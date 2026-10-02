@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MODES } from '@/lib/modes.generated';
+import { accentInk, softCard } from '@/lib/soft-surface';
 
 interface SolveTimeChartProps {
   data: Array<{ date: string; timeSeconds: number; mode: string }>;
@@ -51,7 +52,7 @@ export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChar
     return (
       <div
         className="p-4 text-center"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+        style={softCard(customColor ?? '#0d9488', { radius: 18 })}
       >
         <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           Win more games to see your solve time trend
@@ -100,7 +101,7 @@ export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChar
   return (
     <div
       className="p-4"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+      style={softCard(customColor ?? '#0d9488', { radius: 18 })}
     >
       <svg
         viewBox={`0 0 ${chartW} ${chartH}`}
@@ -153,22 +154,22 @@ export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChar
 
       {/* Tapped-win detail: date, mode, exact time. */}
       {selectedPoint && (
-        <p className="text-[10px] font-black text-center mt-1" style={{ color: MODE_COLORS[selectedPoint.mode] || '#7c3aed' }}>
+        <p className="text-[10px] font-black text-center mt-1 soft-ink" style={accentInk(MODE_COLORS[selectedPoint.mode] || '#7c3aed', MODE_COLORS[selectedPoint.mode] || '#7c3aed').style}>
           {formatDay(selectedPoint.date)} · {modeTitle(selectedPoint.mode)} · {formatTimeExact(selectedPoint.timeSeconds)}
         </p>
       )}
 
       <div className="flex justify-between mt-2">
         <div className="text-center">
-          <div className="text-xs font-black" style={{ color: '#6d28d9' }}>{formatTime(minTime)}</div>
+          <div className="text-xs font-black soft-ink" style={accentInk('#6d28d9', '#6d28d9').style}>{formatTime(minTime)}</div>
           <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Fastest</div>
         </div>
         <div className="text-center">
-          <div className="text-xs font-black" style={{ color: '#7c3aed' }}>{formatTime(avgTime)}</div>
+          <div className="text-xs font-black soft-ink" style={accentInk('#7c3aed', '#7c3aed').style}>{formatTime(avgTime)}</div>
           <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Average</div>
         </div>
         <div className="text-center">
-          <div className="text-xs font-black" style={{ color: '#d97706' }}>{formatTime(maxTime)}</div>
+          <div className="text-xs font-black soft-ink" style={accentInk('#d97706', '#b45309').style}>{formatTime(maxTime)}</div>
           <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Slowest</div>
         </div>
       </div>

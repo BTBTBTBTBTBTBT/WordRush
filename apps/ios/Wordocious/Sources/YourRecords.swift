@@ -109,20 +109,15 @@ private func recordMode(_ key: String?) -> HomeMode? { key.flatMap { k in record
 fileprivate func yourRecordsModeTitle(_ key: String) -> String { recordMode(key)?.title ?? key }
 private func recordAccent(_ gameMode: String?) -> Color { recordMode(gameMode)?.accent ?? gold }
 
-/// The standard record card: 16pt radius, 1.5pt border, a 3pt gradient bar on top.
+/// The standard record card (FINISH_SPEC §A1): a soft wash of the card's color, a
+/// 1.5-pt border and the game card's top bar in its gradient.
 private struct RecordCardShell<Content: View>: View {
     let bar: [Color]
     @ViewBuilder var content: Content
     var body: some View {
-        VStack(spacing: 0) {
-            LinearGradient(colors: bar, startPoint: .leading, endPoint: .trailing).frame(height: 3)
-            content
-        }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        // ART_SPEC §11: the tinted lift sits outside the clip.
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .tintedCard(accent: bar.first ?? FinishInk.purple, bar: bar, radius: 18, barHeight: 8, tint: 0.07, line: 0.24)
     }
 }
 
@@ -132,12 +127,14 @@ private struct RecordCardShell<Content: View>: View {
 private func meCell(_ icon: String, _ value: String, _ label: String, _ color: Color, dim: Bool = false) -> some View {
     VStack(spacing: 3) {
         SymbolGlyph(icon, size: 16, color: dim ? Theme.textMuted : color).opacity(dim && Icon3DName.forSymbol(icon) != nil ? 0.5 : 1)
-        Text(value).font(Brand.font(15, .black)).foregroundStyle(dim ? Theme.textMuted : Theme.textPrimary)
+        // §A2: soft numbers (dimmed when there is no record yet).
+        Text(value).softNumber(17).opacity(dim ? 0.45 : 1)
             .lineLimit(1).minimumScaleFactor(0.7)
-        Text(label).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+        Text(label).font(Brand.font(9, .black)).foregroundStyle(FinishInk.secondary)
             .multilineTextAlignment(.center).lineLimit(2)
     }
     .frame(maxWidth: .infinity).padding(.vertical, 10).padding(.horizontal, 4)
+    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(StatsInk.rowFill(color)))
 }
 
 /// "You're <gap> from the <label> record" over a progress bar toward it.
@@ -178,7 +175,7 @@ struct NextUpCard: View {
         let top = Array(chases.prefix(3))
         RecordCardShell(bar: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("NEXT UP").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                FinishLabel("Next up")
                 VStack(spacing: 4) {
                     HStack {
                         Label { Text("\(next)-day streak shield") } icon: { Icon3D(.flame, size: 14) }.font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
@@ -221,7 +218,7 @@ struct SweepRecordsCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
-                    Text("Daily Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("Daily Sweeps").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                 }
                 if sweep.hasData {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
@@ -291,7 +288,7 @@ struct PuzzleSweepsCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     ModeIconView(icon: .game("more", .symbol("square.grid.2x2")), accent: accent, box: 32)
-                    Text("Puzzles Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("Puzzles Sweeps").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                 }
                 if totals.sweepDays > 0 {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
@@ -327,7 +324,7 @@ struct WordOfTheDayRecordCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 10) {
                         ModeIconView(icon: .symbol("character.book.closed.fill"), accent: accent, box: 32)
-                        Text("Word of the Day").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        Text("Word of the Day").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                     }
                     let pct = Int((Double(record.right) / Double(max(1, record.answered)) * 100).rounded())
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 6) {
@@ -359,7 +356,7 @@ struct GameRecordsCard: View {
         RecordCardShell(bar: [accent, accent.opacity(0.53)]) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Your Records").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("Your Records").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                     Spacer()
                     if !held.isEmpty {
                         HStack(spacing: 3) {
@@ -419,36 +416,49 @@ struct RecordsHeldRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("MEDALS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                FinishLabel("Medals", color: Color(hex: 0xA2560C))
                 HStack(spacing: 10) {
-                    Label { Text("\(auth.profile?.goldMedals ?? 0)") } icon: { Icon3D(.crown, size: 16) }.font(Brand.font(13, .black)).foregroundStyle(gold)
-                    Label("\(auth.profile?.silverMedals ?? 0)", systemImage: "medal.fill").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x9CA3AF))
-                    Label("\(auth.profile?.bronzeMedals ?? 0)", systemImage: "medal.fill").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xB45309))
-                }.labelStyle(.titleAndIcon)
-                Text("Daily top-3 finishes").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    medalTally("gold", auth.profile?.goldMedals ?? 0, "gold", fallback: "crown.fill", gold)
+                    medalTally("silver", auth.profile?.silverMedals ?? 0, "silver", fallback: "medal.fill", Color(hex: 0x9CA3AF))
+                    medalTally("bronze", auth.profile?.bronzeMedals ?? 0, "bronze", fallback: "medal.fill", Color(hex: 0xB45309))
+                }
+                Text("Daily top-3 finishes").font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading).padding(14)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(14)
+            .tintedCard(accent: Color(hex: 0xF5A524), tint: 0.10, line: 0.28)
 
             Button {
+                Haptics.tap()   // the old PressableStyle's press tap
                 if let onOpenRecords { onOpenRecords() } else { showRecords = true }
             } label: {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("GLOBAL RECORDS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                    Label("\(recordsHeld.count)", systemImage: "star.fill").font(Brand.font(13, .black))
-                        .foregroundStyle(recordsHeld.isEmpty ? Theme.textMuted : gold).labelStyle(.titleAndIcon)
+                    FinishLabel("Global records", color: Color(hex: 0x6D28D9))
+                    HStack(spacing: 4) {
+                        MedalArt(kind: "trophy", size: 20, fallbackSymbol: "star.fill", fallbackColor: gold)
+                            .opacity(recordsHeld.isEmpty ? 0.5 : 1)
+                        Text("\(recordsHeld.count)").softNumber(15)
+                    }
                     Text("all-time record\(recordsHeld.count == 1 ? "" : "s") held · Hall of Fame →")
-                        .font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0x7C3AED))
+                        .font(Brand.font(10, .bold)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading).padding(14)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(14)
+                .tintedCard(accent: Color(hex: 0x7C3AED), tint: 0.10, line: 0.28)
             }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(.squish)
         }
+        .fixedSize(horizontal: false, vertical: true)
         .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
+    }
+
+    /// One medal count: the glossy medal art + a soft number.
+    private func medalTally(_ kind: String, _ count: Int, _ label: String, fallback: String, _ color: Color) -> some View {
+        HStack(spacing: 4) {
+            MedalArt(kind: kind, size: 20, fallbackSymbol: fallback, fallbackColor: color)
+            Text("\(count)").softNumber(15)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(count) \(label)")
     }
 }
 
@@ -479,7 +489,7 @@ struct TrophyShelf: View {
         return RecordCardShell(bar: [Color(hex: 0xFBBF24), gold]) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("YOUR TROPHY SHELF").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                    FinishLabel("Your trophy shelf", color: Color(hex: 0xA2560C))
                     Spacer()
                     Button {
                         guard !sharingShelf else { return }
@@ -488,9 +498,9 @@ struct TrophyShelf: View {
                                                              username: auth.profile?.username)
                         sharingShelf = false
                     } label: {
-                        Icon3D(.share, size: 15)
+                        Icon3D(.share, size: 20).frame(width: 36, height: 36).contentShape(Rectangle())
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(.squishIcon)
                     .opacity(sharingShelf ? 0.4 : 1)
                     .accessibilityLabel("Share trophy shelf")
                 }
@@ -549,22 +559,20 @@ struct TrophyShelf: View {
             recordGlyph(r.gameMode, box: 40)
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(r.gameMode.map(yourRecordsModeTitle) ?? "Global") · \(RecordCatalog.label(r.recordType, gameMode: r.gameMode))")
-                    .font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
+                    .font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(A11yInk.on(Color(hex: 0x92400E)))
                     .lineLimit(1).minimumScaleFactor(0.8)
-                Text(r.formattedValue).font(Brand.font(22, .black)).foregroundStyle(gold)
+                Text(r.formattedValue).softNumber(22).lineLimit(1).minimumScaleFactor(0.6)
             }
             Spacer(minLength: 4)
             if let since = heldSince(r.achievedAt) {
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text("held since").font(Brand.font(9, .bold)).foregroundStyle(Color(hex: 0xB45309))
-                    Text(since).font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xB45309))
+                    Text("held since").font(Brand.font(9, .bold)).foregroundStyle(A11yInk.on(Color(hex: 0xB45309)))
+                    Text(since).font(Brand.font(10, .black)).foregroundStyle(A11yInk.on(Color(hex: 0xB45309)))
                 }
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12)
-            .fill(LinearGradient(colors: [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFDE68A), lineWidth: 1))
+        .tintedPill(Color(hex: 0xF5A524), radius: 12)
     }
 
     private func trophyTile(_ r: AllTimeRecord) -> some View {
@@ -575,6 +583,6 @@ struct TrophyShelf: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 6).padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 9).fill(Theme.background))
+        .background(RoundedRectangle(cornerRadius: 9).fill(StatsInk.rowFill(recordAccent(r.gameMode))))
     }
 }

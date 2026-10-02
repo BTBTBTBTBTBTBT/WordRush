@@ -3,14 +3,22 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HeaderBack } from '@/components/ui/page-header';
 import { ArtTitle } from '@/components/ui/art-title';
-import { useState } from 'react';
-import { Switch } from '@/components/ui/switch';
+import { useRef, useState } from 'react';
 import { useTheme, Theme } from '@/lib/theme-context';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
+import { isHapticsOn, setHapticsOn } from '@/lib/haptics';
+import { ProMemberCard } from '@/components/pro/pro-member-card';
+import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { getKeyboardLayout, setKeyboardLayout, type KeyboardLayout } from '@/lib/keyboard-layout';
 import { useAuth } from '@/lib/auth-context';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkedSignIns } from '@/components/settings/linked-sign-ins';
+import { NotificationSettings } from '@/components/settings/notification-settings';
+import { SETTINGS_ACCENT, SettingsOption, SettingsSection, SettingsToggle, settingsRowStyle } from '@/components/settings/settings-kit';
+import { PoseArt } from '@/components/ui/soft-popup';
+import { BRAND_ACCENT, cardBarStyle, softBackground } from '@/lib/soft-surface';
+import { ART_SIZE } from '@/lib/art';
+import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -21,6 +29,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
   const { user, session, signOut, profile } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
+  // FINISH_SPEC U: the separate Haptics toggle (default on; lib/haptics.ts 'pref-haptics').
+  const [hapticsOn, setHapticsOnState] = useState(() => isHapticsOn());
+  const subscriptionRef = useRef<HTMLDivElement>(null);
+  const webBilling = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && !!(profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id;
   const [kbLayout, setKbLayout] = useState<KeyboardLayout>(() => getKeyboardLayout());
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
@@ -110,80 +122,109 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     { value: 'forest', label: 'Forest', description: 'Green and earth tones' },
   ];
 
+  // FINISH_SPEC C4b / G5: the dialog is a soft lavender sheet with the brand
+  // top bar; every section is a tinted card in its own accent with tinted rows
+  // and tinted switches (settings-kit), and the Friends notification toggles
+  // live here now under "Notifications". R with his cocoa rests at the foot
+  // (A7: a secondary spot, one pose).
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideClose
-        className="max-w-md border"
-        style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+        className="max-w-md border rounded-3xl sm:rounded-3xl"
+        style={{ background: softBackground(BRAND_ACCENT, 0.07), borderColor: 'rgba(124, 58, 237, 0.25)', paddingTop: 0 }}
       >
+        <div aria-hidden="true" style={{ ...cardBarStyle(BRAND_ACCENT), margin: '0 -24px', background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }} />
         <DialogHeader>
-          {/* The whole-cast SETTINGS title art (docs/ART_SPEC.md §2) beside the white close circle. */}
-          <div className="flex items-center gap-2">
-            <DialogTitle className="flex-1 min-w-0 text-left">
-              <ArtTitle name="art-title-settings" label="Settings" as="div" align="left" maxWidth={340} />
+          {/* The SETTINGS lettering as a small centered headline (FINISH_SPEC N1), the bare close X at the corner. */}
+          <div className="relative flex items-center justify-center px-10">
+            <DialogTitle className="w-full">
+              <ArtTitle
+                name="art-title-settings"
+                label="Settings"
+                as="div"
+                align="center"
+                widthPct={HEADLINE.widthPct}
+                maxWidth={headlineMaxWidth(...ART_SIZE['art-title-settings'])}
+              />
             </DialogTitle>
-            <HeaderBack kind="close" onClick={() => onOpenChange(false)} size={32} />
+            <HeaderBack kind="close" onClick={() => onOpenChange(false)} size={32} className="absolute right-0 top-1/2 -translate-y-1/2" />
           </div>
-          <DialogDescription style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">
+          <DialogDescription style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold text-center">
             Customize your Wordocious experience
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="section-header">THEME</div>
+        <div className="space-y-4">
+          {/* FINISH_SPEC AA3: the Pro member card (free players: the Go Pro upsell in the same slot).
+              Manage = the Subscription path below: the Stripe portal for a web purchase, else the store links.
+              Go Pro closes this dialog first so the Go Pro popup is on top and clickable. */}
+          <ProMemberCard
+            webBilling={webBilling}
+            manageBusy={portalLoading}
+            onManage={() => (webBilling
+              ? handleManageWebBilling()
+              : subscriptionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))}
+            onGoPro={() => {
+              onOpenChange(false);
+              window.setTimeout(() => openGoProPopup(), 220);
+            }}
+          />
+
+          <SettingsSection title="Theme" accent={SETTINGS_ACCENT.theme}>
             <div className="space-y-1.5">
               {themes.map((t) => (
-                <button
+                <SettingsOption
                   key={t.value}
-                  className="w-full text-left p-3 rounded-xl transition-all"
+                  selected={theme === t.value}
+                  accent={SETTINGS_ACCENT.theme}
+                  label={t.label}
+                  description={t.description}
                   onClick={() => setTheme(t.value)}
-                  style={{
-                    background: theme === t.value ? 'var(--color-surface-hover)' : 'var(--color-bg)',
-                    border: theme === t.value ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)',
-                  }}
-                >
-                  <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{t.label}</div>
-                  <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{t.description}</div>
-                </button>
+                />
               ))}
             </div>
-          </div>
+          </SettingsSection>
 
-          <div className="space-y-2">
-            <div className="section-header">KEYBOARD</div>
+          <SettingsSection title="Keyboard" accent={SETTINGS_ACCENT.keyboard}>
             <div className="space-y-1.5">
               {keyboardLayouts.map((k) => (
-                <button
+                <SettingsOption
                   key={k.value}
-                  className="w-full text-left p-3 rounded-xl transition-all"
+                  selected={kbLayout === k.value}
+                  accent={SETTINGS_ACCENT.keyboard}
+                  label={k.label}
+                  description={k.description}
                   onClick={() => { setKbLayout(k.value); setKeyboardLayout(k.value); }}
-                  style={{
-                    background: kbLayout === k.value ? 'var(--color-surface-hover)' : 'var(--color-bg)',
-                    border: kbLayout === k.value ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)',
-                  }}
-                >
-                  <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{k.label}</div>
-                  <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{k.description}</div>
-                </button>
+                />
               ))}
             </div>
-          </div>
+          </SettingsSection>
 
-          <div className="space-y-3">
-            <div className="section-header">SOUND & FEEDBACK</div>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>Sound Effects</div>
-                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Key taps, win/loss jingles</div>
-              </div>
-              <Switch checked={soundOn} onCheckedChange={(v) => { setSoundOn(v); setSoundEnabled(v); }} />
+          <SettingsSection title="Sound & Feedback" accent={SETTINGS_ACCENT.sound}>
+            <div className="space-y-1.5">
+              <SettingsToggle
+                label="Sound Effects"
+                description="Key taps, win/loss jingles"
+                checked={soundOn}
+                onCheckedChange={(v) => { setSoundOn(v); setSoundEnabled(v); }}
+                accent={SETTINGS_ACCENT.sound}
+              />
+              <SettingsToggle
+                label="Haptics"
+                description="Little buzzes on taps, wins and streaks (where your device supports them)"
+                checked={hapticsOn}
+                onCheckedChange={(v) => { setHapticsOnState(v); setHapticsOn(v); }}
+                accent={SETTINGS_ACCENT.sound}
+              />
             </div>
-          </div>
+          </SettingsSection>
 
-          <div className="space-y-2">
-            <div className="section-header">SUBSCRIPTION</div>
+          {/* C4b: the Friends notification toggles (moved here from the Friends bell). */}
+          {user && <NotificationSettings />}
+
+          <div ref={subscriptionRef} style={{ scrollMarginTop: 8 }}>
+          <SettingsSection title="Subscription" accent={SETTINGS_ACCENT.subscription}>
             {/* The web can't tell which store a Pro sub was bought in, so link
                 both stores' manage pages. Bought on the web (Stripe)? The
                 portal row below appears once web billing is live and opens
@@ -192,12 +233,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               {/* §255: only offer the web portal when a web purchase is on file —
                   the row was appearing for every account, including ones that
                   subscribed on a phone or were granted Pro. */}
-              {process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && !!(profile as any)?.stripe_customer_id && (
+              {webBilling && (
                 <button
                   onClick={handleManageWebBilling}
                   disabled={portalLoading}
-                  className="block w-full text-left p-3 rounded-xl transition-all disabled:opacity-50"
-                  style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}
+                  className="block w-full text-left p-3 disabled:opacity-50"
+                  style={settingsRowStyle(SETTINGS_ACCENT.subscription)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -218,8 +259,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-left p-3 rounded-xl transition-all"
-                  style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}
+                  className="block w-full text-left p-3"
+                  style={settingsRowStyle(SETTINGS_ACCENT.subscription)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -233,48 +274,53 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-text-muted)' }}>{portalError}</p>
               )}
             </div>
+          </SettingsSection>
           </div>
 
           {user && <LinkedSignIns key={user.id} />}
 
           {user && (
-            <div className="space-y-2">
-              <div className="section-header">ACCOUNT</div>
+            <SettingsSection title="Account" accent={SETTINGS_ACCENT.account}>
               <button
                 onClick={handleDeleteAccount}
                 disabled={deleting}
-                className="block w-full text-left p-3 rounded-xl transition-all disabled:opacity-50"
-                style={{ background: '#fef2f2', border: '1.5px solid #fecaca' }}
+                className="block w-full text-left p-3 disabled:opacity-50"
+                style={settingsRowStyle(SETTINGS_ACCENT.account)}
               >
-                <div className="font-extrabold text-xs" style={{ color: '#dc2626' }}>
+                <div className="font-extrabold text-xs" style={{ color: 'var(--color-loss-text)' }}>
                   {deleting ? 'Deleting…' : 'Delete account'}
                 </div>
-                <div className="text-[10px] font-bold" style={{ color: '#b91c1c' }}>
+                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                   Permanently erase your profile and all data
                 </div>
               </button>
               {deleteError && (
-                <p className="text-[10px] font-bold px-1" style={{ color: '#dc2626' }}>{deleteError}</p>
+                <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-loss-text)' }}>{deleteError}</p>
               )}
-            </div>
+            </SettingsSection>
           )}
 
-          <div className="space-y-3">
-            <div className="section-header">ACCESSIBILITY</div>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>Colorblind Mode</div>
-                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>High contrast colors</div>
-              </div>
-              <Switch checked={colorblindMode} onCheckedChange={setColorblindMode} />
+          <SettingsSection title="Accessibility" accent={SETTINGS_ACCENT.accessibility}>
+            <div className="space-y-1.5">
+              <SettingsToggle
+                label="Colorblind Mode"
+                description="High contrast colors"
+                checked={colorblindMode}
+                onCheckedChange={setColorblindMode}
+                accent={SETTINGS_ACCENT.accessibility}
+              />
+              <SettingsToggle
+                label="Reduced Motion"
+                description="Minimize animations"
+                checked={reducedMotion}
+                onCheckedChange={setReducedMotion}
+                accent={SETTINGS_ACCENT.accessibility}
+              />
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>Reduced Motion</div>
-                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Minimize animations</div>
-              </div>
-              <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
-            </div>
+          </SettingsSection>
+
+          <div className="flex justify-center pt-1">
+            <PoseArt pose="art-pose-r-cocoa" size={84} />
           </div>
         </div>
       </DialogContent>

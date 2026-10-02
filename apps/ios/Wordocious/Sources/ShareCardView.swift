@@ -1,12 +1,13 @@
 import SwiftUI
 import WordociousCore
 
-/// Faithful port of the web share image (lib/share-image.ts) — single, multi,
-/// and gauntlet layouts — rendered to PNG via ImageRenderer. Same palette,
-/// wordmark gradient, mode label, stats line + Win/Loss pill, and footer.
-/// ART_SPEC §17: the game's page tint behind it, the game's title art as the
-/// header (the mode label text when the art is missing), and the cast strip above
-/// the footer; the boards give up ~30 pt so the numbers and grids stay as legible.
+/// The game share image (web lib/share-image.ts layouts — single, multi, gauntlet
+/// and the More Games bodies), rendered to PNG via ImageRenderer.
+/// FINISH_SPEC §E1 (finishing-touches `.sharecard`): the game's wallpaper, its title
+/// art (~92% wide), the date line, the result board as GLOSSY tiles on the shared
+/// board tray (§L), three tinted stat windows (purple · blue · gold, soft numbers)
+/// and a footer: a cast pose that is NOT the game's title host, with no bubble,
+/// + "Can you beat me?" / "wordocious.com". Static and always light (see ShareKit).
 /// One board of a multi-board share: color grid, optional letters (only used
 /// by the "Full results" variant), win/loss, and the answer (drawn under the
 /// board when revealing a loss).
@@ -70,113 +71,199 @@ struct ShareCardView: View {
     var solutionDisplay: String? = nil
     /// The game (ART_SPEC §17): its tint behind the card and its title art header.
     var mode: GameMode? = nil
+    /// FINISH_SPEC §E1: the result's points for the gold POINTS window (nil → the
+    /// third window shows the mode's own count instead).
+    var points: Int? = nil
 
-    private let bg = Color(hex: 0xF8F7FF)
-    private let textMuted = Color(hex: 0x6B7280)
-    private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
-    private let lossFG = Color(hex: 0xDC2626), lossBG = Color(hex: 0xFEE2E2)
-    private let boardWinTint = Color(hex: 0xF5F3FF), boardLossTint = Color(hex: 0xFEF2F2)
+    private let bg = Color(hex: 0xF5EEFF)
+    private let lossFG = Color(hex: 0xDC2626)
 
-    /// Canvas matches the web: 1350 tall for OctoWord(8 boards) + Gauntlet, else 1080.
-    var size: CGSize {
-        switch kind {
-        case .gauntlet: return CGSize(width: 1080, height: 1350)
-        case .multi(let boards, _, _): return CGSize(width: 1080, height: boards.count > 4 ? 1350 : 1080)
-        case .single, .sudoku, .regions, .ladder, .wordsearch, .hub, .cryptogram, .groups, .crossword, .scramble: return CGSize(width: 1080, height: 1080)
-        }
-    }
-
-    /// §17: the room the title art + cast strip take, given back by the boards.
-    private static let artShrink: CGFloat = 30
+    /// §S2: the board body's measured natural size (`ShareService.naturalSize(card.boardBody)`),
+    /// set before rendering so the canvas fits the puzzle; nil → the estimate in `boardBox`.
+    var boardNatural: CGSize? = nil
 
     private var titleArt: String? { mode.flatMap(GameTitleArt.forMode)?.asset }
 
+    // MARK: §S2 layout — the canvas is sized to its content
+
+    static let width: CGFloat = 1080
+    /// The board block's target width (88%) and the aspect clamp (4:5 … 9:16).
+    private static let boardWidth: CGFloat = 950
+    private static let minHeight: CGFloat = 1350
+    private static let maxHeight: CGFloat = 1920
+
+    private static let topPad: CGFloat = 44
+    private static let infoH: CGFloat = 50
+    private static let windowH: CGFloat = 124
+    private static let castW: CGFloat = 972
+    private static let bottomPad: CGFloat = 40
+
+    /// Title art at ~70% of the width, height from its aspect (capped).
+    private var titleH: CGFloat {
+        guard let art = titleArt, let a = ArtAsset.aspect(art), a > 0 else { return 110 }
+        return min(200, 756 / a)
+    }
+
+    /// Everything but the board.
+    private var fixedH: CGFloat {
+        Self.topPad + titleH + 18 + Self.infoH + 30 + 34 + Self.windowH + 40
+            + ShareCastWordmark.height(Self.castW) + Self.bottomPad
+    }
+
+    /// The board body's natural size (measured, else estimated).
+    private var natural: CGSize {
+        if let n = boardNatural, n.width > 0, n.height > 0 { return n }
+        return boardBox
+    }
+
+    /// (board scale, canvas height): fill 88% of the width; tall boards scale by
+    /// height so the canvas stays inside the clamp.
+    private var fit: (scale: CGFloat, height: CGFloat) {
+        let n = natural
+        var s = min(Self.boardWidth / n.width, 1.5)
+        if fixedH + n.height * s > Self.maxHeight { s = max(0.2, (Self.maxHeight - fixedH) / n.height) }
+        let h = min(Self.maxHeight, max(Self.minHeight, fixedH + n.height * s))
+        return (s, h.rounded())
+    }
+
+    var size: CGSize { CGSize(width: Self.width, height: fit.height) }
+
+    /// The result board on its own (what `boardNatural` measures).
+    var boardBody: some View { body(for: kind) }
+
+    /// The estimate used when the board wasn't measured.
+    private var boardBox: CGSize {
+        switch kind {
+        case .single: return CGSize(width: 700, height: 880)
+        case .multi(let boards, _, _): return boards.count > 4 ? CGSize(width: 934, height: 1160) : CGSize(width: 742, height: 1240)
+        case .gauntlet: return CGSize(width: 960, height: 560)
+        case .sudoku, .regions, .wordsearch: return CGSize(width: 780, height: 790)
+        case .ladder: return CGSize(width: 600, height: 790)
+        case .hub, .cryptogram, .groups, .crossword, .scramble: return CGSize(width: 960, height: 730)
+        }
+    }
+
+    /// The tray's identity: the game's accent, purple when won, slate when lost.
+    private var trayState: GameTrayState { won ? .won : .lost }
+
     var body: some View {
+        let f = fit
+        let n = natural
+        let boardH = n.height * f.scale
         ZStack {
-            if let mode { ShareArt.Background(tint: .forGame(mode)) } else { bg }
+            if let mode { ShareWall(tint: .forGame(mode)) } else { bg }
             VStack(spacing: 0) {
-                Text("WORDOCIOUS")
-                    .font(Brand.font(52, .black))
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                                                    startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 28)
                 if titleArt != nil {
-                    ShareArt.title(titleArt).padding(.top, 4)
+                    ShareArt.title(titleArt, height: titleH, maxWidth: 756).padding(.top, Self.topPad)
                 } else {
-                    Text(modeLabel).font(Brand.font(38, .black)).foregroundStyle(accent).padding(.top, 10)
+                    Text(modeLabel).font(Brand.fixedFont(84, .black)).foregroundStyle(accent)
+                        .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                        .frame(height: titleH).padding(.horizontal, 60).padding(.top, Self.topPad)
                 }
-                HStack(spacing: 12) {
-                    Text(statsText).font(Brand.font(24, .bold)).foregroundStyle(textMuted)
-                    // ProperNoundle category pill (web drawCategoryPill — accent
-                    // capsule, white 18px label, between stats and Win/Loss).
-                    if let category {
-                        Text(category).font(Brand.font(18, .bold)).foregroundStyle(.white)
-                            .padding(.horizontal, 12).frame(height: 30)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(accent))
-                    }
-                    Text(won ? "Win" : "Loss").font(Brand.font(22, .bold))
-                        .foregroundStyle(won ? winFG : lossFG)
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(won ? winBG : lossBG))
-                }
-                .padding(.top, 14)
+                infoRow.frame(height: Self.infoH).padding(.top, 18)
 
-                Spacer()
+                // The board block (extra canvas height from the 4:5 floor centers it).
                 body(for: kind)
-                Spacer()
+                    .fixedSize()
+                    .frame(width: n.width, height: n.height)
+                    .scaleEffect(f.scale)
+                    .frame(width: n.width * f.scale, height: boardH)
+                    .frame(maxHeight: .infinity)
+                    .padding(.top, 30)
 
-                ShareArt.CastStrip().padding(.bottom, 6)
-                Text("wordocious.com").font(Brand.font(22, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 20)
+                ShareStatRow(items: windows, height: Self.windowH)
+                    .padding(.horizontal, 54)
+                    .padding(.top, 34)
+                ShareCastWordmark(width: Self.castW)
+                    .padding(.top, 40)
+                    .padding(.bottom, Self.bottomPad)
             }
         }
         .frame(width: size.width, height: size.height)
     }
 
-    private var statsText: String {
+    /// One compact info line: date · guesses · time, the ProperNoundle category pill,
+    /// and the W / L badge.
+    private var infoRow: some View {
+        HStack(spacing: 14) {
+            ShareDateLine(text: infoText, size: 30)
+            if let category {
+                Text(category.uppercased()).font(Brand.fixedFont(22, .black)).tracking(2)
+                    .foregroundStyle(accent.mixed(over: .black, 0.75))
+                    .padding(.horizontal, 16).frame(height: 40)
+                    .background(Capsule().fill(accent.wash(0.16)))
+                    .overlay(Capsule().strokeBorder(accent.wash(0.40), lineWidth: 3))
+            }
+            ShareResultBadge(won: won, size: 46)
+        }
+        .padding(.horizontal, 48)
+    }
+
+    private var infoText: String {
         let g = won ? "\(guesses)" : "X"
-        let t = "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))"
         switch kind {
-        case .single: return "\(g)/\(maxGuesses) · \(t) · \(dateStr)"
-        case .multi(_, let solved, let total): return "\(solved)/\(total) boards · \(g)/\(maxGuesses) · \(t) · \(dateStr)"
-        case .gauntlet(_, let done, let total): return "\(done)/\(total) stages · \(guesses) guesses · \(t) · \(dateStr)"
-        case .sudoku(_, _, _, let mistakes, let difficulty, let number):
-            // Semantics-aware (More Games §11): mistakes, never "guesses".
-            let m = "\(mistakes) mistake\(mistakes == 1 ? "" : "s")"
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)\(difficulty) · \(won ? m : "Out of mistakes") · \(t) · \(dateStr)"
-        case .regions(_, _, _, _, let mistakes, let sizeLabel, let number):
-            let m = "\(mistakes) mistake\(mistakes == 1 ? "" : "s")"
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)\(sizeLabel) · \(won ? m : "Out of mistakes") · \(t) · \(dateStr)"
-        case .ladder(_, _, _, _, let par, let moves, let number):
+        case .single, .multi: return "\(dateLineText) · \(g)/\(maxGuesses) · \(timeText)"
+        case .gauntlet: return "\(dateLineText) · \(guesses) guesses · \(timeText)"
+        case .hub: return dateLineText
+        default: return "\(dateLineText) · \(timeText)"
+        }
+    }
+
+    private var timeText: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
+    private func numberPrefix(_ n: Int?) -> String { n.map { " · #\($0)" } ?? "" }
+
+    /// The date line carries whatever the three windows don't (puzzle number,
+    /// difficulty / size, par, rank name).
+    private var dateLineText: String {
+        let d = ShareCast.dateLine(dateStr)
+        switch kind {
+        case .single, .multi, .gauntlet: return d
+        case .sudoku(_, _, _, _, let difficulty, let n): return "\(d)\(numberPrefix(n)) · \(difficulty)"
+        case .regions(_, _, _, _, _, let sizeLabel, let n): return "\(d)\(numberPrefix(n)) · \(sizeLabel)"
+        case .ladder(_, _, _, _, let par, _, let n): return "\(d)\(numberPrefix(n)) · Par \(par)"
+        case .wordsearch(_, _, _, _, _, let n): return "\(d)\(numberPrefix(n))"
+        case .hub(_, _, _, _, _, let n): return "\(d)\(numberPrefix(n))"
+        case .cryptogram(_, _, let n): return "\(d)\(numberPrefix(n))"
+        case .groups(_, _, _, let n): return "\(d)\(numberPrefix(n))"
+        case .crossword(_, _, _, _, let n): return "\(d)\(numberPrefix(n))"
+        case .scramble(_, _, _, _, _, let n): return "\(d)\(numberPrefix(n))"
+        }
+    }
+
+    /// The three tinted windows (purple · blue · gold), semantics-aware per mode
+    /// (More Games §11: mistakes / checks / moves, never "guesses" where they don't apply).
+    private var windows: [(value: String, label: String, tone: ShareStatWindow.Tone)] {
+        let g = won ? "\(guesses)" : "X"
+        func third(_ fallback: (String, String)) -> (value: String, label: String, tone: ShareStatWindow.Tone) {
+            if let points { return (points.formatted(), "POINTS", .gold) }
+            return (fallback.0, fallback.1, .gold)
+        }
+        let time = (value: timeText, label: "TIME", tone: ShareStatWindow.Tone.blue)
+        switch kind {
+        case .single:
+            return [("\(g)/\(maxGuesses)", "GUESSES", .purple), time, third((won ? "WIN" : "LOSS", "RESULT"))]
+        case .multi(_, let solved, let total):
+            return [("\(g)/\(maxGuesses)", "GUESSES", .purple), time, third(("\(solved)/\(total)", "BOARDS"))]
+        case .gauntlet(_, let done, let total):
+            return [("\(guesses)", "GUESSES", .purple), time, third(("\(done)/\(total)", "STAGES"))]
+        case .sudoku(_, _, _, let mistakes, _, _), .regions(_, _, _, _, let mistakes, _, _):
+            return [(won ? "\(mistakes)" : "OUT", "MISTAKES", .purple), time, third((won ? "WIN" : "LOSS", "RESULT"))]
+        case .ladder(_, _, _, _, let par, let moves, _):
             let over = moves - par
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)Par \(par) · \(won ? (over <= 0 ? "On par" : "+\(over)") : "Out of moves") · \(t) · \(dateStr)"
-        case .wordsearch(_, let words, let found, let misses, _, let number):
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)\(found.count)/\(words.count) · \(misses) miss\(misses == 1 ? "" : "es") · \(t) · \(dateStr)"
-        case .hub(let rankName, let pct, let wordsFound, _, let pangramsFound, let number):
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)\(rankName) · \(pct)% · \(wordsFound) word\(wordsFound == 1 ? "" : "s") · \(pangramsFound) pangram\(pangramsFound == 1 ? "" : "s") · \(dateStr)"
-        case .cryptogram(_, let checks, let number):
-            // Check-scored (More Games §11): checks, never "guesses"; a loss is a reveal.
-            let num = number.map { "#\($0) · " } ?? ""
-            let c = checks == 0 ? "No checks" : "\(checks) check\(checks == 1 ? "" : "s")"
-            return "\(num)\(won ? c : "Revealed") · \(t) · \(dateStr)"
-        case .groups(let solvedTiers, let mistakes, _, let number):
-            // Mistake-scored (More Games §11): groups found and mistakes, never "guesses".
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)\(solvedTiers.count)/\(GROUPS_TOTAL_BOARDS) groups · \(mistakes) mistake\(mistakes == 1 ? "" : "s") · \(t) · \(dateStr)"
-        case .crossword(_, _, _, let checks, let number):
-            // Check-scored (More Games §11): clean / checks, never "guesses"; a loss is a reveal.
-            let num = number.map { "#\($0) · " } ?? ""
-            let c = checks == 0 ? "Clean" : "\(checks) check\(checks == 1 ? "" : "s")"
-            return "\(num)\(won ? c : "Revealed") · \(t) · \(dateStr)"
-        case .scramble(_, _, _, let checks, let solvedCount, let number):
-            // Check-scored (More Games §11): words solved of five and checks, never "guesses".
-            let num = number.map { "#\($0) · " } ?? ""
-            return "\(num)\(solvedCount)/\(SCRAMBLE_TOTAL_BOARDS) solved · \(checks) check\(checks == 1 ? "" : "s") · \(t) · \(dateStr)"
+            return [(won ? (over <= 0 ? "PAR" : "+\(over)") : "OUT", "MOVES", .purple), time, third(("\(moves)", "STEPS"))]
+        case .wordsearch(_, let words, let found, let misses, _, _):
+            return [("\(found.count)/\(words.count)", "FOUND", .purple), time, third(("\(misses)", "MISSES"))]
+        case .hub(_, let pct, let wordsFound, _, let pangramsFound, _):
+            return [("\(wordsFound)", "WORDS", .purple), ("\(pangramsFound)", "PANGRAMS", .blue), third(("\(pct)%", "OF MAX"))]
+        case .cryptogram(_, let checks, _):
+            return [(won ? "\(checks)" : "REVEAL", "CHECKS", .purple), time, third((won ? "WIN" : "LOSS", "RESULT"))]
+        case .groups(let solvedTiers, let mistakes, _, _):
+            return [("\(solvedTiers.count)/\(GROUPS_TOTAL_BOARDS)", "GROUPS", .purple), time, third(("\(mistakes)", "MISTAKES"))]
+        case .crossword(_, _, _, let checks, _):
+            return [(won ? (checks == 0 ? "CLEAN" : "\(checks)") : "REVEAL", "CHECKS", .purple), time, third((won ? "WIN" : "LOSS", "RESULT"))]
+        case .scramble(_, _, _, let checks, let solvedCount, _):
+            return [("\(solvedCount)/\(SCRAMBLE_TOTAL_BOARDS)", "SOLVED", .purple), time, third(("\(checks)", "CHECKS"))]
         }
     }
 
@@ -185,18 +272,18 @@ struct ShareCardView: View {
         switch kind {
         case .single(let grid):
             boardCard(grid: grid, letters: reveal ? letters : nil, won: won,
-                      maxSide: (reveal && !won ? 716 : 760) - Self.artShrink, groups: wordGroups,
+                      maxSide: 760, maxHeight: 1100, groups: wordGroups,
                       answerCaption: reveal && !won ? solutionDisplay : nil)
         case .multi(let boards, _, _):
+            // §S2: a tight 2 × 2 (4 × 2 for eight boards), gap ≈ 4% of the width;
+            // each board fills its column width (tall boards scale the block by height).
             let cols = boards.count <= 4 ? 2 : 4
-            // Revealing reserves a caption strip under every board — shrink the
-            // board budget so cell+caption keeps the original grid footprint.
-            // §17: the 2 × 2 grid gives ~24 pt back to the title art + cast strip.
-            let side: CGFloat = (boards.count <= 4 ? 356 : 220) - (reveal ? 40 : 0)
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(side), spacing: 24), count: cols), spacing: 24) {
+            let side: CGFloat = boards.count <= 4 ? 356 : 220
+            let gap: CGFloat = boards.count <= 4 ? 30 : 18
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(side), spacing: gap), count: cols), spacing: gap) {
                 ForEach(0..<boards.count, id: \.self) { i in
                     boardCard(grid: boards[i].grid, letters: reveal ? boards[i].letters : nil,
-                              won: boards[i].won, maxSide: side,
+                              won: boards[i].won, maxSide: side, maxHeight: side * 3,
                               answerCaption: reveal && !boards[i].won ? boards[i].solution : nil,
                               reserveCaption: reveal)
                 }
@@ -232,8 +319,8 @@ struct ShareCardView: View {
     /// then the punchline row grouped by word in the lilac tint, every box
     /// ringed. No letters, no cartoon — the card spoils nothing.
     private func scrambleCard(wordLengths: [Int], circled: [[Int]], pattern: [Int]) -> some View {
-        let emptyBorder = Color(hex: 0xD1D5DB), ring = Color(hex: 0x7C3AED)
-        let lilac = Color(hex: 0xF5F3FF), lilacBorder = Color(hex: 0xC4B5FD)
+        let ring = Color(hex: 0x7C3AED)
+        let lilacBorder = Color(hex: 0x8B5CF6)
         let gap: CGFloat = 10, rowGap: CGFloat = 26, cols = 6
         let areaHeight: CGFloat = 660
         let tile = min(84, floor((1080 - 200 - gap * CGFloat(cols - 1)) / CGFloat(cols)), floor((areaHeight - 120 - rowGap * 5) / 5))
@@ -244,8 +331,7 @@ struct ShareCardView: View {
                 ForEach(0..<wordLengths.count, id: \.self) { r in
                     HStack(spacing: gap) {
                         ForEach(0..<wordLengths[r], id: \.self) { i in
-                            RoundedRectangle(cornerRadius: max(6, tile * 0.14)).fill(Color.white)
-                                .overlay(RoundedRectangle(cornerRadius: max(6, tile * 0.14)).stroke(emptyBorder, lineWidth: 3))
+                            ShareTile(fill: .frost(), size: tile)
                                 .overlay(r < circled.count && circled[r].contains(i)
                                          ? Circle().stroke(ring, lineWidth: 4).frame(width: tile * 0.68, height: tile * 0.68) : nil)
                                 .frame(width: tile, height: tile)
@@ -255,13 +341,12 @@ struct ShareCardView: View {
                     .frame(width: boardW)
                 }
             }
-            Rectangle().fill(emptyBorder).frame(width: boardW, height: 2).padding(.top, rowGap + 6)
+            Rectangle().fill(accent.wash(0.40)).frame(width: boardW, height: 3).padding(.top, rowGap + 6)
             HStack(spacing: wordGap) {
                 ForEach(0..<pattern.count, id: \.self) { wi in
                     HStack(spacing: 6) {
                         ForEach(0..<pattern[wi], id: \.self) { _ in
-                            RoundedRectangle(cornerRadius: max(5, small * 0.14)).fill(lilac)
-                                .overlay(RoundedRectangle(cornerRadius: max(5, small * 0.14)).stroke(lilacBorder, lineWidth: 3))
+                            ShareTile(fill: .frost(lilacBorder), size: small)
                                 .overlay(Circle().stroke(ring, lineWidth: 3).frame(width: small * 0.64, height: small * 0.64))
                                 .frame(width: small, height: small)
                         }
@@ -270,6 +355,7 @@ struct ShareCardView: View {
             }
             .padding(.top, 34)
         }
+        .shareTray(accent: accent, state: trayState, padding: 32)
     }
 
     /// Web drawCrossword parity: the grid silhouette — a purple tile (#ede9fe,
@@ -277,10 +363,9 @@ struct ShareCardView: View {
     /// a block; the largest cell that fits the area, centered. No letters, no
     /// numbers — the card spoils nothing.
     private func crosswordCard(w: Int, h: Int, solution: String) -> some View {
-        let fill = Color(hex: 0xEDE9FE), border = Color(hex: 0xC4B5FD)
+        let fill = Color(hex: 0xA78BFA)
         let gap: CGFloat = 6, areaHeight: CGFloat = 660
         let cell = floor(min((1080 - 160 - gap * CGFloat(w - 1)) / CGFloat(max(1, w)), (areaHeight - 60 - gap * CGFloat(h - 1)) / CGFloat(max(1, h))))
-        let radius = max(5, cell * 0.16)
         let sol = Array(solution)
         return VStack(spacing: gap) {
             ForEach(0..<h, id: \.self) { r in
@@ -288,9 +373,7 @@ struct ShareCardView: View {
                     ForEach(0..<w, id: \.self) { c in
                         let i = r * w + c
                         if i < sol.count, sol[i] != "." {
-                            RoundedRectangle(cornerRadius: radius).fill(fill)
-                                .overlay(RoundedRectangle(cornerRadius: radius).stroke(border, lineWidth: 3))
-                                .frame(width: cell, height: cell)
+                            ShareTile(fill: .color(fill), size: cell)
                         } else {
                             Color.clear.frame(width: cell, height: cell)
                         }
@@ -298,6 +381,7 @@ struct ShareCardView: View {
                 }
             }
         }
+        .shareTray(accent: accent, state: trayState, padding: 28)
     }
 
     /// Web drawGroups parity: four 720-wide tier bars — the solved tiers filled
@@ -321,8 +405,8 @@ struct ShareCardView: View {
             VStack(spacing: 16) {
                 ForEach(0..<solvedTiers.count, id: \.self) { i in
                     let st = ramp[solvedTiers[i]] ?? ramp[1]!
-                    RoundedRectangle(cornerRadius: radius).fill(st.bg).frame(width: barW, height: barH)
-                        .overlay(pips(solvedTiers[i], st.fg))
+                    ShareTile(fill: .color(st.bg), size: barW, height: barH)
+                        .overlay(pips(solvedTiers[i], st.fg).padding(.bottom, barH * 0.07))
                 }
                 ForEach(0..<missed.count, id: \.self) { i in
                     let st = ramp[missed[i]] ?? ramp[1]!
@@ -333,10 +417,11 @@ struct ShareCardView: View {
             }
             HStack(spacing: 22) {
                 ForEach(0..<max(1, maxMistakes), id: \.self) { i in
-                    Circle().fill(i < maxMistakes - mistakes ? accent : Color(hex: 0xE5E7EB)).frame(width: 40, height: 40)
+                    Circle().fill(i < maxMistakes - mistakes ? accent : accent.wash(0.18)).frame(width: 40, height: 40)
                 }
             }
         }
+        .shareTray(accent: self.accent, state: trayState, padding: 32)
     }
 
     /// Web drawCryptogram parity: the ciphertext as rows of blank white cells
@@ -375,9 +460,7 @@ struct ShareCardView: View {
                             ForEach(Array(rows[r][i].enumerated()), id: \.offset) { _, ch in
                                 if isLetter(ch) {
                                     VStack(spacing: 6) {
-                                        RoundedRectangle(cornerRadius: max(5, side * 0.16)).fill(Color.white)
-                                            .overlay(RoundedRectangle(cornerRadius: max(5, side * 0.16)).stroke(Color(hex: 0xD1D5DB), lineWidth: 3))
-                                            .frame(width: side, height: side)
+                                        ShareTile(fill: .frost(), size: side)
                                         Text(String(ch)).font(.system(size: floor(side * 0.34), weight: .heavy, design: .monospaced)).foregroundStyle(codeInk)
                                             .frame(height: 22)
                                     }
@@ -391,22 +474,25 @@ struct ShareCardView: View {
                 }
             }
         }
+        .shareTray(accent: self.accent, state: trayState, padding: 28)
     }
 
     /// Web drawHub parity: the 2-3-2 cluster as blank tiles with the center in
     /// the accent, the rank name large beneath, then % of the maximum.
     private func hubCard(rankName: String, pct: Int) -> some View {
         let tile: CGFloat = 150, gap: CGFloat = 18, accent = Color(hex: 0xC026D3)
-        func blank() -> some View { RoundedRectangle(cornerRadius: tile * 0.14).fill(Color.white).overlay(RoundedRectangle(cornerRadius: tile * 0.14).stroke(Color(hex: 0xD1D5DB), lineWidth: 4)).frame(width: tile, height: tile) }
+        func blank() -> some View { ShareTile(fill: .frost(), size: tile) }
         return VStack(spacing: 24) {
             VStack(spacing: gap) {
                 HStack(spacing: gap) { blank(); blank() }
-                HStack(spacing: gap) { blank(); RoundedRectangle(cornerRadius: tile * 0.14).fill(accent).frame(width: tile, height: tile); blank() }
+                HStack(spacing: gap) { blank(); ShareTile(fill: .color(accent), size: tile); blank() }
                 HStack(spacing: gap) { blank(); blank() }
             }
-            Text(rankName.uppercased()).font(Brand.font(64, .black)).foregroundStyle(accent)
-            Text("\(pct)% of the maximum").font(Brand.font(30, .bold)).foregroundStyle(textMuted)
+            Text(rankName.uppercased()).font(Brand.fixedFont(64, .black)).foregroundStyle(accent)
+                .shadow(color: .white.opacity(0.8), radius: 0, x: 0, y: 2)
+            Text("\(pct)% of the maximum").font(Brand.fixedFont(30, .bold)).foregroundStyle(ShareInk.muted)
         }
+        .shareTray(accent: self.accent, state: trayState, padding: 32)
     }
 
     /// Web drawWordsearch parity: 720pt card, a dot grid with the found words as
@@ -425,12 +511,11 @@ struct ShareCardView: View {
             }
             for r in 0..<count { for c in 0..<count {
                 let ce = center(r, c)
-                ctx.fill(Path(ellipseIn: CGRect(x: ce.x - cell * 0.12, y: ce.y - cell * 0.12, width: cell * 0.24, height: cell * 0.24)), with: .color(Color(hex: 0xC4B5FD)))
+                ctx.fill(Path(ellipseIn: CGRect(x: ce.x - cell * 0.12, y: ce.y - cell * 0.12, width: cell * 0.24, height: cell * 0.24)), with: .color(Color(hex: 0x8B5CF6).opacity(0.45)))
             } }
         }
         .frame(width: side, height: side)
-        .background(RoundedRectangle(cornerRadius: 28).fill(won ? boardWinTint : boardLossTint))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(won ? winFG : lossFG, lineWidth: 3))
+        .shareTray(accent: self.accent, state: trayState, padding: 8)
     }
 
     /// Web drawLadder parity: START purple with letters, END dashed in the accent
@@ -457,14 +542,13 @@ struct ShareCardView: View {
                         ZStack {
                             switch row.kind {
                             case "start":
-                                RoundedRectangle(cornerRadius: radius).fill(start)
-                                Text(String(chars[c])).font(Brand.font(tile * 0.5, .black)).foregroundStyle(.white)
+                                ShareTile(fill: .color(start), letter: String(chars[c]), size: tile)
                             case "end":
                                 RoundedRectangle(cornerRadius: radius).strokeBorder(style: StrokeStyle(lineWidth: 3, dash: [8, 6])).foregroundStyle(accent.opacity(0.55))
-                                Text(String(chars[c])).font(Brand.font(tile * 0.5, .black)).foregroundStyle(accent)
+                                Text(String(chars[c])).font(Brand.fixedFont(tile * 0.5, .black)).foregroundStyle(accent)
                             default:
-                                if changed { RoundedRectangle(cornerRadius: radius).fill(row.kind == "hint" ? hint : accent) }
-                                else { RoundedRectangle(cornerRadius: radius).fill(Color.white); RoundedRectangle(cornerRadius: radius).strokeBorder(Color(hex: 0xD1D5DB), lineWidth: 3) }
+                                if changed { ShareTile(fill: .color(row.kind == "hint" ? hint : accent), size: tile) }
+                                else { ShareTile(fill: .frost(), size: tile) }
                             }
                         }
                         .frame(width: tile, height: tile)
@@ -472,6 +556,7 @@ struct ShareCardView: View {
                 }
             }
         }
+        .shareTray(accent: self.accent, state: trayState, padding: 28)
     }
 
     /// Web drawRegions parity: 720pt card, tinted squares gapped 4, placed stars
@@ -489,10 +574,11 @@ struct ShareCardView: View {
                         let i = r * count + c
                         let g = ok ? Int(reg[i].asciiValue ?? 48) - 48 : 0
                         ZStack {
-                            RoundedRectangle(cornerRadius: max(4, cell * 0.18)).fill(regionsTints[max(0, g) % regionsTints.count])
+                            ShareTile(fill: .color(StarsweepPalette.tone(g).pastel), size: cell)
                             if b.count == count * count && b[i] == "*" {
-                                Circle().fill(h.count == count * count && h[i] == "1" ? Color(hex: 0x8B5CF6) : Color(hex: 0x1A1A2E))
+                                Circle().fill(h.count == count * count && h[i] == "1" ? Color(hex: 0x8B5CF6) : ShareInk.number)
                                     .frame(width: cell * 0.48, height: cell * 0.48)
+                                    .padding(.bottom, cell * 0.07)
                             }
                         }
                         .frame(width: cell, height: cell)
@@ -500,9 +586,7 @@ struct ShareCardView: View {
                 }
             }
         }
-        .padding(pad)
-        .background(RoundedRectangle(cornerRadius: 28).fill(won ? boardWinTint : boardLossTint))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(won ? winFG : lossFG, lineWidth: 3))
+        .shareTray(accent: accent, state: trayState, padding: pad + 8)
     }
 
     /// Web drawSudoku parity: 720pt card, squares gapped 4 with a wider 12 gap
@@ -516,39 +600,39 @@ struct ShareCardView: View {
                 HStack(spacing: 0) {
                     ForEach(0..<9, id: \.self) { c in
                         let i = r * 9 + c
-                        let color: Color = (g.count == 81 && g[i] != "0") ? Color(hex: 0x1A1A2E)
+                        let color: Color? = (g.count == 81 && g[i] != "0") ? Color(hex: 0x3B1A78)
                             : (h.count == 81 && h[i] == "1") ? Color(hex: 0x8B5CF6)
-                            : (b.count == 81 && b[i] != "0") ? Color(hex: 0x7C3AED) : Color(hex: 0xE9E5F5)
-                        RoundedRectangle(cornerRadius: max(4, cell * 0.18)).fill(color).frame(width: cell, height: cell)
+                            : (b.count == 81 && b[i] != "0") ? Color(hex: 0x7C3AED) : nil
+                        ShareTile(fill: color.map { .color($0) } ?? .frost(), size: cell)
                         if c < 8 { Spacer().frame(width: c % 3 == 2 ? boxGap : gap) }
                     }
                 }
                 if r < 8 { Spacer().frame(height: r % 3 == 2 ? boxGap : gap) }
             }
         }
-        .padding(pad)
-        .background(RoundedRectangle(cornerRadius: 28).fill(won ? boardWinTint : boardLossTint))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(won ? winFG : lossFG, lineWidth: 3))
+        .shareTray(accent: accent, state: trayState, padding: pad + 8)
     }
 
     private func boardCard(grid: [[TileState]], letters: [[String]]? = nil, won: Bool,
-                           maxSide: CGFloat, groups: [Int]? = nil,
+                           maxSide: CGFloat, maxHeight: CGFloat? = nil, groups: [Int]? = nil,
                            answerCaption: String? = nil, reserveCaption: Bool = false) -> some View {
         let cols = grid.first?.count ?? 5
         let rows = grid.count
         let gap: CGFloat = max(3, maxSide * 0.012)
         let pad: CGFloat = maxSide * 0.04
         let inner = maxSide - pad * 2
+        // The width budget is `maxSide`; the height budget `maxHeight` (default square).
+        let innerH = (maxHeight ?? maxSide) - pad * 2
         // Web parity (share-image.ts): multi-word answers get a full tile-width
         // gap between name groups. Two-pass sizing — uniform tile first, derive
         // the group gap from it, then re-fit the row with the gaps baked in.
         let validGroups: [Int]? = (groups?.reduce(0, +) == cols && (groups?.count ?? 0) > 1) ? groups : nil
         let tile1 = floor(min((inner - gap * CGFloat(cols - 1)) / CGFloat(cols),
-                              (inner - gap * CGFloat(rows - 1)) / CGFloat(max(rows, 1))))
+                              (innerH - gap * CGFloat(rows - 1)) / CGFloat(max(rows, 1))))
         let groupGap: CGFloat = validGroups != nil ? max(gap * 4, tile1) : gap
         let extra: CGFloat = validGroups != nil ? CGFloat(validGroups!.count - 1) * (groupGap - gap) : 0
         let tile = floor(min((inner - gap * CGFloat(cols - 1) - extra) / CGFloat(cols),
-                             (inner - gap * CGFloat(rows - 1)) / CGFloat(max(rows, 1))))
+                             (innerH - gap * CGFloat(rows - 1)) / CGFloat(max(rows, 1))))
         // Column ranges per group (uniform = one group spanning all columns).
         let chunks: [Range<Int>] = {
             guard let g = validGroups else { return [0..<cols] }
@@ -564,20 +648,16 @@ struct ShareCardView: View {
                         ForEach(0..<chunks.count, id: \.self) { gi in
                             HStack(spacing: gap) {
                                 ForEach(chunks[gi], id: \.self) { c in
-                                    RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(grid[r][c]))
-                                        .frame(width: tile, height: tile)
-                                        .overlay(grid[r][c] == .empty ? RoundedRectangle(cornerRadius: max(4, tile * 0.12))
-                                            .stroke(Color(hex: 0xD1D5DB), lineWidth: 1.5) : nil)
-                                        .overlay(tileLetter(letters?[safe: r]?[safe: c], state: grid[r][c], tile: tile))
+                                    ShareTile(fill: .face(GlossyFace(revealed: grid[r][c])),
+                                              letter: tileLetter(letters?[safe: r]?[safe: c], state: grid[r][c]),
+                                              size: tile)
                                 }
                             }
                         }
                     }
                 }
             }
-            .padding(pad)
-            .background(RoundedRectangle(cornerRadius: 18).fill(won ? boardWinTint : boardLossTint))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(won ? winFG : lossFG, lineWidth: 4))
+            .shareTray(accent: accent, state: won ? .won : .lost, radius: max(20, maxSide * 0.06), padding: pad)
             // Revealed loss: the answer never appears in the tiles, so spell it
             // out under the board — same treatment as the completed-puzzle page.
             if captionH > 0 {
@@ -590,40 +670,38 @@ struct ShareCardView: View {
         }
     }
 
-    /// "Full results" glyph — white, black-weight, centered; EMPTY tiles and
-    /// missing letters draw nothing (the spoiler-free variant passes nil rows).
-    @ViewBuilder
-    private func tileLetter(_ letter: String?, state: TileState, tile: CGFloat) -> some View {
-        if let letter, !letter.isEmpty, state != .empty {
-            Text(letter.uppercased())
-                .font(Brand.font(max(10, tile * 0.55), .black))
-                .foregroundStyle(.white)
-        }
+    /// "Full results" glyph for a tile; EMPTY tiles and missing letters draw
+    /// nothing (the spoiler-free variant passes nil rows).
+    private func tileLetter(_ letter: String?, state: TileState) -> String {
+        guard let letter, !letter.isEmpty, state != .empty else { return "" }
+        return letter.uppercased()
     }
 
+    /// One Gauntlet stage as a tinted card with a top bar (purple cleared / slate
+    /// missed), the stage number as a soft number and the W / L badge art.
     private func gauntletChip(_ index: Int, _ s: GauntletStageShare) -> some View {
-        HStack(spacing: 16) {
-            Text("\(index)").font(Brand.font(32, .black)).foregroundStyle(s.won ? winFG : lossFG)
+        let ink = s.won ? Color(hex: 0x7C3AED) : Color(hex: 0x6B7891)
+        let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+        return HStack(spacing: 20) {
+            Text("\(index)").shareSoftNumber(44).frame(minWidth: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(s.name).font(Brand.font(30, .black)).foregroundStyle(Color(hex: 0x1A1A2E))
+                Text(s.name).font(Brand.fixedFont(30, .black)).foregroundStyle(ShareInk.heading)
                 Text("\(s.boardsSolved)/\(s.totalBoards) boards · \(s.guesses) guesses")
-                    .font(Brand.font(20, .bold)).foregroundStyle(textMuted)
+                    .font(Brand.fixedFont(20, .bold)).foregroundStyle(ShareInk.muted)
             }
             Spacer()
-            Text(s.won ? "✓" : "✗").font(Brand.font(48, .black)).foregroundStyle(s.won ? winFG : lossFG)
+            ShareResultBadge(won: s.won, size: 58)
         }
-        .padding(.horizontal, 24).padding(.vertical, 18)
-        .background(RoundedRectangle(cornerRadius: 16).fill(s.won ? boardWinTint : boardLossTint))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(s.won ? winFG : lossFG, lineWidth: 3))
-    }
-
-    private func tileColor(_ s: TileState) -> Color {
-        switch s {
-        case .correct: return Color(hex: 0x7C3AED)
-        case .present: return Color(hex: 0xF59E0B)
-        case .absent, .hintUsed: return Color(hex: 0x9CA3AF)
-        case .empty: return Color(hex: 0xE5E7EB)
-        }
+        .padding(.horizontal, 26).padding(.top, 26).padding(.bottom, 16)
+        .background(
+            ZStack(alignment: .top) {
+                shape.fill(ink.wash(0.09))
+                LinearGradient(colors: [ink, ink.wash(0.6)], startPoint: .leading, endPoint: .trailing).frame(height: 10)
+            }
+            .clipShape(shape)
+        )
+        .overlay(shape.strokeBorder(ink.wash(0.28), lineWidth: 3))
+        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 12, x: 0, y: 8)
     }
 }
 

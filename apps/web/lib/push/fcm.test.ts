@@ -6,6 +6,7 @@ import {
   isFcmConfigured,
   resetAccessTokenCache,
   sendFcm,
+  fcmMessageBody,
 } from './fcm';
 
 // A throwaway RSA key so the signature is verified for real rather than mocked.
@@ -118,5 +119,18 @@ describe('sendFcm', () => {
     expect(r.failed).toBe(1);
     expect(r.errors).toContain('fcm_not_configured');
     expect(r.staleTokens).toEqual([]);
+  });
+});
+
+describe('fcmMessageBody (FINISH_SPEC K2)', () => {
+  it('carries the W-mascot small icon in the brand purple and the deep link', () => {
+    const b = fcmMessageBody({ token: 't', title: 'Oliver beat you', body: '2,005 vs 1,860', url: '/vs' });
+    expect(b.android).toEqual({ priority: 'high', notification: { icon: 'ic_stat_wordocious', color: '#7c3aed' } });
+    expect(b.data).toEqual({ url: '/vs' });
+    expect(b.notification).toEqual({ title: 'Oliver beat you', body: '2,005 vs 1,860' });
+  });
+  it('attaches a large image only when given', () => {
+    expect(fcmMessageBody({ token: 't', title: 'a', body: 'b', image: 'https://wordocious.com/email/pose.png' }).notification.image).toBe('https://wordocious.com/email/pose.png');
+    expect('data' in fcmMessageBody({ token: 't', title: 'a', body: 'b' })).toBe(false);
   });
 });

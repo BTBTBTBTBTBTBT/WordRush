@@ -1,0 +1,202 @@
+import { useEffect, useState } from 'react';
+import { currentSeason, type Season } from '@wordle-duel/core';
+import { halloweenSrc } from './art';
+import { MASCOT_ART_SIZE, MASCOT_TRIM, boxAspect, boxTrimLayout, type TrimBox } from './cast-moves';
+import { CAST, mascotSrc, type MascotId } from './mascots';
+import type { CastRowLayout, CastSlot } from './share-fit';
+
+// Seasonal cast skins (docs/FINISH_SPEC.md X). During the season (core
+// currentSeason on the player's LOCAL date — Halloween runs Oct 24 – Nov 1)
+// the ten art-halloween-<id> skins replace the hero cast in the living cast
+// header, the cold-start intro + landing flourish, the share-image cast
+// wordmark and the loading screen. Admin / QA preview on any page:
+// `?season=halloween` forces the skins, `?season=none` forces them off,
+// `?season=auto` clears the preview; the choice holds for the browser session.
+
+export type { Season };
+export type SeasonOverride = Season | 'none';
+
+/** The query parameter and the sessionStorage key of the preview. */
+export const SEASON_PARAM = 'season';
+export const SEASON_PREVIEW_KEY = 'wordocious-season-preview';
+/** Fired on window when the preview changes, so mounted headers re-read it. */
+export const SEASON_EVENT = 'wordocious:season';
+
+/**
+ * The preview a URL query asks for: 'halloween' | 'none', 'auto' to clear the
+ * stored preview, or null when the query doesn't mention the season (or names
+ * an unknown one).
+ */
+export function parseSeasonParam(search: string): SeasonOverride | 'auto' | null {
+  let v: string | null = null;
+  try {
+    v = new URLSearchParams(search).get(SEASON_PARAM);
+  } catch {
+    return null;
+  }
+  if (v == null) return null;
+  const s = v.trim().toLowerCase();
+  if (s === 'halloween') return 'halloween';
+  if (s === 'none' || s === 'off') return 'none';
+  if (s === 'auto') return 'auto';
+  return null;
+}
+
+/** A stored preview value, validated (anything else reads as no preview). */
+export function parseStoredSeason(v: string | null | undefined): SeasonOverride | null {
+  return v === 'halloween' || v === 'none' ? v : null;
+}
+
+/** The season to draw: the preview when there is one, else the calendar's. */
+export function resolveSeason(date: string | Date, override: SeasonOverride | null): Season | null {
+  if (override === 'none') return null;
+  if (override) return override;
+  return currentSeason(date);
+}
+
+/**
+ * The session's preview (client only): a `?season=` on this page wins and is
+ * remembered for the session; otherwise whatever an earlier page stored.
+ */
+export function readSeasonOverride(): SeasonOverride | null {
+  if (typeof window === 'undefined') return null;
+  const fromUrl = parseSeasonParam(window.location.search);
+  try {
+    if (fromUrl === 'auto') {
+      sessionStorage.removeItem(SEASON_PREVIEW_KEY);
+      return null;
+    }
+    if (fromUrl) {
+      sessionStorage.setItem(SEASON_PREVIEW_KEY, fromUrl);
+      return fromUrl;
+    }
+    return parseStoredSeason(sessionStorage.getItem(SEASON_PREVIEW_KEY));
+  } catch {
+    return fromUrl === 'auto' ? null : fromUrl;
+  }
+}
+
+/** The season right now on this device (client only; null on the server). */
+export function activeSeason(now: Date = new Date()): Season | null {
+  if (typeof window === 'undefined') return null;
+  return resolveSeason(now, readSeasonOverride());
+}
+
+/**
+ * The season for a client component. Null on the server and in the first
+ * client render (so hydration matches), then the real value; re-read when the
+ * tab comes back (the day may have changed) and on client navigations that
+ * carry a new `?season=` (SEASON_EVENT / popstate).
+ */
+export function useSeason(): Season | null {
+  const [season, setSeason] = useState<Season | null>(null);
+  useEffect(() => {
+    const read = () => setSeason(activeSeason());
+    read();
+    const onVis = () => { if (document.visibilityState === 'visible') read(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener(SEASON_EVENT, read);
+    window.addEventListener('popstate', read);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener(SEASON_EVENT, read);
+      window.removeEventListener('popstate', read);
+    };
+  }, []);
+  return season;
+}
+
+// ── Skin framing ────────────────────────────────────────────────────────────
+
+/** The Halloween skins are 320 px squares (public/art/art-halloween-<id>.webp). */
+export const SKIN_ART_SIZE = 320;
+
+/**
+ * Where each Halloween skin sits inside its 320 px square: the alpha bounding
+ * box [x0, y0, x1, y1] (measured from the shipped webp files, alpha > 8).
+ * The skins aren't trimmed like the hero mascots; drawing each one cut to its
+ * box keeps the row reading WORDOCIOUS edge to edge at one height.
+ */
+export const HALLOWEEN_TRIM: Record<MascotId, TrimBox> = {
+  w: [6, 10, 313, 310],
+  o1: [11, 6, 308, 313],
+  r: [26, 6, 294, 313],
+  d: [24, 6, 296, 313],
+  o2: [23, 6, 296, 313],
+  c: [52, 6, 268, 313],
+  i: [41, 6, 278, 313],
+  o3: [6, 11, 313, 309],
+  u: [13, 6, 307, 313],
+  s: [36, 6, 284, 313],
+};
+
+/** One cast member's art for a season: the image, its square size and art box. */
+export interface CastArt {
+  src: string;
+  /** The square image's side (px). */
+  artSize: number;
+  trim: TrimBox;
+  /** Width / height of the trimmed box (the row's flex weight). */
+  aspect: number;
+  /** The image's size + offset inside a box of `aspect` (percent strings). */
+  layout: { width: string; left: string; top: string };
+}
+
+/** The hero (no season) or the season's skin for one cast member. */
+export function castArt(id: MascotId, season: Season | null): CastArt {
+  if (season === 'halloween') {
+    const trim = HALLOWEEN_TRIM[id];
+    return { src: halloweenSrc(id), artSize: SKIN_ART_SIZE, trim, aspect: boxAspect(trim), layout: boxTrimLayout(trim, SKIN_ART_SIZE) };
+  }
+  const trim = MASCOT_TRIM[id];
+  return { src: mascotSrc(id), artSize: MASCOT_ART_SIZE, trim, aspect: boxAspect(trim), layout: boxTrimLayout(trim, MASCOT_ART_SIZE) };
+}
+
+/** The image paths a canvas tries for one cast member: the skin first, the hero as the fallback. */
+export function castImageSources(id: MascotId, season: Season | null): string[] {
+  return season ? [castArt(id, season).src, mascotSrc(id)] : [mascotSrc(id)];
+}
+
+/** Which art a loaded image is (by its path): a Halloween skin or the hero. */
+export function seasonOfSrc(src: string): Season | null {
+  return src.includes('/art-halloween-') ? 'halloween' : null;
+}
+
+/**
+ * The share wordmark row re-laid for characters of other aspects (the skins):
+ * the same character height, lift, overlap and center as `row` (share-fit
+ * castRowLayout, which is built from the hero boxes), each slot as wide as
+ * its own art, so the skins still stand edge to edge spelling WORDOCIOUS.
+ */
+export function reflowCastRow(row: CastRowLayout, aspectOf: (id: MascotId) => number): CastRowLayout {
+  const slots = row.slots;
+  if (slots.length === 0) return row;
+  const step = slots.length > 1 ? slots[0].x + slots[0].w - slots[1].x : 0;
+  const cx = slots[0].x + row.rowW / 2;
+  const widths = slots.map((s) => aspectOf(s.id) * row.charH);
+  const rowW = widths.reduce((a, b) => a + b, 0) - step * (slots.length - 1);
+  let x = cx - rowW / 2;
+  const out: CastSlot[] = slots.map((s, i) => {
+    const slot = { ...s, x, w: widths[i] };
+    x += widths[i] - step;
+    return slot;
+  });
+  return { ...row, rowW, slots: out };
+}
+
+/** The Halloween day-title / banner props (FINISH_SPEC X; not shipped yet — every slot hides when its file is missing). */
+export const HALLOWEEN_PROPS = ['pumpkin', 'bat', 'candy', 'ghost'] as const;
+export type HalloweenProp = (typeof HALLOWEEN_PROPS)[number];
+
+/** Public path of a Halloween prop (art-halloween-prop-<name>.webp). Deliberately NOT in ART_SIZE until the files ship. */
+export function halloweenPropSrc(name: HalloweenProp): string {
+  return `/art/art-halloween-prop-${name}.webp`;
+}
+
+/** Public path of the Halloween Home banner art (not shipped yet). */
+export const HALLOWEEN_BANNER_SRC = '/art/art-scene-banner-halloween.webp';
+
+/** Every cast member, in WORDOCIOUS order, with its art for `season`. */
+export function castRowArt(season: Season | null): { id: MascotId; art: CastArt }[] {
+  return CAST.map((id) => ({ id, art: castArt(id, season) }));
+}

@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import WordociousCore
 
 /// Local daily-reminder notification — the native counterpart to the web's
 /// push daily-reminder (apps/web/api/cron/daily-reminder). Native uses an
@@ -72,10 +73,11 @@ enum NotificationService {
             content.title = "FLAWLESS STREAK AT RISK! 🏆"
             content.body = "\(flawless) straight days winning every daily. Win them all today to make it \(flawless + 1)."
         } else {
-            content.title = streak >= 3 ? "STREAK AT RISK! 🔥" : "DAILY CHALLENGE 🧩"
+            // FINISH_SPEC §AE: the shared cast-voice push bank (core PushCopy = push-copy.ts).
+            content.title = PushCopy.title
             content.body = streak >= 3
-                ? "Your \(streak)-day streak ends at midnight. One quick game keeps it alive."
-                : "Today's puzzles are live. Keep the streak going."
+                ? PushCopy.body(.streakReminder, days: streak)
+                : PushCopy.body(.dailyReady)
         }
         content.sound = .default
 

@@ -1,24 +1,16 @@
 package com.wordocious.app.ui
 
 import android.content.Intent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,12 +21,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -43,12 +32,11 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.ReferralService
 import com.wordocious.app.data.ShareEvents
 import com.wordocious.app.ui.theme.Nunito
-import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.launch
 
-// "GIFT PRO TO FRIENDS" — Android port of the web invite panel / iOS
-// InvitePanelView. Placement: Profile screen between the header and
-// Today's Dailies (web order parity).
+// "GIFT A WEEK OF PRO" (FINISH_SPEC T4) — Android port of the web invite panel /
+// iOS InvitePanelView. Placement: the Friends tab, under Add a friend (a fixed-light
+// page, so the pieces take their fixed-light washes + inks).
 @Composable
 fun InvitePanel() {
     // Gifting Pro is a Pro benefit — a free account must never see this panel.
@@ -90,94 +78,85 @@ fun InvitePanel() {
     // expiry has passed — a join is news for a week, not a permanent line (founder, 2026-09-26).
     val visible = invites.filter { it.status != "revoked" && expiryMs(it) > now }
     val open = invites.count { it.status == "pending" && expiryMs(it) > now }
-    val slotsLeft = (3 - open).coerceAtLeast(0)
+    val slotsLeft = InviteScreens.giftsLeft(open)
 
     fun share(code: String) {
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(
-                Intent.EXTRA_TEXT,
-                "I'm gifting you 7 days of Wordocious Pro — daily word puzzles, battles, the works. Claim it here: https://wordocious.com/join/$code",
-            )
+            // S4 invite copy; the link is the point, so it stays.
+            putExtra(Intent.EXTRA_TEXT, com.wordocious.app.data.ShareHelper.inviteText("https://wordocious.com/join/$code"))
         }
-        context.startActivity(Intent.createChooser(send, null))
+        context.startActivity(Intent.createChooser(send, "Invite a friend"))
         ShareEvents.log("link_invite", "", "referral")
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(WTheme.surface, RoundedCornerShape(20.dp))
-            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // iOS: Image(systemName: "gift.fill") tinted brand purple. An emoji
-            // renders in the system font and can't be tinted.
-            Icon(
-                Icons.Filled.CardGiftcard, null, tint = WTheme.primary,
-                modifier = Modifier.size(15.dp),
-            )
-            Text(
-                "GIFT PRO TO FRIENDS",
-                fontSize = 15.sp, fontWeight = FontWeight.Black,
-                style = TextStyle(
-                    brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
-                    fontFamily = Nunito,
-                ),
-            )
+    var sentCode by remember { mutableStateOf<String?>(null) }
+
+    fun create() {
+        if (creating || slotsLeft <= 0) return
+        creating = true; error = null
+        scope.launch {
+            val (code, err) = ReferralService.createInvite()
+            creating = false
+            if (code != null) { reload++; sentCode = code; share(code) } else error = err ?: "Could not create an invite."
         }
+    }
 
-        Text(
-            buildAnnotatedString {
-                val muted = androidx.compose.ui.text.SpanStyle(color = WTheme.textMuted)
-                val amber = androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))
-                withStyle(muted) { append("Each friend gets ") }
-                withStyle(amber) { append("7 days of Pro") }
-                withStyle(muted) { append(" free. You get +3 days when they join, a ") }
-                withStyle(amber) { append("free month") }
-                withStyle(muted) { append(" if they subscribe — and ") }
-                withStyle(amber) { append("3 free months") }
-                withStyle(muted) { append(" if they go annual. 3 friends = +4 streak shields.") }
-            },
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito,
-        )
-
-        Button3D(
-            onClick = {
-                if (!creating && slotsLeft > 0) {
-                    creating = true; error = null
-                    scope.launch {
-                        val (code, err) = ReferralService.createInvite()
-                        creating = false
-                        if (code != null) { reload++; share(code) } else error = err ?: "Could not create an invite."
-                    }
-                }
-            },
-            face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
-            shadow = Color(0xFF4C1D95),
+    // T1: after a gift goes out — I tossing the envelope, INVITE SENT!, the code on glossy
+    // tiles, "Send another" (while a slot is free) and "Done" back to the gift card.
+    sentCode?.let { code ->
+        InviteSentCard(
+            onDone = { sentCode = null },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !creating && slotsLeft > 0,
-        ) {
-            Text(
-                when {
-                    creating -> "Creating…"
-                    slotsLeft == 0 -> "All 3 invites out — slots free when friends join"
-                    else -> "Create invite link ($slotsLeft left)"
-                },
-                color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp, fontFamily = Nunito,
-            )
-        }
-        error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
+            code = code,
+            note = "${InviteScreens.GIFT_DAYS} days of Pro are waiting for them. Share the link again from the gift card anytime.",
+            onSendAnother = if (slotsLeft > 0) ({ sentCode = null; create() }) else null,
+            sendAnotherEnabled = !creating,
+            light = true,
+        )
+        return
+    }
 
-        visible.take(6).forEach { inv ->
-            // §251: settled rows lead with WHO — the code is noise once spent.
-            val inviteeName = inv.inviteeId?.let { inviteeNames[it] } ?: "A friend"
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (inv.status == "pending") {
-                    Text(inv.code, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = WTheme.text)
-                }
+    // T4 "GIFT A WEEK OF PRO": O3 with the crowned gift box on the gold card, the soft
+    // 7 DAYS badge, the gifts-left counter and the gold candy "Send a gift" (A7: the
+    // Friends banner's host is O1).
+    GiftProCard(
+        Modifier.fillMaxWidth(),
+        giftsLeft = slotsLeft,
+        sendLabel = when {
+            creating -> "Sending…"
+            slotsLeft == 0 -> "All 3 gifts out"
+            else -> "Send a gift"
+        },
+        onSend = { create() },
+        sendEnabled = !creating && slotsLeft > 0,
+        light = true,
+        content = {
+            Text(
+                buildAnnotatedString {
+                    val muted = androidx.compose.ui.text.SpanStyle(color = FinishInk.label)
+                    val amber = androidx.compose.ui.text.SpanStyle(color = Color(0xFFB45309))
+                    withStyle(muted) { append("Each friend gets ") }
+                    withStyle(amber) { append("7 days of Pro") }
+                    withStyle(muted) { append(" free. You get +3 days when they join, a ") }
+                    withStyle(amber) { append("free month") }
+                    withStyle(muted) { append(" if they subscribe — and ") }
+                    withStyle(amber) { append("3 free months") }
+                    withStyle(muted) { append(" if they go annual. 3 friends = +4 streak shields.") }
+                },
+                fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito,
+            )
+            if (slotsLeft == 0 && !creating) {
+                Text(
+                    "Slots free up when friends join.", fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito,
+                    color = FinishInk.muted, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+            }
+            error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
+
+            visible.take(6).forEach { inv ->
+                // §251: settled rows lead with WHO — the code is noise once spent.
+                val inviteeName = inv.inviteeId?.let { inviteeNames[it] } ?: "A friend"
                 // Days → hours → "expired" ladder (iOS timeLeft): the last day of an
                 // invite's life read "0d left" before.
                 val msLeft = expiryMs(inv) - now
@@ -186,58 +165,79 @@ fun InvitePanel() {
                     msLeft >= 86_400_000L -> "${msLeft / 86_400_000L}d left"
                     else -> "${maxOf(1L, msLeft / 3_600_000L)}h left"
                 }
-                when (inv.status) {
-                    "redeemed" -> Text("$inviteeName joined! +3 days", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    "converted" -> Text(
-                        "$inviteeName subscribed! " + when (inv.convertedPlan) {
-                            "annual" -> "+3 free months"; "monthly" -> "+1 free month"; else -> "Reward earned"
-                        },
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    else -> Text("Waiting · $timeLeft", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Row(
+                    Modifier.fillMaxWidth().lightTintedPill(GIFT_GOLD, 12.dp).padding(start = 10.dp, end = 6.dp, top = 8.dp, bottom = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (inv.status == "pending") {
+                        // T1: the open gift's code on glossy letter tiles, a Pending pill and its time left.
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            InviteCodeTiles(inv.code, tile = 19.dp)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                PendingPill()
+                                Text(timeLeft, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = FinishInk.muted)
+                            }
+                        }
+                        // A3: the bare 3D share icon; cancel as a small quiet candy.
+                        SoftControl(Icon3DName.SHARE, contentDescription = "Share invite ${inv.code}", onClick = { share(inv.code) }, iconSize = 18.dp)
+                        CandyButton("Cancel", onClick = { cancelTarget = inv }, color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Cancel invite ${inv.code}")
+                    } else {
+                        when (inv.status) {
+                            "redeemed" -> Text("$inviteeName joined! +3 days", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            "converted" -> Text(
+                                "$inviteeName subscribed! " + when (inv.convertedPlan) {
+                                    "annual" -> "+3 free months"; "monthly" -> "+1 free month"; else -> "Reward earned"
+                                },
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            else -> Text("Waiting · $timeLeft", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted, modifier = Modifier.weight(1f))
+                        }
+                        // iOS marks a converted invite with trophy.fill, not a crown.
+                        if (inv.status == "converted") Icon3D(Icon3DName.TROPHY, 14.dp)
+                    }
                 }
-                Spacer(Modifier.weight(1f))
-                if (inv.status == "pending") {
-                    Icon3D(Icon3DName.SHARE, 17.dp, contentDescription = "Share", modifier = Modifier.clickableNoRipple { share(inv.code) })
-                    Spacer(Modifier.width(4.dp))
-                    Text("✕", fontSize = 12.sp, color = WTheme.textMuted,
-                        modifier = Modifier.clickableNoRipple { cancelTarget = inv })
-                }
-                if (inv.status == "converted") {
-                    // iOS marks a converted invite with trophy.fill, not a crown.
+            }
+        },
+        footer = {
+            if (leaders.isNotEmpty()) {
+                HorizontalDivider(color = Wash.mix(GIFT_GOLD, 0.4f))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon3D(Icon3DName.TROPHY, 14.dp)
+                    Text("TOP INVITERS THIS MONTH", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color(0xFF8A4A12), fontFamily = Nunito)
+                }
+                leaders.forEachIndexed { i, l ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SoftNumber("${i + 1}", 13.sp, Modifier.width(22.dp), color = FinishInk.softNumber)
+                        Text(l.username, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FinishInk.heading)
+                        Spacer(Modifier.weight(1f))
+                        SoftNumber("${l.count}", 13.sp, color = FinishInk.softNumber)
+                        Text(" joined", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted)
+                    }
                 }
             }
-        }
-
-        if (leaders.isNotEmpty()) {
-            HorizontalDivider(color = WTheme.border)
-            Text("TOP INVITERS THIS MONTH", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito)
-            leaders.forEachIndexed { i, l ->
-                Row {
-                    Text("${i + 1}. ${l.username}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-                    Spacer(Modifier.weight(1f))
-                    Text("${l.count} joined", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-            }
-        }
-    }
+        },
+    )
 
     cancelTarget?.let { target ->
         AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { cancelTarget = null },
-            title = { Text("Cancel invite ${target.code}?", fontWeight = FontWeight.Black, fontFamily = Nunito) },
-            text = { Text("The link stops working immediately and your invite slot frees up.", fontFamily = Nunito) },
+            // A1: a gold-tinted dialog (the Friends page is fixed light).
+            containerColor = Wash.mix(GIFT_GOLD, 0.10f),
+            title = { Text("Cancel invite ${target.code}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FinishInk.heading) },
+            text = { Text("The link stops working immediately and your invite slot frees up.", fontFamily = Nunito, color = FinishInk.label) },
             confirmButton = {
-                TextButton(onClick = {
+                CandyButton("Cancel invite", onClick = {
                     val id = target.id
                     cancelTarget = null
                     scope.launch { ReferralService.cancelInvite(id); reload++ }
-                }) { Text("Cancel invite", color = Color(0xFFDC2626), fontWeight = FontWeight.Black) }
+                }, color = CandyColor.PINK, size = CandySize.MEDIUM)
             },
             dismissButton = {
-                TextButton(onClick = { cancelTarget = null }) { Text("Keep it", fontWeight = FontWeight.Black) }
+                CandyButton("Keep it", onClick = { cancelTarget = null }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
         )
     }
 }
+

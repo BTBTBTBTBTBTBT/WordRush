@@ -56,37 +56,33 @@ struct GameScreen: View {
                                         onPlayAgain: playAgainAction)
                 // Other modes hold the in-play board until the winning row's flip completes.
                 } else if vm.isFinished && revealComplete {
-                    ScrollView {
+                    // FINISH_SPEC §R2: the finished screen fits ONE screen — the
+                    // compact header + result strip, the board scaled to exactly the
+                    // height left, then the dock (share + Next daily / Leaderboard +
+                    // the Unlimited card). The breakdown, rank and definition sit
+                    // below the dock, never above the buttons.
+                    FinishedScreenLayout(header: {
+                        FinishedCompactHeader(
+                            mode: mode, won: vm.status == .won,
+                            guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                            timeSeconds: vm.elapsedSeconds,
+                            boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                            totalBoards: vm.boardCount, points: scorePoints)
+                    }, board: { size in
+                        if vm.boardCount > 1 {
+                            // The compact mini grid (2×2 / 4 across), scaled to fit.
+                            FinishedMiniGrid(boards: vm.boards,
+                                             rowCount: vm.boards.map(\.maxGuesses).max() ?? vm.maxGuesses,
+                                             size: size, revealMissed: vm.status != .won)
+                        } else {
+                            // §L: the single board on the shared tray, fit to the area.
+                            BoardLayout(vm: vm, availableWidth: size.width * 0.94, fitHeight: size.height, tray: true)
+                        }
+                    }, dock: {
+                        finishedDock
+                    }, extras: {
                         VStack(spacing: 8) {
-                            FinishedStatsHeader(
-                                mode: mode, won: vm.status == .won,
-                                guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
-                                timeSeconds: vm.elapsedSeconds,
-                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                                totalBoards: vm.boardCount,
-                                onHome: { dismiss() }, onShare: { reveal in share(reveal: reveal) },
-                                onPlayAgain: playAgainAction)
                             if vm.isDaily { DailyRankBadge(gameMode: mode) }
-                            if vm.boardCount > 1 {
-                                // Compact uniform recap (completed-daily-board
-                                // sizing) — the in-play BoardLayout rendered
-                                // 2-column modes (Quad/Deliverance) zoomed huge
-                                // post-game while Octo's 4 columns looked right.
-                                let tile = CompletedBoardLayout.tileSize(boardCount: vm.boardCount, wordLen: vm.wordLength)
-                                let cols = CompletedBoardLayout.cols(vm.boardCount)
-                                let rowCount = vm.boards.map(\.maxGuesses).max() ?? vm.maxGuesses
-                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing), count: cols),
-                                          spacing: CompletedBoardLayout.gridSpacing) {
-                                    ForEach(vm.boards.indices, id: \.self) { i in
-                                        CompletedMiniBoardView(board: vm.boards[i], tileSize: tile, rowCount: rowCount,
-                                                               revealMissed: vm.status != .won)
-                                    }
-                                }
-                                .frame(maxWidth: CompletedBoardLayout.maxWidth(vm.boardCount))
-                            } else {
-                                // §B6: the finished board at the mockup's 86% width.
-                                BoardLayout(vm: vm, availableWidth: (root.size.width - 20) * 0.9)
-                            }
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
                                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
@@ -94,17 +90,15 @@ struct GameScreen: View {
                                                stagesCompleted: vm.stagesCompletedForScore,
                                                bestCorrectLetters: vm.bestCorrectLettersForScore,
                                                day: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil)
-                            // FINISH_SPEC §B6: today's word (purple tiles on a soft green
-                            // card) above the three candy CTAs.
+                            // §B6: today's word (purple tiles on a soft green card).
                             if vm.boardCount == 1 {
                                 DefinitionCard(solution: vm.boards[0].solution, showWord: true,
                                                label: vm.isDaily ? "TODAY'S WORD" : "THE WORD")
                             }
-                            if vm.isDaily { NextDailyCTA(currentMode: mode.rawValue) }
                         }
                         .padding(.horizontal, 2)
-                        .padding(.bottom, 16)
-                    }
+                        .padding(.top, 14).padding(.bottom, 16)
+                    })
                 } else {
                     header
                     // Greedy area between header and keyboard: size tiles to fit.
@@ -130,6 +124,7 @@ struct GameScreen: View {
                 }
             }
             .padding(.horizontal, 10)
+            .wideColumn(.game)   // §AG: iPad keeps the phone column, centered on the wallpaper
 
             // FINISH_SPEC §B4: the controls row tucked right under the status bar —
             // Home on the left; sound + help on the right (every game, Gauntlet too).
@@ -142,7 +137,13 @@ struct GameScreen: View {
             .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
             .sheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
 
-            if let toast = vm.toast { toastView(toast) }
+            // §K1: the toast slides in with a spring (Reduce Motion: a fade) —
+            // animated in its own container so the rest of the screen keeps its timing.
+            ZStack {
+                if let toast = vm.toast { toastView(toast) }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .animation(G5Toast.animation, value: vm.toast)
 
             // XP toast (after recording) + one-time victory/game-over celebration.
             if let xp = vm.xpResult {
@@ -163,13 +164,7 @@ struct GameScreen: View {
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
                     // The run's composite score — the same inputs the breakdown card uses.
-                    points: Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: vm.status == .won,
-                                                       guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
-                                                       boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                                                       totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
-                                                       stagesCompleted: vm.stagesCompletedForScore,
-                                                       bestCorrectLetters: vm.bestCorrectLettersForScore,
-                                                       dateKey: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil).total),
+                    points: scorePoints,
                     // §242: unlimited games offer the next puzzle on the card
                     // (playAgainAction already carries the non-daily + Pro gate).
                     onPlayAgain: playAgainAction.map { action in
@@ -183,6 +178,9 @@ struct GameScreen: View {
             if vm.stageCleared {
                 StageTransitionOverlay(completedName: vm.gauntletStageName,
                                        next: vm.gauntletNextStageInfo,
+                                       clearedIndex: vm.gauntletCurrentIndex,
+                                       totalStages: vm.gauntletStageCount,
+                                       runningScore: gauntletRunningScore,
                                        onAdvance: { vm.nextStage() })
                 .transition(.opacity)
             }
@@ -211,7 +209,7 @@ struct GameScreen: View {
         .onChange(of: vm.status) { newValue in
             // Haptics fire instantly; the jingle waits for the overlay (below).
             if newValue == .won { Haptics.success() }
-            else if newValue == .lost { Haptics.error() }
+            else if newValue == .lost { Haptics.soft() }   // §U: lose · soft
             // Celebrate the moment of finishing. Gauntlet only celebrates a WON
             // run (web parity: a lost run goes straight to the results screen,
             // no overlay and no game-over sound). Wait out the final row's flip,
@@ -344,9 +342,10 @@ struct GameScreen: View {
     private func gauntletStageNode(_ i: Int) -> some View {
         let completed = vm.gauntletCompletedIndices.contains(i)
         let active = i == vm.gauntletCurrentIndex
-        let bg = completed ? Color(hex: 0xEDE9FE) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF9FAFB)
-        let border = completed ? Color(hex: 0x8B5CF6) : active ? Color(hex: 0xC084FC) : Color(hex: 0xE5E7EB)
-        let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
+        // §A1: upcoming stages are a faint lilac wash, never grey / white.
+        let bg = completed ? Color(hex: 0xEDE9FE) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF6F2FF)
+        let border = completed ? Color(hex: 0x8B5CF6) : active ? Color(hex: 0xC084FC) : Color(hex: 0xDDD0F7)
+        let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9A88BF)
         ZStack {
             Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
                 .modifier(StageGlow(active: active))
@@ -382,7 +381,7 @@ struct GameScreen: View {
     private func gauntletConnectorColor(_ i: Int) -> Color {
         if vm.gauntletCompletedIndices.contains(i) { return Color(hex: 0x8B5CF6) }
         if i == vm.gauntletCurrentIndex { return Color(hex: 0xD8B4FE) }
-        return Color(hex: 0xE5E7EB)
+        return Color(hex: 0xDDD0F7)
     }
 
     /// Per-stage title gradient — mirrors web STAGE_GRADIENTS.
@@ -414,34 +413,78 @@ struct GameScreen: View {
 
     // MARK: Classic hints (Six / Seven) — vowel + consonant reveal buttons
 
-    /// Six = cyan, Seven = lime (web mode accents).
-    private var hintAccent: Color { mode == .duel7 ? Color(hex: 0x84CC16) : Color(hex: 0x06B6D4) }
-
     private var classicHintButtons: some View {
         HStack(spacing: 12) {
             hintPill(
-                label: vm.vowelUsed ? (vm.vowelRevealed == "—" ? "No vowels left" : "Vowel: \(vm.vowelRevealed ?? "")") : "💡 Vowel",
+                label: vm.vowelUsed ? (vm.vowelRevealed == "—" ? "No vowels left" : "Vowel: \(vm.vowelRevealed ?? "")") : "Vowel",
                 used: vm.vowelUsed) { Haptics.success(); vm.revealVowel() }
             hintPill(
-                label: vm.consonantUsed ? (vm.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(vm.consonantRevealed ?? "")") : "💡 Consonant",
+                label: vm.consonantUsed ? (vm.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(vm.consonantRevealed ?? "")") : "Consonant",
                 used: vm.consonantUsed) { Haptics.success(); vm.revealConsonant() }
         }
         // 16pt bottom: keep the pills clear of the Q-row (fat-finger, Aug 11).
         .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
+    /// §A8: the hint buttons are small candy buttons (gold = the hint's glow);
+    /// a used hint becomes the quiet peach showing the revealed letter.
     private func hintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(Brand.font(13, .heavy))
-                .foregroundStyle(used ? Theme.textMuted : hintAccent)
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 10).fill(used ? Theme.surfaceHover : hintAccent.opacity(0.08)))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
+            CandyLabel(title: label, symbol: used ? nil : "lightbulb.fill")
         }
-        .buttonStyle(.squish)
+        .buttonStyle(CandyButtonStyle(variant: used ? .peach : .amber, size: .small))
         .disabled(used)
+    }
+
+    /// The run's composite score — the same inputs the breakdown card uses (the
+    /// victory card and the share image's gold POINTS window both show it).
+    private var scorePoints: Int {
+        Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: vm.status == .won,
+                                   guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
+                                   boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                                   totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
+                                   stagesCompleted: vm.stagesCompletedForScore,
+                                   bestCorrectLetters: vm.bestCorrectLettersForScore,
+                                   dateKey: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil).total)
+    }
+
+    /// FINISH_SPEC §R2 / §R3: the finished screen's dock. A daily: the 3D share icon
+    /// beside Next daily / Leaderboard (+ the Pro Unlimited card). After an
+    /// UNLIMITED game (Pro): the KEEP PLAYING card is the primary action — NEW
+    /// PUZZLE = the existing Play again, "Other games" = back Home to the picker.
+    @ViewBuilder private var finishedDock: some View {
+        let shareIcon = FinishedShareButton(onShare: { reveal in self.share(reveal: reveal) })
+        if vm.isDaily {
+            HStack(alignment: .top, spacing: 6) {
+                shareIcon
+                NextDailyCTA(currentMode: mode.rawValue, compact: true)
+            }
+            .padding(.bottom, 6)
+        } else if let again = onPlayAgain {
+            // §R3: the card shows for everyone (it gates free players itself).
+            HStack(alignment: .center, spacing: 6) {
+                shareIcon
+                UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(mode.rawValue)?.title ?? ModeStyle.title(mode).capitalized,
+                                         afterUnlimited: true, action: again, onOtherGames: { dismiss() })
+            }
+            .padding(.bottom, 6)
+        } else {
+            shareIcon.frame(maxWidth: .infinity).padding(.bottom, 6)
+        }
+    }
+
+    /// FINISH_SPEC §P: the score so far on the between-stage card — the Gauntlet
+    /// scoring with the stages cleared up to (and including) the one just cleared.
+    private var gauntletRunningScore: Int? {
+        guard let g = vm.state.gauntlet, !g.stages.isEmpty else { return nil }
+        let done = min(g.stages.count, g.currentStage + 1)
+        return Int(DailyScoring.breakdown(gameMode: "GAUNTLET", completed: vm.isLastStage,
+                                          guessCount: vm.gauntletTotalGuesses + vm.rowsUsed,
+                                          timeSeconds: vm.elapsedSeconds,
+                                          boardsSolved: g.stages.prefix(done).reduce(0) { $0 + $1.boardCount },
+                                          totalBoards: max(1, g.stages.reduce(0) { $0 + $1.boardCount }),
+                                          stagesCompleted: done,
+                                          dateKey: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil).total)
     }
 
     // MARK: Post-game share
@@ -472,7 +515,8 @@ struct GameScreen: View {
                            timeSeconds: vm.elapsedSeconds,
                            reveal: reveal,
                            letters: single ? vm.shareLetters() : nil,
-                           solutionDisplay: single ? vm.state.boards[0].solution : nil)
+                           solutionDisplay: single ? vm.state.boards[0].solution : nil,
+                           points: scorePoints)
     }
 
     // MARK: Gauntlet stage-clear
@@ -480,25 +524,29 @@ struct GameScreen: View {
     private var stageClearedBanner: some View {
         VStack(spacing: 10) {
             HStack(spacing: 6) {
-                if vm.isLastStage { Icon3D(.trophy, size: 22) }
-                Text(vm.isLastStage ? "Final stage cleared!" : "✅ Stage cleared!")
+                // §AM3: 3D art, never the check-mark emoji.
+                Icon3D(vm.isLastStage ? .trophy : .badgeCheck, size: 22)
+                Text(vm.isLastStage ? "Final stage cleared!" : "Stage cleared!")
                     .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
             }
-            Button(vm.isLastStage ? "Finish Gauntlet" : "Continue") { Haptics.success(); vm.nextStage() }
-                .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
+            Button { Haptics.success(); vm.nextStage() } label: {
+                CandyLabel(title: vm.isLastStage ? "Finish Gauntlet" : "Continue", symbol: "play.fill")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large, fullWidth: false))
         }
         .padding(.vertical, 16).frame(maxWidth: .infinity)
     }
 
+    /// FINISH_SPEC §K1: a tinted pill in the event's color (coral "Not in word
+    /// list", purple "Solved!", slate for the answer reveal) with dark-purple text
+    /// (FinishInk.heading flips in Dark, so it stays legible) and a small cast pose
+    /// that fits the event — never the game's host (§A7).
     private func toastView(_ toast: String) -> some View {
-        Text(toast).font(Brand.font(12, .bold)).foregroundStyle(.white)
-            .padding(.horizontal, 12).padding(.vertical, 4)
-            // Fixed ink needs a fixed fill: Theme.textPrimary is near-white in
-            // Dark, so the toast was white-on-near-white (1.06:1) and the
-            // player never learned why a guess bounced. #1A1A2E is the Light
-            // value of textPrimary, so Light is unchanged.
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x1A1A2E)))
-            .padding(.top, 90).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
+        let tone = G5Toast.tone(forGameMessage: toast)
+        return G5Toast(text: toast, tone: tone, pose: G5Toast.pose(for: tone, avoiding: Mascots.host(mode)))
+            .padding(.horizontal, 24)
+            .padding(.top, 90)
+            .transition(G5Toast.transition)
     }
 }
 
@@ -512,53 +560,114 @@ struct StageTransitionOverlay: View {
     /// VS runs shorten the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for
     /// it, so a 2.5s flourish per stage is a real handicap over a 5-stage run.
     var isVersus: Bool = false
+    /// FINISH_SPEC §P (optional, the solo run passes them): the just-cleared
+    /// stage's index (0-based), the run length and the score so far. Without them
+    /// (VS) the card simply omits the stage counter, dots and score.
+    var clearedIndex: Int? = nil
+    var totalStages: Int? = nil
+    var runningScore: Int? = nil
     let onAdvance: () -> Void
+
+    @State private var appeared = false
+    @State private var pulse = false
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+    private var still: Bool { envReduce || Theme.reduceMotion }
+
+    private static let amber = Color(hex: 0xF59E0B)
+
+    /// The upcoming stage's number (1-based), when known.
+    private var upcoming: Int? { clearedIndex.map { $0 + 2 } }
+
+    /// §P: a big cast pose per upcoming stage; the cleared run (no next) is W, proud.
+    private var pose: (MascotID, String) {
+        guard next != nil else { return (.w, "proud") }
+        switch upcoming {
+        case 2: return (.o1, "cheer")
+        case 3: return (.d, "eureka")
+        case 4: return (.c, "telescope")
+        case 5: return (.s, "flex")
+        case nil: return (.o1, "cheer")
+        default: return (.w, "proud")
+        }
+    }
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.8).ignoresSafeArea()
-            VStack(spacing: 26) {
-                ZStack {
-                    Circle().fill(Color(hex: 0x8B5CF6).opacity(0.3)).frame(width: 80, height: 80)
-                        .overlay(Circle().stroke(Color(hex: 0xA78BFA), lineWidth: 4))
-                    Image(systemName: "checkmark").font(.system(size: 34, weight: .bold)).foregroundStyle(Color(hex: 0xC4B5FD))
-                }
+            Color.black.opacity(0.55).ignoresSafeArea()
+            VStack(spacing: 12) {
+                PoseImage(pose.0, pose.1, height: 140)
+                    .scaleEffect(appeared || still ? 1 : 0.4)
+                    .opacity(appeared || still ? 1 : 0)
+                    .animation(still ? nil : .spring(response: 0.45, dampingFraction: 0.55), value: appeared)
+
                 VStack(spacing: 4) {
-                    Text("STAGE COMPLETE").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xA78BFA))
-                    Text(completedName).font(Brand.font(18, .bold)).foregroundStyle(.white.opacity(0.6))
-                }
-                // Final stage (no next): wait for a tap so the player can take in
-                // the cleared run before the results screen, instead of the 2.5s
-                // auto-advance used between stages.
-                if next == nil {
-                    Text("Tap to see your results")
-                        .font(Brand.font(13, .black)).foregroundStyle(.white.opacity(0.85))
-                        .padding(.horizontal, 16).padding(.vertical, 9)
-                        .background(Capsule().fill(Color(hex: 0x8B5CF6).opacity(0.35)))
-                        .overlay(Capsule().stroke(Color(hex: 0xA78BFA), lineWidth: 1.5))
-                }
-                if let n = next {
-                    VStack(spacing: 6) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "bolt.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xFACC15))
-                            Text("NEXT UP").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xFACC15))
-                            Image(systemName: "bolt.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xFACC15))
+                    FinishLabel("Stage complete", color: Color(hex: 0xB45309))
+                    Text(completedName).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    // A small W badge per cleared stage.
+                    if let c = clearedIndex {
+                        HStack(spacing: 4) {
+                            ForEach(0...max(0, c), id: \.self) { _ in Icon3D(.badgeW, size: 18) }
                         }
-                        Text(n.name).font(Brand.font(30, .black))
-                            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF472B6), Color(hex: 0xC084FC)],
-                                                            startPoint: .leading, endPoint: .trailing))
-                        Text("\(n.boards) board\(n.boards > 1 ? "s" : "") · \(n.guesses) guesses\(n.sequential ? " · sequential" : "")\(n.prefill ? " · pre-filled clues" : "")")
-                            .font(Brand.caption(12)).foregroundStyle(.white.opacity(0.4))
-                        // The overlay has ALWAYS been tap-to-skip, but only the
-                        // final stage said so — mid-run it read as a cutscene you
-                        // had to sit through. Say it every time.
-                        Text("Tap to continue")
-                            .font(Brand.font(11, .black)).tracking(0.8)
-                            .foregroundStyle(.white.opacity(0.5))
-                            .padding(.top, 6)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(c + 1) stages cleared")
                     }
                 }
+
+                if let n = next {
+                    if let u = upcoming, let total = totalStages, total > 0 {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("STAGE").font(Brand.font(13, .black)).tracking(1).foregroundStyle(FinishInk.secondary)
+                            Text("\(u)").softNumber(26)
+                            Text("OF").font(Brand.font(13, .black)).tracking(1).foregroundStyle(FinishInk.secondary)
+                            Text("\(total)").softNumber(26)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Stage \(u) of \(total)")
+                        dots(total: total, upcoming: u)
+                    } else {
+                        FinishLabel("Next up", color: Color(hex: 0xB45309))
+                    }
+                    Text(n.name).font(Brand.font(26, .black)).foregroundStyle(FinishInk.heading)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    // The stage's rule as a tinted pill.
+                    Text("\(n.boards) board\(n.boards > 1 ? "s" : "") · \(n.guesses) guesses\(n.sequential ? " · sequential" : "")\(n.prefill ? " · pre-filled clues" : "")")
+                        .font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 6)
+                        .tintedPill(Self.amber, radius: 12)
+                }
+
+                if let score = runningScore {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("POINTS SO FAR").font(Brand.font(11, .black)).tracking(1).foregroundStyle(FinishInk.secondary)
+                        Text(score.formatted()).softNumber(22)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+
+                Button(action: onAdvance) {
+                    CandyLabel(title: next == nil ? "See results" : "Continue", symbol: "play.fill")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                .padding(.top, 2)
+
+                // The overlay has ALWAYS been tap-to-skip; say so every time.
+                Text(next == nil ? "Tap to see your results" : "Tap to continue")
+                    .font(Brand.font(11, .black)).tracking(0.8)
+                    .foregroundStyle(FinishInk.secondary)
             }
+            .padding(20)
+            .frame(maxWidth: 380)
+            .tintedCard(accent: Self.amber, bar: [Color(hex: 0xFFC56B), Color(hex: 0xF97316)], radius: 24, barHeight: 10,
+                        tint: 0.12, line: 0.32)
+            .padding(.horizontal, 22)
+        }
+        .onAppear {
+            appeared = true
+            if next != nil { Feedback.found() }   // §U: a Gauntlet stage cleared — notify @0.7 · light
+            guard !still else { return }
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) { pulse = true }
         }
         .contentShape(Rectangle())
         .onTapGesture { onAdvance() }
@@ -572,5 +681,23 @@ struct StageTransitionOverlay: View {
             try? await Task.sleep(nanoseconds: nanos)
             onAdvance()
         }
+    }
+
+    /// §P: the run's progress dots — done stages filled amber, the upcoming one
+    /// pulsing (Reduce Motion: still), the rest soft.
+    private func dots(total: Int, upcoming: Int) -> some View {
+        HStack(spacing: 8) {
+            ForEach(1...max(1, total), id: \.self) { i in
+                let done = i < upcoming
+                let current = i == upcoming
+                Circle()
+                    .fill(done || current ? Self.amber : Self.amber.wash(0.22))
+                    .frame(width: 12, height: 12)
+                    .overlay(Circle().stroke(Color(hex: 0xB0650B).opacity(done ? 0.5 : 0.25), lineWidth: 1))
+                    .scaleEffect(current && pulse && !still ? 1.3 : 1)
+                    .opacity(current && pulse && !still ? 0.7 : 1)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }

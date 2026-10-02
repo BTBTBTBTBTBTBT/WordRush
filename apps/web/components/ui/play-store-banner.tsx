@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { X as XIcon } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { candyClass } from '@/components/ui/candy-button';
+import { HeaderCircle } from '@/components/ui/page-header';
+import { alphaHex, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 
 /**
  * Android install banner — the Play-side sibling of the iOS Smart App Banner
@@ -55,17 +58,21 @@ export function PlayStoreBanner() {
     } catch {}
   };
 
+  // K1 / G5: the same tinted notice card as AnnouncementsBanner (brand wash,
+  // top bar), the candy GET button and the bare close X; slides up with a spring.
+  const accent = '#7c3aed';
   return (
     <div className="fixed bottom-0 inset-x-0 z-50 px-3 pb-2 pointer-events-none">
       <div
-        className="max-w-md mx-auto flex items-center gap-2.5 p-3 pointer-events-auto"
+        className="relative max-w-md mx-auto flex items-center gap-2.5 p-2.5 pt-3.5 pr-10 pointer-events-auto overflow-hidden notice-in-bottom"
         style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid #c4b5fd',
-          borderRadius: '16px',
-          boxShadow: '0 4px 24px rgba(124, 58, 237, 0.18)',
+          background: softBackground(accent, 0.14),
+          border: softBorder(accent, 0.14),
+          borderRadius: 20,
+          boxShadow: `0 10px 28px ${alphaHex(accent, 0.24)}`,
         }}
       >
+        <div aria-hidden="true" className="absolute left-0 right-0 top-0" style={cardBarStyle(accent, 6)} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/icon-192.png"
@@ -90,14 +97,13 @@ export function PlayStoreBanner() {
           href={playUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-1.5 rounded-xl text-white text-sm font-black shrink-0"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+          className={candyClass({ color: 'purple', size: 'sm', extra: 'shrink-0' })}
         >
           Get
         </a>
-        <button onClick={dismiss} aria-label="Dismiss app install banner" className="p-0.5 shrink-0">
-          <XIcon className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-        </button>
+        <HeaderCircle label="Dismiss app install banner" onClick={dismiss} size={32} className="absolute top-2 right-1">
+          <XIcon aria-hidden="true" style={{ width: 18, height: 18, color: 'var(--color-win-text, #7c3aed)' }} strokeWidth={3.2} />
+        </HeaderCircle>
       </div>
     </div>
   );

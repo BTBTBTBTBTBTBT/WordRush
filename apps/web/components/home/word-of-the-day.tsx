@@ -10,6 +10,7 @@ import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-stre
 import { HomeSectionTitle } from '@/components/home/home-section-title';
 import { MODE_CARD, ModeCardBand, modeCardSurface } from '@/components/home/mode-card';
 import { SoftNum } from '@/components/ui/soft-number';
+import { accentInk } from '@/lib/soft-surface';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -45,11 +46,15 @@ const LETTERS = ['A', 'B', 'C'];
 /** I's green, the Word of the Day host (docs/ART_SPEC.md §21.5). */
 const WOTD_ACCENT = '#4CC77A';
 const PAD = `${MODE_CARD.padY}px ${MODE_CARD.padX}px`;
+/** Theme-aware inks (legible on the dark card): body gray, the purple part of speech, the link. */
+const BODY_INK = accentInk('#64748b', '#4b5563');
+const POS_INK = accentInk('#7c3aed', '#7c3aed');
+const LINK_INK = accentInk('#8b5cf6', '#8b5cf6');
 
 /** §21.5: the Home game card's frame (surface, radius, border, shadow, 10 px band, padding). */
 function WotdCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="relative overflow-hidden" style={modeCardSurface(WOTD_ACCENT)}>
+    <div data-squish="card" className="relative overflow-hidden" style={modeCardSurface(WOTD_ACCENT)}>
       <ModeCardBand accent={WOTD_ACCENT} />
       <div className={className} style={{ padding: PAD }}>{children}</div>
     </div>
@@ -64,7 +69,7 @@ function WotdSection({ children }: { children: React.ReactNode }) {
         name="art-title-wotd"
         label="Word of the Day"
         below={(
-          <Link href="/words" className="text-[10px] font-bold hover:underline" style={{ color: '#8b5cf6' }}>
+          <Link href="/words" className={`text-[10px] font-bold hover:underline ${LINK_INK.className}`} style={LINK_INK.style}>
             Past words →
           </Link>
         )}
@@ -177,7 +182,7 @@ export function WordOfTheDay() {
             <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{info.phonetic}</span>
           )}
           {partOfSpeech && (
-            <span className="text-[10px] font-extrabold italic" style={{ color: '#7c3aed' }}>{partOfSpeech}</span>
+            <span className={`text-[10px] font-extrabold italic ${POS_INK.className}`} style={POS_INK.style}>{partOfSpeech}</span>
           )}
           {showFlame && (
             <span className="ml-auto flex items-center gap-0.5" aria-label={`${streak}-day word streak`}>
@@ -189,7 +194,7 @@ export function WordOfTheDay() {
 
         {asking && quiz && (
           <div className="mt-1.5 flex flex-col gap-1.5">
-            <div className="text-[11px] font-extrabold" style={{ color: '#4b5563' }}>Which one is it?</div>
+            <div className={`text-[11px] font-extrabold ${BODY_INK.className}`} style={BODY_INK.style}>Which one is it?</div>
             {quiz.choices.map((c, i) => (
               <button
                 key={i}
@@ -228,7 +233,7 @@ export function WordOfTheDay() {
         )}
 
         {settled && !revealing && definition && (
-          <p className="mt-1 text-[11px] font-bold leading-snug" style={{ color: '#4b5563' }}>{definition}</p>
+          <p className={`mt-1 text-[11px] font-bold leading-snug ${BODY_INK.className}`} style={BODY_INK.style}>{definition}</p>
         )}
       </WotdCard>
     </WotdSection>

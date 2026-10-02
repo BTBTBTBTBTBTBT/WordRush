@@ -19,11 +19,13 @@ struct RecordsTab: View {
     @State private var allTimeMode: GameMode = .duel
     @State private var allTimeSweep = false
     @Environment(\.dismiss) private var dismiss
+    /// The sheet's own navigation path (the podium's places push a profile on it).
+    @State private var path: [String] = []
 
     enum RecordsSubTab { case daily, allTime }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ZStack {
                 PageBackground(tint: .leaderboard)
                 VStack(spacing: 0) {
@@ -32,6 +34,7 @@ struct RecordsTab: View {
                 }
             }
             .environment(\.pageTint, .leaderboard)
+            .environment(\.lbOpenProfile, { path.append($0) })
             .toolbar(.hidden, for: .navigationBar)
             // Tapping a record holder / daily-row username opens their public profile
             // (web parity — Records links names to /profile/[id]).
@@ -44,8 +47,12 @@ struct RecordsTab: View {
             VStack(spacing: 16) {
                 placeholder(icon: "crown.fill", title: "Sign in to see records",
                             subtitle: "Daily rankings and the all-time hall of records are available to signed-in players.")
-                Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
+                Button { showAuth = true } label: {
+                    CandyLabel(title: "Sign in", symbol: "person.crop.circle.fill")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large, fullWidth: false))
             }
+            .padding(.top, 24)
             .sheet(isPresented: $showAuth) { AuthView() }
         } else {
             ScrollView {
@@ -60,11 +67,10 @@ struct RecordsTab: View {
                         dismiss()
                         NotificationCenter.default.post(name: .openStats, object: nil)
                     } label: {
-                        Text("Your personal records → Stats")
-                            .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
-                            .frame(maxWidth: .infinity)
+                        CandyLabel(title: "Your records → Stats", symbol: "chart.bar.fill")
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: false))
+                    .accessibilityLabel("Your personal records in Stats")
                     .padding(.top, 8)
                 }
                 .padding(.horizontal, 16).padding(.top, 8)
@@ -109,7 +115,7 @@ struct AllTimeRecordsView: View {
         VStack(alignment: .leading, spacing: 12) {
             RecordsBannerView(tab: $tab, selected: modeSelection, isSweep: sweepSelection,
                               recordsCount: loading ? nil : records.count)
-            if loading { CardsSkeleton() } else {   // web parity: AllTimeSkeleton card blocks
+            if loading { CardsSkeleton().padding(.horizontal, 12).lbCard() } else {   // web parity: AllTimeSkeleton card blocks
                 // Hall of Fame — each record a soft card.
                 LbSectionLabel("HALL OF FAME").padding(.top, 4)
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
@@ -126,7 +132,8 @@ struct AllTimeRecordsView: View {
                     let m = pickerModes.first { $0.dbKey == mode.rawValue }
                     let accent = m?.accent ?? ModeStyle.accent(mode)
                     LbGameHeaderCard(accent: accent, icon: m?.icon ?? .symbol("trophy"),
-                                     title: m?.title ?? mode.rawValue, sub: "All-time bests")
+                                     title: m?.title ?? mode.rawValue, sub: "All-time bests", mode: mode,
+                                     right: { EmptyView() }, extra: { EmptyView() })
                         .id(mode)
                     if RecordCatalog.perMode.contains(where: { modeRecord($0) != nil }) {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
@@ -182,49 +189,42 @@ struct AllTimeRecordsView: View {
     @ViewBuilder private var sweepSection: some View {
         let total = sweepRank?.total ?? sweepEntries.count
         LbGameHeaderCard(accent: recordsSweepAccent, icon: .asset("broom"), title: "Sweep · All-Time",
-                         sub: "Most daily sweeps ever · \(total) sweeper\(total == 1 ? "" : "s")", subSymbol: "person.2.fill")
+                         sub: "Most daily sweeps ever · \(total) sweeper\(total == 1 ? "" : "s")", subSymbol: "person.2.fill",
+                         art: "game-sweep")
         if let r = sweepRank {
             let mine = sweepEntries.first { $0.userId == myId }
-            LbRankCard(rank: r.rank, ofLine: "OF \(r.total) SWEEPERS",
-                       points: mine.map { "\($0.sweepCount)" }, pointsLabel: "SWEEPS")
+            // §C2: the gold result card — your rank, your sweep record, your sweep count.
+            LbResultCard(rank: r.rank, ofLine: "OF \(r.total) SWEEPERS",
+                         line: mine.map { "\($0.flawlessCount) flawless · best \(formatShortTime($0.bestSweepTime))" },
+                         points: mine.map { "\($0.sweepCount)" }, pointsLabel: "SWEEPS")
         }
         if sweepLoading {
-            LeaderboardSkeleton()
+            LeaderboardSkeleton().lbCard()
         } else if sweepEntries.isEmpty {
             emptyCard("No sweeps yet. Be the first!")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
                     allTimeSweepRow(e.rank, e)
-                    if idx < sweepEntries.count - 1 { LbDivider() }
+                        .stripedRow(idx, accent: LbStyle.gold)
                 }
             }
-            .padding(.vertical, 4)
             .lbCard()
         }
     }
 
     private func allTimeSweepRow(_ rank: Int, _ e: AllTimeSweepEntry) -> some View {
         let isMe = e.userId == myId
-        return HStack(spacing: 12) {
-            LbRankBadge(rank: rank).frame(width: 22)
-            AvatarView(url: e.avatarUrl, username: e.username, size: 24)
-            // Doug's Aug-16 feedback (leaderboard row shape): stats under the
-            // name so the name keeps the row's flexible width.
-            NavigationLink(value: e.userId) {
-                VStack(alignment: .leading, spacing: 2) {
-                    (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Text("\(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
-                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                }
-            }.buttonStyle(.squish)
-            Spacer(minLength: 6)
-            Text("\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s")").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                .lineLimit(1).fixedSize()
+        // Doug's Aug-16 feedback (leaderboard row shape): stats under the
+        // name so the name keeps the row's flexible width. §C2a: the empty W / L
+        // slot keeps the sweep counts in one column.
+        return LbBoardRow(rank: rank, userId: e.userId, username: e.username, avatarUrl: e.avatarUrl,
+                          won: nil, points: "\(e.sweepCount)") {
+            VStack(alignment: .leading, spacing: 1) {
+                LbRowName(name: e.username, isMe: isMe)
+                LbRowSub(text: "\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s") · \(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
+            }
         }
-        .padding(.horizontal, 10).padding(.vertical, 10)
         .youRow(isMe)
     }
 
@@ -270,38 +270,36 @@ struct RecordStatCell: View {
     /// The card's mode (per-mode grid) — titles the fewest-guesses cell through
     /// its guess semantics even while the record itself is still nil.
     var gameMode: String? = nil
-    @Environment(\.colorScheme) private var scheme
-
     var body: some View {
         let meta = RecordCatalog.labels[type]
         let has = record != nil
         let mine = isMe && has
-        let valueInk = scheme == .dark ? Color(hex: 0xC4B5FD) : Color(hex: 0x4C1D95)
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8).fill(accent.opacity(0.08))
+                    RoundedRectangle(cornerRadius: 8).fill(accent.opacity(Theme.isDark ? 0.18 : 0.14))
                     SymbolGlyph(meta?.symbol ?? "rosette", size: 13, weight: .semibold)
                         .foregroundStyle(has ? accent : Theme.textMuted)
                 }
                 .frame(width: 28, height: 28)
                 Text(RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode).uppercased())
-                    .font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(Theme.textSecondary)
+                    .font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(FinishInk.secondary)
                     .lineLimit(2).minimumScaleFactor(0.8)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: mine ? 16 : 0)
             }
             // §254: hints on the record, same wording as the leaderboard rows, set small.
-            (Text(record?.valueText ?? "—").font(Brand.font(20, .black)).foregroundColor(has ? valueInk : Theme.textMuted)
+            // §A2: the record value as a soft number.
+            (Text(record?.valueText ?? "—").font(Brand.font(22, .black)).foregroundColor(has ? FinishInk.number : Theme.textMuted)
              + Text(record?.hintsSuffix ?? "").font(Brand.font(12, .bold)).foregroundColor(Theme.textMuted))
+                .softNumber(22)
                 .lineLimit(2).minimumScaleFactor(0.7)
             if let record {
                 NavigationLink(value: record.holderId) {
                     HStack(spacing: 6) {
                         AvatarView(url: record.profiles.avatarUrl, username: record.holderUsername, size: 20)
-                        Text(record.holderUsername).font(Brand.font(11, .heavy)).lineLimit(1).minimumScaleFactor(0.7)
-                            .foregroundStyle(mine ? Color(hex: 0xD97706) : Theme.textPrimary)
+                        Text(record.holderUsername).font(Brand.font(12, .black)).lineLimit(1).minimumScaleFactor(0.7)
+                            .foregroundStyle(mine ? Color(hex: 0xD97706) : FinishInk.heading)
                     }
                 }.buttonStyle(.squish)
             }
@@ -309,20 +307,24 @@ struct RecordStatCell: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-        .background(shape.fill(mine ? Theme.highlightGold : Theme.surface).pageCardShadow())
-        .overlay(shape.strokeBorder(mine ? Color(hex: 0xF59E0B) : Color.clear, lineWidth: 1.5))
+        // §A1: a tinted card in the record's color with its top bar; a record you hold
+        // is gold with a stronger tint.
+        .tintedCard(accent: mine ? Color(hex: 0xF59E0B) : accent,
+                    bar: mine ? [Color(hex: 0xF5A524), Color(hex: 0xFFD166)] : [accent, accent.wash(0.55)],
+                    radius: 16, barHeight: 6, tint: mine ? 0.16 : 0.08, line: mine ? 0.45 : 0.24)
         .overlay(alignment: .topTrailing) {
             if mine {
-                Icon3D(.crown, size: 15, label: "Your record")
-                    .padding(10)
+                Icon3D(.crown, size: 16, label: "Your record")
+                    .padding(.top, 14).padding(.trailing, 10)
             }
         }
     }
 }
 
-/// A Records board row — exactly the new Leaderboard row: medal disc, avatar, name over
-/// the stats line (guesses · time · boards · hints, Win/Loss pill), points at the right,
-/// your row tinted with the amber ring. Shared by the Daily board and yesterday's podium.
+/// A Records board row — exactly the Leaderboard row (§C2a): medal disc, avatar, name
+/// over the stats line (guesses · time · boards · hints), the W / L badge in its own
+/// column, points at the right as a soft number, your row tinted with the amber ring.
+/// Shared by the Daily board and yesterday's winners.
 struct RecordsBoardRow: View {
     let rank: Int
     let entry: LeaderboardEntry
@@ -347,28 +349,15 @@ struct RecordsBoardRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            LbRankBadge(rank: rank).frame(width: 22)
-            AvatarView(url: entry.profiles.avatarUrl, username: entry.username,
-                       size: 24, emoji: entry.profiles.avatarEmoji)
-            NavigationLink(value: entry.userId) {
-                VStack(alignment: .leading, spacing: 2) {
-                    (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    HStack(spacing: 5) {
-                        Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            .lineLimit(1).minimumScaleFactor(0.8)
-                        // ART_SPEC §13: the Win / Loss chip as the 3D badge art.
-                        RowResultBadge(won: entry.completed)
-                    }
-                }
-            }.buttonStyle(.squish)
-            Spacer(minLength: 6)
-            Text(score).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                .lineLimit(1).fixedSize()
+        // §C2a: the W / L badge in its own column immediately left of the points.
+        LbBoardRow(rank: rank, userId: entry.userId, username: entry.username,
+                   avatarUrl: entry.profiles.avatarUrl, emoji: entry.profiles.avatarEmoji,
+                   won: entry.completed, points: score) {
+            VStack(alignment: .leading, spacing: 1) {
+                LbRowName(name: entry.username, isMe: isMe)
+                LbRowSub(text: line)
+            }
         }
-        .padding(.horizontal, 10).padding(.vertical, 10)
         .youRow(isMe)
     }
 }
@@ -525,66 +514,80 @@ struct DailyRecordsView: View {
                 }
             },
             extra: {
+                // The soft segmented toggles (Solo | VS, Everyone | Friends); each paints its
+                // cached board in the same transaction as the selection.
                 HStack(spacing: 8) {
-                    LbPillSwitch(options: [.init(value: "solo", label: "Solo", symbol: "person.fill"),
-                                           .init(value: "vs", label: "VS", symbol: "flag.2.crossed.fill")],
-                                 value: playType, accent: accent) { t in
-                        instantly { playType = t; paintCached() }
-                    }
+                    SoftSegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
+                                  selection: Binding(get: { playType },
+                                                     set: { t in instantly { playType = t; paintCached() } }),
+                                  accent: accent, accessibilityLabel: "Solo or VS")
                     if auth.isAuthenticated {
-                        LbPillSwitch(options: [.init(value: false, label: "Everyone"), .init(value: true, label: "Friends")],
-                                     value: friendsOnly, accent: accent) { f in
-                            instantly { friendsOnly = f; paintCached() }
-                        }
+                        SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
+                                      selection: Binding(get: { friendsOnly },
+                                                         set: { f in instantly { friendsOnly = f; paintCached() } }),
+                                      accent: accent, accessibilityLabel: "Everyone or Friends")
                     }
                 }
             })
             .id(mode)
 
-        // §254: the completed-daily dropdown, mounted exactly as the daily
-        // leaderboard (ProfileTab) mounts it (now the soft card). .id(mode) → a
-        // fresh card per mode: never the previous mode's board under a new header.
-        if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
-
-        // Your rank, as on the Leaderboard. The friends board keeps its own
-        // movement history (never compared against the global rank).
+        // §C2: ONE result card — your rank (as on the Leaderboard; the friends board
+        // keeps its own movement history, never compared against the global rank), how
+        // you did and your points, with the §254 completed-daily dropdown as its footer.
+        // No rank → the dropdown alone. .id(mode) → a fresh card per mode: never the
+        // previous mode's board under a new header.
         if let r = userRank {
             let mine = (entries + (rankWindow?.entries ?? [])).first { $0.userId == auth.profile?.id }
-            LbRankCard(rank: r.rank,
-                       ofLine: friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY\(topPercent(r))",
-                       points: mine.map { lbScoreLabels[$0.compositeScore] ?? formatScore($0.compositeScore) }) {
-                RankDeltaBadge(mode: mode.rawValue, playType: playType,
-                               pageKey: friends ? "records-daily-friends" : "records-daily", currentRank: r.rank)
-            }
+            LbResultCard(rank: r.rank,
+                         ofLine: friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY\(topPercent(r))",
+                         line: mine.map {
+                             lbSolveLine(mode: mode, completed: $0.completed, guessCount: $0.guessCount,
+                                         timeSeconds: $0.timeSeconds, boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
+                         },
+                         points: mine.map { lbScoreLabels[$0.compositeScore] ?? formatScore($0.compositeScore) },
+                         delta: {
+                             RankDeltaBadge(mode: mode.rawValue, playType: playType,
+                                            pageKey: friends ? "records-daily-friends" : "records-daily", currentRank: r.rank)
+                         },
+                         footer: { LbResultFooter { completedCard } })
+        } else {
+            completedCard
         }
 
-        LbSectionLabel("TODAY\u{2019}S BOARD").padding(.top, 4)
+        HStack(spacing: 8) {
+            LbSectionLabel("TODAY\u{2019}S BOARD")
+            Spacer(minLength: 4)
+        }
+        .padding(.top, 4).padding(.leading, 4)
         if loading {
-            LeaderboardSkeleton()   // web parity: animate-pulse rows
+            LeaderboardSkeleton().lbCard()   // web parity: animate-pulse rows
         } else if entries.isEmpty {
             emptyCard(friends ? "None of your friends have played yet today" : "No results yet today. Be the first!")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
                     boardRow(idx + 1, e)
-                    if idx < entries.count - 1 { LbDivider() }
+                        .stripedRow(idx, accent: LbStyle.gold)
                 }
                 if let win = rankWindow {
-                    LbDivider()
-                    Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
+                    Text("···").font(Brand.font(15, .black)).foregroundStyle(FinishInk.secondary)
                         .frame(maxWidth: .infinity).padding(.vertical, 4)
-                    LbDivider()
+                        .accessibilityLabel("More players")
                     ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, e in
                         boardRow(win.startRank + idx, e)
-                        if idx < win.entries.count - 1 { LbDivider() }
+                            .stripedRow(entries.count + idx, accent: LbStyle.gold)
                     }
                 }
             }
-            .padding(.vertical, 4)
             .lbCard()
         }
 
         YesterdayPodiumCard(mode: mode, playType: playType)
+    }
+
+    /// §254: the completed-daily dropdown, mounted exactly as the daily leaderboard mounts it.
+    @ViewBuilder private var completedCard: some View {
+        if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
     }
 
     private func boardRow(_ rank: Int, _ e: LeaderboardEntry) -> some View {
@@ -607,25 +610,28 @@ struct DailyRecordsView: View {
         let total = sweepRank?.total ?? sweepEntries.count
         LbGameHeaderCard(accent: recordsSweepAccent, icon: .asset("broom"), title: "Daily Sweep",
                          sub: "All \(ModeGen.sweep.count) modes today · \(total) sweeper\(total == 1 ? "" : "s")",
-                         subSymbol: "person.2.fill")
+                         subSymbol: "person.2.fill", art: "game-sweep")
         if let r = sweepRank {
             let mine = sweepEntries.first { $0.userId == auth.profile?.id }
-            LbRankCard(rank: r.rank, ofLine: "OF \(r.total) TODAY\(topPercent(r))",
-                       points: mine.map { sweepScoreLabels[$0.totalScore] ?? formatScore($0.totalScore) })
+            let day = LeaderboardService.todayLocal()
+            LbResultCard(rank: r.rank, ofLine: "OF \(r.total) TODAY\(topPercent(r))",
+                         line: mine.map {
+                             "\($0.isFlawless ? "Flawless" : "Swept") · \($0.modesWon)/\(ModeGen.requiredSweepCount(for: day)) won · \(formatShortTime($0.totalTime))"
+                         },
+                         points: mine.map { sweepScoreLabels[$0.totalScore] ?? formatScore($0.totalScore) })
         }
-        LbSectionLabel("TODAY\u{2019}S BOARD").padding(.top, 4)
+        LbSectionLabel("TODAY\u{2019}S BOARD").padding(.top, 4).padding(.leading, 4)
         if sweepLoading {
-            LeaderboardSkeleton()
+            LeaderboardSkeleton().lbCard()
         } else if sweepEntries.isEmpty {
             emptyCard("No sweeps yet today. Be the first!")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
                     sweepRow(e.rank, e)
-                    if idx < sweepEntries.count - 1 { LbDivider() }
+                        .stripedRow(idx, accent: LbStyle.gold)
                 }
             }
-            .padding(.vertical, 4)
             .lbCard()
         }
     }
@@ -635,36 +641,13 @@ struct DailyRecordsView: View {
     // the FLAWLESS/SWEEP pill riding it (§227).
     private func sweepRow(_ rank: Int, _ e: SweepEntry) -> some View {
         let isMe = e.userId == auth.profile?.id
-        return HStack(spacing: 12) {
-            LbRankBadge(rank: rank).frame(width: 22)
-            AvatarView(url: e.avatarUrl, username: e.username, size: 24)
-            // §236: score rides the name line; the stats line owns the width.
-            NavigationLink(value: e.userId) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        Spacer(minLength: 6)
-                        Text(sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore))
-                            .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1).fixedSize()
-                    }
-                    Text(sweepStatsLine(e, details: sweepDetails[e.userId], day: LeaderboardService.todayLocal()))
-                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        // §246 (founder screenshot: "86 guesses ·…"): the hints
-                        // segment fell off the row's end — wrap, never truncate.
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 6) {
-                        SweepModeDots(details: sweepDetails[e.userId],
-                                      day: LeaderboardService.todayLocal())
-                        sweepPill(isFlawless: e.isFlawless,
-                                  streak: flawlessStreaks[e.userId] ?? 0)
-                    }
-                }
-            }.buttonStyle(.squish)
+        // §C2a: the empty W / L slot keeps the totals in one column.
+        return LbBoardRow(rank: rank, userId: e.userId, username: e.username, avatarUrl: e.avatarUrl,
+                          won: nil, points: sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore)) {
+            LbSweepRowInfo(entry: e, isMe: isMe, details: sweepDetails[e.userId],
+                           day: LeaderboardService.todayLocal(),
+                           streak: flawlessStreaks[e.userId] ?? 0)
         }
-        .padding(.horizontal, 10).padding(.vertical, 10)
         .youRow(isMe)
     }
 
@@ -756,12 +739,14 @@ struct DailyRecordsView: View {
 }
 
 /// Yesterday's top finishers for the selected mode (collapsible) — Records daily view.
-/// Identical to the Leaderboard's YESTERDAY'S WINNERS: caps label + chevron, the bare
-/// share icon, and full rows (avatar, stats line, points) in a soft card. Unfiltered.
+/// Identical to the Leaderboard's YESTERDAY'S WINNERS: the caps label + chevron chip,
+/// the bare share icon, the top three on the podium and the rest as full rows (avatar,
+/// stats line, W / L column, points) in the cream card. Unfiltered.
 struct YesterdayPodiumCard: View {
     let mode: GameMode
     let playType: String
     @EnvironmentObject private var auth: AuthService
+    @Environment(\.lbOpenProfile) private var openProfile
     /// Settled podiums by "day:mode:playType" — session-lived (yesterday never changes), so a
     /// mode switch shows THAT mode's podium at once, never the previous mode's rows under the
     /// new board until the fetch lands (founder, 2026-09-29).
@@ -786,9 +771,12 @@ struct YesterdayPodiumCard: View {
                             HStack(spacing: 6) {
                                 LbSectionLabel("YESTERDAY\u{2019}S WINNERS")
                                 Image(systemName: open ? "chevron.up" : "chevron.down")
-                                    .font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textMuted)
+                                    .font(.system(size: 10, weight: .black))
+                                    .foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x8A6A55))
                             }
-                            .padding(.vertical, 6).contentShape(Rectangle())
+                            .padding(.horizontal, 12).frame(height: 30)
+                            .tintedPill(LbStyle.gold)
+                            .contentShape(Capsule())
                         }
                         .buttonStyle(.squish)
                         Spacer(minLength: 4)
@@ -807,17 +795,28 @@ struct YesterdayPodiumCard: View {
                         }
                     }
                     if open && known == nil {
-                        LeaderboardSkeleton()
+                        LeaderboardSkeleton().lbCard()
                     } else if open {
+                        // The top three on the podium (letter-tile avatars, crown on 1st;
+                        // a place opens that player, as their row did), then the rest.
+                        let podium = top3.count >= 3
+                        let start = podium ? 3 : 0
                         VStack(spacing: 0) {
-                            ForEach(Array(top3.enumerated()), id: \.element.id) { i, e in
+                            if podium {
+                                PodiumView(entries: top3.prefix(3).map { e in
+                                    PodiumEntry(id: e.userId,
+                                                name: e.userId == auth.profile?.id ? "You" : e.username,
+                                                username: e.username, emoji: e.profiles.avatarEmoji,
+                                                value: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore))
+                                }, onTap: { e in openProfile?(e.id) })
+                            }
+                            ForEach(Array(top3.enumerated().dropFirst(start)), id: \.element.id) { i, e in
                                 RecordsBoardRow(rank: i + 1, entry: e, mode: mode,
                                                 isMe: e.userId == auth.profile?.id,
                                                 score: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore))
-                                if i < top3.count - 1 { LbDivider() }
+                                    .stripedRow(i - start, accent: LbStyle.gold)
                             }
                         }
-                        .padding(.vertical, 4)
                         .lbCard()
                     }
                 }

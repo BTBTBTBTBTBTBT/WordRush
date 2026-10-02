@@ -226,7 +226,7 @@ struct RivalriesCard: View {
             } else if !(isPro && display.isEmpty) {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Rivalries", accent: Color(hex: 0xEC4899))
-                    let card = KitCard {
+                    let card = KitCard(accent: Color(hex: 0xEC4899)) {
                         VStack(spacing: 6) {
                             ForEach(display) { r in rivalryRow(r) }
                         }
@@ -274,7 +274,7 @@ struct RivalriesCard: View {
             .frame(height: 6)
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+        .background(RoundedRectangle(cornerRadius: 10).fill(StatsInk.rowFill(Color(hex: 0xEC4899))))
     }
 }
 
@@ -392,7 +392,7 @@ struct ProDeepModeCard: View {
     private func cardTitle(_ icon: String, _ title: String, color: Color? = nil) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon).font(.system(size: 13)).foregroundStyle(color ?? accent)
-            Text(title).font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+            Text(title).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
         }
     }
 
@@ -411,13 +411,14 @@ struct ProDeepModeCard: View {
                             Text(o.word).font(Brand.font(14, .black)).tracking(1.2)
                                 .foregroundStyle(Theme.textPrimary)
                             Spacer()
-                            Text("\(fmt1(o.avgGreens)) 🟩").font(Brand.font(10, .bold)).foregroundStyle(Theme.primary)
-                            Text("\(fmt1(o.avgYellows)) 🟨").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xF59E0B))
+                            // §AM3: little drawn tiles, not the emoji squares.
+                            tileCount(fmt1(o.avgGreens), Theme.primary, "greens")
+                            tileCount(fmt1(o.avgYellows), Color(hex: 0xF59E0B), "yellows")
                             Text("\(o.count)× · \(o.winRate)%").font(Brand.font(10, .bold))
                                 .foregroundStyle(Theme.textMuted).frame(width: 60, alignment: .trailing)
                         }
                         .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+                        .background(RoundedRectangle(cornerRadius: 10).fill(StatsInk.rowFill(accent)))
                     }
                 }
                 caption("Average greens / yellows revealed by your first guess")
@@ -472,7 +473,7 @@ struct ProDeepModeCard: View {
                                 .frame(width: 44, alignment: .trailing)
                         }
                         .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+                        .background(RoundedRectangle(cornerRadius: 10).fill(StatsInk.rowFill(accent)))
                     }
                 }
                 caption("Clear rate + average time per stage")
@@ -480,23 +481,34 @@ struct ProDeepModeCard: View {
         }
     }
 
+    /// "1.4" + a tile — an average with a small drawn tile in its color (§AM3: no emoji squares).
+    private func tileCount(_ value: String, _ color: Color, _ word: String) -> some View {
+        HStack(spacing: 3) {
+            Text(value).font(Brand.font(10, .bold)).foregroundStyle(color)
+            RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(color)
+                .frame(width: 9, height: 9)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value) \(word)")
+    }
+
     private func hintsCard(_ h: StatsDeepService.HintHonesty) -> some View {
         KitCard {
             VStack(spacing: 10) {
                 HStack {
-                    Text("💡 Hints").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("Hints").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
                     Spacer()
                     Text("\(h.gamesCounted) games").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }
                 HStack {
                     Spacer()
                     VStack(spacing: 2) {
-                        Text("\(h.hintlessWinRate)%").font(Brand.font(18, .black)).foregroundStyle(Theme.primary)
+                        Text("\(h.hintlessWinRate)%").softNumber(20)
                         Text("HINTLESS WINS").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     Spacer()
                     VStack(spacing: 2) {
-                        Text(fmt1(h.avgHintsPerGame)).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                        Text(fmt1(h.avgHintsPerGame)).softNumber(20)
                         Text("HINTS / GAME").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     Spacer()
@@ -521,7 +533,7 @@ struct ProDeepModeCard: View {
                             }
                             .padding(6).frame(maxWidth: .infinity)
                             .background(RoundedRectangle(cornerRadius: 8)
-                                .fill(a.won ? Color(hex: 0xF5F3FF) : Color(hex: 0xFEF2F2)))
+                                .fill(Theme.isDark ? Color.white.opacity(0.05) : (a.won ? Color(hex: 0xF5F3FF) : Color(hex: 0xFEF2F2))))
                             .overlay(RoundedRectangle(cornerRadius: 8)
                                 .stroke(a.won ? Color(hex: 0xDDD6FE) : Color(hex: 0xFECACA), lineWidth: 1))
                         }

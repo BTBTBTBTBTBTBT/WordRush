@@ -2,9 +2,11 @@ import SwiftUI
 import WordociousCore
 
 /// The Bots page (VS overhaul, founder 2026-10-01; spec
-/// docs/VS_REDESIGN_SPEC.md §8): the Bot of the Day (free once per UTC day,
-/// Classic), THE LADDER (Rook → Lexi → Nova → Adapt, three wins in a row clear a
-/// rung) and Beat your best. Ladder and Beat your best are Pro.
+/// docs/VS_REDESIGN_SPEC.md §8; FINISH_SPEC §D1–§D3): the Bot of the Day (today's
+/// day host, free once per UTC day, Classic), THE LADDER (the ten cast bots, Rip →
+/// Webster the boss; three wins in a row clear a rung) and Your Ghost (beat your
+/// best). Ladder and Your Ghost are Pro. Every rung is a tinted card in its bot's
+/// own color with the character itself.
 struct VSBotsView: View {
     let mode: GameMode
     @Environment(\.dismiss) private var dismiss
@@ -22,7 +24,9 @@ struct VSBotsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VSNavBar(title: "BOTS", onBack: { dismiss() }) { VSModeChip(mode: mode).padding(.trailing, 6) }
+            // No host beside the title: every cast member appears on the ladder
+            // below (§A7 — never the same character image twice on one screen).
+            VSNavBar(title: "BOTS", host: nil, onBack: { dismiss() }) { VSModeChip(mode: mode).padding(.trailing, 6) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     botOfDayCard
@@ -53,65 +57,87 @@ struct VSBotsView: View {
         launch = Launch(mode: mode, kind: kind, ghost: ghost)
     }
 
-    // MARK: - Bot of the Day
+    // MARK: - Bot of the Day (§D2: today's day-host character)
 
     private var botOfDayCard: some View {
         let p = BotPersonas.botOfDay
+        let color = Color(hex: UInt(p.color))
         let result = progression.botOfDay(todayUtc: today)
         let streak = progression.liveBotOfDayStreak(todayUtc: today)
-        return VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("BOT OF THE DAY · \(p.name.uppercased())").font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
-                Text("SAME BOT, SAME PUZZLE FOR EVERYONE").font(Brand.font(10, .heavy)).tracking(0.5).foregroundStyle(VsLobbyKit.ink)
-            }
-            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.5))
-            HStack(spacing: 12) {
-                BotArtCircle(art: p.art, size: 48, background: Color.white.opacity(0.7))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(BotPersonas.tierLine(p.tier)).font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
-                    if streak > 0 {
-                        HStack(spacing: 3) {
-                            FlameMark(size: 11)
-                            Text("\(streak) \(streak == 1 ? "day" : "days") in a row").font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0xC2410C))
-                        }
-                    }
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                // The host in character, ready to play (§A7: the ladder rungs below
+                // draw the hero image, never this pose).
+                PoseImage(p.mascot, "ready", height: 108)
+                    .frame(width: 96)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("BOT OF THE DAY").font(Brand.font(10.5, .black)).tracking(1.1).foregroundStyle(color)
+                    Text(p.name).font(Brand.font(24, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    Text(p.tierLine).font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    Text("Same bot, same puzzle for everyone").font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).padding(.top, 10)
+            HStack(spacing: 10) {
+                // The day streak in soft numbers.
+                HStack(spacing: 5) {
+                    Icon3D(.flame, size: 22)
+                    Text("\(streak)").vsNumber(20)
+                    Text(streak == 1 ? "day" : "days").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(Color(hex: 0xF97316).wash(0.12)))
+                .overlay(Capsule().stroke(Color(hex: 0xF97316).wash(0.32), lineWidth: 1.5))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(streak) \(streak == 1 ? "day" : "days") in a row")
                 Spacer(minLength: 4)
                 if result == .open {
-                    Button { play(.daily) } label: {
-                        Text("PLAY").font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(.white)
-                            .padding(.horizontal, 18).frame(height: 34)
-                            .background(Capsule().fill(VsLobbyKit.ink))
-                    }
-                    .buttonStyle(PressableStyle())
+                    Button { play(.daily) } label: { CandyLabel(title: "Play", symbol: "play.fill") }
+                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
                 } else {
-                    Text(VsLobbyKit.tileLine(result, opponent: p.name, open: ""))
-                        .font(Brand.font(11, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).frame(height: 30)
-                        .background(Capsule().fill(result == .won ? VsLobbyKit.ink : Color(hex: 0x9CA3AF)))
+                    // Today's result: the W / L badge + the line.
+                    HStack(spacing: 6) {
+                        if result == .won || result == .lost { RowResultBadge(won: result == .won, size: 22) }
+                        Text(VsLobbyKit.tileLine(result, opponent: p.name, open: ""))
+                            .font(Brand.font(12, .black)).foregroundStyle(result == .won ? VsLobbyKit.purpleSub : VsLobbyKit.slate)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .padding(.horizontal, 12).frame(minHeight: 34)
+                    .background(Capsule().fill((result == .won ? VsLobbyKit.purple : VsLobbyKit.slate).wash(0.14)))
+                    .overlay(Capsule().stroke((result == .won ? VsLobbyKit.purple : VsLobbyKit.slate).wash(0.34), lineWidth: 1.5))
                 }
             }
-            .padding(12)
+            .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 12)
         }
-        .background(LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color(hex: 0x134E4A).opacity(0.08), radius: 7, x: 0, y: 4)
+        .vsTinted(color, bar: [color.wash(0.7), color], tint: 0.10, line: 0.32)
     }
 
-    // MARK: - THE LADDER
+    // MARK: - THE LADDER (ten cast rungs)
 
     private var ladderSection: some View {
         let rungs = VsLobby.ladderRungs(progression.ladder)
+        let allClear = rungs.allSatisfy { $0.state == .cleared }
         return VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 6) {
                 VSSectionLabel(text: "THE LADDER")
                 if !isPro { VSLockBadge() }
                 Spacer()
-                Text("STREAK \(progression.streak) · BEST \(progression.bestStreak)")
-                    .font(Brand.font(10.5, .black)).tracking(0.5).foregroundStyle(Color(hex: 0xC2410C))
+                HStack(spacing: 4) {
+                    Icon3D(.flame, size: 16)
+                    Text("STREAK").font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.mutedInk)
+                    Text("\(progression.streak)").vsNumber(14)
+                    Text("· BEST").font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.mutedInk)
+                    Text("\(progression.bestStreak)").vsNumber(14)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Streak \(progression.streak), best \(progression.bestStreak)")
             }
-            VStack(spacing: 0) {
+            if allClear { ladderClearedCard }
+            VStack(spacing: 8) {
                 ForEach(Array(rungs.enumerated()), id: \.offset) { i, r in
                     rungRow(r, index: i, rungs: rungs)
                 }
@@ -119,43 +145,73 @@ struct VSBotsView: View {
         }
     }
 
-    private func rungRow(_ r: LadderRung, index i: Int, rungs: [LadderRung]) -> some View {
-        let reached: (Int) -> Bool = { $0 < rungs.count && rungs[$0].state != .locked }
-        let teal = VsLobbyKit.ink, gray = Color(hex: 0xD1D5DB)
-        let tagColor: Color = r.state == .cleared ? teal : r.state == .next ? Color(hex: 0xC2410C) : Color(hex: 0x9CA3AF)
-        let tag = r.state == .cleared ? "CLEARED" : r.state == .next ? "NEXT" : "LOCKED"
-        let ring: Color = r.state == .cleared ? teal : r.state == .next ? VsLobbyKit.purple : .clear
-        let avatarBg: Color = r.state == .cleared ? VsLobbyKit.soft : r.state == .next ? Color(hex: 0xEDE9FE) : Color(hex: 0xE5E7EB)
-        let row = HStack(spacing: 12) {
-            // The 3 px rail: teal up to the next rung, gray after.
-            VStack(spacing: 0) {
-                Rectangle().fill(i == 0 ? .clear : (reached(i) ? teal : gray)).frame(width: 3, height: 15)
-                BotArtCircle(art: BotPersonas.art(r.id), size: 36, background: avatarBg)
-                    .overlay(Circle().strokeBorder(ring, lineWidth: 2))
-                    .shadow(color: r.state == .next ? VsLobbyKit.purple.opacity(0.45) : .clear, radius: 5)
-                    .saturation(r.state == .locked ? 0 : 1)
-                Rectangle().fill(i == rungs.count - 1 ? .clear : (reached(i + 1) ? teal : gray)).frame(width: 3, height: 15)
+    /// All ten rungs cleared: the celebration art (W with the trophy).
+    @ViewBuilder private var ladderClearedCard: some View {
+        VStack(spacing: 8) {
+            if ArtAsset.exists("art-scene-ladder-cleared") {
+                Image("art-scene-ladder-cleared").resizable().interpolation(.high).scaledToFit()
+                    .frame(maxHeight: 190)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .accessibilityHidden(true)
+            } else {
+                Icon3D(.trophy, size: 56)
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(VsLobby.botName(r.id)) · \(BotPersonas.tierLabel(forBotId: r.id))")
-                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
-                Text(r.line).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
-                    .lineLimit(1).minimumScaleFactor(0.8)
+            Text("LADDER CLEARED!").font(Brand.font(18, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.titleInk)
+            Text("All ten beaten — even the boss. Keep any rung for practice.")
+                .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center)
+        }
+        .padding(14).frame(maxWidth: .infinity)
+        .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, tint: 0.14, line: 0.36)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func rungRow(_ r: LadderRung, index i: Int, rungs: [LadderRung]) -> some View {
+        let p = BotPersonas.persona(r.id)
+        let boss = p.rung == VsLobby.ladderBots.count
+        let color = boss ? VsLobbyKit.gold : Color(hex: UInt(p.color))
+        let locked = r.state == .locked
+        let tag = r.state == .cleared ? "CLEARED" : r.state == .next ? "NEXT" : "LOCKED"
+        let row = HStack(spacing: 12) {
+            // The bot's own character (its hero image), on a wash of its color.
+            ZStack(alignment: .bottomTrailing) {
+                Image(p.art).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 54, height: 54)
+                    .saturation(locked ? 0 : 1)
+                    .accessibilityHidden(true)
+                Text("\(p.rung)")
+                    .font(Brand.font(11, .black)).foregroundStyle(.white)
+                    .frame(width: 20, height: 20)
+                    .background(Circle().fill(color))
+                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                    .offset(x: 4, y: 2)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                    Text(p.name).font(Brand.font(15, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                    if boss { Text("BOSS").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(VsLobbyKit.gold.wash(0.3))) }
+                }
+                // "Easy going · Solves in 6" ("Matches your form" for Umi).
+                Text(p.tierLine).font(Brand.font(11.5, .heavy)).foregroundStyle(color == VsLobbyKit.gold ? Color(hex: 0xB45309) : color)
+                    .lineLimit(1).minimumScaleFactor(0.75)
+                Text(r.line).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+                    .lineLimit(1).minimumScaleFactor(0.75)
             }
             Spacer(minLength: 4)
-            if !isPro && r.state != .locked { VSLockBadge() }
-            Text(tag).font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(tagColor)
+            rungTrailing(r, boss: boss)
         }
-        .padding(.horizontal, 12)
-        .frame(height: 66)
-        .background {
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .vsTinted(color, bar: r.state == .next || boss ? [color.wash(0.7), color] : [color],
+                  radius: 18, barHeight: r.state == .next ? 6 : 4,
+                  tint: r.state == .next ? 0.16 : 0.09, line: r.state == .next ? 0.5 : 0.28)
+        .overlay {
             if r.state == .next {
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white)
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(teal, lineWidth: 2))
-                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.07), radius: 5, x: 0, y: 2)
+                RoundedRectangle(cornerRadius: 21, style: .continuous).inset(by: -3)
+                    .stroke(color.opacity(0.28), lineWidth: 3).allowsHitTesting(false)
             }
         }
-        .opacity(r.state == .locked ? 0.55 : 1)
+        .opacity(locked ? 0.55 : 1)
         .contentShape(Rectangle())
         return Button {
             guard r.state != .locked else { return }
@@ -163,35 +219,52 @@ struct VSBotsView: View {
         } label: { row }
         .buttonStyle(.squish)
         .allowsHitTesting(r.state != .locked)
-        .accessibilityLabel("\(VsLobby.botName(r.id)), \(tag.lowercased()), \(r.line)")
+        .accessibilityLabel("\(VsLobby.botName(r.id)), \(p.tierLine), \(tag.lowercased()), \(r.line)")
     }
 
-    // MARK: - BEAT YOUR BEST
+    /// Cleared ✓ · next = the Play candy (a lock on it for free players) · locked = the 3D lock.
+    @ViewBuilder private func rungTrailing(_ r: LadderRung, boss: Bool) -> some View {
+        HStack(spacing: 6) {
+            if boss && ArtAsset.exists("art-medal-trophy") {
+                VSArt("art-medal-trophy", height: 34).frame(width: 30)
+            }
+            switch r.state {
+            case .cleared:
+                Icon3D(.badgeCheck, size: 26)
+            case .next:
+                VSCandyTag(title: "Play", symbol: isPro ? "play.fill" : nil, variant: .purple, showLock: !isPro)
+            case .locked:
+                Icon3D(.lock, size: 22)
+            }
+        }
+    }
+
+    // MARK: - YOUR GHOST (Beat your best — the player's own best run, never a bot)
 
     @ViewBuilder private var beatYourBest: some View {
         if !isPro || ghost != nil {
             VStack(alignment: .leading, spacing: 8) {
                 VSSectionLabel(text: "BEAT YOUR BEST")
-                HStack(spacing: 12) {
-                    BotArtCircle(art: BotPersonas.art("ghost"), size: 40)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Beat your best").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
-                        Text(ghost.map { "Your best \(VsLobbyKit.modeName(mode)): \($0.guesses) guesses · \(VsLobby.vsClock(Int($0.timeMs)))" }
-                             ?? "Race a ghost of your best \(VsLobbyKit.modeName(mode)) run.")
-                            .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub).lineLimit(1).minimumScaleFactor(0.8)
-                    }
-                    Spacer(minLength: 4)
-                    Button {
-                        if isPro, let g = ghost { play(.ghost, ghost: g) } else { showPro = true }
-                    } label: {
-                        HStack(spacing: 4) {
-                            if !isPro { VSLockBadge() }
-                            VSSoftPill(title: "Race it")
+                Button {
+                    if isPro, let g = ghost { play(.ghost, ghost: g) } else { showPro = true }
+                } label: {
+                    HStack(spacing: 12) {
+                        VSGhostTile(size: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Your Ghost").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                            Text(ghost.map { "Your best \(VsLobbyKit.modeName(mode)): \($0.guesses) guesses · \(VsLobby.vsClock(Int($0.timeMs)))" }
+                                 ?? "Race a ghost of your best \(VsLobbyKit.modeName(mode)) run.")
+                                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1).minimumScaleFactor(0.8)
                         }
+                        Spacer(minLength: 4)
+                        VSCandyTag(title: "Race it", variant: .teal, showLock: !isPro)
                     }
-                    .buttonStyle(PressableStyle())
+                    .padding(12)
+                    .vsTinted(VsLobbyKit.purple, bar: [VsLobbyKit.purple.wash(0.5)], radius: 18, barHeight: 4, tint: 0.07)
+                    .contentShape(Rectangle())
                 }
-                .padding(12).vsCard()
+                .buttonStyle(.squish)
+                .accessibilityLabel("Your Ghost, beat your best" + (isPro ? "" : ", Pro"))
             }
         }
     }

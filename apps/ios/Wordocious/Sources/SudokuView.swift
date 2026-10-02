@@ -111,7 +111,7 @@ final class SudokuVM: ObservableObject {
         guard state.givens[state.givens.index(state.givens.startIndex, offsetBy: cell)] == "0" else { SoundManager.shared.playInvalid(); return }
         let wrong = !state.notesMode && state.solution[state.solution.index(state.solution.startIndex, offsetBy: cell)] != Character(String(digit))
         dispatch(.place(cell: cell, digit: digit))
-        if wrong && !isFinished { Haptics.error(); SoundManager.shared.playInvalid() } else { SoundManager.shared.playKeyTap() }
+        if wrong && !isFinished { Haptics.warning(); SoundManager.shared.playInvalid() } else { SoundManager.shared.playKeyTap() }
     }
     func erase() { guard let cell = selected else { return }; dispatch(.erase(cell: cell)) }
     func undo() { dispatch(.undo) }
@@ -132,7 +132,7 @@ final class SudokuVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = state.mistakes + 1, used = state.hintsUsed
         let row = sudokuMatchRow(state)
@@ -179,11 +179,32 @@ struct SudokuView: View {
         ZStack {
             PageBackground(tint: .forGame(.sudoku))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView { VStack(spacing: 10) { header; board.padding(.horizontal, 6); result }.padding(.horizontal, 10) }
+                // FINISH_SPEC §R2: one screen — header + result strip, the board scaled
+                // to the height left, the dock; the breakdown sits below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 6) { header; resultHeadline }
+                } board: { _ in
+                    board.padding(.horizontal, 6)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "SUDOKU", game: sudokuTitle, onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?(vm.state.difficulty) } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    result
+                }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
-                    if !vm.isDaily && isPro { difficultyPicker }
+                    // FINISH_SPEC §Z: the Unlimited picker's slot is reserved in Daily too
+                    // (empty there), so a Pro's board sits at the same spot in both modes.
+                    let slots = GameHeaderLayout.slots(mode: vm.isDaily ? .daily : .unlimited, offersPicker: isPro)
+                    if slots.pickerHeight > 0 {
+                        difficultyPicker
+                            .frame(height: CGFloat(slots.pickerHeight))
+                            .opacity(slots.showsPicker ? 1 : 0)
+                            .allowsHitTesting(slots.showsPicker)
+                            .accessibilityHidden(!slots.showsPicker)
+                    }
                     Spacer(minLength: 4)
                     board.padding(.horizontal, 6)
                     Spacer(minLength: 4)
@@ -192,9 +213,8 @@ struct SudokuView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -277,11 +297,12 @@ struct SudokuView: View {
             ForEach(SudokuDifficulty.allCases, id: \.self) { d in
                 let active = d == vm.state.difficulty
                 Button { if !active { onPlayAgain?(d) } } label: {
-                    Text(difficultyLabel[d] ?? d.rawValue).font(Brand.font(11, .heavy))
-                        .foregroundStyle(active ? .white : sudokuAccent)
+                    // §A1 / §A9: tinted options; the selected one the stronger tint + ring.
+                    Text(difficultyLabel[d] ?? d.rawValue).font(Brand.font(11, .black))
+                        .foregroundStyle(active ? (Theme.isDark ? Color.white : sudokuAccent) : FinishInk.secondary)
                         .padding(.horizontal, 12).padding(.vertical, 5)
-                        .background(Capsule().fill(active ? sudokuAccent : Color.clear))
-                        .overlay(Capsule().stroke(sudokuAccent.opacity(active ? 1 : 0.35), lineWidth: 1.5))
+                        .background(Capsule().fill(PuzKit.face(sudokuAccent, active ? 0.24 : 0.08)))
+                        .overlay(Capsule().stroke(active ? sudokuAccent : PuzKit.line(sudokuAccent, 0.3), lineWidth: active ? 2 : 1.5))
                 }
                 .buttonStyle(.squish)
                 .accessibilityAddTraits(active ? .isSelected : [])
@@ -291,37 +312,46 @@ struct SudokuView: View {
 
     private var board: some View {
         SudokuBoardView(state: vm.state, selected: vm.isFinished ? nil : vm.selected,
-                        revealSolution: vm.state.status == .lost) { cell in
+                        revealSolution: vm.state.status == .lost, tray: true) { cell in
             if !vm.isFinished { vm.selected = cell; Haptics.tap() }
         }
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.state.status == .won
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? "\(sudokuTitle) solved" : "Out of mistakes", won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.mistakes)", vm.mistakes == 1 ? "mistake" : "mistakes"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: points)
+        }
+    }
+
+    private var points: Int {
+        Int(DailyScoring.breakdown(gameMode: GameMode.sudoku.rawValue, completed: vm.state.status == .won,
+                                   guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
+                                   boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
+                                   hintsUsed: vm.hintsUsed).total)
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let remaining = sudokuRemaining(vm.state)
         return VStack(spacing: 10) {
-            Text(won ? "\(sudokuTitle) solved" : "Out of mistakes")
-                .font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
             Text(won
                  ? "\(formatGuessStat(semantics: "mistakes", guessBase: 1, guessCount: vm.mistakes + 1)) · \(timeText(secs))\(vm.hintsUsed > 0 ? " · \(vm.hintsUsed) hint\(vm.hintsUsed == 1 ? "" : "s")" : "")"
                  : "\(remaining) cell\(remaining == 1 ? "" : "s") left · \(timeText(secs))")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain(vm.state.difficulty) } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Color(hex: 0xD97706))
-                }
-            }
-            .foregroundStyle(sudokuAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(sudokuAccent)
             if vm.isDaily { DailyRankBadge(gameMode: .sudoku) }
             ScoreBreakdownView(gameMode: GameMode.sudoku.rawValue, completed: won,
                                guessCount: vm.mistakes + 1, timeSeconds: secs,
                                boardsSolved: won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "SUDOKU") }
         }
         .padding(.vertical, 12)
     }
@@ -355,6 +385,9 @@ struct SudokuBoardView: View {
     let state: SudokuState
     let selected: Int?
     var revealSolution = false
+    /// §L: sit the grid on the shared game tray (the live game; recaps tray at
+    /// their own call sites).
+    var tray = false
     let onSelect: (Int) -> Void
 
     private let rule = Color(hex: 0xC4B5FD), heavy = Color(hex: 0x4C1D95)
@@ -367,8 +400,12 @@ struct SudokuBoardView: View {
     var body: some View {
         GeometryReader { geo in
             // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered).
+            // §L: the tray's padding (both sides) and lip come out of the budget first.
+            let pad: CGFloat = tray ? GameTray.padding * 2 : 0
+            let lip: CGFloat = tray ? GameTray.lip : 0
             let cell = CGFloat(BoardSizing.fitTile(widthUnits: 9, heightUnits: 9,
-                                                   width: Double(geo.size.width), height: Double(geo.size.height),
+                                                   width: Double(geo.size.width - pad / CGFloat(BoardSizing.widthFill)),
+                                                   height: Double(geo.size.height - (pad + lip) / CGFloat(BoardSizing.heightFill)),
                                                    maxTile: 420 / 9, minTile: 10))
             let side = cell * 9
             let selRow = selected.map { $0 / 9 } ?? -1, selCol = selected.map { $0 % 9 } ?? -1, selBox = selected.map(boxOf) ?? -1
@@ -386,24 +423,23 @@ struct SudokuBoardView: View {
                         }
                     }
                 }
-                // Rules — §B1: the tiles separate the cells, so only the box
-                // boundaries keep a line (soft hairlines between the tiles).
+                // §L: the tiles separate the cells; the 3 × 3 boxes are parted by
+                // soft darker seams in the tray color — never black lines.
                 Canvas { ctx, _ in
-                    for k in 1..<9 {
-                        let heavyLine = k % 3 == 0
-                        let w: CGFloat = heavyLine ? 2 : 0.5
-                        let color = heavyLine ? heavy.opacity(0.55) : rule.opacity(0.35)
+                    let seam = GameTray.seam(sudokuAccent, strong: true)
+                    for k in [3, 6] {
+                        let w: CGFloat = max(2, cell * 0.07)
                         let p = CGFloat(k) * cell
-                        ctx.fill(Path(CGRect(x: p - w / 2, y: 0, width: w, height: side)), with: .color(color))
-                        ctx.fill(Path(CGRect(x: 0, y: p - w / 2, width: side, height: w)), with: .color(color))
+                        ctx.fill(Path(roundedRect: CGRect(x: p - w / 2, y: cell * 0.1, width: w, height: side - cell * 0.2),
+                                      cornerRadius: w / 2), with: .color(seam))
+                        ctx.fill(Path(roundedRect: CGRect(x: cell * 0.1, y: p - w / 2, width: side - cell * 0.2, height: w),
+                                      cornerRadius: w / 2), with: .color(seam))
                     }
                 }
                 .allowsHitTesting(false)
             }
             .frame(width: side, height: side)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(heavy, lineWidth: 2.5))
+            .modifier(SudokuTrayChrome(tray: tray, state: state.status == .won ? .won : (state.status == .lost ? .lost : .normal)))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
@@ -421,7 +457,8 @@ struct SudokuBoardView: View {
         let hinted = ch(state.hintMask, i) == "1"
         let sameDigit = selDigit != nil && value == selDigit && !isSelected
         let color: Color = revealed ? Theme.textMuted : isWrong ? wrong : hinted ? hint : given ? Theme.textPrimary : player
-        let bg: Color = isSelected ? selectedFill : sameDigit ? sameFill : inWash ? Theme.winBG : Color.clear
+        let bg: Color = isSelected ? selectedFill.opacity(Theme.isDark ? 0.35 : 1) : sameDigit ? sameFill.opacity(Theme.isDark ? 0.25 : 1)
+            : inWash ? sudokuAccent.opacity(Theme.isDark ? 0.14 : 0.07) : Color.clear
         // FINISH_SPEC §B1: digits ride the game-kit tiles — a given clue is a plain
         // light tile with a dark purple digit; your numbers are purple tiles (a hint
         // too), a wrong entry the red conflict tile; empty cells are frosted glass.
@@ -431,7 +468,7 @@ struct SudokuBoardView: View {
         let digit = value.map(String.init) ?? ""
         Button { onSelect(i) } label: {
             ZStack {
-                Rectangle().fill(bg)
+                RoundedRectangle(cornerRadius: cell * 0.18, style: .continuous).fill(bg)
                 GlossyTile(face: face, letter: revealed ? "" : digit, width: tileSide,
                            letterScale: given ? 0.58 : 0.56)
                     .modifier(TypePop(letter: given ? "" : digit, size: CGSize(width: tileSide, height: tileSide)))
@@ -477,10 +514,10 @@ struct SudokuPad: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                capsule("Undo", "arrow.uturn.backward", dim: vm.state.history.isEmpty) { vm.undo() }
-                capsule("Erase", "eraser") { vm.erase() }
-                capsule("Notes", "pencil", active: vm.state.notesMode) { vm.toggleNotes() }
-                capsule(vm.hintsUsed > 0 ? "Hint · \(vm.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
+                capsule("Undo", "arrow.uturn.backward", variant: .peach, dim: vm.state.history.isEmpty) { vm.undo() }
+                capsule("Erase", "eraser", variant: .peach) { vm.erase() }
+                capsule("Notes", "pencil", variant: vm.state.notesMode ? .purple : .teal, active: vm.state.notesMode) { vm.toggleNotes() }
+                capsule(vm.hintsUsed > 0 ? "Hint · \(vm.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { vm.hint() }
             }
             HStack(spacing: 5) {
                 ForEach(1...9, id: \.self) { d in
@@ -526,15 +563,13 @@ struct SudokuPad: View {
         }
     }
 
-    private func capsule(_ label: String, _ symbol: String, active: Bool = false, dim: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .foregroundStyle(dim ? Theme.textMuted.opacity(0.5) : active ? .white : sudokuAccent)
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Capsule().fill(active ? sudokuAccent : (dim ? Color.clear : sudokuAccent.opacity(0.05))))
-                .overlay(Capsule().stroke(dim ? Theme.border : (active ? sudokuAccent : sudokuAccent.opacity(0.4)), lineWidth: 1.5))
-        }
-        .buttonStyle(.squish)
+    /// §A8: the action row's small candy pills (peach Undo / Erase, teal Notes —
+    /// purple while on — amber Hint). Four share the row, so the pills flex.
+    private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, active: Bool = false, dim: Bool = false,
+                         action: @escaping () -> Void) -> some View {
+        // Four pills share one row: the icons ride along only on wide phones.
+        Button(action: action) { CandyLabel(title: label, symbol: UIScreen.main.bounds.width >= 400 ? symbol : nil) }
+        .buttonStyle(CandyButtonStyle(variant: variant, size: .small, fullWidth: true))
         .disabled(dim)
         .accessibilityLabel(label)
         .accessibilityAddTraits(active ? .isSelected : [])
@@ -618,6 +653,26 @@ struct CustomCompletedDailyCard: View {
             CompletedDailyCard.writeCache(fresh, mode: mode, seed: seed)
             let built = CompletedCustomBoard.build(mode: mode, seed: seed, row: fresh)
             board = built.board; progress = built.progress; data = fresh
+        }
+    }
+}
+
+/// §L: the Sudocious grid's chrome — the shared game tray in the live game (won
+/// purple / lost slate), or a soft tinted panel (no dark rule) in a recap.
+private struct SudokuTrayChrome: ViewModifier {
+    let tray: Bool
+    let state: GameTrayState
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if tray {
+            content.gameTray(accent: sudokuAccent, state: state)
+        } else {
+            let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+            content
+                .padding(4)
+                .background(shape.fill(PuzKit.face(sudokuAccent, 0.09)))
+                .overlay(shape.strokeBorder(PuzKit.line(sudokuAccent, 0.3), lineWidth: 1.5))
         }
     }
 }

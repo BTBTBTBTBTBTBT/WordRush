@@ -30,30 +30,29 @@ struct FriendsBannerView: View {
     }
 
     private func content(now: Date) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         let online = friends.filter { $0.isOnline(now: now) }
             .sorted { (FriendsService.ms($0.lastSeenAt) ?? 0) > (FriendsService.ms($1.lastSeenAt) ?? 0) }
         let rows = self.rows
         let input = Self.input(friendCount: friends.count, online: online.map(\.username), rows: rows)
-        return VStack(spacing: 0) {
+        // FINISH_SPEC §C4 (mockup `.banner`): the race banner is a pink tinted card
+        // with a pink → gold top bar and O1 cheering at the top right.
+        return VStack(alignment: .leading, spacing: 10) {
             strip(input)
-            onNowRow(online, now: now).padding(.top, 10).padding(.horizontal, 12)
-            raceRow(rows).padding(.top, 12).padding(.horizontal, 12).padding(.bottom, 12)
+            onNowRow(online, now: now)
+            raceRow(rows)
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            ZStack {
-                LinearGradient(colors: [Color(hex: 0xFCE7F3), Color(hex: 0xEDE9FE)], startPoint: .top, endPoint: .bottom)
-                // The same white sheen as home.
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                if !online.isEmpty && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
-            }
+            // Shimmers while anyone is on (behind the content, inside the card).
+            if !online.isEmpty && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
         }
-        .clipShape(shape)
-        .shadow(color: FriendsKit.ink.opacity(0.08), radius: 7, x: 0, y: 4)
-        // The cast (docs/MASCOT_SPEC.md §1): O1, the four-armed cheerleader, hosts Friends.
-        .bannerHost(Mascots.friends, trailing: 12)
+        .overlay(alignment: .topTrailing) {
+            // The cast (docs/MASCOT_SPEC.md §1): O1, the four-armed cheerleader, hosts Friends.
+            PoseImage(Mascots.friends, "cheer", height: 80)
+                .padding(.trailing, 8).padding(.top, 2)
+        }
+        .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.amber])
     }
 
     /// The banner's core input from today's race (competition ranks, the same
@@ -70,31 +69,27 @@ struct FriendsBannerView: View {
             leaderPoints: leader?.points ?? 0, nextPoints: next)
     }
 
-    // MARK: Frosted strip
+    // MARK: Headline + clock
 
     private func strip(_ input: FriendsBannerInput) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
             let s = secondsUntilLocalMidnight()
             let clock = String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
             VStack(alignment: .leading, spacing: 4) {
-                // §10 (founder, iOS 220): bigger and glowing — 22/900 ink with a
-                // soft pink glow on the letters only.
                 Text(FriendlyGames.friendsBannerHeadline(input))
-                    .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(2)
-                    .foregroundStyle(FriendsKit.ink)
-                    .shadow(color: FriendsKit.solid.opacity(0.55), radius: 8)
+                    .font(Brand.font(20, .black)).tracking(0.3).lineSpacing(1)
+                    .foregroundStyle(FriendsInk.bannerHead)
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(2).minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-                    .padding(.trailing, Mascots.bannerClearance)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                    .padding(.trailing, 84)
                 Text(FriendlyGames.friendsBannerClockLine(input, clock: clock))
-                    .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
-                    .foregroundStyle(FriendsKit.mid)
+                    .font(Brand.font(11, .black)).tracking(0.6).monospacedDigit()
+                    .foregroundStyle(FriendsInk.bannerLabel)
                     .lineLimit(1).minimumScaleFactor(0.7)
+                    .padding(.trailing, 72)
             }
         }
-        .padding(.top, 12).padding(.horizontal, 12).padding(.bottom, 10)
-        .background(Color.white.opacity(0.5))
     }
 
     // MARK: ON NOW
@@ -102,39 +97,49 @@ struct FriendsBannerView: View {
     private func onNowRow(_ online: [FriendsService.FriendProfile], now: Date) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text("ON NOW").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsKit.mid)
+                FriendsLabel("On now", color: FriendsInk.bannerLabel)
                 if !online.isEmpty {
-                    Text("\(online.count)").font(Brand.font(10, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 6).frame(height: 16)
-                        .background(Capsule().fill(FriendsKit.green))
+                    Text("\(online.count)").font(Brand.font(11, .black)).monospacedDigit()
+                        .foregroundStyle(FriendsInk.bannerLabel)
                 }
                 Spacer(minLength: 0)
             }
             if online.isEmpty {
                 Text(nobodyLine(now: now))
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.mid.opacity(0.8))
+                    .font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.faces)
                     .lineLimit(1).minimumScaleFactor(0.8)
             } else {
-                HStack(alignment: .top, spacing: 10) {
+                // §C4: online friends as letter tiles with a green dot; tap a face to play.
+                HStack(spacing: 8) {
                     ForEach(online.prefix(5)) { f in
                         Button { onFace(f) } label: {
-                            VStack(spacing: 3) {
-                                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 40, online: true)
-                                Text(f.username).font(Brand.font(10, .black)).foregroundStyle(FriendsKit.ink)
-                                    .lineLimit(1).minimumScaleFactor(0.7)
-                                Text(FriendsKit.doing(f)).font(Brand.font(9, .heavy)).foregroundStyle(FriendsKit.green)
-                                    .lineLimit(1).minimumScaleFactor(0.7)
-                            }
-                            .frame(width: 58)
-                            .contentShape(Rectangle())
+                            FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji,
+                                                  size: 34, online: true, ring: false)
+                                .padding(.trailing, 3).padding(.bottom, 1)
+                                .contentShape(Rectangle())
                         }
-                        .buttonStyle(PressableStyle())
+                        .buttonStyle(.squish)
                         .accessibilityLabel("Play with \(f.username), \(FriendsKit.doing(f))")
                     }
+                    Text(facesLine(online))
+                        .font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.faces)
+                        .lineLimit(2).minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityHidden(true)
                     Spacer(minLength: 0)
                 }
             }
         }
+    }
+
+    /// "Doug is playing Gauntlet" (the first friend in a game) / "Doug is on now" /
+    /// "3 friends are on now".
+    private func facesLine(_ online: [FriendsService.FriendProfile]) -> String {
+        if let p = online.first(where: { !($0.activity ?? "").isEmpty }), let a = p.activity {
+            return "\(p.username) is playing \(a)"
+        }
+        if online.count == 1, let f = online.first { return "\(f.username) is on now" }
+        return "\(online.count) friends are on now"
     }
 
     /// "Nobody's on right now · Doug was here 12 min ago" (the most recent presence).
@@ -163,7 +168,7 @@ struct FriendsBannerView: View {
         return Button(action: onRace) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    Text("TODAY'S RACE").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsKit.mid)
+                    FriendsLabel("Today's race", color: FriendsInk.bannerLabel)
                     Spacer(minLength: 4)
                     if let b = best, let n = b.friendStreak, n > 0 {
                         HStack(spacing: 3) {
@@ -186,20 +191,26 @@ struct FriendsBannerView: View {
         .accessibilityHint("Opens today's race")
     }
 
+    /// One race chip (mockup `.rchip`): the place in a medal-colored disc (gold /
+    /// silver / bronze for the scoring top three, purple otherwise), the name and
+    /// the points as a soft number.
     private func raceChip(_ r: TodaysRace.Row) -> some View {
-        let medal: Color = r.rank == 1 ? Color(hex: 0xF59E0B) : r.rank == 2 ? Color(hex: 0x9CA3AF) : Color(hex: 0xB45309)
-        return HStack(spacing: 5) {
-            Text("\(r.rank)").font(Brand.font(10, .black)).foregroundStyle(.white)
-                .frame(width: 18, height: 18)
-                .background(Circle().fill(r.points > 0 && r.rank <= 3 ? medal : Color(hex: 0xC4B5FD)))
-            Text(r.me ? "YOU" : r.username.uppercased()).font(Brand.font(10, .black)).tracking(0.3)
-                .foregroundStyle(FriendsKit.ink).lineLimit(1).minimumScaleFactor(0.7)
-            Text(r.points.formatted()).font(Brand.font(10, .heavy)).monospacedDigit()
-                .foregroundStyle(FriendsKit.mid).lineLimit(1).fixedSize()
+        let disc = r.points > 0 && r.rank <= 3 ? FriendsInk.medal(r.rank) : FriendsInk.purple
+        return HStack(spacing: 6) {
+            Text("\(r.rank)").font(Brand.font(11, .black)).foregroundStyle(.white)
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(LinearGradient(colors: [disc.mixed(over: .white, 0.75), disc],
+                                                         startPoint: .top, endPoint: .bottom)))
+            Text(r.me ? "YOU" : r.username.uppercased()).font(Brand.font(12, .black))
+                .foregroundStyle(FriendsInk.chip).lineLimit(1).minimumScaleFactor(0.7)
+            Text(r.points.formatted()).softNumber(12, color: FinishInk.softNumber)
+                .lineLimit(1).fixedSize()
         }
-        .padding(.leading, 4).padding(.trailing, 8).frame(height: 28)
-        .background(Capsule().fill(Color.white.opacity(0.85)))
-        .overlay(Capsule().stroke(r.me ? FriendsKit.solid : .clear, lineWidth: 2))
-        .frame(maxWidth: 118)
+        .padding(.leading, 4).padding(.trailing, 10).frame(minHeight: 28)
+        .background(Capsule().fill(Color.white.opacity(0.72)))
+        .overlay(Capsule().stroke(r.me ? FriendsKit.solid : FriendsInk.pink.wash(0.3), lineWidth: r.me ? 2 : 1))
+        .frame(maxWidth: 130)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(r.me ? "You" : r.username), place \(r.rank), \(r.points) points")
     }
 }

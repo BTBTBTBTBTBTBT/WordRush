@@ -633,3 +633,15 @@ export function buildTrophyCaseShareInput(opts: TrophyCaseShareOpts): ShareLeade
     date: now,
   };
 }
+
+/**
+ * The hook line the card draws under its rows (S3): the builder's footer with
+ * its "play free at wordocious.com" part dropped — the cast wordmark and the
+ * one "wordocious.com" line under it say where to play now. Brag footers
+ * without the site ("3 straight days winning every daily") come back whole.
+ */
+export function shareHookLine(footer: string): string {
+  return footer
+    .replace(/\s*(?:[—–-]\s*)?(?:play free at\s+)?wordocious\.com\s*$/i, '')
+    .trim();
+}

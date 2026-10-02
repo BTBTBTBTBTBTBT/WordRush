@@ -8,7 +8,6 @@ import { loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { supabase } from '@/lib/supabase-client';
 import {
   Star,
-  Zap,
   Swords,
   User,
   Medal,
@@ -18,14 +17,16 @@ import {
   Pencil,
 } from 'lucide-react';
 import { GameArt } from '@/components/ui/game-art';
-import { Icon3D, Crown3D, Flame3D, type IconLike } from '@/components/ui/icon3d';
-import Link from 'next/link';
+import { Icon3D, Flame3D, type IconLike } from '@/components/ui/icon3d';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { getTodayLocal, fetchDailyVsResult } from '@/lib/daily-service';
 import { shareFlawlessStreakCard } from '@/lib/leaderboard-share-flow';
 import { WIN_FG } from '@/lib/tile-theme';
-import { ProBadge } from '@/components/ui/pro-badge';
+import { BadgeArt, LevelBadge } from '@/components/badges/badge-art';
+import { AchievementGrid } from '@/components/badges/achievement-grid';
+import { achievementBadge, achievementProgress } from '@/lib/badges';
+import { levelTier as coreLevelTier, levelTierLabel } from '@wordle-duel/core';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
@@ -42,10 +43,15 @@ import { DailyCalendar } from '@/components/profile/daily-calendar';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
-import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
-import { ArtTitle } from '@/components/ui/art-title';
+import { SectionHeader, KitCard, ChartCard, TintTile } from '@/components/profile/stat-kit';
+import { STAT_LABELS } from '@/lib/stat-labels';
+import { PageHeadline } from '@/components/ui/page-headline';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { HeaderGlyph } from '@/components/ui/header-glyph';
+import { SoftNum } from '@/components/ui/soft-number';
+import { BRAND_ACCENT, alphaHex, cardBarStyle, softBorder, softCard, softPill } from '@/lib/soft-surface';
 import { MASCOT_LINES } from '@/lib/mascots';
-import { PAGE_SCENES, onPageShadow } from '@/lib/art';
+import { PAGE_SCENES } from '@/lib/art';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
@@ -55,8 +61,11 @@ import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
 import { RecentMatchesList, isPlayedToday, isUnlimitedSolo } from '@/components/stats/recent-matches';
 import { SignatureCard, StandingTrendCard } from '@/components/stats/signature-cards';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
-import { GameRail, buildRailItems, RAIL_TODAY, RAIL_VS, RAIL_ALL } from '@/components/stats/game-rail';
+import { StatsPicker } from '@/components/stats/stats-picker';
+import { TintSegment } from '@/components/stats/tint-segment';
 import { TodayCard } from '@/components/stats/today-card';
+import { pickerRows, SWEEP_KEY } from '@/lib/game-picker';
+import { VIEW_TODAY, VIEW_ALL, VIEW_SWEEP, VIEW_VS, VIEW_PARAM, parseViewParam, viewUrl, swipeOrder, swipeNeighbor, todayBadges } from '@/lib/stats-view';
 import { useFlags } from '@/hooks/use-flags';
 import type { Database } from '@/lib/database.types';
 
@@ -70,15 +79,18 @@ import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
 import { formatGuessStat } from '@/lib/format';
 import { PageBackground } from '@/components/ui/page-background';
+import { MedalArt, GoldMedal, SilverMedal, BronzeMedal } from '@/components/stats/medal-art';
 
 // STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
 // and Records merge into one Stats tab that "flows like butter"). One page:
-//   identity strip → game rail → ONE page below it, chosen from the rail:
-//   Today (landing) · a game page per daily mode · VS · All-time.
-// Swipe left/right on the page moves one rail chip; hold Today (or the grid
-// button) for every game at once. `?view=<key>` keeps the page on reload and
-// lets /records redirect to the All-time page. Zero new fetches beyond the
-// old profile page except today's VS result and the sweep streak.
+//   STATS headline → identity card → the game picker → ONE page below it:
+//   Today (landing) · All-time · the Daily Sweep · a game page per daily mode.
+// The picker is the Leaderboard's (FINISH_SPEC C3): every game visible at
+// once, Today | All-time as a toggle in its header row. Swipe left/right on
+// the page moves one step in the picker's reading order (lib/stats-view.ts).
+// `?view=<key>` keeps the page on reload and lets /records redirect to the
+// All-time page. Zero new fetches beyond the old profile page except today's
+// VS result and the sweep streak.
 
 // Recent Matches chrome — from the catalog + the home icon table (More Games
 // Stage 6), so every daily mode (Sudocious included) gets its title, icon and
@@ -123,21 +135,15 @@ function formatDuration(seconds: number): string {
   return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
-const VIEW_PARAM = 'view';
-/** `?view=all-time` (the /records redirect), `?view=vs`, `?view=<dbKey>`; anything else → Today. */
+/** `?view=all-time` (the /records redirect), `?view=sweep`, `?view=<dbKey>`; 'vs' → All-time; anything else → Today. */
 function readViewParam(): string {
   try {
-    const v = new URLSearchParams(window.location.search).get(VIEW_PARAM);
-    if (!v) return RAIL_TODAY;
-    if (v === 'all-time' || v === RAIL_ALL) return RAIL_ALL;
-    if (v === RAIL_VS) return RAIL_ALL;   // VS now lives at the bottom of All-time (2026-10-01)
-    return MODE_BY_DBKEY[v] ? v : RAIL_TODAY;
-  } catch { return RAIL_TODAY; }
+    return parseViewParam(new URLSearchParams(window.location.search).get(VIEW_PARAM), (k) => !!MODE_BY_DBKEY[k]);
+  } catch { return VIEW_TODAY; }
 }
 function writeViewParam(key: string) {
   try {
-    const url = key === RAIL_TODAY ? '/stats' : `/stats?${VIEW_PARAM}=${key === RAIL_ALL ? 'all-time' : key}`;
-    window.history.replaceState(window.history.state, '', url);
+    window.history.replaceState(window.history.state, '', viewUrl(key));
   } catch {}
 }
 
@@ -152,23 +158,23 @@ export default function StatsPage() {
   // Solo/VS toggle on a game page — scopes user_stats AND every per-game
   // chart (restat B1). The VS page pins it to 'vs' (or 'vs_cpu' for practice).
   const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
-  // Which page the rail shows. Starts on Today on both server and client (a
+  // Which page the picker shows. Starts on Today on both server and client (a
   // lazy window read would mismatch hydration); the mount effect applies ?view=
   // before the first paint — a ?view=all-time landing no longer shows Today for
   // a frame first (founder, 2026-09-29).
-  const [selected, setSelectedState] = useState<string>(RAIL_TODAY);
+  const [selected, setSelectedState] = useState<string>(VIEW_TODAY);
   useIsomorphicLayoutEffect(() => { setSelectedState(readViewParam()); }, []);
   const setSelected = useCallback((key: string) => {
     // The Today card's VS pill still says 'vs': that is All-time's VS section now.
-    if (key === RAIL_VS) {
-      setSelectedState(RAIL_ALL);
-      writeViewParam(RAIL_ALL);
+    if (key === VIEW_VS) {
+      setSelectedState(VIEW_ALL);
+      writeViewParam(VIEW_ALL);
       setTimeout(() => document.getElementById('vs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
       return;
     }
     setSelectedState(key);
     writeViewParam(key);
-    if (key !== RAIL_ALL && key !== RAIL_TODAY && !hasVs(key)) setActiveTab('solo');
+    if (key !== VIEW_ALL && key !== VIEW_TODAY && !hasVs(key)) setActiveTab('solo');
   }, []);
 
   // P5 split: static-per-user data fetches once; only trends/openers/weekday
@@ -225,6 +231,7 @@ export default function StatsPage() {
         opponentNames: matchBundle.opponentNames,
         medals: medalsRes,
         userAchievements: new Set(achievementsRes.map(a => a.key)),
+        achievementDates: new Map<string, string | null>(achievementsRes.map(a => [a.key, a.unlocked_at ?? null])),
         todayDailies: dailiesRes,
         sweepPoints: sweepPointsRes,
         standing: standingRes,
@@ -263,6 +270,7 @@ export default function StatsPage() {
   const todaysMatches = matches.filter((m) => isPlayedToday(m.created_at) && (isProActive || !isUnlimitedSolo(m)));
   const medals = staticData?.medals ?? [];
   const userAchievements = staticData?.userAchievements ?? new Set<string>();
+  const achievementDates = staticData?.achievementDates ?? new Map<string, string | null>();
   // Until the page's own read lands (first visit this session), today's results
   // come from the completions context the whole app already holds (disk-cached,
   // same daily_results rows) — so the Today card, the rail's W/L dots and a game
@@ -306,9 +314,13 @@ export default function StatsPage() {
     () => import('@/lib/home-streaks').then((m) => m.fetchQuizRecord(profile!.id)),
     { revalidateOnFocus: false },
   );
-  const railItems = useMemo(() => buildRailItems(SWEEP_MODES, visibleMore, todayDailies, vsDailyWon), [visibleMore, todayDailies, vsDailyWon]);
+  // The picker's rows (the same filter as Home), today's W / L per tile, and
+  // the swipe order (Today · All-time · WORDOCIOUS incl. Sweep · PUZZLES).
+  const rows = useMemo(() => pickerRows(flagOn), [flagOn]);
+  const badges = useMemo(() => todayBadges(rows, todayDailies, DAILY_MODES.map((m) => m.id)), [rows, todayDailies]);
+  const order = useMemo(() => swipeOrder(rows), [rows]);
 
-  // Swipe on the page moves one chip along the rail (founder: no 19-page
+  // Swipe on the page moves one step through the picker (founder: no 19-page
   // swipe — but a swipe between neighbors is the natural gesture).
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { const t = e.touches[0]; touchStart.current = { x: t.clientX, y: t.clientY }; };
@@ -318,9 +330,8 @@ export default function StatsPage() {
     const t = e.changedTouches[0];
     const dx = t.clientX - s.x, dy = t.clientY - s.y;
     if (Math.abs(dx) < 70 || Math.abs(dy) > 50) return;
-    const i = railItems.findIndex((it) => it.key === selected);
-    const next = railItems[i + (dx < 0 ? 1 : -1)];
-    if (next) setSelected(next.key);
+    const next = swipeNeighbor(order, selected, dx < 0 ? 1 : -1);
+    if (next) setSelected(next);
   };
 
   // Stats filtered to the active Solo/VS tab.
@@ -384,18 +395,8 @@ export default function StatsPage() {
             Create a free account to save your stats, streaks, and daily leaderboard ranks.
           </p>
           <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={exitGuest}
-              className="btn-3d px-6 py-2.5 rounded-xl text-white font-black text-sm"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
-            >
-              Sign In
-            </button>
-            <Link href="/">
-              <button className="px-6 py-2.5 rounded-xl font-black text-sm" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}>
-                Go Home
-              </button>
-            </Link>
+            <CandyButton onClick={exitGuest} color="purple" size="md">Sign In</CandyButton>
+            <CandyLink href="/" color="peach" size="md">Go Home</CandyLink>
           </div>
         </div>
       </PageBackground>
@@ -405,14 +406,8 @@ export default function StatsPage() {
   const levelProgress = (profile.xp % 1000) / 10;
   const xpToNextLevel = 1000 - (profile.xp % 1000);
 
-  const levelTier = (() => {
-    const lvl = profile.level ?? 1;
-    if (lvl >= 100) return { label: 'Diamond', bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8' };
-    if (lvl >= 51) return { label: 'Platinum', bg: '#f5f3ff', border: '#c4b5fd', color: '#6d28d9' };
-    if (lvl >= 26) return { label: 'Gold', bg: '#fef9ec', border: '#fde68a', color: '#92400e' };
-    if (lvl >= 11) return { label: 'Silver', bg: '#f3f4f6', border: '#d1d5db', color: '#374151' };
-    return { label: 'Bronze', bg: '#fef2e8', border: '#fed7aa', color: '#9a3412' };
-  })();
+  // V3: the shared tier ladder (packages/core levelTier).
+  const tierLabel = levelTierLabel(coreLevelTier(profile.level ?? 1));
 
   const memberSince = (profile as any).created_at
     ? new Date((profile as any).created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
@@ -457,15 +452,24 @@ export default function StatsPage() {
     <PageBackground tint="stats" className="min-h-screen pb-32">
       <AppHeader />
 
-      <div className="max-w-2xl mx-auto px-4 space-y-4">
-        {/* STATS: the whole-cast title art (docs/ART_SPEC.md §2) in place of the text title and its host. */}
-        <ArtTitle name="art-title-stats" label="Stats" as="div" className="pt-1" />
+      {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): up to
+          1100 px wide — the headline across the top, then two columns: the
+          player card + game picker on the left (kept in view on tall windows),
+          the selected page's cards on the right. */}
+      <div className="max-w-2xl page-wide mx-auto px-4 space-y-4">
+        {/* A6: the STATS title is a headline — full width, edge to edge, right on the wallpaper. */}
+        <PageHeadline name="art-title-stats" label="Stats" className="pt-1" />
 
-        {/* ── Player card (founder, 2026-09-26: "the top looks unfinished with the random
-            buttons"): ONE card. Avatar · name · chips on the first row with Edit / Share as
-            quiet icon buttons top-right; the level pill + XP bar span the card; Private,
-            Go Pro and the dev toggle sit in a single footer row only when they apply. ── */}
-        <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px', boxShadow: onPageShadow() }}>
+        <div className="page-grid-2 space-y-4">
+        <div className="page-sticky space-y-4">
+
+        {/* ── Player card (C3 cont): lavender wash, purple→pink 10 px top bar, the level bar in
+            the same gradient. Avatar · name · chips on the first row with Edit (candy) and Share
+            (bare 3D icon) top-right; the level row spans the card; Private, Go Pro and the dev
+            toggle sit in a single footer row only when they apply. ── */}
+        <div className="overflow-hidden" style={softCard(BRAND_ACCENT, { radius: 20 })}>
+          <div aria-hidden="true" style={{ height: 10, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
+          <div className="p-4">
           <div className="flex items-start gap-3">
             <AvatarUpload size={64} editable={false} />
             <div className="flex-1 min-w-0">
@@ -475,14 +479,14 @@ export default function StatsPage() {
                 ) : (
                   <h1 className="text-2xl font-black truncate leading-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">{profile.username}</h1>
                 )}
-                {isProActive && <ProBadge size="md" />}
               </div>
               {memberSince && (
-                <p className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Playing since {memberSince}</p>
+                <p className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Playing since {memberSince}</p>
               )}
               {(() => {
-                const featuredName = (profile as any).featured_achievement
-                  ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement)?.name : null;
+                const featuredDef = (profile as any).featured_achievement
+                  ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement) : null;
+                const featuredName = featuredDef?.name ?? null;
                 const bioText = ((profile as any).bio as string | null)?.trim();
                 const favMode = (profile as any).favorite_mode
                   ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
@@ -490,12 +494,12 @@ export default function StatsPage() {
                 return (
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                     {featuredName && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: `${accentHex}1a`, color: accentHex }}>
-                        <Star className="w-3 h-3" fill="currentColor" /> {featuredName}
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5" style={{ ...softPill(accentHex, { bar: false }), color: accentHex }}>
+                        <BadgeArt name={achievementBadge(featuredDef!.icon)} size={18} className="-my-1" /> {featuredName}
                       </span>
                     )}
                     {favMode && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5" style={{ ...softPill(favMode.accentColor, { bar: false }), color: favMode.accentColor }}>
                         <GameArt id={favMode.id} size={16} className="-my-1" fallback={favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} /> {favMode.shortTitle}
                       </span>
                     )}
@@ -504,26 +508,26 @@ export default function StatsPage() {
                 );
               })()}
             </div>
-            {/* Quiet icon actions — same 32px circles as the header's ? and ⚙. */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
+            {/* A8 / A3: Edit is a small round candy button; Share is the bare 3D share icon. */}
+            <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-2">
+              <CandyButton
                 onClick={() => setEditOpen(true)}
                 aria-label="Edit profile"
-                className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
+                color="purple"
+                size="round"
+                icon={<Pencil className="w-4 h-4 candy-icon" color="#fff" strokeWidth={3} aria-hidden="true" />}
+                style={{ ['--candy-h' as string]: '34px' } as React.CSSProperties}
+              />
+              <HeaderGlyph
+                icon="share"
+                label="Share profile card"
                 onClick={() => {
                   const tw = profile.total_wins, tl = profile.total_losses;
                   void shareResult({
                     layout: 'profile', mode: 'Classic',
                     username: profile.username || 'Player',
                     level: (profile as any).level ?? 1,
-                    tier: levelTier.label,
+                    tier: tierLabel,
                     accentHex,
                     totalWins: tw,
                     winRate: tw + tl > 0 ? Math.round((tw / (tw + tl)) * 100) : 0,
@@ -536,77 +540,74 @@ export default function StatsPage() {
                     achievementsTotal: ACHIEVEMENTS.length,
                   });
                 }}
-                aria-label="Share profile card"
-                className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
-              >
-                <Icon3D name="share" size={17} />
-              </button>
+              />
             </div>
           </div>
 
-          {/* Level row spans the card: pill · bar · XP to next. */}
-          <div className="flex items-center gap-2.5 mt-3">
-            <div
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shrink-0"
-              style={{ background: levelTier.bg, border: `1.5px solid ${levelTier.border}`, color: levelTier.color }}
-            >
-              <Star className="w-3 h-3" fill="currentColor" />
-              Lvl {profile.level}
-              <span className="opacity-70">·</span>
-              <span>{levelTier.label}</span>
+          {/* Level row spans the card: LVL · tier on the left, XP on the right, the gradient bar under. */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-[12px] font-black tint-ink" style={{ color: '#5b3c96' }}>
+              <LevelBadge level={profile.level ?? 1} size={34} numberSize={17} prefix="Lvl" tier />
+              <span>{xpToNextLevel} XP to next</span>
             </div>
-            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-              <div className="h-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #fbbf24, #f97316)' }} />
+            <div className="h-2.5 rounded-full overflow-hidden mt-1.5" style={{ background: alphaHex('#7c3aed', 0.14) }}>
+              <div className="h-full rounded-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #a855f7, #ec4899)' }} />
             </div>
-            <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>{xpToNextLevel} XP to next</span>
           </div>
 
           {/* Footer row — only when something applies. */}
           {((profile as any).social_links || (profile as any).is_private || !isProActive || (profile as any).is_admin) && (
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: `1.5px dashed ${alphaHex('#7c3aed', 0.25)}` }}>
               <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
               {(profile as any).is_private && (
-                <button
+                <CandyButton
                   onClick={() => setEditOpen(true)}
                   title="Your profile is private — other players see a limited card. Tap to change."
-                  className="flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full"
-                  style={{ background: '#f3f0ff', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+                  color="peach"
+                  size="sm"
+                  icon={<Lock className="w-3.5 h-3.5" aria-hidden="true" />}
                 >
-                  <Lock className="w-3 h-3" /> Private
-                </button>
+                  Private
+                </CandyButton>
               )}
               {!isProActive && (
-                <Link href="/pro" className="ml-auto">
-                  <button className="btn-3d px-4 py-1.5 rounded-lg text-white font-extrabold text-xs" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 2px 0 #92400e' }}>
-                    Go Pro
-                  </button>
-                </Link>
+                <CandyLink href="/pro" color="amber" size="sm" className="ml-auto">Go Pro</CandyLink>
               )}
-              {/* DEV-ONLY (profiles.is_admin): a quiet gray tool pill, not a stray red link. */}
+              {/* DEV-ONLY (profiles.is_admin): a quiet peach tool pill. */}
               {(profile as any).is_admin && (
-                <button
+                <CandyButton
                   onClick={async () => {
                     const newValue = !(profile as any).is_pro;
                     await (supabase as any).from('profiles').update({ is_pro: newValue }).eq('id', profile.id);
                     await refreshProfile();
                   }}
-                  className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
-                  style={{ background: 'var(--color-surface-hover)', border: '1.5px dashed var(--color-border)', color: 'var(--color-text-muted)' }}
+                  color="peach"
+                  size="sm"
+                  className="ml-auto"
                   title="Developer: toggle Pro on this account"
+                  icon={<span className="w-1.5 h-1.5 rounded-full" style={{ background: (profile as any).is_pro ? WIN_FG : '#9ca3af' }} />}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: (profile as any).is_pro ? WIN_FG : '#9ca3af' }} />
                   Dev · Pro {(profile as any).is_pro ? 'on' : 'off'}
-                </button>
+                </CandyButton>
               )}
             </div>
           )}
+          </div>
         </div>
 
-        {/* ── The game rail ── */}
-        <GameRail items={railItems} selected={selected} onSelect={setSelected} />
+        {/* ── The game picker (C3): the Leaderboard's window in the Stats blue. ── */}
+        <StatsPicker
+          view={selected}
+          onSelect={setSelected}
+          badges={badges}
+          wordociousExtra={(() => {
+            const done = DAILY_MODES.filter((m) => todayDailies.has(m.id)).length;
+            return <SoftNum size={13} className="soft-num-auto" style={{ opacity: 0.85 }}>{done} / {DAILY_MODES.length} today</SoftNum>;
+          })()}
+        />
+        </div>
 
-        {/* ── ONE page below the rail, keyed per page. No fade+rise on a switch any
+        {/* ── ONE page below the picker, keyed per page. No fade+rise on a switch any
             more (was F1): the new page is simply there in the tap's frame (founder,
             2026-09-29 — Android dropped its page-swap fade, iOS likewise). ── */}
         <div
@@ -615,7 +616,7 @@ export default function StatsPage() {
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {selected === RAIL_TODAY && (
+          {selected === VIEW_TODAY && (
             <TodayCard
               sweepModes={DAILY_MODES}
               moreModes={visibleMore}
@@ -629,7 +630,7 @@ export default function StatsPage() {
               onJump={setSelected}
             />
           )}
-          {selected === RAIL_TODAY && (
+          {selected === VIEW_TODAY && (
             <>
               {/* Founder (2026-09-26): the most recent games — daily AND unlimited — right on Today;
                   the full history stays on All-time. Same rows, same stats. */}
@@ -646,40 +647,35 @@ export default function StatsPage() {
             const href = dailyHref(selected) ?? '/';
             return (
               <>
-                {/* Solo | VS toggle — only where the game has a live VS board. */}
+                {/* Solo | VS toggle — only where the game has a live VS board (tinted segments). */}
                 {hasVs(selected) && (
-                  <div className="flex gap-2">
-                    {(['solo', 'vs'] as const).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setActiveTab(t)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold"
-                        style={{
-                          background: activeTab === t ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-                          border: activeTab === t ? `1.5px solid ${accentColor}` : '1.5px solid var(--color-border)',
-                          color: activeTab === t ? accentColor : 'var(--color-text-muted)',
-                        }}
-                      >
-                        {t === 'solo' ? <User className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
-                        {t === 'solo' ? 'Solo' : 'VS'}
-                      </button>
-                    ))}
-                  </div>
+                  <TintSegment<'solo' | 'vs' | 'vs_cpu'>
+                    options={[
+                      { key: 'solo', label: 'Solo', icon: <User className="w-3.5 h-3.5" aria-hidden="true" /> },
+                      { key: 'vs', label: 'VS', icon: <Swords className="w-3.5 h-3.5" aria-hidden="true" /> },
+                    ]}
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    accent={accentColor}
+                    ink={accentColor}
+                    label="Solo or VS"
+                  />
                 )}
-                {/* Today's result for this game, or the door to play it. */}
-                <Link
-                  href={href}
-                  className="flex items-center gap-3 px-4 py-2.5"
-                  style={{ background: `${accentColor}10`, border: `1.5px solid ${accentColor}55`, borderRadius: '14px' }}
+                {/* Today's result for this game on its own tint, with the candy door to play / open it. */}
+                <div
+                  className="flex items-center gap-3 pl-4 pr-2.5 py-2"
+                  style={{ ...softPill(accentColor, { radius: 16 }), paddingTop: 10 }}
                 >
-                  <span className="text-[10px] font-black uppercase tracking-wider shrink-0" style={{ color: accentColor }}>Today</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider shrink-0 tint-ink" style={{ color: accentColor }}>Today</span>
                   <span className="text-xs font-extrabold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
                     {today
                       ? `${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${today.score.toLocaleString()} pts`
                       : `Not played yet — play today's ${meta.title}`}
                   </span>
-                  <span className="text-[11px] font-black shrink-0" style={{ color: accentColor }}>{today ? 'Open →' : 'Play →'}</span>
-                </Link>
+                  <CandyLink href={href} color={today ? 'peach' : 'purple'} size="sm" icon={today ? 'eye' : 'play'} className="shrink-0" aria-label={today ? `Open today's ${meta.title}` : `Play today's ${meta.title}`}>
+                    {today ? 'Open' : 'Play'}
+                  </CandyLink>
+                </div>
                 {/* Your records in this game (the old Records → You "bests by mode" card). */}
                 {activeTab === 'solo' && (
                   <GameRecordsCard
@@ -701,9 +697,47 @@ export default function StatsPage() {
             );
           })()}
 
-          {selected === RAIL_ALL && (
+          {/* The Daily Sweep page (the picker's broom tile, C2b / C3): the sweep stats the
+              page already had — today's run, the Daily Sweeps + Puzzles Sweeps records and the
+              daily points trend with its sweep / flawless marks — plus the door to the Sweep board. */}
+          {selected === VIEW_SWEEP && (
             <>
-              {/* Lifetime headline stats + this-week strip */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <TintTile
+                  accent="#f5a524"
+                  ink="#a2560c"
+                  icon={<Icon3D name="flame" size={20} />}
+                  label={STAT_LABELS.sweepStreak}
+                  value={sweepStats?.currentSweepStreak ?? 0}
+                  sub={`${sweepStats?.sweepCount ?? 0} ${(sweepStats?.sweepCount ?? 0) === 1 ? 'sweep' : 'sweeps'} all-time`}
+                />
+                <TintTile
+                  accent="#7c3aed"
+                  ink="#6d28d9"
+                  icon={<MedalArt medal="trophy" size={20} />}
+                  label="Flawless streak"
+                  value={sweepStats?.currentFlawlessStreak ?? 0}
+                  sub={`best ${sweepStats?.bestFlawlessStreak ?? 0}`}
+                />
+              </div>
+              <SectionHeader label="Daily Sweeps" accent="#4f46e5" right={<CandyLink href={`/daily?mode=${SWEEP_KEY}`} color="purple" size="sm" icon="trophy">Sweep board</CandyLink>} />
+              <SweepRecordsCard sweep={yours.sweep} sweepRankToday={yours.sweepRankToday} sweepRankAllTime={yours.sweepRankAllTime} />
+              <PuzzleSweepRecordsCard rec={puzzleRec ?? null} />
+              {sweepPoints.length >= 2 && (
+                <>
+                  <SectionHeader label="Daily Points" accent="#ec4899" />
+                  <ChartCard title="Points per day" hint="Last 30 days · ● sweep · ● flawless" tint="#ec4899">
+                    <PointsChart points={sweepPoints} />
+                  </ChartCard>
+                </>
+              )}
+            </>
+          )}
+
+          {selected === VIEW_ALL && (
+            <>
+              {/* Lifetime headline stats (four colored tiles) + this-week strip */}
+              <SectionHeader label="All-time" accent="#7c3aed" />
               <SnapshotHero
                 totalWins={profile.total_wins}
                 totalLosses={profile.total_losses}
@@ -747,26 +781,27 @@ export default function StatsPage() {
                       accent="#a78bfa"
                       right={<span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{totalWeek} {totalWeek === 1 ? 'game' : 'games'}</span>}
                     />
-                    <KitCard>
-                      <div className="flex items-end justify-between gap-1 h-16">
+                    <KitCard tint="#7c3aed">
+                      <div className="flex items-end justify-between gap-2">
                         {activity.map((a) => {
                           const d = new Date(a.day + 'T00:00:00Z');
                           const dow = d.toLocaleDateString('en-US', { weekday: 'narrow', timeZone: 'UTC' });
                           const heightPct = a.count === 0 ? 6 : 12 + (a.count / maxCount) * 88;
                           return (
                             <div key={a.day} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="w-full flex items-end justify-center" style={{ height: '48px' }}>
+                              <div className="w-full flex items-end justify-center" style={{ height: 72 }}>
                                 <div
-                                  className="w-full rounded-t"
+                                  className="w-full"
                                   style={{
                                     height: `${heightPct}%`,
-                                    background: a.count === 0 ? 'var(--color-border)' : 'linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%)',
+                                    borderRadius: '8px 8px 4px 4px',
+                                    background: a.count === 0 ? alphaHex('#7c3aed', 0.14) : 'linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%)',
                                     transition: 'height 300ms ease-out',
                                   }}
                                   title={`${a.count} ${a.count === 1 ? 'game' : 'games'} · ${a.day}`}
                                 />
                               </div>
-                              <span className="text-[9px] font-extrabold uppercase" style={{ color: 'var(--color-text-muted)' }}>{dow}</span>
+                              <span className="text-[11px] font-black uppercase" style={{ color: 'var(--color-text-muted)' }}>{dow}</span>
                             </div>
                           );
                         })}
@@ -797,7 +832,7 @@ export default function StatsPage() {
               {sweepPoints.length >= 2 && (
                 <>
                   <SectionHeader label="Daily Points" accent="#ec4899" />
-                  <ChartCard title="Points per day" hint="Last 30 days · ● sweep · ● flawless">
+                  <ChartCard title="Points per day" hint="Last 30 days · ● sweep · ● flawless" tint="#ec4899">
                     <PointsChart points={sweepPoints} />
                   </ChartCard>
                 </>
@@ -815,10 +850,10 @@ export default function StatsPage() {
               {openers.length > 0 && (
                 <>
                   <SectionHeader label="Opener Lab" accent="#06b6d4" />
-                  <KitCard>
+                  <KitCard tint="#06b6d4">
                     <div className="space-y-1.5">
                       {openers.map((o, i) => (
-                        <div key={o.word} className="flex items-center gap-2.5 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
+                        <div key={o.word} className="flex items-center gap-2.5 p-2" style={{ background: alphaHex('#06b6d4', i % 2 === 0 ? 0.1 : 0.04), borderRadius: '10px' }}>
                           <span className="text-[10px] font-black w-4 text-center" style={{ color: 'var(--color-text-muted)' }}>{i + 1}</span>
                           <span className="text-sm font-black tracking-wider flex-1" style={{ color: 'var(--color-text)' }}>{o.word}</span>
                           <span className="text-[10px] font-bold w-8 text-right" style={{ color: 'var(--color-text-muted)' }}>{o.count}×</span>
@@ -842,6 +877,7 @@ export default function StatsPage() {
                   <>
                     <SectionHeader label="Weekday Form" accent="#f97316" />
                     <ChartCard
+                      tint="#f97316"
                       title="Win rate by day"
                       hint={best ? `Best: ${dayNames[best.dow]} (${Math.round((best.won / best.played) * 100)}%)` : undefined}
                     >
@@ -855,10 +891,11 @@ export default function StatsPage() {
                               </span>
                               <div className="w-full flex items-end" style={{ height: 44 }}>
                                 <div
-                                  className="w-full rounded-t"
+                                  className="w-full"
                                   style={{
                                     height: `${d.played === 0 ? 4 : 10 + rate * 90}%`,
-                                    background: d.played === 0 ? 'var(--color-border)' : best && d.dow === best.dow ? 'linear-gradient(180deg, #fbbf24, #f97316)' : 'linear-gradient(180deg, #a78bfa, #7c3aed)',
+                                    borderRadius: '8px 8px 4px 4px',
+                                    background: d.played === 0 ? alphaHex('#7c3aed', 0.14) : best && d.dow === best.dow ? 'linear-gradient(180deg, #fbbf24, #f97316)' : 'linear-gradient(180deg, #a78bfa, #7c3aed)',
                                     opacity: d.played === 0 ? 1 : 0.5 + 0.5 * (d.played / maxPlayed),
                                   }}
                                   title={`${d.won}/${d.played} won`}
@@ -878,13 +915,16 @@ export default function StatsPage() {
               {insights.length > 0 && (
                 <>
                   <SectionHeader label="Insights" accent="#7c3aed" />
-                  <div className="p-4 space-y-2" style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%)', border: '1.5px solid #ddd6fe', borderRadius: '16px' }}>
+                  <div className="overflow-hidden" style={softCard('#7c3aed', { radius: 18 })}>
+                  <div aria-hidden="true" style={cardBarStyle('#7c3aed')} />
+                  <div className="p-4 space-y-2">
                     {insights.map((text, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#7c3aed' }} />
                         <p className="text-xs font-bold leading-snug" style={{ color: 'var(--color-text)' }}>{text}</p>
                       </div>
                     ))}
+                  </div>
                   </div>
                 </>
               )}
@@ -906,22 +946,22 @@ export default function StatsPage() {
               {/* ── Progression: medals + achievements under one banner ── */}
               <SectionHeader label="Progression" accent="#f59e0b" />
 
-              {/* Daily Medals */}
-              <KitCard>
+              {/* Daily Medals — on gold, each medal count a soft number on its own tint. */}
+              <KitCard accent="#f5a524">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Daily Medals</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   {[
-                    { icon: Crown3D, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#d97706' },
-                    { icon: Medal, count: (profile as any).silver_medals || 0, label: 'Silver', color: 'var(--color-text-muted)' },
-                    { icon: Medal, count: (profile as any).bronze_medals || 0, label: 'Bronze', color: '#b45309' },
+                    { icon: GoldMedal, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#d97706', tint: '#f5a524' },
+                    { icon: SilverMedal, count: (profile as any).silver_medals || 0, label: 'Silver', color: '#64748b', tint: '#94a3b8' },
+                    { icon: BronzeMedal, count: (profile as any).bronze_medals || 0, label: 'Bronze', color: '#b45309', tint: '#d97706' },
                   ].map((m, i) => {
                     const MIcon = m.icon;
                     return (
-                      <div key={i} className="text-center p-3" style={{ background: 'var(--color-bg)', borderRadius: '12px' }}>
-                        <MIcon className="w-6 h-6 mx-auto mb-1" style={{ color: m.color }} />
-                        <div className="text-xl font-black" style={{ color: m.color }}>{m.count}</div>
+                      <div key={i} className="text-center p-3" style={softPill(m.tint, { radius: 14 })}>
+                        <MIcon className="w-8 h-8 mx-auto mb-1" style={{ color: m.color }} />
+                        <SoftNum size={22} as="div" className="soft-num-auto">{m.count}</SoftNum>
                         <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{m.label}</div>
                       </div>
                     );
@@ -932,9 +972,9 @@ export default function StatsPage() {
                     <div className={`space-y-1.5 ${showAllMedals ? 'max-h-80 overflow-y-auto pr-1' : ''}`}>
                       {(showAllMedals ? medals : medals.slice(0, 5)).map((medal: MedalType) => {
                         const medalConfig: Record<string, { icon: IconLike; color: string; label: string }> = {
-                          gold: { icon: Crown3D, color: '#d97706', label: '1st' },
-                          silver: { icon: Medal, color: 'var(--color-text-muted)', label: '2nd' },
-                          bronze: { icon: Medal, color: '#b45309', label: '3rd' },
+                          gold: { icon: GoldMedal, color: '#d97706', label: '1st' },
+                          silver: { icon: SilverMedal, color: 'var(--color-text-muted)', label: '2nd' },
+                          bronze: { icon: BronzeMedal, color: '#b45309', label: '3rd' },
                           streak_7: { icon: Flame3D, color: '#ea580c', label: '7-Day Streak' },
                           streak_30: { icon: Flame3D, color: '#dc2626', label: '30-Day Streak' },
                           streak_100: { icon: Flame3D, color: '#7c3aed', label: '100-Day Streak' },
@@ -943,8 +983,8 @@ export default function StatsPage() {
                         const cfg = medalConfig[medal.medal_type] || { icon: Medal, color: 'var(--color-text-muted)', label: medal.medal_type };
                         const MedalIcon = cfg.icon;
                         return (
-                          <div key={medal.id} className="flex items-center gap-2.5 p-2.5" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
-                            <MedalIcon className="w-4 h-4" style={{ color: cfg.color }} fill={cfg.icon === Flame3D || cfg.icon === Star ? 'currentColor' : 'none'} />
+                          <div key={medal.id} className="flex items-center gap-2.5 p-2.5" style={{ background: alphaHex('#f5a524', 0.1), border: softBorder('#f5a524', 0.1, 1), borderRadius: '10px' }}>
+                            <MedalIcon className="w-5 h-5" style={{ color: cfg.color }} fill={cfg.icon === Flame3D || cfg.icon === Star ? 'currentColor' : 'none'} />
                             <span className="text-xs font-extrabold flex-1" style={{ color: 'var(--color-text)' }}>
                               {medal.medal_type.startsWith('streak') ? cfg.label : (gameModeTitles[medal.game_mode] || medal.game_mode)}
                               {medal.medal_type === 'perfect' && <span className="text-[10px] font-bold ml-1" style={{ color: WIN_FG }}>Perfect!</span>}
@@ -957,9 +997,11 @@ export default function StatsPage() {
                       })}
                     </div>
                     {medals.length > 5 && (
-                      <button onClick={() => setShowAllMedals((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
-                        {showAllMedals ? 'Show less' : `View all ${medals.length} medals →`}
-                      </button>
+                      <div className="flex justify-center mt-2.5">
+                        <CandyButton onClick={() => setShowAllMedals((v) => !v)} color="peach" size="sm" aria-expanded={showAllMedals}>
+                          {showAllMedals ? 'Show less' : `View all ${medals.length} medals`}
+                        </CandyButton>
+                      </div>
                     )}
                   </>
                 ) : (
@@ -970,105 +1012,64 @@ export default function StatsPage() {
               {/* Achievements (grouped by category, under the Progression banner) */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Achievements</span>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: '#f3f0ff', color: '#7c3aed' }}>{userAchievements.size}/{ACHIEVEMENTS.length}</span>
+                <span className="px-2 py-0.5" style={softPill('#7c3aed', { bar: false })}><SoftNum size={12} className="soft-num-auto">{userAchievements.size} / {ACHIEVEMENTS.length}</SoftNum></span>
               </div>
-              <div className="space-y-3 mb-2">
-                {([
-                  ['beginner', 'Getting Started', '#7c3aed'],
-                  ['consistency', 'Consistency', '#f97316'],
-                  ['skill', 'Skill', '#2563eb'],
-                  ['social', 'Social', '#0d9488'],
-                  ['collection', 'Collection', '#d97706'],
-                ] as const).map(([catKey, catLabel, catColor]) => {
-                  const items = ACHIEVEMENTS.filter((a) => a.category === catKey);
-                  if (items.length === 0) return null;
-                  const unlockedN = items.filter((a) => userAchievements.has(a.key)).length;
-                  const medalCount = ((profile as any).gold_medals || 0) + ((profile as any).silver_medals || 0) + ((profile as any).bronze_medals || 0);
-                  // Progress hints for a few cheaply-derivable locked achievements.
-                  const progressMap: Record<string, { c: number; t: number }> = {
-                    streak_7: { c: profile.daily_login_streak || 0, t: 7 },
-                    streak_30: { c: profile.daily_login_streak || 0, t: 30 },
-                    medal_10: { c: medalCount, t: 10 },
-                    medal_50: { c: medalCount, t: 50 },
-                  };
-                  return (
-                    <div key={catKey}>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: catColor }}>{catLabel}</span>
-                        <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{unlockedN}/{items.length}</span>
-                      </div>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {items.map((a) => {
-                          const isUnlocked = userAchievements.has(a.key);
-                          const prog = !isUnlocked ? progressMap[a.key] : undefined;
-                          const showProg = !!prog && prog.c < prog.t;
-                          return (
-                            <div key={a.key} className="text-center p-2.5" style={{ background: isUnlocked ? '#f3f0ff' : '#fafafa', border: isUnlocked ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)', borderRadius: '12px', opacity: isUnlocked ? 1 : (showProg ? 0.8 : 0.4) }}>
-                              <div className="text-lg mb-0.5">{isUnlocked ? '✓' : '?'}</div>
-                              <div className="text-[10px] font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{a.name}</div>
-                              <div className="text-[9px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>{a.description}</div>
-                              {showProg && (
-                                <div className="mt-1">
-                                  <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, (prog!.c / prog!.t) * 100)}%`, background: '#7c3aed' }} />
-                                  </div>
-                                  <div className="text-[8px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{prog!.c}/{prog!.t}</div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
+              <AchievementGrid
+                unlocked={achievementDates}
+                progress={(a) => achievementProgress(a.key, {
+                  dailyStreak: profile.daily_login_streak,
+                  winStreak: (profile as any).current_streak,
+                  level: profile.level,
+                  totalWins: profile.total_wins,
+                  totalLosses: profile.total_losses,
+                  gold: (profile as any).gold_medals,
+                  silver: (profile as any).silver_medals,
+                  bronze: (profile as any).bronze_medals,
                 })}
-              </div>
+              />
 
               {/* VS (founder, 2026-10-01): VS left the game strip (rarely played; the grid now
                   comes out even). Its record, Rivalries, Bots practice and per-game boards live here.
                   The People and Bots sums here are the VS banner's RECORD row (VS overhaul §10). */}
               <div id="vs-section" style={{ scrollMarginTop: 12 }}><SectionHeader label="VS" accent="#ec4899" /></div>
               {/* VS RECORD summary card */}
-              <div
-                className="p-4 flex items-center gap-4"
-                style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #fce7f3 100%)', border: '1.5px solid #c4b5fd', borderRadius: '16px' }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed15' }}>
-                  <Swords className="w-5 h-5" style={{ color: '#7c3aed' }} />
+              <div className="overflow-hidden" style={softCard('#ec4899', { radius: 18 })}>
+              <div aria-hidden="true" style={{ height: 10, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
+              <div className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 flex items-center justify-center flex-shrink-0" style={softPill('#ec4899', { radius: 12 })}>
+                  <Swords className="w-5 h-5" style={{ color: '#db2777' }} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#6d28d9' }}>VS Record</div>
-                  <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider tint-ink" style={{ color: '#a0336b' }}>VS Record</div>
+                  <SoftNum size={24} as="div" className="soft-num-auto">
                     {vsRecord.wins}–{vsRecord.losses}
-                  </div>
+                  </SoftNum>
                   <div className="text-[10px] font-extrabold" style={{ color: vsDailyWon === null ? 'var(--color-text-muted)' : vsDailyWon ? WIN_FG : '#dc2626' }}>
                     Today: {vsDailyWon === null ? 'not played' : vsDailyWon ? 'won' : 'lost'}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-black" style={{ color: '#7c3aed' }}>{vsRecord.winRate}%</div>
+                  <SoftNum size={24} as="div" className="soft-num-auto">{vsRecord.winRate}%</SoftNum>
                   <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                     Win rate · {vsRecord.total} {vsRecord.total === 1 ? 'match' : 'matches'}
                   </div>
                 </div>
+              </div>
               </div>
 
               {/* Rivalries — most-faced opponents with head-to-head bars (Pro). */}
               {vsRecord.total > 0 && <RivalriesCard userId={profile.id} isPro={isProActive} />}
 
               {/* vs Bots record — unranked practice: no leaderboard, no XP, no streak. */}
-              <div
-                className="p-4 flex items-center gap-4"
-                style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#64748b15' }}>
-                  <Bot className="w-5 h-5" style={{ color: '#64748b' }} />
+              <div className="p-4 flex items-center gap-4" style={softCard('#0d9488', { radius: 18 })}>
+                <div className="w-10 h-10 flex items-center justify-center flex-shrink-0" style={softPill('#0d9488', { radius: 12 })}>
+                  <Bot className="w-5 h-5" style={{ color: '#0d9488' }} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs Bots</div>
-                  <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider tint-ink" style={{ color: '#0f766e' }}>vs Bots</div>
+                  <SoftNum size={24} as="div" className="soft-num-auto">
                     {cpuRecord.wins}–{cpuRecord.losses}
-                  </div>
+                  </SoftNum>
                   {cpuRecord.total === 0 ? (
                     <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Beat a bot to start your record</div>
                   ) : cpuBestStreak > 0 && (
@@ -1076,7 +1077,7 @@ export default function StatsPage() {
                   )}
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.total === 0 ? '—' : `${cpuRecord.winRate}%`}</div>
+                  <SoftNum size={24} as="div" className="soft-num-auto">{cpuRecord.total === 0 ? '—' : `${cpuRecord.winRate}%`}</SoftNum>
                   <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                     {cpuRecord.total === 0 ? 'No games yet' : `Win rate · ${cpuRecord.total} ${cpuRecord.total === 1 ? 'match' : 'matches'}`}
                   </div>
@@ -1104,22 +1105,16 @@ export default function StatsPage() {
                     );
                   })}
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  {(['vs', 'vs_cpu'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setVsTab(t)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold"
-                      style={{
-                        background: vsTab === t ? '#7c3aed15' : 'var(--color-surface)',
-                        border: vsTab === t ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                        color: vsTab === t ? '#7c3aed' : 'var(--color-text-muted)',
-                      }}
-                    >
-                      {t === 'vs' ? 'People' : 'Bots'}
-                    </button>
-                  ))}
-                </div>
+                <TintSegment<'vs' | 'vs_cpu'>
+                  options={[{ key: 'vs', label: 'People' }, { key: 'vs_cpu', label: 'Bots' }]}
+                  value={vsTab}
+                  onChange={setVsTab}
+                  accent="#7c3aed"
+                  ink="#6d28d9"
+                  label="People or Bots"
+                  size="sm"
+                  className="shrink-0"
+                />
               </div>
               <ModeDetailPanel
                 userId={profile.id}
@@ -1147,6 +1142,7 @@ export default function StatsPage() {
             </>
           )}
         </div>{/* /page */}
+        </div>{/* /page-grid-2 */}
       </div>
 
       <BottomNav />
@@ -1186,7 +1182,7 @@ function FlawlessBannerFooter({ total }: { total: number }) {
     <div className="text-center mt-2">
       {streak >= 2 && (
         <div className="text-sm font-black tracking-wide" style={{ color: '#b45309' }}>
-          <Icon3D name="trophy" size={18} inline /> {streak}-DAY FLAWLESS STREAK
+          <MedalArt medal="trophy" size={18} inline /> <SoftNum size={15} className="soft-num-auto">{streak}</SoftNum>-DAY FLAWLESS STREAK
         </div>
       )}
       <div className="flex items-center justify-center gap-1.5 mt-0.5">
@@ -1194,15 +1190,7 @@ function FlawlessBannerFooter({ total }: { total: number }) {
           All {total} dailies won today · +600 XP earned
         </span>
         {streak >= 1 && (
-          <button
-            onClick={share}
-            disabled={sharing}
-            aria-label="Share flawless streak"
-            className="p-0.5 active:scale-95 transition-transform"
-            style={{ color: '#b45309', opacity: sharing ? 0.4 : 1 }}
-          >
-            <Icon3D name="share" size={17} />
-          </button>
+          <HeaderGlyph icon="share" label="Share flawless streak" onClick={share} disabled={sharing} size={20} style={{ opacity: sharing ? 0.4 : 1, minHeight: 36 }} />
         )}
       </div>
     </div>

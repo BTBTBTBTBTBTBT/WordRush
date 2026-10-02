@@ -31,6 +31,28 @@ export interface FcmMessage {
   body: string;
   /** Deep-link path handed to the app (e.g. "/daily"). */
   url?: string;
+  /** Optional large image (absolute https URL, PNG/JPEG), e.g. the event's cast pose (FINISH_SPEC K2). */
+  image?: string;
+}
+
+/**
+ * FINISH_SPEC K2: the Android notification look — the white monochrome
+ * W-mascot small icon (`ic_stat_wordocious`, an Android drawable) tinted the
+ * brand purple; Android falls back to the app icon when the drawable is
+ * missing.
+ */
+export const ANDROID_NOTIFICATION = { icon: 'ic_stat_wordocious', color: '#7c3aed' } as const;
+
+/** The FCM v1 `message` for one push (pure, unit-tested). */
+export function fcmMessageBody(m: FcmMessage) {
+  return {
+    token: m.token,
+    notification: { title: m.title, body: m.body, ...(m.image ? { image: m.image } : {}) },
+    // Delivered alongside the notification so a tap can deep-link,
+    // matching the `url` the APNs payload carries.
+    ...(m.url ? { data: { url: m.url } } : {}),
+    android: { priority: 'high' as const, notification: { ...ANDROID_NOTIFICATION } },
+  };
 }
 
 export interface FcmResult {
@@ -178,16 +200,7 @@ export async function sendFcm(messages: FcmMessage[]): Promise<FcmResult> {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: {
-            token: m.token,
-            notification: { title: m.title, body: m.body },
-            // Delivered alongside the notification so a tap can deep-link,
-            // matching the `url` the APNs payload carries.
-            ...(m.url ? { data: { url: m.url } } : {}),
-            android: { priority: 'high' as const },
-          },
-        }),
+        body: JSON.stringify({ message: fcmMessageBody(m) }),
       });
       if (res.ok) {
         result.sent += 1;

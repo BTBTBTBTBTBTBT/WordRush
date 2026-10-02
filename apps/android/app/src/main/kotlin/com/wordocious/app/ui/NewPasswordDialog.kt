@@ -51,15 +51,14 @@ fun NewPasswordDialog(onDone: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDone) {
-        Column(
-            Modifier.widthIn(max = 360.dp).fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(20.dp))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // A1 / G5: a purple-tinted window with its top bar (no white), D taking notes up top.
+        TintedCard(
+            PW_PURPLE, Modifier.widthIn(max = 360.dp).fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+          Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            CastPose(MascotId.D, "notes", 72.dp)
             Text(
                 "WORDOCIOUS", fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
                 style = TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)), fontFamily = Nunito),
@@ -91,7 +90,8 @@ fun NewPasswordDialog(onDone: () -> Unit) {
                             .padding(12.dp),
                     )
                 }
-                Button3D(
+                CandyButton(
+                    if (saving) "Saving…" else "Save New Password",
                     onClick = {
                         error = null
                         when {
@@ -119,22 +119,12 @@ fun NewPasswordDialog(onDone: () -> Unit) {
                             }
                         }
                     },
-                    face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
-                    shadow = Color(0xFF4C1D95),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !saving,
-                ) {
-                    Text(
-                        if (saving) "Saving…" else "Save New Password",
-                        fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    )
-                }
-                Text(
-                    "Close", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    modifier = Modifier.clickableNoRipple { if (!saving) onDone() }.padding(4.dp),
+                    color = CandyColor.PURPLE, size = CandySize.LARGE,
+                    modifier = Modifier.fillMaxWidth(), fill = true, enabled = !saving,
                 )
+                CandyButton("Close", onClick = { if (!saving) onDone() }, color = CandyColor.PEACH, size = CandySize.SMALL, enabled = !saving)
             }
+          }
         }
     }
 }
@@ -152,11 +142,15 @@ private fun PasswordField(label: String, value: String, onValue: (String) -> Uni
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             textStyle = TextStyle(fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.text),
             cursorBrush = SolidColor(WTheme.primary),
+            // A1: a tinted input (no white).
             modifier = Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(WTheme.bg)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .background(accentWash(PW_PURPLE, 0.07f))
+                .border(1.5.dp, accentLine(PW_PURPLE, 0.4f), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 11.dp),
         )
     }
 }
+
+/** The reset window's purple. */
+private val PW_PURPLE = Color(0xFF7C3AED)

@@ -11,10 +11,14 @@ import java.time.ZoneOffset
  * user_stats(vs_cpu); this tracks the streak, boss-ladder rung, cosmetic
  * unlocks, and Bot-of-the-Day streak. Kotlin port of cpu-progression.ts.
  *
- * VS overhaul §7 (2026-10-01) adds the bot ladder (`ladderCleared` rungs of
- * Rook → Lexi → Nova → Adapt, `ladderRun` wins in a row against the next one,
- * folded by core ladderAfterGame) and today's Bot of the Day result
- * (`botOfDayPlayedDay` UTC day + `botOfDayResult` won/lost/draw).
+ * VS overhaul §7 (2026-10-01) adds the bot ladder (`ladderCleared` rungs,
+ * `ladderRun` wins in a row against the next one, folded by core
+ * ladderAfterGame) and today's Bot of the Day result (`botOfDayPlayedDay` UTC
+ * day + `botOfDayResult` won/lost/draw). FINISH_SPEC D1 (2026-10-02): the ladder
+ * is the ten-bot cast (core BotCast); a device still on the old four-rung ladder
+ * (Rook → Lexi → Nova → Adapt) migrates once on load — cleared N becomes
+ * [0, 2, 4, 7, 10][N], the run in progress resets, unlocked badges map to their
+ * cast bot (rook → ivy, lexi → opal, nova → dewey, adapt → umi).
  */
 data class CpuProgression(
     val streak: Int = 0,
@@ -39,7 +43,25 @@ object CpuProgressionStore {
     private val milestones = setOf(5, 10, 25, 50, 100)
     private val tierRung = mapOf(BotTier.EASY to 1, BotTier.MEDIUM to 2, BotTier.HARD to 3)
 
-    fun load(): CpuProgression = CpuProgression(
+    /** The ladder layout the stored progress is in (1 = the old four rungs, 2 = the cast). */
+    private const val LADDER_VERSION = 2
+
+    fun load(): CpuProgression {
+        val p = read()
+        if (prefs.getInt("ladderVersion", 1) >= LADDER_VERSION) return p
+        val migrated = migrateLegacy(p)
+        save(migrated)
+        return migrated
+    }
+
+    /** The one-time move from the old four-rung ladder to the cast (pure; see the class doc). */
+    internal fun migrateLegacy(p: CpuProgression): CpuProgression = p.copy(
+        ladderCleared = com.wordocious.core.BotCast.migrateLegacyLadderCleared(p.ladderCleared),
+        ladderRun = 0,
+        unlocked = p.unlocked.map { com.wordocious.core.BotCast.canonicalId(it) }.toSet(),
+    )
+
+    private fun read(): CpuProgression = CpuProgression(
         streak = prefs.getInt("streak", 0),
         bestStreak = prefs.getInt("bestStreak", 0),
         rung = prefs.getInt("rung", 0),
@@ -59,6 +81,7 @@ object CpuProgressionStore {
             .putInt("botOfDayStreak", p.botOfDayStreak).putString("botOfDayLastDay", p.botOfDayLastDay)
             .putInt("ladderCleared", p.ladderCleared).putInt("ladderRun", p.ladderRun)
             .putString("botOfDayPlayedDay", p.botOfDayPlayedDay).putString("botOfDayResult", p.botOfDayResult)
+            .putInt("ladderVersion", LADDER_VERSION)
             .apply()
     }
 
@@ -119,9 +142,9 @@ object CpuProgressionStore {
         return next
     }
 
-    /** The bot the ladder sends next: the first uncleared rung, Adapt once all four are cleared. */
+    /** The bot the ladder sends next: the first uncleared rung, Webster (the boss) once all ten are cleared. */
     fun nextLadderBot(p: CpuProgression = load()): String =
-        com.wordocious.core.VsLobby.LADDER_BOTS.getOrElse(p.ladderCleared) { "adapt" }
+        com.wordocious.core.VsLobby.LADDER_BOTS.getOrElse(p.ladderCleared) { com.wordocious.core.VsLobby.LADDER_BOTS.last() }
 
     fun todayUtc(): String = LocalDate.now(ZoneOffset.UTC).toString()
 }

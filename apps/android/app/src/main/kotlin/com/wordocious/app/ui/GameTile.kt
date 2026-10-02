@@ -114,7 +114,7 @@ fun Modifier.gameTilePress(onLongClick: (() -> Unit)? = null, onClick: () -> Uni
     // A9: the shared squish (was a flat 0.96 scale).
     @Suppress("UNUSED_VARIABLE") val unused = scale
     return this
-        .pressSquish(interaction)
+        .pressSquish(interaction, card = true)
         .combinedClickable(interactionSource = interaction, indication = null, onLongClick = onLongClick, onClick = onClick)
 }
 
@@ -138,7 +138,7 @@ fun GameTileCard(
     title: String,
     sub: String?,
     modifier: Modifier = Modifier,
-    surface: Color = WTheme.surface,
+    surface: Color = accentWash(accent),   // FINISH_SPEC A1: never plain white
     titleColor: Color = WTheme.text,
     subColor: Color = WTheme.textMuted,
     titleMaxLines: Int = 1,
@@ -181,7 +181,7 @@ fun GameTileSquare(
     label: String?,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    surface: Color = WTheme.surface,
+    surface: Color = accentWash(accent),   // FINISH_SPEC A1: never plain white
     labelColor: Color = WTheme.textMuted,
     chipSize: Dp = 32.dp,
     corner: Dp = GameTileStyle.CORNER,

@@ -16,8 +16,7 @@ struct MoreModePickerSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(moreSections(moreModes.filter { $0.dailyEligible && flags.isOn($0.flagKey) })) { section in
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(section.title.uppercased())
-                                .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted).tracking(1)
+                            FinishLabel(section.title)
                             ForEach(section.modes) { m in
                                 if let gm = m.mode ?? m.dbKey.flatMap({ GameMode(rawValue: $0) }) {
                                     Button { onPick(gm); dismiss() } label: { row(m) }.buttonStyle(.squish)
@@ -35,10 +34,12 @@ struct MoreModePickerSheet: View {
         HStack(spacing: 12) {
             ModeIconView(icon: m.icon, accent: m.accent, box: 40)
             VStack(alignment: .leading, spacing: 1) {
-                Text(m.title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                Text(m.desc).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text(m.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                Text(m.desc).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer()
+            Image(systemName: "play.fill").font(.system(size: 12, weight: .black))
+                .foregroundStyle(m.accent.opacity(0.75)).accessibilityHidden(true)
         }
         .padding(12).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
         // The shared game-tile chrome (docs/GAME_TILE_STYLE.md) on the row layout.

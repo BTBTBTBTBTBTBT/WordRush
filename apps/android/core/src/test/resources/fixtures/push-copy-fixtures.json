@@ -1,0 +1,159 @@
+{
+  "title": "Wordocious",
+  "bank": {
+    "friendBeat": "{name} just beat your {game} time ⚡ Your move!",
+    "yourTurn": "{name} played. Your turn! 🎯",
+    "streakReminder": "Your 🔥 {days}-day streak misses you! One quick game?",
+    "shieldUsed": "A shield saved your streak 🛡️ Phew!",
+    "challengeReceived": "{name} challenged you to {game} ⚔️",
+    "friendRequest": "{name} wants to be friends! 🎉",
+    "giftReceived": "{name} gifted you a week of Pro 🎁",
+    "dailyReady": "Today's puzzles are fresh 🌅"
+  },
+  "filled": [
+    {
+      "kind": "friendBeat",
+      "text": "A friend just beat your Wordocious time ⚡ Your move!"
+    },
+    {
+      "kind": "friendBeat",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Oliver just beat your QuadWord time ⚡ Your move!"
+    },
+    {
+      "kind": "friendBeat",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "A friend just beat your Wordocious time ⚡ Your move!"
+    },
+    {
+      "kind": "yourTurn",
+      "text": "A friend played. Your turn! 🎯"
+    },
+    {
+      "kind": "yourTurn",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Oliver played. Your turn! 🎯"
+    },
+    {
+      "kind": "yourTurn",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "A friend played. Your turn! 🎯"
+    },
+    {
+      "kind": "streakReminder",
+      "text": "Your 🔥 0-day streak misses you! One quick game?"
+    },
+    {
+      "kind": "streakReminder",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Your 🔥 12-day streak misses you! One quick game?"
+    },
+    {
+      "kind": "streakReminder",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "Your 🔥 3-day streak misses you! One quick game?"
+    },
+    {
+      "kind": "shieldUsed",
+      "text": "A shield saved your streak 🛡️ Phew!"
+    },
+    {
+      "kind": "shieldUsed",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "A shield saved your streak 🛡️ Phew!"
+    },
+    {
+      "kind": "shieldUsed",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "A shield saved your streak 🛡️ Phew!"
+    },
+    {
+      "kind": "challengeReceived",
+      "text": "A friend challenged you to Wordocious ⚔️"
+    },
+    {
+      "kind": "challengeReceived",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Oliver challenged you to QuadWord ⚔️"
+    },
+    {
+      "kind": "challengeReceived",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "A friend challenged you to Wordocious ⚔️"
+    },
+    {
+      "kind": "friendRequest",
+      "text": "A friend wants to be friends! 🎉"
+    },
+    {
+      "kind": "friendRequest",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Oliver wants to be friends! 🎉"
+    },
+    {
+      "kind": "friendRequest",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "A friend wants to be friends! 🎉"
+    },
+    {
+      "kind": "giftReceived",
+      "text": "A friend gifted you a week of Pro 🎁"
+    },
+    {
+      "kind": "giftReceived",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Oliver gifted you a week of Pro 🎁"
+    },
+    {
+      "kind": "giftReceived",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "A friend gifted you a week of Pro 🎁"
+    },
+    {
+      "kind": "dailyReady",
+      "text": "Today's puzzles are fresh 🌅"
+    },
+    {
+      "kind": "dailyReady",
+      "name": "Oliver",
+      "game": "QuadWord",
+      "days": 12,
+      "text": "Today's puzzles are fresh 🌅"
+    },
+    {
+      "kind": "dailyReady",
+      "name": "  ",
+      "game": "",
+      "days": 3,
+      "text": "Today's puzzles are fresh 🌅"
+    }
+  ]
+}

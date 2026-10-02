@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { X as XIcon } from 'lucide-react';
-import { Icon3D } from '@/components/ui/icon3d';
-import { haptic } from '@/lib/haptics';
-import { playSuccess } from '@/lib/sounds';
+import Image from 'next/image';
+import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
+import { feedback } from '@/lib/sound-events';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { computeDailyTotals } from '@/lib/daily-service';
 import { shareDailySweep, shareMoreSweep } from '@/lib/daily-share';
@@ -13,14 +12,23 @@ import type { ShareMode } from '@/lib/share-image';
 import { MODE_SHARE_GLYPH } from '@/lib/share-grid';
 import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
-import { CastRow } from '@/components/ui/mascot';
 import { MomentArt } from '@/components/ui/art-title';
+import { CandyButton, type CandyColor } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
+import { ART_SIZE, artSrc } from '@/lib/art';
+import { softPill } from '@/lib/soft-surface';
 
 // One-time full-screen celebration shown when the player completes every daily
-// in the current sweep. Two distinct treatments (NOT the per-game victory
-// confetti, which would look redundant when the final daily was itself a win):
-//   • Daily Sweep      → violet/pink sparkle burst.
-//   • Flawless Victory → gold fireworks + foil shimmer.
+// in the current sweep (docs/FINISH_SPEC.md G3): a full-screen overlay tinted
+// in the moment's color, the existing SWEEP! / FLAWLESS! lettering on top, the
+// big scene art springing in with a bounce over a soft glow (S racing his
+// broom for a Sweep, the pink O on her gem for a Flawless), soft-number stat
+// tiles below, candy confetti and candy buttons. Reduce Motion: the art fades
+// in, no confetti, no glow pulse.
+//   • Daily Sweep        → gold.
+//   • More Games Sweep   → indigo.
+//   • Flawless (either)  → pink.
 
 interface ModeMeta { dbKey: string; mode: ShareMode; label: string; accent: string }
 // The sweep set comes from the catalog's era table for today, so the tile row
@@ -57,31 +65,15 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   }, [completions, more]);
   const flawless = totals.flawless;
   const modes = more ? MORE_MODES : MODES;
-  // Sweep colors: violet/pink for the Daily Sweep, indigo for More Games; Flawless is gold on both.
-  const sweepA = more ? '#6366f1' : '#a78bfa', sweepB = more ? '#4f46e5' : '#ec4899';
-  const sweepInk = more ? '#4338ca' : '#6d28d9';
+  const look = flawless ? LOOKS.flawless : more ? LOOKS.more : LOOKS.sweep;
   const title = flawless
     ? (more ? MORE_SWEEP_COPY.flawless.title : 'FLAWLESS VICTORY!')
     : (more ? MORE_SWEEP_COPY.sweep.title : 'DAILY SWEEP!');
   const noun = more ? 'More Games puzzles' : 'daily puzzles';
   const [sharing, setSharing] = useState(false);
 
-  useEffect(() => { haptic('heavy'); playSuccess(); }, []);
-
-  // Pre-compute particle vectors (radial). Flawless gets more, larger sparks.
-  const particles = useMemo(() => {
-    const count = flawless ? 28 : 20;
-    return Array.from({ length: count }, (_, i) => {
-      const angle = (i / count) * Math.PI * 2 + (i % 2) * 0.4;
-      const dist = (flawless ? 170 : 130) + (i % 5) * 22;
-      return {
-        dx: Math.cos(angle) * dist,
-        dy: Math.sin(angle) * dist,
-        delay: (i % 7) * 0.12,
-        size: flawless ? 10 + (i % 4) * 4 : 8 + (i % 3) * 3,
-      };
-    });
-  }, [flawless]);
+  // FINISH_SPEC U: Sweep / Flawless = `celebrate` + success-then-heavy haptics.
+  useEffect(() => { feedback('celebrate'); }, []);
 
   const handleShare = async () => {
     if (sharing) return;
@@ -89,157 +81,153 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
     try { await (more ? shareMoreSweep(completions) : shareDailySweep(completions)); } finally { setSharing(false); }
   };
 
+  const [aw, ah] = ART_SIZE[look.art];
+  const stats: { value: string; label: string }[] = [
+    { value: `${totals.won}/${totals.total}`, label: 'Won' },
+    { value: fmtTime(totals.totalTimeSeconds), label: 'Total Time' },
+    { value: totals.totalScore.toLocaleString(), label: 'Total Pts' },
+  ];
+
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center px-5 animate-fade-in"
-      style={{ backgroundColor: 'rgba(24, 24, 46, 0.7)' }}
+      className="fixed inset-0 z-[60] overflow-y-auto animate-fade-in"
+      style={{ background: look.overlay }}
       onClick={onClose}
     >
-      {/* Radial particle burst centered behind the card. */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="relative" style={{ width: 0, height: 0 }}>
-          {particles.map((p, i) => (
-            <span
-              key={i}
-              style={{
-                position: 'absolute',
-                left: 0, top: -120,
-                width: p.size, height: p.size,
-                ['--dx' as string]: `${p.dx}px`,
-                ['--dy' as string]: `${p.dy}px`,
-                borderRadius: flawless ? '50%' : '2px',
-                background: flawless
-                  ? 'radial-gradient(circle, #fde68a, #f59e0b)'
-                  : (i % 2 ? (more ? '#a5b4fc' : '#c4b5fd') : (more ? '#818cf8' : '#f9a8d4')),
-                boxShadow: flawless ? '0 0 8px rgba(245,158,11,0.8)' : (more ? '0 0 6px rgba(99,102,241,0.7)' : '0 0 6px rgba(167,139,250,0.7)'),
-                animation: `${flawless ? 'firework-spark' : 'sweep-spark'} ${flawless ? 1.6 : 1.9}s ease-out ${p.delay}s infinite`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
+      <Confetti colors={CANDY_CONFETTI[look.confetti]} />
 
-      <div
-        className="relative max-w-sm w-full animate-fade-in-scale"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="min-h-full flex items-center justify-center px-5 py-8">
         <div
-          className="relative overflow-hidden text-center"
-          style={{
-            background: flawless
-              ? 'linear-gradient(160deg, #fffbeb, #fef3c7)'
-              : (more ? 'linear-gradient(160deg, #eef2ff, #e0e7ff)' : 'linear-gradient(160deg, #faf5ff, #fce7f3)'),
-            border: flawless ? '1.5px solid #f59e0b' : (more ? '1.5px solid #a5b4fc' : '1.5px solid #c4b5fd'),
-            borderRadius: '18px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-          }}
+          role="dialog"
+          aria-label={title}
+          className="relative max-w-sm w-full flex flex-col items-center text-center"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Foil shimmer sweep (stronger for Flawless). */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* SWEEP! / FLAWLESS! lettering (docs/ART_SPEC.md §6) under a small DAILY /
+              PUZZLES kicker; the full title ("DAILY SWEEP!", "PUZZLES FLAWLESS!") is its name. */}
+          <span aria-hidden="true" className="text-[12px] font-black uppercase text-white" style={{ letterSpacing: 1.6, textShadow: INK_SHADOW }}>
+            {more ? 'Puzzles' : 'Daily'}
+          </span>
+          <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} maxHeight={84} widthPct={86} />
+
+          {/* The big scene art springs in over a soft glow. */}
+          <div className="relative flex justify-center mt-1" style={{ height: ART_H }}>
             <div
-              className="animate-foil-sweep absolute top-0 h-full"
-              style={{
-                width: '40%',
-                background: flawless
-                  ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)'
-                  : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent)',
-              }}
+              aria-hidden="true"
+              className="absolute celebrate-glow"
+              style={{ width: ART_H * 1.35, height: ART_H * 1.35, top: '50%', left: '50%', marginTop: -ART_H * 0.675, marginLeft: -ART_H * 0.675, borderRadius: '50%', background: look.glow }}
+            />
+            <Image
+              src={artSrc(look.art)}
+              alt=""
+              aria-hidden="true"
+              width={aw}
+              height={ah}
+              priority
+              draggable={false}
+              sizes={`${Math.round((ART_H * aw) / ah)}px`}
+              className="relative select-none pointer-events-none celebrate-spring"
+              style={{ height: ART_H, width: 'auto', maxWidth: '86vw', objectFit: 'contain', filter: 'drop-shadow(0 10px 16px rgba(40, 10, 80, 0.35))' }}
             />
           </div>
 
-          {/* Top accent bar */}
-          <div
-            className="h-1.5"
-            style={{ background: flawless
-              ? 'linear-gradient(90deg, #fbbf24, #d97706, #fbbf24)'
-              : `linear-gradient(90deg, ${sweepA}, ${sweepB}, ${sweepA})` }}
-          />
+          <p className="text-sm font-extrabold mt-2 text-white" style={{ textShadow: INK_SHADOW }}>
+            {flawless
+              ? `All ${totals.total} ${noun} won today`
+              : `All ${totals.total} ${noun} completed today`}
+          </p>
 
-          <div className="relative px-5 pt-5 pb-5">
-            {/* The whole cast jumps in a left-to-right wave, twice, over the
-                confetti; on a Flawless day W wears the gold crown. */}
-            <div className="flex justify-center mb-2">
-              <CastRow size={26} motion="wave" hop={14} stagger={60} duration={1000} iterations={2} crownW={flawless} />
-            </div>
-            {/* SWEEP! / FLAWLESS! lettering (docs/ART_SPEC.md §6) under a small DAILY /
-                PUZZLES kicker; the full title ("DAILY SWEEP!", "PUZZLES FLAWLESS!") is its name. */}
-            <div className="flex flex-col items-center gap-0.5">
-              <span aria-hidden="true" className="text-[11px] font-black uppercase" style={{ letterSpacing: 1.4, color: flawless ? '#b45309' : sweepInk }}>
-                {more ? 'Puzzles' : 'Daily'}
-              </span>
-              <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} />
-            </div>
-
-            <p className="text-xs font-extrabold mt-1" style={{ color: flawless ? '#b45309' : sweepInk }}>
-              {flawless
-                ? `All ${totals.total} ${noun} won today`
-                : `All ${totals.total} ${noun} completed today`}
-            </p>
-
-            {/* Summary totals */}
-            <div className="flex justify-center gap-6 mt-4">
-              <div className="text-center">
-                <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{totals.won}/{totals.total}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Won</div>
+          {/* Summary totals: soft-number tiles in the moment's color. */}
+          <div className="grid grid-cols-3 gap-2 mt-3 w-full">
+            {stats.map((st) => (
+              <div key={st.label} className="text-center" style={{ ...softPill(look.accent, { radius: 16 }), padding: '10px 6px 8px' }}>
+                <SoftNum size={st.value.length > 6 ? 18 : 22} as="b" className="block soft-num-auto">{st.value}</SoftNum>
+                <span className="block mt-1 text-[10px] font-black uppercase" style={{ letterSpacing: 1, color: 'var(--color-text-muted)' }}>{st.label}</span>
               </div>
-              <div className="text-center">
-                <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{fmtTime(totals.totalTimeSeconds)}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Total Time</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{totals.totalScore.toLocaleString()}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Total Pts</div>
-              </div>
-            </div>
+            ))}
+          </div>
 
-            {/* Per-game list */}
-            <div
-              className="mt-4 px-3 py-2 grid grid-cols-3 gap-1.5"
-              style={{ background: 'rgba(255,255,255,0.55)', borderRadius: '12px' }}
+          {/* Per-game list: mini game cards in each game's color with the W / L badge. */}
+          <div className="mt-3 grid grid-cols-3 gap-1.5 w-full">
+            {modes.map((m) => {
+              const c = completions.get(m.dbKey);
+              if (!c) return null;
+              return (
+                <div key={m.dbKey} className="flex items-center gap-1.5 px-1.5 py-1" style={softPill(m.accent, { radius: 10, bar: false })}>
+                  <span
+                    className="flex items-center justify-center font-black text-white shrink-0"
+                    style={{ width: 22, height: 22, borderRadius: 7, background: m.accent, fontSize: MODE_SHARE_GLYPH[m.mode].length >= 3 ? 9 : 12 }}
+                  >
+                    {MODE_SHARE_GLYPH[m.mode]}
+                  </span>
+                  <span className="text-[11px] font-bold truncate text-left" style={{ color: 'var(--color-text)' }}>{m.label}</span>
+                  <WinLossBadge won={c.won} size={16} className="ml-auto" />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Actions: candy buttons. */}
+          <div className="flex gap-2 mt-5 w-full">
+            <CandyButton
+              color={look.candy}
+              size="lg"
+              className="flex-1"
+              icon={<Icon3D name="share" size={22} />}
+              onClick={handleShare}
+              disabled={sharing}
             >
-              {modes.map((m) => {
-                const c = completions.get(m.dbKey);
-                if (!c) return null;
-                return (
-                  <div key={m.dbKey} className="flex items-center gap-1.5 px-1 py-0.5">
-                    <span
-                      className="flex items-center justify-center font-black text-white shrink-0"
-                      style={{ width: 22, height: 22, borderRadius: 7, background: m.accent, fontSize: MODE_SHARE_GLYPH[m.mode].length >= 3 ? 9 : 12 }}
-                    >
-                      {MODE_SHARE_GLYPH[m.mode]}
-                    </span>
-                    <span className="text-[11px] font-bold truncate" style={{ color: 'var(--color-text)' }}>{m.label}</span>
-                    <span className="text-[11px] font-black ml-auto" style={{ color: c.won ? '#16a34a' : '#dc2626' }}>
-                      {c.won ? '✓' : '✗'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={handleShare}
-                disabled={sharing}
-                className="btn-3d flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-black"
-                style={{ background: flawless ? 'linear-gradient(135deg, #d97706, #b45309)' : (more ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : 'linear-gradient(135deg, #7c3aed, #ec4899)') }}
-              >
-                <Icon3D name="share" size={20} />
-                {sharing ? 'Sharing…' : 'Share'}
-              </button>
-              <button
-                onClick={onClose}
-                className="btn-3d flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-black"
-                style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid var(--color-border)', color: flawless ? '#b45309' : (more ? '#4f46e5' : '#7c3aed') }}
-              >
-                <XIcon className="w-4 h-4" />
-                Close
-              </button>
-            </div>
+              {sharing ? 'Sharing…' : 'Share'}
+            </CandyButton>
+            <CandyButton color="peach" size="lg" onClick={onClose}>
+              Close
+            </CandyButton>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+/** The scene art's height (px). */
+const ART_H = 200;
+
+/** White lettering's soft dark edge on the colored overlay. */
+const INK_SHADOW = '0 1px 0 rgba(59, 26, 120, 0.55), 0 2px 6px rgba(59, 26, 120, 0.35)';
+
+interface Look {
+  accent: string;
+  overlay: string;
+  glow: string;
+  art: 'art-scene-sweep-broom' | 'art-scene-flawless-star';
+  candy: CandyColor;
+  confetti: keyof typeof CANDY_CONFETTI;
+}
+
+/** Each moment's color: the full-screen tint, the glow behind the art, its art, button and confetti. */
+const LOOKS: Record<'sweep' | 'more' | 'flawless', Look> = {
+  sweep: {
+    accent: '#f5a524',
+    overlay: 'radial-gradient(circle at 50% 38%, rgba(255, 214, 120, 0.96), rgba(245, 165, 36, 0.95) 48%, rgba(194, 94, 12, 0.97))',
+    glow: 'radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 236, 170, 0.45) 42%, rgba(255, 214, 120, 0) 70%)',
+    art: 'art-scene-sweep-broom',
+    candy: 'amber',
+    confetti: 'gold',
+  },
+  more: {
+    accent: '#6366f1',
+    overlay: 'radial-gradient(circle at 50% 38%, rgba(165, 180, 252, 0.96), rgba(99, 102, 241, 0.95) 48%, rgba(55, 48, 163, 0.97))',
+    glow: 'radial-gradient(circle, rgba(255, 255, 255, 0.75), rgba(199, 210, 254, 0.45) 42%, rgba(165, 180, 252, 0) 70%)',
+    art: 'art-scene-sweep-broom',
+    candy: 'purple',
+    confetti: 'indigo',
+  },
+  flawless: {
+    accent: '#ec4899',
+    overlay: 'radial-gradient(circle at 50% 38%, rgba(251, 182, 216, 0.96), rgba(236, 72, 153, 0.95) 48%, rgba(134, 25, 143, 0.97))',
+    glow: 'radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(253, 230, 138, 0.5) 40%, rgba(251, 182, 216, 0) 70%)',
+    art: 'art-scene-flawless-star',
+    candy: 'pink',
+    confetti: 'pink',
+  },
+};

@@ -77,6 +77,7 @@ import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.pressScale
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -127,6 +128,13 @@ private val TIER_STYLE = mapOf(
     4 to TierStyle(Color(0xFF1A1A2E), Color(0xFFFFFFFF)),
 )
 private fun tierStyle(tier: Int) = TIER_STYLE[tier] ?: TIER_STYLE[1]!!
+
+/** J3 a tier's card / pip accent (the same one-hue ramp, readable as a top bar and a wash). */
+private val TIER_ACCENT = mapOf(1 to Color(0xFFA78BFA), 2 to Color(0xFF8B5CF6), 3 to Color(0xFF7C3AED), 4 to Color(0xFF3B0764))
+private fun tierAccent(tier: Int) = TIER_ACCENT[tier] ?: TIER_ACCENT[1]!!
+
+/** L the Kindred tray's inner padding (the tray adds its 4 dp lip under it). */
+private val KINDRED_TRAY_PAD = 8.dp
 
 /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
 private val HOLIDAY_TITLES = mapOf(
@@ -280,7 +288,7 @@ class KindredSession(val seed: String, val isDaily: Boolean) {
         if (isFinished) return
         dispatch(GroupsAction.Submit, onFinished)
         when (state.lastResult) {
-            GroupsResult.CORRECT -> if (!isFinished) SoundManager.playSuccess()
+            GroupsResult.CORRECT -> if (!isFinished) SoundManager.playPartial()
             GroupsResult.ONEAWAY -> { flash("One away…"); SoundManager.playInvalid(); shakeKey++ }
             GroupsResult.WRONG -> { flash("Not a group"); SoundManager.playInvalid(); shakeKey++ }
             GroupsResult.REPEAT -> flash("Already tried that set")
@@ -375,17 +383,8 @@ fun KindredScreen(
             .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                KindredHeader(session)
-                Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    session.state.solved.forEach { g -> GroupBar(g) }
-                    groupsUnsolved(session.state).forEach { g -> GroupBar(g, revealed = true) }
-                }
-                KindredResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            KindredFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 KindredHeader(session)
@@ -407,6 +406,7 @@ fun KindredScreen(
                     val barsH = (56.dp + 6.dp) * s.solved.size
                     val chipsH = if (revealedLabels.isNotEmpty()) 26.dp + gap else 0.dp
                     val gapsH = 8.dp /* column vertical padding */ + gap /* grid→rail */ +
+                        KINDRED_TRAY_PAD * 2 + GameTrayStyle.LIP /* the grid's tray */ +
                         (if (s.solved.isNotEmpty()) gap else 0.dp) /* rail→bars */ + 6.dp * (rows - 1) /* between tile rows */ + chipsH
                     val tileH = ((maxHeight - railH - barsH - gapsH) / rows).coerceIn(56.dp, 92.dp)
                     Column(
@@ -429,21 +429,17 @@ fun KindredScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Capsule("Shuffle", Icons.Filled.Shuffle) { session.shuffle() }
                     Capsule("Deselect", Icons.Filled.Cancel, dim = sel == 0) { session.deselect() }
-                    Capsule("Submit", Icons.Filled.CheckCircle, dim = sel != 4, filled = sel == 4) { session.submit(onFinished) }
+                    Capsule("Submit", Icons.Filled.CheckCircle, dim = sel != 4, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.submit(onFinished) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Capsule("Name a category", Icons.Filled.Label) { session.hintLabel() }
-                    Capsule(if (session.state.hintsUsed > 0) "Show a pair · ${session.state.hintsUsed}" else "Show a pair", Icons.Filled.Link) { session.hintPair() }
+                    Capsule("Name a category", Icons.Filled.Label, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintLabel() }
+                    Capsule(if (session.state.hintsUsed > 0) "Show a pair · ${session.state.hintsUsed}" else "Show a pair", Icons.Filled.Link, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintPair() }
                 }
                 Spacer(Modifier.height(10.dp))
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // G5 a toast is a tinted pill (no dark slab, no white).
+        session.toast?.let { PieceToast(it, GROUPS_ACCENT, top = 100.dp) }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) KindredOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(GROUPS_ACCENT, onBack) }
@@ -482,31 +478,56 @@ private fun Pips(tier: Int, color: Color, size: Int = 5) {
     }
 }
 
-/** A solved (or, after the game, revealed) group as a full-width bar: pips for
- *  the tier, the label, the four words. Revealed bars are dimmed and dashed. */
+/** J3 a solved (or, after the game, revealed) group as a tinted card in its tier's
+ *  color with the top bar: pips for the tier, the label, the four words. Revealed
+ *  cards are faded with a dashed outline. */
 @Composable
 internal fun GroupBar(group: GroupsGroup, revealed: Boolean = false) {
-    val st = tierStyle(group.tier)
-    val shape = RoundedCornerShape(12.dp)
-    Column(
-        Modifier.fillMaxWidth().alpha(if (revealed) 0.85f else 1f).clip(shape).background(st.bg)
+    val accent = tierAccent(group.tier)
+    val dark = WTheme.isDark
+    val ink = if (dark) WTheme.text else com.wordocious.app.ui.FinishInk.heading
+    com.wordocious.app.ui.TintedCard(
+        accent = accent,
+        modifier = Modifier.fillMaxWidth().alpha(if (revealed) 0.85f else 1f)
             .then(
-                if (revealed) Modifier.drawBehind {
+                if (revealed) Modifier.drawWithContent {
+                    drawContent()
                     val stroke = 2.dp.toPx()
                     drawRoundRect(
-                        color = Color.White.copy(alpha = 0.5f), cornerRadius = CornerRadius(12.dp.toPx()),
+                        color = accent.copy(alpha = 0.7f), cornerRadius = CornerRadius(16.dp.toPx()),
+                        topLeft = androidx.compose.ui.geometry.Offset(stroke / 2, stroke / 2),
+                        size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
                         style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx()))),
                     )
                 } else Modifier,
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+            ),
+        corner = 16.dp, barHeight = 8.dp,
+        tint = com.wordocious.app.ui.accentWash(accent, if (group.tier >= 3) 0.16f else 0.18f),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Pips(group.tier, st.fg)
-            Text(group.label, fontSize = 14.sp, fontWeight = FontWeight.Black, color = st.fg, fontFamily = Nunito, textAlign = TextAlign.Center)
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Pips(group.tier, if (dark) Color(0xFFC4B5FD) else accent)
+                Text(group.label, fontSize = 14.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, textAlign = TextAlign.Center)
+            }
+            Text(group.words.joinToString(", "), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (dark) WTheme.textMuted else com.wordocious.app.ui.FinishInk.label, letterSpacing = 0.4.sp, textAlign = TextAlign.Center)
         }
-        Text(group.words.joinToString(", "), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = st.fg, letterSpacing = 0.4.sp, textAlign = TextAlign.Center)
+    }
+}
+
+/** L the finished groups (the game's results and the Completed-Today card): the
+ *  solved cards, then the revealed ones, in the game tray (purple solved, slate not). */
+@Composable
+internal fun KindredFinishedBars(solved: List<GroupsGroup>, unsolved: List<GroupsGroup>, modifier: Modifier = Modifier) {
+    GameTray(
+        GROUPS_ACCENT, modifier.widthIn(max = 420.dp).fillMaxWidth(), state = finishTray(true, unsolved.isEmpty()),
+        padding = androidx.compose.foundation.layout.PaddingValues(KINDRED_TRAY_PAD),
+    ) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            solved.forEach { GroupBar(it) }
+            unsolved.forEach { GroupBar(it, revealed = true) }
+        }
     }
 }
 
@@ -520,13 +541,14 @@ private fun RevealedChips(groups: List<GroupsGroup>) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         groups.forEach { g ->
-            val st = tierStyle(g.tier)
+            val accent = tierAccent(g.tier)
+            // A1 a soft chip in the tier's tint.
             Row(
-                Modifier.clip(CircleShape).background(st.bg).padding(horizontal = 10.dp, vertical = 5.dp),
+                Modifier.softChip(accent).padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Pips(g.tier, st.fg, size = 4)
-                Text(g.label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = st.fg)
+                Pips(g.tier, if (WTheme.isDark) Color(0xFFC4B5FD) else accent, size = 4)
+                Text(g.label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading)
             }
         }
     }
@@ -539,8 +561,10 @@ private fun RevealedChips(groups: List<GroupsGroup>) {
 private fun TileGrid(session: KindredSession, tileH: Dp) {
     val s = session.state
     val ringed = s.pairs.flatten().filter { it in s.tiles }.toSet()
+    // L the grid sits in the shared game tray.
     Column(
-        Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp).shakeOnReject(session.shakeKey),
+        Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp).shakeOnReject(session.shakeKey)
+            .gameTray(GROUPS_ACCENT, padding = androidx.compose.foundation.layout.PaddingValues(KINDRED_TRAY_PAD)),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         for (row in s.tiles.chunked(4)) {
@@ -554,7 +578,6 @@ private fun TileGrid(session: KindredSession, tileH: Dp) {
 
 @Composable
 private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean, onTap: () -> Unit) {
-    val shape = RoundedCornerShape(10.dp)
     // The label scales with the tile (founder, 2026-09-28): normal words
     // clamp(tile × 0.22, 12–15 sp), long words (> 8 chars) clamp(tile × 0.18, 10–13 sp).
     val base = if (word.length > 8) (tileH.value * 0.18f).coerceIn(10f, 13f).sp else (tileH.value * 0.22f).coerceIn(12f, 15f).sp
@@ -570,15 +593,18 @@ private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean
         Modifier.fillMaxWidth().height(tileH)
             .then(if (ringed) Modifier.border(2.dp, PAIR_RING, RoundedCornerShape(14.dp)).padding(3.dp) else Modifier.padding(3.dp)),
     ) {
+        // J3 a glossy chip (tinted face, lip, gloss); selected = filled purple (the tier ramp's color).
+        val look = if (selected) TileLooks.CORRECT else tintedChipLook(GROUPS_ACCENT, WTheme.isDark)
         Box(
-            Modifier.fillMaxSize().clip(shape).background(if (selected) GROUPS_ACCENT else WTheme.surface)
-                .border(2.dp, if (selected) GROUPS_ACCENT else WTheme.border, shape)
-                .pressScale { onTap() }
-                .padding(horizontal = 3.dp),
+            Modifier.fillMaxSize()
+                .squishClickable(onClick = onTap)
+                .drawBehind { drawGameTile(look) }
+                .padding(start = 3.dp, end = 3.dp, bottom = (tileH - 6.dp) * TILE_LIP),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                word, fontSize = fs, fontWeight = FontWeight.Black, color = if (selected) Color.White else WTheme.text, fontFamily = Nunito,
+                word, fontSize = fs, fontWeight = FontWeight.Black, color = look.glyph, fontFamily = Nunito,
+                style = androidx.compose.ui.text.TextStyle(shadow = if (look.glyphShadow.alpha > 0f) androidx.compose.ui.graphics.Shadow(look.glyphShadow, androidx.compose.ui.geometry.Offset(0f, 1.5f), 1.5f) else null),
                 textAlign = TextAlign.Center, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, lineHeight = fs,
                 modifier = Modifier.drawWithContent { if (fitted) drawContent() },
                 onTextLayout = { r -> if (r.hasVisualOverflow && scale > 0.55f) scale -= 0.05f else fitted = true },
@@ -620,31 +646,20 @@ private fun MistakeDots(mistakes: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("Mistakes left", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         for (i in 0 until GROUPS_MAX_MISTAKES) {
-            Box(Modifier.size(10.dp).clip(CircleShape).background(if (i < GROUPS_MAX_MISTAKES - mistakes) GROUPS_ACCENT else WTheme.border))
+            Box(Modifier.size(10.dp).clip(CircleShape).background(if (i < GROUPS_MAX_MISTAKES - mistakes) GROUPS_ACCENT else com.wordocious.app.ui.accentLine(GROUPS_ACCENT)))
         }
     }
 }
 
+/** A8 a game control: a small candy button with its icon; [dim] = nothing to do (taps ignored, as before). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, filled: Boolean = false, onClick: () -> Unit) {
-    val fg = if (dim) WTheme.textMuted.copy(alpha = 0.5f) else if (filled) Color.White else GROUPS_ACCENT
-    Row(
-        Modifier.clip(CircleShape)
-            .background(if (dim) Color.Transparent else if (filled) GROUPS_ACCENT else GROUPS_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (dim) WTheme.border else if (filled) GROUPS_ACCENT else GROUPS_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple { if (!dim) onClick() }
-            .padding(horizontal = 10.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg)
-    }
-}
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun KindredResult(
+private fun KindredFinished(
     session: KindredSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
@@ -653,48 +668,48 @@ private fun KindredResult(
     val secs = session.elapsed
     val gc = groupsGuessCount(s)
     val context = LocalContext.current
-    val hintsText = if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Row(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-                .border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(GROUPS_ACCENT.copy(alpha = 0.08f))
-                    .border(2.dp, GROUPS_ACCENT.copy(alpha = 0.27f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(if (won) (if (s.mistakes == 0) "✓" else "${s.mistakes}") else "✗", fontSize = 20.sp, fontWeight = FontWeight.Black, color = GROUPS_ACCENT, fontFamily = Nunito)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    if (won) (if (s.mistakes == 0) "Flawless — all four groups" else "All four groups found") else "Out of mistakes",
-                    fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF16A34A) else Color(0xFFEF4444), fontFamily = Nunito,
-                )
-                Text("${session.groupsLabel} · ${session.mistakesLabel} · ${timeText(secs)}$hintsText", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            }
+    val title = if (won) (if (s.mistakes == 0) "Flawless, all four groups" else "All four groups found") else "Out of mistakes"
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}${session.groupsLabel} · ${session.mistakesLabel} · ${timeText(secs)}"
+        val text = "Wordocious Kindred${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · ${session.groupsLabel} · ${session.mistakesLabel} · wordocious.com/kindred"
+        val bmp = ShareImage.renderGroups(context, s.solved.map { it.tier }, s.mistakes, GROUPS_MAX_MISTAKES, won, meta)
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { KindredHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOfNotNull(
+                    // A win is always 4/4; the groups chip only says something on a loss.
+                    if (!won) stripCount("${s.solved.size}/$GROUPS_TOTAL_BOARDS", "groups") else null,
+                    stripCount("${s.mistakes}", if (s.mistakes == 1) "mistake" else "mistakes", StripGlyph.CROWN, GROUPS_ACCENT),
+                    stripTime(secs), stripPoints(session.points),
+                ),
+                srText = "$title. ${s.solved.size} of $GROUPS_TOTAL_BOARDS groups, ${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}, time ${timeText(secs)}, ${session.points} points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.GROUPS, isDaily = session.isDaily, accent = GROUPS_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) onPlayAgain else null,
+                onOtherGames = onBack,
+                more = {
+                    hintsNote(s.hintsUsed)?.let { Text("$title · $it", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
+                    if (session.isDaily) DailyRankBadge(GameMode.GROUPS)
+                    ScoreBreakdownCard(GameMode.GROUPS, won, gc, secs, groupsBoardsSolved(s), GROUPS_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
+                },
+            )
+        },
+    ) { _, maxH ->
+        // R2: the four group bars; on a very short phone they scroll in place.
+        FinishedListSlot(maxHeight = maxH, accent = GROUPS_ACCENT, seeAllTitle = "All four groups") {
+            KindredFinishedBars(s.solved, groupsUnsolved(s), Modifier.padding(horizontal = 4.dp))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", GROUPS_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", GROUPS_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}${session.groupsLabel} · ${session.mistakesLabel} · ${timeText(secs)}"
-                val text = "Wordocious Kindred${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · ${session.groupsLabel} · ${session.mistakesLabel} · wordocious.com/kindred"
-                val bmp = ShareImage.renderGroups(context, s.solved.map { it.tier }, s.mistakes, GROUPS_MAX_MISTAKES, won, meta)
-                ShareImage.shareBitmap(context, bmp, text)
-            }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain() }
-        }
-        if (session.isDaily) DailyRankBadge(GameMode.GROUPS)
-        ScoreBreakdownCard(GameMode.GROUPS, won, gc, secs, groupsBoardsSolved(s), GROUPS_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.GROUPS, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 /** Always m:ss — the header clock and the share caption. */
@@ -704,40 +719,17 @@ private fun clockText(s: Int) = "${s / 60}:${"%02d".format(s % 60)}"
 private fun KindredOverlay(session: KindredSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == GroupsStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "GROUPS") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.mistakes}", "MISTAKES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
+    PieceOverlay(won, "GROUPS", GROUPS_ACCENT, onScrimTap = onDismiss) {
+        // Moment lettering (ART_SPEC §6).
+        com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            StatBlock("${session.state.mistakes}", "MISTAKES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
         }
+        onPlayAgain?.let { PiecePlayAgain(won, it) }
+        PieceTapHint()
     }
 }
 
+/** A2 a soft-number stat. */
 @Composable
-private fun StatBlock(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
-    }
-}
+private fun StatBlock(value: String, label: String) = PieceStat(value, label)

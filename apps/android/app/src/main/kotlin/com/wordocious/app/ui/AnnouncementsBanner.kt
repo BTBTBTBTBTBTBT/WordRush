@@ -3,6 +3,7 @@ package com.wordocious.app.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,38 +59,38 @@ fun AnnouncementsBanner() {
     }
 
     val a = current ?: return
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(WTheme.surface, RoundedCornerShape(16.dp))
-            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    // FINISH_SPEC A1 / G5: a tinted lavender card with the purple → pink top bar, the 3D
+    // bell, and a bare dismiss X that squishes (44 dp tap area).
+    val purple = Color(0xFF7C3AED)
+    TintedCard(
+        purple, Modifier.fillMaxWidth(), corner = 16.dp,
+        bar = Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))), barHeight = 6.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 2.dp, top = 8.dp, bottom = 10.dp),
     ) {
-        // iOS uses a purple vector megaphone, not a full-color system emoji.
-        Icon(
-            Icons.Filled.Campaign, null, tint = Color(0xFF7C3AED),
-            modifier = Modifier.padding(top = 2.dp).size(13.dp),
-        )
-        Column(Modifier.weight(1f)) {
-            Text(
-                a.title, fontSize = 13.sp, fontWeight = FontWeight.Black,
-                style = TextStyle(
-                    brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
-                    fontFamily = Nunito,
-                ),
-            )
-            Text(a.body, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, fontFamily = Nunito)
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon3D(Icon3DName.BELL, 22.dp, Modifier.padding(top = 4.dp))
+            Column(Modifier.weight(1f).padding(top = 4.dp)) {
+                Text(
+                    a.title, fontSize = 14.sp, fontWeight = FontWeight.Black,
+                    style = TextStyle(
+                        brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
+                        fontFamily = Nunito,
+                    ),
+                )
+                Text(a.body, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, fontFamily = Nunito)
+            }
+            Box(
+                Modifier.size(SOFT_CONTROL_TAP).squishClickable("Dismiss", icon = true) {
+                    val dismissed = SettingsPref.get("dismissed-announcements", "")
+                    SettingsPref.set("dismissed-announcements", if (dismissed.isEmpty()) a.id else "$dismissed,${a.id}")
+                    current = null
+                },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Close, null, tint = if (WTheme.isDark) WTheme.textMuted else FinishInk.label, modifier = Modifier.size(16.dp))
+            }
         }
-        Icon(
-            Icons.Filled.Close, "Dismiss", tint = WTheme.textMuted,
-            modifier = Modifier.size(11.dp).clickableNoRipple {
-                val dismissed = SettingsPref.get("dismissed-announcements", "")
-                SettingsPref.set("dismissed-announcements", if (dismissed.isEmpty()) a.id else "$dismissed,${a.id}")
-                current = null
-            },
-        )
     }
 }
 

@@ -68,10 +68,6 @@ struct FinishedStatsHeader: View {
     /// Pro Unlimited only (web: amber "Play Again" on non-daily games).
     var onPlayAgain: (() -> Void)? = nil
 
-    @State private var showShareOptions = false
-    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
-    @State private var shareReveal: Bool?
-
     private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
     private var isMulti: Bool { totalBoards > 1 }
 
@@ -123,20 +119,7 @@ struct FinishedStatsHeader: View {
 
     @ViewBuilder private var shareButton: some View {
         if let onShare {
-            Button {
-                if shareHasSpoilers { showShareOptions = true } else { onShare(false) }
-            } label: {
-                Icon3D(.share, size: 32)
-                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.2), radius: 2.5, x: 0, y: 3)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.squishIcon)
-            .accessibilityLabel("Share")
-            .sheet(isPresented: $showShareOptions,
-                   onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
-                ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
-            }
+            FinishedShareButton(hasSpoilers: shareHasSpoilers, onShare: onShare)
         }
     }
 
@@ -149,6 +132,130 @@ struct FinishedStatsHeader: View {
         return isMulti
             ? "\(boardsSolved)/\(totalBoards) solved  ·  \(timeStr)"
             : "Out of guesses  ·  \(timeStr)"
+    }
+}
+
+/// The finished screen's 3D share icon (B6) with the spoiler chooser — shared by
+/// the stats header and the §R2 dock.
+struct FinishedShareButton: View {
+    /// False for shares with no tiles to spoil — skips the variant chooser.
+    var hasSpoilers: Bool = true
+    var size: CGFloat = 32
+    /// Bool = "Full results" (letters revealed); false = spoiler-free card.
+    let onShare: (Bool) -> Void
+
+    @State private var showShareOptions = false
+    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
+    @State private var shareReveal: Bool?
+
+    var body: some View {
+        Button {
+            if hasSpoilers { showShareOptions = true } else { onShare(false) }
+        } label: {
+            Icon3D(.share, size: size)
+                .shadow(color: Color(hex: 0x4C1D95).opacity(0.2), radius: 2.5, x: 0, y: 3)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.squishIcon)
+        .accessibilityLabel("Share")
+        .sheet(isPresented: $showShareOptions,
+               onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
+            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
+        }
+    }
+}
+
+/// FINISH_SPEC §R2: the finished screen's compact header — the game's title art
+/// (capped short so the board and the dock fit one screen) and the one-line result
+/// strip (badge · solved · guesses · time · points).
+struct FinishedCompactHeader: View {
+    let mode: GameMode
+    let won: Bool
+    let guessCount: Int
+    let maxGuesses: Int            // 0 = unknown (hide the "/N")
+    let timeSeconds: Int
+    let boardsSolved: Int
+    let totalBoards: Int
+    var points: Int? = nil
+
+    private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
+
+    private var items: [(value: String, label: String)] {
+        var out: [(value: String, label: String)] = []
+        if totalBoards > 1 { out.append(("\(boardsSolved)/\(totalBoards)", "solved")) }
+        out.append((maxGuesses > 0 && !won ? "\(guessCount)/\(maxGuesses)" : "\(guessCount)",
+                    guessCount == 1 ? "guess" : "guesses"))
+        out.append((timeStr, "time"))
+        return out
+    }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            // Between the corner Home / Help controls (56 pt clear each side).
+            Group {
+                if let art = GameTitleArt.forMode(mode) {
+                    GameTitleArtView(asset: art.asset, label: art.label,
+                                     maxHeight: UIScreen.main.bounds.height < 700 ? 52 : 68, minHeight: 36)
+                } else {
+                    Text(ModeStyle.title(mode)).font(Brand.font(24, .black))
+                        .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .gameHost(mode, size: 26)
+                }
+            }
+            .padding(.horizontal, 54)
+            .padding(.top, 4)
+            FinishedResultStrip(won: won, items: items, points: points)
+                .padding(.horizontal, 4)
+        }
+    }
+}
+
+/// FINISH_SPEC §R2: a multi-board game's finished boards as the compact mini grid
+/// (2 × 2, or 4 across for 8 boards), scaled to fit exactly `size` — the tiles may
+/// shrink below their playing size. Each mini board keeps its own tray (framed).
+struct FinishedMiniGrid: View {
+    let boards: [BoardState]
+    let rowCount: Int
+    let size: CGSize
+    var revealMissed: Bool = false
+
+    private static let gap: CGFloat = CompletedBoardLayout.gridSpacing
+
+    var body: some View {
+        let n = boards.count
+        let cols = CompletedBoardLayout.cols(n)
+        let rows = Int(ceil(Double(n) / Double(max(1, cols))))
+        let tile = Self.tile(boardCount: n, wordLen: boards.first?.solution.count ?? 5, rowCount: rowCount,
+                             size: size, revealMissed: revealMissed)
+        VStack(spacing: Self.gap) {
+            ForEach(0..<rows, id: \.self) { r in
+                HStack(spacing: Self.gap) {
+                    ForEach(0..<cols, id: \.self) { c in
+                        let i = r * cols + c
+                        if i < n {
+                            CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: rowCount,
+                                                   revealMissed: revealMissed)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+
+    /// The largest tile that fits every board in its cell (mini tray padding + lip +
+    /// the ✓ badge's float + the missed-answer line), capped at a comfortable 30 pt.
+    static func tile(boardCount n: Int, wordLen: Int, rowCount: Int, size: CGSize, revealMissed: Bool) -> CGFloat {
+        let cols = CompletedBoardLayout.cols(n)
+        let rows = Int(ceil(Double(n) / Double(max(1, cols))))
+        let cellW = (size.width - CGFloat(cols - 1) * gap) / CGFloat(max(1, cols))
+        let cellH = (size.height - CGFloat(rows - 1) * gap) / CGFloat(max(1, rows))
+        let w = max(1, wordLen), h = max(1, rowCount)
+        let tw = (cellW - 16) / (CGFloat(w) + CGFloat(w - 1) * 0.1)
+        let th = (cellH - 22 - (revealMissed ? 16 : 0)) / (CGFloat(h) + CGFloat(h - 1) * 0.1)
+        return max(6, min(30, tw, th))
     }
 }
 
@@ -171,10 +278,10 @@ struct DailyRankBadge: View {
                     Icon3D(.trophy, size: 12)
                     Text("\(badge.label) · #\(r.rank) of \(r.total)").font(Brand.font(10, .black))
                 }
-                .foregroundStyle(gold ? Color(hex: 0x92400E) : Theme.textMuted)
-                .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Capsule().fill(gold ? Color(hex: 0xFEF3C7) : Theme.surfaceHover))
-                .overlay(Capsule().stroke(gold ? Color(hex: 0xFDE68A) : Theme.border, lineWidth: 1))
+                .foregroundStyle(gold ? (Theme.isDark ? Color(hex: 0xFCD34D) : Color(hex: 0x92400E)) : FinishInk.secondary)
+                .padding(.horizontal, 9).padding(.top, 6).padding(.bottom, 4)
+                // §A1: a tinted pill (gold for a top finish, lilac otherwise).
+                .tintedPill(gold ? Color(hex: 0xF59E0B) : Color(hex: 0x8B5CF6))
             }
         }
         .task(id: gameMode.rawValue) {
@@ -345,6 +452,8 @@ struct NextDailyCTA: View {
     /// suggested the mode the player JUST finished, and tapping it re-opened
     /// the same results screen.
     var currentMode: String? = nil
+    /// §R2: inside the finished screen's dock — medium candies, tighter spacing.
+    var compact: Bool = false
 
     /// Seeds instantly from the day-keyed cache (which already includes the
     /// just-finished game via completionPosted); load() confirms from the server.
@@ -377,7 +486,7 @@ struct NextDailyCTA: View {
         Group {
             // Dailies only record for signed-in accounts; guests get nothing.
             if AuthService.shared.profile != nil {
-                VStack(spacing: 10) {
+                VStack(spacing: compact ? 6 : 10) {
                     if let next = nextMode, let key = next.dbKey {
                         Button {
                             dismiss()
@@ -391,18 +500,27 @@ struct NextDailyCTA: View {
                             // with the next game's icon.
                             CandyLabel(title: "Next daily: \(next.title)") { gameIcon(next) }
                         }
-                        .buttonStyle(CandyButtonStyle(variant: .amber))
+                        .buttonStyle(CandyButtonStyle(variant: .amber, size: compact ? .medium : .large))
                         .accessibilityLabel("Next daily: \(next.title)")
                     } else if nextMode == nil {
-                        Text("All \(DailyCompletionsStore.totalDailyModes) dailies done — Sweep complete! 🏆")
-                            .font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x7C3AED))
-                            .padding(.vertical, 4)
+                        // §AM3: the 3D trophy, not the emoji.
+                        HStack(spacing: 6) {
+                            Text("All \(DailyCompletionsStore.totalDailyModes) dailies done. Sweep complete!")
+                                .font(Brand.font(13, .black)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
+                            Icon3D(.trophy, size: 20)
+                        }
+                        .padding(.vertical, 4)
                     }
                     viewLeaderboard
                     keepPlayingUnlimited
                 }
                 .frame(maxWidth: 400)
-                .padding(.top, 4)
+                .padding(.top, compact ? 0 : 4)
+            } else {
+                // FINISH_SPEC §R3 (founder 10-02): guests see the Unlimited card too —
+                // it opens the Go Pro paywall, which signs them in first.
+                keepPlayingUnlimited
+                    .frame(maxWidth: 400)
             }
         }
         .task { await completions.load() }
@@ -425,33 +543,30 @@ struct NextDailyCTA: View {
                 // §B6 / §A8: the purple candy button with the 3D trophy.
                 CandyLabel(title: "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
             }
-            .buttonStyle(CandyButtonStyle(variant: .purple))
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: compact ? .medium : .large))
             .accessibilityLabel("View \(mode.title) Leaderboard")
         }
     }
 
-    /// "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited
-    /// game of the SAME mode the player just finished (tester-reported dead
-    /// end: after the daily — especially a completed sweep — Pro players had
-    /// no visible path to keep playing; the home Daily/Unlimited toggle went
-    /// undiscovered). Styled like the Next Daily capsule but in the current
-    /// mode's accent. Non-Pro and guests see nothing.
+    /// "Keep playing: Unlimited <Mode>" — the handoff into an Unlimited game of
+    /// the SAME mode the player just finished (tester-reported dead end: after
+    /// the daily — especially a completed sweep — players had no visible path to
+    /// keep playing; the home Daily/Unlimited toggle went undiscovered).
     @ViewBuilder private var keepPlayingUnlimited: some View {
-        if AuthService.shared.isProActive,
-           let key = currentMode,
+        // §R3 (founder 10-02): everyone sees the card — for free players it opens
+        // the Pro paywall itself and starts the game after a purchase.
+        if let key = currentMode,
            let mode = (homeModes + moreModes).first(where: { $0.dbKey == key }) {
-            Button {
+            // FINISH_SPEC §R3: the peach KEEP PLAYING card with U's loop art; the
+            // same post of playUnlimited.
+            UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(key)?.title ?? mode.title) {
                 dismiss()
                 // Same choreography as playNextDaily: let this cover's dismiss
                 // finish before the root presents the unlimited game.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     NotificationCenter.default.post(name: Self.playUnlimited, object: key)
                 }
-            } label: {
-                // §B6 / §A8: the soft (peach) candy button for the quiet action.
-                CandyLabel(title: "Keep playing: Unlimited \(ModeGen.byDbKey(key)?.title ?? mode.title)") { gameIcon(mode) }
             }
-            .buttonStyle(CandyButtonStyle(variant: .peach))
         }
     }
 

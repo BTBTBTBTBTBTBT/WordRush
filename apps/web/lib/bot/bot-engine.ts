@@ -264,6 +264,11 @@ export interface BuildOpts {
   targetSolveMs?: number;
   forceSolve?: boolean;
   adaptive?: AdaptiveHint;
+  /**
+   * The cast bot's own solve range (core BOT_CAST `guesses`, FINISH_SPEC D1):
+   * narrows the tier's [minGuesses, maxGuesses]; the tier keeps its pace.
+   */
+  guessRange?: readonly [number, number] | null;
 }
 
 /** Tiles (color-only string states) for a guess against a solution. */
@@ -289,7 +294,10 @@ export function buildBotPlan(
   // The word lists are loaded before any VS match mounts (VsGame waits on useDictionary).
   const state = createInitialState(seed, mode);
   const totalBoards = boardCountForMode(mode);
-  const params = resolveParams(difficulty, opts.adaptive);
+  const tierParams = resolveParams(difficulty, opts.adaptive);
+  const params = opts.guessRange && difficulty !== 'adaptive'
+    ? { ...tierParams, minGuesses: opts.guessRange[0], maxGuesses: opts.guessRange[1] }
+    : tierParams;
   // Gauntlet's createInitialState boards hold only the CURRENT stage; the full
   // 21-board run comes from the seed directly (reducer parity).
   let solutions: string[];

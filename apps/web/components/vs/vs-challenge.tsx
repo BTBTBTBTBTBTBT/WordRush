@@ -8,20 +8,23 @@
  * result from the stored numbers. Expired: a simple card. Your own: the
  * results so far.
  */
+import { shareCaption } from '@wordle-duel/core';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
-import type { GameMode } from '@wordle-duel/core';
+import { vsClock, type GameMode } from '@wordle-duel/core';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastLoader } from '@/components/ui/cast-loader';
+import { SoftNum } from '@/components/ui/soft-number';
 import { useAuth } from '@/lib/auth-context';
 import { fetchHeadToHead, type HeadToHeadRecord } from '@/lib/head-to-head';
 import { fetchChallenge, fetchVsChallenges, type ChallengeLookup } from '@/lib/vs-challenges-client';
 import { VS, modeTitle, raceTarget, sentStatus, type SentChallenge } from '@/lib/vs-lobby';
 import { VsGame } from './vs-game';
 import { ChallengeResult } from './challenge-result';
-import { InitialAvatar, ModeChip, TealButton, vsCardStyle } from './vs-ui';
+import { InitialAvatar, ModeChip, TealButton, VS_LIGHT_VARS, VsCard } from './vs-ui';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
+import { PAGE_SCENES, artSrc } from '@/lib/art';
+import { NOTICE_POSES } from './vs-notice-art';
 import { PageBackground } from '@/components/ui/page-background';
 
 export function VsChallenge({ code }: { code: string }) {
@@ -47,23 +50,21 @@ export function VsChallenge({ code }: { code: string }) {
   }, [code, loading, user, profile?.id]);
 
   const centered = (node: React.ReactNode) => (
-    <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5">
-      <div className="w-full max-w-sm text-center p-5 space-y-3" style={{ ...vsCardStyle, borderRadius: 16 }}>{node}</div>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5" style={VS_LIGHT_VARS}>
+      <VsCard className="w-full max-w-sm text-center"><div className="p-5 space-y-3">{node}</div></VsCard>
     </PageBackground>
   );
-  const vsHome = <TealButton className="w-full py-3 text-[14px]" onClick={() => router.push('/vs')}>VS Home</TealButton>;
+  const vsHome = <TealButton size="lg" block onClick={() => router.push('/vs')}>VS Home</TealButton>;
 
   if (loading || (user && !lookup)) {
-    return centered(<Loader2 className="w-6 h-6 mx-auto animate-spin" style={{ color: VS.ink }} />);
+    return centered(<div className="flex justify-center"><CastLoader /></div>);
   }
   if (!user) {
     return centered(
       <>
         <div className="text-[16px] font-black" style={{ color: VS.deep }}>Sign in to race</div>
         <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>A friend challenged you to race their Wordocious run. Sign in (or create a free account) to play.</p>
-        <Link href={`/?returnTo=${encodeURIComponent(`/vs/challenge/${code}`)}`} className="block">
-          <TealButton className="w-full py-3 text-[14px]">Sign in</TealButton>
-        </Link>
+        <CandyLink href={`/?returnTo=${encodeURIComponent(`/vs/challenge/${code}`)}`} color="teal" size="lg" block>Sign in</CandyLink>
       </>,
     );
   }
@@ -94,7 +95,9 @@ export function VsChallenge({ code }: { code: string }) {
         onHome={() => router.push('/vs')}
         onChallengeBack={() => router.push(isProActive ? `/vs/friend?mode=${challenge.gameMode}&friend=${challenge.challenger.id}` : '/pro')}
         onShare={() => {
-          const text = `I raced ${name}’s ${modeTitle(challenge.gameMode)} run on Wordocious ⚔️\nhttps://wordocious.com/vs`;
+          // FINISH_SPEC S4: the shared fun copy.
+          const day = new Date().toISOString().slice(0, 10);
+          const text = `${shareCaption(entry.outcome === 'draw' ? 'vsDraw' : entry.outcome === 'win' ? 'vsWin' : 'vsLose', { date: day, game: modeTitle(challenge.gameMode), opp: name })}\nwordocious.com`;
           if (navigator.share) navigator.share({ text }).catch(() => {});
           else navigator.clipboard?.writeText(text).catch(() => {});
         }}
@@ -136,22 +139,32 @@ export function VsChallenge({ code }: { code: string }) {
     return <VsGame mode={challenge.gameMode as GameMode} race={challenge} />;
   }
 
-  // The intro card (frosted, teal).
+  // The intro card (K1: a tinted teal card, the challenger's tile, a fitting pose, soft numbers).
   return (
-    <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5">
-      <div className="w-full max-w-sm overflow-hidden" style={{ borderRadius: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #d5f5ee, #e0f2fe)', boxShadow: '0 4px 14px rgba(15,118,110,0.10)' }}>
-        <div className="flex items-center gap-2.5" style={{ padding: '14px 14px 12px', background: 'rgba(255,255,255,0.5)' }}>
-          <InitialAvatar name={name} url={challenge.challenger.avatarUrl} size={36} />
+    <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5" style={VS_LIGHT_VARS}>
+      <VsCard className="w-full max-w-sm">
+        <div className="flex items-center gap-2.5" style={{ padding: '12px 14px 4px' }}>
+          <InitialAvatar name={name} url={challenge.challenger.avatarUrl} size={38} />
           <span className="flex-1 font-black" style={{ fontSize: 16, color: VS.deep, letterSpacing: 0.4 }}>RACE @{name.toUpperCase()}’S RUN</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={artSrc(NOTICE_POSES.challenge[0])} alt="" aria-hidden="true" width={56} height={56} draggable={false} style={{ width: 56, height: 56, objectFit: 'contain', margin: '-6px -4px -6px 0' }} />
         </div>
         <div className="space-y-3" style={{ padding: 14 }}>
           <ModeChip mode={challenge.gameMode} />
-          <div className="text-[20px] font-black" style={{ color: VS.deep }}>{raceTarget(challenge.run)}</div>
+          {challenge.run.solved ? (
+            <div className="flex items-baseline gap-1.5 text-[15px] font-black" style={{ color: VS.deep }} aria-label={raceTarget(challenge.run)}>
+              Solved in <SoftNum size={26}>{challenge.run.guesses}</SoftNum> · <SoftNum size={26}>{vsClock(challenge.run.timeMs)}</SoftNum>
+            </div>
+          ) : (
+            <div className="text-[20px] font-black" style={{ color: VS.deep }}>{raceTarget(challenge.run)}</div>
+          )}
           <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Same puzzle. {name}’s pace plays out beside you.</p>
-          <TealButton className="w-full py-3 text-[15px]" onClick={() => setStarted(true)}>Start</TealButton>
-          <button type="button" onClick={() => router.push('/vs')} className="w-full text-[12px] font-black" style={{ color: VS.label }}>Not now</button>
+          <TealButton size="lg" block icon="play" onClick={() => setStarted(true)}>Start</TealButton>
+          <div className="flex justify-center">
+            <CandyButton color="peach" size="sm" onClick={() => router.push('/vs')}>Not now</CandyButton>
+          </div>
         </div>
-      </div>
+      </VsCard>
     </PageBackground>
   );
 }

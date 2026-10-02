@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -74,10 +75,12 @@ fun AppHeader(
     val profile by AuthService.profile.collectAsState()
     val isGuest by AuthService.isGuest.collectAsState()
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp),
+        // N3: 9 dp breathing room under the status bar; N4: the controls row 6 dp below the cast.
+        modifier = Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         CastTitle(pro = AuthService.isProActive)
+        Spacer(Modifier.height(6.dp))
         HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn)
     }
 }
@@ -88,7 +91,26 @@ fun AppHeader(
  */
 @Composable
 private fun CastTitle(pro: Boolean) {
-    Box(Modifier.fillMaxWidth().padding(horizontal = 2.dp), contentAlignment = Alignment.BottomCenter) {
+    // FINISH_SPEC N3: the cast row at ≈90% of the width, centered (not edge to edge), on a
+    // soft elliptical ground shadow in the page accent (~14%, blurred by its own falloff).
+    val accent = LocalPageTint.current?.accent ?: Color(0xFF7C3AED)
+    Box(
+        Modifier.fillMaxWidth(CAST_ROW_WIDTH_FRACTION)
+            .drawBehind {
+                val w = size.width * 0.92f
+                val h = 14.dp.toPx()
+                val cx = size.width / 2f
+                val cy = size.height - h * 0.35f
+                drawOval(
+                    Brush.radialGradient(
+                        listOf(accent.copy(alpha = 0.14f), accent.copy(alpha = 0.07f), Color.Transparent),
+                        center = Offset(cx, cy), radius = w / 2f,
+                    ),
+                    topLeft = Offset(cx - w / 2f, cy - h / 2f), size = Size(w, h),
+                )
+            },
+        contentAlignment = Alignment.BottomCenter,
+    ) {
         if (pro) {
             // #f59e0b at ~25%, 2 dp, blurred (blur is API 31+; the faded ends carry it below).
             Box(
@@ -395,7 +417,7 @@ private fun WeekDayTile(on: Boolean) {
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (on) Text("✓", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+        if (on) Icon3D(Icon3DName.BADGE_CHECK, 20.dp)
     }
 }
 
@@ -448,3 +470,6 @@ private fun FlawlessPopup(days: Int, onDismiss: () -> Unit) {
         PopupBody("Consecutive days winning every Daily Sweep game. Win them all today to keep it alive.")
     }
 }
+
+/** FINISH_SPEC N3: the cast row's share of the screen width (centered, not edge to edge). */
+const val CAST_ROW_WIDTH_FRACTION = 0.9f

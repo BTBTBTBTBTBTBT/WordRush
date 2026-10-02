@@ -120,40 +120,41 @@ fun moreTotals(byMode: Map<String, DailyCompletionsService.Completion>, modes: L
 @Composable
 fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg) {
+    // FINISH_SPEC G5: the More Games sheet in the finishing look — a soft lilac sheet,
+    // the MORE GAMES title as its headline, each game a tinted card in its own color
+    // (top bar + the 3D game icon) that squishes.
+    ModalBottomSheet(
+        onDismissRequest = onDismiss, sheetState = sheetState,
+        containerColor = accentWash(Color(0xFF7C3AED), 0.08f),
+    ) {
         Column(
             Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // The shared sheet header (HEADER_SPEC §4); Done is the white close circle.
-            PageHeader(
-                "MORE GAMES", onClose = onDismiss, closeLabel = "Done",
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                art = TitleArt.MOREGAMES, // ART_SPEC §2
-            )
+            // Done is the bare close X (A3); the title art is the sheet's headline (A6).
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                HeaderBackButton(onDismiss, close = true, contentDescription = "Done")
+            }
+            PageHeadline(TitleArt.MOREGAMES)
             val flagTable by FlagsService.flags.collectAsState()
             val flagsLoaded by FlagsService.loaded.collectAsState()
             moreSections(MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }).forEach { section ->
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        section.title.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                        color = WTheme.textMuted, letterSpacing = 1.sp,
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FinishLabel(section.title.uppercase(), Modifier.padding(start = 4.dp, top = 4.dp))
                     section.modes.forEach { card ->
-                        // The game tile's chrome (docs/GAME_TILE_STYLE.md) on a list row.
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .gameTilePress { onPick(card.dbKey!!) }
-                                .gameTileChrome(card.accent, WTheme.surface)
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        TintedCard(
+                            card.accent,
+                            Modifier.fillMaxWidth().squishClickable("${card.title}, ${card.desc}") { onPick(card.dbKey!!) },
+                            corner = 18.dp,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 10.dp),
                         ) {
-                            GameTileChip(card.accent, 40.dp) { ModeGlyph(card, card.accent, box = 40.dp) }
-                            Column(Modifier.weight(1f)) {
-                                Text(card.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                                Text(card.desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) { ModeGlyph(card, card.accent, box = 42.dp) }
+                                Column(Modifier.weight(1f)) {
+                                    Text(card.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.heading)
+                                    Text(card.desc, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted)
+                                }
                             }
                         }
                     }

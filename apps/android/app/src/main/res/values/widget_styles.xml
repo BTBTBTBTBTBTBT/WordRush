@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC AL: the widget's labeled stat chips. A soft number (A2: Nunito Black,
+     #3b1a78, tabular digits, a soft white lift) over / beside a small letter-spaced caps
+     label in the chip's darker accent ink. -->
+<resources>
+    <style name="WidgetNumber">
+        <item name="android:fontFamily">@font/nunito</item>
+        <item name="android:textFontWeight">900</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#3B1A78</item>
+        <item name="android:shadowColor">#CCFFFFFF</item>
+        <item name="android:shadowDy">1.5</item>
+        <item name="android:shadowRadius">0.5</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <style name="WidgetLabel">
+        <item name="android:fontFamily">@font/nunito</item>
+        <item name="android:textFontWeight">900</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+</resources>

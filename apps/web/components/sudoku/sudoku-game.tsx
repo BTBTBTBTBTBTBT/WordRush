@@ -28,19 +28,18 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { sudokuElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 
 // Sudocious, the daily sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
 // device from the daily seed; Pro Unlimited picks Easy / Medium / Hard. Three
@@ -287,6 +286,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   const finished = state.status !== 'playing';
   const won = state.status === 'won';
   const remaining = sudokuRemaining(state);
+  const points = computeScoreBreakdown('SUDOKU', won, state.mistakes + 1, elapsedSeconds, won ? 1 : 0, 1, state.hintsUsed).total;
   const mistakeDots = (
     <span className="inline-flex items-center gap-0.5 align-middle" aria-label={`${mistakes} of ${SUDOKU_MAX_MISTAKES} mistakes`}>
       {Array.from({ length: SUDOKU_MAX_MISTAKES }, (_, i) => (
@@ -302,7 +302,8 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   return (
     <GameBackground
       mode="SUDOKU"
-      className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
+      className="h-screen-stable flex flex-col relative"
+      style={finished || completion ? FINISHED_SHELL_PAD : undefined}
     >
       {showVictory && <VictoryAnimation mode="SUDOKU" onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('SUDOKU', true, state.mistakes + 1, elapsedSeconds, 1, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(difficulty) : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('SUDOKU', false, state.mistakes + 1, elapsedSeconds, 0, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(difficulty) : undefined} />}
@@ -332,10 +333,10 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // day's grid from the matches row (a loss shows the solution muted), then the card.
-        <CompletedCustomDaily dbKey="SUDOKU" completion={completion}
+        <PuzzleElsewhere dbKey="SUDOKU" completion={completion}
           boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
           {elsewhere?.state && <SudokuBoard state={elsewhere.state} selected={null} onSelect={() => {}} revealSolution={!completion.won} />}
-        </CompletedCustomDaily>
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
@@ -376,47 +377,38 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the board scaled to the
+        // room left (a lost board shows the solution in muted digits, so nobody
+        // leaves without the answer), then the dock; the breakdown under More.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex items-center justify-center px-3 py-2">{board}</div>
-
-            {/* Result panel — the answer is on the board above (a lost board
-                shows the solution in muted digits), so nobody leaves without it. */}
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={SUDOKU_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-2xl font-black"
-                  style={{ backgroundColor: `${SUDOKU_ACCENT}15`, border: `2px solid ${SUDOKU_ACCENT}44`, color: SUDOKU_ACCENT }}>
-                  {won ? '✓' : remaining}
-                </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? 'Sudocious solved' : 'Out of mistakes'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {won
-                      ? `${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
-                      : `${remaining} cell${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="SUDOKU" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={() => startPractice(difficulty)} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard
-                gameMode="SUDOKU"
-                completed={won}
-                guessCount={state.mistakes + 1}
-                timeSeconds={elapsedSeconds}
-                boardsSolved={won ? 1 : 0}
-                totalBoards={1}
-                hintsUsed={state.hintsUsed}
-                day={mode === 'daily' ? getTodayLocal() : undefined}
-              />
-              {mode === 'daily' && <NextDailyCta currentMode="SUDOKU" />}
-            </div>
-          </div>
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.mistakes} guessLabel={state.mistakes === 1 ? 'mistake' : 'mistakes'} time={formatTime(elapsedSeconds)} points={points}
+                srText={won
+                  ? `Sudocious solved. ${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
+                  : `Out of mistakes. ${remaining} cell${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`} />
+            }
+            board={board}
+            dock={
+              <FinishedDock currentMode="SUDOKU" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? () => startPractice(difficulty) : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="SUDOKU" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure accent={SUDOKU_ACCENT}>
+                <ScoreBreakdownCard
+                  gameMode="SUDOKU"
+                  completed={won}
+                  guessCount={state.mistakes + 1}
+                  timeSeconds={elapsedSeconds}
+                  boardsSolved={won ? 1 : 0}
+                  totalBoards={1}
+                  hintsUsed={state.hintsUsed}
+                  day={mode === 'daily' ? getTodayLocal() : undefined}
+                />
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

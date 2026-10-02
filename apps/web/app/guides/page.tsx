@@ -2,10 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
-import { InfoPageHeader } from '@/components/ui/info-page-header';
-import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
-import { PageBackground } from '@/components/ui/page-background';
-import { onPageShadow } from '@/lib/art';
+import { InfoCard, InfoPageLayout, IntroCard, IntroText, LinkCard, SectionCard } from '@/components/ui/info-page';
 
 export const metadata: Metadata = {
   title: 'Wordocious Mode Guides — Rules, Scoring & Strategy for Every Mode',
@@ -15,78 +12,65 @@ export const metadata: Metadata = {
 
 export default function GuidesIndexPage() {
   return (
-    <PageBackground tint="home" className="min-h-screen pb-12">
-      <InfoPageHeader title="Mode Guides" art="art-title-howto" artLabel="How to Play" />
-      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-sm font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
+    <InfoPageLayout title="Mode Guides" art="art-title-guides" artLabel="Mode Guides">
+      <IntroCard title="How every game works">
+        <IntroText>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.
+        </IntroText>
+      </IntroCard>
+
+      {/* C6: game guides first, each in its own game's color (mockup .guidecard). */}
+      {MODE_GUIDES.map((g) => (
+        <LinkCard
+          key={g.slug}
+          href={`/guides/${g.slug}`}
+          accent={g.accent}
+          icon={<GuideIcon slug={g.slug} accent={g.accent} className="w-6 h-6" />}
+          title={g.title}
+          sub={g.tagline}
+        />
+      ))}
+
+      <SectionCard heading="Which mode should you play first?" className="p-5 space-y-3">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+          The eight daily word games are really four families, and More Games adds a fifth. <strong>Single-board classics</strong> — Classic (5 letters), Six,
+          and Seven — are pure deduction: one hidden word, six to eight guesses, and the only variable is word length. Longer words
+          sound harder but often play easier, because every guess reveals more letters; the real difficulty jump is the
+          thinner vocabulary most players have at six and seven letters. If you&apos;re new, start with Classic and work up.
         </p>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+          <strong>Multi-board marathons</strong> — QuadWord (4 boards) and OctoWord (8) — solve several words with a shared
+          guess pool. They reward breadth over depth: your opening guesses should maximize information across every board
+          at once, not chase a single kill. These are the modes where a disciplined three-guess opening routine pays off
+          most, and the ones that teach you to read multiple boards at a glance.
+        </p>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+          <strong>Twist modes</strong> change the rules themselves. Succession chains answers so each solve feeds the next.
+          Deliverance is a rescue mission against a shrinking guess budget. They&apos;re the antidote to autopilot.
+        </p>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+          <strong>Gauntlet</strong> chains five stages into one run where a single bust ends everything — the
+          closest thing Wordocious has to a boss fight. Finish all eight word games in a day and you&apos;ve scored a{' '}
+          <strong>Daily Sweep</strong>, tracked on the{' '}
+          <Link href="/strategy/daily-sweep-guide" style={{ color: '#7c3aed', fontWeight: 700 }}>sweep leaderboard</Link> —
+          the long-game goal that turns dabbling into a routine.
+        </p>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+          Finally, <strong style={{ color: '#4f46e5' }}>More Games</strong> is the tile on the home screen that opens ten extra
+          dailies outside the sweep: ProperNoundle (famous names instead of dictionary words), Sudocious (sudoku),
+          Starsweep (star placement), Letter Ladder, Spyglass (word search), Hubbub (seven-letter hub), Codebreaker
+          (cryptogram), Kindred (groups of four), Crosswordocious (sayings crossword) and Muddle (scramble). They earn
+          XP, medals and their own leaderboards but never change your sweep. Each guide above covers one mode&apos;s
+          exact rules, its scoring formula, and the specific strategy that mode rewards.
+        </p>
+      </SectionCard>
 
-        <div className="rounded-2xl p-5 mb-6 space-y-3" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: onPageShadow() }}>
-          <h2 className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--color-text)' }}>
-            Which mode should you play first?
-          </h2>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            The eight daily word games are really four families, and More Games adds a fifth. <strong>Single-board classics</strong> — Classic (5 letters), Six,
-            and Seven — are pure deduction: one hidden word, six to eight guesses, and the only variable is word length. Longer words
-            sound harder but often play easier, because every guess reveals more letters; the real difficulty jump is the
-            thinner vocabulary most players have at six and seven letters. If you&apos;re new, start with Classic and work up.
-          </p>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            <strong>Multi-board marathons</strong> — QuadWord (4 boards) and OctoWord (8) — solve several words with a shared
-            guess pool. They reward breadth over depth: your opening guesses should maximize information across every board
-            at once, not chase a single kill. These are the modes where a disciplined three-guess opening routine pays off
-            most, and the ones that teach you to read multiple boards at a glance.
-          </p>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            <strong>Twist modes</strong> change the rules themselves. Succession chains answers so each solve feeds the next.
-            Deliverance is a rescue mission against a shrinking guess budget. They&apos;re the antidote to autopilot.
-          </p>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            <strong>Gauntlet</strong> chains five stages into one run where a single bust ends everything — the
-            closest thing Wordocious has to a boss fight. Finish all eight word games in a day and you&apos;ve scored a{' '}
-            <strong>Daily Sweep</strong>, tracked on the{' '}
-            <Link href="/strategy/daily-sweep-guide" style={{ color: '#7c3aed', fontWeight: 700 }}>sweep leaderboard</Link> —
-            the long-game goal that turns dabbling into a routine.
-          </p>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            Finally, <strong style={{ color: '#4f46e5' }}>More Games</strong> is the tile on the home screen that opens ten extra
-            dailies outside the sweep: ProperNoundle (famous names instead of dictionary words), Sudocious (sudoku),
-            Starsweep (star placement), Letter Ladder, Spyglass (word search), Hubbub (seven-letter hub), Codebreaker
-            (cryptogram), Kindred (groups of four), Crosswordocious (sayings crossword) and Muddle (scramble). They earn
-            XP, medals and their own leaderboards but never change your sweep. Each guide below covers one mode&apos;s
-            exact rules, its scoring formula, and the specific strategy that mode rewards.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {MODE_GUIDES.map((g) => (
-            <Link
-              key={g.slug}
-              href={`/guides/${g.slug}`}
-              className="relative overflow-hidden flex items-center justify-between p-4 transition-transform hover:scale-[1.01]"
-              // One game-tile style (docs/GAME_TILE_STYLE.md): the home card's tint, border and top bar.
-              style={gameTileSurface(g.accent)}
-            >
-              <GameTileBar accent={g.accent} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${g.accent}15` }}>
-                    <GuideIcon slug={g.slug} accent={g.accent} />
-                  </span>
-                  <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{g.title}</span>
-                </div>
-                <p className="text-xs font-medium mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>{g.tagline}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        <p className="text-xs font-medium mt-6 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+      <InfoCard className="px-4 py-3">
+        <p className="m-0 text-xs font-bold leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           New to word puzzles entirely? Start with <Link href="/how-to-play" style={{ color: '#7c3aed', fontWeight: 700 }}>How to Play</Link> for
           the tile-color basics, then come back here when you want to climb the daily leaderboards.
         </p>
-      </div>
-    </PageBackground>
+      </InfoCard>
+    </InfoPageLayout>
   );
 }

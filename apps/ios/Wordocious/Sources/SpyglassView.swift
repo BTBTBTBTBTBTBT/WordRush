@@ -130,8 +130,8 @@ final class SpyglassVM: ObservableObject {
         }
         let before = state
         dispatch(.select(from: from, to: to))
-        if state.found.count > before.found.count { Haptics.tap(); SoundManager.shared.playSuccess() }
-        else if state.misses > before.misses { Haptics.error(); SoundManager.shared.playInvalid(); flash("Not one of the words") }
+        if state.found.count > before.found.count { Haptics.tap(); SoundManager.shared.playFound() }
+        else if state.misses > before.misses { Haptics.warning(); SoundManager.shared.playInvalid(); flash("Not one of the words") }
     }
     func hint() { let before = state.hintsUsed; dispatch(.hint); if state.hintsUsed > before { SoundManager.shared.playKeyTap() } }
     func showWords() { guard !state.wordsShown else { return }; dispatch(.show); flash("Words shown — finds from here count like misses") }
@@ -143,7 +143,7 @@ final class SpyglassVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = state.guessCount, used = state.hintsUsed
         let found = state.found.count, total = state.words.count
@@ -190,20 +190,31 @@ struct SpyglassView: View {
         ZStack {
             PageBackground(tint: .forGame(.wordsearch))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView { VStack(spacing: 10) { header; SpyglassGridView(vm: vm, revealMissing: vm.state.status == .lost).padding(.horizontal, 6); wordChips; result }.padding(.horizontal, 10) }
+                // FINISH_SPEC §R2: one screen — header + result strip, the grid scaled to
+                // the height left, the dock; the word list + breakdown below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 4) { header; resultHeadline }
+                } board: { _ in
+                    SpyglassGridView(vm: vm, revealMissing: vm.state.status == .lost, tray: true).padding(.horizontal, 6)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "WORDSEARCH", game: "Spyglass", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    VStack(spacing: 10) { wordChips; result }.padding(.top, 8)
+                }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
                     // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
                     Spacer(minLength: 6)
-                    SpyglassGridView(vm: vm, revealMissing: false).padding(.horizontal, 6)
+                    SpyglassGridView(vm: vm, revealMissing: false, tray: true).padding(.horizontal, 6)
                     wordChips.padding(.top, 4)
-                    HStack(spacing: 8) {
-                        capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
-                        capsule(vm.state.wordsShown ? "Words shown" : "Show words", "list.bullet", dim: vm.state.wordsShown) { vm.showWords() }
-                        TimelineView(.periodic(from: .now, by: 1)) { _ in
-                            capsule(vm.canReveal ? "Reveal" : "Reveal · \(timeText(max(0, revealAfterSeconds - vm.elapsed)))", "eye", dim: !vm.canReveal) { vm.reveal() }
-                        }
+                    // §A8: candy pills — amber Hint, teal Show words, peach Reveal
+                    // (each fades while it's unavailable). One row when it fits.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 8) { hintPill; showPill; revealPill }
+                        VStack(spacing: 6) { HStack(spacing: 8) { hintPill; showPill }; revealPill }
                     }
                     .padding(.top, 6)
                     Spacer(minLength: 6)
@@ -212,9 +223,8 @@ struct SpyglassView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 110).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -258,16 +268,24 @@ struct SpyglassView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    private func capsule(_ label: String, _ symbol: String, dim: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .foregroundStyle(dim ? Theme.textMuted.opacity(0.5) : spyglassAccent)
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Capsule().fill(dim ? Color.clear : spyglassAccent.opacity(0.05)))
-                .overlay(Capsule().stroke(dim ? Theme.border : spyglassAccent.opacity(0.4), lineWidth: 1.5))
+    /// §A8: a small candy pill; `dim` shows it faded (it stays tappable — the
+    /// view model explains why it can't act yet).
+    private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, dim: Bool = false,
+                         action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+            .opacity(dim ? 0.55 : 1)
+    }
+    private var hintPill: some View {
+        capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { vm.hint() }
+    }
+    private var showPill: some View {
+        capsule(vm.state.wordsShown ? "Words shown" : "Show words", "list.bullet", variant: .teal, dim: vm.state.wordsShown) { vm.showWords() }
+    }
+    private var revealPill: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            capsule(vm.canReveal ? "Reveal" : "Reveal · \(timeText(max(0, revealAfterSeconds - vm.elapsed)))", "eye", variant: .peach,
+                    dim: !vm.canReveal) { vm.reveal() }
         }
-        .buttonStyle(.squish)
-        .accessibilityLabel(label)
     }
 
     private var header: some View {
@@ -299,42 +317,55 @@ struct SpyglassView: View {
             let found = s.found.contains(w), hinted = s.hinted.contains(w) && !found
             // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
             let visible = found || s.wordsShown || s.status != .playing
-            Text(visible ? w : String(repeating: "•", count: w.count)).font(Brand.font(14, .bold)).strikethrough(found)
+            // §J3: a found word is a glossy capsule in the accent with a soft glow;
+            // the rest are tinted pills (hinted ones ringed in the accent).
+            Text(visible ? w : String(repeating: "•", count: w.count)).font(Brand.font(14, found ? .black : .bold))
                 .tracking(visible ? 0 : 2)
                 .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-                .accessibilityLabel(visible ? w : "\(w.count)-letter word")
-                .foregroundStyle(found ? spyglassInk : (visible ? Theme.textPrimary : Theme.textMuted))
+                .accessibilityLabel(visible ? "\(w)\(found ? ", found" : "")" : "\(w.count)-letter word")
+                .foregroundStyle(found ? Color.white : (visible ? PuzKit.ink : FinishInk.secondary))
+                .shadow(color: found ? Color(hex: 0x1A2E05).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(Capsule().fill(found ? spyglassAccent.opacity(0.14) : Theme.surface))
-                .overlay(Capsule().stroke(found ? spyglassAccent.opacity(0.35) : (hinted ? spyglassAccent : Theme.border), lineWidth: 1))
+                .background {
+                    if !found {
+                        Capsule().fill(PuzKit.face(spyglassAccent, 0.10))
+                            .overlay(Capsule().stroke(hinted ? spyglassAccent : PuzKit.line(spyglassAccent, 0.3), lineWidth: hinted ? 1.5 : 1))
+                    }
+                }
+                .modifier(SpyglassFoundChip(on: found))
         }
         .padding(.horizontal, 6)
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let s = vm.state
+        let won = s.status == .won
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? (s.guessCount == 10 ? "Clean clear" : (s.wordsShown ? "Cleared with the list" : "Grid cleared")) : "Revealed",
+                                won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(s.found.count)/\(s.words.count)", "found"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: vm.points)
+        }
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let s = vm.state
         let won = s.status == .won
         let secs = vm.elapsed
         return VStack(spacing: 10) {
-            Text(won ? (s.guessCount == 10 ? "Clean clear" : (s.wordsShown ? "Cleared with the list" : "Grid cleared")) : "Revealed")
-                .font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
             Text("\(s.found.count)/\(s.words.count) found · \(formatGuessStat(semantics: "misses", guessBase: 10, guessCount: s.guessCount)) · \(timeText(secs))\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Color(hex: 0xD97706))
-                }
-            }
-            .foregroundStyle(spyglassAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(spyglassAccent)
             if vm.isDaily { DailyRankBadge(gameMode: .wordsearch) }
             ScoreBreakdownView(gameMode: GameMode.wordsearch.rawValue, completed: won,
                                guessCount: s.guessCount, timeSeconds: secs,
                                boardsSolved: s.found.count, totalBoards: s.words.count, hintsUsed: s.hintsUsed,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "WORDSEARCH") }
         }
         .padding(.vertical, 12)
     }
@@ -410,19 +441,24 @@ private struct WrapLayout: Layout {
 struct SpyglassGridView: View {
     @ObservedObject var vm: SpyglassVM
     let revealMissing: Bool
+    /// §L: sit the letters on the shared game tray (the live game; recaps tray at
+    /// their own call sites).
+    var tray = false
     @State private var anchor: Int?
     @State private var hover: Int?
     @State private var pendingTap: Int?
 
-    private let heavy = Color(hex: 0x4C1D95)
-    private let rule = Color(hex: 0x4C1D95).opacity(0.16)
 
     var body: some View {
         let s = vm.state, n = s.n
         GeometryReader { geo in
             // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered).
+            // §L: the tray's padding (both sides) and lip come out of the budget first.
+            let pad: CGFloat = tray ? GameTray.padding * 2 : 8
+            let lip: CGFloat = tray ? GameTray.lip : 0
             let cell = CGFloat(BoardSizing.fitTile(widthUnits: Double(n), heightUnits: Double(n),
-                                                   width: Double(geo.size.width), height: Double(geo.size.height),
+                                                   width: Double(geo.size.width - pad / CGFloat(BoardSizing.widthFill)),
+                                                   height: Double(geo.size.height - (pad + lip) / CGFloat(BoardSizing.heightFill)),
                                                    maxTile: 120, minTile: 4))
             let side = cell * CGFloat(n)
             let chars = Array(s.grid)
@@ -437,26 +473,51 @@ struct SpyglassGridView: View {
                         var p = Path(); p.move(to: center(a)); p.addLine(to: center(b))
                         ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: cell * 0.72, lineCap: .round, dash: dashed ? [6, 5] : []))
                     }
-                    for w in s.words where s.found.contains(w.w) { let c = wordsearchCells(n, w); capsule(c[0], c[c.count - 1], spyglassAccent.opacity(0.28)) }
-                    if revealMissing { for w in s.words where !s.found.contains(w.w) { let c = wordsearchCells(n, w); capsule(c[0], c[c.count - 1], Color(hex: 0xDC2626).opacity(0.45), dashed: true) } }
-                    if let a = anchor, let h = hover, h != a, preview != nil { capsule(a, h, spyglassAccent.opacity(0.18)) }
-                    for k in 1..<n {
-                        let p = CGFloat(k) * cell
-                        ctx.fill(Path(CGRect(x: p - 0.5, y: 0, width: 1, height: side)), with: .color(rule))
-                        ctx.fill(Path(CGRect(x: 0, y: p - 0.5, width: side, height: 1)), with: .color(rule))
+                    /// §J3: a found word as a glossy capsule in the accent — a darker
+                    /// lip, a light → base face, a gloss on its upper half, a soft glow.
+                    func glossyCapsule(_ a: Int, _ b: Int) {
+                        let p0 = center(a), p1 = center(b)
+                        let len = hypot(p1.x - p0.x, p1.y - p0.y)
+                        let angle = Angle(radians: Double(atan2(p1.y - p0.y, p1.x - p0.x)))
+                        let w = cell * 0.78
+                        let rect = CGRect(x: -w / 2, y: -w / 2, width: len + w, height: w)
+                        let shape = Path(roundedRect: rect, cornerRadius: w / 2)
+                        ctx.drawLayer { l in
+                            l.translateBy(x: p0.x, y: p0.y + w * 0.07)
+                            l.rotate(by: angle)
+                            l.addFilter(.shadow(color: spyglassAccent.opacity(0.45), radius: w * 0.22))
+                            l.fill(shape, with: .color(Color.black.mixed(over: spyglassAccent, 0.3)))
+                        }
+                        ctx.drawLayer { l in
+                            l.translateBy(x: p0.x, y: p0.y)
+                            l.rotate(by: angle)
+                            l.fill(shape, with: .linearGradient(Gradient(colors: [Color.white.mixed(over: spyglassAccent, 0.45), spyglassAccent]),
+                                                                startPoint: CGPoint(x: 0, y: -w / 2), endPoint: CGPoint(x: 0, y: w / 2)))
+                            let gloss = Path(roundedRect: CGRect(x: rect.minX + w * 0.25, y: -w / 2 + w * 0.08,
+                                                                  width: max(0, rect.width - w * 0.5), height: w * 0.36),
+                                             cornerRadius: w * 0.18)
+                            l.fill(gloss, with: .linearGradient(Gradient(colors: [Color.white.opacity(0.5), Color.white.opacity(0)]),
+                                                                startPoint: CGPoint(x: 0, y: -w / 2), endPoint: CGPoint(x: 0, y: 0)))
+                        }
                     }
+                    for w in s.words where s.found.contains(w.w) { let c = wordsearchCells(n, w); glossyCapsule(c[0], c[c.count - 1]) }
+                    if revealMissing { for w in s.words where !s.found.contains(w.w) { let c = wordsearchCells(n, w); capsule(c[0], c[c.count - 1], Color(hex: 0xDC2626).opacity(0.45), dashed: true) } }
+                    if let a = anchor, let h = hover, h != a, preview != nil { capsule(a, h, spyglassAccent.opacity(0.22)) }
                 }
                 VStack(spacing: 0) {
                     ForEach(0..<n, id: \.self) { r in
                         HStack(spacing: 0) {
                             ForEach(0..<n, id: \.self) { c in
                                 let i = r * n + c
+                                // §J3: crisp letters on the tinted tray (no grid lines);
+                                // a found letter reads white on its glossy capsule.
                                 ZStack {
-                                    if i == anchor || i == pendingTap { Rectangle().fill(spyglassAccent.opacity(0.2)) }
-                                    else if previewSet.contains(i) { Rectangle().fill(spyglassAccent.opacity(0.08)) }
-                                    if hintCells.contains(i) { Rectangle().stroke(spyglassAccent, lineWidth: 2).padding(1) }
+                                    if i == anchor || i == pendingTap { Circle().fill(spyglassAccent.opacity(0.24)).padding(cell * 0.08) }
+                                    else if previewSet.contains(i) { Circle().fill(spyglassAccent.opacity(0.10)).padding(cell * 0.08) }
+                                    if hintCells.contains(i) { Circle().stroke(Color(hex: 0xF5C542), lineWidth: 2).padding(cell * 0.08) }
                                     Text(String(chars[i])).font(Brand.font(min(20, cell * 0.5), .black))
-                                        .foregroundStyle(foundCells.contains(i) ? spyglassInk : Theme.textPrimary)
+                                        .foregroundStyle(foundCells.contains(i) ? Color.white : PuzKit.ink)
+                                        .shadow(color: foundCells.contains(i) ? Color(hex: 0x1A2E05).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                                 }
                                 .frame(width: cell, height: cell)
                             }
@@ -465,9 +526,6 @@ struct SpyglassGridView: View {
                 }
             }
             .frame(width: side, height: side)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(heavy, lineWidth: 2.5))
             .contentShape(Rectangle())
             .gesture(vm.isFinished ? nil : DragGesture(minimumDistance: 0)
                 .onChanged { g in
@@ -483,6 +541,7 @@ struct SpyglassGridView: View {
                     // A tap: the second tap completes a tap-tap selection.
                     if let p = pendingTap, p != a { pendingTap = nil; vm.select(from: p, to: a) } else { pendingTap = a }
                 })
+            .modifier(SpyglassTrayChrome(on: tray, state: s.status == .won ? .won : (s.status == .lost ? .lost : .normal)))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
@@ -494,5 +553,39 @@ struct SpyglassGridView: View {
         let c = Int(floor(p.x / cell)), r = Int(floor(p.y / cell))
         guard c >= 0, c < n, r >= 0, r < n else { return nil }
         return r * n + c
+    }
+}
+
+/// §L: the letters on the shared game tray in play; a soft tinted panel (no dark
+/// rule) in a recap.
+private struct SpyglassTrayChrome: ViewModifier {
+    let on: Bool
+    let state: GameTrayState
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on {
+            content.gameTray(accent: spyglassAccent, state: state)
+        } else {
+            let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+            content
+                .padding(4)
+                .background(shape.fill(PuzKit.face(spyglassAccent, 0.09)))
+                .overlay(shape.strokeBorder(PuzKit.line(spyglassAccent, 0.3), lineWidth: 1.5))
+        }
+    }
+}
+
+/// §J3: a found word chip as a glossy capsule in the accent with a soft glow.
+private struct SpyglassFoundChip: ViewModifier {
+    let on: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on {
+            content.puzChip(spyglassAccent, radius: 16, lip: 3, gloss: 0.5, glow: spyglassAccent.opacity(0.4))
+        } else {
+            content
+        }
     }
 }

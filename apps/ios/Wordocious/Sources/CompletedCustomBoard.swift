@@ -141,11 +141,12 @@ struct CompletedCustomBoardView: View {
                 WordWrapLayout(spacing: 5, lineSpacing: 5) {
                     ForEach(vm.state.words.map(\.w), id: \.self) { w in
                         let found = vm.state.found.contains(w)
+                        // §A1: word chips are tinted pills (found = the game's accent,
+                        // missed = a soft slate), never white.
                         Text(w).font(Brand.font(11, .bold)).strikethrough(found).lineLimit(1).fixedSize()
-                            .foregroundStyle(found ? Theme.textPrimary : Theme.textMuted)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Capsule().fill(found ? ModeStyle.accent(.wordsearch).opacity(0.14) : Theme.surface))
-                            .overlay(Capsule().stroke(found ? ModeStyle.accent(.wordsearch).opacity(0.35) : Theme.border, lineWidth: 1))
+                            .foregroundStyle(found ? FinishInk.heading : FinishInk.secondary)
+                            .padding(.horizontal, 8).padding(.top, 5).padding(.bottom, 3)
+                            .tintedPill(found ? ModeStyle.accent(.wordsearch) : G5Accent.slate)
                     }
                 }
                 .frame(maxWidth: width)
@@ -155,7 +156,7 @@ struct CompletedCustomBoardView: View {
         case .cryptogram(let vm):
             VStack(spacing: 8) {
                 CipherBoardView(vm: vm, finished: true, cell: CodebreakerSizing.cell(for: vm.state.cipher, width: width, height: nil))
-                Text("“\(vm.state.text)”").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary).multilineTextAlignment(.center)
+                Text("“\(vm.state.text)”").font(Brand.font(14, .heavy)).foregroundStyle(FinishInk.heading).multilineTextAlignment(.center)
             }
             .frame(maxWidth: width)
         case .groups(let solved, let unsolved):
@@ -190,10 +191,10 @@ private struct CompletedHubBoard: View {
             HStack {
                 Text(r.rankName).font(Brand.font(12, .black)).foregroundStyle(accent)
                 Spacer()
-                Text("\(r.points)/\(r.max) pts · \(r.found.count)\(puzzle.map { "/\($0.words.count)" } ?? "") words").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                Text("\(r.points)/\(r.max) pts · \(r.found.count)\(puzzle.map { "/\($0.words.count)" } ?? "") words").font(Brand.caption(11)).foregroundStyle(FinishInk.secondary)
             }
             HStack(spacing: 4) {
-                ForEach(0..<HUB_RANKS.count, id: \.self) { i in Capsule().fill(i <= r.rank ? accent : Theme.borderLight).frame(height: 6) }
+                ForEach(0..<HUB_RANKS.count, id: \.self) { i in Capsule().fill(i <= r.rank ? accent : accent.wash(0.18)).frame(height: 6) }
             }
             if letters.count == 7 {
                 let o = Array(letters.dropFirst())
@@ -204,7 +205,7 @@ private struct CompletedHubBoard: View {
                 }
                 .padding(.vertical, 2)
             }
-            Text(puzzle == nil ? "WORDS FOUND" : "ALL WORDS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            FinishLabel(puzzle == nil ? "Words found" : "All words")
             WordWrapLayout(spacing: 5, lineSpacing: 5) {
                 ForEach(Set((puzzle?.words ?? r.found) + r.bonusFound).sorted(), id: \.self) { w in chip(w) }
             }
@@ -213,19 +214,21 @@ private struct CompletedHubBoard: View {
     }
 
     private func tile(_ ch: Character, centre: Bool = false) -> some View {
-        Text(String(ch)).font(Brand.font(16, .black)).foregroundStyle(centre ? .white : Theme.textPrimary)
+        // §A1 / §J1: hive letters as tinted tiles (the center filled in the accent).
+        Text(String(ch)).font(Brand.font(16, .black)).foregroundStyle(centre ? .white : FinishInk.heading)
             .frame(width: 34, height: 34)
-            .background(RoundedRectangle(cornerRadius: 7).fill(centre ? accent : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(centre ? accent : Theme.border, lineWidth: 1.5))
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(centre ? accent : (Theme.isDark ? accent.opacity(0.14) : accent.wash(0.12))))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(centre ? accent : accent.wash(0.34), lineWidth: 1.5))
     }
 
     private func chip(_ w: String) -> some View {
         let got = r.found.contains(w) || r.bonusFound.contains(w)
         let pangram = puzzle?.pangrams.contains(w) ?? false, revealed = r.revealed.contains(w)
         return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .bold)).lineLimit(1).fixedSize()
-            .foregroundStyle(!got ? Color(hex: 0x9CA3AF) : pangram ? accent : revealed ? Color(hex: 0x8B5CF6) : Theme.textPrimary)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(!got ? Color(hex: 0xF9FAFB) : pangram ? accent.opacity(0.14) : Theme.surface))
-            .overlay(Capsule().stroke(!got ? Color(hex: 0xE5E7EB) : pangram ? accent : revealed ? Color(hex: 0x8B5CF6) : Theme.border, lineWidth: 1))
+            .foregroundStyle(!got ? FinishInk.secondary.opacity(0.75) : pangram ? accent : revealed ? Color(hex: 0x8B5CF6) : FinishInk.heading)
+            .padding(.horizontal, 8).padding(.top, 5).padding(.bottom, 3)
+            // §A1: tinted pills — missed = soft slate, pangram = the accent,
+            // revealed = lilac, found = the accent's light wash.
+            .tintedPill(!got ? G5Accent.slate : revealed ? Color(hex: 0x8B5CF6) : accent)
     }
 }

@@ -4,23 +4,18 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,27 +26,35 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.R
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.launch
 
 /**
- * Streak-at-risk modal — ports web modals/streak-shield-modal.tsx. Restyled to
- * the home redesign's look (founder, 2026-10-01: the old card "looks dated"): a
- * soft warm header with the flame and the number, an all-caps headline, no
- * bubbles, one flat rounded button. Same actions: "USE A SHIELD" when shields
- * remain (or the no-shields Pro note) and a muted "Let it reset" decline.
+ * Streak-at-risk window — ports web modals/streak-shield-modal.tsx, in the finishing
+ * look (FINISH_SPEC G2): a lavender card with the purple shield header
+ * (#a78bfa → #7c3aed → #6d28d9) carrying U guarding the flame (`art_scene_shield_guard`),
+ * the streak and shield counts as soft-number tiles, USE A SHIELD as the large purple
+ * candy button and "Let it reset" as the soft peach one. Spending a shield swaps the
+ * card to a "Streak saved!" beat (the art springing in on a glow, confetti) for 1.8 s
+ * before closing. Reduce Motion: no spring, no confetti. Same actions as before.
  */
 @Composable
 fun StreakShieldModal(
@@ -67,11 +70,15 @@ fun StreakShieldModal(
     // 1.8s before closing (iOS/web parity) — the modal owns its own dismissal.
     var saved by remember { mutableStateOf(false) }
     // iOS fires a warning haptic and springs the card in from 0.9×/0 opacity.
-    val haptics = LocalHapticFeedback.current
+    val feedbackView = androidx.compose.ui.platform.LocalView.current
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        com.wordocious.app.data.Haptics.warning(feedbackView)
         shown = true
+    }
+    // Spec U: shield saved = streak · medium.
+    LaunchedEffect(saved) {
+        if (saved) com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.STREAK, feedbackView)
     }
     val appear by animateFloatAsState(
         targetValue = if (shown) 1f else 0f,
@@ -80,137 +87,153 @@ fun StreakShieldModal(
         label = "shieldAppear",
     )
     val shieldsAfter = (shields - 1).coerceAtLeast(0)
-    val cardShape = RoundedCornerShape(22.dp)
+    val cardShape = RoundedCornerShape(24.dp)
+    val purple = MomentInk.shield
 
-    Box(
-        Modifier.fillMaxSize().background(Color(0x731E1B4B)).clickableNoRipple { if (!busy && !saved) onClose() },
-        contentAlignment = Alignment.Center,
-    ) {
+    PopupScrim(onTap = { if (!busy && !saved) onClose() }) {
         Box(
             Modifier.padding(16.dp).widthIn(max = 384.dp).fillMaxWidth()
                 .graphicsLayer { scaleX = 0.9f + 0.1f * appear; scaleY = 0.9f + 0.1f * appear; alpha = appear }
-                .shadow(24.dp, cardShape, ambientColor = Color(0x404C1D95), spotColor = Color(0x404C1D95))
+                .shadow(24.dp, cardShape, ambientColor = Color(0x59280F50), spotColor = Color(0x59280F50))
                 .clip(cardShape)
-                // FINISH_SPEC A1: the lavender card, not white.
-                .background(accentWash(Color(0xFF7C3AED), 0.08f))
+                // FINISH_SPEC A1: the lavender popup card (`.pop` --tint #f5efff), not white.
+                .background(accentWash(purple, 0.09f))
+                .border(1.5.dp, accentLine(purple, 0.26f), cardShape)
                 .clickableNoRipple { },
         ) {
             if (saved) {
-                Column(Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.fillMaxWidth()
-                            .background(Brush.verticalGradient(listOf(Color(0xFFEDE9FE), Color(0xFFE0E7FF))))
-                            .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon3D(Icon3DName.SHIELD, 64.dp)
-                        Text(
-                            "STREAK SAVED!", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                            color = Color(0xFF4C1D95), modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
-                    Text(
-                        "Your $streak-day streak is safe \u00B7 $shieldsAfter ${if (shieldsAfter == 1) "shield" else "shields"} left",
-                        fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
-                    )
-                }
+                SavedBeat(streak, shieldsAfter)
                 return@Box
             }
             Column(Modifier.fillMaxWidth()) {
-                // Warm header: flame, the number, DAY STREAK.
-                Column(
-                    Modifier.fillMaxWidth()
-                        .background(Brush.verticalGradient(listOf(Color(0xFFFFF3E0), Color(0xFFFDE7F0))))
-                        .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon3D(Icon3DName.FLAME, 56.dp)
-                    Text(
-                        "$streak", fontSize = 52.sp, lineHeight = 52.sp, fontWeight = FontWeight.Black,
-                        color = Color(0xFF78350F), modifier = Modifier.padding(top = 4.dp),
-                    )
-                    Text(
-                        "DAY STREAK", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
-                        color = Color(0xFFB45309), modifier = Modifier.padding(top = 4.dp),
+                // G2: the purple shield header with U guarding the flame.
+                Box(Modifier.fillMaxWidth().background(MomentInk.shieldHeader)) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 18.dp, end = 30.dp, top = 16.dp, bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f).padding(end = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            HeaderTitle("DON'T LOSE YOUR STREAK!")
+                            Text(
+                                "Your $streak-day streak ends if you don't play today.",
+                                fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.92f),
+                                lineHeight = 1.3.em,
+                            )
+                        }
+                        Image(
+                            painterResource(R.drawable.art_scene_shield_guard), contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.height(112.dp).widthIn(max = 130.dp).clearAndSetSemantics { },
+                        )
+                    }
+                    PopupClose(
+                        { if (!busy) onClose() }, Modifier.align(Alignment.TopEnd),
+                        enabled = !busy,
                     )
                 }
                 Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(
-                        "DON'T LOSE YOUR STREAK!", fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                        color = Color(0xFF4C1D95), textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        "Your $streak-day streak ends if you don't play today.",
-                        fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), textAlign = TextAlign.Center,
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon3D(Icon3DName.SHIELD, 20.dp)
-                        Text(
-                            "$shields ${if (shields == 1) "shield" else "shields"}",
-                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9),
+                    // A2: the streak and the shields as two soft-number tiles.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TintedStatTile(
+                            Color(0xFFF5A524), "DAY STREAK", "$streak", Modifier.weight(1f),
+                            icon = Icon3DName.FLAME, bar = true,
+                        )
+                        TintedStatTile(
+                            purple, if (shields == 1) "SHIELD" else "SHIELDS", "$shields", Modifier.weight(1f),
+                            icon = Icon3DName.SHIELD, bar = true,
                         )
                     }
                     // Shields are the only way to save a streak. No shields: the Pro note.
                     if (shields > 0) {
-                        val btnShape = RoundedCornerShape(14.dp)
-                        Box(
-                            Modifier.padding(top = 4.dp).fillMaxWidth().height(48.dp)
-                                .shadow(8.dp, btnShape, ambientColor = Color(0x4D6D28D9), spotColor = Color(0x4D6D28D9))
-                                .clip(btnShape)
-                                .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
-                                .alpha(if (busy) 0.5f else 1f)
-                                .clickableNoRipple {
-                                    if (!busy) {
-                                        busy = true
-                                        scope.launch {
-                                            onUseShield()
-                                            busy = false
-                                            saved = true
-                                            kotlinx.coroutines.delay(1_800)
-                                            onClose()
-                                        }
+                        CandyButton(
+                            if (busy) "USING A SHIELD…" else "USE A SHIELD",
+                            onClick = {
+                                if (!busy) {
+                                    busy = true
+                                    scope.launch {
+                                        onUseShield()
+                                        busy = false
+                                        saved = true
+                                        kotlinx.coroutines.delay(1_800)
+                                        onClose()
                                     }
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                if (busy) "USING A SHIELD\u2026" else "USE A SHIELD",
-                                fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White,
-                            )
-                        }
+                                }
+                            },
+                            color = CandyColor.PURPLE, size = CandySize.LARGE, fill = true,
+                            enabled = !busy, modifier = Modifier.fillMaxWidth(),
+                        )
                     } else {
                         Text(
                             "You're out of shields. Pro members get 4 every billing period.",
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), textAlign = TextAlign.Center,
+                            fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                            color = if (WTheme.isDark) WTheme.textSecondary else FinishInk.muted,
+                            textAlign = TextAlign.Center,
                         )
                     }
-                    Text(
+                    CandyButton(
                         "Let it reset",
-                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280),
-                        textAlign = TextAlign.Center,
-                        // iOS spans the full card width so the whole row is the tap target.
-                        modifier = Modifier.fillMaxWidth().alpha(if (busy) 0.5f else 1f).clickableNoRipple {
+                        onClick = {
                             if (!busy) {
                                 busy = true
                                 scope.launch { onDecline(); busy = false }
                             }
-                        }.padding(vertical = 8.dp),
+                        },
+                        color = CandyColor.PEACH, size = CandySize.MEDIUM, fill = true,
+                        enabled = !busy, modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-            // Close X (36dp target), hidden on the saved beat.
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp).size(36.dp)
-                    .clickableNoRipple { if (!busy) onClose() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Close, "Close", tint = Color(0xFF92400E), modifier = Modifier.size(20.dp))
+        }
+        // G2: the saved beat's confetti over the whole window (off with Reduce Motion).
+        if (saved) PopupConfetti(MomentInk.shieldConfetti)
+    }
+}
+
+/** G2 the "Streak saved!" beat: the shield art springing in on a glow, the soft streak, the shields left. */
+@Composable
+private fun SavedBeat(streak: Int, shieldsAfter: Int) {
+    Column(Modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth().background(MomentInk.shieldHeader).padding(top = 14.dp, bottom = 6.dp)) {
+            SceneArtPop(R.drawable.art_scene_shield_guard, height = 150.dp, glow = Color(0xFFFFE9A8))
+        }
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                "STREAK SAVED!", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+                color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
+                modifier = Modifier.semantics { heading() },
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon3D(Icon3DName.FLAME, 26.dp)
+                SoftNumber("$streak", 30.sp)
+                Text(
+                    "day streak", fontSize = 13.sp, fontWeight = FontWeight.Black,
+                    color = if (WTheme.isDark) WTheme.textSecondary else FinishInk.label,
+                )
             }
+            Text(
+                "Your $streak-day streak is safe · $shieldsAfter ${if (shieldsAfter == 1) "shield" else "shields"} left",
+                fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                color = if (WTheme.isDark) WTheme.textSecondary else FinishInk.muted, textAlign = TextAlign.Center,
+            )
         }
     }
+}
+
+/** The white popup headline on a colored header (the mockup's `.pop .head h3`). */
+@Composable
+internal fun HeaderTitle(text: String, fontSize: androidx.compose.ui.unit.TextUnit = 20.sp) {
+    val px = androidx.compose.ui.platform.LocalDensity.current.density
+    Text(
+        text, fontSize = fontSize, fontWeight = FontWeight.Black, color = Color.White, lineHeight = 1.1.em,
+        style = TextStyle(shadow = Shadow(Color(0x1F000000), Offset(0f, 2f * px), 0f)),
+        modifier = Modifier.semantics { heading() },
+    )
 }

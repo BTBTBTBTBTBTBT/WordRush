@@ -41,7 +41,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -73,6 +72,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendlyGamesService
@@ -83,8 +84,11 @@ import com.wordocious.app.ui.friends.FriendlyGameGlyph
 import com.wordocious.app.ui.friends.FriendlyGameIcon
 import com.wordocious.app.ui.friends.FriendsBannerView
 import com.wordocious.app.ui.friends.FriendsLabel
+import com.wordocious.app.ui.friends.FriendsNotice
 import com.wordocious.app.ui.friends.FriendsPink
-import com.wordocious.app.ui.friends.PinkPill
+import com.wordocious.app.ui.friends.FRIENDS_CARD_ACCENT
+import com.wordocious.app.ui.friends.friendsLine
+import com.wordocious.app.ui.friends.friendsWash
 import com.wordocious.app.ui.friends.QuickPlayRequest
 import com.wordocious.app.ui.friends.QuickPlaySheet
 import com.wordocious.app.ui.friends.color
@@ -158,6 +162,29 @@ fun FriendsScreen(
     val scope = rememberCoroutineScope()
     val addRequester = remember { BringIntoViewRequester() }
     val addFocus = remember { FocusRequester() }
+    // FINISH_SPEC T1 / T3: the invite-sent card (a request now pending, in Add a friend)
+    // and the NEW FRIENDS card (a request accepted — theirs by you, yours by them, or a
+    // mutual add).
+    var requestSentTo by remember { mutableStateOf<String?>(null) }
+    var newFriend by remember { mutableStateOf<NewFriend?>(null) }
+    val context = LocalContext.current
+    // T3, the inviter's side: watch my outgoing requests (per account, across launches);
+    // one that turns into a friend gets the NEW FRIENDS card once.
+    LaunchedEffect(version, myProfile?.id) {
+        val uid = myProfile?.id ?: return@LaunchedEffect
+        if (!FriendsService.loaded) return@LaunchedEffect
+        val prefs = context.getSharedPreferences(INVITE_WATCH_PREFS, android.content.Context.MODE_PRIVATE)
+        val key = "watch_friend_requests_$uid"
+        val t = InviteScreens.trackRequests(
+            InviteScreens.parseWatched(prefs.getString(key, null)),
+            FriendsService.outgoing, FriendsService.friends.map { it.id },
+        )
+        prefs.edit().putString(key, InviteScreens.formatWatched(t.watch)).apply()
+        if (newFriend == null) {
+            t.accepted.firstNotNullOfOrNull { id -> FriendsService.friends.firstOrNull { it.id.equals(id, ignoreCase = true) } }
+                ?.let { newFriend = NewFriend.of(it) }
+        }
+    }
 
     // The existing free live VS challenge (§289): a private Classic battle, pushed to the friend.
     fun challenge(f: FriendsService.FriendProfile) {
@@ -167,7 +194,7 @@ fun FriendsScreen(
             try {
                 when (val r = FriendsService.challenge(f.id, "DUEL")) {
                     is FriendsService.ChallengeOutcome.Sent -> {
-                        note = "Challenge sent to ${f.username} ⚔️"
+                        note = "Challenge sent to ${f.username}!"
                         onJoinInvite(com.wordocious.core.GameMode.DUEL, r.code)
                     }
                     is FriendsService.ChallengeOutcome.Failed -> note = r.message
@@ -184,32 +211,18 @@ fun FriendsScreen(
         )
     }
 
+    val friendsScroll = rememberScrollState()
+    ScrollToTopOnReselect(friendsScroll) // AJ: a re-tap of Friends scrolls to the top.
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.FRIENDS, alwaysLight = true)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(friendsScroll)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 1. Title + controls row (founder, 2026-10-02: the shared AppHeader above every
-        // tab is the Friends header too, so the FRIENDS text title row is gone). The
-        // whole-cast FRIENDS art (ART_SPEC §2) leads; the bell and add-friend circles
-        // sit right-aligned beside it.
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                PageTitleArt(TitleArt.FRIENDS, alignment = Alignment.CenterStart)
-            }
-            NotificationPrefsButton(myProfile)
-            if (signedIn) {
-                HeaderCircle(
-                    onClick = { scope.launch { addRequester.bringIntoView(); runCatching { addFocus.requestFocus() } } },
-                    contentDescription = "Add a friend",
-                ) { Icon3D(Icon3DName.ADD_FRIEND, 23.dp) }
-            }
-        }
+        // 1. The FRIENDS headline (FINISH_SPEC A6 / C4b / N1): the FRIENDS lettering as a
+        // calm centered headline (PageHeadline sizes it), nothing beside it. The bell moved into Settings ›
+        // Notifications; "Add a friend" is a candy button in the YOUR FRIENDS header.
+        PageHeadline(TitleArt.FRIENDS, Modifier.fillMaxWidth())
         if (!signedIn) {
             Text(
                 "Sign in to add friends, race them every day and play pocket games together.",
@@ -217,22 +230,8 @@ fun FriendsScreen(
             )
             return@Column
         }
-        note?.let {
-            // A shield note wears the 3D shield (HEADER_SPEC §2) instead of the emoji.
-            val shieldNote = it.startsWith(SHIELD_NOTE)
-            Row(
-                Modifier.clip(RoundedCornerShape(50)).background(FriendsPink.soft)
-                    .clickableNoRipple { note = null }.padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                if (shieldNote) Icon3D(Icon3DName.SHIELD, 16.dp)
-                Text(
-                    if (shieldNote) it.removePrefix(SHIELD_NOTE) else it,
-                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.solid,
-                )
-            }
-        }
+        // K1: the note as a notice card — springs in, squishes, taps or swipes away.
+        FriendsNotice(note, onDismiss = { note = null })
 
         // 2. The Friends banner
         FriendsBannerView(
@@ -245,30 +244,34 @@ fun FriendsScreen(
         if (games.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FriendsLabel("YOUR TURN")
+                    FriendsLabel("YOUR TURN", Modifier.padding(start = 4.dp))
                     val mine = games.count { it.yourTurn }
-                    if (mine > 0) {
-                        Text(
-                            "$mine", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(RoundedCornerShape(50)).background(FriendsPink.solid).padding(horizontal = 7.dp, vertical = 1.dp),
-                        )
-                    }
+                    // M: the Friends tab's candy count badge, on the section waiting on you.
+                    if (mine > 0) FriendsCountBadge(mine, arrivals = 0, pulsing = false, height = 16.dp)
                 }
                 // Your turn first, then the most recently moved.
                 games.sortedWith(compareByDescending<FriendlyGamesService.GameView> { it.yourTurn }.thenByDescending { it.updatedAt }).forEach { g ->
+                    // A1: each game's own tint + top bar.
                     Row(
-                        Modifier.fillMaxWidth().friendsCard().clickableNoRipple { onOpenGame(g.id) }.padding(10.dp),
+                        Modifier.fillMaxWidth()
+                            .squishClickable(label = null) { onOpenGame(g.id) }
+                            .friendsCard(16.dp, accent = g.kind.color, bar = g.kind.color, barHeight = 6.dp)
+                            .padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 10.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         FriendlyGameIcon(g.kind, 34.dp)
                         Column(Modifier.weight(1f)) {
                             Text(
                                 "${g.title} vs @${g.opponent.username}", fontSize = 13.sp, fontWeight = FontWeight.Black,
-                                color = FriendsPink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                color = FriendsPink.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             )
-                            Text(g.line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.solid, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(g.line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        PinkPill(if (g.yourTurn) "PLAY" else "WAITING", solid = g.yourTurn) { onOpenGame(g.id) }
+                        CandyButton(
+                            if (g.yourTurn) "PLAY" else "WAITING", onClick = { onOpenGame(g.id) },
+                            color = if (g.yourTurn) CandyColor.PURPLE else CandyColor.PEACH, size = CandySize.SMALL,
+                            icon = if (g.yourTurn) CandyIcon.PLAY else null,
+                        )
                     }
                 }
             }
@@ -276,29 +279,22 @@ fun FriendsScreen(
 
         // 5. PLAY WITH FRIENDS
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 FriendsLabel("PLAY WITH FRIENDS")
                 Spacer(Modifier.weight(1f))
-                Text("TAP A GAME, PICK A FRIEND", fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label, maxLines = 1)
+                FriendsLabel("TAP A GAME, PICK A FRIEND")
             }
-            // Six games, 3 across × 2 rows (§9); each row's cards share one height.
+            // Six games, 3 across × 2 rows (§9); each row's cards share one height. C4: each a
+            // small card tinted in its own color with its own top bar.
             FRIENDLY_KINDS.chunked(3).forEach { row ->
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { k ->
-                        // The home mode card's tile (docs/GAME_TILE_STYLE.md): accent wash, top bar,
-                        // the 3D pocket game art (ART_SPEC §9) on its soft chip.
-                        GameTileCard(
-                            accent = k.color, title = k.title, sub = k.sub,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            surface = Color.White, titleColor = GameTileStyle.INK, subColor = FriendsPink.label,
-                            titleMaxLines = 2,
-                            onClick = {
-                                if (friends.isEmpty()) {
-                                    note = "Add a friend first — then pick a game"
-                                    scope.launch { addRequester.bringIntoView() }
-                                } else quickPlay = QuickPlayRequest(null, k)
-                            },
-                        ) { FriendlyGameGlyph(k, 26.dp) }
+                        PocketGameCard(k, Modifier.weight(1f).fillMaxHeight()) {
+                            if (friends.isEmpty()) {
+                                note = "Add a friend first — then pick a game"
+                                scope.launch { addRequester.bringIntoView() }
+                            } else quickPlay = QuickPlayRequest(null, k)
+                        }
                     }
                 }
             }
@@ -306,6 +302,20 @@ fun FriendsScreen(
 
         // 6. THIS WEEK'S RACE
         if (friends.isNotEmpty()) WeeklyRaceSection(version, onOpenProfile)
+
+        // T3: NEW FRIENDS! — the high-five, both avatars, Challenge them / See friends.
+        newFriend?.let { nf ->
+            val f = friends.firstOrNull { (nf.id != null && it.id.equals(nf.id, ignoreCase = true)) || it.username.equals(nf.person.name, ignoreCase = true) }
+            val me = myProfile
+            NewFriendsCard(
+                me = InvitePerson(me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, me?.accentColor),
+                friend = nf.person,
+                onSeeFriends = { newFriend = null },
+                // The existing challenge path (a private Classic VS battle, pushed to the friend).
+                onChallenge = f?.let { { newFriend = null; challenge(it) } },
+                light = true,
+            )
+        }
 
         // 7. YOUR FRIENDS
         YourFriendsSection(
@@ -317,18 +327,39 @@ fun FriendsScreen(
             onTaunt = { tauntTarget = it },
             onUnfriend = { unfriendTarget = it },
             onNote = { note = it },
+            // C4b: the old header add-friend circle's flow — jump to Add by username and focus it.
+            onAdd = {
+                // Back from the invite-sent card to the field first (T1), then focus it.
+                val wasSent = requestSentTo != null
+                requestSentTo = null
+                scope.launch { if (wasSent) delay(60); addRequester.bringIntoView(); runCatching { addFocus.requestFocus() } }
+            },
         )
 
         // INVITES (only while something is pending) — under YOUR FRIENDS (founder 2026-10-01).
         if (incoming.isNotEmpty() || outgoing.isNotEmpty()) {
-            InvitesSection(incoming, outgoing, onOpenProfile)
+            InvitesSection(
+                incoming, outgoing, onOpenProfile,
+                // A7: the invite-sent art shows once — not while Add a friend wears it.
+                showArt = requestSentTo == null,
+                onAccepted = { newFriend = NewFriend.of(it) },
+            )
         }
 
         // 8. MOMENTS
         ActivityFeed(onOpenProfile = onOpenProfile, onRematch = { kind, friendId -> quickPlay = QuickPlayRequest(friendId, kind) })
 
         // 9. Add by username + share link, then the gift-Pro panel.
-        AddFriendSection(Modifier.bringIntoViewRequester(addRequester), addFocus) { note = it }
+        AddFriendSection(
+            Modifier.bringIntoViewRequester(addRequester), addFocus,
+            sentTo = requestSentTo,
+            onSent = { requestSentTo = it },
+            onSentDone = { requestSentTo = null },
+            onNewFriend = { name, id ->
+                val f = friends.firstOrNull { (id != null && it.id.equals(id, ignoreCase = true)) || it.username.equals(name, ignoreCase = true) }
+                newFriend = f?.let { NewFriend.of(it) } ?: NewFriend(id, InvitePerson(name))
+            },
+        ) { note = it }
         InvitePanel()
         // The tab sits under the BottomNav — clear it so the last card's tail is reachable.
         Spacer(Modifier.height(96.dp))
@@ -348,13 +379,14 @@ fun FriendsScreen(
     // The full Today's Race (the TODAY'S RACE row of the banner).
     if (showRace) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(onDismissRequest = { showRace = false }, sheetState = sheetState, containerColor = FriendsPink.page) {
+        // A1: a pink-tinted sheet (no white).
+        ModalBottomSheet(onDismissRequest = { showRace = false }, sheetState = sheetState, containerColor = FRIENDS_SHEET) {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 PageTitleText("TODAY’S RACE", accent = PageAccent.friends, fontSize = 17.sp)
-                Column(Modifier.fillMaxWidth().friendsCard().padding(12.dp)) {
+                Column(Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT).padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 12.dp)) {
                     TodaysRaceCard(
                         friends = friends,
                         meDigest = FriendsService.meDigest,
@@ -372,18 +404,20 @@ fun FriendsScreen(
     // Unfriend confirm (§225).
     unfriendTarget?.let { target ->
         AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { unfriendTarget = null },
-            title = { Text("Unfriend ${target.username}?", fontWeight = FontWeight.Black, fontFamily = Nunito) },
-            text = { Text("You can re-add them anytime.", fontFamily = Nunito) },
+            containerColor = FRIENDS_SHEET,
+            title = { Text("Unfriend ${target.username}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FriendsPink.heading) },
+            text = { Text("You can re-add them anytime.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = FriendsPink.muted) },
             confirmButton = {
-                TextButton(onClick = {
+                CandyButton("Unfriend", onClick = {
                     val id = target.id
                     unfriendTarget = null
                     scope.launch { FriendsService.remove(id); FriendsService.load(force = true) }
-                }) { Text("Unfriend", color = Color(0xFFDC2626), fontWeight = FontWeight.Black) }
+                }, color = CandyColor.PINK, size = CandySize.MEDIUM)
             },
             dismissButton = {
-                TextButton(onClick = { unfriendTarget = null }) { Text("Keep", fontWeight = FontWeight.Black) }
+                CandyButton("Keep", onClick = { unfriendTarget = null }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
         )
     }
@@ -399,80 +433,106 @@ private fun InvitesSection(
     incoming: List<FriendsService.FriendProfile>,
     outgoing: List<FriendsService.FriendProfile>,
     onOpenProfile: (String) -> Unit,
+    showArt: Boolean = true,
+    onAccepted: (FriendsService.FriendProfile) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var inviteNote by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(inviteNote) { if (inviteNote != null) { delay(2_500); inviteNote = null } }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FriendsLabel("INVITES")
-            Text(
-                "${incoming.size + outgoing.size}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(FriendsPink.solid).padding(horizontal = 7.dp, vertical = 1.dp),
+            // M: requests waiting on you wear the tab's candy count badge; sent ones the soft count.
+            if (incoming.isNotEmpty()) FriendsCountBadge(incoming.size, arrivals = 0, pulsing = false, height = 16.dp)
+            else CountPill(outgoing.size)
+        }
+        // T2: each request received is its own pink card — the sender's tile over I tossing
+        // the envelope (the art once per screen, A7), "<Name> wants to be friends!", the soft
+        // Decline and the Accept candy (TEAL: FinishKit has no green candy). Accepting opens
+        // the NEW FRIENDS card (T3).
+        incoming.forEachIndexed { i, r ->
+            InviteReceivedCard(
+                inviter = InvitePerson(r.username, r.avatarUrl, r.avatarEmoji),
+                onAccept = { scope.launch { if (FriendsService.accept(r.id)) onAccepted(r) } },
+                onDecline = { scope.launch { FriendsService.decline(r.id) } },
+                modifier = Modifier.fillMaxWidth(),
+                showArt = showArt && i == 0,
+                onOpenProfile = { onOpenProfile(r.id) },
+                light = true,
             )
         }
-        Column(Modifier.fillMaxWidth().friendsCard().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (incoming.isNotEmpty()) {
-                FriendsLabel("FRIEND REQUESTS")
-                incoming.forEach { r ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        FriendAvatar(r)
-                        Text(
-                            "@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink, maxLines = 1,
-                            modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
-                        )
-                        Box(
-                            Modifier.size(30.dp).clip(CircleShape).background(FriendsPink.solid)
-                                .clickableNoRipple { scope.launch { FriendsService.accept(r.id) } },
-                            contentAlignment = Alignment.Center,
-                        ) { Icon(Icons.Filled.Check, "Accept ${r.username}", tint = Color.White, modifier = Modifier.size(15.dp)) }
-                        Box(
-                            Modifier.size(30.dp).clip(CircleShape).background(FriendsPink.soft)
-                                .clickableNoRipple { scope.launch { FriendsService.decline(r.id) } },
-                            contentAlignment = Alignment.Center,
-                        ) { Icon(Icons.Filled.Close, "Decline ${r.username}", tint = FriendsPink.solid, modifier = Modifier.size(15.dp)) }
-                    }
-                }
-            }
-            if (outgoing.isNotEmpty()) {
+        if (outgoing.isNotEmpty()) {
+            Column(
+                Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT).padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
                 FriendsLabel("SENT — WAITING")
                 outgoing.forEach { r ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FriendAvatar(r)
-                        Text(
-                            buildAnnotatedString {
-                                append("@${r.username}")
-                                withStyle(SpanStyle(color = FriendsPink.label, fontSize = 10.sp)) { append("  · ${agoShort(r.requestedAt)}") }
-                            },
-                            fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink, maxLines = 1,
-                            modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
-                        )
-                        // §212: the invite usually died unseen — re-push, 1/24h.
-                        val reminded = withinDay(r.remindedAt)
-                        PinkPill(if (reminded) "Reminded" else "Remind", solid = false, enabled = !reminded) {
-                            scope.launch {
-                                inviteNote = when (FriendsService.remind(r.id)) {
-                                    FriendsService.RemindOutcome.REMINDED -> "Reminder sent to ${r.username} 🔔"
-                                    FriendsService.RemindOutcome.ALREADY -> "Already reminded today"
-                                    FriendsService.RemindOutcome.FAILED -> "Could not remind"
+                        Row(
+                            Modifier.weight(1f).squishClickable(label = "@${r.username}, pending, sent ${agoShort(r.requestedAt)}, open profile") { onOpenProfile(r.id) },
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            FriendAvatar(r)
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    "@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                                // T1: a small "Pending" glossy pill on the request-pending row.
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    PendingPill()
+                                    Text(agoShort(r.requestedAt), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
                                 }
                             }
                         }
-                        Text(
-                            "Cancel", fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.label,
-                            modifier = Modifier.clickableNoRipple { scope.launch { FriendsService.decline(r.id) } }.padding(4.dp),
+                        // §212: the invite usually died unseen — re-push, 1/24h.
+                        val reminded = withinDay(r.remindedAt)
+                        CandyButton(
+                            if (reminded) "Reminded" else "Remind",
+                            onClick = {
+                                scope.launch {
+                                    inviteNote = when (FriendsService.remind(r.id)) {
+                                        FriendsService.RemindOutcome.REMINDED -> "Reminder sent to ${r.username}!"
+                                        FriendsService.RemindOutcome.ALREADY -> "Already reminded today"
+                                        FriendsService.RemindOutcome.FAILED -> "Could not remind"
+                                    }
+                                }
+                            },
+                            color = CandyColor.AMBER, size = CandySize.SMALL, enabled = !reminded,
+                        )
+                        CandyButton(
+                            "Cancel", onClick = { scope.launch { FriendsService.decline(r.id) } },
+                            color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Cancel request to ${r.username}",
                         )
                     }
                 }
-            }
-            inviteNote?.let {
-                Text(it, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.sub, modifier = Modifier.clickableNoRipple { inviteNote = null })
+                inviteNote?.let {
+                    Text(
+                        it, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.sub,
+                        modifier = Modifier.squishClickable(label = null) { inviteNote = null },
+                    )
+                }
             }
         }
     }
 }
 
+/** T3 the friend the NEW FRIENDS card celebrates ([id] null = known by name only). */
+private data class NewFriend(val id: String?, val person: InvitePerson) {
+    companion object {
+        fun of(f: FriendsService.FriendProfile) = NewFriend(f.id, InvitePerson(f.username, f.avatarUrl, f.avatarEmoji))
+    }
+}
+
+/** T3 where the inviter's watched outgoing requests live (SharedPreferences). */
+private const val INVITE_WATCH_PREFS = "wordocious_invites"
+
 // ── THIS WEEK'S RACE ───────────────────────────────────────────────────────
+
+/** C4 the weekly race card's gold (stats-friends-polish: #fff7ec / #f8e2c4, bar #f5a524 → #ffd166). */
+private val RACE_GOLD = Color(0xFFF59E0B)
+private val RACE_INK = Color(0xFF8A4A12)
 
 @Composable
 private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
@@ -497,14 +557,27 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
     val podium = standings.take(3)
     val raceStarted = standings.any { it.pts > 0 }
     if (podium.isEmpty()) return
+    val dark = WTheme.isDark
+    val ink = if (dark) WTheme.text else RACE_INK
+    val sub = if (dark) WTheme.textMuted else FriendsPink.muted
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // C4: this week's race on a gold card with the Leaderboard's medal podium.
+    TintedCard(
+        RACE_GOLD, Modifier.fillMaxWidth(),
+        bar = Brush.horizontalGradient(listOf(Color(0xFFF5A524), Color(0xFFFFD166))),
+        tint = if (dark) WTheme.surface else Color(0xFFFFF7EC),
+        line = if (dark) WTheme.border else Color(0xFFF8E2C4),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FriendsLabel("THIS WEEK’S RACE")
+            FriendsLabel("THIS WEEK’S RACE", Modifier.weight(1f, fill = false), color = ink)
             Spacer(Modifier.weight(1f))
-            WeekEndsCountdown()
+            WeekEndsCountdown(ink)
             if (raceStarted) {
-                Icon3D(Icon3DName.SHARE, 18.dp, contentDescription = "Share weekly race", alpha = if (sharingRace) 0.4f else 1f, modifier = Modifier.padding(start = 8.dp).clickableNoRipple {
+                // A3: the bare 3D share icon with the squish.
+                SoftControl(
+                    Icon3DName.SHARE, contentDescription = "Share weekly race",
+                    onClick = {
                         if (!sharingRace) {
                             sharingRace = true
                             scope.launch {
@@ -517,150 +590,136 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
                             }
                         }
                     },
+                    iconSize = 20.dp, alpha = if (sharingRace) 0.4f else 1f,
                 )
             }
         }
-        Column(
-            Modifier.fillMaxWidth().friendsCard().padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            // §294 (D3.3) — the Sunday finish, settled server-side.
-            val lastWeekResult = remember(version) { FriendsService.lastWeek }
-            lastWeekResult?.let { r ->
-                val win = r.rank == 1
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (win) Brush.linearGradient(listOf(Color(0xFFFEF3C7), Color(0xFFFDE68A))) else SolidColor(FriendsPink.page),
-                            RoundedCornerShape(12.dp),
-                        )
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                ) {
-                    if (win) Icon3D(Icon3DName.CROWN, 22.dp) else Text("🏁", fontSize = 16.sp)
-                    Text(
-                        buildAnnotatedString {
-                            append("Last week you finished ")
-                            withStyle(SpanStyle(fontWeight = FontWeight.Black)) { append("${ordinal(r.rank)} of ${r.circleSize}") }
-                            append(" · ${fmtPts(r.points)} pts")
-                            if (!win && !r.winnerName.isNullOrBlank()) {
-                                withStyle(SpanStyle(color = FriendsPink.label)) {
-                                    append(" · "); appendIcon3D(Icon3DName.CROWN); append(" ${r.winnerName} ${fmtPts(r.winnerPoints)}")
-                                }
-                            }
-                        },
-                        inlineContent = icon3DInline(),
-                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                        color = if (win) Color(0xFF92400E) else FriendsPink.ink, fontFamily = Nunito,
-                        lineHeight = 14.sp, modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-            // §232/§238: last week's winner, and the settled-week history.
-            val lastWeek = remember(version) {
-                val entries = FriendsService.friends.map { it.username to (it.lastWeekPoints ?: 0) } +
-                    listOfNotNull(AuthService.profile.value?.let { "You" to (FriendsService.meDigest?.lastWeekPoints ?: 0) })
-                entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }
-            }
-            val pastWeeks = remember(version) {
-                val meArr = FriendsService.meDigest?.pastWeekPoints ?: emptyList()
-                val len = maxOf(meArr.size, FriendsService.friends.maxOfOrNull { it.pastWeekPoints?.size ?: 0 } ?: 0)
-                (0 until len).mapNotNull { k ->
-                    val entries = FriendsService.friends.map { it.username to (it.pastWeekPoints?.getOrNull(k) ?: 0) } +
-                        listOfNotNull(AuthService.profile.value?.let { "You" to (meArr.getOrNull(k) ?: 0) })
-                    entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }?.let { Triple(k, it.first, it.second) }
-                }
-            }
-            lastWeek?.let { (name, pts) ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().clickableNoRipple { if (pastWeeks.size > 1) showPastWeeks = !showPastWeeks },
-                ) {
-                    Text(
-                        buildAnnotatedString { append("Last week: "); appendIcon3D(Icon3DName.CROWN); append(" $name · ${fmtPts(pts)} pts") },
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, fontFamily = Nunito,
-                        inlineContent = icon3DInline(),
-                    )
-                    if (pastWeeks.size > 1) {
-                        Icon(
-                            Icons.Filled.KeyboardArrowDown, "Past weeks", tint = FriendsPink.label,
-                            modifier = Modifier.size(14.dp).rotate(if (showPastWeeks) 180f else 0f),
-                        )
-                    }
-                }
-            }
-            if (showPastWeeks) {
-                pastWeeks.filter { it.first > 0 }.forEach { (k, name, pts) ->
-                    Text(
-                        buildAnnotatedString { append("${pastWeekLabel(k)}: "); appendIcon3D(Icon3DName.CROWN); append(" $name · ${fmtPts(pts)} pts") },
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        color = FriendsPink.label, fontFamily = Nunito, modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
-                        inlineContent = icon3DInline(),
-                    )
-                }
-            }
+        // §294 (D3.3) — the Sunday finish, settled server-side.
+        val lastWeekResult = remember(version) { FriendsService.lastWeek }
+        lastWeekResult?.let { r ->
+            val win = r.rank == 1
             Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .tintedPill(if (win) RACE_GOLD else FRIENDS_CARD_ACCENT)
+                    .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             ) {
-                listOf(1, 0, 2).filter { it < podium.size }.forEach { i ->
-                    val e = podium[i]
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp).clickableNoRipple { onOpenProfile(e.id) },
-                    ) {
-                        Text(if (raceStarted) listOf("🥇", "🥈", "🥉")[i] else "🏁", fontSize = if (i == 0) 20.sp else 14.sp)
-                        PodiumAvatar(e)
-                        Text(
-                            e.username, fontSize = 10.sp, fontWeight = FontWeight.Black,
-                            color = if (e.isMe) FriendsPink.solid else FriendsPink.ink,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 80.dp),
-                        )
-                        Text("${fmtPts(e.pts)} pts", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label)
-                    }
-                }
-            }
-            if (standings.size > 3) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp, start = 8.dp, end = 8.dp),
-                ) {
-                    standings.drop(3).forEachIndexed { i, e ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth().clickableNoRipple { onOpenProfile(e.id) },
-                        ) {
-                            Text(
-                                ordinal(i + 4), fontSize = 10.sp, fontWeight = FontWeight.Black, color = FriendsPink.label,
-                                fontFamily = Nunito, modifier = Modifier.width(28.dp), textAlign = TextAlign.End,
-                            )
-                            Text(
-                                e.username, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                                color = if (e.isMe) FriendsPink.solid else FriendsPink.ink,
-                                fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                            )
-                            Text("${fmtPts(e.pts)} pts", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, fontFamily = Nunito)
-                        }
-                    }
-                }
-            }
-            if (!raceStarted) {
+                if (win) Icon3D(Icon3DName.CROWN, 22.dp) else GlyphArtImage(GlyphArt.medal(r.rank) ?: GlyphArt.MEDAL, 22.dp)
                 Text(
-                    "Race resets Mondays — first daily takes the lead.",
-                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, fontFamily = Nunito,
+                    buildAnnotatedString {
+                        append("Last week you finished ")
+                        withStyle(SpanStyle(fontWeight = FontWeight.Black)) { append("${ordinal(r.rank)} of ${r.circleSize}") }
+                        append(" · ${fmtPts(r.points)} pts")
+                        if (!win && !r.winnerName.isNullOrBlank()) {
+                            withStyle(SpanStyle(color = sub)) {
+                                append(" · "); appendIcon3D(Icon3DName.CROWN); append(" ${r.winnerName} ${fmtPts(r.winnerPoints)}")
+                            }
+                        }
+                    },
+                    inlineContent = icon3DInline(),
+                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (dark) WTheme.text else if (win) Color(0xFF92400E) else FriendsPink.heading, fontFamily = Nunito,
+                    lineHeight = 14.sp, modifier = Modifier.weight(1f),
                 )
             }
+        }
+        // §232/§238: last week's winner, and the settled-week history.
+        val lastWeek = remember(version) {
+            val entries = FriendsService.friends.map { it.username to (it.lastWeekPoints ?: 0) } +
+                listOfNotNull(AuthService.profile.value?.let { "You" to (FriendsService.meDigest?.lastWeekPoints ?: 0) })
+            entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }
+        }
+        val pastWeeks = remember(version) {
+            val meArr = FriendsService.meDigest?.pastWeekPoints ?: emptyList()
+            val len = maxOf(meArr.size, FriendsService.friends.maxOfOrNull { it.pastWeekPoints?.size ?: 0 } ?: 0)
+            (0 until len).mapNotNull { k ->
+                val entries = FriendsService.friends.map { it.username to (it.pastWeekPoints?.getOrNull(k) ?: 0) } +
+                    listOfNotNull(AuthService.profile.value?.let { "You" to (meArr.getOrNull(k) ?: 0) })
+                entries.maxByOrNull { it.second }?.takeIf { it.second > 0 }?.let { Triple(k, it.first, it.second) }
+            }
+        }
+        lastWeek?.let { (name, pts) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().then(
+                    if (pastWeeks.size > 1) Modifier.squishClickable(label = null) { showPastWeeks = !showPastWeeks } else Modifier,
+                ),
+            ) {
+                Text(
+                    buildAnnotatedString { append("Last week: "); appendIcon3D(Icon3DName.CROWN); append(" $name · ${fmtPts(pts)} pts") },
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = sub, fontFamily = Nunito,
+                    inlineContent = icon3DInline(),
+                )
+                if (pastWeeks.size > 1) {
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown, "Past weeks", tint = sub,
+                        modifier = Modifier.size(14.dp).rotate(if (showPastWeeks) 180f else 0f),
+                    )
+                }
+            }
+        }
+        if (showPastWeeks) {
+            pastWeeks.filter { it.first > 0 }.forEach { (k, name, pts) ->
+                Text(
+                    buildAnnotatedString { append("${pastWeekLabel(k)}: "); appendIcon3D(Icon3DName.CROWN); append(" $name · ${fmtPts(pts)} pts") },
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                    color = sub, fontFamily = Nunito, modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
+                    inlineContent = icon3DInline(),
+                )
+            }
+        }
+        // C4: the shared medal podium (gold / silver / bronze steps, letter tiles, crown on 1st).
+        MedalPodium(
+            podium.mapIndexed { i, e ->
+                PodiumSpot(
+                    place = i + 1, name = e.username, points = fmtPts(e.pts), username = e.avatarName,
+                    accentHex = e.accentHex, emoji = e.avatarEmoji,
+                    onClick = { onOpenProfile(e.id) },
+                )
+            },
+            stepScale = 0.84f, avatar = 40.dp,
+        )
+        if (standings.size > 3) {
+            Column(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(12.dp))) {
+                standings.drop(3).forEachIndexed { i, e ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                            .squishClickable(label = "${ordinal(i + 4)}, ${e.username}, ${fmtPts(e.pts)} points") { onOpenProfile(e.id) }
+                            .stripedRow(i, RACE_GOLD)
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                    ) {
+                        Text(
+                            ordinal(i + 4), style = softNumberStyle(12.sp, if (dark) null else FinishInk.softNumber),
+                            modifier = Modifier.width(32.dp), textAlign = TextAlign.End,
+                        )
+                        Text(
+                            e.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                            color = if (e.isMe) FriendsPink.solid else ink,
+                            fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                        )
+                        Text(fmtPts(e.pts), style = softNumberStyle(13.sp, if (dark) null else FinishInk.softNumber))
+                    }
+                }
+            }
+        }
+        if (!raceStarted) {
+            Text(
+                "Race resets Mondays — first daily takes the lead.",
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = sub, fontFamily = Nunito,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
 
 // ── YOUR FRIENDS ───────────────────────────────────────────────────────────
+
+/** C4 the friends list's lavender (stats-friends-polish: #f6f0ff / #e4d6ff). */
+private val LIST_TINT = Color(0xFFF6F0FF)
+private val LIST_LINE = Color(0xFFE4D6FF)
 
 @Composable
 private fun YourFriendsSection(
@@ -675,6 +734,7 @@ private fun YourFriendsSection(
     onTaunt: (FriendsService.FriendProfile) -> Unit,
     onUnfriend: (FriendsService.FriendProfile) -> Unit,
     onNote: (String) -> Unit,
+    onAdd: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var menuTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
@@ -685,28 +745,44 @@ private fun YourFriendsSection(
         top?.takeIf { (it.weekPoints ?: 0) > 0 && (it.weekPoints ?: 0) > me }?.id
     }
     val sweepSize = com.wordocious.app.ModeGen.sweep.size
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            FriendsLabel(if (friends.isEmpty()) "YOUR FRIENDS" else "YOUR FRIENDS · ${friends.size}")
-            Spacer(Modifier.weight(1f))
-            val slackers = friends.filter { it.playedToday == 0 && !isNewFriend(it) }
+    val slackers = friends.filter { it.playedToday == 0 && !isNewFriend(it) }
+    val shape = RoundedCornerShape(20.dp)
+    // C4: the list on a lavender card; the section header carries the candy actions (C4b).
+    Column(
+        Modifier.fillMaxWidth()
+            .shadow(6.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
+            .clip(shape).background(LIST_TINT).border(1.5.dp, LIST_LINE, shape),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            FriendsLabel(
+                if (friends.isEmpty()) "YOUR FRIENDS" else "YOUR FRIENDS · ${friends.size}",
+                Modifier.weight(1f), color = FinishInk.label,
+            )
             if (slackers.isNotEmpty()) {
-                Text(
-                    "Nudge all who haven't played", fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid, maxLines = 1,
-                    modifier = Modifier.clickableNoRipple {
+                CandyButton(
+                    "Nudge all",
+                    onClick = {
                         scope.launch {
                             var n = 0
                             for (f in slackers) {
                                 if (FriendsService.taunt(f.id, "slowpoke", com.wordocious.app.todayLocalDate()) == FriendsService.TauntOutcome.SENT) n++
                             }
-                            onNote(if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"} 🔔" else "Everyone already nudged today")
+                            onNote(if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"}!" else "Everyone already nudged today")
                         }
                     },
+                    color = CandyColor.AMBER, size = CandySize.SMALL,
+                    contentDescription = "Nudge all who haven't played",
                 )
             }
+            // C4b: "Add a friend" moved here from the header circle (same flow).
+            CandyButton("Add a friend", onClick = onAdd, color = CandyColor.PINK, size = CandySize.SMALL)
         }
         if (friends.isEmpty()) {
-            Column(Modifier.fillMaxWidth().friendsCard().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // No friends yet: I's invite scene above the line (ART_SPEC §7).
                 SceneEmptyState(SceneArt.INVITE, Mascots.addFriendLine, height = 120.dp, color = FriendsPink.sub)
                 Text(
@@ -721,109 +797,170 @@ private fun YourFriendsSection(
             }
             return@Column
         }
-        Column(Modifier.fillMaxWidth().friendsCard().padding(vertical = 4.dp)) {
-            friends.sortedWith(compareByDescending<FriendsService.FriendProfile> { it.isOnline(nowMs) }.thenBy { it.username.lowercase() })
-                .forEachIndexed { idx, f ->
-                    if (idx > 0) Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(1.dp).background(Color(0xFFF3F0FF)))
-                    val on = f.isOnline(nowMs)
-                    val played = f.playedToday ?: 0
-                    Box {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                                .combinedClickableNoRipple(onLongClick = { menuTarget = f }, onClick = { onOpenProfile(f.id) })
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
-                        ) {
-                            FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 38.dp, online = on)
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(
-                                        buildAnnotatedString {
-                                            append("@${f.username}")
-                                            if (f.id == crownId) { append(" "); appendIcon3D(Icon3DName.CROWN) }
-                                        },
-                                        fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink,
-                                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                                        inlineContent = icon3DInline(),
-                                    )
-                                    if ((f.flawlessStreak ?: 0) >= 2) MiniChip("×${f.flawlessStreak}", Color(0xFFB45309), Color(0xFFF59E0B), Icon3DName.TROPHY)
-                                    friendversary(f)?.let { MiniChip("🎉 $it DAYS", FriendsPink.solid, FriendsPink.solid) }
-                                    if (isNewFriend(f)) MiniChip("NEW", PURPLE, PURPLE)
-                                }
-                                val line = presenceLine(f.lastSeenMs, f.activity, nowMs)
-                                    ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today"
+        friends.sortedWith(compareByDescending<FriendsService.FriendProfile> { it.isOnline(nowMs) }.thenBy { it.username.lowercase() })
+            .forEachIndexed { idx, f ->
+                val on = f.isOnline(nowMs)
+                val played = f.playedToday ?: 0
+                Box {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                            .combinedClickableNoRipple(onLongClick = { menuTarget = f }, onClick = { onOpenProfile(f.id) })
+                            .stripedRow(idx, Color(0xFF7C3AED), first = false)
+                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                    ) {
+                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 38.dp, online = on)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
-                                    line, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                                    color = if (on) FriendsPink.green else FriendsPink.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    buildAnnotatedString {
+                                        append("@${f.username}")
+                                        if (f.id == crownId) { append(" "); appendIcon3D(Icon3DName.CROWN) }
+                                    },
+                                    fontSize = 14.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                                    inlineContent = icon3DInline(),
                                 )
+                                if ((f.flawlessStreak ?: 0) >= 2) MiniChip("×${f.flawlessStreak}", Color(0xFFB45309), Color(0xFFF59E0B), Icon3DName.TROPHY)
+                                friendversary(f)?.let { MiniChip("$it DAYS", FriendsPink.solid, FriendsPink.solid, art = GlyphArt.SPARKLES) }
+                                if (isNewFriend(f)) MiniChip("NEW", PURPLE, PURPLE)
                             }
-                            (f.friendStreak ?: 0).takeIf { it > 0 }?.let { FlameCount("$it") }
-                            when {
-                                on -> PinkPill("Play", solid = true) { onPlay(f) }
-                                played > 0 || (f.todayPoints ?: 0) > 0 -> PinkPill(
-                                    if (challengingId == f.id) "Sending…" else "Challenge", solid = false,
-                                    enabled = challengingId == null,
-                                ) { onChallenge(f) }
-                                else -> PinkPill("Nudge", solid = false) { onTaunt(f) }
-                            }
+                            val line = presenceLine(f.lastSeenMs, f.activity, nowMs)
+                                ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today"
+                            Text(
+                                line, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                color = if (on) FriendsPink.green else Color(0xFF7A6A95), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            )
                         }
-                        // §225: long-press menu — profile / taunt / challenge / gift / unfriend.
-                        DropdownMenu(expanded = menuTarget?.id == f.id, onDismissRequest = { menuTarget = null }) {
-                            MenuItem("View profile") { menuTarget = null; onOpenProfile(f.id) }
-                            MenuItem("Taunt") { menuTarget = null; onTaunt(f) }
-                            MenuItem("Play a game", FriendsPink.solid) { menuTarget = null; onPlay(f) }
-                            MenuItem("Challenge ⚔️", Color(0xFFEC4899)) { menuTarget = null; onChallenge(f) }
-                            if (canGift) {
-                                MenuItem("Gift a shield", Color(0xFF0D9488), Icon3DName.SHIELD) {
-                                    menuTarget = null
-                                    scope.launch {
-                                        when (val r = FriendsService.giftShield(f.id)) {
-                                            is FriendsService.GiftOutcome.Sent -> {
-                                                onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
-                                                AuthService.refreshProfile()
-                                            }
-                                            is FriendsService.GiftOutcome.Failed -> onNote(r.message)
+                        (f.friendStreak ?: 0).takeIf { it > 0 }?.let { FlameCount("$it") }
+                        // C4: chunky candy actions — Play / Challenge purple, Nudge amber.
+                        when {
+                            on -> CandyButton("Play", onClick = { onPlay(f) }, color = CandyColor.PURPLE, size = CandySize.SMALL, contentDescription = "Play with ${f.username}")
+                            played > 0 || (f.todayPoints ?: 0) > 0 -> CandyButton(
+                                if (challengingId == f.id) "Sending…" else "Challenge",
+                                onClick = { onChallenge(f) },
+                                color = CandyColor.PURPLE, size = CandySize.SMALL,
+                                enabled = challengingId == null, contentDescription = "Challenge ${f.username}",
+                            )
+                            else -> CandyButton("Nudge", onClick = { onTaunt(f) }, color = CandyColor.AMBER, size = CandySize.SMALL, contentDescription = "Nudge ${f.username}")
+                        }
+                    }
+                    // §225: long-press menu — profile / taunt / challenge / gift / unfriend.
+                    DropdownMenu(
+                        expanded = menuTarget?.id == f.id, onDismissRequest = { menuTarget = null },
+                        containerColor = FRIENDS_SHEET,
+                    ) {
+                        MenuItem("View profile") { menuTarget = null; onOpenProfile(f.id) }
+                        MenuItem("Taunt") { menuTarget = null; onTaunt(f) }
+                        MenuItem("Play a game", FriendsPink.solid) { menuTarget = null; onPlay(f) }
+                        MenuItem("Challenge", Color(0xFFEC4899), art = GlyphArt.SWORDS) { menuTarget = null; onChallenge(f) }
+                        if (canGift) {
+                            MenuItem("Gift a shield", Color(0xFF0D9488), Icon3DName.SHIELD) {
+                                menuTarget = null
+                                scope.launch {
+                                    when (val r = FriendsService.giftShield(f.id)) {
+                                        is FriendsService.GiftOutcome.Sent -> {
+                                            onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
+                                            AuthService.refreshProfile()
                                         }
+                                        is FriendsService.GiftOutcome.Failed -> onNote(r.message)
                                     }
                                 }
                             }
-                            MenuItem("Unfriend", Color(0xFFDC2626)) { menuTarget = null; onUnfriend(f) }
                         }
+                        MenuItem("Unfriend", Color(0xFFDC2626)) { menuTarget = null; onUnfriend(f) }
                     }
                 }
-        }
+            }
+        Spacer(Modifier.height(4.dp))
     }
 }
 
 /** The gift note's marker: the note row swaps it for the 3D shield. */
-private const val SHIELD_NOTE = "🛡️ "
+private const val SHIELD_NOTE = com.wordocious.app.ui.friends.FRIENDS_SHIELD_NOTE
 
 @Composable
-private fun MiniChip(text: String, ink: Color, tint: Color, icon3d: Icon3DName? = null) {
+private fun MiniChip(text: String, ink: Color, tint: Color, icon3d: Icon3DName? = null, art: GlyphArt? = null) {
     Row(
         Modifier.clip(RoundedCornerShape(4.dp)).background(tint.copy(alpha = 0.13f)).padding(horizontal = 4.dp, vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         if (icon3d != null) Icon3D(icon3d, 11.dp)
+        if (art != null) GlyphArtImage(art, 11.dp)
         Text(text, fontSize = 8.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, maxLines = 1)
     }
 }
 
 @Composable
-private fun MenuItem(text: String, color: Color = Color.Unspecified, icon3d: Icon3DName? = null, onClick: () -> Unit) {
+private fun MenuItem(text: String, color: Color = FriendsPink.heading, icon3d: Icon3DName? = null, art: GlyphArt? = null, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Nunito, color = color) },
         onClick = onClick,
-        leadingIcon = icon3d?.let { { Icon3D(it, 20.dp) } },
+        leadingIcon = icon3d?.let { { Icon3D(it, 20.dp) } } ?: art?.let { { GlyphArtImage(it, 20.dp) } },
     )
 }
+
+/** A small soft-number count on a pink pill (YOUR TURN / INVITES). */
+@Composable
+private fun CountPill(n: Int) {
+    Text(
+        "$n", style = softNumberStyle(12.sp, FinishInk.softNumber), maxLines = 1,
+        modifier = Modifier.lightTintedPill(FRIENDS_CARD_ACCENT, 50.dp).padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 1.dp),
+    )
+}
+
+/**
+ * C4 a PLAY WITH FRIENDS card: a small card tinted in the pocket game's own color with
+ * its own top bar (stats-friends-polish `.gt`), the 3D game art, the name and its line.
+ */
+@Composable
+private fun PocketGameCard(kind: com.wordocious.core.FriendlyKind, modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    CappedFontScale {
+        Column(
+            modifier
+                .squishClickable(label = "${kind.title}, ${kind.sub}. Pick a friend to play") { onClick() }
+                .shadow(5.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
+                .clip(shape)
+                .background(friendsWash(kind.color, 0.12f))
+                .border(1.5.dp, friendsLine(kind.color, 0.32f), shape),
+        ) {
+            Box(Modifier.fillMaxWidth().height(7.dp).background(kind.color))
+            Column(
+                Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                FriendlyGameGlyph(kind, 34.dp)
+                Text(
+                    kind.title, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    kind.sub, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+/** A1 the Friends sheets / dialogs / menus: a soft pink wash instead of white. */
+internal val FRIENDS_SHEET = Color(0xFFFFF3F9)
 
 // ── Add by username + share link ───────────────────────────────────────────
 
 @Composable
-private fun AddFriendSection(modifier: Modifier, focus: FocusRequester, onNote: (String) -> Unit) {
+private fun AddFriendSection(
+    modifier: Modifier,
+    focus: FocusRequester,
+    sentTo: String? = null,
+    onSent: (String) -> Unit = {},
+    onSentDone: () -> Unit = {},
+    onNewFriend: (name: String, id: String?) -> Unit = { _, _ -> },
+    onNote: (String) -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var username by remember { mutableStateOf("") }
@@ -843,86 +980,132 @@ private fun AddFriendSection(modifier: Modifier, focus: FocusRequester, onNote: 
         sending = true
         scope.launch {
             when (val r = FriendsService.request(username = name)) {
-                is FriendsService.RequestOutcome.Accepted -> { onNote("You're now friends! 🎉"); username = "" }
-                is FriendsService.RequestOutcome.Pending -> { onNote("Request sent 🤝"); username = "" }
+                // T3 / T1: a mutual add → NEW FRIENDS!; a pending request → INVITE SENT!
+                is FriendsService.RequestOutcome.Accepted -> { onNewFriend(name, null); username = "" }
+                is FriendsService.RequestOutcome.Pending -> { onSent(name); username = "" }
                 is FriendsService.RequestOutcome.Failed -> onNote(r.message)
             }
             sending = false
         }
     }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FriendsLabel("ADD A FRIEND")
-        Column(Modifier.fillMaxWidth().friendsCard().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = username, onValueChange = { username = it },
-                    placeholder = { Text("Add by username", fontSize = 12.sp) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-                    modifier = Modifier.weight(1f).focusRequester(focus),
-                )
-                PinkPill(if (sending) "…" else "Add", solid = true, enabled = !sending && username.trim().isNotEmpty()) { add() }
-            }
-            suggestions.forEach { u ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(FriendsPink.page)
-                        .clickableNoRipple {
-                            if (sending) return@clickableNoRipple
-                            sending = true
-                            suggestions = emptyList()
-                            scope.launch {
-                                when (val r = FriendsService.request(addresseeId = u.id)) {
-                                    is FriendsService.RequestOutcome.Accepted -> { onNote("You're now friends! 🎉"); username = "" }
-                                    is FriendsService.RequestOutcome.Pending -> { onNote("Request sent to ${u.username} 🤝"); username = "" }
-                                    is FriendsService.RequestOutcome.Failed -> onNote(r.message)
-                                }
-                                sending = false
-                            }
-                        }
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                ) {
-                    FriendAvatar(u)
-                    Text(u.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.ink, maxLines = 1, modifier = Modifier.weight(1f))
-                    Text("Lvl ${u.level}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label)
-                }
-            }
-            // §225/§289: the share link covers the "get them on the app" direction.
-            Row(
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.alpha(if (sharingInvite) 0.55f else 1f).clickableNoRipple {
-                    val myId = AuthService.userId ?: return@clickableNoRipple
-                    val myName = AuthService.profile.value?.username ?: return@clickableNoRipple
-                    if (sharingInvite) return@clickableNoRipple
-                    sharingInvite = true
-                    scope.launch {
-                        try {
-                            var text = "Add me on Wordocious — I'm $myName\nhttps://wordocious.com/profile/$myId"
-                            if (AuthService.isProActive) {
-                                val now = java.time.Instant.now()
-                                val open = com.wordocious.app.data.ReferralService.myInvites().firstOrNull { r ->
-                                    r.status == "pending" && (AuthService.parseTimestamp(r.expiresAt)?.isAfter(now) ?: false)
-                                }
-                                if (open != null) {
-                                    text = "I'm gifting you 7 days of Wordocious Pro — add me once you're in: $myName\nhttps://wordocious.com/join/${open.code}"
-                                }
-                            }
-                            val send = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, text)
-                            }
-                            context.startActivity(Intent.createChooser(send, null))
-                        } finally { sharingInvite = false }
+    fun shareInvite() {
+        val myId = AuthService.userId ?: return
+        val myName = AuthService.profile.value?.username ?: return
+        if (sharingInvite) return
+        sharingInvite = true
+        scope.launch {
+            try {
+                // S4 invite copy; the link (profile, or a Pro gift's join link) stays.
+                var text = com.wordocious.app.data.ShareHelper.inviteText("https://wordocious.com/profile/$myId")
+                if (AuthService.isProActive) {
+                    val now = java.time.Instant.now()
+                    val open = com.wordocious.app.data.ReferralService.myInvites().firstOrNull { r ->
+                        r.status == "pending" && (AuthService.parseTimestamp(r.expiresAt)?.isAfter(now) ?: false)
                     }
-                },
+                    if (open != null) {
+                        text = com.wordocious.app.data.ShareHelper.inviteText("https://wordocious.com/join/${open.code}")
+                    }
+                }
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(send, "Invite a friend"))
+            } finally { sharingInvite = false }
+        }
+    }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FriendsLabel("ADD A FRIEND", Modifier.padding(start = 4.dp))
+        // T1: the request went out — I tossing the envelope, INVITE SENT!, the friend on a
+        // glossy pill, "Send another" (back to the field) and "Done".
+        if (sentTo != null) {
+            InviteSentCard(
+                onDone = onSentDone,
+                modifier = Modifier.fillMaxWidth(),
+                name = "@$sentTo",
+                note = "It's waiting on their Friends tab.",
+                onSendAnother = { onSentDone(); scope.launch { delay(60); runCatching { focus.requestFocus() } } },
+                light = true,
+            )
+            return@Column
+        }
+        Box(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT)
+                    .padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon3D(Icon3DName.SHARE, 17.dp, contentDescription = null, modifier = Modifier)
-                Text("Share invite link", fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid, fontFamily = Nunito)
+                Text(
+                    "Find them by username, or send your link.", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+                    color = FriendsPink.heading, modifier = Modifier.padding(end = 64.dp),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = username, onValueChange = { username = it },
+                        placeholder = { Text("Add by username", fontSize = 12.sp, color = FriendsPink.muted) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = friendsFieldColors(),
+                        modifier = Modifier.weight(1f).focusRequester(focus),
+                    )
+                    CandyButton(
+                        if (sending) "…" else "Add", onClick = { add() },
+                        color = CandyColor.PINK, size = CandySize.MEDIUM,
+                        enabled = !sending && username.trim().isNotEmpty(), contentDescription = "Send friend request",
+                    )
+                }
+                suggestions.forEach { u ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                            .squishClickable(label = "Add ${u.username}, level ${u.level}") {
+                                if (sending) return@squishClickable
+                                sending = true
+                                suggestions = emptyList()
+                                scope.launch {
+                                    when (val r = FriendsService.request(addresseeId = u.id)) {
+                                        is FriendsService.RequestOutcome.Accepted -> { onNewFriend(u.username, u.id); username = "" }
+                                        is FriendsService.RequestOutcome.Pending -> { onSent(u.username); username = "" }
+                                        is FriendsService.RequestOutcome.Failed -> onNote(r.message)
+                                    }
+                                    sending = false
+                                }
+                            }
+                            .lightTintedPill(Color(0xFF7C3AED), 12.dp) // AD: inside the fixed-light card
+                            .padding(start = 10.dp, end = 10.dp, top = 9.dp, bottom = 7.dp),
+                    ) {
+                        FriendAvatar(u)
+                        Text(u.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.heading, maxLines = 1, modifier = Modifier.weight(1f))
+                        // V3: the level-tier badge with the level in soft numbers.
+                        LevelBadge(u.level, 18.dp, numberSize = 12.sp, prefix = "LVL")
+                    }
+                }
+                // §225/§289: the share link covers the "get them on the app" direction.
+                CandyButton(
+                    "Share invite link", onClick = { shareInvite() },
+                    color = CandyColor.PURPLE, size = CandySize.MEDIUM, icon = CandyIcon.SHARE,
+                    enabled = !sharingInvite, modifier = Modifier.fillMaxWidth(), fill = true,
+                )
             }
+            // A7: W waving hello beside the line (the banner host is O1).
+            CastPose(MascotId.W, "wave", 56.dp, Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 8.dp))
         }
     }
 }
+
+/** The Friends text fields: a soft pink-tinted container (A1, no white) with the pink focus line. */
+@Composable
+internal fun friendsFieldColors() = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = friendsWash(FRIENDS_CARD_ACCENT, 0.06f),
+    unfocusedContainerColor = friendsWash(FRIENDS_CARD_ACCENT, 0.06f),
+    focusedBorderColor = FRIENDS_CARD_ACCENT,
+    unfocusedBorderColor = friendsLine(FRIENDS_CARD_ACCENT, 0.4f),
+    focusedTextColor = FriendsPink.heading,
+    unfocusedTextColor = FriendsPink.heading,
+    cursorColor = FRIENDS_CARD_ACCENT,
+)
 
 // ── Taunt picker ───────────────────────────────────────────────────────────
 
@@ -931,40 +1114,49 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<String?>(null) }
     androidx.compose.ui.window.Dialog(onDismissRequest = onDone) {
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White)) {
-            Text(
-                "NUDGE ${target.username.uppercase()}",
-                fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.label, letterSpacing = 1.2.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            )
-            PanelDivider()
+        // K1: a nudge — amber card with its top bar, the friend's tile and R, sleepy.
+        Column(
+            com.wordocious.app.ui.PopupWidth.fillMaxWidth().friendsCard(20.dp, accent = Color(0xFFF59E0B), bar = Color(0xFFF59E0B)),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 18.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                FriendFace(target.username, target.avatarUrl, target.avatarEmoji, 34.dp, online = false)
+                Text(
+                    "NUDGE ${target.username.uppercase()}",
+                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading, letterSpacing = 0.08.em,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                )
+                CastPose(MascotId.R, "sleepwalk", 48.dp)
+            }
             val s = status
             if (s != null) {
                 Text(
-                    s, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.ink, textAlign = TextAlign.Center,
+                    s, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.heading, textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                 )
             } else {
-                com.wordocious.app.data.FriendTaunts.ALL.forEach { taunt ->
+                com.wordocious.app.data.FriendTaunts.ALL.forEachIndexed { i, taunt ->
                     Text(
-                        taunt.text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.ink,
-                        modifier = Modifier.fillMaxWidth().clickableNoRipple {
+                        // AM3: the taunt's emoji travels only in the push text, never on screen.
+                        withoutEmoji(taunt.text), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.heading,
+                        modifier = Modifier.fillMaxWidth().squishClickable(label = null) {
                             scope.launch {
                                 status = when (FriendsService.taunt(target.id, taunt.id, com.wordocious.app.todayLocalDate())) {
-                                    FriendsService.TauntOutcome.SENT -> "Sent 😈"
+                                    FriendsService.TauntOutcome.SENT -> "Sent!"
                                     FriendsService.TauntOutcome.ALREADY_SENT -> "Already nudged them today"
                                     FriendsService.TauntOutcome.FAILED -> "Could not send"
                                 }
                                 delay(1400)
                                 onDone()
                             }
-                        }.padding(horizontal = 16.dp, vertical = 13.dp),
+                        }.stripedRow(i, Color(0xFFF59E0B), first = false).padding(horizontal = 16.dp, vertical = 13.dp),
                     )
-                    PanelDivider()
                 }
-                Text(
-                    "Cancel", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.label, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clickableNoRipple(onDone).padding(vertical = 13.dp),
+                CandyButton(
+                    "Cancel", onClick = onDone, color = CandyColor.PEACH, size = CandySize.MEDIUM,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp),
                 )
             }
         }
@@ -976,7 +1168,8 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
 @Composable
 private fun Modifier.combinedClickableNoRipple(onLongClick: () -> Unit, onClick: () -> Unit): Modifier {
     val interaction = remember { MutableInteractionSource() }
-    return this.combinedClickable(interactionSource = interaction, indication = null, onLongClick = onLongClick, onClick = onClick)
+    // A9: the row squishes on press.
+    return this.pressSquish(interaction).combinedClickable(interactionSource = interaction, indication = null, onLongClick = onLongClick, onClick = onClick)
 }
 
 /** §238: "1,504" — US-grouped points for the race surfaces. */
@@ -1014,22 +1207,12 @@ private fun parseIsoMs(iso: String?): Long? {
         .getOrNull()
 }
 
-@Composable
-private fun PanelDivider() {
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF3F0FF)))
-}
-
 internal data class PodiumEntry(
     val id: String, val username: String, val avatarUrl: String?,
     val avatarEmoji: String?, val pts: Int, val isMe: Boolean,
     /** §20 letter tile: initials + accent come from the real profile, not the "You" label. */
     val avatarName: String = username, val accentHex: String? = null,
 )
-
-@Composable
-private fun PodiumAvatar(e: PodiumEntry) {
-    FriendFace(e.avatarName, e.avatarUrl, e.avatarEmoji, 36.dp, online = false, ring = if (e.isMe) FriendsPink.solid else null, accentHex = e.accentHex)
-}
 
 // FRIENDS row (§207 Tier 3) — the compact card on the OWN profile screen
 // pointing at the Friends tab: Users icon, gradient FRIENDS, count, red pending
@@ -1047,13 +1230,16 @@ fun FriendsRowLink(onOpen: () -> Unit) {
     val friendCount = remember(version) { FriendsService.friends.size }
     val pending = remember(version) { FriendsService.incoming.size }
 
+    // A1 / A9: a purple-tinted card with its top bar, squishing on tap.
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(WTheme.surface, RoundedCornerShape(20.dp))
-            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
-            .clickableNoRipple(onOpen)
-            .padding(16.dp),
+            .squishClickable(label = null, onClick = onOpen)
+            .then(
+                if (WTheme.isDark) Modifier.clip(RoundedCornerShape(20.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(20.dp))
+                else Modifier.friendsCard(20.dp, accent = PURPLE, bar = PURPLE, barHeight = 6.dp)
+            )
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -1064,7 +1250,7 @@ fun FriendsRowLink(onOpen: () -> Unit) {
             style = TextStyle(brush = Brush.linearGradient(listOf(PURPLE, Color(0xFFEC4899))), fontFamily = Nunito),
         )
         if (friendCount > 0) {
-            Text("$friendCount", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+            Text("$friendCount", style = softNumberStyle(14.sp))
         }
         Spacer(Modifier.weight(1f))
         if (pending > 0) {
@@ -1109,12 +1295,12 @@ internal fun FriendAvatar(f: FriendsService.FriendProfile, accentHex: String? = 
 
 /** "ends Sunday · 2d 04:12:09" — the weekly race's live clock (weeks run Mon-Sun, reset Monday 00:00 local). */
 @Composable
-private fun WeekEndsCountdown() {
+private fun WeekEndsCountdown(color: Color = FriendsPink.label) {
     val hidden = LocalTabHidden.current
     val label by produceState(weekEndsLabel()) {
         while (true) { delay(1_000); hidden.awaitShown(); value = weekEndsLabel() }
     }
-    Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, fontFamily = Nunito)
+    Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = color, fontFamily = Nunito, maxLines = 1)
 }
 
 private fun weekEndsLabel(): String {

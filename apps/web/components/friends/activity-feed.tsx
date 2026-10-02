@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Medal, Star, Sparkles, LayoutGrid } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -11,11 +12,18 @@ import { getTodayLocal } from '@/lib/daily-service';
 import { recordValue, RECORD_LABELS } from '@/lib/records-ui';
 import { WIN_FG } from '@/lib/tile-theme';
 import {
-  FR, REACTIONS, REACTION_GLYPH, gameMomentText, kindForTitle, reactionChips, toggleReaction, type ReactionKey,
+  FR, KIND_COLOR, REACTIONS, REACTION_LABEL, gameMomentText, kindForTitle, reactionChips, toggleReaction, type ReactionKey,
 } from '@/lib/friends-play';
-import { FriendAvatar, GameIconSquare, SectionLabel, cardStyle } from './friends-ui';
+import { FrCard, FriendAvatar, GameIconSquare, SectionLabel } from './friends-ui';
+import { SceneArt } from './invite-screens';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
+import { CandyButton } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { ART_SIZE, PAGE_SCENES, artSrc, poseArt, type PoseArtName } from '@/lib/art';
+import { FR_LOOK, frBar, frSurface, momentAccent, momentKey, momentPoses, numberRuns } from '@/lib/friends-look';
+import { softMix } from '@/lib/soft-surface';
+import { haptic } from '@/lib/haptics';
+import { ReactionIcon, REACTION_TINT } from './reaction-icon';
 
 // ACTIVITY — the Friends tab's feed (Stats + Friends redesign D3, founder
 // 2026-09-26): the last seven days of your circle's moments — Daily Sweeps,
@@ -23,13 +31,32 @@ import { PAGE_SCENES } from '@/lib/art';
 // More Games Sweeps — newest first, each row a door to the profile. Read-only
 // over existing tables (/api/friends/feed). Friends overhaul §6 (2026-10-01):
 // renamed MOMENTS, finished pocket games join the feed, and every moment takes
-// fixed-emoji reactions (👏 🔥 😱 😤, + Rematch on game moments). Founder
-// 2026-10-01: no "+" chip — double-tap (double-click) a moment toggles 👏,
+// fixed reactions (clap, fire, wow, grr, + Rematch on game moments). Founder
+// 2026-10-01: no "+" chip — double-tap (double-click) a moment toggles clap,
 // long-press (right-click) opens a floating reaction bar above it, and chips
-// show inside the moment only once it has reactions.
+// show inside the moment only once it has reactions. Finishing build K1
+// (2026-10-02): every moment is an in-app notice — a tinted card in the
+// event's color with its top bar, the sender's letter tile, a small cast pose
+// that fits the event, the headline in Nunito Black with soft numbers and a
+// candy action (Rematch / View); it slides in with a spring (off with Reduce
+// Motion) and squishes on tap. AM1 (10-02): no phone emoji — reactions are our
+// 3D art / word pills (./reaction-icon) in a candy tray; reacting pops + bursts.
 
 const DOUBLE_TAP_MS = 300;
+
+/** Art already on the Friends screen (the banner's O1 cheer, the add-friend card's I) — never repeated in a moment (A7). */
+const SCREEN_POSES: PoseArtName[] = [poseArt('o1', 'cheer'), poseArt('i', 'reach')];
 const LONG_PRESS_MS = 450;
+const BURST_MS = 650;
+
+/** AM1: the little spark burst when you react (globals.css .react-burst; off with Reduce Motion). */
+function ReactBurst({ tint }: { tint: string }) {
+  return (
+    <span className="react-burst" aria-hidden="true" style={{ ['--burst' as string]: tint } as React.CSSProperties}>
+      {[0, 1, 2, 3, 4, 5].map((i) => <i key={i} />)}
+    </span>
+  );
+}
 
 function dayLabel(day: string, today: string): string {
   if (day === today) return 'today';
@@ -94,6 +121,10 @@ export function ActivityFeed({ onRematch }: Props) {
   const [fetched, setFetched] = useState<{ userId: string; events: FeedEvent[]; reactions: FeedReactions } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [picker, setPicker] = useState<string | null>(null);
+  // AM1: the reaction you just added pops + bursts (n restarts the animation on a repeat tap).
+  const [burst, setBurst] = useState<{ id: string; key: ReactionKey; n: number } | null>(null);
+  const burstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (burstTimer.current) clearTimeout(burstTimer.current); }, []);
   const pickerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!user) return;
@@ -128,6 +159,12 @@ export function ActivityFeed({ onRematch }: Props) {
       setFetched(next);
     };
     apply(toggleReaction(before, key, on) as FeedReactions[string]);
+    if (on) {
+      haptic('light'); // the press sound already plays via SquishHost
+      setBurst({ id: e.id, key, n: Date.now() });
+      if (burstTimer.current) clearTimeout(burstTimer.current);
+      burstTimer.current = setTimeout(() => setBurst(null), BURST_MS);
+    }
     const ok = await reactToMoment(e.id, e.userId, key, on);
     if (!ok) apply(before ?? { counts: {}, mine: [] });
   };
@@ -143,7 +180,7 @@ export function ActivityFeed({ onRematch }: Props) {
   const href = (e: FeedEvent) => (e.me ? '/stats' : `/profile/${e.userId}`);
 
   // One tap opens the profile (after a beat, so a second tap can claim it);
-  // a double tap toggles 👏 instead.
+  // a double tap toggles clap instead.
   const onRowClick = (e: FeedEvent) => {
     if (suppressClick.current) { suppressClick.current = false; return; }
     if (picker) { setPicker(null); return; }
@@ -176,117 +213,189 @@ export function ActivityFeed({ onRematch }: Props) {
     if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; }
   };
 
+  // K1: each moment is a notice card in its event's color, with a fitting cast
+  // pose (never one already on the Friends screen, never twice — A7).
+  const keys = shown.map((e) => momentKey(e, user.id));
+  const poses = momentPoses(keys, SCREEN_POSES);
+
   return (
     <div className="space-y-2">
-      <SectionLabel right={<span className="text-[10px] font-black" style={{ color: FR.label, letterSpacing: 0.8 }}>LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT</span>}>Moments</SectionLabel>
-      <div className="p-3" style={cardStyle}>
-        {events === null ? (
-          <div className="space-y-2 animate-pulse">
-            {[0, 1, 2].map((i) => <div key={i} className="h-8 rounded-xl" style={{ background: '#f1f5f9' }} />)}
+      <SectionLabel
+        color={FR_LOOK.playLabel}
+        right={<span className="text-[10px] font-black text-right" style={{ color: FR_LOOK.playLabel, letterSpacing: 0.8 }}>LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT</span>}
+      >
+        Moments
+      </SectionLabel>
+      {events === null ? (
+        <FrCard accent={FR_LOOK.pink}>
+          <div className="p-3 space-y-2 animate-pulse" aria-hidden>
+            {[0, 1, 2].map((i) => <div key={i} className="h-8 rounded-xl" style={{ background: softMix(FR_LOOK.pink, 0.16) }} />)}
           </div>
-        ) : events.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 p-1 text-center">
+        </FrCard>
+      ) : events.length === 0 ? (
+        <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.bannerBar}>
+          <div className="flex flex-col items-center gap-2 p-4 text-center">
             {/* R, asleep: quiet in here (docs/ART_SPEC.md §7). */}
             <ArtScene scene={PAGE_SCENES.empty} />
-            <p className="text-xs font-bold" style={{ color: FR.label }}>
+            <p className="text-xs font-bold" style={{ color: FR_LOOK.rowSub }}>
               Quiet week so far. A sweep, a medal, a record or a game won by anyone in your circle shows up here.
             </p>
           </div>
-        ) : (
-          <div className="space-y-1">
-            {shown.map((e, idx) => {
-              const { text, icon } = describe(e);
-              const chips = reactionChips(reactions[e.id]);
-              const isGame = e.type === 'game';
-              const open = picker === e.id;
-              return (
-                <div
-                  key={e.id}
-                  ref={open ? pickerRef : undefined}
-                  role="link"
-                  tabIndex={0}
-                  aria-label={`${text}. Double-tap to clap, hold to react.`}
-                  onClick={() => onRowClick(e)}
-                  onKeyDown={(ev) => { if (ev.key === 'Enter') router.push(href(e)); }}
-                  onContextMenu={(ev) => { ev.preventDefault(); pressEnd(); openBar(e); }}
-                  onPointerDown={(ev) => pressStart(e, ev)}
-                  onPointerUp={pressEnd}
-                  onPointerLeave={pressEnd}
-                  onPointerCancel={pressEnd}
-                  className="relative px-1 py-1.5 cursor-pointer select-none"
-                  style={{ borderTop: idx === 0 ? undefined : '1px solid #f1f5f9', touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
-                >
-                  <div className="flex items-start gap-2.5">
-                    <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={32} />
-                    <span className="shrink-0 pt-1.5">{icon}</span>
-                    <div className="flex-1 min-w-0 pt-1">
-                      <span className="block text-[11.5px] font-extrabold leading-snug" style={{ color: FR.text }}>{text}</span>
-                      {chips.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                          {chips.map((c) => (
-                            <button
-                              key={c.key}
-                              type="button"
-                              onClick={(ev) => { ev.stopPropagation(); if (c.key === 'rematch' && !c.mine) rematch(e); else void react(e, c.key, !c.mine); }}
-                              aria-pressed={c.mine}
-                              aria-label={`${c.key} ${c.count}`}
-                              className="flex items-center gap-0.5 px-1.5 text-[11px] font-black rounded-full transition-transform active:scale-95"
-                              style={{ height: 20, background: FR.soft, color: FR.mid, boxShadow: c.mine ? `0 0 0 1.5px ${FR.solid}` : undefined }}
-                            >
-                              <span>{REACTION_GLYPH[c.key]}</span>
-                              <span>{c.count}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[9.5px] font-bold shrink-0 pt-1.5" style={{ color: FR.label }}>{dayLabel(e.day, today)}</span>
-                  </div>
-                  {open && (
-                    <div
-                      className="absolute z-30 flex items-center gap-1 p-1.5"
-                      style={{ left: 42, bottom: 'calc(100% - 4px)', background: '#ffffff', borderRadius: 999, boxShadow: '0 8px 24px rgba(15,23,42,0.16)' }}
-                      onClick={(ev) => ev.stopPropagation()}
-                    >
-                      {REACTIONS.map((r) => {
-                        const mine = (reactions[e.id]?.mine ?? []).includes(r.key);
+        </FrCard>
+      ) : (
+        <div className="space-y-2">
+          {shown.map((e, idx) => {
+            const { text, icon } = describe(e);
+            const chips = reactionChips(reactions[e.id]);
+            const isGame = e.type === 'game';
+            const open = picker === e.id;
+            const pocket = isGame ? kindForTitle(e.gameTitle) : null;
+            const accent = momentAccent(keys[idx], pocket ? KIND_COLOR[pocket] : null);
+            const pose = poses[idx];
+            return (
+              <div
+                key={e.id}
+                ref={open ? pickerRef : undefined}
+                role="link"
+                tabIndex={0}
+                aria-label={`${text}. Double-tap to clap, hold to react.`}
+                onClick={() => onRowClick(e)}
+                onKeyDown={(ev) => { if (ev.key === 'Enter') router.push(href(e)); }}
+                onContextMenu={(ev) => { ev.preventDefault(); pressEnd(); openBar(e); }}
+                onPointerDown={(ev) => pressStart(e, ev)}
+                onPointerUp={pressEnd}
+                onPointerLeave={pressEnd}
+                onPointerCancel={pressEnd}
+                className="notice-in relative cursor-pointer select-none"
+                style={{
+                  ...frSurface(accent, { radius: 16 }),
+                  boxShadow: `0 6px 14px ${softMix(accent, 0.3)}55`,
+                  touchAction: 'manipulation',
+                  WebkitTouchCallout: 'none',
+                  animationDelay: `${Math.min(idx, 8) * 45}ms`,
+                }}
+              >
+                <div aria-hidden="true" style={{ ...frBar(accent, 5), borderRadius: '16px 16px 0 0' }} />
+                <div className="flex items-start gap-2.5" style={{ padding: '8px 10px 9px' }}>
+                  <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={34} />
+                  <div className="flex-1 min-w-0">
+                    <span className="flex items-start gap-1.5">
+                      <span className="shrink-0 pt-px">{icon}</span>
+                      <span className="block text-[12.5px] font-black leading-snug" style={{ color: FR_LOOK.ink }}>
+                        {numberRuns(text).map((r, i) => (r.num ? <SoftNum key={i} size={13}>{r.text}</SoftNum> : <span key={i}>{r.text}</span>))}
+                      </span>
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      {chips.map((c) => {
+                        const popped = burst?.id === e.id && burst.key === c.key;
                         return (
                           <button
-                            key={r.key}
+                            key={c.key}
                             type="button"
-                            onClick={() => { setPicker(null); void react(e, r.key, !mine); }}
-                            aria-label={r.key}
-                            aria-pressed={mine}
-                            className="flex items-center justify-center rounded-full text-[17px] transition-transform active:scale-90"
-                            style={{ width: 34, height: 34, background: mine ? FR.soft : 'transparent', boxShadow: mine ? `0 0 0 1.5px ${FR.solid}` : undefined }}
+                            onClick={(ev) => { ev.stopPropagation(); if (c.key === 'rematch' && !c.mine) rematch(e); else void react(e, c.key, !c.mine); }}
+                            aria-pressed={c.mine}
+                            aria-label={`${REACTION_LABEL[c.key]} ${c.count}`}
+                            className="relative flex items-center gap-1 pl-1 pr-2 text-[11px] font-black rounded-full"
+                            style={{
+                              height: 26,
+                              background: `linear-gradient(180deg, ${softMix(accent, c.mine ? 0.2 : 0.08)}, ${softMix(accent, c.mine ? 0.32 : 0.16)})`,
+                              border: c.mine ? `1.5px solid ${accent}` : `1.5px solid ${softMix(accent, 0.3)}`,
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+                              color: FR_LOOK.ink,
+                            }}
                           >
-                            {r.glyph}
+                            <span key={popped ? burst!.n : 'still'} className={popped ? 'candy-badge-pop inline-flex' : 'inline-flex'}>
+                              <ReactionIcon reaction={c.key} size={18} />
+                            </span>
+                            <SoftNum size={12}>{c.count}</SoftNum>
+                            {popped && <ReactBurst key={burst!.n} tint={REACTION_TINT[c.key]} />}
                           </button>
                         );
                       })}
-                      {isGame && (
-                        <button
-                          type="button"
-                          onClick={() => rematch(e)}
-                          className="px-3 text-[11px] font-black text-white rounded-full whitespace-nowrap"
-                          style={{ height: 30, background: FR.solid }}
-                        >
-                          Rematch
-                        </button>
+                      <span className="flex-1" />
+                      <span className="text-[10px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>{dayLabel(e.day, today)}</span>
+                      {isGame && pocket ? (
+                        <CandyButton size="sm" color="pink" icon="replay" onClick={(ev) => { ev.stopPropagation(); rematch(e); }}>Rematch</CandyButton>
+                      ) : (
+                        <CandyButton size="sm" color="purple" icon="eye" onClick={(ev) => { ev.stopPropagation(); router.push(href(e)); }} aria-label={`View ${e.me ? 'your stats' : `${e.username}'s profile`}`}>View</CandyButton>
                       )}
                     </div>
+                  </div>
+                  {e.type === 'gift' ? (
+                    // T4: gift-shield moments wear the shield-guard art, small.
+                    <SceneArt name="art-scene-shield-guard" height={40} className="shrink-0" style={{ marginTop: -2 }} />
+                  ) : pose && (
+                    <Image
+                      src={artSrc(pose)}
+                      alt=""
+                      aria-hidden
+                      width={ART_SIZE[pose][0]}
+                      height={ART_SIZE[pose][1]}
+                      loading="lazy"
+                      draggable={false}
+                      className="shrink-0 pointer-events-none select-none"
+                      style={{ width: 40, height: 40, objectFit: 'contain', marginTop: -2 }}
+                    />
                   )}
                 </div>
-              );
-            })}
-            {events.length > 8 && (
-              <button onClick={() => setExpanded((v) => !v)} className="w-full py-1 text-[11px] font-extrabold" style={{ color: FR.solid }}>
+                {open && (
+                  <div
+                    role="group"
+                    aria-label="React"
+                    className="gt-pop absolute z-30 flex items-center gap-1 p-1.5"
+                    style={{
+                      left: 42,
+                      bottom: 'calc(100% - 4px)',
+                      // AM1: a tinted candy tray (glossy pink wash, white top light, soft drop).
+                      ...frSurface(FR_LOOK.pink, { share: 0.1, radius: 999 }),
+                      background: `linear-gradient(180deg, ${softMix(FR_LOOK.pink, 0.14)}, ${softMix(FR_LOOK.pink, 0.26)})`,
+                      boxShadow: `inset 0 2px 0 rgba(255,255,255,0.75), inset 0 -3px 0 ${softMix(FR_LOOK.pink, 0.36)}, 0 10px 26px rgba(60,30,110,0.2)`,
+                    }}
+                    onClick={(ev) => ev.stopPropagation()}
+                  >
+                    {REACTIONS.map((r) => {
+                      const mine = (reactions[e.id]?.mine ?? []).includes(r.key);
+                      return (
+                        <button
+                          key={r.key}
+                          type="button"
+                          onClick={() => { setPicker(null); void react(e, r.key, !mine); }}
+                          aria-label={r.label}
+                          aria-pressed={mine}
+                          className={`flex items-center justify-center rounded-full ${mine ? 'candy-badge-pop' : ''}`}
+                          style={{
+                            minWidth: 38,
+                            height: 38,
+                            padding: '0 3px',
+                            background: mine
+                              ? `linear-gradient(180deg, #ffffff, ${softMix(REACTION_TINT[r.key], 0.3)})`
+                              : `linear-gradient(180deg, rgba(255,255,255,0.85), ${softMix(FR_LOOK.pink, 0.12)})`,
+                            boxShadow: mine
+                              ? `0 0 0 2px ${FR.solid}, inset 0 1px 0 #fff, 0 3px 6px ${softMix(FR_LOOK.pink, 0.45)}`
+                              : `inset 0 1px 0 #fff, 0 2px 4px ${softMix(FR_LOOK.pink, 0.4)}`,
+                          }}
+                        >
+                          <ReactionIcon reaction={r.key} size={26} />
+                        </button>
+                      );
+                    })}
+                    {isGame && (
+                      <CandyButton size="sm" color="pink" onClick={() => rematch(e)}>Rematch</CandyButton>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {events.length > 8 && (
+            <div className="flex justify-center pt-1">
+              <CandyButton size="sm" color="peach" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
                 {expanded ? 'Show less' : `Show all ${events.length}`}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+              </CandyButton>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

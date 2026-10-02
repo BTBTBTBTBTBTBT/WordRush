@@ -15,6 +15,9 @@ struct WelcomeView: View {
 
     var body: some View {
         ZStack {
+            // The cover's own backdrop is the Home wallpaper (never the system's
+            // plain white), dimmed under the card.
+            PageBackground(tint: .home)
             Color(hex: 0x1A1A2E).opacity(0.55).ignoresSafeArea()
             VStack(spacing: 0) {
                 LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
@@ -28,63 +31,64 @@ struct WelcomeView: View {
                             Wordmark(size: 22)
                         } else {
                             Wordmark(size: 24)
-                            Text("Welcome to Wordocious").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                            Text("Welcome to Wordocious").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                         }
                     }
                     .padding(.top, 20).padding(.bottom, 16)
 
                     VStack(alignment: .leading, spacing: 12) {
-                        pillar("sparkles", Color(hex: 0x7C3AED), Color(hex: 0xF3F0FF), "Daily Puzzles", "Eight daily word games and ten More Games, new every day")
-                        pillar("flag.checkered", Color(hex: 0xEC4899), Color(hex: 0xFDF2F8), "Play with Friends", "Today's Race, a weekly finish and VS with friends")
-                        pillar("trophy.fill", Color(hex: 0xD97706), Color(hex: 0xFFFBEB), "Climb the Leaderboards", "Earn medals, build streaks, and track your stats")
+                        pillar("sparkles", Color(hex: 0x7C3AED), "Daily Puzzles", "Eight daily word games and ten More Games, new every day")
+                        pillar("flag.checkered", Color(hex: 0xEC4899), "Play with Friends", "Today's Race, a weekly finish and VS with friends")
+                        pillar("trophy.fill", Color(hex: 0xD97706), "Climb the Leaderboards", "Earn medals, build streaks, and track your stats")
                     }
                     .padding(.bottom, 18)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("CHOOSE A USERNAME").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                        FinishLabel("Choose a username")
                         TextField("username", text: $username)
-                            .font(Brand.font(15, .bold)).foregroundStyle(Theme.textPrimary)
+                            .font(Brand.font(15, .bold)).foregroundStyle(FinishInk.heading)
                             .textInputAutocapitalization(.never).autocorrectionDisabled().focused($focused)
-                            .padding(.horizontal, 12).padding(.vertical, 11)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(error == nil ? Theme.border : Color(hex: 0xDC2626), lineWidth: 1.5))
+                            .g5Field(error: error != nil)
                         if let error { Text(error).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xDC2626)) }
-                        else { Text("3-20 characters. Letters, numbers, and underscores.").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted) }
+                        else { Text("3-20 characters. Letters, numbers, and underscores.").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary) }
                     }
                     .padding(.bottom, 14)
 
+                    // §A8: candy buttons — purple "Let's Play!", quiet peach "Skip".
                     Button(action: save) {
-                        Text(saving ? "Saving…" : "Let's Play!").font(Brand.font(15, .black)).foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).frame(height: 48)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(
-                                LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                            .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4)
+                        CandyLabel(title: saving ? "Saving…" : "Let's Play!", symbol: "play.fill")
                     }
-                    .buttonStyle(.squish).disabled(saving)
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .large)).disabled(saving)
 
-                    Button("Skip for now") { skip() }
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).padding(.top, 10)
+                    Button { skip() } label: { CandyLabel(title: "Skip for now") }
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                        .padding(.top, 6)
                         .disabled(saving)
                 }
                 .padding(.horizontal, 24).padding(.bottom, 20)
             }
             .frame(maxWidth: 360)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+            // §G5: a tinted card (no plain white), the gradient bar on top.
+            .background(ZStack {
+                RoundedRectangle(cornerRadius: 20).fill(Theme.isDark ? Theme.surface : G5Accent.purple.wash(0.07))
+                if Theme.isDark { RoundedRectangle(cornerRadius: 20).fill(G5Accent.purple.opacity(0.08)) }
+            })
             .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border, lineWidth: 1.5))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.isDark ? G5Accent.purple.opacity(0.35) : G5Accent.purple.wash(0.26), lineWidth: 1.5))
             .shadow(color: .black.opacity(0.15), radius: 30, x: 0, y: 20)
             .padding(.horizontal, 24)
         }
         .onAppear { username = auth.profile?.username ?? "" }
     }
 
-    private func pillar(_ icon: String, _ tint: Color, _ bg: Color, _ title: String, _ sub: String) -> some View {
+    private func pillar(_ icon: String, _ tint: Color, _ title: String, _ sub: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
+            // §A1: the icon sits on a mini tinted tile (wash + border + top bar).
             SymbolGlyph(icon, size: 14, color: tint)
-                .frame(width: 28, height: 28).background(RoundedRectangle(cornerRadius: 8).fill(bg))
+                .frame(width: 30, height: 30).tintedPill(tint, radius: 9)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                Text(sub).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).fixedSize(horizontal: false, vertical: true)
+                Text(title).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
+                Text(sub).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }

@@ -25,9 +25,9 @@ describe('VS banner', () => {
     expect(vsTodayStatus({ battle: 'won', botOfDay: 'won' })).toBe('SWEEP · 2/2 WON');
   });
   it('record line matches the Stats buckets', () => {
-    expect(vsRecordLine({ wins: 12, losses: 7 }, { wins: 31, losses: 9 }, 2)).toBe('PEOPLE 12–7 · BOTS 31–9 · LADDER 2/4');
+    expect(vsRecordLine({ wins: 12, losses: 7 }, { wins: 31, losses: 9 }, 2)).toBe('PEOPLE 12–7 · BOTS 31–9 · LADDER 2/10');
     expect(vsRecordLine({ wins: 0, losses: 0 }, { wins: 4, losses: 2 }, null)).toBe('PEOPLE 0–0 · BOTS 4–2');
-    expect(vsRecordLine({ wins: 1, losses: 0 }, { wins: 1, losses: 0 }, 4)).toBe('PEOPLE 1–0 · BOTS 1–0 · LADDER CLEARED');
+    expect(vsRecordLine({ wins: 1, losses: 0 }, { wins: 1, losses: 0 }, 10)).toBe('PEOPLE 1–0 · BOTS 1–0 · LADDER CLEARED');
   });
 });
 
@@ -56,20 +56,28 @@ describe('challenge outcome', () => {
 describe('bot ladder', () => {
   it('three in a row against the next bot clears its rung', () => {
     let s = { cleared: 0, run: 0 };
-    s = ladderAfterGame(s, 'rook', true);
-    s = ladderAfterGame(s, 'nova', false); // other bots don't touch it
-    s = ladderAfterGame(s, 'rook', true);
+    s = ladderAfterGame(s, 'rip', true);
+    s = ladderAfterGame(s, 'dewey', false); // other bots don't touch it
+    s = ladderAfterGame(s, 'rip', true);
     expect(s).toEqual({ cleared: 0, run: 2 });
-    s = ladderAfterGame(s, 'rook', true);
+    s = ladderAfterGame(s, 'rip', true);
     expect(s).toEqual({ cleared: 1, run: 0 });
-    s = ladderAfterGame(s, 'lexi', true);
-    s = ladderAfterGame(s, 'lexi', false);
+    s = ladderAfterGame(s, 'ivy', true);
+    s = ladderAfterGame(s, 'ivy', false);
     expect(s).toEqual({ cleared: 1, run: 0 });
-    expect(ladderAfterGame({ cleared: 4, run: 0 }, 'adapt', true)).toEqual({ cleared: 4, run: 0 });
+    expect(ladderAfterGame({ cleared: 10, run: 0 }, 'webster', true)).toEqual({ cleared: 10, run: 0 });
+  });
+  it('old ids count as their cast replacement', () => {
+    // rook → ivy (rung 2)
+    expect(ladderAfterGame({ cleared: 1, run: 0 }, 'rook', true)).toEqual({ cleared: 1, run: 1 });
+    expect(ladderAfterGame({ cleared: 5, run: 2 }, 'adapt', true)).toEqual({ cleared: 6, run: 0 });
   });
   it('rung lines', () => {
-    expect(ladderRungs({ cleared: 2, run: 1 }).map((x) => [x.state, x.line])).toEqual([
-      ['cleared', 'Cleared'], ['cleared', 'Cleared'], ['next', 'Win 3 in a row to clear · 1 so far'], ['locked', 'Clear Nova to unlock'],
+    const rungs = ladderRungs({ cleared: 2, run: 1 });
+    expect(rungs).toHaveLength(10);
+    expect(rungs.slice(0, 4).map((x) => [x.id, x.state, x.line])).toEqual([
+      ['rip', 'cleared', 'Cleared'], ['ivy', 'cleared', 'Cleared'], ['ollie', 'next', 'Win 3 in a row to clear · 1 so far'], ['opal', 'locked', 'Clear Ollie to unlock'],
     ]);
+    expect(rungs[9]).toEqual({ id: 'webster', state: 'locked', line: 'Clear Scoot to unlock' });
   });
 });

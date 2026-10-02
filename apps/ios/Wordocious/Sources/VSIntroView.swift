@@ -40,6 +40,9 @@ struct VSMatchIntroView: View {
         var botArt: String? = nil
         /// Replaces the level chip: "BOT", or a challenge's "@doug’s run".
         var subtitle: String? = nil
+        /// FINISH_SPEC §D3: the cast bot it plays as (banter at match start); nil
+        /// for people and Your Ghost.
+        var botId: String? = nil
     }
 
     let mode: GameMode
@@ -50,6 +53,8 @@ struct VSMatchIntroView: View {
     let headToHead: HeadToHeadRecord?
     /// Purple window (a challenge race) instead of VS teal.
     var purple: Bool = false
+    /// FINISH_SPEC §D3: a CPU bot's kind, in-character hello (nil for people / the ghost).
+    var banter: String? = nil
     let onDone: () -> Void
 
     // Staggered slam — the two cards clash a beat apart rather than landing
@@ -61,8 +66,9 @@ struct VSMatchIntroView: View {
     @State private var finished = false
 
     private var opp: Player { opponent ?? Player(username: "Anonymous", avatarUrl: nil, level: nil) }
-    private var headInk: Color { purple ? VsLobbyKit.purpleInk : VsLobbyKit.deep }
+    private var headInk: Color { VsLobbyKit.titleInk }
     private var subInk: Color { purple ? VsLobbyKit.purpleSub : VsLobbyKit.ink }
+    private var accent: Color { purple ? VsLobbyKit.purple : VsLobbyKit.ink }
 
     var body: some View {
         ZStack {
@@ -82,7 +88,7 @@ struct VSMatchIntroView: View {
         .contentShape(Rectangle())
         .onTapGesture { finish() }
         .onAppear {
-            SoundManager.shared.playVsStinger()
+            Feedback.vs()   // §U: vs · medium
             // Slam-in with a soft overshoot so the clash glides in instead of
             // snapping; the two sides land a beat apart (opponent +0.12s).
             let slam = Animation.spring(response: 0.72, dampingFraction: 0.72)
@@ -97,27 +103,24 @@ struct VSMatchIntroView: View {
         }
     }
 
+    /// The versus card (§D3): you (your avatar / letter tile) vs them (a bot in its
+    /// "ready" pose, or the person's avatar), names, the candy VS lettering, and the
+    /// bot's hello line or the head-to-head.
     private var window: some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Text("MATCH FOUND").font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(headInk)
                 Spacer(minLength: 6)
                 VSModeChip(mode: mode)
             }
-            .padding(.horizontal, 12).padding(.vertical, 12)
-            .background(Color.white.opacity(0.5))
+            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 6)
 
             VStack(spacing: 14) {
-                HStack(alignment: .top, spacing: 6) {
+                HStack(alignment: .center, spacing: 6) {
                     playerCard(me)
                         .offset(x: meSlammed ? 0 : -260)
                         .opacity(meSlammed ? 1 : 0)
-                    Text("VS")
-                        .font(Brand.font(26, .black)).foregroundStyle(.white)
-                        .frame(width: 52, height: 52)
-                        .background(Circle().fill(subInk))
-                        .padding(.top, 10)
+                    VSLettering()
                         .scaleEffect(vsPopped ? 1 : 0.01)
                         .opacity(vsPopped ? 1 : 0)
                     playerCard(opp)
@@ -125,8 +128,12 @@ struct VSMatchIntroView: View {
                         .opacity(oppSlammed ? 1 : 0)
                 }
 
-                // Head-to-head line (known opponents only).
-                if opponent != nil, let h2h = headToHead {
+                // The bot's hello (kind, in character) or the head-to-head (known people).
+                if let banter {
+                    VSBanterBubble(line: banter, accent: oppAccent)
+                        .offset(y: h2hShown ? 0 : 8)
+                        .opacity(h2hShown ? 1 : 0)
+                } else if opponent != nil, let h2h = headToHead {
                     Text(HeadToHeadService.headToHeadLine(opponentName: opp.username, h2h))
                         .font(Brand.font(12, .heavy)).foregroundStyle(subInk)
                         .multilineTextAlignment(.center)
@@ -134,22 +141,16 @@ struct VSMatchIntroView: View {
                         .opacity(h2hShown ? 1 : 0)
                 }
             }
-            .padding(.horizontal, 10).padding(.vertical, 18)
+            .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 18)
         }
         .frame(maxWidth: 420)
-        .background {
-            ZStack {
-                if purple {
-                    LinearGradient(colors: [Color(hex: 0xEBD6FD), Color(hex: 0xE2E6FF)], startPoint: .top, endPoint: .bottom)
-                } else {
-                    LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom)
-                }
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
-        }
-        .clipShape(shape)
-        .shadow(color: (purple ? VsLobbyKit.purpleInk : VsLobbyKit.deep).opacity(0.08), radius: 7, x: 0, y: 4)
+        .vsTinted(accent, bar: purple ? VsLobbyKit.purpleBar : VsLobbyKit.tealBar, tint: 0.10, line: 0.3)
+    }
+
+    /// The opponent's own color (a cast bot's), else the window accent.
+    private var oppAccent: Color {
+        if let id = opponent?.botId { return VsLobbyKit.castColor(id) }
+        return accent
     }
 
     private func finish() {
@@ -159,36 +160,67 @@ struct VSMatchIntroView: View {
     }
 
     private func playerCard(_ p: Player) -> some View {
-        VStack(spacing: 7) {
-            // Avatar + ring share one frame and are rasterized into a single
-            // layer, so the ring can never drift off the photo mid-slam.
-            ZStack {
-                VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 72)
-                // §20: rounded-square ring on a letter tile.
-                AvatarOutline(tile: p.botArt == nil && AvatarView.showsTile(p.avatarUrl)).strokeBorder(.white, lineWidth: 3)
+        let m = VsLobbyKit.mascot(fromArt: p.botArt)
+        return VStack(spacing: 7) {
+            if let m {
+                // A cast bot stands in character, ready to play.
+                PoseImage(m, "ready", height: 96)
+                    .frame(height: 96)
+            } else {
+                // Avatar + ring share one frame and are rasterized into a single
+                // layer, so the ring can never drift off the photo mid-slam.
+                ZStack {
+                    VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 72)
+                    // §20: rounded-square ring on a letter tile.
+                    AvatarOutline(tile: p.botArt == nil && AvatarView.showsTile(p.avatarUrl)).strokeBorder(.white, lineWidth: 3)
+                }
+                .frame(width: 72, height: 72)
+                .drawingGroup()
+                .shadow(color: accent.opacity(0.22), radius: 6, x: 0, y: 3)
+                .frame(height: 96)
             }
-            .frame(width: 72, height: 72)
-            .drawingGroup()
-            .shadow(color: headInk.opacity(0.12), radius: 5, x: 0, y: 2)
             Text(p.username.uppercased())
                 .font(Brand.font(13, .black)).tracking(0.4).foregroundStyle(headInk)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if let subtitle = p.subtitle {
-                chip(subtitle)
+                chip(subtitle, accent: m.map { VsLobbyKit.castColor($0) } ?? accent)
             } else if let level = p.level {
-                chip("Lv \(level)")
+                chip("Lv \(level)", accent: accent)
             }
         }
         .frame(maxWidth: .infinity)
     }
 
-    private func chip(_ text: String) -> some View {
+    private func chip(_ text: String, accent: Color) -> some View {
         Text(text)
-            .font(Brand.font(10, .black)).foregroundStyle(subInk)
+            .font(Brand.font(10, .black)).foregroundStyle(VsLobbyKit.titleInk)
             .lineLimit(1).minimumScaleFactor(0.7)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(Color.white.opacity(0.75)))
+            .padding(.horizontal, 9).padding(.vertical, 3)
+            .background(Capsule().fill(accent.wash(0.16)))
+            .overlay(Capsule().stroke(accent.wash(0.4), lineWidth: 1))
+    }
+}
+
+/// The versus card's VS lettering: white Nunito Black with the dark-purple outline
+/// on a glossy pink → purple candy disc with the gold rim (§A8 look).
+struct VSLettering: View {
+    var size: CGFloat = 56
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Circle().fill(Color(hex: 0x7A1679)).offset(y: 3)
+            Circle().fill(LinearGradient(colors: [Color(hex: 0xF472B6), Color(hex: 0xA21CAF)], startPoint: .top, endPoint: .bottom))
+            Circle().fill(LinearGradient(colors: [Color.white.opacity(0.45), Color.white.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .frame(width: size * 0.7, height: size * 0.45)
+                .padding(.top, 3)
+            Circle().strokeBorder(Color(hex: 0xF5C542), lineWidth: 2)
+            OutlinedText(text: "VS", size: size * 0.42, width: 1.75)
+                .frame(width: size, height: size)
+        }
+        .frame(width: size, height: size)
+        .shadow(color: Color(hex: 0x3B1A78).opacity(0.25), radius: 6, x: 0, y: 4)
+        .accessibilityLabel("Versus")
     }
 }
 
@@ -211,7 +243,7 @@ struct TypingDots: View {
     }
 }
 
-/// Top toast for opponent milestone callouts ("<name> got 4 greens! 😱") —
+/// Top toast for opponent milestone callouts ("<name> got 4 greens!") —
 /// a soft white pill with a teal dot (VS polish spec §1), over the board.
 struct VSCalloutPill: View {
     let text: String
@@ -220,11 +252,13 @@ struct VSCalloutPill: View {
         HStack(spacing: 7) {
             Circle().fill(VsLobbyKit.ink).frame(width: 7, height: 7)
             Text(text)
-                .font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.deep)
+                .font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.titleInk)
                 .lineLimit(2).multilineTextAlignment(.leading)
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
-        .background(Capsule().fill(Color.white))
+        // §A1: no plain white — a soft teal wash with its border.
+        .background(Capsule().fill(VsLobbyKit.ink.wash(0.12)))
+        .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.34), lineWidth: 1.5))
         .shadow(color: VsLobbyKit.deep.opacity(0.14), radius: 8, x: 0, y: 3)
         .padding(.horizontal, 24)
         .transition(.move(edge: .top).combined(with: .opacity))

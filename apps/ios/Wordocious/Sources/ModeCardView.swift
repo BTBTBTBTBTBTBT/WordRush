@@ -13,9 +13,9 @@ import WordociousCore
 /// (900, 16; shrinks to fit a long word) on the icon's top edge, the description
 /// (secondary ink, 12.5, up to two lines) on its bottom edge. No chevron (§21.4).
 /// ~84 pt tall. Every state is as before: the 3D W / L badge (now at the end of
-/// the title line, §21.1; Unlimited's infinity mark in the same slot), the dimmed free-played
-/// (locked) card with its gray band, the done tint, the result line in place of
-/// the description once played, and Unlimited's infinity mark.
+/// the title line, §21.1), the dimmed free-played (locked) card with its gray band, the
+/// done tint, and the result line in place of the description once played. FINISH_SPEC §Y:
+/// no infinity mark on Unlimited cards any more.
 struct ModeCardView: View {
     let mode: HomeMode
     /// Today's daily result for this mode (Daily mode only).
@@ -23,8 +23,8 @@ struct ModeCardView: View {
     /// Today's daily-VS outcome for the VS card (Daily mode only).
     var vsWon: Bool? = nil
     var locked: Bool = false
-    /// Pro's Unlimited mode (home redesign, founder 2026-10-01): no badges, a small
-    /// infinity mark in the accent at the end of the title line instead (§21.1).
+    /// Pro's Unlimited mode (home redesign, founder 2026-10-01): no badges (and,
+    /// FINISH_SPEC §Y, no infinity mark either).
     var unlimited: Bool = false
 
     /// §18.2 measures (radius, band and padding live on GameCardChrome).
@@ -44,10 +44,14 @@ struct ModeCardView: View {
             VStack(alignment: .leading, spacing: 0) {
                 titleRow
                 Spacer(minLength: 2)
-                Text(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
-                    .font(Brand.font(12.5, .semibold)).foregroundStyle(Theme.textSecondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                // FINISH_SPEC §Z: the subtitle slot always reserves the description's
+                // height, so a played card ("4 guesses · 27s", Daily) and the same card
+                // in Unlimited (the description) are the same height — flipping the
+                // Daily ⇄ Unlimited switch never moves the grid.
+                ZStack(alignment: .bottomLeading) {
+                    subtitle(mode.desc).hidden()
+                    subtitle(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: Self.icon, alignment: .leading)
         }
@@ -56,6 +60,13 @@ struct ModeCardView: View {
         .gameCardChrome(bar: locked ? lockGray : mode.accent, done: isDone && !locked,
                         border: locked ? lockGray : nil)
         .opacity(locked ? 0.6 : 1)
+    }
+
+    private func subtitle(_ text: String) -> some View {
+        Text(text)
+            .font(Brand.font(12.5, .semibold)).foregroundStyle(Theme.textSecondary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// Today's W / L outcome for the title-line badge (Daily only; never on Unlimited).
@@ -70,24 +81,21 @@ struct ModeCardView: View {
     /// overlay centered on the title line (whose center sits on the cap-height
     /// middle), so solved and unsolved cards keep identical text alignment; the
     /// title reserves the badge's width and truncates before it.
-    /// Unlimited's infinity mark takes the same slot (it used to sit in the corner,
-    /// where the full-width title would now run under it).
+    /// §Y: Unlimited has no mark in that slot (the infinity glyph is gone); VoiceOver
+    /// still hears "Unlimited" on the title.
     private var titleRow: some View {
         let badgeSize: CGFloat = 26
         let won = badgeWon
-        let infinity = unlimited && !locked
-        let reserve: CGFloat = won != nil ? badgeSize + 4 : (infinity ? 20 : 0)
+        let reserve: CGFloat = won != nil ? badgeSize + 4 : 0
         return Text(mode.title).font(Brand.font(16, .black))
             .foregroundStyle(locked ? Theme.textMuted : mode.accent)
             .lineLimit(1).minimumScaleFactor(0.68)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.trailing, reserve)
+            .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
             .overlay(alignment: .trailing) {
                 if let won {
                     winBadge(won: won, size: badgeSize)
-                } else if infinity {
-                    Image(systemName: "infinity").font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(mode.accent).accessibilityLabel("Unlimited")
                 }
             }
     }

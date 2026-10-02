@@ -7,6 +7,7 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, artSrc, poseArt, type PoseArtName } from '@/lib/art';
 import { softPill, softBackground } from '@/lib/soft-surface';
 import { WEEK_LETTERS, streakWeek } from '@/lib/streak-week';
+import { feedback } from '@/lib/sound-events';
 
 // The streak + shield popups (docs/FINISH_SPEC.md C5; mockup
 // finishing-touches.html): little celebrations, not plain bubbles. A colored
@@ -37,6 +38,8 @@ interface PopupShellProps {
 
 function PopupShell({ open, onClose, label, icon, title, sub, host, header, accent, children }: PopupShellProps) {
   const ref = useRef<HTMLDivElement>(null);
+  // FINISH_SPEC U: a popup opening = `whoosh`.
+  useEffect(() => { if (open) feedback('whoosh'); }, [open]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -55,7 +58,7 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
         role="dialog"
         aria-label={label}
         tabIndex={-1}
-        className="absolute left-0 right-0 top-full mt-2 z-50 overflow-hidden animate-fade-in-scale outline-none"
+        className="page-pop absolute left-0 right-0 top-full mt-2 z-50 overflow-hidden animate-fade-in-scale outline-none"
         style={{ borderRadius: 24, boxShadow: '0 18px 40px rgba(40, 15, 80, 0.35)', background: softBackground(accent, 0.08) }}
       >
         <div className="relative flex items-center gap-3" style={{ padding: '14px 16px 12px', paddingRight: 92, background: header }}>
@@ -84,8 +87,8 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
 function StatTile({ value, label, accent, ink }: { value: number; label: string; accent: string; ink: string }) {
   return (
     <div className="text-center" style={{ ...softPill(accent, { radius: 14 }), padding: '10px 10px 8px' }}>
-      <SoftNum size={28} as="b" className="block">{value}</SoftNum>
-      <span className="font-black" style={{ fontSize: 10, letterSpacing: '0.12em', color: ink }}>{label}</span>
+      <SoftNum size={28} as="b" className="block soft-num-auto">{value}</SoftNum>
+      <span className="font-black tint-ink" style={{ fontSize: 10, letterSpacing: '0.12em', color: ink }}>{label}</span>
     </div>
   );
 }
@@ -122,7 +125,7 @@ export function StreakPopup({ open, onClose, streak, best, today, playedToday }:
       </div>
       <div className="grid grid-cols-7 gap-1 text-center" style={{ padding: '4px 14px 2px' }} aria-label="This week">
         {WEEK_LETTERS.map((d, i) => (
-          <span key={i} className="font-black" style={{ fontSize: 10, color: '#a2560c' }}>
+          <span key={i} className="font-black tint-ink" style={{ fontSize: 10, color: '#a2560c' }}>
             {d}
             <i
               className="grid place-items-center not-italic"
@@ -169,7 +172,7 @@ export function ShieldPopup({ open, onClose, shields }: { open: boolean; onClose
       <div className="flex justify-center items-center gap-2" style={{ padding: '12px 14px 2px' }} aria-hidden="true">
         {Array.from({ length: shown }).map((_, i) => <Icon3D key={i} name="shield" size={40} />)}
         <Icon3D name="shield" size={40} style={{ opacity: 0.28, filter: 'grayscale(1)' }} />
-        {shields > SHIELD_ROW && <SoftNum size={20}>+{shields - SHIELD_ROW}</SoftNum>}
+        {shields > SHIELD_ROW && <SoftNum size={20} className="soft-num-auto">+{shields - SHIELD_ROW}</SoftNum>}
       </div>
       <p style={BLURB_STYLE}>
         A shield saves your streak if you miss a day. Earn a free one at every 7-day milestone; Pro members get 4 each billing period.

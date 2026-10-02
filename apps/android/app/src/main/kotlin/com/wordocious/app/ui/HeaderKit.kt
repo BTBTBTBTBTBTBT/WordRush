@@ -278,22 +278,3 @@ fun icon3DInline(size: TextUnit = 1.25.em): Map<String, androidx.compose.foundat
         }
     }
 
-/** The 3D set icon that stands in for a chrome emoji (🔥 🏆 🛡 👑), or null. */
-fun icon3DForEmoji(emoji: String): Icon3DName? = when (emoji.trim().removeSuffix("️")) {
-    "🔥" -> Icon3DName.FLAME
-    "🏆" -> Icon3DName.TROPHY
-    "🛡" -> Icon3DName.SHIELD
-    "👑" -> Icon3DName.CROWN
-    else -> null
-}
-
-/**
- * A UI-chrome glyph that arrives as an emoji (highlight / feed tiles): the 3D
- * set icon where one exists (HEADER_SPEC §2), the emoji otherwise (medal discs
- * stay as they are).
- */
-@Composable
-fun ChromeGlyph(emoji: String, size: Dp, fontSize: TextUnit) {
-    val icon = icon3DForEmoji(emoji)
-    if (icon != null) Icon3D(icon, size) else Text(emoji, fontSize = fontSize)
-}

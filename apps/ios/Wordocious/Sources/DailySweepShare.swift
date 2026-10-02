@@ -54,9 +54,11 @@ enum DailySweepCatalog {
     }
 }
 
-/// 1080×1350 PNG card matching the web all-dailies design. ART_SPEC §17: the
-/// home tint behind it and the cast strip above the footer (the rows sit 4 pt
-/// closer and the footer 20 pt lower to make the room).
+/// 1080×1350 PNG card (web all-dailies design). FINISH_SPEC §E1: the Home
+/// wallpaper, the DAILIES / PUZZLES title art, the headline, every played game
+/// as a tinted row with its 3D game icon on a mini game card and the W / L badge,
+/// three tinted stat windows (won · time · points, soft numbers) and a footer cast
+/// pose that is not the page host. Static and always light (see ShareKit).
 struct DailySweepCardView: View {
     let rows: [DailySweepRow]
     let won: Int
@@ -69,104 +71,108 @@ struct DailySweepCardView: View {
     /// "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES" over the same layout.
     var title: String? = nil
 
-    private let textMuted = Color(hex: 0x6B7280)
-    private let textDark = Color(hex: 0x1A1A2E)
-    private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
-    private let lossFG = Color(hex: 0xDC2626), lossBG = Color(hex: 0xFEE2E2)
-
-    var size: CGSize { CGSize(width: 1080, height: 1350) }
-
     private var titleColors: [Color] {
-        flawless ? [Color(hex: 0xFBBF24), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]
+        flawless ? [Color(hex: 0xF59E0B), Color(hex: 0xB45309)] : [Color(hex: 0x8B5CF6), Color(hex: 0xEC4899)]
     }
+
+    /// The Puzzles card (its rows are the More Games dailies) vs the Wordocious one.
+    private var isPuzzles: Bool {
+        guard let first = rows.first?.dbKey else { return false }
+        return DailySweepCatalog.moreModes.contains { $0.dbKey == first }
+    }
+
+    private var titleArt: String { isPuzzles ? "art-title-puzzles" : "art-title-dailies" }
+
+    /// Title art at ~70% of the width (height from its aspect, capped).
+    private var titleH: CGFloat {
+        guard ArtAsset.exists(titleArt), let a = ArtAsset.aspect(titleArt), a > 0 else { return 0 }
+        return min(200, 756 / a)
+    }
+
+    // §S2: the canvas is sized to its rows (4:5 … 9:16).
+    private var rowGap: CGFloat { rows.count > 8 ? 10 : 12 }
+    private var rowH: CGFloat { rows.count > 8 ? 84 : 92 }
+    private var rowsH: CGFloat {
+        let n = CGFloat(max(rows.count, 1))
+        return rowH * n + rowGap * (n - 1)
+    }
+    private let castW: CGFloat = 972
+    private var fixedH: CGFloat {
+        40 + titleH + 8 + 112 + 40 + 26 + 30 + 120 + 40 + ShareCastWordmark.height(castW) + 40
+    }
+    var size: CGSize { CGSize(width: 1080, height: min(1920, max(1350, fixedH + rowsH)).rounded()) }
 
     var body: some View {
         ZStack {
-            ShareArt.Background(tint: .home)
+            ShareWall(tint: .home)
             VStack(spacing: 0) {
-                Text("WORDOCIOUS")
-                    .font(Brand.font(56, .black))
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                                                    startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 44)
+                if titleH > 0 {
+                    ShareArt.title(titleArt, height: titleH, maxWidth: 756).padding(.top, 40)
+                }
                 Text(title ?? (flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP"))
-                    .font(Brand.font(52, .black))
+                    .font(Brand.fixedFont(48, .black))
                     .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
+                    .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
                     // The home share titles the card with the banner headline
                     // ("WORDOCIOUS SWEPT! 10 PUZZLES LEFT"): two lines, then shrink.
                     .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.5)
                     .padding(.horizontal, 48)
-                    .padding(.top, 12)
-                Text("\(won)/\(total) won · \(fmt(totalTimeSeconds)) · \(totalScore) pts · \(dateStr)")
-                    .font(Brand.font(26, .bold)).foregroundStyle(textMuted)
-                    .padding(.top, 14)
+                    .frame(height: 112)
+                    .padding(.top, titleH > 0 ? 8 : 48)
+                ShareDateLine(text: ShareCast.dateLine(dateStr), size: 28)
+                    .frame(height: 40)
 
-                Spacer(minLength: 28)
-                VStack(spacing: 12) {
+                VStack(spacing: rowGap) {
                     ForEach(rows) { row in rowView(row) }
                 }
-                .padding(.horizontal, 90)
-                Spacer(minLength: 20)
+                .padding(.horizontal, 64)
+                .frame(maxHeight: .infinity)
+                .padding(.top, 26)
 
-                ShareArt.CastStrip().padding(.bottom, 6)
-                Text("wordocious.com").font(Brand.font(22, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 20)
+                ShareStatRow(items: [
+                    ("\(won)/\(total)", "WON", .purple),
+                    (fmt(totalTimeSeconds), "TIME", .blue),
+                    (totalScore.formatted(), "POINTS", .gold),
+                ], height: 120)
+                .padding(.horizontal, 54)
+                .padding(.top, 30)
+                ShareCastWordmark(width: castW)
+                    .padding(.top, 40)
+                    .padding(.bottom, 40)
             }
         }
         .frame(width: size.width, height: size.height)
     }
 
+    /// One game: a tinted row in its accent with the 3D game icon on a mini game
+    /// card, the name + its numbers, and the W / L badge art.
     private func rowView(_ r: DailySweepRow) -> some View {
-        HStack(spacing: 22) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16).fill(r.accent).frame(width: 72, height: 72)
-                shareGlyph(r)
+        let shape = RoundedRectangle(cornerRadius: min(28, rowH * 0.32), style: .continuous)
+        let icon = rowH - 18
+        return HStack(spacing: 20) {
+            ShareIconTile(accent: r.accent, icon: ShareCast.gameIcon(dbKey: r.dbKey), fallback: r.glyph, size: icon)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(r.modeLabel).font(Brand.fixedFont(min(30, rowH * 0.38), .black)).foregroundStyle(ShareInk.heading)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                Text("\(r.won ? "\(r.guesses)g" : "X") · \(fmt(r.timeSeconds)) · \(r.score.formatted()) pts")
+                    .font(Brand.fixedFont(min(22, rowH * 0.28), .bold)).foregroundStyle(ShareInk.muted)
+                    .lineLimit(1).minimumScaleFactor(0.6)
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(r.modeLabel).font(Brand.font(30, .black)).foregroundStyle(textDark)
-                Text("\(r.won ? "\(r.guesses)g" : "X") · \(fmt(r.timeSeconds)) · \(r.score) pts")
-                    .font(Brand.font(21, .bold)).foregroundStyle(textMuted)
-            }
-            Spacer()
-            Text(r.won ? "✓" : "✗").font(Brand.font(48, .black))
-                .foregroundStyle(r.won ? winFG : lossFG)
+            Spacer(minLength: 8)
+            ShareResultBadge(won: r.won, size: min(56, rowH * 0.62))
         }
-        .padding(.horizontal, 24).padding(.vertical, 16)
+        .padding(.horizontal, 18)
         .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 20).fill(r.won ? winBG : lossBG))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(r.won ? winFG : lossFG, lineWidth: 3))
-    }
-
-    /// The mode's real game icon (lucide / hand / roman numeral — same source as
-    /// the home cards + celebration modal), drawn in WHITE on the accent badge so
-    /// the shared card shows recognizable game icons, not bare letter glyphs.
-    /// Falls back to the glyph text if the mode isn't found.
-    @ViewBuilder
-    private func shareGlyph(_ r: DailySweepRow) -> some View {
-        // homeModes alone left the ten More Games titles as letter glyphs (founder, 2026-09-28).
-        // White on the accent badge: the one-ink glyph, not the 3D game art.
-        if let icon = (homeModes + moreModes).first(where: { $0.dbKey == r.dbKey })?.icon.glyph {
-            switch icon {
-            case .asset(let name), .original(let name):
-                Image(name).renderingMode(.template).resizable().scaledToFit()
-                    .frame(width: 38, height: 38).foregroundStyle(.white)
-            case .roman(let text):
-                Text(text).font(Brand.font(CGFloat(text.count >= 3 ? 26 : 32), .black)).foregroundStyle(.white)
-            case .hand(let name, let number):
-                ZStack(alignment: .center) {
-                    Image(name).renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 44, height: 46).foregroundStyle(.white)
-                    Text(number).font(Brand.font(22, .black)).foregroundStyle(r.accent)
-                        .offset(y: 9)
-                }
-            case .symbol(let name):
-                Image(systemName: name).font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
-            case .game:
-                EmptyView() // unreachable: unwrapped above
+        .frame(height: rowH)
+        .background(
+            ZStack(alignment: .leading) {
+                shape.fill(r.accent.wash(0.08))
+                r.accent.frame(width: 8)
             }
-        } else {
-            Text(r.glyph).font(Brand.font(CGFloat(r.glyph.count >= 3 ? 24 : 30), .black)).foregroundStyle(.white)
-        }
+            .clipShape(shape)
+        )
+        .overlay(shape.strokeBorder(r.accent.wash(0.26), lineWidth: 3))
+        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.08), radius: 8, x: 0, y: 6)
     }
 
     private func fmt(_ s: Int) -> String { "\(s / 60):\(String(format: "%02d", s % 60))" }
@@ -188,12 +194,8 @@ extension ShareService {
 
     #if canImport(UIKit)
     @MainActor
-    private static func render(_ card: DailySweepCardView) -> (image: UIImage, png: Data)? {
-        let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(card.size)
-        renderer.scale = 1
-        guard let image = renderer.uiImage, let png = image.pngData() else { return nil }
-        return (image, png)
+    private static func render(_ card: DailySweepCardView) -> UIImage? {
+        renderCard(card, size: card.size)
     }
 
     private static func cardDate() -> String {
@@ -230,45 +232,23 @@ extension ShareService {
 
     /// Puzzles Sweep / Flawless share (founder, 2026-09-26): the same card over
     /// the ten More Games dailies, headed "PUZZLES SWEEP" / "PUZZLES FLAWLESS"
-    /// ("PUZZLES · N/10" mid-day). Uploads the card and links its /s OG page
-    /// (m=MoreSweep) exactly like the Daily Sweep — a bare wordocious.com link
-    /// made Messages unfurl the generic home page image instead of the card
-    /// (founder, 2026-09-26). `title` overrides the headline (the home share).
+    /// ("PUZZLES · N/10" mid-day). §S1: the image only (no hosted link).
+    /// `title` overrides the headline (the home share).
     @MainActor
     static func shareMoreSweep(byMode: [String: DailyCompletion], title: String? = nil) {
         #if canImport(UIKit)
-        guard let card = moreCard(byMode: byMode, title: title), let r = render(card) else { return }
-        let t = moreTotals(byMode: byMode)
-        let flawless = moreSweepTier(byMode: byMode) == .flawless
-        Task {
-            let url = await uploadSweepURL(
-                png: r.png, shareMode: "MoreSweep", flawless: flawless, won: t.won, total: t.total,
-                totalTime: Int(t.totalTimeSeconds.rounded()), totalScore: Int(t.totalScore.rounded()))
-            await MainActor.run {
-                var items: [Any] = [r.image]
-                if let url { items.append(url) }
-                present(items: items)
-            }
-        }
+        guard let card = moreCard(byMode: byMode, title: title), let image = render(card) else { return }
+        presentImages([image], game: "Puzzles")
         #endif
     }
 
-    /// Render + share the all-dailies card. Uploads to share-images and links
-    /// the /s OG page with m=DailySweep params (web app/s/[...key] parity).
+    /// Render + share the all-dailies card — §S1: the image only.
     /// `title` overrides the headline (the home share uses the banner headline).
     @MainActor
     static func shareDailySweep(byMode: [String: DailyCompletion], title: String? = nil) {
         #if canImport(UIKit)
-        guard let card = wordCard(byMode: byMode, title: title), let r = render(card) else { return }
-        let totals = DailyTotals(byMode)
-        Task {
-            let url = await uploadDailySweepURL(png: r.png, totals: totals)
-            await MainActor.run {
-                var items: [Any] = [r.image]
-                if let url { items.append(url) }
-                present(items: items)
-            }
-        }
+        guard let card = wordCard(byMode: byMode, title: title), let image = render(card) else { return }
+        presentImages([image], game: "Sweep")
         #endif
     }
 
@@ -276,8 +256,7 @@ extension ShareService {
     /// daily-share.ts shareTodayProgress): today's progress so far, mid-day or
     /// done. The Wordocious card titled with the banner headline, plus the Puzzles
     /// card when any Puzzles were played — both images in ONE share sheet (a single
-    /// 18-row card is too cramped to read). Only one group played → that card alone,
-    /// titled with the headline, through its usual upload + OG link.
+    /// 18-row card is too cramped to read). Only one group played → that card alone.
     @MainActor
     static func shareTodayProgress(byMode: [String: DailyCompletion], headline: String) {
         #if canImport(UIKit)
@@ -289,84 +268,22 @@ extension ShareService {
               let b = moreCard(byMode: byMode, title: nil).flatMap(render) else {
             shareDailySweep(byMode: byMode, title: headline); return
         }
-        present(items: [a.image, b.image])
+        presentImages([a, b], game: "Today")
         #endif
     }
 
     // MARK: - Profile stats share card (Wave B P4) ────────────────────────────
 
-    /// Render + share the profile stats card. Mirrors web lib/share-image.ts
-    /// drawProfileCard + the /s OG page m=Profile params.
+    /// Render + share the profile stats card — §S1: the image only.
     @MainActor
     static func shareProfile(_ input: ProfileShareInput) {
         #if canImport(UIKit)
+        var input = input
+        if input.castId == nil { input.castId = CastAvatars.shared.lookFor(input.username)?.castId }
         let card = ProfileShareCardView(input: input)
-        let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(card.size)
-        renderer.scale = 1
-        guard let image = renderer.uiImage, let png = image.pngData() else { return }
-        Task {
-            let url = await uploadProfileURL(png: png, input: input)
-            await MainActor.run {
-                var items: [Any] = [image]
-                if let url { items.append(url) }
-                present(items: items)
-            }
-        }
+        guard let image = renderCard(card, size: card.size) else { return }
+        presentImages([image], game: "Stats")
         #endif
-    }
-
-    private static func uploadProfileURL(png: Data, input: ProfileShareInput) async -> URL? {
-        let client = AuthService.shared.client
-        guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
-        f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
-        let dateStr = f.string(from: Date())
-        let key = "\(uid)/Profile-\(dateStr)"
-        do {
-            try await AuthService.shared.uploadClient.storage.from("share-images").upload(
-                "\(key).png", data: png, options: FileOptions(contentType: "image/png", upsert: true))
-        } catch { return nil }
-        let q: [String: String] = [
-            "m": "Profile", "w": "1080", "h": "1080",
-            "v": "p\(input.totalWins)-\(input.currentStreak)-\(input.achievementsUnlocked)",
-        ]
-        var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
-        comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
-        return comps?.url
-    }
-
-    private static func uploadDailySweepURL(png: Data, totals: DailyTotals) async -> URL? {
-        await uploadSweepURL(
-            png: png, shareMode: "DailySweep", flawless: totals.flawless, won: totals.won, total: totals.total,
-            totalTime: Int(totals.totalTimeSeconds.rounded()), totalScore: Int(totals.totalScore.rounded()))
-    }
-
-    /// Upload an all-dailies card to share-images under `<uid>/<shareMode>-<date>`
-    /// and build its /s OG link (web share-page-copy.ts reads m=DailySweep and
-    /// m=MoreSweep with the same won/tot/t/pts params).
-    private static func uploadSweepURL(png: Data, shareMode: String, flawless: Bool, won: Int, total: Int, totalTime: Int, totalScore: Int) async -> URL? {
-        let client = AuthService.shared.client
-        guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
-        f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
-        let dateStr = f.string(from: Date())
-        let key = "\(uid)/\(shareMode)-\(dateStr)"
-        do {
-            try await AuthService.shared.uploadClient.storage.from("share-images").upload(
-                "\(key).png", data: png, options: FileOptions(contentType: "image/png", upsert: true))
-        } catch { return nil }
-        let q: [String: String] = [
-            "m": shareMode,
-            "sweep": flawless ? "flawless" : "sweep",
-            "won": "\(won)", "tot": "\(total)",
-            "t": "\(totalTime)", "pts": "\(totalScore)",
-            "w": "1080", "h": "1350",
-            "v": "\(flawless ? "f" : "s")\(won)-\(totalTime)-\(totalScore)",
-        ]
-        var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
-        comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
-        return comps?.url
     }
 }
 
@@ -385,74 +302,78 @@ struct ProfileShareInput {
     let bronze: Int
     let achievementsUnlocked: Int
     let achievementsTotal: Int
+    /// FINISH_SPEC §AH: the worn cast hero; nil = the player's recorded look (CastAvatars).
+    var castId: String? = nil
 }
 
-/// 1080×1080 profile stats PNG matching web drawProfileCard (wordmark, accent
-/// username, Level·Tier, a 2×3 grid of stat tiles). ART_SPEC §17: the home tint
-/// behind it and the cast strip above the footer.
+/// 1080×1080 profile stats PNG (web drawProfileCard: wordmark, accent username,
+/// Level·Tier, a 2×3 grid of stats). FINISH_SPEC §E1: the Home wallpaper, the six
+/// stats as tinted windows with top bars and soft numbers, and a footer cast pose
+/// (not the Home host). Static and always light (see ShareKit).
 struct ProfileShareCardView: View {
     let input: ProfileShareInput
-    var size: CGSize { CGSize(width: 1080, height: 1080) }
+    /// §S2: 4:5 (the content fits it; the clamp's floor).
+    var size: CGSize { CGSize(width: 1080, height: 1350) }
 
-    private let textMuted = Color(hex: 0x6B7280)
-    private let textDark = Color(hex: 0x1A1A2E)
     private var accent: Color { Color(hex: input.accentHex) }
 
-    private var tiles: [(String, String)] {
+    private var tiles: [(String, String, ShareStatWindow.Tone)] {
         [
-            ("\(input.totalWins)", "Total Wins"),
-            ("\(input.winRate)%", "Win Rate"),
-            ("\(input.currentStreak)", "Win Streak"),
-            ("\(input.dailyStreak)", "Daily Streak"),
-            ("\(input.gold)·\(input.silver)·\(input.bronze)", "Medals G·S·B"),
-            ("\(input.achievementsUnlocked)/\(input.achievementsTotal)", "Achievements"),
+            ("\(input.totalWins)", "TOTAL WINS", .purple),
+            ("\(input.winRate)%", "WIN RATE", .blue),
+            ("\(input.currentStreak)", "WIN STREAK", .pink),
+            ("\(input.dailyStreak)", "DAILY STREAK", .gold),
+            ("\(input.gold)·\(input.silver)·\(input.bronze)", "MEDALS G·S·B", .teal),
+            ("\(input.achievementsUnlocked)/\(input.achievementsTotal)", "ACHIEVEMENTS", .green),
         ]
     }
 
+    private let titleArt = "art-title-stats"
+
     var body: some View {
         ZStack {
-            ShareArt.Background(tint: .home)
+            ShareWall(tint: .home)
             VStack(spacing: 0) {
-                Text("WORDOCIOUS")
-                    .font(Brand.font(50, .black))
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                                                    startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 40)
-                Text(input.username)
-                    .font(Brand.font(76, .black)).foregroundStyle(accent)
-                    .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 80).padding(.top, 18)
-                Text("Level \(input.level) · \(input.tier)")
-                    .font(Brand.font(30, .bold)).foregroundStyle(textMuted)
-                    .padding(.top, 8)
+                if ArtAsset.exists(titleArt), let a = ArtAsset.aspect(titleArt), a > 0 {
+                    ShareArt.title(titleArt, height: min(200, 756 / a), maxWidth: 756).padding(.top, 40)
+                }
+                // §AH: the player's worn hero on its tinted circle beside the name.
+                HStack(spacing: 18) {
+                    if let cast = AvatarCastRules.normalize(input.castId) {
+                        CastAvatarFace(castId: cast, size: 96, alwaysLight: true)
+                    }
+                    Text(input.username)
+                        .font(Brand.fixedFont(76, .black)).foregroundStyle(accent)
+                        .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                }
+                .padding(.horizontal, 80).padding(.top, 14)
+                // §V3: the tier badge beside the level line.
+                HStack(spacing: 14) {
+                    Image(LevelTier.forLevel(input.level).assetName)
+                        .resizable().interpolation(.high).scaledToFit()
+                        .frame(width: 72, height: 72)
+                    ShareDateLine(text: "Level \(input.level) · \(input.tier)", size: 30)
+                        .fixedSize()
+                }
+                .padding(.top, 6)
 
-                Spacer(minLength: 40)
-                VStack(spacing: 24) {
+                Spacer(minLength: 24)
+                VStack(spacing: 22) {
                     ForEach(0..<3, id: \.self) { r in
-                        HStack(spacing: 24) {
-                            statTile(tiles[r * 2].0, tiles[r * 2].1)
-                            statTile(tiles[r * 2 + 1].0, tiles[r * 2 + 1].1)
+                        HStack(spacing: 22) {
+                            ShareStatWindow(value: tiles[r * 2].0, label: tiles[r * 2].1, tone: tiles[r * 2].2, height: 160)
+                            ShareStatWindow(value: tiles[r * 2 + 1].0, label: tiles[r * 2 + 1].1, tone: tiles[r * 2 + 1].2, height: 160)
                         }
                     }
                 }
-                .padding(.horizontal, 80)
-                Spacer(minLength: 30)
+                .padding(.horizontal, 64)
+                Spacer(minLength: 24)
 
-                ShareArt.CastStrip().padding(.bottom, 6)
-                Text("wordocious.com").font(Brand.font(24, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 24)
+                ShareCastWordmark(width: 972)
+                    .padding(.bottom, 40)
             }
         }
         .frame(width: size.width, height: size.height)
-    }
-
-    private func statTile(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 8) {
-            Text(value).font(Brand.font(60, .black))
-                .foregroundStyle(accent).lineLimit(1).minimumScaleFactor(0.5)
-            Text(label).font(Brand.font(26, .bold)).foregroundStyle(textMuted)
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 40)
-        .background(RoundedRectangle(cornerRadius: 28).fill(.white))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(Color(hex: 0xE5E7EB), lineWidth: 3))
     }
 }

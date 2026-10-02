@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { X, EyeOff, Eye } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
+import { BRAND_ACCENT, softBackground, softBorder } from '@/lib/soft-surface';
 
 export type ShareVariant = 'clean' | 'full';
 
@@ -79,8 +80,9 @@ export function ShareVariantHost() {
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-sm animate-modal-content"
         style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
+          // A1: the brand wash, never plain white.
+          background: softBackground(BRAND_ACCENT),
+          border: softBorder(BRAND_ACCENT),
           borderRadius: '20px',
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
@@ -115,7 +117,7 @@ export function ShareVariantHost() {
                 key={v.variant}
                 onClick={() => settle(v.variant)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl transition-transform active:scale-[0.98]"
-                style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+                style={{ background: softBackground(v.accent), border: softBorder(v.accent), boxShadow: `inset 0 4px 0 ${v.accent}` }}
               >
                 <span
                   className="flex-shrink-0 w-10 h-10 rounded-[11px] flex items-center justify-center"

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -67,8 +68,9 @@ export async function POST(req: NextRequest) {
   const title = MODE_BY_DBKEY[gameMode]?.title ?? gameMode;
   void broadcastPush(
     {
-      title: `${meProf?.username ?? 'A friend'} challenges you!`,
-      body: `${title} VS Battle — tap to play now`,
+      // FINISH_SPEC AE: the shared cast-voice push copy.
+      title: PUSH_TITLE,
+      body: pushCopy('challengeReceived', { name: meProf?.username ?? undefined, game: title }),
       url: `/vs/join/${inviteCode}`,
     },
     new Set([body.friendId]),

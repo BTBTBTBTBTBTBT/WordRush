@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.app.ui.game.TrayState
+import com.wordocious.app.ui.game.gameTray
 import com.wordocious.core.BoardState
 import com.wordocious.core.GameAction
 import com.wordocious.core.GameMode
@@ -335,11 +337,11 @@ fun FinalBoards(
     // 21-board letter wall was unreadable). ─────────────────────────────────
     if (mode == GameMode.GAUNTLET) {
         Column(
-            Modifier.fillMaxWidth().vsCard(16.dp).padding(16.dp),
+            Modifier.fillMaxWidth().vsCard(18.dp, VS_RESULT_ACCENT).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             GauntletRecapSection(myName, myFlatWords, Color(0xFF7C3AED), seed, myTimeMs)
-            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+            Box(Modifier.fillMaxWidth().height(1.5.dp).background(vsLine(VS_RESULT_ACCENT)))
             GauntletRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), seed, opponentTimeMs)
         }
         return
@@ -349,13 +351,13 @@ fun FinalBoards(
     // FULL board set as the compact solo-style recap. ────────────────────────
     if (solutions.size > 1) {
         Column(
-            Modifier.fillMaxWidth().vsCard(16.dp).padding(16.dp),
+            Modifier.fillMaxWidth().vsCard(18.dp, VS_RESULT_ACCENT).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // My side uses the actual final boards when snapshotted (no replay
             // drift); the opponent's is always a seed replay of their log.
             MultiBoardRecapSection(myName, myFlatWords, Color(0xFF7C3AED), mode, seed, solutions, finalBoards = myBoards)
-            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+            Box(Modifier.fillMaxWidth().height(1.5.dp).background(vsLine(VS_RESULT_ACCENT)))
             MultiBoardRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), mode, seed, solutions)
         }
         return
@@ -381,7 +383,7 @@ fun FinalBoards(
     // ProperNoundleMiniBoard derives from the display).
     val pnGroups = pnDisplay?.let { pn.wordGroups(it) }
     Column(
-        Modifier.fillMaxWidth().vsCard(16.dp).padding(16.dp),
+        Modifier.fillMaxWidth().vsCard(18.dp, VS_RESULT_ACCENT).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // CRASH CLASS, DO NOT REINTRODUCE height(IntrinsicSize.*) HERE: LetterBoard
@@ -401,7 +403,7 @@ fun FinalBoards(
                 FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f), pnGroups)
             }
             Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
+                Box(Modifier.width(1.5.dp).fillMaxHeight().background(vsLine(VS_RESULT_ACCENT)))
             }
         }
         // Reveal the answer so a missed board isn't a mystery — with its real
@@ -409,7 +411,8 @@ fun FinalBoards(
         solutions.firstOrNull()?.let { answer ->
             Text(
                 "Answer: ${(pnDisplay ?: answer).uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp, color = WTheme.textSecondary,
+                letterSpacing = 1.sp, color = VsPurple.deep,
+                modifier = Modifier.vsPill(VS_RESULT_ACCENT, 50.dp).padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 4.dp),
             )
         }
     }
@@ -498,7 +501,12 @@ private fun FinalBoardsSide(
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 12.dp))
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                indices.forEach { idx -> LetterBoard(boards[idx] ?: emptyList(), wordGroups) }
+                // L: each recap board sits in the shared game tray (solved purple / missed slate).
+                indices.forEach { idx ->
+                    Box(Modifier.fillMaxWidth().gameTray(accent, if (solved) TrayState.WON else TrayState.LOST, corner = 14.dp, padding = androidx.compose.foundation.layout.PaddingValues(6.dp), shadow = false)) {
+                        LetterBoard(boards[idx] ?: emptyList(), wordGroups)
+                    }
+                }
             }
         }
     }
@@ -513,8 +521,10 @@ fun VsConfetti() {
         Color(0xFFFFD700), Color(0xFFFF6B9D), Color(0xFFC084FC), Color(0xFF60A5FA),
         Color(0xFF34D399), Color(0xFFFBBF24), Color(0xFFF97316), Color(0xFFEC4899),
     )
-    val pieces = remember {
-        List(50) {
+    // FINISH_SPEC AD: Battery Saver halves the burst.
+    val count = com.wordocious.app.ui.theme.CalmMotion.confettiCount(50, com.wordocious.app.ui.theme.WTheme.calmMotion)
+    val pieces = remember(count) {
+        List(count) {
             VsConfettiPiece(
                 xFrac = Random.nextFloat(),
                 color = colors[Random.nextInt(colors.size)],

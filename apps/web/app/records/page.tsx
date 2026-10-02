@@ -3,8 +3,12 @@
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Users, User, Swords, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, User, Swords } from 'lucide-react';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
+import { HeaderGlyph } from '@/components/ui/header-glyph';
+import { CandyLink } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { GameArt } from '@/components/ui/game-art';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
@@ -15,8 +19,14 @@ import { RecordsBanner, type RecordsTab } from '@/components/leaderboard/records
 import { ArtScene } from '@/components/ui/art-scene';
 import { GAME_TITLE_ART_HEIGHT, PAGE_SCENES, gameTitleArtForDbKey, gameTitleArtLabel, type GameTitleArtName } from '@/lib/art';
 import { ArtTitle } from '@/components/ui/art-title';
-import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
-import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
+import {
+  BoardAvatar, BoardCard, BoardRow, DisclosureHeader, ResultCard, RowBadge, SECTION_LABEL, SOFT_CARD, SWEEP_BADGE_COL, SegmentedPill, SweepBadge, YOUR_ROW,
+} from '@/components/leaderboard/board-rows';
+import { boardAvatarFor } from '@/components/leaderboard/board-rows';
+import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
+import { rowBadge, solvedLine, splitPodium } from '@/lib/leaderboard-podium';
+import { cardBarStyle, softCard } from '@/lib/soft-surface';
+import { GameTileChip, GameTileGlyph } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { guessRowLabel } from '@/lib/mode-stats';
@@ -90,10 +100,10 @@ import { PageBackground } from '@/components/ui/page-background';
 const CAPS_LABEL: React.CSSProperties = { ...SECTION_LABEL, textTransform: 'uppercase' };
 
 /**
- * One record (records-redesign §2): a soft white card — the record's icon in a
- * tile chip of the game's color, the record name (caps 10 / 900 gray), the value
- * big (20 / 900), the holder's avatar + name, and a small gold crown on records
- * you hold.
+ * One record (records-redesign §2; FINISH_SPEC A1, A2): a card tinted in the
+ * game's color (no plain white) — the record's icon in a tile chip, the record
+ * name (caps 10 / 900), the value big in soft numbers, the holder's avatar +
+ * name, and a small gold crown (and your soft-gold ring) on records you hold.
  */
 function RecordCard({
   recordType,
@@ -112,7 +122,7 @@ function RecordCard({
   const hasRecord = !!record;
 
   return (
-    <div className="relative flex flex-col gap-1.5 p-3" style={isCurrentUser && hasRecord ? { ...SOFT_CARD, ...YOUR_ROW, borderRadius: 14 } : SOFT_CARD}>
+    <div className="relative flex flex-col gap-1.5 p-3" style={isCurrentUser && hasRecord ? { ...softCard(accentColor), ...YOUR_ROW, borderRadius: 18 } : softCard(accentColor)}>
       {isCurrentUser && hasRecord && (
         <Icon3D name="crown" size={14} label="Your record" className="absolute top-2.5 right-2.5" />
       )}
@@ -120,12 +130,14 @@ function RecordCard({
         <GameTileChip accent={accentColor} width={28}>
           <Icon className="w-3.5 h-3.5" style={{ color: hasRecord ? accentColor : 'var(--color-text-muted)' }} />
         </GameTileChip>
-        <span className="text-[10px] font-black uppercase leading-tight min-w-0" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6 }}>
+        <span className="text-[10px] font-black uppercase leading-tight min-w-0 pr-4" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6 }}>
           {config.label}
         </span>
       </div>
-      <div className="font-black leading-tight" style={{ fontSize: 20, color: hasRecord ? 'var(--color-record-value)' : 'var(--color-text-muted)' }}>
-        {hasRecord ? recordValue(record!.record_type, record!.record_value, record!.game_mode) : '—'}
+      <div className="leading-tight">
+        {hasRecord
+          ? <SoftNum size={20}>{recordValue(record!.record_type, record!.record_value, record!.game_mode)}</SoftNum>
+          : <span className="font-black" style={{ fontSize: 20, color: 'var(--color-text-muted)' }}>—</span>}
         {/* §254: hints on the record, same wording as the leaderboard rows. */}
         {hasRecord && record!.hints_used != null && record!.game_mode && (() => {
           const h = formatHintsLabel(record!.game_mode, record!.hints_used!);
@@ -147,7 +159,11 @@ function RecordCard({
   );
 }
 
-/** The game-tile CARD header (tint, border, top bar, chip, 15 / 900 name). */
+/**
+ * The game card header (FINISH_SPEC C2's Play card look): tinted in the game's
+ * color with its 10 px top bar, the title art (or, without one, the game's 3D
+ * icon + name), the sub line, and the right-hand control.
+ */
 function GameHeaderCard({ accent, glyph, title, titleArt = null, sub, right, children }: {
   accent: string;
   glyph: React.ReactNode;
@@ -159,19 +175,19 @@ function GameHeaderCard({ accent, glyph, title, titleArt = null, sub, right, chi
   children?: React.ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden mb-4" style={gameTileSurface(accent)}>
-      <GameTileBar accent={accent} />
-      <div className="px-3 pt-4 pb-3">
+    <div className="relative overflow-hidden mb-4" style={softCard(accent, { radius: 18 })}>
+      <div aria-hidden="true" style={cardBarStyle(accent)} />
+      <div style={{ padding: '10px 12px 12px' }}>
         <div className="flex items-center gap-3">
-          <GameTileChip accent={accent}>{glyph}</GameTileChip>
+          {!titleArt && glyph}
           <div className="flex-1 min-w-0">
             {titleArt ? (
-              <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" priority={false} className="mb-0.5" />
+              <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" level={2} priority={false} motion="none" className="mb-0.5" />
             ) : (
-              <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>{title}</div>
+              <div className="font-black truncate" style={{ fontSize: 17, color: 'var(--color-text)' }}>{title}</div>
             )}
             {sub != null && (
-              <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{sub}</div>
+              <div className="flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>{sub}</div>
             )}
           </div>
           {right}
@@ -391,78 +407,95 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
   const lbScoreLabels = tieAwareScoreLabels(leaderboard.map((e) => e.composite_score));
   const sweepScoreLabels = tieAwareScoreLabels(sweepLeaderboard.map((e) => e.total_score));
 
-  // One Sweep row — records style (py-2.5); total score · total time ·
-  // modes-won, with a GOLD "FLAWLESS" / VIOLET "SWEEP" pill.
-  const renderSweepRow = (entry: SweepEntry, rank: number) => {
-    const isCurrentUser = !!userId && entry.user_id === userId;
-    const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
+  // One Sweep row — the daily board's shell (§232 parity): total score, the
+  // words-not-codes stats (§246: wrap, never truncate), the dot strip under
+  // them, and the GOLD "FLAWLESS" / VIOLET "SWEEP" pill in the badge column (C2a).
+  const renderSweepRow = (entry: SweepEntry, rank: number, i: number) => {
     const det = sweepDetails.get(entry.user_id);
     return (
-      <div key={entry.user_id} className="flex items-center gap-3 px-3 py-2.5" style={isCurrentUser ? YOUR_ROW : undefined}>
-        <RankIcon rank={rank} />
-        <BoardAvatar url={entry.avatar_url} name={entry.username} />
-        {/* §236: same shell as the daily board's sweep row — score on the
-            NAME line, stats owning the full width, dots + pill beneath. */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/profile/${entry.user_id}`}
-              className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity flex-1 min-w-0"
-              style={{ color: 'var(--color-text)' }}
-            >
-              {entry.username}
-              {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-            </Link>
-            <span className="font-black text-[13px] shrink-0 tabular-nums" style={{ color: 'var(--color-text)' }}>
-              {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
-            </span>
-          </div>
-          {/* §232: daily-board parity — words-not-codes stats + the dot strip
-              with the pill beside it (founder ask, Aug 24). */}
-          {/* §246: wrap, never truncate — the hints segment fell off the end. */}
-          <div className="text-[10px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-            {sweepStatsText(entry, det, today)}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <SweepModeDots details={det} day={today} />
-            <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
-              style={{ background: `${pillColor}22`, color: pillColor }}
-            >
-              {entry.is_flawless
-                ? ((flawlessStreaks.get(entry.user_id) ?? 0) >= 2 ? `FLAWLESS ×${flawlessStreaks.get(entry.user_id)}` : 'FLAWLESS')
-                : 'SWEEP'}
-            </span>
-          </div>
-        </div>
-      </div>
+      <BoardRow
+        key={entry.user_id}
+        rank={rank}
+        userId={entry.user_id}
+        avatar={boardAvatarFor(entry)}
+        username={entry.username}
+        avatarUrl={entry.avatar_url}
+        isMe={!!userId && entry.user_id === userId}
+        stats={<span className="leading-snug">{sweepStatsText(entry, det, today)}</span>}
+        below={<SweepModeDots details={det} day={today} />}
+        badge={<SweepBadge flawless={entry.is_flawless} streak={flawlessStreaks.get(entry.user_id) ?? 0} />}
+        badgeWidth={SWEEP_BADGE_COL}
+        score={sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
+        stripe={i % 2 === 0}
+        divider={i > 0}
+      />
     );
   };
 
-  // Your rank card's points: your own row on the board in hand.
-  const myPoints = (() => {
-    if (!userId) return null;
-    if (isSweep) {
-      const e = sweepLeaderboard.find((r) => r.user_id === userId);
-      return e ? sweepScoreLabels.get(e.total_score) ?? formatScore(e.total_score) : null;
-    }
-    const e = leaderboard.find((r) => r.user_id === userId);
-    return e ? lbScoreLabels.get(e.composite_score) ?? formatScore(e.composite_score) : null;
+  // Your result card: your own row on the board in hand.
+  const myEntry = userId && !isSweep ? leaderboard.find((r) => r.user_id === userId) ?? null : null;
+  const mySweepEntry = userId && isSweep ? sweepLeaderboard.find((r) => r.user_id === userId) ?? null : null;
+  const myPoints = mySweepEntry
+    ? sweepScoreLabels.get(mySweepEntry.total_score) ?? formatScore(mySweepEntry.total_score)
+    : myEntry ? lbScoreLabels.get(myEntry.composite_score) ?? formatScore(myEntry.composite_score) : null;
+  const mySolved = (() => {
+    if (mySweepEntry) return `${mySweepEntry.is_flawless ? 'Flawless' : 'Swept'} · ${sweepStatsText(mySweepEntry, sweepDetails.get(mySweepEntry.user_id), today)}`;
+    if (!myEntry) return null;
+    if (playType === 'vs') return `${myEntry.vs_wins}W / ${myEntry.vs_games}G`;
+    const meta = MODE_BY_DBKEY[selectedMode];
+    const line = solvedLine(meta?.guessSemantics ?? 'guesses', meta?.guessBase ?? 1, myEntry.guess_count, myEntry.time_seconds, myEntry.completed);
+    const h = formatHintsLabel(selectedMode, myEntry.hints_used);
+    return h ? `${line} · ${h}` : line;
   })();
+
+  // C2: the podium for the top three, the rest as rows. Blocked users are
+  // hidden client-side; ranks keep their original positions (holes where
+  // blocked rows were). The sweep service already filters blocked users and
+  // its RPC rank is authoritative.
+  const lbSplit = splitPodium(
+    leaderboard
+      .map((entry, index) => ({ entry, rank: index + 1 }))
+      .filter(({ entry }) => !isBlocked(entry.user_id)),
+  );
+  const sweepSplit = splitPodium(sweepLeaderboard.map((entry) => ({ entry, rank: entry.rank })));
+  const lbPodium: PodiumPlace[] = lbSplit.podium.map(({ entry, rank }) => ({
+    avatar: boardAvatarFor(entry),
+    key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
+    avatarUrl: entry.avatar_url, avatarEmoji: entry.avatar_emoji, isMe: !!userId && entry.user_id === userId,
+    points: lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score),
+    badge: rowBadge(entry, playType) ? <WinLossBadge won={entry.completed} size={15} /> : undefined,
+    extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{recordsStatsText(entry, selectedMode, playType)}</span>,
+  }));
+  const sweepPodium: PodiumPlace[] = sweepSplit.podium.map(({ entry, rank }) => ({
+    avatar: boardAvatarFor(entry),
+    key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
+    avatarUrl: entry.avatar_url, isMe: !!userId && entry.user_id === userId,
+    points: sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score),
+    extra: (
+      <div className="flex flex-col items-center gap-1 max-w-full">
+        <SweepBadge flawless={entry.is_flawless} streak={flawlessStreaks.get(entry.user_id) ?? 0} />
+        <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>
+          {sweepStatsText(entry, sweepDetails.get(entry.user_id), today)}
+        </span>
+        <SweepModeDots details={sweepDetails.get(entry.user_id)} day={today} />
+      </div>
+    ),
+  }));
 
   return (
     <div>
       <PullToRefresh onRefresh={loadData} accentColor={color}>
-      {/* Per-game board card (records-redesign §2): the game-tile CARD header
-          with the Solo | VS and Everyone | Friends pills and a bare share icon. */}
+      {/* Per-game board card (records-redesign §2, C2 look): the tinted game
+          card with the Solo | VS and Everyone | Friends pills and the bare
+          3D share icon. */}
       <GameHeaderCard
         accent={color}
-        glyph={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
-        title={mode.title}
+        glyph={<GameArt id={isSweep ? 'sweep' : mode.id} size={44} fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />} />}
+        title={isSweep ? 'Daily Sweep' : mode.title}
         titleArt={isSweep ? null : gameTitleArtForDbKey(selectedMode)}
         sub={
           <>
-            <Users className="w-3 h-3 shrink-0" />
+            <Users className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">
               {isSweep
                 ? `${playerCount} swept today`
@@ -473,15 +506,15 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
         right={
           // Share is per-mode only — Sweep has no card design here.
           !isSweep && !loading && leaderboard.length > 0 ? (
-            <button
+            <HeaderGlyph
+              icon="share"
+              size={20}
+              label="Share leaderboard"
               onClick={handleShareLeaderboard}
               disabled={sharingLb}
-              aria-label="Share leaderboard"
-              className="p-1 -my-1 shrink-0 active:scale-95 transition-transform"
-              style={{ color: 'var(--color-text-secondary)', opacity: sharingLb ? 0.4 : 1 }}
-            >
-              <Icon3D name="share" size={20} />
-            </button>
+              className="shrink-0"
+              style={{ minWidth: 40, opacity: sharingLb ? 0.4 : 1 }}
+            />
           ) : null
         }
       >
@@ -512,67 +545,70 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
         )}
       </GameHeaderCard>
 
-      {/* §254/§255: the completed-daily dropdown, in the soft card style. */}
+      {/* C2: the ONE result card on gold, as on the Leaderboard. */}
+      {userRank && (
+        <ResultCard
+          rank={userRank.rank}
+          ofLine={`OF ${userRank.totalPlayers} TODAY${userRank.totalPlayers > 1 ? ` · TOP ${Math.max(1, Math.round((userRank.rank / userRank.totalPlayers) * 100))}%` : ''}`}
+          solved={mySolved}
+          points={myPoints}
+          delta={!isSweep ? <RankDeltaBadge mode={selectedMode} playType={playType} pageKey={friendsOnly && userId ? 'records-daily-friends' : 'records-daily'} currentRank={userRank.rank} /> : null}
+        />
+      )}
+
+      {/* §254/§255: your finished board, collapsible under the result. */}
       {!isSweep && (
         <SoftCompletedCards>
           <CompletedDailyBoard modeId={selectedMode} />
         </SoftCompletedCards>
       )}
 
-      {/* Your rank, as on the Leaderboard. */}
-      {userRank && (
-        <YourRankCard
-          rank={userRank.rank}
-          ofLine={`OF ${userRank.totalPlayers} TODAY${userRank.totalPlayers > 1 ? ` · TOP ${Math.max(1, Math.round((userRank.rank / userRank.totalPlayers) * 100))}%` : ''}`}
-          points={myPoints}
-          delta={!isSweep ? <RankDeltaBadge mode={selectedMode} playType={playType} pageKey={friendsOnly && userId ? 'records-daily-friends' : 'records-daily'} currentRank={userRank.rank} /> : null}
-        />
-      )}
-
       <div className="mb-2 px-1" style={SECTION_LABEL}>TODAY&apos;S BOARD</div>
       {/* No fade on a mode switch: the new board is simply there in the tap's
           frame (founder, 2026-09-29; iOS/Android parity). */}
-      <div key={`${selectedMode}-${playType}`} className="overflow-hidden p-1.5" style={SOFT_CARD}>
+      <BoardCard key={`${selectedMode}-${playType}`}>
         {loading ? (
           <LeaderboardSkeleton />
         ) : isSweep ? (
           sweepLeaderboard.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
               <div className="flex justify-center mb-2"><ArtScene scene={PAGE_SCENES.empty} /></div>
               <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
             </div>
           ) : (
-            // Service already filters blocked; the RPC rank is authoritative.
-            <div>{sweepLeaderboard.map((entry) => renderSweepRow(entry, entry.rank))}</div>
+            <div>
+              <Podium places={sweepPodium} label="Top three sweepers" />
+              {sweepSplit.rest.map(({ entry, rank }, i) => renderSweepRow(entry, rank, i + (sweepPodium.length > 0 ? 1 : 0)))}
+            </div>
           )
         ) : leaderboard.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
             <div className="flex justify-center mb-2"><ArtScene scene={PAGE_SCENES.empty} /></div>
             <p className="text-xs font-bold">No results yet today. Be the first!</p>
           </div>
         ) : (
           <div>
-            {/* Blocked users are hidden client-side; ranks keep their
-                original positions (holes where blocked rows were). */}
-            {leaderboard
-              .map((entry, index) => ({ entry, rank: index + 1 }))
-              .filter(({ entry }) => !isBlocked(entry.user_id))
-              .map(({ entry, rank }) => (
-                <BoardRow
-                  key={entry.user_id}
-                  rank={rank}
-                  userId={entry.user_id}
-                  username={entry.username}
-                  avatarUrl={entry.avatar_url}
-                  avatarEmoji={entry.avatar_emoji}
-                  isMe={!!userId && entry.user_id === userId}
-                  stats={<RecordsRowStats entry={entry} mode={selectedMode} playType={playType} />}
-                  score={lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
-                />
-              ))}
+            <Podium places={lbPodium} />
+            {lbSplit.rest.map(({ entry, rank }, i) => (
+              <BoardRow
+                key={entry.user_id}
+                rank={rank}
+                userId={entry.user_id}
+                avatar={boardAvatarFor(entry)}
+                username={entry.username}
+                avatarUrl={entry.avatar_url}
+                avatarEmoji={entry.avatar_emoji}
+                isMe={!!userId && entry.user_id === userId}
+                stats={<span className="truncate">{recordsStatsText(entry, selectedMode, playType)}</span>}
+                badge={<RowBadge kind={rowBadge(entry, playType)} />}
+                score={lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
+                stripe={(i + (lbPodium.length > 0 ? 1 : 0)) % 2 === 0}
+                divider={i > 0 || lbPodium.length > 0}
+              />
+            ))}
           </div>
         )}
-      </div>
+      </BoardCard>
 
       {/* Yesterday's podium */}
       <YesterdayPodium mode={selectedMode} playType={playType} userId={userId} />
@@ -581,25 +617,18 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
   );
 }
 
-/** A records row's stats line: solo guesses · time · boards · hints + W/L, or VS W/G. */
-function RecordsRowStats({ entry, mode, playType }: { entry: LeaderboardEntry; mode: string; playType: 'solo' | 'vs' }) {
-  if (playType === 'vs') return <span className="truncate">{entry.vs_wins}W / {entry.vs_games}G</span>;
-  return (
-    <>
-      <span className="truncate">
-        {guessRowLabel(MODE_BY_DBKEY[mode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[mode]?.guessBase ?? 1, entry.guess_count)} · {formatTime(entry.time_seconds)}
-        {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
-        {/* §254: hints ride this row exactly as on the daily leaderboard —
-            the founder wants the two pages to match. */}
-        {(() => {
-          const h = formatHintsLabel(mode, entry.hints_used);
-          return h ? ` · ${h}` : '';
-        })()}
-      </span>
-      {/* §13: the W / L badge art in place of the text chip. */}
-      <WinLossBadge won={entry.completed} />
-    </>
-  );
+/**
+ * A records row's stats line: solo guesses · time · boards · hints, or VS
+ * W/G. The W / L badge is not here (C2a: it has its own column).
+ */
+function recordsStatsText(entry: LeaderboardEntry, mode: string, playType: 'solo' | 'vs'): string {
+  if (playType === 'vs') return `${entry.vs_wins}W / ${entry.vs_games}G`;
+  let s = `${guessRowLabel(MODE_BY_DBKEY[mode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[mode]?.guessBase ?? 1, entry.guess_count)} · ${formatTime(entry.time_seconds)}`;
+  if (entry.total_boards > 1) s += ` · ${entry.boards_solved}/${entry.total_boards}`;
+  // §254: hints ride this row exactly as on the daily leaderboard — the
+  // founder wants the two pages to match.
+  const h = formatHintsLabel(mode, entry.hints_used);
+  return h ? `${s} · ${h}` : s;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -649,52 +678,51 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
   // Identical to the Leaderboard's YESTERDAY'S WINNERS (records-redesign §2).
   return (
     <>
-      <div className="w-full mt-5 mb-2 flex items-center gap-1.5 px-1">
-        <button
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          className="flex-1 flex items-center gap-1.5 text-left"
-          style={SECTION_LABEL}
-        >
-          YESTERDAY&apos;S WINNERS
-          {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
-        {/* Settled-podium share — only once the podium is open. */}
-        {open && top3.length > 0 && (
-          <button
-            onClick={handleShare}
-            disabled={sharing}
-            aria-label="Share yesterday's podium"
-            className="p-1 -my-1 active:scale-95 transition-transform"
-            style={{ color: 'var(--color-text-secondary)', opacity: sharing ? 0.4 : 1 }}
-          >
-            <Icon3D name="share" size={20} />
-          </button>
-        )}
-      </div>
+      <DisclosureHeader
+        label={<>YESTERDAY&apos;S WINNERS</>}
+        open={open}
+        onToggle={() => setOpen((o) => !o)}
+        right={
+          // Settled-podium share — only once the podium is open.
+          open && top3.length > 0 ? (
+            <HeaderGlyph
+              icon="share"
+              size={20}
+              label="Share yesterday's podium"
+              onClick={handleShare}
+              disabled={sharing}
+              style={{ minWidth: 40, opacity: sharing ? 0.4 : 1 }}
+            />
+          ) : null
+        }
+      />
       {open && (
-        <div className="overflow-hidden mb-4 p-1.5" style={SOFT_CARD}>
+        <BoardCard className="mb-4">
           {!cachedTop3 ? (
             <LeaderboardSkeleton />
           ) : (
             top3
               .map((entry, index) => ({ entry, rank: index + 1 }))
               .filter(({ entry }) => !isBlocked(entry.user_id))
-              .map(({ entry, rank }) => (
+              .map(({ entry, rank }, i) => (
                 <BoardRow
                   key={entry.user_id}
                   rank={rank}
                   userId={entry.user_id}
+                  avatar={boardAvatarFor(entry)}
                   username={entry.username}
                   avatarUrl={entry.avatar_url}
                   avatarEmoji={entry.avatar_emoji}
                   isMe={!!userId && entry.user_id === userId}
-                  stats={<RecordsRowStats entry={entry} mode={mode} playType={playType} />}
+                  stats={<span className="truncate">{recordsStatsText(entry, mode, playType)}</span>}
+                  badge={<RowBadge kind={rowBadge(entry, playType)} />}
                   score={podiumScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
+                  stripe={i % 2 === 0}
+                  divider={i > 0}
                 />
               ))
           )}
-        </div>
+        </BoardCard>
       )}
     </>
   );
@@ -769,7 +797,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
 
   return (
     <div>
-      {/* Hall of Fame — each record a soft card (records-redesign §2). */}
+      {/* Hall of Fame — each record a tinted card (records-redesign §2, A1). */}
       <div className="mb-5">
         <div className="mb-2 px-1" style={CAPS_LABEL}>Hall of Fame</div>
         <div className="grid grid-cols-2 gap-3">
@@ -788,15 +816,15 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
         </div>
       </div>
 
-      {/* By Game Mode — the game picked in the banner: a game-tile CARD header,
-          then its records (or the all-time Sweep board) below. */}
+      {/* By Game Mode — the game picked in the picker: the tinted game card
+          header, then its records (or the all-time Sweep board) below. */}
       <div>
         <div className="mb-2 px-1" style={CAPS_LABEL}>By Game Mode</div>
 
         <GameHeaderCard
           key={selectedMode}
           accent={color}
-          glyph={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+          glyph={<GameArt id={isSweep ? 'sweep' : mode.id} size={44} fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />} />}
           title={isSweep ? 'Sweep · All-Time' : mode.title}
           titleArt={isSweep ? null : gameTitleArtForDbKey(selectedMode)}
           sub={isSweep ? 'Lifetime sweeps' : 'All-time bests'}
@@ -805,34 +833,38 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
         {isSweep ? (
           // All-time Sweep leaderboard — lifetime sweep count, flawless count,
           // and best (fastest) sweep time.
-          <div className="overflow-hidden p-1.5" style={SOFT_CARD}>
+          <BoardCard>
             {sweepBoard === null ? (
               <LeaderboardSkeleton />
             ) : sweepBoard.length === 0 ? (
               <div className="py-5 text-center">
                 <div className="flex justify-center mb-1.5"><ArtScene scene={PAGE_SCENES.empty} /></div>
-                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
+                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>No sweeps yet</p>
               </div>
             ) : (
               // Service already filters blocked; the RPC rank is authoritative.
-              sweepBoard.map((entry) => (
+              // C2a: no single W / L here — the badge column stays, empty, so the totals line up.
+              sweepBoard.map((entry, i) => (
                 <BoardRow
                   key={entry.user_id}
                   rank={entry.rank}
                   userId={entry.user_id}
+                  avatar={boardAvatarFor(entry)}
                   username={entry.username}
                   avatarUrl={entry.avatar_url}
                   isMe={!!userId && entry.user_id === userId}
                   stats={<span className="truncate">{entry.flawless_count} flawless{entry.best_sweep_time ? ` · best ${formatTime(entry.best_sweep_time)}` : ''}</span>}
                   score={`${entry.sweep_count} sweep${entry.sweep_count !== 1 ? 's' : ''}`}
+                  stripe={i % 2 === 0}
+                  divider={i > 0}
                 />
               ))
             )}
-          </div>
+          </BoardCard>
         ) : modeRecords.length === 0 ? (
           <div className="py-5 text-center" style={SOFT_CARD}>
             <div className="flex justify-center mb-1.5"><ArtScene scene={PAGE_SCENES.empty} /></div>
-            <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No records yet</p>
+            <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>No records yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -892,9 +924,9 @@ export default function RecordsPage() {
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
-        {/* The Records banner (records-redesign §1): title, sub line, the
-            DAILY | ALL-TIME switch and the game rows. Replaces the old header,
-            toggle row and mode picker. */}
+        {/* A6 + C2: the ALL-TIME RECORDS headline, then the one game picker
+            card (sub line + DAILY | ALL-TIME switch on top, the WORDOCIOUS row
+            with the Sweep broom tile, then PUZZLES). */}
         <div className="mb-4">
           <RecordsBanner
             tab={activeTab}
@@ -913,14 +945,15 @@ export default function RecordsPage() {
           <AllTimeRecordsView key="alltime" userId={user?.id} selectedMode={allTimeMode} onCount={setRecordsCount} />
         )}
 
+        {/* A8: the two way-outs as quiet candy pills. */}
         <div className="flex flex-col items-center gap-2 mt-6">
-          <Link href="/daily" className="text-[11px] font-black" style={{ color: '#7c3aed' }}>
+          <CandyLink href="/daily" size="sm" color="peach">
             Today&apos;s boards → Leaderboard
-          </Link>
+          </CandyLink>
           {/* D2 step 3 (2026-09-26): your own records live on the Stats tab now. */}
-          <Link href="/stats?view=all-time" className="text-[11px] font-black" style={{ color: '#7c3aed' }}>
+          <CandyLink href="/stats?view=all-time" size="sm" color="peach">
             Your personal records → Stats
-          </Link>
+          </CandyLink>
         </div>
       </div>
 

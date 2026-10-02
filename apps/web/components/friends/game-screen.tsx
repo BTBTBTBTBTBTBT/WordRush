@@ -2,27 +2,37 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { FRIENDLY_TITLES, whoseTurn, type FriendlyMove } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
-import { FR, KIND_COLOR, KIND_GRADIENT, TILE, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
+import { FR, KIND_COLOR, KIND_GRADIENT, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
 import { ResultHost } from '@/components/ui/mascot';
 import { pocketResultHost } from '@/lib/mascots';
+import { CandyButton } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { PageBackground } from '@/components/ui/page-background';
+import { frBar } from '@/lib/friends-look';
+import { softMix } from '@/lib/soft-surface';
 
 // A Friends pocket game (Friends overhaul §4, canvas board AE; also the push
 // deep link /friends/games/<id>). The server runs the rules; this screen polls
 // the game every 2 s while it is open and visible (which also tells the server
 // we're watching, so moves arrive live instead of as a push), sends moves,
 // retries on a 409, and offers REMATCH / FRIENDS when it's over. RESIGN lives
-// in the close confirm while the game is still going.
+// in the close confirm while the game is still going. Finishing build (A1, A2,
+// A8, L): the Friends wallpaper (light-only), the score card with the game's
+// top bar and soft numbers, every board on the shared game tray, candy actions.
+
+/** A danger candy (Resign): the candy look recolored red. */
+const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
 
 const POLL_MS = 2000;
 
@@ -158,7 +168,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         <div className="text-center py-10 space-y-3">
           <ArtScene scene={PAGE_SCENES.notFound} />
           <p className="text-sm font-bold" style={{ color: FR.label }}>This game isn&apos;t here anymore.</p>
-          <button type="button" onClick={() => router.push('/friends')} className="px-5 py-2.5 text-[13px] font-black rounded-full" style={{ background: FR.soft, color: FR.mid }}>FRIENDS</button>
+          <CandyButton size="md" color="peach" onClick={() => router.push('/friends')}>Friends</CandyButton>
         </div>
       </Shell>
     );
@@ -199,17 +209,26 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         {won && <Icon3D name="trophy" size={14} className="shrink-0" />}
         {label}
       </span>
-      {value !== null && <span className="font-black" style={{ fontSize: 34, lineHeight: 1, color: isMe ? TILE.you : '#b45309' }}>{value}</span>}
+      {value !== null && <SoftNum size={34}>{value}</SoftNum>}
       <span
         className="text-[9.5px] font-black px-2 rounded-full"
-        style={{ height: 18, display: 'flex', alignItems: 'center', letterSpacing: 0.6, background: toPlay ? '#ffffff' : 'transparent', color: toPlay ? FR.solid : 'transparent' }}
+        style={{
+          height: 18, display: 'flex', alignItems: 'center', letterSpacing: 0.6,
+          background: toPlay ? softMix('#ec4899', 0.14) : 'transparent',
+          border: `1.5px solid ${toPlay ? softMix('#ec4899', 0.36) : 'transparent'}`,
+          color: toPlay ? FR.solid : 'transparent',
+        }}
       >
         TO PLAY
       </span>
     </div>
   );
 
-  const boardProps = { me, you, them, active, busy, revealKey, onMove };
+  const boardProps = {
+    me, you, them, active, busy, revealKey, onMove,
+    accent: KIND_COLOR[game.kind],
+    tray: youWon ? 'won' as const : theyWon ? 'lost' as const : 'playing' as const,
+  };
 
   return (
     <Shell>
@@ -220,9 +239,11 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         style={{
           borderRadius: 16,
           background: `linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${left} 0%, ${left} 50%, ${right} 50%, ${right} 100%)`,
-          boxShadow: '0 4px 14px rgba(131,24,67,0.10)',
+          border: `1.5px solid ${softMix(KIND_COLOR[game.kind], 0.32)}`,
+          boxShadow: '0 8px 20px rgba(60,30,110,0.10)',
         }}
       >
+        <div aria-hidden="true" className="relative" style={frBar(KIND_COLOR[game.kind])} />
         {youWon && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
             <div className="absolute" style={{ top: '-20%', left: 0, width: '38%', height: '140%', background: 'linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.55), rgba(255,255,255,0))', animation: 'banner-shimmer 2.6s ease-in-out 1 both' }} />
@@ -251,23 +272,18 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         <div className="space-y-2.5 pt-1">
           {/* Pocket game result host: O3 pops on a win, R on a loss, U on a draw. */}
           <ResultHost id={pocketResultHost(youWon ? 'win' : theyWon ? 'loss' : 'draw')} pop={youWon} />
-          <button
-            type="button"
+          <CandyButton
+            color="pink"
+            block
             onClick={rematch}
             disabled={rematching}
-            className="w-full py-3 flex items-center justify-center gap-2 text-[15px] font-black text-white transition-transform active:scale-[0.98] disabled:opacity-60"
-            style={{ background: FR.solid, borderRadius: 14, letterSpacing: 0.6 }}
+            icon={rematching ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : 'replay'}
           >
-            {rematching && <Loader2 className="w-4 h-4 animate-spin" />} REMATCH
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push('/friends')}
-            className="w-full py-3 text-[14px] font-black transition-transform active:scale-[0.98]"
-            style={{ background: FR.soft, color: FR.mid, borderRadius: 14, letterSpacing: 0.6 }}
-          >
-            FRIENDS
-          </button>
+            Rematch
+          </CandyButton>
+          <CandyButton color="peach" block onClick={() => router.push('/friends')}>
+            Friends
+          </CandyButton>
         </div>
       )}
 
@@ -278,15 +294,15 @@ export function FriendlyGameScreen({ id }: { id: string }) {
             <p className="text-[12.5px] font-bold" style={{ color: FR.label }}>
               It keeps going. Come back from YOUR TURN on the Friends tab any time in the next 3 days.
             </p>
-            <button type="button" onClick={() => router.push('/friends')} className="w-full py-3 text-[14px] font-black text-white rounded-[14px]" style={{ background: FR.solid, letterSpacing: 0.6 }}>
-              BACK TO FRIENDS
-            </button>
-            <button type="button" onClick={() => setConfirmClose(false)} className="w-full py-3 text-[14px] font-black rounded-[14px]" style={{ background: FR.soft, color: FR.mid, letterSpacing: 0.6 }}>
-              KEEP PLAYING
-            </button>
-            <button type="button" onClick={resign} className="w-full py-2.5 text-[12.5px] font-black" style={{ color: '#dc2626', letterSpacing: 0.6 }}>
-              RESIGN ({them.name.toUpperCase()} WINS)
-            </button>
+            <CandyButton color="pink" size="md" block onClick={() => router.push('/friends')}>
+              Back to Friends
+            </CandyButton>
+            <CandyButton color="peach" size="md" block onClick={() => setConfirmClose(false)}>
+              Keep playing
+            </CandyButton>
+            <CandyButton size="sm" block onClick={resign} style={DANGER}>
+              Resign ({them.name} wins)
+            </CandyButton>
           </div>
         </Sheet>
       )}
@@ -294,10 +310,13 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   );
 }
 
+/** Light-only: the shared washes (the game tray) mix over white here in every theme. */
+const LIGHT_CARD_BASE = { ['--color-card-base' as string]: '#ffffff' } as React.CSSProperties;
+
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ backgroundColor: FR.page }}>
-      <div className="max-w-md mx-auto px-4 pt-2 pb-10 space-y-3.5">{children}</div>
-    </div>
+    <PageBackground tint="friends" scheme="light" className="min-h-screen overflow-y-auto" style={LIGHT_CARD_BASE}>
+      <div className="relative max-w-md mx-auto px-4 pt-2 pb-10 space-y-3.5">{children}</div>
+    </PageBackground>
   );
 }

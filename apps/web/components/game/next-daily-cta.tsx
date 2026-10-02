@@ -2,14 +2,14 @@
 
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyLink } from '@/components/ui/candy-button';
-import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
-import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
+import { dailyHref } from '@/lib/mode-routes';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
-import { softCard } from '@/lib/soft-surface';
+import { accentInk, softCard } from '@/lib/soft-surface';
+import { UnlimitedCard } from './finished-kit';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -19,6 +19,8 @@ const DAILY_ORDER: Array<{ id: string; href: string }> = SWEEP_MODES
 
 /** The CTA stack's row: full width up to 400, 10 px apart (B6). */
 const CTA_ROW = 'w-full max-w-[400px] mx-auto mt-3';
+/** The sweep-done strip's ink: deep amber on light, a light amber on the dark card. */
+const SWEEP_INK = accentInk('#f5a524', '#92400e');
 
 /**
  * U3: post-game handoff that keeps the daily loop moving. FINISH_SPEC B6 + A8:
@@ -40,8 +42,8 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
     <>
       {next ? <NextDailyLink next={next} /> : (
         <div
-          className={`${CTA_ROW} px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black`}
-          style={{ ...softCard('#f5a524', { radius: 16 }), color: '#92400e' }}
+          className={`${CTA_ROW} px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black ${SWEEP_INK.className}`}
+          style={{ ...softCard('#f5a524', { radius: 16 }), ...SWEEP_INK.style }}
         >
           {/* U, all done for today (docs/ART_SPEC.md §7), small enough for the strip. */}
           <ArtScene scene={PAGE_SCENES.allDone} height={48} maxWidthPct={30} center={false} />
@@ -86,32 +88,12 @@ function NextDailyLink({ next }: { next: { id: string; href: string } }) {
 
 /**
  * "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited game
- * of the SAME mode the player just finished (tester-reported dead end: after
- * the daily — especially a completed sweep — Pro players had no visible path
- * to keep playing; the home Daily/Unlimited toggle went undiscovered).
- * Reuses the home toggle's unlimited routing: the mode's route without
- * `?daily=true` (see effectiveHref in app/page.tsx). A plain <a> rather than
- * <Link>: the unlimited route shares this page's pathname, and a client-side
- * query-only navigation would keep the finished daily game's mounted state
- * (game components lazy-init their session on mount) — a full document load
- * starts the fresh unlimited puzzle. Non-Pro and guests see nothing.
+ * of the SAME mode (tester-reported dead end after the daily). FINISH_SPEC R3:
+ * now the peach KEEP PLAYING card with the U loop art (finished-kit.tsx
+ * UnlimitedCard): Pro gets a full document load into the same route without
+ * ?daily; free players and guests see the same card (gold PRO pill) and tapping
+ * it opens the Go Pro popup (founder 10-02).
  */
 function KeepPlayingUnlimited({ currentMode }: { currentMode: string }) {
-  const { isProActive } = useAuth();
-  // Any daily mode with a route — the More Games titles are not in the sweep
-  // order but have the same Pro "keep playing" handoff (§18d).
-  const entry = DAILY_ORDER.find((m) => m.id === currentMode)
-    ?? (MODE_ROUTES[currentMode] ? { id: currentMode, href: `${MODE_ROUTES[currentMode]}?daily=true` } : undefined);
-  const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
-  if (!isProActive || !entry || !mode) return null;
-
-  const href = entry.href.split('?')[0];   // unlimited = same route, no daily param
-
-  return (
-    <div className={CTA_ROW}>
-      <CandyLink href={href} native color="peach" size="lg" block icon="infinity" aria-label={`Keep playing: Unlimited ${mode.title}`}>
-        Unlimited {mode.title}
-      </CandyLink>
-    </div>
-  );
+  return <UnlimitedCard currentMode={currentMode} className="mt-3" />;
 }

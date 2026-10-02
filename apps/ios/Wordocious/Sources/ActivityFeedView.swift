@@ -8,9 +8,9 @@ import WordociousCore
 /// GET /api/friends/feed (FriendsService.fetchFeed). Native twin of
 /// components/friends/activity-feed.tsx. Friends overhaul (2026-10-01, spec
 /// §6): titled MOMENTS on a white card, finished pocket games join the feed,
-/// and every moment takes the fixed reactions (👏 🔥 😱 😤, Rematch on games).
+/// and every moment takes the fixed reactions (clap, fire, wow, grr, Rematch on games).
 /// §10 (founder, iOS 220): chips show only when a moment has reactions, small
-/// and inside its card; double-tap toggles 👏, long-press floats the reaction
+/// and inside its card; double-tap toggles clap, long-press floats the reaction
 /// bar above the card (tap outside to dismiss).
 struct ActivityFeedView: View {
     /// Friends overhaul §6: a Rematch reaction on a game moment opens the
@@ -29,60 +29,69 @@ struct ActivityFeedView: View {
     @State private var profileId: String?
     @State private var expanded = false
     @State private var pulse = false
+    /// §AM1: when each "<moment>:<key>" was last picked (uptime) — drives its pop + burst.
+    @State private var poppedAt: [String: TimeInterval] = [:]
 
     private static let purple = Color(hex: 0x7C3AED)
     private static let shown = 8
 
-    /// The fixed reaction set (server keys → what the chip shows).
-    static let reactionKeys: [(key: String, label: String)] = [("clap", "👏"), ("fire", "🔥"), ("wow", "😱"), ("grr", "😤"), ("rematch", "Rematch")]
+    /// The fixed reaction set (server keys → their word). §AM1: drawn as our 3D
+    /// art / word pills (`ReactionGlyph`), never the system emoji.
+    static let reactionKeys: [(key: String, label: String)] = ["clap", "fire", "wow", "grr", "rematch"].map { ($0, Reaction.word($0)) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             FriendsSectionHeader(title: "MOMENTS") {
                 Text("LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT").font(Brand.font(8.5, .black)).tracking(0.6)
-                    .foregroundStyle(FriendsKit.label).lineLimit(1).minimumScaleFactor(0.7)
+                    .foregroundStyle(FriendsInk.section).lineLimit(1).minimumScaleFactor(0.7)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                if let events {
-                    if events.isEmpty {
-                        // R asleep over the quiet feed (ART_SPEC §7).
-                        MascotMessage(scene: .asleep,
-                                      line: "Quiet week so far — a sweep, a medal, a record or a game won from anyone in your circle shows up here.",
-                                      color: FriendsKit.label)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        let today = FriendsService.localDay()
-                        ForEach(expanded ? events : Array(events.prefix(Self.shown))) { e in
-                            moment(e, today: today)
+            if let events {
+                if events.isEmpty {
+                    // R asleep over the quiet feed (ART_SPEC §7).
+                    MascotMessage(scene: .asleep,
+                                  line: "Quiet week so far — a sweep, a medal, a record or a game won from anyone in your circle shows up here.",
+                                  color: FriendsInk.muted)
+                        .frame(maxWidth: .infinity)
+                        .padding(14)
+                        .friendsCard(accent: FriendsInk.pink)
+                } else {
+                    let today = FriendsService.localDay()
+                    let shownEvents = expanded ? events : Array(events.prefix(Self.shown))
+                    let poses = Self.assignPoses(shownEvents)
+                    // FINISH_SPEC §K1: every moment is its own notice card in the
+                    // event's color.
+                    VStack(spacing: 8) {
+                        ForEach(shownEvents) { e in
+                            moment(e, today: today, pose: poses[e.id])
                                 .zIndex(picking == e.id ? 1 : 0)
                         }
-                        if events.count > Self.shown {
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.15)) { expanded.toggle() }
-                            } label: {
-                                Text(expanded ? "Show less" : "Show all \(events.count)")
-                                    .font(Brand.font(11, .heavy)).foregroundStyle(FriendsKit.solid)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 4)
-                            }
-                            .buttonStyle(.squish)
-                        }
                     }
-                } else {
-                    // Skeleton while the feed loads.
-                    VStack(spacing: 8) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xEDE9FE)).frame(height: 32)
+                    if events.count > Self.shown {
+                        Button {
+                            if Theme.reduceMotion { expanded.toggle() }
+                            else { withAnimation(.easeInOut(duration: 0.15)) { expanded.toggle() } }
+                        } label: {
+                            CandyLabel(title: expanded ? "Show less" : "Show all \(events.count)")
                         }
-                    }
-                    .opacity(pulse ? 0.45 : 1)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                        .frame(maxWidth: .infinity)
                     }
                 }
+            } else {
+                // Skeleton while the feed loads.
+                VStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 12).fill(FriendsInk.pink.wash(0.12)).frame(height: 32)
+                    }
+                }
+                .opacity(pulse ? 0.45 : 1)
+                .onAppear {
+                    guard !Theme.reduceMotion else { return }
+                    withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
+                }
+                .padding(14)
+                .friendsCard(accent: FriendsInk.pink)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .vsCard(radius: 14)
         }
         // Tap outside the floating bar to dismiss it: an oversized catcher behind
         // the feed (it doesn't take layout space).
@@ -109,20 +118,30 @@ struct ActivityFeedView: View {
         }
     }
 
-    /// One moment: its card (the row, plus reaction chips when it has any),
-    /// double-tap → 👏, hold → the floating reaction bar, tap → the profile.
-    private func moment(_ e: FriendsService.FeedEvent, today: String) -> some View {
+    /// One moment: its notice card (§K1 — the row, the reaction chips when it has
+    /// any, the candy action), double-tap → clap, hold → the floating reaction bar,
+    /// tap → the profile.
+    private func moment(_ e: FriendsService.FeedEvent, today: String, pose: Pose?) -> some View {
         let open = picking == e.id
-        return VStack(alignment: .leading, spacing: 5) {
-            row(e, today: today)
-            reactionChips(e)
+        let look = Self.look(e)
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return VStack(alignment: .leading, spacing: 6) {
+            row(e, today: today, pose: pose)
+            HStack(spacing: 6) {
+                reactionChips(e)
+                Spacer(minLength: 0)
+                action(e)
+            }
         }
-        .padding(.horizontal, 8).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 12).fill(e.me ? FriendsKit.soft.opacity(0.6) : FriendsKit.page))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(open ? FriendsKit.solid.opacity(0.5) : .clear, lineWidth: 1.5))
-        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 8)
+        .friendsCard(accent: look.color, bar: [look.color, look.color.mixed(over: .white, 0.7)], radius: 16,
+                     barHeight: 5, tint: e.me ? 0.12 : 0.08, line: 0.26)
+        .overlay(shape.stroke(open ? FriendsKit.solid.opacity(0.6) : .clear, lineWidth: 2).allowsHitTesting(false))
+        .contentShape(shape)
         .onTapGesture(count: 2) {
             picking = nil
+            // §AM1: the pick plays the candy press sound (the bar's squish buttons do it on touch-down).
+            SoundManager.shared.play(.press)
             toggle(e, "clap")
         }
         .onTapGesture {
@@ -131,7 +150,8 @@ struct ActivityFeedView: View {
         }
         .onLongPressGesture(minimumDuration: 0.35) {
             Haptics.tap()
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { picking = e.id }
+            if Theme.reduceMotion { picking = e.id }
+            else { withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { picking = e.id } }
         }
         .overlay(alignment: .top) {
             if open {
@@ -149,23 +169,133 @@ struct ActivityFeedView: View {
         }
     }
 
-    private func row(_ e: FriendsService.FeedEvent, today: String) -> some View {
+    private func row(_ e: FriendsService.FeedEvent, today: String, pose: Pose?) -> some View {
         let d = Self.describe(e)
-        return HStack(spacing: 10) {
-            AvatarView(url: e.avatar_url, username: e.username, size: 30, emoji: e.avatar_emoji)
-            Group {
-                if e.type == "game", let k = e.friendlyKind {
-                    FriendlyGameIcon(kind: k, size: 20, glow: false)
-                } else {
-                    SymbolGlyph(d.symbol, size: 13, weight: .bold, color: d.color)
+        let score = Self.scoreText(e)
+        let headline = score.map { d.text.replacingOccurrences(of: " (\($0))", with: "") } ?? d.text
+        return HStack(alignment: .center, spacing: 10) {
+            // The sender's letter tile (§20; an uploaded photo stays a circle).
+            AvatarView(url: e.avatar_url, username: e.username, size: 34, emoji: e.avatar_emoji)
+                .overlay(alignment: .bottomTrailing) {
+                    Group {
+                        if e.type == "game", let k = e.friendlyKind {
+                            FriendlyGameIcon(kind: k, size: 18, glow: false)
+                        } else {
+                            SymbolGlyph(d.symbol, size: 10, weight: .bold, color: d.color)
+                                .frame(width: 18, height: 18)
+                                .background(Circle().fill(d.color.wash(0.16)))
+                                .overlay(Circle().stroke(d.color.wash(0.45), lineWidth: 1))
+                        }
+                    }
+                    .offset(x: 5, y: 4)
+                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(headline).font(Brand.font(13, .black)).foregroundStyle(FriendsInk.heading)
+                    .lineLimit(2).multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    if let score {
+                        Text(score).softNumber(14, color: FinishInk.softNumber)
+                    }
+                    Text(Self.dayLabel(e.day, today: today)).font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.rowSub)
                 }
             }
-            .frame(width: 20)
-            Text(d.text).font(Brand.font(12, .heavy)).foregroundStyle(Color(hex: 0x111827))
-                .lineLimit(2).multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(Self.dayLabel(e.day, today: today)).font(Brand.font(9.5, .bold)).foregroundStyle(FriendsKit.label)
-                .fixedSize()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if e.type == "gift" {
+                // §T4: a shield gift wears the small shield-guard art (U guarding the flame).
+                FriendsSceneArt(asset: "art-scene-shield-guard", height: 44, maxWidth: 56, spring: false)
+            } else if let pose {
+                // §K1: a small cast pose that fits the event (decorative, §A7 variety).
+                PoseImage(pose.id, pose.pose, height: 44)
+            }
+        }
+    }
+
+    /// §K1: the small candy action where the moment already has one — Rematch on a
+    /// pocket game (the Rematch reaction's quick play), View on a friend's moment
+    /// (the row's profile door).
+    @ViewBuilder private func action(_ e: FriendsService.FeedEvent) -> some View {
+        if e.type == "game", e.friendlyKind != nil, onRematch != nil {
+            Button {
+                let r = reactions[e.id] ?? .init(counts: [:], mine: [])
+                if r.mine.contains("rematch") {
+                    // Already reacted: just open quick play again.
+                    let friendId = e.me ? e.otherId : e.userId
+                    if let friendId, let kind = e.friendlyKind { onRematch?(kind, friendId) }
+                } else {
+                    toggle(e, "rematch")
+                }
+            } label: {
+                CandyLabel(title: "Rematch", symbol: "arrow.counterclockwise")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+            .accessibilityLabel("Rematch")
+        } else if !e.me {
+            Button { profileId = e.userId } label: {
+                CandyLabel(title: "View", symbol: "eye.fill")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+            .accessibilityLabel("View \(e.username)'s profile")
+        }
+    }
+
+    // MARK: §K1 event looks + poses
+
+    struct Pose: Equatable { let id: MascotID; let pose: String }
+
+    /// The event's notice color (its card wash + top bar).
+    static func look(_ e: FriendsService.FeedEvent) -> (color: Color, poses: [Pose]) {
+        let viewer = AuthService.shared.profile?.id
+        switch e.type {
+        case "game":
+            if e.kind == "draw" { return (Color(hex: 0x0EA5E9), [Pose(id: .u, pose: "lotus"), Pose(id: .c, pose: "lean")]) }
+            // "Doug beat you": O2 gasps.
+            if !e.me, let other = e.otherId, other.caseInsensitiveCompare(viewer ?? "") == .orderedSame {
+                return (FriendsInk.pink, [Pose(id: .o2, pose: "gasp"), Pose(id: .o3, pose: "laugh")])
+            }
+            return (FriendsInk.purple, [Pose(id: .s, pose: "trophy"), Pose(id: .w, pose: "cheer"), Pose(id: .i, pose: "cheer")])
+        case "flawless": return (Color(hex: 0xF59E0B), [Pose(id: .d, pose: "cheer"), Pose(id: .o2, pose: "twirl")])
+        case "sweep": return (Color(hex: 0x7C3AED), [Pose(id: .s, pose: "slide"), Pose(id: .s, pose: "flex")])
+        case "more_flawless", "more_sweep": return (Color(hex: 0x4F46E5), [Pose(id: .c, pose: "cheer"), Pose(id: .c, pose: "telescope")])
+        case "gift": return (Color(hex: 0x0D9488), [Pose(id: .u, pose: "meditate"), Pose(id: .u, pose: "tea")])
+        case "record": return (Color(hex: 0xD97706), [Pose(id: .d, pose: "eureka"), Pose(id: .d, pose: "notes")])
+        default:
+            let k = e.kind ?? ""
+            if k == "gold" { return (Color(hex: 0xF5A524), [Pose(id: .w, pose: "proud"), Pose(id: .w, pose: "victory")]) }
+            if k == "silver" { return (Color(hex: 0x8D99B0), [Pose(id: .i, pose: "giggle"), Pose(id: .i, pose: "victory")]) }
+            if k == "bronze" { return (Color(hex: 0xD9844A), [Pose(id: .r, pose: "cheer"), Pose(id: .r, pose: "cocoa")]) }
+            if k == "perfect" { return (Color(hex: 0x10B981), [Pose(id: .i, pose: "cheer"), Pose(id: .o3, pose: "handstand")]) }
+            if k.hasPrefix("streak_") { return (Color(hex: 0xF97316), [Pose(id: .s, pose: "stopwatch"), Pose(id: .s, pose: "ready")]) }
+            return (Color(hex: 0x7C3AED), [Pose(id: .w, pose: "wave")])
+        }
+    }
+
+    /// §A7: never the same image twice on the screen — each shown moment takes its
+    /// event's first unused pose, else any unused cast pose (never O1, the page host).
+    static func assignPoses(_ events: [FriendsService.FeedEvent]) -> [String: Pose] {
+        let pool: [Pose] = [MascotID.w, .r, .d, .o2, .c, .i, .o3, .u, .s].flatMap { id in
+            ["ready", "victory", "goodgame", "waiting"].map { Pose(id: id, pose: $0) }
+        }
+        var used: [Pose] = []
+        var out: [String: Pose] = [:]
+        for e in events where e.type != "gift" {
+            let preferred = look(e).poses
+            if let p = preferred.first(where: { !used.contains($0) }) ?? pool.first(where: { !used.contains($0) }) {
+                used.append(p)
+                out[e.id] = p
+            }
+        }
+        return out
+    }
+
+    /// A score / value shown as a soft number: a pocket game's "2–1", a record's value.
+    static func scoreText(_ e: FriendsService.FeedEvent) -> String? {
+        switch e.type {
+        case "game":
+            guard let s = e.score, s.first?.isNumber == true else { return nil }
+            return s
+        default:
+            return nil
         }
     }
 
@@ -183,59 +313,69 @@ struct ActivityFeedView: View {
         if !shown.isEmpty {
             HStack(spacing: 5) {
                 ForEach(shown, id: \.key) { o in
-                    chip(o.label, count: r.counts[o.key] ?? 0, mine: r.mine.contains(o.key)) { toggle(e, o.key) }
+                    chip(o.key, label: o.label, count: r.counts[o.key] ?? 0, mine: r.mine.contains(o.key),
+                         poppedAt: poppedAt["\(e.id):\(o.key)"] ?? 0) { toggle(e, o.key) }
                 }
-                Spacer(minLength: 0)
             }
-            .padding(.leading, 60)
+            .padding(.leading, 44)
         }
     }
 
-    private func chip(_ label: String, count: Int, mine: Bool, action: @escaping () -> Void) -> some View {
+    /// §AM1: a reaction chip — our 3D art / word (never the emoji) + its soft-number count.
+    private func chip(_ key: String, label: String, count: Int, mine: Bool, poppedAt: TimeInterval,
+                      action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 2) {
-                Text(label).font(label.count > 2 ? Brand.font(10, .black) : .system(size: 11))
-                    .foregroundStyle(FriendsKit.solid)
-                Text("\(count)").font(Brand.font(11, .black)).foregroundStyle(FriendsKit.ink).monospacedDigit()
+            HStack(spacing: 3) {
+                ReactionGlyph(key: key, size: 16, framed: false)
+                Text("\(count)").softNumber(11, color: FinishInk.softNumber)
             }
-            .padding(.horizontal, 7).frame(height: 20)
-            .background(Capsule().fill(FriendsKit.soft))
-            .overlay(Capsule().stroke(mine ? FriendsKit.solid : .clear, lineWidth: 1.5))
+            .padding(.horizontal, 7).frame(minHeight: 22)
+            .friendsChip(FriendsInk.pink, strong: mine)
+            .reactionPop(at: poppedAt)
         }
         .buttonStyle(.squish)
+        .accessibilityLabel("\(label) \(count)")
         .accessibilityAddTraits(mine ? .isSelected : [])
     }
 
-    /// The floating pill above a held moment: 👏 🔥 😱 😤 (+ Rematch on games).
+    /// §AM1: the floating candy tray above a held moment — clap, fire, wow, grr
+    /// (+ Rematch on games) as squishy 3D-art buttons with their counts; the pick
+    /// pops with a little burst, then the tray tucks away.
     private func reactionBar(_ e: FriendsService.FeedEvent) -> some View {
         let r = reactions[e.id] ?? .init(counts: [:], mine: [])
         return HStack(spacing: 4) {
             ForEach(options(e), id: \.key) { o in
                 let mine = r.mine.contains(o.key)
+                let count = r.counts[o.key] ?? 0
                 Button {
                     toggle(e, o.key)
-                    withAnimation(.easeOut(duration: 0.15)) { picking = nil }
+                    // Let the pop + burst play before the tray tucks away (Reduce Motion: at once).
+                    let wait = Theme.reduceMotion ? 0 : 0.32
+                    DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
+                        guard picking == e.id else { return }
+                        withAnimation(.easeOut(duration: 0.15)) { picking = nil }
+                    }
                 } label: {
-                    Group {
-                        if o.label.count > 2 {
-                            Text(o.label).font(Brand.font(11, .black)).foregroundStyle(FriendsKit.solid)
-                                .padding(.horizontal, 10)
-                        } else {
-                            Text(o.label).font(.system(size: 22)).frame(width: 38)
+                    HStack(spacing: 2) {
+                        ReactionGlyph(key: o.key, size: 30)
+                            .reactionPop(at: poppedAt["\(e.id):\(o.key)"] ?? 0)
+                        if count > 0 {
+                            Text("\(count)").softNumber(12, color: FinishInk.softNumber)
                         }
                     }
-                    .frame(height: 38)
-                    .background(Capsule().fill(mine ? FriendsKit.soft : .clear))
+                    .padding(.horizontal, 4)
+                    .frame(minWidth: 40, minHeight: 40)
+                    .background(Capsule().fill(mine ? FriendsInk.pink.wash(0.26) : .clear))
                     .overlay(Capsule().stroke(mine ? FriendsKit.solid : .clear, lineWidth: 1.5))
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.squish)
                 .accessibilityLabel(o.key == "rematch" ? "Rematch" : "React \(o.label)")
+                .accessibilityValue(count > 0 ? "\(count)" : "")
                 .accessibilityAddTraits(mine ? .isSelected : [])
             }
         }
-        .padding(.horizontal, 6).padding(.vertical, 4)
-        .background(Capsule().fill(Color.white)
-            .shadow(color: FriendsKit.ink.opacity(0.18), radius: 12, y: 4))
+        // §A1 + §AM1: the popover is a tinted candy tray, never plain white.
+        .reactionTray(FriendsInk.pink)
         .fixedSize()
     }
 
@@ -246,6 +386,7 @@ struct ActivityFeedView: View {
         if on { r.mine.append(key); r.counts[key, default: 0] += 1 }
         else { r.mine.removeAll { $0 == key }; r.counts[key] = max(0, (r.counts[key] ?? 1) - 1) }
         reactions[e.id] = r
+        if on { poppedAt["\(e.id):\(key)"] = ProcessInfo.processInfo.systemUptime }
         Haptics.tap()
         Task { await FriendsService.react(momentId: e.id, ownerId: e.userId, emoji: key, on: on) }
         if key == "rematch", on, e.type == "game", let kind = e.friendlyKind {

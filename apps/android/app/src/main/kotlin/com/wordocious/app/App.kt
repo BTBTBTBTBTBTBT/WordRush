@@ -8,6 +8,9 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // FINISH_SPEC U: preload the 16-sound pack once + track the resumed activity for haptics.
+        com.wordocious.app.data.Haptics.install(this)
+        com.wordocious.app.data.SoundManager.preload()
         // Storage hygiene + cross-midnight grace (iOS launch-sweep parity):
         // Android previously never swept per-seed daily saves, so they
         // accumulated forever.
@@ -27,6 +30,9 @@ class App : Application() {
         // in-progress unlimited board
         // stays resumable via its save + "unlimited-current-*" marker.
         com.wordocious.app.data.SettingsPref.set("pref-play-mode", "daily")
+        // FINISH_SPEC AL: refresh the widget on every launch (guests included) from today's
+        // cached completions, so its solved / points / countdown chips are current.
+        runCatching { com.wordocious.app.widget.WidgetBridge.update(com.wordocious.app.data.DailyCompletionsService.readCache()) }
     }
 
     companion object {

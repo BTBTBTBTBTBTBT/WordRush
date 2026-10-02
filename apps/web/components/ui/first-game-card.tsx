@@ -2,8 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Play, X as XIcon } from 'lucide-react';
+import { X as XIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { CandyLink } from '@/components/ui/candy-button';
+import { HeaderCircle } from '@/components/ui/page-header';
+import { PoseArt } from '@/components/ui/soft-popup';
+import { cardBarStyle, softCard } from '@/lib/soft-surface';
 
 const DISMISS_KEY = 'first-game-card-dismissed';
 
@@ -27,48 +31,32 @@ export function FirstGameCard() {
     try { localStorage.setItem(DISMISS_KEY, '1'); } catch {}
   };
 
+  // G5: a tinted card with its top bar, O3 ready to go (A7: not the Home host
+  // W, who also hosts Classic), the candy Play and the bare close X.
   return (
     <div
-      className="relative px-3 py-2.5 flex items-center gap-3"
-      style={{
-        background: 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-        borderRadius: '16px',
-      }}
+      className="relative px-3 pt-3.5 pb-2.5 pr-8 flex items-center gap-3 overflow-hidden"
+      style={{ ...softCard('#7c3aed', { radius: 18 }), overflow: 'hidden' }}
     >
-      <span
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: '#7c3aed15' }}
-      >
-        <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
-      </span>
+      <div aria-hidden="true" className="absolute left-0 right-0 top-0" style={cardBarStyle('#7c3aed', 6)} />
+      <PoseArt pose="art-pose-o3-ready" size={44} />
       <div className="flex-1 min-w-0">
         <div className="text-xs font-black" style={{ color: 'var(--color-text)' }}>
           New here? Start with Classic
         </div>
         <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
           The original 5-letter challenge — a fresh puzzle every day.{' '}
-          <Link href="/how-to-play" className="underline" style={{ color: '#7c3aed' }}>
+          <Link href="/how-to-play" className="underline" style={{ color: 'var(--color-win-text, #7c3aed)' }}>
             How to play
           </Link>
         </div>
       </div>
-      <Link
-        href="/practice?daily=true"
-        className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-white font-black text-xs flex-shrink-0 active:scale-95 transition-transform"
-        style={{ background: '#7c3aed' }}
-      >
-        <Play className="w-3 h-3" fill="currentColor" />
+      <CandyLink href="/practice?daily=true" color="purple" size="sm" icon="play" className="flex-shrink-0">
         Play
-      </Link>
-      <button
-        onClick={dismiss}
-        aria-label="Dismiss"
-        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
-      >
-        <XIcon className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
-      </button>
+      </CandyLink>
+      <HeaderCircle label="Dismiss" onClick={dismiss} size={28} className="absolute top-1.5 right-0.5">
+        <XIcon aria-hidden="true" style={{ width: 15, height: 15, color: 'var(--color-win-text, #7c3aed)' }} strokeWidth={3.2} />
+      </HeaderCircle>
     </div>
   );
 }

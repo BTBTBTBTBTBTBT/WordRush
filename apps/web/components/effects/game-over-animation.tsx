@@ -5,10 +5,13 @@ import { haptic } from '@/lib/haptics';
 import { playGameOver } from '@/lib/sounds';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { useWordDefinitions } from '@/hooks/use-word-definitions';
-import { Mascot } from '@/components/ui/mascot';
-import { MomentArt } from '@/components/ui/art-title';
 import { PAGE_HOSTS } from '@/lib/mascots';
-import { CandyButton } from '@/components/ui/candy-button';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { ResultPopup } from './result-popup';
+import { PopupDefinition } from './popup-definition';
+
+/** "So close" wears a soft rose (G5: tinted, never plain white). */
+const ROSE = '#f43f5e';
 
 interface GameOverAnimationProps {
   onComplete?: () => void;
@@ -25,160 +28,54 @@ interface GameOverAnimationProps {
   guessLabel?: string;
   /** §242: "Try again" button on the card — unlimited games only. */
   onPlayAgain?: () => void;
+  /** The game's mode db key: its accent tints the card (R1); the rose stays the fallback. */
+  mode?: string;
+  /** Per-answer solved state for multi-board losses (solved boards stay purple). */
+  solvedMask?: boolean[];
 }
 
-export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain }: GameOverAnimationProps) {
+export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain, mode, solvedMask }: GameOverAnimationProps) {
   useEffect(() => { haptic('medium'); playGameOver(); }, []);
   const { definition: singleDef } = useWordDefinition(solution || null);
   const multiDefs = useWordDefinitions(solutions || []);
-  // M:SS past a minute (founder, 2026-09-28: "35m 17s" wrapped inside the stat cell).
-  const formatTime = (s: number) => {
-    if (s < 60) return `${s}s`;
-    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-  };
-
+  const accent = (mode && MODE_BY_DBKEY[mode]?.accentHex) || ROSE;
+  const multiDefLines = !solution && solutions && solutions.length > 0 && solutions.length <= 4
+    ? solutions.map((w) => ({ w, def: multiDefs.get(w.toLowerCase()) })).filter((x) => x.def)
+    : [];
+  // FINISH_SPEC R1: the shared popup in its loss form — R (sleepy) on the
+  // stage, SO CLOSE!, the answers on slate tiles under "the answer".
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-5 animate-fade-in"
-      style={{ backgroundColor: 'rgba(24, 24, 46, 0.6)' }}
-      onClick={onComplete}
-    >
-      <div className="relative max-w-sm w-full animate-fade-in-scale">
-        {/* R (sleepy, nightcap) above the result, static, standing on the card's top edge. */}
-        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: -58, zIndex: 2 }}>
-          <Mascot id={PAGE_HOSTS.loss} size={80} priority />
-        </div>
-        <div
-          className="relative overflow-hidden text-center"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid var(--color-border)',
-            borderRadius: '16px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-          }}
-        >
-          {/* Top accent bar */}
-          <div
-            className="h-1.5"
-            style={{ background: 'linear-gradient(90deg, #f87171, #ef4444, #dc2626)' }}
-          />
-
-          <div className="px-5 pt-6 pb-4">
-            {/* SO CLOSE! lettering (docs/ART_SPEC.md §6); the answer reveal stays under it. */}
-            <MomentArt moment="soclose" />
-
-            {/* Single solution word */}
-            {solution && (
-              <div className="mt-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6b7280' }}>The answer was</div>
-                <div className="text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
-                  {solution.toUpperCase()}
-                </div>
-              </div>
-            )}
-
-            {/* Single solution definition */}
-            {solution && singleDef?.definition && (
-              <div
-                className="mt-3 px-4 py-3"
-                style={{ background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}
-              >
-                {singleDef.phonetic && (
-                  <div className="text-xs font-medium mb-1.5" style={{ color: '#6b7280' }}>{singleDef.phonetic}</div>
-                )}
-                {singleDef.partOfSpeech && (
-                  <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: '#fee2e2', color: '#ef4444' }}>
-                    {singleDef.partOfSpeech}
-                  </span>
-                )}
-                <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
-                  {singleDef.definition}
+    <ResultPopup
+      outcome="loss"
+      accent={accent}
+      host={PAGE_HOSTS.loss}
+      moment="soclose"
+      solution={solution}
+      solutions={solution ? undefined : solutions}
+      solvedMask={solvedMask}
+      definition={
+        solution && singleDef?.definition ? <PopupDefinition def={singleDef} accent={accent} />
+          : multiDefLines.length > 0 ? (
+            <div className="mt-2 text-left space-y-1">
+              {multiDefLines.map(({ w, def }) => (
+                <p key={w} className="m-0 text-[11px] font-medium leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+                  <span className="font-black" style={{ color: 'var(--color-text)' }}>{w.toUpperCase()}</span>
+                  {def!.partOfSpeech && <span className="italic"> {def!.partOfSpeech}.</span>} {def!.definition}
                 </p>
-              </div>
-            )}
-
-            {/* Multiple solutions (multi-board games) */}
-            {!solution && solutions && solutions.length > 0 && (
-              <div
-                className="mt-3 px-4 py-3 max-h-48 overflow-y-auto"
-                style={{
-                  background: '#fef2f2',
-                  borderRadius: '12px',
-                  border: '1px solid #fecaca',
-                }}
-              >
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#6b7280' }}>Solutions</div>
-                <div className="space-y-2">
-                  {solutions.map((word, i) => {
-                    const def = multiDefs.get(word.toLowerCase());
-                    return (
-                      <div key={i}>
-                        <span className="font-black tracking-wider text-sm" style={{ color: '#1a1a2e' }}>
-                          {word.toUpperCase()}
-                        </span>
-                        {def && (
-                          <p className="text-[11px] font-medium leading-snug mt-0.5" style={{ color: '#4b5563' }}>
-                            {def.partOfSpeech && <span className="italic">{def.partOfSpeech}. </span>}
-                            {def.definition}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Stats */}
-            {(guesses != null || timeSeconds != null || boardsSolved != null || points != null) && (
-              <div className="flex justify-center gap-5 mt-4">
-                {boardsSolved != null && totalBoards != null && (
-                  <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
-                      {boardsSolved}/{totalBoards}
-                    </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Boards Completed</div>
-                  </div>
-                )}
-                {guesses != null && (
-                  <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
-                      {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
-                    </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>{guessLabel}</div>
-                  </div>
-                )}
-                {timeSeconds != null && (
-                  <div className="text-center">
-                    <div className={`font-black whitespace-nowrap ${formatTime(timeSeconds).length > 5 ? 'text-lg' : 'text-xl'}`} style={{ color: '#1a1a2e' }}>
-                      {formatTime(timeSeconds)}
-                    </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Time</div>
-                  </div>
-                )}
-                {points != null && (
-                  <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
-                      {Math.round(points).toLocaleString()}
-                    </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Points</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* §242: unlimited games offer another run straight from the card. */}
-            {onPlayAgain && (
-              <CandyButton size="md" color="amber" icon="replay" className="mt-4" onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}>
-                Try again
-              </CandyButton>
-            )}
-            <p className="text-xs font-bold mt-4" style={{ color: '#fca5a5' }}>
-              Tap anywhere to continue
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+              ))}
+            </div>
+          ) : null
+      }
+      guesses={guesses}
+      maxGuesses={maxGuesses}
+      guessLabel={guessLabel}
+      timeSeconds={timeSeconds}
+      boardsSolved={boardsSolved}
+      totalBoards={totalBoards}
+      points={points}
+      onContinue={onComplete}
+      onPlayAgain={onPlayAgain}
+      playAgainLabel="Try again"
+    />
   );
 }

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 
 import { Download, Copy, X, Check } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
+import { CandyButton } from '@/components/ui/candy-button';
+import { BRAND_ACCENT, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 import { copyShareToClipboard } from '@/lib/share-utils';
 
 interface ShareModalState {
@@ -85,13 +87,17 @@ export function SharePreviewHost() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm p-5 animate-modal-content"
+            className="relative w-full max-w-sm p-5 pt-6 animate-modal-content"
             style={{
-              background: 'var(--color-surface)',
+              // A1: the brand wash (never plain white) + the card's top bar.
+              background: softBackground(BRAND_ACCENT),
+              border: softBorder(BRAND_ACCENT),
               borderRadius: '24px',
+              overflow: 'hidden',
               boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
             }}
           >
+            <div aria-hidden="true" style={{ ...cardBarStyle(BRAND_ACCENT), position: 'absolute', top: 0, left: 0, right: 0 }} />
             <HeaderBack kind="close" onClick={closeSharePreview} size={32} className="absolute top-3 right-3" />
 
             <h3 className="text-lg font-black text-center mb-3" style={{ color: 'var(--color-text)' }}>
@@ -102,36 +108,28 @@ export function SharePreviewHost() {
               <img
                 src={imageUrl}
                 alt="Share preview"
+                width={1080}
+                height={1350}
                 className="w-full rounded-xl mb-3"
-                style={{ border: '1.5px solid var(--color-border)' }}
+                style={{ border: softBorder(BRAND_ACCENT) }}
               />
             )}
 
             <div className="space-y-2">
-              <button
-                onClick={handleDownload}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm text-white btn-3d"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  boxShadow: '0 4px 0 #4c1d95',
-                }}
-              >
-                <Download className="w-4 h-4" />
+              {/* A8: candy buttons — purple primary, pink secondary. */}
+              <CandyButton onClick={handleDownload} color="purple" size="md" block icon={<Download className="w-4 h-4" aria-hidden="true" />}>
                 Save image
-              </button>
+              </CandyButton>
 
-              <button
+              <CandyButton
                 onClick={handleCopyCaption}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold text-sm transition-colors"
-                style={{
-                  background: 'var(--color-bg)',
-                  border: '1.5px solid var(--color-border)',
-                  color: 'var(--color-text)',
-                }}
+                color="pink"
+                size="md"
+                block
+                icon={copied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
               >
-                {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                 {copied ? 'Link copied' : 'Copy link'}
-              </button>
+              </CandyButton>
             </div>
           </div>
         </div>

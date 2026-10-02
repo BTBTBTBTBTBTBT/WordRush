@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Gift } from 'lucide-react';
-import { Icon3D } from '@/components/ui/icon3d';
+import { CandyButton } from '@/components/ui/candy-button';
+import { StateCard } from '@/components/ui/soft-popup';
+import {
+  GIFT_BAR, GIFT_GOLD, INVITE_ACCENT, INVITE_BAR, InviteReceivedBody, InviteStateBody, ProUnlockedBody,
+} from '@/components/friends/invite-screens';
+import { softBackground } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { logLandingVisit } from '@/lib/landing-visits';
-import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
 
 // Referral landing — wordocious.com/join/<CODE>. Modeled on vs/join/[code]
 // (same centered card) but for the Pro gift-trial program. Signed-out
@@ -72,90 +74,113 @@ export default function JoinReferralPage() {
     setClaiming(false);
   };
 
-  const centered = (node: React.ReactNode) => (
-    <div className="min-h-screen-stable flex items-center justify-center px-5" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="w-full max-w-sm text-center p-6" style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px', boxShadow: '0 4px 24px rgba(124, 58, 237, 0.08)' }}>
+  // T2 / T4 (docs/FINISH_SPEC.md): every state is a tinted card with a cast
+  // pose (or scene) and a candy button — never a bare text line. The pitch is
+  // the invite in the Friends pink; Pro unlocked / not eligible sit in gold.
+  const centered = (node: React.ReactNode, accent: string = INVITE_ACCENT, gradient: string = INVITE_BAR) => (
+    <div className="min-h-screen-stable flex items-center justify-center px-5 py-8" style={{ background: softBackground(accent, 0.07) }}>
+      <StateCard accent={accent} gradient={gradient}>
         {node}
-      </div>
+      </StateCard>
     </div>
   );
 
   if (loading || status === 'loading') {
-    return centered(<p className="text-sm font-bold animate-pulse" style={{ color: 'var(--color-text-muted)' }}>Loading invite…</p>);
+    return centered(
+      <InviteStateBody pose="art-pose-u-meditate" title="Opening your invite…" busy>
+        Just a moment.
+      </InviteStateBody>,
+    );
   }
-  if (status === 'notfound') return centered(<><ArtScene scene={PAGE_SCENES.notFound} className="mb-3" /><p className="text-sm font-black" style={{ color: '#dc2626' }}>Invite not found.</p></>);
-  if (status === 'expired') return centered(<p className="text-sm font-black" style={{ color: '#dc2626' }}>This invite has expired — ask your friend for a fresh one.</p>);
-  if (status === 'used') return centered(<p className="text-sm font-black" style={{ color: 'var(--color-text-muted)' }}>This invite was already used — ask your friend for a fresh one.</p>);
+  if (status === 'notfound') {
+    return centered(
+      <InviteStateBody scene="art-scene-o3-notfound" title="Invite not found">
+        That link doesn&apos;t match an invite. Check it with your friend, or come play anyway.
+      </InviteStateBody>,
+    );
+  }
+  if (status === 'expired') {
+    return centered(
+      <InviteStateBody pose="art-pose-r-sleepwalk" title="This invite has expired">
+        Ask your friend for a fresh one.
+      </InviteStateBody>,
+    );
+  }
+  if (status === 'used') {
+    return centered(
+      <InviteStateBody pose="art-pose-d-skeptic" title="Already used">
+        This invite was already claimed. Ask your friend for a fresh one.
+      </InviteStateBody>,
+    );
+  }
 
   if (claimResult === 'claimed') {
     return centered(
-      <>
-        <Icon3D name="crown" size={40} className="mx-auto mb-2" />
-        <h1 className="text-lg font-black" style={{ color: 'var(--color-text)' }}>Pro unlocked!</h1>
-        <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
-          7 days of Wordocious Pro are on your account. Taking you to the game…
-        </p>
-      </>,
+      <ProUnlockedBody onStart={() => router.replace('/')} note="Taking you to the game…" />,
+      GIFT_GOLD,
+      GIFT_BAR,
     );
   }
   if (claimResult === 'ineligible') {
     return centered(
-      <>
-        <Gift className="w-8 h-8 mx-auto mb-2" style={{ color: '#7c3aed' }} />
-        <h1 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>Not eligible</h1>
-        <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Gift trials are for brand-new players — accounts that have had Pro before (or already
-          used an invite) can&apos;t claim one. The daily puzzles are still free!
-        </p>
-        <button onClick={() => router.replace('/')} className="w-full py-2.5 rounded-xl text-sm font-black text-white btn-3d" style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}>
-          Play Wordocious
-        </button>
-      </>,
+      // T4: a kind pose (R with cocoa) on the tinted card.
+      <InviteStateBody
+        pose="art-pose-r-cocoa"
+        title="Not eligible"
+        action={(
+          <CandyButton color="purple" size="lg" block icon="play" onClick={() => router.replace('/')}>
+            Go to Wordocious
+          </CandyButton>
+        )}
+      >
+        Gift trials are for brand-new players. Accounts that have had Pro before (or already
+        used an invite) can&apos;t claim one. The daily puzzles are still free!
+      </InviteStateBody>,
+      GIFT_GOLD,
+      GIFT_BAR,
     );
   }
 
-  const pitch = (
+  const inviter = { name: inviterName ?? 'A friend' };
+  const headline = inviterName ? <>{inviterName} wants to play with you!</> : <>You&apos;ve been invited!</>;
+  const giftLine = (
     <>
-      <Gift className="w-10 h-10 mx-auto mb-2" style={{ color: '#7c3aed' }} />
-      <h1 className="text-lg font-black" style={{ color: 'var(--color-text)' }}>
-        {inviterName ? <>@{inviterName} sent you a gift!</> : <>You&apos;ve been gifted!</>}
-      </h1>
-      <p className="text-xs font-bold mt-1 mb-4" style={{ color: 'var(--color-text-muted)' }}>
-        7 days of <span style={{ color: '#d97706' }}>Wordocious Pro</span> — free. Ad-free play,
-        unlimited replays, VS in every mode, and more.
-      </p>
+      They sent you <span style={{ color: '#b45309' }}>7 days of Wordocious Pro</span>, free. Ad-free play,
+      unlimited replays, VS in every mode, and more.
     </>
   );
 
   if (!user) {
     return centered(
       <>
-        {pitch}
-        <button
-          onClick={() => { exitGuest(); router.push('/'); }}
-          className="w-full py-2.5 rounded-xl text-sm font-black text-white btn-3d"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
+        <InviteReceivedBody
+          inviter={inviter}
+          headline={headline}
+          acceptLabel="Accept"
+          declineLabel="No thanks"
+          onAccept={() => { exitGuest(); router.push('/'); }}
+          onDecline={() => router.replace('/')}
         >
-          Create a free account to claim
-        </button>
+          {giftLine}
+        </InviteReceivedBody>
         <p className="text-[10px] font-bold mt-3" style={{ color: 'var(--color-text-muted)' }}>
-          Your gift is saved — it applies automatically after you sign up.
+          Create a free account to claim. Your gift is saved and applies automatically after you sign up.
         </p>
       </>,
     );
   }
 
   return centered(
-    <>
-      {pitch}
-      <button
-        onClick={handleClaim}
-        disabled={claiming}
-        className="w-full py-2.5 rounded-xl text-sm font-black text-white btn-3d disabled:opacity-50"
-        style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
-      >
-        {claiming ? 'Claiming…' : 'Claim 7 days of Pro'}
-      </button>
-    </>,
+    <InviteReceivedBody
+      inviter={inviter}
+      headline={headline}
+      acceptLabel={claiming ? 'Claiming…' : 'Accept'}
+      declineLabel="No thanks"
+      onAccept={handleClaim}
+      onDecline={() => router.replace('/')}
+      busy={claiming}
+    >
+      {giftLine}
+    </InviteReceivedBody>,
   );
 }

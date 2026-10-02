@@ -58,12 +58,13 @@ enum VSResultBoards {
     }
 }
 
-/// VS result share card — same canvas + aesthetic as the daily ShareCardView
-/// (page-tint bg, WORDOCIOUS gradient wordmark, accent mode label, Win/Loss pill,
-/// tinted board cards, wordocious.com footer), with a head-to-head center:
-/// each player's name, final score (winner crowned + accent, loser dimmed),
-/// solve line, and their color-only boards. Colors only = no daily spoilers.
-/// ART_SPEC §17: the VS page tint behind it and the cast strip above the footer.
+/// VS result share card — FINISH_SPEC §E1 on the 1080 canvas, drawn static and
+/// ALWAYS LIGHT with the share kit (ShareKit.swift): the VS wallpaper, the VS
+/// title art, the date line + result pill, a head-to-head center (each player's
+/// name, crowned winner, soft-number score, solve line and their color-only boards
+/// on the light game tray in glossy tiles; the candy VS disc between), three tinted
+/// stat windows, and (FINISH_SPEC §S3) the cast wordmark: the ten heroes standing
+/// together over "wordocious.com". 4:5 (§S2). Colors only = no daily spoilers.
 struct VSShareCardView: View {
     struct Side {
         let name: String
@@ -82,68 +83,68 @@ struct VSShareCardView: View {
     let opponent: Side
     let dateStr: String
 
-    // Identical palette to ShareCardView.
-    private let textMuted = Color(hex: 0x6B7280)
-    private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
-    private let lossFG = Color(hex: 0xDC2626), lossBG = Color(hex: 0xFEE2E2)
-    private let drawFG = Color(hex: 0xD97706), drawBG = Color(hex: 0xFEF3C7)
-    private let boardWinTint = Color(hex: 0xF5F3FF), boardLossTint = Color(hex: 0xFEF2F2)
     private let mePurple = Color(hex: 0x7C3AED), oppPink = Color(hex: 0xEC4899)
 
-    var size: CGSize { CGSize(width: 1080, height: 1080) }
+    var size: CGSize { CGSize(width: 1080, height: 1350) }
 
     var body: some View {
         ZStack {
-            ShareArt.Background(tint: .vs)
+            ShareWall(tint: .vs)
             VStack(spacing: 0) {
-                // Hero wordmark — the brand is the headline of the share (user
-                // feedback: 56pt read as an afterthought on the 1080 canvas).
-                Text("WORDOCIOUS")
-                    .font(Brand.font(92, .black)).tracking(1)
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                                                    startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 36)
-                Text(modeLabel).font(Brand.font(40, .black)).foregroundStyle(accent).padding(.top, 6)
-                // Stats line + result pill (same row shape as the daily card).
-                HStack(spacing: 12) {
-                    Text("\(fmt(me.score)) vs \(fmt(opponent.score)) · \(dateStr)")
-                        .font(Brand.font(24, .bold)).foregroundStyle(textMuted)
-                    Text(isDraw ? "Draw" : isWin ? "Victory" : "Defeat")
-                        .font(Brand.font(22, .bold))
-                        .foregroundStyle(isDraw ? drawFG : isWin ? winFG : lossFG)
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(isDraw ? drawBG : isWin ? winBG : lossBG))
+                if ArtAsset.exists("art-title-vs"), let a = ArtAsset.aspect("art-title-vs"), a > 0 {
+                    // §S2: title art ~70% of the width.
+                    ShareArt.title("art-title-vs", height: min(200, 756 / a), maxWidth: 756).padding(.top, 44)
+                } else {
+                    Text(modeLabel)
+                        .font(Brand.fixedFont(72, .black)).foregroundStyle(accent)
+                        .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                        .padding(.horizontal, 60).padding(.top, 44)
                 }
-                .padding(.top, 12)
+                HStack(spacing: 18) {
+                    ShareDateLine(text: "\(modeLabel) · \(dateStr)", size: 28)
+                    resultPill
+                }
+                .padding(.top, 14)
 
-                Spacer()
-                HStack(alignment: .top, spacing: 40) {
+                Spacer(minLength: 10)
+                HStack(alignment: .center, spacing: 26) {
                     sideColumn(me, accent: mePurple)
-                    // VS sits centered BETWEEN THE BOARDS: a spacer the height of
-                    // the name/score/solved header, then a frame the height of the
-                    // board block (both sides render identical board sizes, so the
-                    // block height is deterministic).
-                    VStack(spacing: 0) {
-                        Color.clear.frame(width: 10, height: Self.headerBlockHeight)
-                        Text("VS").font(Brand.font(44, .black)).foregroundStyle(textMuted)
-                            .frame(height: boardsBlockHeight)
-                    }
+                    VSLettering(size: 104)
                     sideColumn(opponent, accent: oppPink)
                 }
-                .padding(.horizontal, 50)
-                Spacer()
+                .padding(.horizontal, 44)
+                Spacer(minLength: 10)
 
-                ShareArt.CastStrip().padding(.bottom, 6)
-                Text("wordocious.com").font(Brand.font(22, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 20)
+                ShareStatRow(items: [
+                    (value: fmt(me.score), label: "YOUR SCORE", tone: .purple),
+                    (value: fmt(opponent.score), label: "THEIR SCORE", tone: .pink),
+                    (value: isDraw ? "DRAW" : (isWin ? "WIN" : "LOSS"), label: "RESULT", tone: .gold),
+                ], height: 100)
+                .padding(.horizontal, 60)
+                ShareCastWordmark(width: 972)
+                    .padding(.top, 40).padding(.bottom, 40)
             }
         }
         .frame(width: size.width, height: size.height)
     }
 
+    /// Victory / Draw / Defeat as a tinted pill with the 3D W / L badge.
+    private var resultPill: some View {
+        let tone: Color = isDraw ? Color(hex: 0xF5A524) : (isWin ? mePurple : Color(hex: 0x6B7891))
+        return HStack(spacing: 10) {
+            if !isDraw { ShareResultBadge(won: isWin, size: 40) }
+            Text(isDraw ? "Draw" : isWin ? "Victory" : "Defeat")
+                .font(Brand.fixedFont(28, .black)).foregroundStyle(ShareInk.heading)
+        }
+        .padding(.horizontal, 20).frame(height: 56)
+        .background(Capsule().fill(tone.wash(0.16)))
+        .overlay(Capsule().strokeBorder(tone.wash(0.45), lineWidth: 3))
+    }
+
     private func fmt(_ s: Double) -> String { String(format: "%.2f", s) }
 
-    /// Both sides' cards render on a SHARED grid size (max rows/cols across
+    /// Both sides' boards render on a SHARED grid size (max rows/cols across
     /// every displayed board, short boards padded with empty rows) so the two
     /// columns are pixel-identical — a 3-guess win next to a 6-guess loss used
     /// to produce two differently-sized boards, which read as a layout bug.
@@ -157,114 +158,63 @@ struct VSShareCardView: View {
     }
     private var multiBoard: Bool { me.grids.count > 1 || opponent.grids.count > 1 }
 
-    /// Fixed height of the name/score/solved block above each side's boards —
-    /// lets the center VS column line up with the board region exactly.
-    static let headerBlockHeight: CGFloat = 158
-
-    /// Height of one board card, from the same shared-grid math boardCard uses.
-    private var boardCardHeight: CGFloat {
-        let maxSide: CGFloat = multiBoard ? 260 : 380
-        let cols = CGFloat(sharedCols), rows = CGFloat(sharedRows)
-        let gap = max(3, maxSide * 0.012)
-        let pad = maxSide * 0.04
-        let inner = maxSide - pad * 2
-        let tile = floor(min((inner - gap * (cols - 1)) / cols, (inner - gap * (rows - 1)) / rows))
-        return tile * rows + gap * (rows - 1) + pad * 2
-    }
-
-    /// Height of the taller side's shown board stack (boards + 14pt spacing).
-    private var boardsBlockHeight: CGFloat {
-        let shown = CGFloat(min(max(me.grids.count, opponent.grids.count), 2))
-        return boardCardHeight * shown + 14 * (shown - 1)
-    }
-
     private func sideColumn(_ side: Side, accent: Color) -> some View {
-        let highlighted = side.won || isDraw
-        return VStack(spacing: 0) {
-            // Fixed-height header so the center VS column can align on the boards.
-            VStack(spacing: 10) {
-                HStack(spacing: 6) {
-                    if side.won && !isDraw { Icon3D(.crown, size: 28, label: "Winner") }
-                    Text(side.name).font(Brand.font(28, .black)).foregroundStyle(accent).lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                }
-                Text(fmt(side.score))
-                    .font(Brand.font(52, .black)).monospacedDigit()
-                    .foregroundStyle(highlighted ? accent : textMuted)
-                Text(side.solved ? "✓ Solved" : "✗ Not solved")
-                    .font(Brand.font(20, .bold))
-                    .foregroundStyle(side.solved ? Color(hex: 0x16A34A) : lossFG)
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                if side.won && !isDraw { Icon3D(.crown, size: 34, label: "Winner") }
+                Text(side.name).font(Brand.fixedFont(30, .black)).foregroundStyle(accent).lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
-            .frame(height: Self.headerBlockHeight, alignment: .top)
+            Text(fmt(side.score)).shareSoftNumber(56)
+            Text(side.solved ? "Solved" : "Not solved")
+                .font(Brand.fixedFont(22, .black))
+                .foregroundStyle(side.solved ? Color(hex: 0x6D28D9) : ShareInk.muted)
             VStack(spacing: 14) {
                 ForEach(0..<min(side.grids.count, 2), id: \.self) { i in
-                    boardCard(grid: side.grids[i], tinted: side.won, maxSide: multiBoard ? 260 : 380)
+                    boardTray(grid: side.grids[i], won: side.won || (isDraw && side.solved),
+                              maxSide: multiBoard ? 200 : 330)
                 }
             }
+            .padding(.top, 6)
             if side.grids.count > 2 {
-                Text("+\(side.grids.count - 2) more").font(Brand.font(18, .bold)).foregroundStyle(textMuted)
-                    .padding(.top, 10)
+                Text("+\(side.grids.count - 2) more").font(Brand.fixedFont(20, .black)).foregroundStyle(ShareInk.muted)
             }
         }
         .frame(maxWidth: .infinity)
     }
 
-    /// Same tinted/bordered board card as the daily share card (uniform grid).
-    /// Sized by the SHARED row/col counts and padded with empty rows, so every
-    /// card on the image has identical dimensions regardless of guess count.
-    private func boardCard(grid: [[TileState]], tinted won: Bool, maxSide: CGFloat) -> some View {
+    /// One board on the light share tray (won → purple wash, else slate), glossy
+    /// color-only tiles (frosted for empty cells) on the shared grid.
+    private func boardTray(grid: [[TileState]], won: Bool, maxSide: CGFloat) -> some View {
         let cols = sharedCols
         let rows = sharedRows
-        let gap: CGFloat = max(3, maxSide * 0.012)
-        let pad: CGFloat = maxSide * 0.04
-        let inner = maxSide - pad * 2
-        let tile = floor(min((inner - gap * CGFloat(cols - 1)) / CGFloat(cols),
-                             (inner - gap * CGFloat(rows - 1)) / CGFloat(rows)))
+        let gap: CGFloat = max(4, maxSide * 0.03)
+        let tile = floor(min((maxSide - gap * CGFloat(cols - 1)) / CGFloat(cols),
+                             (maxSide - gap * CGFloat(rows - 1)) / CGFloat(rows)))
         return VStack(spacing: gap) {
             ForEach(0..<rows, id: \.self) { r in
                 HStack(spacing: gap) {
                     ForEach(0..<cols, id: \.self) { c in
                         let state: TileState = r < grid.count && c < grid[r].count ? grid[r][c] : .empty
-                        RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(state))
-                            .frame(width: tile, height: tile)
+                        ShareTile(fill: state == .empty || state == .hintUsed ? .frost() : .face(GlossyFace(revealed: state)),
+                                  size: tile)
                     }
                 }
             }
         }
-        .padding(pad)
-        .background(RoundedRectangle(cornerRadius: 18).fill(won ? boardWinTint : boardLossTint))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(won ? winFG : lossFG, lineWidth: 4))
-    }
-
-    private func tileColor(_ s: TileState) -> Color {
-        switch s {
-        case .correct: return Color(hex: 0x7C3AED)
-        case .present: return Color(hex: 0xF59E0B)
-        case .absent, .hintUsed: return Color(hex: 0x9CA3AF)
-        case .empty: return Color(hex: 0xE5E7EB)
-        }
+        .shareTray(accent: accent, state: won ? .won : .lost, radius: 30, padding: 16)
     }
 }
 
 /// Renders the VS share card to a PNG and presents the native share sheet with
-/// [image, text] — image for Messages/WhatsApp, text+link for everything else.
+/// the IMAGE ONLY (FINISH_SPEC §S1: no link, no caption text).
 enum VSShareService {
     @MainActor
     static func share(card: VSShareCardView, text: String) {
         #if canImport(UIKit)
-        let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(card.size)
-        renderer.scale = 1
-        var items: [Any] = [text]
-        if let image = renderer.uiImage { items.insert(image, at: 0) }
-        guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-              let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else { return }
-        var top = root
-        while let p = top.presentedViewController { top = p }
-        let av = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        av.popoverPresentationController?.sourceView = top.view
-        av.popoverPresentationController?.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
-        top.present(av, animated: true)
+        _ = text   // §S1: results share no text (kept for the call site).
+        guard let image = ShareService.renderCard(card, size: card.size) else { return }
+        ShareService.presentImages([image], game: "VS")
         #endif
     }
 }
@@ -297,6 +247,9 @@ struct VSFinalBoards: View {
     /// ProperNoundle VS: my final rows with REAL tiles (.hintUsed included).
     var myFinalPNRows: [VSPNRecapRow]? = nil
 
+    /// The tray's color: the mode's own accent (§L).
+    private var trayAccent: Color { ModeStyle.accent(mode) }
+
     var body: some View {
         if mode == .gauntlet {
             gauntletRecap
@@ -316,11 +269,12 @@ struct VSFinalBoards: View {
         if !(myWords.isEmpty && oppWords.isEmpty) {
             VStack(spacing: 14) {
                 gauntletSection(label: myName, words: myWords, accent: Color(hex: 0x7C3AED), timeMs: myTimeMs)
-                Rectangle().fill(Theme.border).frame(height: 1)
+                Rectangle().fill(GameTray.seam(trayAccent)).frame(height: 1.5)
                 gauntletSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899), timeMs: opponentTimeMs)
             }
-            .padding(16).frame(maxWidth: .infinity)
-            .vsCard(radius: 14)
+            .padding(5).frame(maxWidth: .infinity)
+            // §L: the final boards sit on the shared game tray (no plain card).
+            .gameTray(accent: trayAccent, lightOnly: true)
         }
     }
 
@@ -331,12 +285,12 @@ struct VSFinalBoards: View {
                 .foregroundStyle(accent).lineLimit(1)
                 .minimumScaleFactor(0.7)
             if words.isEmpty {
-                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .padding(.vertical, 8)
             } else if let rec = GauntletReconstruct.reconstruct(seed: seed, guesses: words) {
                 GauntletCompletedView(progress: rec.progress, totalTimeMs: timeMs, showSummary: true)
             } else {
-                Text("\(words.count) guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text("\(words.count) guesses").font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
             }
         }
         .frame(maxWidth: .infinity)
@@ -350,11 +304,11 @@ struct VSFinalBoards: View {
         if !(myWords.isEmpty && oppWords.isEmpty) {
             VStack(spacing: 14) {
                 recapSection(label: myName, words: myWords, accent: Color(hex: 0x7C3AED))
-                Rectangle().fill(Theme.border).frame(height: 1)
+                Rectangle().fill(GameTray.seam(trayAccent)).frame(height: 1.5)
                 recapSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899))
             }
-            .padding(16).frame(maxWidth: .infinity)
-            .vsCard(radius: 14)
+            .padding(5).frame(maxWidth: .infinity)
+            .gameTray(accent: trayAccent, lightOnly: true)
         }
     }
 
@@ -383,10 +337,10 @@ struct VSFinalBoards: View {
                 Text("\(won)/\(boards.count) BOARDS").font(Brand.font(9, .black)).tracking(0.5)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(Capsule().fill(allWon ? VsLobbyKit.purple : Color(hex: 0x64748B)))
+                    .background(Capsule().fill(allWon ? VsLobbyKit.purple : VsLobbyKit.slate))
             }
             if words.isEmpty {
-                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .padding(.vertical, 8)
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing), count: cols),
@@ -455,7 +409,7 @@ struct VSFinalBoards: View {
                     side(label: myName, boards: mine, accent: Color(hex: 0x7C3AED), solved: mySolved,
                          pnRealRows: myFinalPNRows,
                          board: myFinalBoards?.first ?? logBoard(myGuessLog, solved: mySolved))
-                    Rectangle().fill(Theme.border).frame(width: 1)
+                    Rectangle().fill(GameTray.seam(trayAccent)).frame(width: 1.5)
                     side(label: opponentName, boards: theirs, accent: Color(hex: 0xEC4899), solved: oppSolved,
                          board: logBoard(opponentGuessLog, solved: oppSolved))
                 }
@@ -465,11 +419,11 @@ struct VSFinalBoards: View {
                 if let answer = solutions.first {
                     Text("Answer: \((pnPuzzle?.display ?? answer).uppercased())")
                         .font(Brand.font(11, .black)).tracking(1)
-                        .foregroundStyle(Theme.textSecondary)
+                        .foregroundStyle(VsLobbyKit.mutedInk)
                 }
             }
-            .padding(16).frame(maxWidth: .infinity)
-            .vsCard(radius: 14)
+            .padding(5).frame(maxWidth: .infinity)
+            .gameTray(accent: trayAccent, lightOnly: true)
         }
     }
 
@@ -495,7 +449,7 @@ struct VSFinalBoards: View {
             Text(solved ? "SOLVED" : "NOT SOLVED").font(Brand.font(9, .black)).tracking(0.5)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7).padding(.vertical, 3)
-                .background(Capsule().fill(solved ? VsLobbyKit.purple : Color(hex: 0x64748B)))
+                .background(Capsule().fill(solved ? VsLobbyKit.purple : VsLobbyKit.slate))
             if let puzzle = pnPuzzle, let rows = pnRealRows, !rows.isEmpty {
                 // ProperNoundle, MY side with a final-state snapshot: feed the
                 // REAL rows (words + tiles) so hint rows render exactly as they
@@ -509,7 +463,7 @@ struct VSFinalBoards: View {
                          tiles: row.tiles)
                     })
             } else if indices.isEmpty {
-                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .padding(.vertical, 12)
             } else if let puzzle = pnPuzzle {
                 // ProperNoundle: reuse the solo completed mini-board so the
@@ -543,34 +497,16 @@ struct VSFinalBoards: View {
         // Shrink tiles for long words so two boards still fit side-by-side.
         let wordLen = rows.first?.letters.count ?? 5
         let tile: CGFloat = wordLen <= 5 ? 24 : (wordLen == 6 ? 21 : 18)
+        // §B1: the recap letters are the glossy tiles (purple / gold / slate; a hint
+        // row's filler is the frosted hint-used tile).
         return VStack(spacing: 3) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 HStack(spacing: 3) {
                     ForEach(Array(row.letters.enumerated()), id: \.offset) { ci, letter in
-                        Text(letter)
-                            .font(Brand.font(tile * 0.5, .black)).foregroundStyle(.white)
-                            .frame(width: tile, height: tile)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(tileBackground(row.states[safe: ci] ?? .absent)))
+                        GlossyTile(face: GlossyFace(revealed: row.states[safe: ci] ?? .absent), letter: letter, width: tile)
                     }
                 }
             }
-        }
-    }
-
-    private func tileBackground(_ state: TileState) -> AnyShapeStyle {
-        switch state {
-        case .correct:
-            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing))
-        case .present:
-            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing))
-        case .hintUsed:
-            // Hint-row filler tile — same light gray as the in-game board
-            // (BoardView), so a hint row reads distinctly from an absent guess.
-            return AnyShapeStyle(Color(hex: 0xE5E7EB))
-        default:
-            return AnyShapeStyle(Theme.textMuted)
         }
     }
 }
@@ -599,7 +535,7 @@ struct VSComparisonBars: View {
                 let theirPct = total <= 0 ? 0.5 : m.mine / total
                 VStack(alignment: .leading, spacing: 4) {
                     Text(m.label.uppercased())
-                        .font(Brand.font(9, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                        .font(Brand.font(9, .heavy)).tracking(0.8).foregroundStyle(VsLobbyKit.mutedInk)
                     barRow(pct: myPct, value: m.format(m.mine),
                            colors: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED)])
                     barRow(pct: theirPct, value: m.format(m.theirs),
@@ -608,15 +544,14 @@ struct VSComparisonBars: View {
             }
         }
         .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .vsTinted(VsLobbyKit.purple, radius: 18)
     }
 
     private func barRow(pct: Double, value: String, colors: [Color]) -> some View {
         HStack(spacing: 8) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.border)
+                    Capsule().fill(VsLobbyKit.purple.wash(0.14))
                     Capsule().fill(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
                         .frame(width: geo.size.width * max(0.06, pct))
                         .animation(Theme.animation(.easeInOut(duration: 0.6)), value: pct)
@@ -624,7 +559,7 @@ struct VSComparisonBars: View {
             }
             .frame(height: 12)
             Text(value)
-                .font(Brand.font(10, .heavy)).foregroundStyle(Theme.textPrimary)
+                .vsNumber(12)
                 .frame(width: 56, alignment: .trailing)
         }
     }

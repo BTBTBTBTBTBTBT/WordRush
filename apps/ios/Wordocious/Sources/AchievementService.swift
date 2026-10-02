@@ -25,6 +25,19 @@ enum AchievementService {
         return Set(rows.map { $0.achievement_key })
     }
 
+    /// FINISH_SPEC §V1: the unlocked keys with their `unlocked_at` stamps (the
+    /// Stats grid shows the date under each unlocked badge).
+    static func fetchUnlockedDates(userId: String) async -> [String: String] {
+        struct Row: Decodable { let achievement_key: String; let unlocked_at: String? }
+        let rows: [Row] = (try? await AuthService.shared.client.from("achievements")
+            .select("achievement_key,unlocked_at")
+            .eq("user_id", value: userId)
+            .execute().value) ?? []
+        var out: [String: String] = [:]
+        for r in rows { out[r.achievement_key] = r.unlocked_at ?? "" }
+        return out
+    }
+
     // MARK: - Unlock detection (port of checkAchievements)
 
     private struct AchProfile: Decodable {
@@ -325,6 +338,8 @@ enum AchievementService {
             }
         }
 
+        // FINISH_SPEC §V2: celebrate each new unlock (queued popups).
+        if !unlocked.isEmpty { let keys = unlocked; Task { @MainActor in await AchievementUnlockCenter.shared.enqueue(keys: keys) } }
         return unlocked
     }
 

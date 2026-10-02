@@ -37,6 +37,11 @@ import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber,
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
+import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, nearestAvatarColor, validateAvatar } from '../src/avatar-config';
+import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
+import { currentSeason, levelTier, levelTierLabel } from '../src/level-season';
+import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
+import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
@@ -330,7 +335,7 @@ export function renderVsLobbyFixtures() {
   }
   const records = [
     [{ wins: 12, losses: 7 }, { wins: 31, losses: 9 }, 2], [{ wins: 0, losses: 0 }, { wins: 4, losses: 2 }, null],
-    [{ wins: 1, losses: 0 }, { wins: 1, losses: 0 }, 4], [{ wins: 3, losses: 3 }, { wins: 0, losses: 1 }, 0],
+    [{ wins: 1, losses: 0 }, { wins: 1, losses: 0 }, 10], [{ wins: 3, losses: 3 }, { wins: 0, losses: 1 }, 0],
   ].map(([people, bots, ladder]) => ({ people, bots, ladder, line: vsRecordLine(people as any, bots as any, ladder as number | null) }));
   const run = (solved: boolean, boardsSolved: number, guesses: number, timeMs: number): VsRun => ({ solved, boardsSolved, guesses, timeMs });
   const pairs: Array<[VsRun, VsRun]> = [
@@ -341,10 +346,16 @@ export function renderVsLobbyFixtures() {
     [run(true, 4, 7, 200000), run(true, 4, 7, 200400)], [run(true, 21, 30, 600000), run(true, 21, 31, 500000)],
   ];
   const outcomes = pairs.map(([me, them]) => ({ me, them, outcome: vsOutcome(me, them), margin: vsMargin(me, them), headline: challengeHeadline(vsOutcome(me, them), 'doug') }));
-  const games: Array<[string, boolean]> = [['rook', true], ['nova', false], ['rook', true], ['rook', true], ['lexi', true], ['lexi', false], ['lexi', true], ['lexi', true], ['lexi', true], ['nova', true], ['nova', true], ['nova', true], ['adapt', true], ['adapt', true], ['adapt', true], ['adapt', true]];
+  // FINISH_SPEC D1: the ten-bot cast ladder; 'rook' (an old id) counts as ivy.
+  const games: Array<[string, boolean]> = [['rip', true], ['dewey', false], ['rip', true], ['rip', true], ['ivy', true], ['ivy', false], ['rook', true], ['ivy', true], ['ivy', true], ['ollie', true], ['ollie', true], ['ollie', true], ['opal', true], ['opal', true], ['opal', true], ['cosmo', true], ['cosmo', true], ['cosmo', true], ['umi', true], ['umi', true], ['umi', true], ['ozzy', true], ['ozzy', true], ['ozzy', true], ['dewey', true], ['dewey', true], ['dewey', true], ['scoot', true], ['scoot', true], ['scoot', true], ['webster', true], ['webster', true], ['webster', true], ['webster', true]];
   let s = { cleared: 0, run: 0 };
   const ladder = games.map(([bot, won]) => { s = ladderAfterGame(s, bot, won); return { bot, won, after: s, rungs: ladderRungs(s) }; });
-  return { banners, records, outcomes, ladder };
+  // The cast table + Bot of the Day (bot-cast.ts), pinned for the ports.
+  const cast = BOT_CAST.map((b) => ({ ...b, solveLine: botSolveLine(b) }));
+  const legacy = ['rook', 'lexi', 'nova', 'adapt', 'ghost', 'daily', 'webster'].map((id) => ({ id, canonical: canonicalBotId(id) }));
+  const legacyCleared = [0, 1, 2, 3, 4].map((n) => ({ old: n, cleared: migrateLegacyLadderCleared(n) }));
+  const botOfDay = ['2026-10-04', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2027-01-01'].map((day) => ({ day, id: botOfTheDay(day).id }));
+  return { banners, records, outcomes, ladder, cast, legacy, legacyCleared, botOfDay };
 }
 
 // Friends overhaul (founder, 2026-10-01): the server runs the pocket games, so
@@ -719,6 +730,56 @@ export function renderGroupsFixtures() {
   return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, holidayKeys: Object.keys(bank.holiday ?? {}), days, seeds, puzzle: p, orders, reducer, malformed: [reconstructGroups(['1|a|A,B,C'], []), reconstructGroups(['1|a|A,B,C,D', '2|b|E,F,G,H', '3|c|I,J,K,L'], [])] };
 }
 
+// FINISH_SPEC S4: the share caption bank + its deterministic pick (FNV-1a over `${date}|${game}`).
+export function renderShareCaptionFixtures() {
+  const hashes = ['', 'a', 'foobar', '2026-10-02|QuadWord', '2026-10-02|Classic', '2027-01-01|Gauntlet'].map((key) => ({ key, hash: captionHash(key) }));
+  const days = ['2026-10-01', '2026-10-02', '2026-10-03', '2026-12-25', '2027-01-01'];
+  const games = ['Classic', 'QuadWord', 'OctoWord', 'Gauntlet', 'Sudocious'];
+  const kinds = Object.keys(SHARE_CAPTIONS) as ShareCaptionKind[];
+  const picks = kinds.flatMap((kind) => days.flatMap((date) => games.map((game) => ({ kind, date, game, index: shareCaptionIndex(kind, date, game) }))));
+  const vars = { n: 9, t: '3:12', b: 4, k: 3, opp: 'Doug', url: 'https://wordocious.com/join/AB12CD' };
+  const filled = kinds.flatMap((kind) => [undefined, 2, 3, 12].map((d) => ({ kind, date: '2026-10-02', game: 'QuadWord', ...vars, d: d ?? null, text: shareCaption(kind, { date: '2026-10-02', game: 'QuadWord', ...vars, d }) })));
+  return { bank: SHARE_CAPTIONS, toasts: SHARE_TOASTS, hashes, picks, filled };
+}
+
+// FINISH_SPEC V + X: level tiers and the seasonal skin window.
+export function renderLevelSeasonFixtures() {
+  const levels = [0, 1, 5, 10, 11, 25, 26, 50, 51, 99, 100, 101, 500].map((level) => ({ level, tier: levelTier(level), label: levelTierLabel(levelTier(level)) }));
+  const days = ['2026-10-01', '2026-10-23', '2026-10-24', '2026-10-31', '2026-11-01', '2026-11-02', '2026-12-25', '2027-10-24'].map((date) => ({ date, season: currentSeason(date) }));
+  return { levels, days };
+}
+
+// FINISH_SPEC AE: the push copy bank, filled.
+export function renderPushCopyFixtures() {
+  const kinds = Object.keys(PUSH_COPY) as PushKind[];
+  const filled = kinds.flatMap((kind) => [{}, { name: 'Oliver', game: 'QuadWord', days: 12 }, { name: '  ', game: '', days: 3 }].map((v) => ({ kind, ...v, text: pushCopy(kind, v) })));
+  return { title: PUSH_TITLE, bank: PUSH_COPY, filled };
+}
+
+// FINISH_SPEC AN3: avatar defaults, validation, Pro enforcement, presets.
+export function renderAvatarConfigFixtures() {
+  // Seeds are lowercased usernames (defaultAvatar(username.toLowerCase(), ...)); '' = guest.
+  const users = ['', 'guest', 'bmt', 'doug', 'oliver_22', 'johnnyauer'];
+  const accents = [null, '#7c3aed', '#ec4899', '#22c55e', '#f59e0b', 'bogus'];
+  const defaults = users.flatMap((u) => accents.map((a) => ({ seed: u, accent: a, config: defaultAvatar(u, a) })));
+  const withPhoto = users.map((u) => ({ seed: u, accent: '#7c3aed', hasPhoto: true, config: defaultAvatar(u, '#7c3aed', true) }));
+  const fbPhoto = defaultAvatar('fixture', '#2563eb', true);
+  const display = [{}, { display: 'mascot' }, { display: 'photo' }, { display: 'selfie' }].flatMap((raw) => [
+    { raw, hasPhoto: true, result: validateAvatar(raw, fbPhoto).display },
+    { raw, hasPhoto: false, result: validateAvatar(raw, defaultAvatar('fixture', '#2563eb', false)).display },
+  ]);
+  const nearest = ['#7c3aed', '#ec4899', '#0ea5e9', '#123456', '#ffffff', '#000000', 'bogus'].map((hex) => ({ hex, id: nearestAvatarColor(hex) }));
+  const fb = defaultAvatar('fixture', '#2563eb');
+  const validate = [
+    null, [1], 'x', {}, { body: 'tall', color: 'neon', eyes: 'laser', head: 'wizard', frame: 'gold' },
+    { v: 1, body: 'star', color: 'mint', pattern: 'dots', patternColor: 'pink', eyes: 'cyclops', nose: 'freckles', mouth: 'gasp', head: 'crown', face: 'mustache', neck: 'cape', frame: 'pro', bg: 'galaxy' },
+    { bg: 'lava', neck: 'flower', head: 'tiara' },
+  ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
+  const pro = [true, false].map((isPro) => ({ isPro, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) }));
+  const presets = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'].map((id) => ({ castId: id, config: castPreset(id) }));
+  return { colors: AVATAR_COLORS, backdrops: AVATAR_BACKDROPS, defaults, withPhoto, display, nearest, fallback: fb, validate, pro, presets };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -736,6 +797,10 @@ const FILES: Array<[string, unknown]> = [
   ['vs-lobby-fixtures.json', renderVsLobbyFixtures()],
   ['friendly-games-fixtures.json', renderFriendlyFixtures()],
   ['leaderboard-title-fixtures.json', renderLeaderboardTitleFixtures()],
+  ['share-captions-fixtures.json', renderShareCaptionFixtures()],
+  ['level-season-fixtures.json', renderLevelSeasonFixtures()],
+  ['push-copy-fixtures.json', renderPushCopyFixtures()],
+  ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

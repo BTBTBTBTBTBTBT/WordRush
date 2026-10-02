@@ -1,68 +1,56 @@
 import SwiftUI
 import WordociousCore
 
-/// ART_SPEC §20 (founder, 2026-10-02): a player with NO uploaded photo is a
-/// glossy letter tile matching the mascot letters — a rounded square with a
-/// thick bottom lip, a top gloss and the initials (or chosen emoji) in white
-/// Nunito Black. The one tile every no-photo avatar draws, so it cannot drift.
-/// Uploaded photos stay circles (AvatarView); bots keep their own art.
+/// FINISH_SPEC §AN (was ART_SPEC §20's letter tile): a player with NO photo
+/// showing is their build-your-own MASCOT (MascotAvatar) with their initial as the
+/// white body letter — the saved config (MascotLooks), else a worn AH cast hero's
+/// preset, else the deterministic default in their accent color. The one view
+/// every no-photo avatar draws, so it cannot drift. (§AM2: never an emoji.)
+/// The name and parameters are kept so every call site compiles unchanged.
 struct LetterTileAvatar: View {
     let username: String
     var size: CGFloat = 40
-    /// The player's stored accent ("#RRGGBB"; nil = never set). A real swatch
-    /// from the personalization palette wins (web tileBaseColor parity).
+    /// The player's stored accent ("#RRGGBB"; nil = never set): colors the default mascot.
     var accentHex: String? = nil
+    /// FINISH_SPEC §AM2: emoji avatars are retired — kept for call-site
+    /// compatibility (the stored avatar_emoji is untouched) but NEVER drawn.
     var emoji: String? = nil
+    /// FINISH_SPEC §AA2: Pro players get the gold frame + the tiny crown.
+    var pro: Bool = false
+    /// FINISH_SPEC §AH: the worn cast hero ("w" … "s") → its mascot preset, and the
+    /// level-tier frame. nil = the player's recorded look (CastAvatars, by
+    /// username) when `lookup`.
+    var castId: String? = nil
+    var frame: String? = nil
+    /// false draws exactly what is passed (Edit Profile's live, unsaved choice).
+    var lookup: Bool = true
+    /// FINISH_SPEC §AN: an explicit mascot; nil = the saved one (MascotLooks) when `lookup`.
+    var config: AvatarConfig? = nil
+
+    @ObservedObject private var looks = CastAvatars.shared
+    @ObservedObject private var mascots = MascotLooks.shared
 
     /// Corner radius as a fraction of the tile's side (rings match it).
     static let cornerFraction: CGFloat = 0.24
 
-    var body: some View {
-        let s = size
-        let accent = LetterTileColor.parseHex(accentHex)
-            .flatMap { v in ProfileAccent.palette.contains { $0.hex == v } ? accentHex : nil }
-        let base = LetterTileColor.baseHex(username: username, accentHex: accent)
-        let edge = Color(hex: LetterTileColor.darken(base, 0.22))
-        let radius = s * Self.cornerFraction
-        let faceH = s * 0.93
-        let emo = emoji?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let letters = LetterTileColor.initials(username)
+    /// The default mascot's accent: the player's stored accent as-is (nil when
+    /// unset → core's default), exactly like web / Android `defaultAvatar(name, accent)`.
+    static func defaultAccentHex(username: String, accentHex: String?) -> String? {
+        guard let a = accentHex?.trimmingCharacters(in: .whitespaces), !a.isEmpty else { return nil }
+        return a
+    }
 
-        return ZStack(alignment: .top) {
-            // Body — the tile's thickness, showing as the bottom lip.
-            RoundedRectangle(cornerRadius: radius).fill(edge)
-            // Face.
-            RoundedRectangle(cornerRadius: radius)
-                .fill(LinearGradient(stops: [
-                    .init(color: Color(hex: LetterTileColor.lighten(base, 0.18)), location: 0),
-                    .init(color: Color(hex: base), location: 0.7),
-                    .init(color: Color(hex: LetterTileColor.darken(base, 0.06)), location: 1),
-                ], startPoint: .top, endPoint: .bottom))
-                .frame(width: s, height: faceH)
-            // Gloss over the top of the face.
-            RoundedRectangle(cornerRadius: s * 0.18)
-                .fill(LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0)],
-                                     startPoint: .top, endPoint: .bottom))
-                .frame(width: s * 0.84, height: faceH * 0.42)
-                .offset(y: s * 0.08)
-            // Letters / emoji, centered on the FACE.
-            Group {
-                if !emo.isEmpty {
-                    Text(emo).font(.system(size: s * 0.5))
-                } else {
-                    let fontSize = s * (letters.count > 1 ? 0.42 : 0.56)
-                    Text(letters)
-                        .font(Brand.fixedFont(fontSize, .black))
-                        .tracking(-0.02 * fontSize)
-                        .foregroundStyle(.white)
-                        .shadow(color: edge.opacity(0.45), radius: s * 0.02, x: 0, y: s * 0.03)
-                }
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .frame(width: s, height: faceH)
-        }
-        .frame(width: s, height: s)
+    var body: some View {
+        let look = lookup && (castId == nil || frame == nil) ? looks.lookFor(username) : nil
+        let cast = AvatarCastRules.normalize(castId ?? look?.castId)
+        let ring = AvatarFrameRules.normalize(frame ?? look?.frame)
+        let saved = config ?? (lookup ? mascots.configFor(username) : nil)
+        let shown = MascotLooks.display(saved: saved, castId: cast, frame: ring, username: username,
+                                        accentHex: Self.defaultAccentHex(username: username, accentHex: accentHex))
+        return MascotAvatar(config: shown, initial: AvatarCatalog.initial(username), size: size)
+            .frame(width: size, height: size)
+            // §AN6: the Pro gold frame + crown follows the rounded square (a "pro" frame already wears it).
+            .proAvatarMark(pro && shown.frame != "pro", size: size, tile: true)
     }
 }
 

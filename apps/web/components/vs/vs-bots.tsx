@@ -1,31 +1,43 @@
 'use client';
 
 /**
- * The Bots page (VS overhaul §8): the Bot of the Day (same bot, same puzzle for
- * everyone, once per UTC day), THE LADDER (Rook → Lexi → Nova → Adapt, three
- * wins in a row clear a rung — core ladderRungs), and BEAT YOUR BEST (a ghost
- * of your best run). Every tap starts the game through the normal VS screen
- * (?cpu=<kind>). Free players get the Bot of the Day in Classic; the ladder and
- * the ghost are Pro.
+ * The Bots page (VS overhaul §8; finishing build docs/FINISH_SPEC.md D1–D3):
+ * the Bot of the Day (today's day-host character — same bot, same puzzle for
+ * everyone, once per UTC day), THE LADDER of the ten cast bots (Rip → Webster,
+ * three wins in a row clear a rung — core ladderRungs), and YOUR GHOST (your
+ * best run, drawn as a faded version of your own letter tile). Every tap
+ * starts the game through the normal VS screen (?cpu=<kind>). Free players get
+ * the Bot of the Day in Classic; the ladder and the ghost are Pro.
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { ladderRungs, vsClock, VS_MODE_ORDER } from '@wordle-duel/core';
+import { SoftNum } from '@/components/ui/soft-number';
+import { CandyButton, candyClass } from '@/components/ui/candy-button';
+import { CastLoader } from '@/components/ui/cast-loader';
+import { LADDER_BOTS, LADDER_CLEAR_RUN, ladderRungs, vsClock, VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { vsHrefForMode } from '@/lib/invite-service';
-import { BOT_OF_DAY_ID, BOT_ROSTER, botArt } from '@/lib/bot/bot-personas';
+import { botLine, botOfDayPersona, botPersona, botRosterEntry, type BotPose } from '@/lib/bot/bot-personas';
 import { botOfDayToday, emptyCpuProgression, loadCpuProgression, type CpuProgression } from '@/lib/bot/cpu-progression';
 import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
 import type { CpuKind } from '@/lib/adapters/bot-match-service';
 import { VS, loadVsMode, modeTitle, todayTileLine, utcDay } from '@/lib/vs-lobby';
+import { darken } from '@/lib/soft-surface';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { BotAvatar, ModeChip, SectionLabel, SoftPill, TealButton, VsNav, vsCardStyle } from './vs-ui';
+import {
+  BotFigure, BotPoseAvatar, BotSpeech, CardBar, GhostAvatar, ModeChip, SectionLabel, SoftPill, TealButton, VS_ACCENT, VS_LIGHT_VARS,
+  VsCard, VsNav, vsCard,
+} from './vs-ui';
 import { PAGE_HOSTS } from '@/lib/mascots';
+import { ArtScene } from '@/components/ui/art-scene';
+import { medalSrc } from '@/lib/art';
 import { PageBackground } from '@/components/ui/page-background';
 
-const KIND_BY_BOT: Record<string, CpuKind> = { rook: 'easy', lexi: 'medium', nova: 'hard', adapt: 'adaptive' };
+/** The Bot of the Day card's pose for today's result (never the ladder's 'ready' image — A7). */
+function botOfDayPose(result: ReturnType<typeof botOfDayToday>): BotPose {
+  return result === 'lost' ? 'victory' : result === 'open' ? 'waiting' : 'goodgame';
+}
 
 export function VsBots() {
   const router = useRouter();
@@ -42,116 +54,177 @@ export function VsBots() {
   }, [isPro, profile?.id, mode]);
 
   const play = (kind: CpuKind) => router.push(`${vsHrefForMode(isPro ? mode : 'DUEL')}?cpu=${kind}`);
-  const bod = BOT_ROSTER[BOT_OF_DAY_ID];
-  const bodResult = botOfDayToday(p, utcDay());
+  const day = utcDay();
+  const bodPersona = botOfDayPersona(day);
+  const bod = botRosterEntry(bodPersona.id);
+  const bodResult = botOfDayToday(p, day);
+  // One line per visit in the bot's own voice (kind, never mean); picked after
+  // mount (the pick is random, so it never differs between server and client).
+  const [bodLine, setBodLine] = useState<string | null>(null);
+  useEffect(() => {
+    setBodLine(botLine(bodPersona.id, bodResult === 'lost' ? 'bot_win' : bodResult === 'open' ? 'match_start' : 'bot_loss'));
+  }, [bodPersona.id, bodResult]);
   const rungs = ladderRungs({ cleared: p.ladderCleared, run: p.ladderRun });
-  const nextIndex = rungs.findIndex((r) => r.state === 'next');
+  const cleared = Math.min(p.ladderCleared, LADDER_BOTS.length);
+  const me = profile as { username?: string | null; avatar_emoji?: string | null; accent_color?: string | null } | null;
 
   return (
-    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24">
+    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav title="BOTS" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin" style={{ color: VS.ink }} /></div>
+          <div className="flex justify-center py-16"><CastLoader /></div>
         ) : isGuest && !profile ? (
-          <div className="p-4 text-center space-y-3" style={vsCardStyle}>
-            <div className="text-base font-black" style={{ color: VS.deep }}>Sign in to play the bots</div>
-            <button onClick={exitGuest} className="w-full py-3 text-[15px] font-black text-white" style={{ background: VS.ink, borderRadius: 12 }}>SIGN IN</button>
-          </div>
+          <VsCard>
+            <div className="p-4 text-center space-y-3">
+              <div className="text-base font-black" style={{ color: VS.deep }}>Sign in to play the bots</div>
+              <TealButton size="lg" block onClick={exitGuest}>SIGN IN</TealButton>
+            </div>
+          </VsCard>
         ) : (
           <>
-            {/* BOT OF THE DAY — the frosted teal window. */}
-            <div className="overflow-hidden" style={{ borderRadius: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #d5f5ee, #e0f2fe)', boxShadow: '0 4px 14px rgba(15,118,110,0.10)' }}>
-              <div style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
-                <div className="font-black" style={{ fontSize: 16, color: VS.deep, letterSpacing: 0.4 }}>BOT OF THE DAY · {bod.name.toUpperCase()}</div>
-                <div className="font-extrabold" style={{ fontSize: 10.5, color: VS.ink, letterSpacing: 0.4 }}>SAME BOT, SAME PUZZLE FOR EVERYONE</div>
+            {/* BOT OF THE DAY — today's day-host character (D2), in its own color. */}
+            <VsCard accent={bodPersona.color}>
+              <div className="flex items-center justify-between gap-2" style={{ padding: '10px 14px 0' }}>
+                <span className="text-[10.5px] font-black uppercase" style={{ color: darken(bodPersona.color, 0.35), letterSpacing: 1.2 }}>Bot of the Day</span>
+                <span className="text-[10px] font-extrabold uppercase" style={{ color: VS.label, letterSpacing: 0.6 }}>Same bot, same puzzle for everyone</span>
               </div>
-              <div className="flex items-center gap-3" style={{ padding: '12px' }}>
-                <BotAvatar src={botArt(bod.id)} name={bod.name} size={48} bg="#ffffff" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-black" style={{ color: VS.deep }}>{bod.line}</div>
-                  {p.botOfDayStreak > 0 && (
-                    <div className="flex items-center gap-1 text-[11.5px] font-black" style={{ color: '#c2410c' }}>
-                      <Icon3D name="flame" size={14} /> {p.botOfDayStreak} {p.botOfDayStreak === 1 ? 'day' : 'days'} in a row
-                    </div>
-                  )}
+              <div className="flex items-center gap-2" style={{ padding: '4px 12px 12px 6px' }}>
+                <BotFigure id={bodPersona.id} pose={botOfDayPose(bodResult)} size={104} />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="font-black leading-tight" style={{ fontSize: 22, color: VS.deep }}>{bod.name}</div>
+                  <div className="text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>{bod.tier} · {bod.line}</div>
+                  {bodLine && <BotSpeech text={bodLine} accent={bodPersona.color} />}
                 </div>
+              </div>
+              <div className="flex items-center gap-3" style={{ padding: '0 14px 14px' }}>
+                {p.botOfDayStreak > 0 ? (
+                  <span className="flex items-center gap-1" aria-label={`${p.botOfDayStreak} ${p.botOfDayStreak === 1 ? 'day' : 'days'} in a row`}>
+                    <Icon3D name="flame" size={20} />
+                    <SoftNum size={20}>{p.botOfDayStreak}</SoftNum>
+                    <span className="text-[11px] font-black" style={{ color: VS.deep }}>{p.botOfDayStreak === 1 ? 'day' : 'days'} in a row</span>
+                  </span>
+                ) : null}
+                <span className="flex-1" />
                 {bodResult === 'open' ? (
-                  <TealButton className="px-5 py-2.5 text-[13px]" onClick={() => play('daily')}>Play</TealButton>
+                  <TealButton icon="play" onClick={() => play('daily')}>Play {bod.name}</TealButton>
                 ) : (
-                  <span
-                    className="px-3 py-1.5 text-[12px] font-black rounded-full"
-                    style={{ background: bodResult === 'won' ? VS.ink : '#9ca3af', color: '#ffffff' }}
-                  >
+                  <span className="px-3 py-1.5 text-[12px] font-black rounded-full" style={{ ...vsCard(bodResult === 'won' ? VS_ACCENT : '#64748b', { radius: 999, shadow: false }), color: bodResult === 'won' ? VS.ink : '#475569' }}>
                     {todayTileLine(bodResult, bod.name, bod.name, false)}
                   </span>
                 )}
               </div>
-            </div>
+            </VsCard>
 
-            {/* THE LADDER */}
+            {/* THE LADDER — ten cast bots, three wins in a row per rung. */}
             <SectionLabel right={
-              <span className="text-[11px] font-black" style={{ color: '#c2410c', letterSpacing: 0.6 }}>STREAK {p.streak} · BEST {p.bestStreak}</span>
+              <span className="flex items-center gap-1 text-[11px] font-black" style={{ color: VS.deep, letterSpacing: 0.4 }}>
+                <Icon3D name="flame" size={15} /> STREAK <SoftNum size={14}>{p.streak}</SoftNum> · BEST <SoftNum size={14}>{p.bestStreak}</SoftNum>
+              </span>
             }>The ladder</SectionLabel>
-            <div className="relative">
-              {rungs.map((r, i) => {
-                const bot = BOT_ROSTER[r.id];
+            {cleared >= LADDER_BOTS.length ? (
+              // The whole ladder cleared: the celebration + the ladder trophy.
+              <VsCard accent="#7c3aed">
+                <div className="flex flex-col items-center gap-1 px-3 pb-3 pt-1">
+                  <ArtScene scene="ladder-cleared" height={170} maxWidthPct={70} />
+                  <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.5 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={30} height={30} loading="lazy" style={{ width: 30, height: 30 }} /> Ladder cleared
+                  </span>
+                  <span className="text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>All ten bots beaten. Webster salutes you!</span>
+                </div>
+              </VsCard>
+            ) : (
+              <div className="flex items-center gap-3 px-3 py-2" style={vsCard(VS_ACCENT, { radius: 14 })}>
+                <SoftNum size={24}>{cleared}<span style={{ fontSize: 15 }}>/{LADDER_BOTS.length}</span></SoftNum>
+                <span className="flex-1 min-w-0 text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>
+                  rungs cleared · win {LADDER_CLEAR_RUN} in a row to climb
+                </span>
+                {/* The prize at the top: the ladder trophy. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={28} height={28} loading="lazy" style={{ width: 28, height: 28, opacity: 0.85 }} />
+              </div>
+            )}
+            <ol className="space-y-2" aria-label="The ladder">
+              {rungs.map((r) => {
+                const bot = botRosterEntry(r.id);
+                const persona = botPersona(r.id);
                 const locked = r.state === 'locked';
                 const isNext = r.state === 'next';
+                const isCleared = r.state === 'cleared';
                 const canPlay = isPro && !locked;
-                const ring = r.state === 'cleared' ? `0 0 0 2px ${VS.ink}` : isNext ? '0 0 0 2px #7c3aed, 0 0 10px rgba(124,58,237,0.45)' : undefined;
-                const tag = r.state === 'cleared' ? { t: 'CLEARED', c: VS.ink } : isNext ? { t: 'NEXT', c: '#c2410c' } : { t: 'LOCKED', c: '#9ca3af' };
                 return (
-                  <div key={r.id} className="relative" style={{ paddingBottom: i < rungs.length - 1 ? 10 : 0 }}>
-                    {/* The 3px line to the next rung: teal up to the next rung, gray after. */}
-                    {i < rungs.length - 1 && (
-                      <span className="absolute" style={{ left: 29, top: 40, bottom: -2, width: 3, borderRadius: 2, background: nextIndex >= 0 && i < nextIndex ? VS.ink : '#d1d5db' }} />
-                    )}
+                  <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => (isPro ? (canPlay ? play(KIND_BY_BOT[r.id]) : undefined) : router.push('/pro'))}
-                      className="relative w-full flex items-center gap-3 px-3 py-2.5 text-left"
-                      style={{
-                        borderRadius: 14,
-                        background: isNext ? '#ffffff' : 'transparent',
-                        boxShadow: isNext ? `0 0 0 2px ${VS.ink}, ${VS.cardShadow}` : undefined,
-                        opacity: locked ? 0.55 : 1,
-                        cursor: canPlay || !isPro ? 'pointer' : 'default',
-                      }}
+                      onClick={() => (isPro ? (canPlay ? play(r.id as CpuKind) : undefined) : router.push('/pro'))}
+                      aria-disabled={isPro && !canPlay}
+                      aria-label={`${bot.name}, rung ${persona.rung}, ${bot.tier}. ${bot.line}. ${r.line}${isPro ? '' : '. Pro'}`}
+                      className="relative w-full flex flex-col text-left overflow-hidden"
+                      style={{ ...vsCard(locked ? '#94a3b8' : persona.color, { selected: isNext, radius: 16 }), cursor: canPlay || !isPro ? 'pointer' : 'default' }}
                     >
-                      <BotAvatar src={botArt(r.id)} name={bot.name} size={36} bg={r.state === 'cleared' ? VS.soft : isNext ? '#ede9fe' : '#e5e7eb'} ring={ring} />
-                      <span className="flex-1 min-w-0">
-                        <span className="block text-[13px] font-black" style={{ color: '#1f2937' }}>{bot.name} · {bot.tier}</span>
-                        <span className="block text-[11px] font-bold truncate" style={{ color: '#4b5563' }}>{r.line}</span>
+                      <CardBar accent={locked ? '#94a3b8' : persona.color} height={isNext ? 10 : 6} />
+                      <span className="flex items-center gap-3 px-3 py-2.5" style={{ opacity: locked ? 0.55 : 1 }}>
+                        <SoftNum size={15} style={{ width: 20, textAlign: 'center' }}>{persona.rung}</SoftNum>
+                        <span className="relative shrink-0">
+                          <BotPoseAvatar id={r.id} pose="ready" accent={persona.color} size={isNext ? 52 : 44} faded={locked} />
+                          {isCleared && (
+                            <span className="absolute -right-1 -bottom-1"><Icon3D name="badge-check" size={20} /></span>
+                          )}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="flex items-center gap-1 text-[14px] font-black truncate" style={{ color: VS.deep }}>
+                            {bot.name} · {bot.tier}
+                            {/* The boss rung holds the ladder trophy. */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {persona.rung === LADDER_BOTS.length && <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={18} height={18} loading="lazy" style={{ width: 18, height: 18 }} />}
+                          </span>
+                          <span className="block text-[11px] font-extrabold truncate" style={{ color: '#4b5563' }}>{bot.line} · {persona.tagline}</span>
+                          <span className="block text-[11px] font-bold truncate" style={{ color: isNext ? darken(persona.color, 0.35) : VS.label }}>{r.line}</span>
+                          {isNext && (
+                            // The 3-in-a-row progress toward clearing this rung.
+                            <span className="flex items-center gap-1 mt-1" aria-hidden="true">
+                              {Array.from({ length: LADDER_CLEAR_RUN }, (_, i) => (
+                                <span key={i} className="rounded-full" style={{ width: 14, height: 14, background: i < p.ladderRun ? persona.color : '#ffffff', boxShadow: `inset 0 0 0 2px ${persona.color}` }} />
+                              ))}
+                            </span>
+                          )}
+                        </span>
+                        {!isPro ? (
+                          <Icon3D name="lock" size={18} />
+                        ) : isNext ? (
+                          <span className={candyClass({ color: 'teal', size: 'sm' })} aria-hidden="true"><span className="candy-label">NEXT</span></span>
+                        ) : locked ? (
+                          <Icon3D name="lock" size={18} />
+                        ) : (
+                          <span className="text-[10px] font-black" style={{ color: VS.ink, letterSpacing: 0.8 }}>CLEARED</span>
+                        )}
                       </span>
-                      {isPro ? (
-                        <span className="text-[10px] font-black" style={{ color: tag.c, letterSpacing: 0.8 }}>{tag.t}</span>
-                      ) : (
-                        <Icon3D name="lock" size={17} />
-                      )}
                     </button>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
 
-            {/* BEAT YOUR BEST */}
+            {/* YOUR GHOST — your best run, as a faded version of your own letter tile. */}
             {(!isPro || ghost) && (
-              <div className="flex items-center gap-3 p-3" style={vsCardStyle}>
-                <BotAvatar src={botArt('ghost')} name="Your Ghost" size={40} />
-                <span className="flex-1 min-w-0">
-                  <span className="block text-[13px] font-black" style={{ color: '#1f2937' }}>Beat your best</span>
-                  <span className="block text-[11px] font-bold truncate" style={{ color: '#4b5563' }}>
-                    {ghost ? `Your best ${modeTitle(mode)}: ${ghost.guessCount} guesses · ${vsClock(ghost.timeMs)}` : 'Race a replay of your best run'}
+              <VsCard accent="#64748b">
+                <div className="flex items-center gap-3 p-3">
+                  <GhostAvatar name={me?.username ?? 'You'} emoji={me?.avatar_emoji} accent={me?.accent_color} size={44} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[14px] font-black" style={{ color: VS.deep }}>Your Ghost</span>
+                    <span className="block text-[11px] font-bold truncate" style={{ color: '#4b5563' }}>
+                      {ghost ? `Your best ${modeTitle(mode)}: ${ghost.guessCount} guesses · ${vsClock(ghost.timeMs)}` : 'Race a replay of your best run'}
+                    </span>
                   </span>
-                </span>
-                {isPro ? (
-                  <SoftPill onClick={() => play('ghost')}>Race it</SoftPill>
-                ) : (
-                  <button type="button" onClick={() => router.push('/pro')} aria-label="Pro" className="p-1"><Icon3D name="lock" size={17} /></button>
-                )}
-              </div>
+                  {isPro ? (
+                    <SoftPill onClick={() => play('ghost')}>Race it</SoftPill>
+                  ) : (
+                    <CandyButton color="purple" size="sm" onClick={() => router.push('/pro')} icon={<Icon3D name="lock" size={14} />}>Pro</CandyButton>
+                  )}
+                </div>
+              </VsCard>
             )}
           </>
         )}

@@ -1,0 +1,21 @@
+{
+  "version": 0,
+  "placeholder": true,
+  "note": "PLACEHOLDER anchors (FINISH_SPEC AN2). The coordinator replaces this file with the real per-shape anchors after the art-av-* files land. Coordinates are 0-1 body coordinates.",
+  "bodies": {
+    "classic": { "faceCenter": [0.5, 0.42], "eyeY": 0.36, "mouthY": 0.52, "cheekY": 0.47, "headTop": { "x": 0.5, "y": 0.06, "w": 0.62 }, "neckY": 0.7, "letterBox": [0.28, 0.56, 0.44, 0.3] },
+    "tall": { "faceCenter": [0.5, 0.36], "eyeY": 0.3, "mouthY": 0.45, "cheekY": 0.4, "headTop": { "x": 0.5, "y": 0.04, "w": 0.48 }, "neckY": 0.62, "letterBox": [0.3, 0.52, 0.4, 0.32] },
+    "wide": { "faceCenter": [0.5, 0.45], "eyeY": 0.39, "mouthY": 0.55, "cheekY": 0.5, "headTop": { "x": 0.5, "y": 0.12, "w": 0.72 }, "neckY": 0.72, "letterBox": [0.27, 0.58, 0.46, 0.26] },
+    "blob": { "faceCenter": [0.5, 0.44], "eyeY": 0.38, "mouthY": 0.54, "cheekY": 0.49, "headTop": { "x": 0.5, "y": 0.08, "w": 0.6 }, "neckY": 0.72, "letterBox": [0.29, 0.57, 0.42, 0.28] },
+    "bean": { "faceCenter": [0.5, 0.4], "eyeY": 0.34, "mouthY": 0.5, "cheekY": 0.45, "headTop": { "x": 0.52, "y": 0.06, "w": 0.52 }, "neckY": 0.66, "letterBox": [0.3, 0.55, 0.4, 0.3] },
+    "star": { "faceCenter": [0.5, 0.46], "eyeY": 0.41, "mouthY": 0.56, "cheekY": 0.51, "headTop": { "x": 0.5, "y": 0.02, "w": 0.4 }, "neckY": 0.74, "letterBox": [0.31, 0.58, 0.38, 0.26] }
+  },
+  "parts": {
+    "eyes": { "slot": "eyeY", "scale": 0.46 },
+    "mouth": { "slot": "mouthY", "scale": 0.26 },
+    "nose": { "slot": "cheekY", "scale": 0.5 },
+    "head": { "slot": "headTop", "scale": 1.0 },
+    "face": { "slot": "eyeY", "scale": 0.56 },
+    "neck": { "slot": "neckY", "scale": 0.6 }
+  }
+}

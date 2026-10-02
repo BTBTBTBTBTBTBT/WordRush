@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -99,7 +98,7 @@ internal fun GameCardFrame(
 ) {
     Column(
         // A9: the whole card squishes (the press leads the chain).
-        modifier.then(if (onClick != null) Modifier.squishClickable(onClick = onClick) else Modifier)
+        modifier.then(if (onClick != null) Modifier.squishClickable(card = true, onClick = onClick) else Modifier)
             .fillMaxWidth()
             .gameCardSurface(
                 bg = gameCardBg(accent, done),
@@ -130,7 +129,7 @@ internal fun ModeCardView(
     vsWon: Boolean? = null,
     subtitleOverride: String? = null,
     /** Pro's Unlimited mode (home redesign, founder 2026-10-01): no badges (callers pass no
-     *  completion), a small infinity mark on the title line in the card's accent instead (§21.1). */
+     *  completion) and, since FINISH_SPEC Y, no infinity mark either. */
     unlimited: Boolean = false,
     onVs: () -> Unit,
     onClick: () -> Unit,
@@ -156,7 +155,7 @@ internal fun ModeCardView(
     Box(
         // A9: the whole card squishes (the press leads the chain).
         modifier = modifier
-            .squishClickable(onClick = onClick)
+            .squishClickable(card = true, onClick = onClick)
             .heightIn(min = MODE_CARD_MIN_HEIGHT)
             .gameCardSurface(cardBg, cardBorder)
             .then(if (isLocked) Modifier.alpha(0.6f) else Modifier),
@@ -201,14 +200,8 @@ internal fun ModeCardView(
                             // Same 26 dp art as before (ART_SPEC §4), centered on the title line
                             // without making the line taller (the title's top stays on the icon's).
                             TitleLineBadge(doneWon)
-                        } else if (unlimited && !isLocked) {
-                            // Pro Unlimited's infinity mark takes the badge's place on the title line.
-                            Spacer(Modifier.width(4.dp))
-                            Icon(
-                                androidx.compose.material.icons.Icons.Filled.AllInclusive, contentDescription = null,
-                                tint = card.accent, modifier = Modifier.size(14.dp),
-                            )
                         }
+                        // FINISH_SPEC Y: no infinity mark on Unlimited cards (founder 10-02).
                     }
                     // Completed daily shows guesses · time; else the mode description (web parity).
                     Text(
@@ -227,16 +220,14 @@ internal fun ModeCardView(
 
         // VS swords button (Pro + Unlimited) — quick-match this mode (web parity).
         if (showVs) {
-            Box(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(26.dp)
-                    .clip(RoundedCornerShape(8.dp)).background(Color(0xFF0D9488).copy(alpha = 0.12f))
-                    .border(1.dp, Color(0xFF0D9488).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                    .clickableNoRipple(onVs),
-                contentAlignment = Alignment.Center,
+            // FINISH_SPEC A8: a small round teal candy button (was a flat tinted square).
+            CandyRoundButton(
+                "VS", onClick = onVs, color = CandyColor.TEAL, diameter = 30.dp,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp),
             ) {
                 Icon(
                     androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords),
-                    contentDescription = "VS", tint = Color(0xFF0D9488), modifier = Modifier.size(14.dp),
+                    contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp),
                 )
             }
         }

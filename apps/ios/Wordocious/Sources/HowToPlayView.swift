@@ -62,45 +62,63 @@ func htpColor(_ hex: String) -> Color {
 
 struct HowToPlayView: View {
     @ObservedObject private var service = HowToPlayService.shared
+    /// FINISH_SPEC §W: "Take the tour" replays the first-run onboarding.
+    @State private var showTour = false
 
-    private var card: some View {
-        RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow()
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
+    /// §C6: each section card takes the next color of the brand set.
+    private static let accents: [Color] = [Color(hex: 0x7C3AED), Color(hex: 0xEC4899), Color(hex: 0xF59E0B),
+                                           Color(hex: 0x3B82F6), Color(hex: 0x10B981)]
 
     var body: some View {
-        MenuScaffold("How to Play", host: Mascots.help, art: .howto) {
+        // FINISH_SPEC §C6: back + help icons, the HOW TO PLAY headline, the intro card,
+        // then tinted section cards with top bars. Help here opens the FAQ.
+        MenuScaffold("How to Play", host: Mascots.help, art: .howto, help: .faq) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Everything you need to know to get started")
-                        .font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                VStack(alignment: .leading, spacing: 12) {
+                    InfoIntroCard(heading: "How Wordocious works",
+                                  line: "Everything you need to know to get started")
+
+                    // §W: replay the three-card first-run tour.
+                    Button { showTour = true } label: { CandyLabel(title: "Take the tour", symbol: "sparkles") }
+                        .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
+                        .frame(maxWidth: .infinity)
 
                     if service.sections.isEmpty {
                         CastLoader(showTips: false).frame(maxWidth: .infinity).padding(.top, 40)
                     } else {
-                        ForEach(service.sections) { section(_: $0) }
+                        ForEach(Array(service.sections.enumerated()), id: \.element.id) { i, sec in
+                            section(sec, accent: Self.accents[i % Self.accents.count])
+                        }
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
             }
         }
         .task { await service.load() }
+        .fullScreenCover(isPresented: $showTour) {
+            OnboardingView(replay: true) { play in
+                showTour = false
+                // "Play today's Classic": once the tour is down, close How to Play
+                // and open the Classic daily from the tab root.
+                if play { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Onboarding.playClassic() } }
+            }
+        }
     }
 
     @ViewBuilder
-    private func section(_ s: HTPSection) -> some View {
+    private func section(_ s: HTPSection, accent: Color) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(s.title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+            Text(s.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
 
             if let intro = s.intro {
-                Text(intro).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(2)
+                Text(intro).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
             }
 
             if let bullets = s.bullets {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(bullets.indices, id: \.self) { i in
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("•").font(Brand.font(12, .black)).foregroundStyle(Theme.primary)
+                            Text("•").font(Brand.font(12, .black)).foregroundStyle(accent)
                             bulletText(bullets[i])
                         }
                     }
@@ -108,7 +126,7 @@ struct HowToPlayView: View {
             }
 
             if let heading = s.tilesHeading {
-                Text(heading).font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary).padding(.top, 2)
+                Text(heading).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading).padding(.top, 2)
             }
             if let tiles = s.tiles {
                 VStack(alignment: .leading, spacing: 10) {
@@ -121,25 +139,25 @@ struct HowToPlayView: View {
                     ForEach(modes.indices, id: \.self) { i in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(modes[i].name).font(Brand.font(12, .black)).foregroundStyle(htpColor(modes[i].accent))
-                            Text(modes[i].body).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(2)
+                            Text(modes[i].body).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
                         }
                     }
                 }
             }
 
             if let outro = s.outro {
-                Text(outro).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(2).padding(.top, 2)
+                Text(outro).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2).padding(.top, 2)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(16).background(card)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(16).infoCard(accent)
     }
 
     private func bulletText(_ b: HTPBullet) -> Text {
         if let strong = b.strong {
-            return Text(strong).font(Brand.font(12, .black)).foregroundColor(Theme.textPrimary)
-                + Text(b.text).font(Brand.font(12, .regular)).foregroundColor(Theme.textSecondary)
+            return Text(strong).font(Brand.font(12, .black)).foregroundColor(FinishInk.heading)
+                + Text(b.text).font(Brand.font(12, .regular)).foregroundColor(FinishInk.secondary)
         }
-        return Text(b.text).font(Brand.font(12, .regular)).foregroundColor(Theme.textSecondary)
+        return Text(b.text).font(Brand.font(12, .regular)).foregroundColor(FinishInk.secondary)
     }
 
     private func tileRow(_ row: HTPTileRow) -> some View {
@@ -148,24 +166,22 @@ struct HowToPlayView: View {
                 ForEach(row.letters.indices, id: \.self) { i in tile(row.letters[i]) }
             }
             (Text(row.strong).font(Brand.font(12, .black)).foregroundColor(htpColor(row.strongColor))
-             + Text(row.rest).font(Brand.font(12, .regular)).foregroundColor(Theme.textSecondary))
+             + Text(row.rest).font(Brand.font(12, .regular)).foregroundColor(FinishInk.secondary))
         }
     }
 
+    /// §B1: the example letters as glossy tiles (purple right spot, gold wrong spot,
+    /// slate not in the word, frosted empty).
     private func tile(_ l: HTPLetter) -> some View {
-        let filled = l.color != "empty"
-        let fill: Color = {
+        let face: GlossyFace = {
             switch l.color {
-            case "green": return Color(hex: 0x7C3AED)
-            case "yellow": return Color(hex: 0xF59E0B)
-            case "gray": return Color(hex: 0x64748B)
-            default: return Theme.surface
+            case "green": return .correct
+            case "yellow": return .present
+            case "gray": return .absent
+            default: return .typed
             }
         }()
-        let border: Color = filled ? fill : Theme.border
-        return Text(l.ch).font(Brand.font(13, .black)).foregroundStyle(filled ? .white : Theme.textPrimary)
-            .frame(width: 34, height: 34)
-            .background(RoundedRectangle(cornerRadius: 5).fill(fill))
-            .overlay(RoundedRectangle(cornerRadius: 5).stroke(border, lineWidth: 2))
+        return GlossyTile(face: face, letter: l.ch, width: 34)
+            .accessibilityLabel(l.ch)
     }
 }

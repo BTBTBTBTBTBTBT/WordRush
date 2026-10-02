@@ -66,6 +66,8 @@ describe('game art', () => {
       expect(fs.existsSync(file), file).toBe(true);
       expect(webpSize(file)).toEqual([256, 256]);
     }
+    // C2b: the Sweep tile's broom (not a catalog game).
+    expect(webpSize(pub(gameArtSrc('sweep') as string))).toEqual([256, 256]);
     expect(gameArtSrc('nope')).toBeNull();
     expect(gameArtSrc(null)).toBeNull();
   });
@@ -189,7 +191,7 @@ describe('big game titles below the corner row (§19.3)', () => {
     expect(GAME_HEADER.pad).toBeLessThanOrEqual(6);
     expect(GAME_HEADER.inset).toBe(32);
     expect(gameHeaderArtHeight('art-game-scramble')).toBe(
-      `clamp(44px, calc((100vw - 32px) * ${(h / w).toFixed(4)}), var(--game-title-cap, 120px))`,
+      `clamp(44px, calc((var(--game-col-w, 100vw) - 32px) * ${(h / w).toFixed(4)}), var(--game-title-cap, 120px))`,
     );
   });
 

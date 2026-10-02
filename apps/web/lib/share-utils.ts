@@ -1,4 +1,6 @@
 import type { ShareImageInput, ShareLeaderboardInput, ShareMode } from './share-image';
+import { SHARE_TOASTS } from '@wordle-duel/core';
+import { stripEmoji } from './strip-emoji';
 import { openSharePreview } from '@/components/share/share-preview-modal';
 import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
@@ -50,21 +52,26 @@ export function buildShareCaption(): string {
 // ──────────────────────────────────────────────────────────────────────
 
 export interface ShareResultOutcome {
-  /** 'share' = Web Share sheet opened; 'clipboard' = image + text on clipboard; 'modal' = preview modal shown; 'text' = text-only fallback copied; 'failed' = nothing worked. */
-  via: 'share' | 'clipboard' | 'modal' | 'text' | 'failed';
+  /** 'share' = Web Share sheet opened (the image only); 'clipboard' = the image on the clipboard; 'download' = the PNG saved; 'modal' = preview modal shown; 'text' = text-only fallback copied; 'failed' = nothing worked. */
+  via: 'share' | 'clipboard' | 'download' | 'modal' | 'text' | 'failed';
 }
 
-async function tryWebShare(blob: Blob, caption: string, mode: ShareMode): Promise<boolean> {
+/** The PNG's file name: "Wordocious-QuadWord.png" (S1). */
+export function shareFileName(mode: string): string {
+  return `Wordocious-${String(mode).replace(/[^A-Za-z0-9]+/g, '')}.png`;
+}
+
+/**
+ * FINISH_SPEC S1: the share sheet gets the IMAGE ONLY — no url, no text, no
+ * title — so Messages / WhatsApp show the picture, not a link-preview card.
+ */
+async function tryWebShare(blob: Blob, mode: ShareMode): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.share) return false;
   try {
-    const file = new File([blob], `wordocious-${Date.now()}.png`, { type: 'image/png' });
+    const file = new File([blob], shareFileName(mode), { type: 'image/png' });
     // canShare with files fails entirely on browsers that don't support file sharing.
     if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
-    await navigator.share({
-      files: [file],
-      text: caption,
-      title: `Wordocious ${mode}`,
-    });
+    await navigator.share({ files: [file] });
     return true;
   } catch (err) {
     // AbortError (user canceled) still counts as a "handled" share from our POV
@@ -74,19 +81,38 @@ async function tryWebShare(blob: Blob, caption: string, mode: ShareMode): Promis
   }
 }
 
-async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> {
+/** S1 fallback 1: the image alone on the clipboard. */
+async function tryClipboardImage(blob: Blob): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.clipboard || typeof ClipboardItem === 'undefined') return false;
   try {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        'image/png': blob,
-        'text/plain': new Blob([caption], { type: 'text/plain' }),
-      }),
-    ]);
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
     return true;
   } catch {
     return false;
   }
+}
+
+/** S1 fallback 2: download the PNG. */
+function tryDownload(blob: Blob, mode: ShareMode): boolean {
+  if (typeof document === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) return false;
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = shareFileName(mode);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The S4 toasts after a fallback ("Image copied! Paste it anywhere"); the core copy's emoji never reach the screen (AM3). */
+function flashShareToast(kind: 'copied' | 'saved') {
+  void import('@/hooks/use-toast').then(({ toast }) => toast({ title: stripEmoji(SHARE_TOASTS[kind]) })).catch(() => {});
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -233,31 +259,26 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
 }
 
 /**
- * Single entry point every game's Share button calls. Generates a PNG from
- * the supplied game-result payload and then walks progressive fallbacks:
+ * Single entry point every game's Share button calls. FINISH_SPEC S1: a
+ * completed-game share sends the IMAGE ONLY — no URL, no caption — so the
+ * recipient sees the picture, not a link-preview card:
  *
- *   1. Web Share (mobile native share sheet with the image attached).
- *   2. Clipboard image + text (iOS Safari 16.4+, desktop Chrome).
- *   3. Preview modal with Save/Copy buttons.
- *   4. Text-only clipboard copy of the caption (mirrors old behavior).
+ *   1. Web Share with the PNG as the only item.
+ *   2. The PNG on the clipboard ("Image copied! Paste it anywhere 📋").
+ *   3. Download the PNG ("Saved! Share it anywhere 🖼️").
+ *   4. The preview modal (Save / Copy), then a text copy as the last resort.
  *
- * The caption is a per-result page URL (with the PNG uploaded behind it) so
- * that targets which ignore the attached file — Facebook, X, LinkedIn — still
- * render the puzzle via Open Graph. Falls back to the bare site URL.
- *
- * Returns which path succeeded so the caller can flash the right toast.
+ * No hosted /s/ page is created any more (old links keep working). `opts`
+ * stays for old call sites; `linkOnly` is ignored (results are image only).
+ * Returns which path succeeded so the caller can flash the right state.
  */
 export async function shareResult(
   input: ShareImageInput,
   /** share_events surface tag — post-game buttons keep the default; the daily
    *  leaderboard buttons pass 'leaderboard'. */
   surface: string = 'post_game',
-  /** Share the hosted URL alone (no image attachment). For cards whose /s/
-   *  unfurl IS the card (leaderboard), image+link would render TWICE in the
-   *  Messages compose sheet — the link preview already carries the pixels,
-   *  and it's tappable. Falls back to the image chain if there's no URL or
-   *  the link share fails for any reason other than the user canceling. */
-  opts: { linkOnly?: boolean } = {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _opts: { linkOnly?: boolean } = {},
 ): Promise<ShareResultOutcome> {
   let blob: Blob | null = null;
   try {
@@ -268,39 +289,23 @@ export async function shareResult(
     blob = null;
   }
 
-  // Prefer a per-result URL (puzzle PNG uploaded behind it); fall back to the
-  // bare site URL if the upload can't happen.
-  let caption = buildShareCaption();
-  let hostedUrl: string | null = null;
   if (blob) {
-    hostedUrl = await uploadAndBuildShareUrl(blob, input);
-    if (hostedUrl) caption = hostedUrl;
-  }
-
-  if (opts.linkOnly && hostedUrl && typeof navigator !== 'undefined' && navigator.share) {
-    try {
-      await navigator.share({ url: hostedUrl });
-      logShareEvent('other', input.mode, surface);
-      return { via: 'share' };
-    } catch (e) {
-      // User canceled the sheet — done, don't cascade into image fallbacks.
-      if ((e as Error)?.name === 'AbortError') return { via: 'failed' };
-      // Anything else (no share support, permission) → image chain below.
-    }
-  }
-
-  if (blob) {
-    if (await tryWebShare(blob, caption, input.mode)) {
+    if (await tryWebShare(blob, input.mode)) {
       logShareEvent('image', input.mode, surface);
       return { via: 'share' };
     }
-    if (await tryClipboardImage(blob, caption)) {
+    if (await tryClipboardImage(blob)) {
       logShareEvent('image', input.mode, surface);
+      flashShareToast('copied');
       return { via: 'clipboard' };
     }
-    // Preview modal as a visible fallback before giving up.
+    if (tryDownload(blob, input.mode)) {
+      logShareEvent('image', input.mode, surface);
+      flashShareToast('saved');
+      return { via: 'download' };
+    }
     try {
-      openSharePreview(blob, caption);
+      openSharePreview(blob, buildShareCaption());
       logShareEvent('image', input.mode, surface);
       return { via: 'modal' };
     } catch {
@@ -308,12 +313,14 @@ export async function shareResult(
     }
   }
 
-  // Image generation failed OR modal path errored — at minimum copy the caption
-  // so the user still has something to paste.
-  const copied = await copyShareToClipboard(caption);
+  // Image generation failed: at minimum copy the site so the user has something to paste.
+  const copied = await copyShareToClipboard(buildShareCaption());
   if (copied) logShareEvent('text', input.mode, surface);
   return { via: copied ? 'text' : 'failed' };
 }
+
+/** The hosted /s/ page builder is kept for old-link compatibility tooling; result shares no longer call it. */
+export const __uploadAndBuildShareUrl = uploadAndBuildShareUrl;
 
 /**
  * Copy text to clipboard with fallback.

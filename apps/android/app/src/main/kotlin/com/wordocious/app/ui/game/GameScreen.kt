@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -133,16 +134,16 @@ internal fun Modifier.shakeOnReject(shakeKey: Int): Modifier {
 }
 
 /**
- * Hint pills (spec Part 2 Hints UI) — Six/Seven/ProperNoundle. Two pills
- * (Vowel/Consonant) between board and keyboard. Unused = accent text + accent@8%
- * bg + 1.5dp accent border; used = muted + #F3F4F6 + disabled. Label shows
- * "💡 Vowel" → "Vowel: X" or "No vowels left".
+ * Hint pills (spec Part 2 Hints UI) — Six/Seven/ProperNoundle. Two hints
+ * (Vowel/Consonant) between board and keyboard. FINISH_SPEC A8: an unused hint
+ * is a glossy candy button (vowel pink, consonant teal); a used one becomes a
+ * tinted pill carrying "Vowel: X" / "No vowels left".
  */
 // Non-private so the VS screen (ui.vs) can reuse the exact same pills for
 // Six/Seven VS — parity by construction.
 @Composable
 fun HintPills(
-    accent: Color,
+    @Suppress("UNUSED_PARAMETER") accent: Color,
     vowelUsed: Boolean, vowelRevealed: String?,
     consonantUsed: Boolean, consonantRevealed: String?,
     onVowel: () -> Unit, onConsonant: () -> Unit,
@@ -150,28 +151,29 @@ fun HintPills(
     Row(
         // iOS classicHintButtons: HStack(spacing: 12) inset 16pt. 16dp bottom
         // keeps the pills clear of the Q-row (fat-finger, Aug 11).
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        HintPill(
-            accent = accent, used = vowelUsed,
-            label = if (!vowelUsed) "💡 Vowel"
-            else if (vowelRevealed == "—") "No vowels left" else "Vowel: $vowelRevealed",
-            onClick = onVowel, modifier = Modifier.weight(1f),
+        HintCandy(
+            label = "Vowel",
+            usedLabel = if (vowelRevealed == "—") "No vowels left" else "Vowel: $vowelRevealed",
+            used = vowelUsed, color = com.wordocious.app.ui.CandyColor.PINK, icon = Icons.Filled.Lightbulb,
+            onClick = onVowel, modifier = Modifier.weight(1f), fill = true,
         )
-        HintPill(
-            accent = accent, used = consonantUsed,
-            label = if (!consonantUsed) "💡 Consonant"
-            else if (consonantRevealed == "—") "No consonants left" else "Consonant: $consonantRevealed",
-            onClick = onConsonant, modifier = Modifier.weight(1f),
+        HintCandy(
+            label = "Consonant",
+            usedLabel = if (consonantRevealed == "—") "No consonants left" else "Consonant: $consonantRevealed",
+            used = consonantUsed, color = com.wordocious.app.ui.CandyColor.TEAL, icon = Icons.Filled.Lightbulb,
+            onClick = onConsonant, modifier = Modifier.weight(1f), fill = true,
         )
     }
 }
 
 /**
- * ProperNoundle hints (spec line 166) — 3 capsule pills Clue/Vowel/Consonant.
- * Clue #9333EA/#D8B4FE/#FAF5FF (lightbulb→hourglass), Vowel #2563EB/#93C5FD/#EFF6FF
- * (eye), Consonant #16A34A/#86EFAC/#F0FDF4 (number). Used = gray + disabled.
+ * ProperNoundle hints (spec line 166) — Clue / Vowel / Consonant. FINISH_SPEC A8:
+ * candy buttons sized to their labels and centered (Clue purple, Vowel pink,
+ * Consonant teal); a used one becomes a tinted pill with the revealed letter.
  */
 // Non-private so the VS screen (ui.vs) can reuse the exact same pills for
 // ProperNoundle VS — parity by construction.
@@ -181,32 +183,28 @@ fun ProperNoundleHints(
     vowelRevealed: String?, consonantRevealed: String?,
     onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
-    // iOS sizes each pill to its own label and centers the row, so "Clue" is
-    // narrow and "Consonant" wide — and a pill SHRINKS when its label collapses
-    // to the revealed letter. weight(1f) forced three equal full-bleed pills
-    // that never changed width, which is the main reason this row read as a
-    // different control set from iOS.
+    // iOS sizes each pill to its own label and centers the row; a pill SHRINKS when
+    // its label collapses to the revealed letter.
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        NoundlePill(
-            label = "Clue",
+        HintCandy(
+            label = "Clue", usedLabel = "Clue used",
+            used = clueUsed, color = com.wordocious.app.ui.CandyColor.PURPLE,
             icon = if (loadingClue) Icons.Filled.HourglassEmpty else Icons.Filled.Lightbulb,
-            used = clueUsed, text = Color(0xFF9333EA), border = Color(0xFFD8B4FE), bg = Color(0xFFFAF5FF),
             onClick = onClue,
         )
-        NoundlePill(
-            label = vowelRevealed ?: "Vowel",
-            icon = Icons.Filled.Visibility,
-            used = vowelRevealed != null, text = Color(0xFF2563EB), border = Color(0xFF93C5FD), bg = Color(0xFFEFF6FF),
-            onClick = onVowel,
+        HintCandy(
+            label = "Vowel", usedLabel = vowelRevealed ?: "Vowel",
+            used = vowelRevealed != null, color = com.wordocious.app.ui.CandyColor.PINK,
+            icon = Icons.Filled.Visibility, onClick = onVowel,
         )
-        NoundlePill(
-            label = consonantRevealed ?: "Consonant",
-            icon = Icons.Filled.Tag,
-            used = consonantRevealed != null, text = Color(0xFF0D9488), border = Color(0xFF5EEAD4), bg = Color(0xFFF0FDFA),
-            onClick = onConsonant,
+        HintCandy(
+            label = "Consonant", usedLabel = consonantRevealed ?: "Consonant",
+            used = consonantRevealed != null, color = com.wordocious.app.ui.CandyColor.TEAL,
+            icon = Icons.Filled.Tag, onClick = onConsonant,
         )
     }
 }
@@ -235,47 +233,7 @@ internal fun PnCategoryPill(category: String) {
     )
 }
 
-@Composable
-private fun NoundlePill(
-    label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, used: Boolean,
-    text: Color, border: Color, bg: Color, onClick: () -> Unit, modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-            .background(if (used) Color.Transparent else bg)
-            .border(1.5.dp, if (used) Color(0xFFE5E7EB) else border, androidx.compose.foundation.shape.RoundedCornerShape(50))
-            .then(if (used) Modifier else Modifier.clickableNoRipple(onClick))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = if (used) Color(0xFFD1D5DB) else text, modifier = Modifier.size(14.dp))
-        Text(
-            label, color = if (used) Color(0xFFD1D5DB) else text,
-            fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
-        )
-    }
-}
 
-@Composable
-private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
-            .background(if (used) WTheme.surfaceHover else accent.copy(alpha = 0.08f))
-            .border(1.5.dp, if (used) WTheme.border else accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
-            .then(if (used) Modifier else Modifier.clickableNoRipple(onClick))
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            color = if (used) WTheme.textMuted else accent,
-            fontSize = 13.sp, fontWeight = FontWeight.Black,
-        )
-    }
-}
 
 /**
  * Gauntlet 5-node stepper — 1:1 with iOS `gauntletStageNode` (GameScreen.swift
@@ -346,7 +304,7 @@ fun GauntletStepper(current: Int, total: Int, modifier: Modifier = Modifier) {
                 contentAlignment = Alignment.Center,
             ) {
                 when {
-                    done -> Text("✓", color = fg, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    done -> com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp)
                     active -> Icon(Icons.Filled.PlayArrow, null, tint = fg, modifier = Modifier.size(10.dp))
                     else -> Text("${i + 1}", color = fg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
@@ -985,6 +943,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             StageTransitionOverlay(
                 completed = gauntlet.stages[gauntlet.currentStage],
                 next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
+                guessesSoFar = GauntletLook.guessesSoFar(gauntlet, state.boards),
             ) { vm.advanceGauntletStage() }
         }
 
@@ -993,17 +952,22 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         val rejectMsg by vm.rejectMessage.collectAsState()
         rejectMsg?.let {
             Box(Modifier.fillMaxWidth().padding(top = 90.dp), contentAlignment = Alignment.TopCenter) {
+                // FINISH_SPEC K1 / G5: the toast is a tinted pill in the reject red (a soft
+                // wash, its line and a red top band) with dark-purple ink. FIXED ink on a
+                // FIXED fill in both themes, so it never goes low-contrast in Dark.
+                val shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
                 Text(
-                    it, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    it, color = Color(0xFF2A1650), fontSize = 13.sp, fontWeight = FontWeight.Black,
                     modifier = Modifier
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        // FIXED ink demands a FIXED fill. WTheme.text is near-white
-                        // in Dark, so white-on-near-white made every "Not in word
-                        // list" / "Not enough letters" bounce silent — 1.06:1.
-                        // #1A1A2E is exactly what WTheme.text resolves to in Light,
-                        // so the light look is unchanged.
-                        .background(Color(0xFF1A1A2E))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .shadow(6.dp, shape, clip = false, ambientColor = Color(0x33F0435F), spotColor = Color(0x33F0435F))
+                        .clip(shape)
+                        .background(Color(0xFFFFEEF1))
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(Color(0xFFF0435F), size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx()))
+                        }
+                        .border(1.5.dp, Color(0xFFF8B4C0), shape)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
@@ -1091,6 +1055,9 @@ internal fun SingleBoard(
     wordGroups: List<Int>? = null,
     /** False on a static recap (the finished screen): no reveal / celebration replays. */
     animateLastRow: Boolean = true,
+    /** FINISH_SPEC L the tray's accent (null = the game's tint, else Classic purple); false = no tray. */
+    trayAccent: Color? = null,
+    tray: Boolean = true,
 ) {
     val wordLen = board.solution.length
     val rows = board.maxGuesses
@@ -1101,12 +1068,21 @@ internal fun SingleBoard(
     val (shownGuess, clearOf) = rememberRejectClear(currentGuess, isInvalid, wordLen)
     val clearing = shownGuess != currentGuess
 
+    val accent = trayAccent ?: com.wordocious.app.ui.LocalGameTint.current ?: Color(0xFF7C3AED)
+    val trayState = when (board.status) {
+        GameStatus.WON -> TrayState.WON
+        GameStatus.LOST -> TrayState.LOST
+        else -> TrayState.PLAYING
+    }
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val gap = BOARD_TILE_GAP
         // Inter-word gaps are 14 dp where intra-word gaps are the tile gap (iOS NoundleBoard).
         val extraGroupGap = (WORD_GROUP_GAP - gap) * ((groups?.size ?: 1) - 1)
+        // L: the tray's padding + lip come out of the space the tiles may use.
+        val chromeW = if (tray) GameTrayStyle.PADDING.value * 2 else 0f
+        val chromeH = if (tray) GameTrayStyle.PADDING.value * 2 + GameTrayStyle.LIP.value else 0f
         val fit = BoardSizing.fitSquare(
-            availW = maxWidth.value, availH = maxHeight.value,
+            availW = (maxWidth.value - chromeW).coerceAtLeast(0f), availH = (maxHeight.value - chromeH).coerceAtLeast(0f),
             cols = wordLen, rows = rows, gap = gap.value, extraWidth = extraGroupGap.value,
         )
         val tile = fit.cellW
@@ -1114,6 +1090,7 @@ internal fun SingleBoard(
         // through density WITHOUT the user's fontScale (the tile doesn't font-scale).
         val tileFontDp = (tile * 0.56f).coerceIn(4f, 40f)
 
+        Box(if (tray) Modifier.gameTray(accent, trayState) else Modifier) {
         Column(
             modifier = Modifier.size(fit.width.dp, fit.height.dp),
             verticalArrangement = Arrangement.spacedBy(gap),
@@ -1171,6 +1148,7 @@ internal fun SingleBoard(
                     TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, modifier = Modifier.weight(1f))
                 }
             }
+        }
         }
     }
 }

@@ -20,6 +20,7 @@ import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT, COLUMN_CLASS } from './muddle-board';
+import { GameTray } from '@/components/ui/game-tray';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -32,18 +33,17 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { scrambleElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 
 // Muddle (More Games §5): unscramble four words; their circled letters spell
@@ -256,13 +256,42 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const es = elsewhere?.result.state ?? null;
   const esCaption = es ? es.caption.split('____') : null;
   const noop = () => {};
+  // FINISH_SPEC R2: the finished board — the cartoon, the completed caption and
+  // the punchline on the tray (purple once won, slate once lost), with the four
+  // word rows collapsed to a summary (all of them under "See all words").
+  const muddleFinishedBoard = (s: ScrambleState, caption: string[], cartoon: string | null, alt: string, isWon: boolean) => {
+    const solvedWords = s.solved.slice(0, SCRAMBLE_FINAL).filter(Boolean).length;
+    return (
+      <div className="flex flex-col items-center px-1 pb-1">
+        <CartoonPanel src={cartoon} alt={alt} fixed />
+        <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1.5 line-clamp-2" style={{ fontSize: 14, lineHeight: 1.25, color: 'var(--color-text)' }}>
+          {caption[0]}
+          <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{s.final.answer.toLowerCase()}</span>
+          {caption[1] ?? ''}
+        </p>
+        <GameTray accent={MUDDLE_ACCENT} state={isWon ? 'won' : 'lost'} padding={6} className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
+          <FinalRow state={s} active={false} shaking={false} finished onSelect={noop} onTapTile={noop} onRevealLetter={noop} />
+        </GameTray>
+        <div className="mt-1.5 text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>
+          {solvedWords} of {SCRAMBLE_FINAL} words solved{s.hintsUsed ? ` · ${s.hintsUsed} hint${s.hintsUsed === 1 ? '' : 's'}` : ''}
+        </div>
+      </div>
+    );
+  };
+  const muddleWordRows = (s: ScrambleState, isWon: boolean) => (
+    <GameTray accent={MUDDLE_ACCENT} state={isWon ? 'won' : 'lost'} padding={6} className={`${COLUMN_CLASS} flex flex-col shrink-0`}>
+      {s.words.map((_, i) => (
+        <WordRow key={i} state={s} row={i} active={false} shaking={false} finished onSelect={noop} onTapTile={noop} onRevealLetter={noop} onSolveWord={noop} />
+      ))}
+    </GameTray>
+  );
   // Compact rule (§5, founder 2026-09-23): 30px capsules; the ::before pseudo stretches the hit target to 44px without adding height.
   // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
   const capsule = (dim: boolean) => candyClass({ dim });
   const capsuleStyle = (_dim: boolean) => undefined;
 
   return (
-    <GameBackground mode="SCRAMBLE" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="SCRAMBLE" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="SCRAMBLE" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -291,90 +320,81 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // cartoon, caption and the rows solved from the matches row, then the card.
-        <CompletedCustomDaily dbKey="SCRAMBLE" completion={completion}
-          boardsSolved={elsewhere?.result.progress.boardsSolved} totalBoards={elsewhere?.result.progress.totalBoards} hintsUsed={elsewhere?.result.progress.hintsUsed}>
-          {es && esCaption && (
-            <>
-              <CartoonPanel src={elsewhere?.puzzle?.cartoon ?? null} alt={elsewhere?.puzzle?.altText ?? 'Cartoon'} fixed />
-              <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1.5 line-clamp-2" style={{ fontSize: 14, lineHeight: 1.25, color: 'var(--color-text)' }}>
-                {esCaption[0]}
-                <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{es.final.answer.toLowerCase()}</span>
-                {esCaption[1] ?? ''}
-              </p>
-              <div className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
-                {es.words.map((_, i) => (
-                  <WordRow key={i} state={es} row={i} active={false} shaking={false} finished onSelect={noop} onTapTile={noop} onRevealLetter={noop} onSolveWord={noop} />
-                ))}
-                <FinalRow state={es} active={false} shaking={false} finished onSelect={noop} onTapTile={noop} onRevealLetter={noop} />
-              </div>
-            </>
-          )}
-        </CompletedCustomDaily>
+        <PuzzleElsewhere dbKey="SCRAMBLE" completion={completion}
+          boardsSolved={elsewhere?.result.progress.boardsSolved} totalBoards={elsewhere?.result.progress.totalBoards} hintsUsed={elsewhere?.result.progress.hintsUsed}
+          moreExtra={es ? muddleWordRows(es, completion.won) : undefined}>
+          {es && esCaption && muddleFinishedBoard(es, esCaption, elsewhere?.puzzle?.cartoon ?? null, elsewhere?.puzzle?.altText ?? 'Cartoon', completion.won)}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-puzzle flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
+      ) : finished ? (
+        // FINISH_SPEC R2: one screen — the result strip, the cartoon + caption +
+        // punchline scaled to the room left, then the dock. The four word rows
+        // collapse to a "N of 4 words" summary; "See all words" (More) holds
+        // them with the score breakdown.
+        <>
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.checks} guessLabel={state.checks === 1 ? 'check' : 'checks'} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? (state.checks === 5 && state.hintsUsed === 0 ? 'Muddle solved clean' : 'Muddle solved') : 'Out of checks'}. ${scrambleBoardsSolved(state)}/${SCRAMBLE_TOTAL_BOARDS} solved · ${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
+            }
+            board={muddleFinishedBoard(state, captionParts, puzzle?.cartoon ?? null, puzzle?.altText ?? 'Cartoon', won)}
+            dock={
+              <FinishedDock currentMode="SCRAMBLE" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="SCRAMBLE" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure label="See all words" accent={MUDDLE_ACCENT}>
+                <div className="flex flex-col items-center gap-3">
+                  {muddleWordRows(state, won)}
+                  <ScoreBreakdownCard gameMode="SCRAMBLE" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
+                    boardsSolved={scrambleBoardsSolved(state)} totalBoards={SCRAMBLE_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
+                </div>
+              </MoreDisclosure>
+            }
+          />
+          <BottomNav />
+        </>
       ) : (
       <>
       {/* Compact rule (§5, founder 2026-09-23): one flex column — the cartoon
           flexes to the height left over (96px floor, 26vh cap), caption and
           words never shrink, and only this region scrolls on a short screen;
           the keyboard below is a fixed footer that never scrolls away. */}
-      <div className={`flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-3 pt-1 ${finished ? 'gap-2 pb-2' : ''}`}>
-        <CartoonPanel src={puzzle?.cartoon ?? null} alt={puzzle?.altText ?? 'Cartoon'} fixed={finished} />
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-3 pt-1">
+        <CartoonPanel src={puzzle?.cartoon ?? null} alt={puzzle?.altText ?? 'Cartoon'} />
         <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1.5 line-clamp-2" style={{ fontSize: 14, lineHeight: 1.25, color: 'var(--color-text)' }}>
           {captionParts[0]}
-          <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{finished || state.solved[SCRAMBLE_FINAL] ? state.final.answer.toLowerCase() : ' '}</span>
+          <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{state.solved[SCRAMBLE_FINAL] ? state.final.answer.toLowerCase() : ' '}</span>
           {captionParts[1] ?? ''}
         </p>
-        <div className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
+        {/* FINISH_SPEC L: the word rows sit on the shared game tray. */}
+        <GameTray accent={MUDDLE_ACCENT} state="playing" padding={6} className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
           {state.words.map((_, i) => (
-            <WordRow key={i} state={state} row={i} active={row === i} shaking={shakeRow === i} finished={finished}
+            <WordRow key={i} state={state} row={i} active={row === i} shaking={shakeRow === i} finished={false}
               onSelect={(r) => setRow(r)} onTapTile={(r, ch) => { setRow(r); dispatch({ type: 'TYPE', row: r, letter: ch }); playKeyTap(); }}
               onRevealLetter={(r) => { dispatch({ type: 'REVEAL_LETTER', row: r }); haptic('light'); }} onSolveWord={(r) => { dispatch({ type: 'SOLVE_WORD', row: r }); haptic('light'); }} />
           ))}
-          <FinalRow state={state} active={row === SCRAMBLE_FINAL} shaking={shakeRow === SCRAMBLE_FINAL} finished={finished}
+          <FinalRow state={state} active={row === SCRAMBLE_FINAL} shaking={shakeRow === SCRAMBLE_FINAL} finished={false}
             onSelect={() => setRow(SCRAMBLE_FINAL)} onTapTile={(ch) => { setRow(SCRAMBLE_FINAL); dispatch({ type: 'TYPE', row: SCRAMBLE_FINAL, letter: ch }); playKeyTap(); }}
             onRevealLetter={() => { dispatch({ type: 'REVEAL_LETTER', row: SCRAMBLE_FINAL }); haptic('light'); }} />
-        </div>
-        {finished && (
-          <div className={`${COLUMN_CLASS} px-1 pb-2 animate-fade-in-up`}>
-            <ResultCard accent={MUDDLE_ACCENT}>
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black" style={{ backgroundColor: `${MUDDLE_ACCENT}15`, border: `2px solid ${MUDDLE_ACCENT}44`, color: MUDDLE_ACCENT }}>
-                {won ? state.checks : '✗'}
-              </div>
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                  {won ? (state.checks === 5 && state.hintsUsed === 0 ? 'Muddle solved clean' : 'Muddle solved') : 'Out of checks'}
-                </span>
-                <span className="text-xs text-gray-400">{`${scrambleBoardsSolved(state)}/${SCRAMBLE_TOTAL_BOARDS} solved · ${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}</span>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <ShareGlyph onShare={handleShare} copied={copied} />
-                  {mode === 'daily' && <DailyRankBadge gameMode="SCRAMBLE" />}
-                  {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-                </div>
-              </div>
-            </ResultCard>
-            <ScoreBreakdownCard gameMode="SCRAMBLE" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
-              boardsSolved={scrambleBoardsSolved(state)} totalBoards={SCRAMBLE_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-            {mode === 'daily' && <NextDailyCta currentMode="SCRAMBLE" />}
-          </div>
-        )}
+        </GameTray>
       </div>
 
-      {!finished ? (
-        <div className="shrink-0 pb-1.5 px-2 pt-1 flex flex-col gap-1.5">
-          <div className="flex justify-center gap-2 px-1" role="group" aria-label="Muddle controls">
-            <button type="button" onClick={() => { dispatch({ type: 'BACK', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the last letter">
-              <Delete className="w-3.5 h-3.5" /> Delete
-            </button>
-            <button type="button" onClick={() => { dispatch({ type: 'CLEAR', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Clear the active word">
-              <XCircle className="w-3.5 h-3.5" /> Clear
-            </button>
-          </div>
-          <Keyboard onKey={onKey} />
+      <div className="shrink-0 pb-1.5 px-2 pt-1 flex flex-col gap-1.5">
+        <div className="flex justify-center gap-2 px-1" role="group" aria-label="Muddle controls">
+          <button type="button" onClick={() => { dispatch({ type: 'BACK', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the last letter">
+            <Delete className="w-3.5 h-3.5" /> Delete
+          </button>
+          <button type="button" onClick={() => { dispatch({ type: 'CLEAR', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Clear the active word">
+            <XCircle className="w-3.5 h-3.5" /> Clear
+          </button>
         </div>
-      ) : <BottomNav />}
-      {finished && void scrambleFinalLetters}
+        <Keyboard onKey={onKey} />
+      </div>
+      {void scrambleFinalLetters}
       </>
       )}
     </GameBackground>

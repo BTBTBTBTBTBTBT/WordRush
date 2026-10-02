@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, X as XIcon } from 'lucide-react';
+import { CandyButton } from '@/components/ui/candy-button';
+import { CandyBadge } from '@/components/ui/candy-badge';
+import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
+import { SoftNum } from '@/components/ui/soft-number';
+import { GREEN_CANDY, INVITE_BAR, SceneArt } from '@/components/friends/invite-screens';
+import { SOFT_INK, cardBarStyle, softBackground, softBorder, softShadow } from '@/lib/soft-surface';
 import { fetchPendingInvitesForUser, lookupUsernames, markInviteDeclined, type MatchInvite } from '@/lib/invite-service';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
+
+const ACCENT = '#ec4899';
 
 interface Props {
   userId: string | undefined;
@@ -40,42 +47,38 @@ export function PendingInvitesBanner({ userId }: Props) {
   };
 
   return (
+    // K1 + T2 notice (docs/FINISH_SPEC.md): a pink-washed card with its top
+    // bar, the inviter's letter tile, I tossing the invite envelope (A7: not
+    // Home's W host), the headline in Nunito Black, green candy Accept and the
+    // soft peach Decline; slides in with a spring (off with Reduce Motion).
     <div
-      className="flex items-center gap-3 p-3 mb-3"
-      style={{
-        background: 'linear-gradient(135deg, #fdf4ff, #fce7f3)',
-        border: '1.5px solid #f5d0fe',
-        borderRadius: '14px',
-      }}
+      className="notice-in relative mb-3"
+      style={{ background: softBackground(ACCENT, 0.12), border: softBorder(ACCENT, 0.12), borderRadius: 16, boxShadow: softShadow(ACCENT, 0.16) }}
+      role="status"
     >
-      <div className="w-9 h-9 flex items-center justify-center rounded-full flex-shrink-0" style={{ background: '#ec4899' }}>
-        <Mail className="w-4 h-4 text-white" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
-          @{name} invited you to {PROFILE_MODES.find((m) => m.dbKey === top.game_mode)?.title ?? top.game_mode}
-        </p>
-        {invites.length > 1 && (
-          <p className="text-[10px] font-bold" style={{ color: '#a21caf' }}>
-            +{invites.length - 1} more pending
+      <div aria-hidden="true" style={{ ...cardBarStyle(ACCENT, 6), background: INVITE_BAR, borderRadius: '14.5px 14.5px 0 0' }} />
+      <div className="flex items-center gap-3 px-3 pt-2 pb-1.5">
+        <span className="relative shrink-0 inline-flex">
+          <LetterTileAvatar name={name} size={38} />
+          {/* M: the waiting-invite candy badge (the headline says it). */}
+          <CandyBadge count={invites.length} size={16} style={{ position: 'absolute', top: -6, right: -6 }} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-black leading-snug" style={{ color: SOFT_INK.num }}>
+            @{name} invited you to {PROFILE_MODES.find((m) => m.dbKey === top.game_mode)?.title ?? top.game_mode}
           </p>
-        )}
+          {invites.length > 1 && (
+            <p className="text-[11px] font-extrabold" style={{ color: SOFT_INK.label }}>
+              +<SoftNum size={11}>{invites.length - 1}</SoftNum> more pending
+            </p>
+          )}
+        </div>
+        <SceneArt name="art-scene-invite-sent" height={50} className="shrink-0" style={{ marginTop: -4 }} />
       </div>
-      <button
-        onClick={handleAccept}
-        className="px-3 py-1.5 rounded-lg text-xs font-black text-white"
-        style={{ background: '#ec4899' }}
-      >
-        Play
-      </button>
-      <button
-        onClick={handleDismiss}
-        className="w-7 h-7 flex items-center justify-center rounded-full"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid #f5d0fe', color: '#a21caf' }}
-        aria-label="Dismiss"
-      >
-        <XIcon className="w-3.5 h-3.5" />
-      </button>
+      <div className="flex items-center justify-end gap-2 px-3 pb-2.5 -mt-1">
+        <CandyButton size="sm" color="peach" onClick={handleDismiss} aria-label={`Decline @${name}'s invite`} className="shrink-0">Decline</CandyButton>
+        <CandyButton size="sm" icon="check" onClick={handleAccept} aria-label={`Accept @${name}'s invite and play`} className="shrink-0" style={GREEN_CANDY}>Accept</CandyButton>
+      </div>
     </div>
   );
 }

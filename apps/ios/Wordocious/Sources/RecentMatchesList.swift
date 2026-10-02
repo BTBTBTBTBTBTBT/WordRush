@@ -62,15 +62,19 @@ struct RecentMatchesList: View {
             }
             if matches.count > limit {
                 if let onSeeAll {
+                    // §A8: a small candy action, not a text link.
                     Button { Haptics.tap(); onSeeAll() } label: {
-                        Text("See all \(matches.count) in All-time →")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.squish).padding(.top, 2)
+                        CandyLabel(title: "See all \(matches.count) in All-time", symbol: "arrow.right")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    .frame(maxWidth: .infinity).padding(.top, 4)
                 } else {
                     Button { showAll.toggle() } label: {
-                        Text(showAll ? "Show less" : "View all \(matches.count) ›")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.squish).padding(.top, 2)
+                        CandyLabel(title: showAll ? "Show less" : "View all \(matches.count)",
+                                   symbol: showAll ? "chevron.up" : "chevron.down")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: showAll ? .peach : .purple, size: .small, fullWidth: false))
+                    .frame(maxWidth: .infinity).padding(.top, 4)
                 }
             }
         }
@@ -168,16 +172,16 @@ struct TodayGamesList: View {
         return HStack(spacing: 12) {
             if let meta { ModeIconView(icon: meta.icon, accent: meta.accent, box: 36) }
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(title) Unlimited").font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.7)
-                Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1).minimumScaleFactor(0.8)
+                Text("\(title) Unlimited").font(Brand.font(13, .heavy)).foregroundStyle(FinishInk.heading).lineLimit(1).minimumScaleFactor(0.7)
+                Text(line).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1).minimumScaleFactor(0.8)
             }
             Spacer()
             Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
                 .rotationEffect(.degrees(isOpen ? 180 : 0))
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        // §A1: tinted in the game's color, never plain white.
+        .tintedCard(accent: meta?.accent ?? FinishInk.purple, radius: 14, tint: 0.08, line: 0.26)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) Unlimited, \(line)")

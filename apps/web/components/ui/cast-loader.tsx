@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { CastRow } from './mascot';
-import { loadingTip } from '@/lib/mascots';
+import { CAST, loadingTip } from '@/lib/mascots';
+import { castArt, useSeason } from '@/lib/season';
 
 // §3 loading: the CastRow at 22 px per tile doing a staggered wave (each tile
 // hops 8 px, 70 ms apart, 1.1 s loop). It replaces the spinner; the caller
 // keeps its LOADING <MODE> label. §6: an optional rotating tip voiced by D.
+// FINISH_SPEC X: during the season the cast waves in its Halloween skins.
 
 const TIP_MS = 3200;
 
 export function CastLoader({ size = 22 }: { size?: number }) {
-  return <CastRow size={size} motion="wave" hop={8} stagger={70} duration={1100} iterations="infinite" />;
+  const season = useSeason();
+  const srcs = season ? Object.fromEntries(CAST.map((id) => [id, castArt(id, season).src])) : undefined;
+  return <CastRow size={size} motion="wave" hop={8} stagger={70} duration={1100} iterations="infinite" srcs={srcs} />;
 }
 
 /** One short real tip at a time, rotating (D's voice). Starts on a random tip. */

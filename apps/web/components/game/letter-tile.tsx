@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { CSSProperties } from 'react';
 import { REVEAL, type TileLook } from '@/lib/tile-motion';
+import { RevealFeedback } from '@/components/game/reveal-feedback';
 
 export { tileLook, type TileLook } from '@/lib/tile-motion';
 
@@ -38,11 +39,13 @@ export interface LetterTileProps {
   role?: string;
   'aria-label'?: string;
   'aria-hidden'?: boolean;
+  /** FINISH_SPEC U: the reveal's `flip` sound + haptic (default on; off for decorative replays like the result popup). */
+  flipSound?: boolean;
 }
 
 export const LetterTile = memo(function LetterTile({
   letter = '', look, flipIndex, pop, bad = false, outIndex = 0, hopIndex, rowLength = 5, sink = false, hint = false, invalid = false,
-  className = '', style, role, ...aria
+  className = '', style, role, flipSound = true, ...aria
 }: LetterTileProps) {
   const flip = flipIndex != null;
   const popOn = pop ?? (look === 'typed' && !flip);
@@ -75,6 +78,9 @@ export const LetterTile = memo(function LetterTile({
       <b>{letter}</b>
       {flip && look !== 'typed' && look !== 'empty' && (
         <span className="gt-cover" aria-hidden="true"><b>{letter}</b></span>
+      )}
+      {flip && flipSound && look !== 'typed' && look !== 'empty' && (
+        <RevealFeedback index={flipIndex} landAfterTiles={hopIndex === 0 ? rowLength : undefined} />
       )}
     </div>
   );

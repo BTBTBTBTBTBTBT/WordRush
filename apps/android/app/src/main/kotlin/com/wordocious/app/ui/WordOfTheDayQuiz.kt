@@ -85,14 +85,9 @@ internal fun WordOfTheDayCard(onPastWords: () -> Unit) {
 /** "Past words ›" — the archive link centered under the WORD OF THE DAY title (§19.2). */
 @Composable
 private fun PastWordsLink(onPastWords: () -> Unit) {
+    // A1 / A9: a navigation link as a tinted chip in I's green that squishes.
     CappedFontScale {
-        Row(
-            Modifier.heightIn(min = 32.dp).clickableNoRipple(onPastWords).padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-            Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
-        }
+        InfoLinkChip("Past words \u203A", WOTD_CARD_ACCENT, Modifier.padding(top = 2.dp), onClick = onPastWords)
     }
 }
 
@@ -168,7 +163,7 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
                 if (partOfSpeech.isNotBlank()) {
                     Text(
                         partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                        fontStyle = FontStyle.Italic, color = Color(0xFF7C3AED),
+                        fontStyle = FontStyle.Italic, color = purpleTextInk,
                     )
                 }
                 if (showFlame) {
@@ -180,14 +175,16 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
 
         if (asking) {
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Which one is it?", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF4B5563))
+                Text("Which one is it?", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = darkSafe(Color(0xFF4B5563), WTheme.textSecondary))
                 choices.forEachIndexed { i, c ->
+                    // A1 / A9: each choice a tinted row that squishes.
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 44.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(WTheme.surface)
-                            .border(1.5.dp, Color(0xFFDDD6FE), RoundedCornerShape(10.dp))
-                            .clickableNoRipple { pick(i) }
+                        Modifier.fillMaxWidth()
+                            .squishClickable("Choice ${LETTERS[i]}: $c") { pick(i) }
+                            .heightIn(min = 44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(accentWash(Color(0xFF7C3AED), 0.08f))
+                            .border(1.5.dp, accentLine(Color(0xFF7C3AED), 0.28f), RoundedCornerShape(12.dp))
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -226,7 +223,7 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
         }
 
         if (settled && !revealing) {
-            Text(definition, fontSize = 11.sp, lineHeight = 1.3.em, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), modifier = Modifier.padding(top = 2.dp))
+            Text(definition, fontSize = 11.sp, lineHeight = 1.3.em, fontWeight = FontWeight.Bold, color = darkSafe(Color(0xFF4B5563), WTheme.textSecondary), modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

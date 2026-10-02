@@ -9,6 +9,9 @@ import WordociousCore
 ///   signed-in → RootTabView (the app)
 struct ContentView: View {
     @EnvironmentObject private var auth: AuthService
+    /// FINISH_SPEC §AO: the first-run flow picks the username itself; the old
+    /// Welcome cover only shows once that flow is done (or was never needed).
+    @AppStorage(Onboarding.flagKey) private var onboardedV2 = false
 
     var body: some View {
         // Show the app immediately when signed in/guest — OR optimistically while
@@ -22,7 +25,7 @@ struct ContentView: View {
                 // First-run onboarding (ports the web WelcomeModal): shown once
                 // when a new account hasn't onboarded yet.
                 .fullScreenCover(isPresented: Binding(
-                    get: { auth.profile?.hasOnboarded == false },
+                    get: { auth.profile?.hasOnboarded == false && onboardedV2 },
                     set: { _ in })) {
                     WelcomeView()
                 }
@@ -38,42 +41,35 @@ struct ContentView: View {
 /// from loading → authenticated is invisible. Ports the AuthGate `loading`
 /// branch (header bar + hero banner + section header + 2×2 card grid, pulsing).
 private struct LoadingSkeleton: View {
-    @State private var pulse = false
-
     var body: some View {
         VStack(spacing: 0) {
-            // Mimic AppHeader (52px, bottom border, surface bg) with the wordmark.
+            // Mimic the header row with the wordmark (FINISH_SPEC §A1: no white
+            // header bar — it sits on the wallpaper like the real header).
             HStack {
                 Wordmark(size: 16)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .background(Theme.surface)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(Theme.border).frame(height: 1.5)
-            }
 
-            // Skeleton placeholders matching the home page layout.
+            // §G5: tinted shimmer placeholders matching the home page layout.
             VStack(alignment: .leading, spacing: 8) {
-                RoundedRectangle(cornerRadius: 14).fill(Theme.border).frame(height: 68)        // hero banner
-                RoundedRectangle(cornerRadius: 6).fill(Theme.border)
-                    .frame(width: 100, height: 14).padding(.top, 4)                            // section header
+                SkeletonBlock(height: 68, cornerRadius: 14, accent: Color(hex: 0x7C3AED))           // hero banner
+                SkeletonBlock(height: 14, width: 100, cornerRadius: 6, accent: Color(hex: 0x8B5CF6))
+                    .padding(.top, 4)                                                                // section header
                 let cols = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+                let accents: [UInt] = [0x7C3AED, 0xEC4899, 0x3B82F6, 0xF59E0B]
                 LazyVGrid(columns: cols, spacing: 8) {
-                    ForEach(0..<4, id: \.self) { _ in
-                        RoundedRectangle(cornerRadius: 14).fill(Theme.border).frame(height: 88)  // mode cards
+                    ForEach(0..<4, id: \.self) { i in
+                        SkeletonBlock(height: 88, cornerRadius: 14, accent: Color(hex: accents[i]))  // mode cards
                     }
                 }
             }
             .padding(.horizontal, 16).padding(.top, 8)
-            .opacity(pulse ? 0.25 : 0.45)
-            .animation(Theme.animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)), value: pulse)
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .pageBackground(.home)
-        .onAppear { pulse = true }
     }
 }
 

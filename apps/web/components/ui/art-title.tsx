@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { ART_SIZE, MOMENT_LABEL, artMotion, artSrc, type ArtMotion, type ArtName, type MomentName } from '@/lib/art';
+import { ART_SIZE, MOMENT_LABEL, artLabel, artMotion, artSrc, type ArtMotion, type ArtName, type MomentName } from '@/lib/art';
 
 // Image titles (docs/ART_SPEC.md §1, §2, §6, §8): a page title drawn as art — the
 // lettering with the whole cast on it (art-title-*) or a Leaderboard day title
@@ -15,8 +15,11 @@ import { ART_SIZE, MOMENT_LABEL, artMotion, artSrc, type ArtMotion, type ArtName
 
 interface ArtTitleProps {
   name: ArtName;
-  /** The title text (the image's accessible name), e.g. "Friends", "Friday’s Finest". */
-  label: string;
+  /**
+   * The title text (the image's accessible name), e.g. "Friends", "Friday’s Finest".
+   * Empty or omitted falls back to the words the art draws (lib/art.ts artLabel; FINISH_SPEC AB).
+   */
+  label?: string;
   /** Widest it draws, in CSS px (it fills the content width up to this). */
   maxWidth?: number;
   /** Fixed rendered height in CSS px instead (width follows the aspect ratio). */
@@ -29,6 +32,12 @@ interface ArtTitleProps {
   widthPct?: number;
   align?: 'center' | 'left';
   as?: 'h1' | 'h2' | 'div';
+  /**
+   * FINISH_SPEC AB: with `as="div"`, give the wrapper the heading role at this
+   * level (a card's or result's headline). Leave unset when the art already
+   * sits inside a heading element (e.g. a DialogTitle) or isn't a heading.
+   */
+  level?: 1 | 2 | 3 | 4;
   /** Above-the-fold titles load eagerly. */
   priority?: boolean;
   className?: string;
@@ -37,7 +46,7 @@ interface ArtTitleProps {
 
 export function ArtTitle({
   name, label, maxWidth: maxWidthProp = 420, height, maxHeight, widthPct = 100, align = 'center', as = 'h1',
-  priority = true, motion, className = '', style,
+  priority = true, motion, level, className = '', style,
 }: ArtTitleProps) {
   const [w, h] = ART_SIZE[name];
   const Tag = as;
@@ -46,14 +55,16 @@ export function ArtTitle({
     ? { height, width: 'auto', maxWidth: '100%', objectFit: 'contain' }
     : { width: `${widthPct}%`, maxWidth, height: 'auto' };
   const move = motion ?? artMotion(name);
+  const heading = Tag === 'div' && level != null ? { role: 'heading' as const, 'aria-level': level } : null;
   return (
     <Tag
+      {...heading}
       className={`flex ${align === 'center' ? 'justify-center' : 'justify-start'} m-0 select-none ${className}`}
       style={{ lineHeight: 0, ...style }}
     >
       <Image
         src={artSrc(name)}
-        alt={label}
+        alt={label || artLabel(name)}
         width={w}
         height={h}
         priority={priority}
@@ -76,6 +87,8 @@ interface MomentArtProps {
   /** Share of the card width to fill (§6: ~70%). */
   widthPct?: number;
   as?: 'h1' | 'h2' | 'div';
+  /** With `as="div"`: the heading level the wrapper announces (ArtTitle `level`). */
+  level?: 1 | 2 | 3 | 4;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -87,7 +100,7 @@ interface MomentArtProps {
  * cap keeps the aspect ratio), inside the heading element the text used, with
  * the words as its accessible name. The game's host pop stays above it.
  */
-export function MomentArt({ moment, label, maxHeight = 72, widthPct = 70, as = 'h2', className = '', style }: MomentArtProps) {
+export function MomentArt({ moment, label, maxHeight = 72, widthPct = 70, as = 'h2', level, className = '', style }: MomentArtProps) {
   const name = `art-moment-${moment}` as const;
   const [w, h] = ART_SIZE[name];
   return (
@@ -97,6 +110,7 @@ export function MomentArt({ moment, label, maxHeight = 72, widthPct = 70, as = '
       maxWidth={Math.round((maxHeight * w) / h)}
       widthPct={widthPct}
       as={as}
+      level={level}
       className={className}
       style={style}
     />

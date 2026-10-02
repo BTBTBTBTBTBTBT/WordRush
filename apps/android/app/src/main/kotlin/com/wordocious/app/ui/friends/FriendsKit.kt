@@ -37,8 +37,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
-import com.wordocious.app.ui.clickableNoRipple
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.em
+import com.wordocious.app.ui.CandyButton
+import com.wordocious.app.ui.CandyColor
+import com.wordocious.app.ui.CandySize
+import com.wordocious.app.ui.FinishInk
+import com.wordocious.app.ui.Wash
 import com.wordocious.app.ui.pageCardShadow
+import com.wordocious.app.ui.softNumberStyle
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.CoinFace
 import com.wordocious.core.FriendlyKind
@@ -63,6 +72,12 @@ object FriendsPink {
     val label = Color(0xFF6B7280)
     val sub = Color(0xFF4B5563)
     val lavender = Color(0xFFEDE9FE)
+    /** FINISH_SPEC C4 inks (stats-friends-polish mockup). */
+    val labelInk = Color(0xFF8A2D63)
+    val heading = Color(0xFF2A1650)
+    val muted = Color(0xFF6F5F8F)
+    /** The online dot (#22c55e). */
+    val online = Color(0xFF22C55E)
 }
 
 /** OUR tile colors (never Wordle green/yellow): purple = right / you, amber = present / them, slate = absent. */
@@ -72,14 +87,18 @@ object FriendsTiles {
     val slate = Color(0xFFCBD5E1)
 }
 
-/** Each pocket game's color (§0). */
+/**
+ * Each pocket game's color — FINISH_SPEC C4 (stats-friends-polish mockup): the PLAY
+ * WITH FRIENDS cards' own top bars (RPS orange, Tic-Tac-Tile purple, Call It gold,
+ * Pass the Puzzle sky, Ghost violet, Word Chain green); the card tint is its wash.
+ */
 val FriendlyKind.color: Color get() = when (this) {
     FriendlyKind.RPS -> Color(0xFFF97316)
     FriendlyKind.TTT -> Color(0xFF7C3AED)
-    FriendlyKind.COIN -> Color(0xFFCA8A04)
-    FriendlyKind.PASS -> Color(0xFF2563EB)
-    FriendlyKind.GHOST -> Color(0xFF9F1239)
-    FriendlyKind.CHAIN -> Color(0xFF059669)
+    FriendlyKind.COIN -> Color(0xFFEAB308)
+    FriendlyKind.PASS -> Color(0xFF0EA5E9)
+    FriendlyKind.GHOST -> Color(0xFF8B5CF6)
+    FriendlyKind.CHAIN -> Color(0xFF10B981)
 }
 
 /** The game screen's title gradient (§4). */
@@ -111,61 +130,67 @@ fun rpsArt(pick: RpsPick): Int = when (pick) {
 
 fun coinArt(face: CoinFace): Int = if (face == CoinFace.HEADS) R.drawable.friends_heads else R.drawable.friends_tails
 
-/** "PLAY WITH FRIENDS", "YOUR TURN" … — 11 sp, 900, letter-spacing 1.2, grey. */
+/**
+ * "PLAY WITH FRIENDS", "YOUR TURN" … — the finishing kit's section label (FinishLabel:
+ * 11 sp Black, .12em) in the Friends page's pink label ink. The Friends tab is a
+ * fixed-light design (pageBackground alwaysLight), so the ink stays fixed in every theme.
+ */
 @Composable
-fun FriendsLabel(text: String, modifier: Modifier = Modifier, color: Color = FriendsPink.label) {
-    Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = color, modifier = modifier, maxLines = 1)
+fun FriendsLabel(text: String, modifier: Modifier = Modifier, color: Color = FriendsPink.labelInk) {
+    Text(
+        text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.12.em, color = color,
+        modifier = modifier, maxLines = 1, overflow = TextOverflow.Ellipsis,
+    )
 }
 
-/** White, radius 14, soft shadow (the page accent on a tinted page, ART_SPEC §11), no border. */
-fun Modifier.friendsCard(radius: Dp = 14.dp): Modifier =
+/**
+ * A1 the Friends page's fixed-light wash of [accent] (the Friends tab stays light in
+ * every theme, like its wallpaper).
+ */
+fun friendsWash(accent: Color, amount: Float = Wash.CARD): Color = Wash.mix(accent, amount)
+
+/** A1 the matching fixed-light 1.5 dp line. */
+fun friendsLine(accent: Color, amount: Float = Wash.LINE): Color = Wash.mix(accent, amount)
+
+/**
+ * A1 a Friends card: the page's pink wash (or [accent]'s) with a 1.5 dp line, radius
+ * [radius], a soft violet lift and, when [bar] is set, the game-card top bar.
+ */
+fun Modifier.friendsCard(radius: Dp = 14.dp, accent: Color = FRIENDS_CARD_ACCENT, bar: Color? = null, barHeight: Dp = 10.dp): Modifier =
     this.pageCardShadow(radius) { shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95)) }
         .clip(RoundedCornerShape(radius))
-        // FINISH_SPEC A1: the Friends page's pink wash + a faint pink line instead of white
-        // (dark mode keeps the card it had).
-        .background(if (com.wordocious.app.ui.theme.WTheme.isDark) Color.White else com.wordocious.app.ui.Wash.mix(FRIENDS_CARD_ACCENT, com.wordocious.app.ui.Wash.CARD))
-        .then(
-            if (com.wordocious.app.ui.theme.WTheme.isDark) Modifier
-            else Modifier.border(1.5.dp, com.wordocious.app.ui.Wash.mix(FRIENDS_CARD_ACCENT, com.wordocious.app.ui.Wash.LINE), RoundedCornerShape(radius))
-        )
+        // FINISH_SPEC A1: the accent's wash + a faint line instead of white (fixed light, like the page).
+        .background(friendsWash(accent))
+        .then(if (bar != null) Modifier.drawBehind { drawRect(bar, Offset.Zero, Size(size.width, barHeight.toPx())) } else Modifier)
+        .border(1.5.dp, friendsLine(accent), RoundedCornerShape(radius))
 
 /** A1 the Friends page accent the cards wash with (#ec4899). */
-private val FRIENDS_CARD_ACCENT = Color(0xFFEC4899)
+val FRIENDS_CARD_ACCENT = Color(0xFFEC4899)
 
-/** Solid pink (primary) or soft pink pill. */
+/**
+ * A8 the Friends small action: a SMALL candy button — [solid] = the pink candy, soft =
+ * the quiet peach candy. (Was a flat pink pill; every caller flips with it.)
+ */
 @Composable
 fun PinkPill(text: String, solid: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(
-        modifier.clip(RoundedCornerShape(50))
-            .background(if (solid) FriendsPink.solid else FriendsPink.soft)
-            .alpha(if (enabled) 1f else 0.5f)
-            .clickableNoRipple { if (enabled) onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        Alignment.Center,
-    ) {
-        Text(
-            text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, maxLines = 1,
-            color = if (solid) Color.White else FriendsPink.solid,
-        )
-    }
+    CandyButton(
+        text, onClick = onClick, modifier = modifier,
+        color = if (solid) CandyColor.PINK else CandyColor.PEACH,
+        size = CandySize.SMALL, enabled = enabled,
+    )
 }
 
-/** Full-width solid pink caps button (CTA). */
+/**
+ * A8 the Friends call to action: a LARGE candy button stretched to the width it is
+ * given — [solid] = the pink candy, soft = the quiet peach candy.
+ */
 @Composable
 fun PinkButton(text: String, modifier: Modifier = Modifier, solid: Boolean = true, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(
-        modifier.clip(RoundedCornerShape(14.dp))
-            .background(if (solid) FriendsPink.solid else FriendsPink.soft)
-            .alpha(if (enabled) 1f else 0.5f)
-            .clickableNoRipple { if (enabled) onClick() }
-            .padding(horizontal = 16.dp, vertical = 13.dp),
-        Alignment.Center,
-    ) {
-        Text(
-            text, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, maxLines = 1,
-            color = if (solid) Color.White else FriendsPink.solid,
-        )
-    }
+    CandyButton(
+        text, onClick = onClick, modifier = modifier,
+        color = if (solid) CandyColor.PINK else CandyColor.PEACH,
+        size = CandySize.LARGE, fill = true, enabled = enabled,
+    )
 }
 
 /**
@@ -206,56 +231,61 @@ fun FriendFace(
     modifier: Modifier = Modifier,
     ring: Color? = null,
     accentHex: String? = null,
+    /** The pulsing green ring around an online face (off = just the green dot, C4 banner). */
+    presenceRing: Boolean = true,
 ) {
-    val pulse = if (online && !WTheme.reducedMotion) {
+    val pulse = if (online && presenceRing && !WTheme.reducedMotion) {
         val t = rememberInfiniteTransition(label = "onNowPulse")
         val a by t.animateFloat(0.25f, 0.7f, infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "a")
         a
     } else 0.45f
-    val url = avatarUrl?.takeIf { it.isNotBlank() }
+    // AH/AN: a worn character or saved mascot beats the photo.
+    val worn = com.wordocious.app.data.MascotAvatars.wearsMascot(name)
+    val url = avatarUrl?.takeIf { it.isNotBlank() && !worn }
     // ART_SPEC §20: no photo → letter tile; its ring, glow and presence dot follow the tile's rounded square.
-    val shape = com.wordocious.app.ui.avatarShape(hasPhoto = url != null, size = size)
+    val shape = com.wordocious.app.ui.avatarShape(hasPhoto = url != null || worn, size = size)
     Box(modifier.size(size), Alignment.Center) {
-        val ringColor = if (online) FriendsPink.green else ring
-        val glow = if (online) Modifier.drawBehind {
+        val ringColor = if (online && presenceRing) FriendsPink.green else ring
+        val glow = if (online && presenceRing) Modifier.drawBehind {
             val grow = 3.dp.toPx()
-            if (url != null) {
-                drawCircle(FriendsPink.green.copy(alpha = pulse * 0.45f), radius = this.size.minDimension / 2f + grow)
-            } else {
-                drawRoundRect(
-                    FriendsPink.green.copy(alpha = pulse * 0.45f),
-                    topLeft = androidx.compose.ui.geometry.Offset(-grow, -grow),
-                    size = androidx.compose.ui.geometry.Size(this.size.width + 2 * grow, this.size.height + 2 * grow),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(this.size.minDimension * 0.24f + grow),
-                )
-            }
+            // AN6: photo and mascot are both rounded squares, so the glow is too.
+            drawRoundRect(
+                FriendsPink.green.copy(alpha = pulse * 0.45f),
+                topLeft = androidx.compose.ui.geometry.Offset(-grow, -grow),
+                size = androidx.compose.ui.geometry.Size(this.size.width + 2 * grow, this.size.height + 2 * grow),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(this.size.minDimension * 0.22f + grow),
+            )
         } else Modifier
         if (url != null) {
             Box(
                 Modifier.size(size).then(glow)
-                    .clip(CircleShape)
+                    .clip(shape)
                     .background(Color(0xFFEDE9FE))
-                    .then(if (ringColor != null) Modifier.border(2.dp, ringColor, CircleShape) else Modifier),
+                    .then(if (ringColor != null) Modifier.border(2.dp, ringColor, shape) else Modifier),
                 Alignment.Center,
             ) {
-                coil.compose.AsyncImage(
-                    model = url, contentDescription = name,
-                    modifier = Modifier.fillMaxSize().padding(if (ringColor != null) 2.dp else 0.dp).clip(CircleShape),
-                    contentScale = ContentScale.Crop,
+                // AN6: the photo is a rounded square (never a circle) with the player's frame.
+                val inner = size - if (ringColor != null) 4.dp else 0.dp
+                com.wordocious.app.ui.PhotoAvatar(
+                    url, inner,
+                    frame = com.wordocious.app.data.MascotAvatars.photoFrame(name),
+                    contentDescription = name,
                 )
             }
         } else {
             Box(Modifier.size(size).then(glow)) {
-                com.wordocious.app.ui.LetterTileAvatar(name, size, accentHex = accentHex, emoji = avatarEmoji)
+                // AA2: the signed-in Pro player's own face wears the gold ring + crown.
+                com.wordocious.app.ui.LetterTileAvatar(name, size, accentHex = accentHex, emoji = avatarEmoji, pro = com.wordocious.app.ui.isOwnProAvatar(name))
                 if (ringColor != null) Box(Modifier.matchParentSize().border(2.dp, ringColor, shape))
             }
         }
         if (online) {
+            // C4: the green dot (#22c55e) in a 2 dp white ring.
             Box(
-                Modifier.align(Alignment.BottomEnd).offset(x = 1.dp, y = 1.dp)
-                    .size((size.value * 0.28f).coerceAtLeast(9f).dp)
-                    .clip(CircleShape).background(Color.White).padding(1.5.dp)
-                    .clip(CircleShape).background(FriendsPink.green),
+                Modifier.align(Alignment.BottomEnd).offset(x = 3.dp, y = 1.dp)
+                    .size((size.value * 0.3f).coerceAtLeast(12f).dp)
+                    .clip(CircleShape).background(Color.White).padding(2.dp)
+                    .clip(CircleShape).background(FriendsPink.online),
             )
         }
     }
@@ -266,7 +296,8 @@ fun FriendFace(
 fun FlameCount(text: String, modifier: Modifier = Modifier, size: Dp = 14.dp) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, size)
-        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.flameInk, maxLines = 1)
+        // A2: the count in the soft-number style (fixed light: the Friends tab).
+        Text(text, style = softNumberStyle(12.sp, FinishInk.softNumber), maxLines = 1)
     }
 }
 

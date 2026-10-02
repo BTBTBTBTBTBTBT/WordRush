@@ -12,6 +12,7 @@ import {
 import allowed from '@/data/allowed.json';
 import solutions from '@/data/solutions.json';
 import legacy from '@/data/solutions-legacy.json';
+import { NO_AVATAR_FIELDS, selectWithAvatarColumns, withOwnAvatarFields, type AvatarFields } from './avatar-fields-server';
 import allowed6 from '@/data/allowed-6.json';
 import allowed7 from '@/data/allowed-7.json';
 
@@ -79,7 +80,7 @@ export interface GameRow {
   updated_at: string;
 }
 
-export interface Prof { id: string; username: string; avatar_url: string | null; avatar_emoji?: string | null }
+export interface Prof extends Partial<AvatarFields> { id: string; username: string; avatar_url: string | null; avatar_emoji?: string | null }
 
 /** A game is dropped after 3 days with no move. */
 export const GAME_IDLE_MS = 3 * 24 * 60 * 60 * 1000;
@@ -104,7 +105,14 @@ export function gameView(row: GameRow, me: string, opp: Prof | undefined) {
     kind: row.kind,
     title: FRIENDLY_TITLES[row.kind],
     me: side,
-    opponent: { id: otherId, username: them, avatarUrl: opp?.avatar_url ?? null, avatarEmoji: opp?.avatar_emoji ?? null },
+    // FINISH_SPEC AH/AN3 (additive): the opponent's avatar choice + active Pro.
+    opponent: {
+      id: otherId, username: them, avatarUrl: opp?.avatar_url ?? null, avatarEmoji: opp?.avatar_emoji ?? null,
+      avatar_cast_id: opp?.avatar_cast_id ?? NO_AVATAR_FIELDS.avatar_cast_id,
+      avatar_frame: opp?.avatar_frame ?? NO_AVATAR_FIELDS.avatar_frame,
+      avatar_config: opp?.avatar_config ?? NO_AVATAR_FIELDS.avatar_config,
+      is_pro: opp?.is_pro ?? NO_AVATAR_FIELDS.is_pro,
+    },
     state: friendlyStateFor(row.state, side),
     status: row.status,
     yourTurn: !over && (turn === 'both' || turn === side),
@@ -129,8 +137,10 @@ export async function expireIdle(admin: SupabaseClient, userId: string): Promise
 
 export async function profilesById(admin: SupabaseClient, ids: string[]): Promise<Map<string, Prof>> {
   if (ids.length === 0) return new Map();
-  const { data } = await admin.from('profiles').select('id, username, avatar_url, avatar_emoji').in('id', [...new Set(ids)]);
-  return new Map((data ?? []).map((p: Prof) => [p.id, p]));
+  // + is_pro / avatar columns (tolerant: retried without the avatar columns while they don't exist).
+  const { data } = await selectWithAvatarColumns((extra) =>
+    admin.from('profiles').select(`id, username, avatar_url, avatar_emoji${extra}`).in('id', [...new Set(ids)]));
+  return new Map(((data ?? []) as Prof[]).map((p) => [p.id, withOwnAvatarFields(p)]));
 }
 
 /** The match winner's user id, or null for a draw / still going. */

@@ -463,12 +463,16 @@ final class VSMatchViewModel: ObservableObject {
         service.disconnect()
 
         var config = BotConfig(opponentId: oppId)
-        if kind == .adaptive {
+        // FINISH_SPEC §D1: Umi (the old Adapt) matches the player's form; every
+        // other cast bot plays its own guess range at its speed tier.
+        if id.adaptive {
             config.adaptive = BotEngine.AdaptiveHint(winRate: min(0.9, 0.4 + Double(CpuProgressionStore.load().streak) * 0.05))
+        } else if let m = id.persona?.member, let lo = m.minGuesses, let hi = m.maxGuesses {
+            config.guessRange = lo...max(lo, hi)
         }
         if let ghost { config.ghostGuesses = ghost.guesses; config.ghostTimeMs = ghost.timeMs }
         if let fixedSeed { config.fixedSeed = fixedSeed }
-        let engineDifficulty = BotDifficulty(rawValue: kind == .adaptive ? "adaptive" : id.tier.rawValue) ?? .medium
+        let engineDifficulty = BotDifficulty(rawValue: id.adaptive ? "adaptive" : id.tier.rawValue) ?? .medium
 
         let bot = LocalBotMatchService(difficulty: engineDifficulty, config: config)
         service = bot
@@ -776,7 +780,7 @@ final class VSMatchViewModel: ObservableObject {
         if let oppId = data.opponentUserId, CpuOpponent.isCpu(oppId) {
             // Bot opponent: the persona identity and art locally — no profile / H2H fetch.
             let id = CpuOpponent.identity(oppId)
-            // Labelled a bot by name ("Lexi · Bot"), drawn with its art.
+            // Labelled a bot by name ("Opal · Bot"), drawn as its character.
             opponentInfo = VsProfile(username: "\(id.name) · Bot", avatarUrl: nil, level: 0, botArt: id.art)
         } else if let c = raceChallenge {
             // Challenge ghost: the challenger themself (never a bot label) + head-to-head.
@@ -1062,7 +1066,7 @@ final class VSMatchViewModel: ObservableObject {
             let greens = primary.tiles.filter { $0 == "CORRECT" }.count
             let len = primary.tiles.count
             if calloutText == nil, len >= 2, greens == len - 1 {
-                calloutText = "\(name) got \(greens) greens! 😱"
+                calloutText = "\(name) got \(greens) greens!"
             }
         }
         if calloutText == nil, !p.solved, p.attempts == modeMaxGuesses - 1 {
@@ -1119,17 +1123,21 @@ final class VSMatchViewModel: ObservableObject {
             // session tally, photo-finish on a close / last-guess win.
             let tier = cpuPersona?.tier ?? .medium
             let dayResult: VsDayResult = data.winner == "draw" ? .draw : (won ? .won : .lost)
-            let outcome = CpuProgressionStore.recordGame(won: won, tier: tier, personaId: BotPersonas.persona(tier).id,
-                                                         botId: cpuPersona?.botId ?? "lexi")
+            let outcome = CpuProgressionStore.recordGame(won: won, tier: tier,
+                                                         personaId: cpuPersona?.persona?.id ?? BotPersonas.persona(tier).id,
+                                                         botId: cpuPersona?.botId ?? "opal")
             if cpuKind == .daily { CpuProgressionStore.recordBotOfDay(result: dayResult, todayUtc: LeaderboardService.todayUTC()) }
             // A bot that stepped into the Daily Battle (§6): its result shows on the
             // VS banner from a local key — never a daily_results 'vs' row (the People
             // record and the VS leaderboard stay people-only).
-            if dailyVsActive { VsLobbyKit.recordDailyBot(result: dayResult, opponent: cpuPersona?.name ?? "Lexi") }
+            if dailyVsActive { VsLobbyKit.recordDailyBot(result: dayResult, opponent: cpuPersona?.name ?? "Opal") }
             cpuStreak = outcome.progression.streak
             cpuMilestone = outcome.milestone
             cpuUnlock = outcome.unlockedPersona
             cpuClearedRung = outcome.clearedRung
+            // §U: the boss falls (ladder cleared) — celebrate; a bot-streak milestone — streak.
+            if let r = outcome.clearedRung, BotCast.canonicalId(r) == VsLobby.ladderBots.last { Feedback.celebrate() }
+            else if outcome.milestone != nil { Feedback.streak() }
             if won { cpuSessionWins += 1 } else { cpuSessionLosses += 1 }
             if won {
                 let margin = abs(data.playerTime - data.opponentTime)

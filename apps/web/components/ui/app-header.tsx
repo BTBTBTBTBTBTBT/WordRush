@@ -1,10 +1,11 @@
 'use client';
 
+import { CLOSE_OVERLAYS_EVENT } from '@/lib/nav-home';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { CastHeader } from '@/components/ui/cast-header';
+import { CastHeader, CAST_ROW } from '@/components/ui/cast-header';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { CandyButton } from '@/components/ui/candy-button';
 import { MenuModal } from '@/components/modals/menu-modal';
@@ -30,6 +31,12 @@ export function AppHeader() {
   const [streakOpen, setStreakOpen] = useState(false);
   const [shieldOpen, setShieldOpen] = useState(false);
   const [flawlessOpen, setFlawlessOpen] = useState(false);
+  // FINISH_SPEC AJ: a footer tab tap closes every header popup / sheet.
+  useEffect(() => {
+    const close = () => { setHelpOpen(false); setSettingsOpen(false); setStreakOpen(false); setShieldOpen(false); setFlawlessOpen(false); };
+    window.addEventListener(CLOSE_OVERLAYS_EVENT, close);
+    return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, close);
+  }, []);
 
   // Back from a Settings › Linked sign-ins round trip (?link=apple): reopen
   // Settings so the section can say whether it worked (founder, 2026-09-30).
@@ -97,14 +104,16 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="pt-1 pb-1">
-        {/* Row 1: the living cast header, edge to edge. The link home is the old wordmark's tap. */}
-        <Link href="/" aria-label="Wordocious home" className="block px-1" data-no-squish="">
-          <CastHeader crown={isPro} />
+      {/* FINISH_SPEC AG: on desktop web the header is the 560 px centered column, so the cast row stays 90% of it. */}
+      <header className="pb-1 page-col" style={{ paddingTop: CAST_ROW.topMargin }}>
+        {/* Row 1: the living cast header — FINISH_SPEC N3: ≈90% of the width,
+            centered, with a soft ground shadow. The link home is the old wordmark's tap. */}
+        <Link href="/" aria-label="Wordocious home" className="block mx-auto" style={{ width: `${CAST_ROW.widthPct}%` }} data-no-squish="">
+          <CastHeader crown={isPro} ground />
         </Link>
 
-        {/* Row 2: the bare 3D counters left, help + settings right. The popups hang under this row. */}
-        <div className="relative flex items-center justify-between gap-2 px-3 mt-0.5">
+        {/* Row 2 (N4: 6 px under the cast row): the bare 3D counters left, help + settings right. The popups hang under this row. */}
+        <div className="relative flex items-center justify-between gap-2 px-3" style={{ marginTop: CAST_ROW.controlsGap }}>
           <div className="flex items-center gap-1 min-w-0">
             {/* Guest — prominent Sign In entry (returns to the landing/login). */}
             {isGuest && !profile && (

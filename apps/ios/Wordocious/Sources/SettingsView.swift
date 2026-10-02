@@ -15,10 +15,14 @@ struct SettingsView: View {
     private var theme: String { themeManager.theme }
     // Sound reads UserDefaults directly in SoundManager; @AppStorage writes it.
     @AppStorage("pref-sound") private var soundOn = true
+    // FINISH_SPEC §U: every haptic is gated by this (Haptics reads UserDefaults).
+    @AppStorage("pref-haptics") private var hapticsOn = true
     // Keyboard layout (§213): standard | flipped | michael. Pure rendering —
     // KeyboardView reads this to arrange the same keys three ways.
     @AppStorage("pref-keyboard-layout") private var keyboardLayout = "standard"
     @AppStorage("pref-daily-reminder") private var dailyReminder = false
+    /// FINISH_SPEC §X: the admin-only season preview ("halloween" | "" = by date).
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
     @State private var reminderDenied = false
     @State private var showDeleteConfirm = false
     @State private var deleting = false
@@ -40,46 +44,63 @@ struct SettingsView: View {
             ZStack {
                 PageBackground(tint: .home)
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        section("THEME") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // FINISH_SPEC §AA3: the WORDOCIOUS PRO member card leads Settings
+                        // (free players see the Go Pro upsell in the same slot).
+                        SettingsProCard()
+                        // FINISH_SPEC §G5: every section is a tinted card with its own
+                        // top bar (§A1); rows squish (§A9); toggles take the accent.
+                        section("THEME", accent: G5Accent.lilac) {
                             VStack(spacing: 8) {
                                 ForEach(themes, id: \.value) { t in themeRow(t) }
                             }
                         }
-                        section("KEYBOARD") {
+                        section("KEYBOARD", accent: G5Accent.blue) {
                             VStack(spacing: 8) {
                                 ForEach(keyboardLayouts, id: \.value) { k in keyboardRow(k) }
                             }
                         }
-                        section("SOUND & FEEDBACK") {
-                            VStack(spacing: 0) {
-                                toggleRow("Sound Effects", "Key taps, win/loss jingles", $soundOn)
-                            }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+                        section("SOUND & FEEDBACK", accent: G5Accent.teal) {
+                            toggleRow("Sound Effects", "Key taps, win/loss jingles", $soundOn, accent: G5Accent.teal)
+                            G5Divider(accent: G5Accent.teal)
+                            toggleRow("Haptics", "Gentle taps and buzzes as you play", $hapticsOn, accent: G5Accent.teal)
                         }
-                        section("NOTIFICATIONS") {
-                            VStack(spacing: 0) {
-                                toggleRow("Daily Reminders", "A nudge to play today's puzzles", $dailyReminder)
+                        section("NOTIFICATIONS", accent: G5Accent.pink) {
+                            toggleRow("Daily Reminders", "A nudge to play today's puzzles", $dailyReminder, accent: G5Accent.pink)
+                            // FINISH_SPEC §C4b: the Friends push categories moved here
+                            // from the bell beside the FRIENDS title — the same toggles
+                            // and write path (NotificationPrefsToggles), shown only
+                            // signed in, like the bell was.
+                            if auth.profile != nil {
+                                G5Divider(accent: G5Accent.pink)
+                                FinishLabel("Friends notifications")
+                                NotificationPrefsToggles()
+                                Text("Friend requests always come through.")
+                                    .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
-                        section("ACCESSIBILITY") {
+                        section("ACCESSIBILITY", accent: G5Accent.green) {
                             VStack(spacing: 0) {
-                                toggleRow("Colorblind Mode", "High contrast colors", $themeManager.colorblind)
-                                Divider().overlay(Theme.border)
-                                toggleRow("Reduced Motion", "Minimize animations", $themeManager.reducedMotion)
+                                toggleRow("Colorblind Mode", "High contrast colors", $themeManager.colorblind, accent: G5Accent.green)
+                                G5Divider(accent: G5Accent.green)
+                                toggleRow("Reduced Motion", "Minimize animations", $themeManager.reducedMotion, accent: G5Accent.green)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+                        }
+                        // FINISH_SPEC §X: admin-only preview of the Halloween cast skins.
+                        if auth.profile?.isAdmin == true {
+                            section("ADMIN", accent: G5Accent.coral) {
+                                toggleRow("Halloween preview", "Show the Halloween cast skins today",
+                                          Binding(get: { debugSeason == "halloween" },
+                                                  set: { debugSeason = $0 ? "halloween" : ""; CastSkin.invalidate() }),
+                                          accent: G5Accent.coral)
+                            }
                         }
                         // Which providers open this account + link Google / Apple
                         // to it (founder, 2026-09-30). Signed-in accounts only.
                         if auth.isAuthenticated && SupabaseConfig.isConfigured {
                             LinkedSignInsSection()
                         }
-                        section("SUBSCRIPTION") {
+                        section("SUBSCRIPTION", accent: G5Accent.gold) {
                             VStack(spacing: 0) {
                                 // Apple's native manage-subscriptions sheet (cancel,
                                 // change plan, resubscribe). Works signed-out too —
@@ -94,12 +115,10 @@ struct SettingsView: View {
                                             await UIApplication.shared.open(url)
                                         }
                                     }
-                                } label: { linkRow("Manage Subscription") }.buttonStyle(.squish)
+                                } label: { linkRow("Manage Subscription", accent: G5Accent.gold) }.buttonStyle(.squish)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
-                        section("ABOUT") {
+                        section("ABOUT", accent: G5Accent.purple) {
                             VStack(spacing: 0) {
                                 // Present as sheets (same as the "?" menu) rather than pushing —
                                 // InfoPage hides the nav bar, so pushing it animated the bar
@@ -110,9 +129,9 @@ struct SettingsView: View {
                                 // restated How to Play in older copy. Section now opens
                                 // with Help & Support.
                                 Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.squish)
-                                Divider().overlay(Theme.border)
+                                G5Divider()
                                 Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.squish)
-                                Divider().overlay(Theme.border)
+                                G5Divider()
                                 // Ad-consent withdrawal. UMP requires a
                                 // PERSISTENT entry point — the first-launch
                                 // form is a one-shot, and the in-app policy
@@ -125,36 +144,40 @@ struct SettingsView: View {
                                             consentError = err
                                         }
                                     } label: { linkRow("Ad Privacy Settings") }.buttonStyle(.squish)
-                                    Divider().overlay(Theme.border)
+                                    G5Divider()
                                 }
                                 Button { infoKind = .terms } label: { linkRow("Terms of Service") }.buttonStyle(.squish)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
                         if auth.isAuthenticated {
-                            Button { Task { await auth.signOut(); dismiss() } } label: {
-                                Text("Sign Out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
-                            }.buttonStyle(.bordered).tint(Color(hex: 0xDC2626))
-
-                            // Delete Account — ports the web profile flow (calls
-                            // /api/account/delete). Required by App Store 5.1.1(v).
-                            Button(role: .destructive) { showDeleteConfirm = true } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "trash").font(.system(size: 15))
-                                    Text("Delete Account").font(Brand.font(14, .heavy))
-                                    Spacer()
+                            // §A8 / §G5: the account actions are candy buttons — Sign
+                            // Out the quiet peach, Delete the pink (its confirmation
+                            // alert is unchanged).
+                            VStack(spacing: 10) {
+                                Button { Task { await auth.signOut(); dismiss() } } label: {
+                                    CandyLabel(title: "Sign Out", symbol: "rectangle.portrait.and.arrow.right")
                                 }
-                                .foregroundStyle(Color(hex: 0xDC2626))
-                                .padding(14)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
+                                .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
+
+                                // Delete Account — ports the web profile flow (calls
+                                // /api/account/delete). Required by App Store 5.1.1(v).
+                                Button(role: .destructive) { showDeleteConfirm = true } label: {
+                                    CandyLabel(title: "Delete Account", symbol: "trash.fill")
+                                }
+                                .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
+                                .disabled(deleting)
                             }
-                            .buttonStyle(.squish)
-                            .disabled(deleting)
+                            .padding(.top, 4)
                         }
-                        Text("Wordocious · v1.0.0").font(Brand.font(11, .bold))
-                            .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity)
+                        // §G5 / §A7: a cast pose in the footer — U with her tea (the
+                        // Settings host is R, so not R).
+                        VStack(spacing: 4) {
+                            PoseImage(.u, "tea", height: 86)
+                            Text("Wordocious · v1.0.0").font(Brand.font(11, .bold))
+                                .foregroundStyle(FinishInk.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 4)
                     }
                     .padding(16)
                 }
@@ -216,11 +239,8 @@ struct SettingsView: View {
         }
     }
 
-    private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(Brand.font(11, .heavy)).tracking(1.1).foregroundStyle(Theme.textMuted)
-            content()
-        }
+    private func section<C: View>(_ title: String, accent: Color, @ViewBuilder _ content: @escaping () -> C) -> some View {
+        G5Card(title, accent: accent) { content() }
     }
 
     private let keyboardLayouts: [(value: String, label: String, desc: String)] = [
@@ -230,53 +250,55 @@ struct SettingsView: View {
     ]
 
     private func keyboardRow(_ k: (value: String, label: String, desc: String)) -> some View {
-        let active = keyboardLayout == k.value
-        return Button { keyboardLayout = k.value } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(k.label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                    Text(k.desc).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                }
-                Spacer()
-                if active { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.primary) }
-            }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.background))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.squish)
+        optionRow(label: k.label, desc: k.desc, active: keyboardLayout == k.value, accent: G5Accent.blue) {
+            keyboardLayout = k.value
+        }
     }
 
     private func themeRow(_ t: (value: String, label: String, desc: String)) -> some View {
-        let active = theme == t.value
-        return Button { themeManager.theme = t.value } label: {
+        optionRow(label: t.label, desc: t.desc, active: theme == t.value, accent: G5Accent.lilac) {
+            themeManager.theme = t.value
+        }
+    }
+
+    /// §A1 a selectable mini tile (selected = stronger tint + accent ring), squish (§A9).
+    private func optionRow(label: String, desc: String, active: Bool, accent: Color,
+                           action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(t.label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                    Text(t.desc).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    Text(label).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                    Text(desc).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                 }
                 Spacer()
-                if active { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.primary) }
+                if active { Image(systemName: "checkmark.circle.fill").foregroundStyle(accent) }
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.background))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.squish)
+            .contentShape(Rectangle())
+            .g5Option(active: active, accent: accent, radius: 14)
+        }
+        .buttonStyle(.squish)
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 
-    private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>) -> some View {
+    private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>, accent: Color) -> some View {
         Toggle(isOn: binding) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(Brand.headline(14)).foregroundStyle(Theme.textPrimary)
-                Text(sub).font(Brand.body(11)).foregroundStyle(Theme.textMuted)
+                Text(title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                Text(sub).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
         }
-        .tint(Theme.primary).padding(12)
+        .tint(accent).padding(.vertical, 6)
     }
 
-    private func linkRow(_ title: String) -> some View {
+    private func linkRow(_ title: String, accent: Color = G5Accent.purple) -> some View {
         HStack {
-            Text(title).font(Brand.headline(14)).foregroundStyle(Theme.textPrimary)
+            Text(title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
             Spacer()
-        }.padding(12)
+            Image(systemName: "chevron.right").font(.system(size: 12, weight: .heavy))
+                .foregroundStyle(accent.opacity(0.7)).accessibilityHidden(true)
+        }
+        .padding(.vertical, 11)
+        .contentShape(Rectangle())
     }
 }

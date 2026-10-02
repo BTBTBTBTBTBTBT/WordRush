@@ -42,17 +42,28 @@ struct SolvedPuzzleView: View {
                 GauntletResultsView(progress: g, won: localWon, mode: mode, isDaily: true,
                                     elapsedMsFallback: elapsedMs, onHome: { dismiss() }, onShare: { share() })
             } else if let d = data, mode != .gauntlet {
-                ScrollView {
+                // FINISH_SPEC §R2: one screen — compact header + result strip, the
+                // board scaled to the height left, then the dock (share + Next daily /
+                // Leaderboard + the Pro Unlimited card); the breakdown, rank and
+                // definition below the dock.
+                FinishedScreenLayout(header: {
+                    FinishedCompactHeader(
+                        mode: mode, won: d.won,
+                        guessCount: d.guessCount, maxGuesses: maxGuesses,
+                        timeSeconds: d.timeSeconds,
+                        boardsSolved: d.won ? d.solutions.count : solvedCount(d),
+                        totalBoards: d.solutions.count, points: points(d))
+                }, board: { size in
+                    boards(d, size: size)
+                }, dock: {
+                    HStack(alignment: .top, spacing: 6) {
+                        FinishedShareButton(onShare: { reveal in share(reveal: reveal) })
+                        NextDailyCTA(currentMode: mode.rawValue, compact: true)
+                    }
+                    .padding(.bottom, 6)
+                }, extras: {
                     VStack(spacing: 10) {
-                        FinishedStatsHeader(
-                            mode: mode, won: d.won,
-                            guessCount: d.guessCount, maxGuesses: maxGuesses,
-                            timeSeconds: d.timeSeconds,
-                            boardsSolved: d.won ? d.solutions.count : solvedCount(d),
-                            totalBoards: d.solutions.count,
-                            onHome: { dismiss() }, onShare: { reveal in share(reveal: reveal) })
                         DailyRankBadge(gameMode: mode)
-                        boards(d)
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
                                            guessCount: d.guessCount, timeSeconds: d.timeSeconds,
                                            boardsSolved: d.won ? d.solutions.count : solvedCount(d), totalBoards: d.solutions.count,
@@ -65,14 +76,18 @@ struct SolvedPuzzleView: View {
                             DefinitionCard(solution: only.solution)
                         }
                     }
-                    .padding(.horizontal, 12).padding(.bottom, 16)
-                }
+                    .padding(.top, 14).padding(.bottom, 16)
+                })
+                .padding(.horizontal, 12)
             } else {
                 VStack(spacing: 12) {
                     // R unplugged for the error screen (MASCOT_SPEC §6, ART_SPEC §7).
                     SceneArt(.unplugged)
-                    Text("Couldn't load your solved puzzle").font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                    Button("Home") { dismiss() }.font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
+                    Text("Couldn't load your solved puzzle").font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                    // §A8: a candy button, not a text link.
+                    Button { dismiss() } label: { CandyLabel(title: "Home") { Icon3D(.tabHome, size: 20) } }
+                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
+                        .accessibilityLabel("Home")
                 }
             }
 
@@ -160,21 +175,33 @@ struct SolvedPuzzleView: View {
                                                         guesses: d.guesses, maxGuesses: maxGuesses)
     }
 
-    @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily) -> some View {
+    /// The score the breakdown card shows (same inputs) — the result strip and the
+    /// share image's POINTS window.
+    private func points(_ d: MatchStatsService.SolvedDaily) -> Int {
+        Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: d.won,
+                                   guessCount: d.guessCount, timeSeconds: d.timeSeconds,
+                                   boardsSolved: d.won ? d.solutions.count : solvedCount(d),
+                                   totalBoards: d.solutions.count,
+                                   dateKey: LeaderboardService.todayLocal()).total)
+    }
+
+    /// §R2: the board(s) scaled to fit `size` — a single board on the shared tray,
+    /// multi-board games as the compact mini grid.
+    @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily, size: CGSize) -> some View {
         let bs = displayBoards(d)
         let rowCount = bs.map(\.maxGuesses).max() ?? 6
         if bs.count == 1 {
-            CompletedMiniBoardView(board: bs[0], tileSize: tileSize, rowCount: rowCount, framed: false)
+            let len = CGFloat(max(1, bs[0].solution.count)), rows = CGFloat(max(1, rowCount))
+            let pad = GameTray.padding * 2
+            let tile = max(10, min(52, (size.width * 0.94 - pad) / (len + (len - 1) * 0.1),
+                                   (size.height - pad - GameTray.lip - 4) / (rows + (rows - 1) * 0.1)))
+            // §L: the single solved board sits on the shared game tray (won →
+            // purple wash, lost → slate). Mini boards tray themselves (framed).
+            CompletedMiniBoardView(board: bs[0], tileSize: tile, rowCount: rowCount, framed: false)
+                .gameTray(accent: ModeStyle.accent(mode), state: bs[0].status == .won ? .won : .lost)
+                .frame(width: size.width, height: size.height)
         } else {
-            let cols = Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing),
-                             count: CompletedBoardLayout.cols(bs.count))
-            LazyVGrid(columns: cols, spacing: CompletedBoardLayout.gridSpacing) {
-                ForEach(bs.indices, id: \.self) { i in
-                    CompletedMiniBoardView(board: bs[i], tileSize: tileSize, rowCount: rowCount, framed: true,
-                                           revealMissed: !d.won)
-                }
-            }
-            .frame(maxWidth: CompletedBoardLayout.maxWidth(bs.count))
+            FinishedMiniGrid(boards: bs, rowCount: rowCount, size: size, revealMissed: !d.won)
         }
     }
 
@@ -251,6 +278,9 @@ struct SolvedPuzzleView: View {
                            won: d.won, guesses: d.guessCount, maxGuesses: maxGuesses, timeSeconds: d.timeSeconds,
                            reveal: reveal,
                            letters: singleBoard.map { letters($0) },
-                           solutionDisplay: pnDisplay ?? singleBoard?.solution)
+                           solutionDisplay: pnDisplay ?? singleBoard?.solution,
+                           // The share image's gold POINTS window: the same score the
+                           // review's breakdown card shows (same inputs).
+                           points: points(d))
     }
 }

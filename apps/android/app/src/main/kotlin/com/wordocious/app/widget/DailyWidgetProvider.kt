@@ -10,9 +10,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Shader
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -22,38 +21,31 @@ import android.view.View
 import android.widget.RemoteViews
 import com.wordocious.app.MainActivity
 import com.wordocious.app.R
+import com.wordocious.app.data.ShareFinish
 import com.wordocious.app.ui.Mascots
-import com.wordocious.app.ui.PageTint
-import com.wordocious.app.ui.lightArgb
-import com.wordocious.core.BannerTier
-import com.wordocious.core.DayStreaks
-import com.wordocious.core.GroupProgress
-import com.wordocious.core.bannerHeadline
-import com.wordocious.core.groupStatus
-import com.wordocious.core.groupStreak
-import com.wordocious.core.groupTier
 import java.util.Calendar
 
 /**
- * "Daily Puzzles" home-screen widget — the Android twin of iOS
- * WordociousWidget.swift. Home redesign (founder, 2026-10-01): the widget is the
- * home banner. One-window background (the Wordocious row's tier color on top
- * blending into the Puzzles row's below, with the white sheen), a frosted header
- * strip with the shared bannerHeadline, the 8 + 10 chip rows, and today's footer
- * strip (wordmark · N/18 · points · live countdown). Double Flawless turns the
- * frame gold with a gold glow. The old fresh / at-risk / sweep / flawless themes
- * are gone; the tier colors replace them. A 2x2 placement gets the small layout.
- * ART_SPEC §17: the home tint gradient under the tier bands, the day's host at the
- * corner, the 3D flame beside every streak and the W / L badge art on played chips.
+ * "Daily Puzzles" home-screen widget — FINISH_SPEC E2 (the finishing-touches
+ * `.wsmall` / `.wmed`): the Home wallpaper, today's dailies as mini game-card tiles
+ * (accent wash + border + a 4dp accent bar + the glossy game icon, a purple check on
+ * finished ones), the streak (3D flame) and rank (3D trophy) in soft numbers, the
+ * cast spelling WORDOCIOUS across the top of the medium. FINISH_SPEC AL: both sizes
+ * ALWAYS show three labeled stat chips — puzzles solved today ("5/18 SOLVED"), today's
+ * points ("3,420 POINTS", the app's own sum) and a live countdown to new puzzles at
+ * local midnight — next to the streak chip; our 3D art for every chip icon, no emoji.
+ * A 2x2 placement gets the small layout.
  *
  * Classic RemoteViews on purpose: the countdown is a Chronometer with
  * isCountDown — the one RemoteViews element that ticks every second without
- * waking the app (Glance has no equivalent) — and each chip carries its own
- * PendingIntent deep-linking into that mode's daily.
+ * waking the app (Glance has no equivalent) — and each tile carries its own
+ * PendingIntent deep-linking into that mode's daily. RemoteViews can't layer a
+ * tinted card, a bar, an icon and a badge, so each tile (and the cast strip and the
+ * wallpaper crop) is a small bitmap, kept small for the binder parcel.
  *
- * The headline's greeting moves at noon and 5 pm, and the board resets at
- * midnight: inexact AlarmManager broadcasts at the next of 12/17/00 local
- * re-render it. updatePeriodMillis (30 min) is the belt-and-braces fallback.
+ * The board resets at midnight: inexact AlarmManager broadcasts at the next of
+ * 12/17/00 local re-render it. updatePeriodMillis (30 min) is the belt-and-braces
+ * fallback.
  */
 class DailyWidgetProvider : AppWidgetProvider() {
 
@@ -89,341 +81,260 @@ class DailyWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val ACTION_TIMED_REFRESH = "com.wordocious.app.widget.TIMED_REFRESH"
 
-        // Exact banner hexes (docs/HOME_REDESIGN_SPEC.md §2).
         private const val PURPLE = 0xFF7C3AED.toInt()
-        private const val HEAD_INK = 0xFF4C1D95.toInt()
-        private const val HEAD_INK_GOLD = 0xFF78350F.toInt()
-        private const val TROPHY = 0xFFB45309.toInt()
-        private const val LOST_GRAY = 0xFF9CA3AF.toInt()
-        private const val DOT_EMPTY = 0xB3FFFFFF.toInt()
-        private const val SWEEP_TINT = 0xFFEBD6FD.toInt()
-        private const val FLAWLESS_TINT = 0xFFFDE68A.toInt()
-
-        private fun tierInk(t: BannerTier): Int = when (t) {
-            BannerTier.NONE -> 0xFF6D28D9.toInt()
-            BannerTier.SWEEP -> 0xFF7E22CE.toInt()
-            BannerTier.FLAWLESS -> 0xFF92400E.toInt()
-        }
 
         private fun hex(s: String): Int =
             runCatching { Color.parseColor(if (s.startsWith("#")) s else "#$s") }.getOrDefault(PURPLE)
 
-        private fun withAlpha(color: Int, alpha: Float): Int =
-            Color.argb((alpha * 255).toInt(), Color.red(color), Color.green(color), Color.blue(color))
-
         // Explicit view-id tables (no getIdentifier: resource shrinking must see every id).
-        private val ID_TABLE: Map<String, IntArray> = mapOf(
-            "w_word" to intArrayOf(R.id.w_word0, R.id.w_word1, R.id.w_word2, R.id.w_word3, R.id.w_word4, R.id.w_word5, R.id.w_word6, R.id.w_word7),
-            "w_word_bg" to intArrayOf(R.id.w_word0_bg, R.id.w_word1_bg, R.id.w_word2_bg, R.id.w_word3_bg, R.id.w_word4_bg, R.id.w_word5_bg, R.id.w_word6_bg, R.id.w_word7_bg),
-            "w_word_dash" to intArrayOf(R.id.w_word0_dash, R.id.w_word1_dash, R.id.w_word2_dash, R.id.w_word3_dash, R.id.w_word4_dash, R.id.w_word5_dash, R.id.w_word6_dash, R.id.w_word7_dash),
-            "w_word_icon" to intArrayOf(R.id.w_word0_icon, R.id.w_word1_icon, R.id.w_word2_icon, R.id.w_word3_icon, R.id.w_word4_icon, R.id.w_word5_icon, R.id.w_word6_icon, R.id.w_word7_icon),
-            "w_word_glyph" to intArrayOf(R.id.w_word0_glyph, R.id.w_word1_glyph, R.id.w_word2_glyph, R.id.w_word3_glyph, R.id.w_word4_glyph, R.id.w_word5_glyph, R.id.w_word6_glyph, R.id.w_word7_glyph),
-            "w_puz" to intArrayOf(R.id.w_puz0, R.id.w_puz1, R.id.w_puz2, R.id.w_puz3, R.id.w_puz4, R.id.w_puz5, R.id.w_puz6, R.id.w_puz7, R.id.w_puz8, R.id.w_puz9),
-            "w_puz_bg" to intArrayOf(R.id.w_puz0_bg, R.id.w_puz1_bg, R.id.w_puz2_bg, R.id.w_puz3_bg, R.id.w_puz4_bg, R.id.w_puz5_bg, R.id.w_puz6_bg, R.id.w_puz7_bg, R.id.w_puz8_bg, R.id.w_puz9_bg),
-            "w_puz_dash" to intArrayOf(R.id.w_puz0_dash, R.id.w_puz1_dash, R.id.w_puz2_dash, R.id.w_puz3_dash, R.id.w_puz4_dash, R.id.w_puz5_dash, R.id.w_puz6_dash, R.id.w_puz7_dash, R.id.w_puz8_dash, R.id.w_puz9_dash),
-            "w_puz_icon" to intArrayOf(R.id.w_puz0_icon, R.id.w_puz1_icon, R.id.w_puz2_icon, R.id.w_puz3_icon, R.id.w_puz4_icon, R.id.w_puz5_icon, R.id.w_puz6_icon, R.id.w_puz7_icon, R.id.w_puz8_icon, R.id.w_puz9_icon),
-            "w_puz_glyph" to intArrayOf(R.id.w_puz0_glyph, R.id.w_puz1_glyph, R.id.w_puz2_glyph, R.id.w_puz3_glyph, R.id.w_puz4_glyph, R.id.w_puz5_glyph, R.id.w_puz6_glyph, R.id.w_puz7_glyph, R.id.w_puz8_glyph, R.id.w_puz9_glyph),
-            "w_sw" to intArrayOf(R.id.w_sw0, R.id.w_sw1, R.id.w_sw2, R.id.w_sw3, R.id.w_sw4, R.id.w_sw5, R.id.w_sw6, R.id.w_sw7),
-            "w_sp" to intArrayOf(R.id.w_sp0, R.id.w_sp1, R.id.w_sp2, R.id.w_sp3, R.id.w_sp4, R.id.w_sp5, R.id.w_sp6, R.id.w_sp7, R.id.w_sp8, R.id.w_sp9),
-        )
-
-        private fun ids(prefix: String, suffix: String): IntArray = ID_TABLE.getValue(prefix + suffix)
-
-        /** Snapshot iconAsset → bundled drawable (the SAME assets the home menu
-         *  uses; keep in step with ui.modeIconRes and WidgetBridge.iconSpec).
-         *  null → text glyph fallback, exactly like iOS. */
-        private fun assetRes(name: String?): Int? = when (name) {
-            "wordle-grid" -> R.drawable.ic_wordle_grid
-            "swords" -> R.drawable.ic_swords
-            "trending-up" -> R.drawable.ic_trending_up
-            "shield" -> R.drawable.ic_shield
-            "skull" -> R.drawable.ic_skull
-            "crown" -> R.drawable.ic_crown
-            "broom" -> R.drawable.ic_broom
-            "six-hand" -> R.drawable.ic_six_hand
-            "seven-hand" -> R.drawable.ic_seven_hand
-            "grid-3x3" -> R.drawable.ic_grid_3x3
-            "shuffle" -> R.drawable.ic_shuffle
-            "hexagon" -> R.drawable.ic_hexagon
-            "quote" -> R.drawable.ic_quote
-            "group" -> R.drawable.ic_group
-            "ladder" -> R.drawable.ic_ladder
-            "key-round" -> R.drawable.ic_key_round
-            "text-search" -> R.drawable.ic_text_search
-            "star" -> R.drawable.ic_star
-            else -> null
-        }
-
-        /** Today's two rows, read off the snapshot. */
-        private class Rows(snap: WidgetBridge.Snapshot) {
-            val word = GroupProgress(snap.modes.count { it.played }, snap.modes.count { it.won }, snap.modes.size)
-            val puzzleList = snap.puzzles.orEmpty()
-            val puzzles = GroupProgress(puzzleList.count { it.played }, puzzleList.count { it.won }, puzzleList.size)
-            val wTier = groupTier(word)
-            val pTier = groupTier(puzzles)
-            val double = wTier == BannerTier.FLAWLESS && pTier == BannerTier.FLAWLESS
-            val played = word.played + puzzles.played
-            val total = word.total + puzzles.total
-            val wStreak = groupStreak(wTier, DayStreaks(snap.wordSweepStreak ?: 0, snap.wordFlawlessStreak ?: 0))
-            val pStreak = groupStreak(pTier, DayStreaks(snap.puzzlesSweepStreak ?: 0, snap.puzzlesFlawlessStreak ?: 0))
-            fun headline(now: Calendar, name: String?) =
-                bannerHeadline(word, puzzles, now.get(Calendar.HOUR_OF_DAY), name.orEmpty())
-        }
+        private val MEDIUM_TILES = intArrayOf(R.id.w_t0, R.id.w_t1, R.id.w_t2, R.id.w_t3, R.id.w_t4, R.id.w_t5, R.id.w_t6, R.id.w_t7)
+        private val SMALL_TILES = intArrayOf(R.id.w_t0, R.id.w_t1, R.id.w_t2, R.id.w_t3)
 
         // ── Render ──────────────────────────────────────────────────────────
 
         fun render(context: Context, mgr: AppWidgetManager, ids: IntArray) {
             val snap = WidgetBridge.loadSnapshot(context)
             val now = Calendar.getInstance()
-            val rows = Rows(snap)
             for (id in ids) {
                 val views = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     // The launcher picks the layout that fits the current size.
                     RemoteViews(mapOf(
-                        SizeF(110f, 110f) to buildSmall(context, snap, rows, now),
-                        SizeF(240f, 110f) to buildMedium(context, snap, rows, now),
+                        SizeF(110f, 110f) to buildSmall(context, snap, now),
+                        SizeF(240f, 110f) to buildMedium(context, snap, now),
                     ))
                 } else {
                     val minW = mgr.getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
-                    if (minW in 1 until 200) buildSmall(context, snap, rows, now) else buildMedium(context, snap, rows, now)
+                    if (minW in 1 until 200) buildSmall(context, snap, now) else buildMedium(context, snap, now)
                 }
                 mgr.updateAppWidget(id, views)
             }
         }
 
+        // ── Bitmaps (cached per process: the art never changes, only the done flags) ──
+
+        private val tileCache = HashMap<String, Bitmap>()
+        private var castCache: Bitmap? = null
+        private val wallCache = HashMap<String, Bitmap>()
+
+        /** The tile bitmap's side in px (a 40dp tile at the device density, capped for the parcel). */
+        private fun tilePx(context: Context): Int = (40f * context.resources.displayMetrics.density).toInt().coerceIn(48, 96)
+
         /**
-         * The one-window fill: the ART_SPEC §11 home tint (3-stop diagonal, no tiles
-         * at widget sizes — §17) under the banner's tier bands — a swept / flawless
-         * Wordocious row tints the top (0–52%, fading out by 72%), the Puzzles row
-         * the bottom — and the white 135° sheen. A tiny bitmap stretched to the
-         * widget: gradients survive the stretch, and it keeps the RemoteViews parcel
-         * far under the binder limit.
+         * One mini game-card tile (`.wt`): the accent wash, a 1.5 border, a 4-unit accent
+         * bar, the glossy game icon at 74%, and — when [done] — the purple ✓ badge over
+         * its top-right corner (the bitmap keeps a margin for it).
          */
-        private fun fillBitmap(rows: Rows): Bitmap {
-            val w = 48; val h = 48
-            val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        private fun tileBitmap(context: Context, m: WidgetBridge.ModeEntry, done: Boolean): Bitmap {
+            val key = "${m.key}|$done"
+            tileCache[key]?.let { return it }
+            val px = tilePx(context)
+            val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)
-            val p = Paint()
-            p.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), PageTint.HOME.lightArgb(), null, Shader.TileMode.CLAMP)
-            c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
-            fun tierTint(t: BannerTier): Int? = when (t) { BannerTier.NONE -> null; BannerTier.SWEEP -> SWEEP_TINT; BannerTier.FLAWLESS -> FLAWLESS_TINT }
-            tierTint(rows.wTier)?.let { top ->
-                p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(top, top, top and 0x00FFFFFF, top and 0x00FFFFFF), floatArrayOf(0f, 0.52f, 0.72f, 1f), Shader.TileMode.CLAMP)
-                c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+            val margin = px * 0.12f
+            val tile = RectF(margin * 0.5f, margin, px - margin, px - margin * 0.5f)
+            val unit = tile.width() / 33f // the mockup's tile is ~33 css px
+            val modeId = com.wordocious.app.ModeGen.byDbKey(m.key)?.id
+            val icon = com.wordocious.app.ui.gameArtRes(modeId)
+            ShareFinish.drawMiniGameCard(context, c, tile, hex(m.colorHex), icon, unit = unit)
+            if (icon == null) {
+                // No art for this id: the old glyph in the accent.
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textAlign = Paint.Align.CENTER; color = hex(m.colorHex); textSize = tile.width() * 0.4f
+                    typeface = ShareFinish.nunito(context, 900)
+                }
+                val t = m.iconText ?: m.glyph
+                c.drawText(t, tile.centerX(), tile.centerY() + p.textSize * 0.35f, p)
             }
-            tierTint(rows.pTier)?.let { bottom ->
-                p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(bottom and 0x00FFFFFF, bottom and 0x00FFFFFF, bottom, bottom), floatArrayOf(0f, 0.52f, 0.72f, 1f), Shader.TileMode.CLAMP)
-                c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+            if (done) {
+                // `.wt.done::after`: 14 px rounded square, #7c3aed, white ✓, at (-3, -3) off the corner.
+                val b = 14f * unit
+                val r = RectF(px - b - 0.5f, 0.5f, px - 0.5f, b + 0.5f)
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = PURPLE; setShadowLayer(1.5f * unit, 0f, 1f * unit, 0x553C1E6E) }
+                c.drawRoundRect(r, 5f * unit, 5f * unit, p)
+                p.clearShadowLayer()
+                p.color = Color.WHITE; p.style = Paint.Style.STROKE; p.strokeWidth = 1.9f * unit
+                p.strokeCap = Paint.Cap.ROUND; p.strokeJoin = Paint.Join.ROUND
+                val path = android.graphics.Path().apply {
+                    moveTo(r.left + b * 0.27f, r.top + b * 0.53f)
+                    lineTo(r.left + b * 0.44f, r.top + b * 0.70f)
+                    lineTo(r.left + b * 0.75f, r.top + b * 0.33f)
+                }
+                c.drawPath(path, p)
             }
-            p.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), intArrayOf(0x59FFFFFF, 0x00FFFFFF, 0x00FFFFFF), floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP)
-            c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+            tileCache[key] = bmp
             return bmp
         }
 
-        /** Frame, fill and halo — shared by both sizes. */
-        private fun applyChrome(views: RemoteViews, rows: Rows) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                views.setInt(R.id.widget_root, "setBackgroundResource", if (rows.double) R.drawable.widget_frame_gold else R.drawable.widget_frame_brand)
-                views.setImageViewBitmap(R.id.w_fill, fillBitmap(rows))
-                views.setBoolean(R.id.w_fill, "setClipToOutline", true)
-                views.setViewVisibility(R.id.w_fill, View.VISIBLE)
-            } else {
-                // setClipToOutline isn't remotable before 31: the square bitmap would poke
-                // past the rounded corners, so older launchers get the nearest baked drawable.
-                views.setViewVisibility(R.id.w_fill, View.GONE)
-                views.setInt(R.id.widget_root, "setBackgroundResource", when {
-                    rows.wTier == BannerTier.FLAWLESS || rows.pTier == BannerTier.FLAWLESS -> R.drawable.widget_bg_flawless
-                    rows.wTier == BannerTier.SWEEP || rows.pTier == BannerTier.SWEEP -> R.drawable.widget_bg_sweep
-                    else -> R.drawable.widget_bg_midday
-                })
+        /** The ten cast heroes spelling WORDOCIOUS (`.wcast`), one strip bitmap. */
+        private fun castBitmap(context: Context): Bitmap? {
+            castCache?.let { return it }
+            val each = (30f * context.resources.displayMetrics.density).toInt().coerceIn(40, 64)
+            val gap = each * 0.06f
+            val cast = Mascots.cast
+            val w = (cast.size * each + (cast.size - 1) * gap).toInt()
+            val bmp = Bitmap.createBitmap(w, each, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+            var x = 0f
+            for (m in cast) {
+                ShareFinish.decode(context, m.res, sample = 4)?.let { src -> c.drawBitmap(src, null, RectF(x, 0f, x + each, each.toFloat()), p) }
+                x += each + gap
             }
-            views.setImageViewResource(R.id.w_halo, if (rows.double) R.drawable.widget_halo_gold else R.drawable.widget_halo_violet)
-            // ART_SPEC §17: the day's host (the cast member on today's day-title art) at the corner.
-            views.setImageViewResource(R.id.w_host, Mascots.dayHost(java.time.LocalDate.now()).res)
+            castCache = bmp
+            return bmp
+        }
+
+        /** The Home wallpaper, center-cropped to the widget's [aspect] (w / h), small and opaque. */
+        private fun wallBitmap(context: Context, aspect: Float): Bitmap? {
+            val key = "%.2f".format(aspect)
+            wallCache[key]?.let { return it }
+            val src = ShareFinish.decode(context, R.drawable.art_wall_home, sample = 4) ?: return null
+            val targetW = src.width
+            val targetH = (targetW / aspect).toInt().coerceAtMost(src.height)
+            val out = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.RGB_565)
+            val top = ((src.height - targetH) * 0.35f).toInt()
+            Canvas(out).drawBitmap(src, android.graphics.Rect(0, top, targetW, top + targetH), RectF(0f, 0f, targetW.toFloat(), targetH.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
+            wallCache[key] = out
+            return out
+        }
+
+        /** The wallpaper fill (API 31+: clipped to the corners; older launchers keep the tinted card). */
+        private fun applyWall(context: Context, views: RemoteViews, aspect: Float) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val wall = wallBitmap(context, aspect)
+                if (wall != null) {
+                    views.setImageViewBitmap(R.id.w_fill, wall)
+                    views.setBoolean(R.id.w_fill, "setClipToOutline", true)
+                    views.setViewVisibility(R.id.w_fill, View.VISIBLE)
+                    return
+                }
+            }
+            // setClipToOutline isn't remotable before 31: the square bitmap would poke past
+            // the rounded corners, so older launchers show the tinted card alone.
+            views.setViewVisibility(R.id.w_fill, View.GONE)
         }
 
         private fun applyCountdown(views: RemoteViews, now: Calendar) {
             // The live countdown: android.widget.Chronometer counting down to
             // local midnight — ticks every second with zero refresh budget.
-            views.setInt(R.id.w_hourglass, "setColorFilter", PURPLE)
             val remainingMs = nextLocalMidnightMillis(now) - System.currentTimeMillis()
             views.setChronometerCountDown(R.id.w_countdown, true)
             views.setChronometer(R.id.w_countdown, SystemClock.elapsedRealtime() + remainingMs, null, true)
         }
 
-        private fun buildMedium(context: Context, snap: WidgetBridge.Snapshot, rows: Rows, now: Calendar): RemoteViews {
-            val views = RemoteViews(context.packageName, R.layout.widget_daily)
-            applyChrome(views, rows)
-
-            // Header strip: the shared headline (after 8 pm it stays the evening
-            // greeting until a puzzle is played) and the day-streak flame.
-            views.setTextViewText(R.id.w_title, rows.headline(now, snap.username))
-            views.setTextColor(R.id.w_title, if (rows.double) HEAD_INK_GOLD else HEAD_INK)
-            views.setViewVisibility(R.id.w_trophy, if (rows.double) View.VISIBLE else View.GONE)
-            views.setInt(R.id.w_trophy, "setColorFilter", TROPHY)
+        /**
+         * FINISH_SPEC AL: the labeled stat chips both sizes always show — streak, solved
+         * today, points today, and the countdown (with its clock art). Each chip reads as
+         * one full phrase to TalkBack; the countdown chip's label reads "New puzzles in"
+         * and the Chronometer then reads its live time.
+         */
+        private fun applyStats(context: Context, views: RemoteViews, snap: WidgetBridge.Snapshot, now: Calendar) {
+            val day = WidgetStats.dayStats(snap, com.wordocious.app.todayLocalDate())
             views.setTextViewText(R.id.w_streak, "${snap.streak}")
-
-            renderRowLabel(views, R.id.w_wrow_label, R.id.w_wrow_status, R.id.w_wrow_flame, R.id.w_wrow_streak,
-                "WORDOCIOUS", groupStatus(rows.word), rows.wTier, rows.wStreak)
-            renderRowLabel(views, R.id.w_prow_label, R.id.w_prow_status, R.id.w_prow_flame, R.id.w_prow_streak,
-                "PUZZLES", groupStatus(rows.puzzles), rows.pTier, rows.pStreak)
-            renderChips(context, views, "w_word", 8, snap.modes, requestBase = 1, glyphDp = 11f, badgeDp = 22f)
-            renderChips(context, views, "w_puz", 10, rows.puzzleList, requestBase = 20, glyphDp = 10f, badgeDp = 20f)
-
-            val points = groupedPoints((snap.points ?: 0) + (snap.puzzlePoints ?: 0))
-            views.setTextViewText(R.id.w_stat, "${rows.played}/${rows.total} · $points pts")
+            views.setContentDescription(R.id.w_streak_row, WidgetStats.streakPhrase(snap.streak))
+            views.setTextViewText(R.id.w_solved, WidgetStats.solvedLabel(day))
+            views.setContentDescription(R.id.w_solved_chip, WidgetStats.solvedPhrase(day))
+            views.setTextViewText(R.id.w_points, WidgetStats.pointsLabel(day.points))
+            views.setContentDescription(R.id.w_points_chip, WidgetStats.pointsPhrase(day.points))
+            clockIcon(context)?.let { views.setImageViewBitmap(R.id.w_clock_icon, it) }
             applyCountdown(views, now)
-
-            // Anywhere that isn't a chip opens the app plainly.
-            views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, 0))
-            return views
         }
 
-        private fun buildSmall(context: Context, snap: WidgetBridge.Snapshot, rows: Rows, now: Calendar): RemoteViews {
-            val views = RemoteViews(context.packageName, R.layout.widget_daily_small)
-            applyChrome(views, rows)
-            views.setTextViewText(R.id.w_streak, "${snap.streak}")
-            views.setTextViewText(R.id.w_big, "${rows.played}/${rows.total}")
-            views.setTextColor(R.id.w_big, if (rows.double) HEAD_INK_GOLD else HEAD_INK)
-            views.setTextViewText(R.id.w_title, rows.headline(now, snap.username))
-            views.setTextColor(R.id.w_title, if (rows.double) HEAD_INK_GOLD else HEAD_INK)
-            renderDots(context, views, "w_sw", 8, snap.modes)
-            renderDots(context, views, "w_sp", 10, rows.puzzleList)
-            applyCountdown(views, now)
-            views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, 0))
-            return views
+        private var clockCache: Bitmap? = null
+
+        /**
+         * The countdown chip's clock (AL addendum 2: our art, never an emoji). The 3D
+         * `art_badge_icon_clock_sprite` is preferred the moment it ships (looked up by name
+         * so this compiles before it lands); until then a code-drawn soft gold clock face.
+         */
+        private fun clockIcon(context: Context): Bitmap? {
+            clockCache?.let { return it }
+            val px = (16f * context.resources.displayMetrics.density).toInt().coerceIn(32, 64)
+            @Suppress("DiscouragedApi")
+            val art = context.resources.getIdentifier("art_badge_icon_clock_sprite", "drawable", context.packageName)
+            val bmp = if (art != 0) {
+                ShareFinish.decode(context, art, sample = 1)?.let { Bitmap.createScaledBitmap(it, px, px, true) }
+            } else null
+            return (bmp ?: drawClock(px)).also { clockCache = it }
         }
 
-        private fun renderRowLabel(
-            views: RemoteViews, labelId: Int, statusId: Int, flameId: Int, streakId: Int,
-            label: String, status: String, tier: BannerTier, streak: Int,
-        ) {
-            val ink = tierInk(tier)
-            views.setTextViewText(labelId, label)
-            views.setTextColor(labelId, ink)
-            views.setTextViewText(statusId, status)
-            views.setTextColor(statusId, ink)
-            // A row's flame hides when its run is 0 (spec §2 Streaks).
-            val show = if (streak > 0) View.VISIBLE else View.GONE
-            views.setViewVisibility(flameId, show)
-            views.setViewVisibility(streakId, show)
-            views.setTextViewText(streakId, "$streak")
+        /** A soft gold clock face: gold rim with a darker edge, cream dial, plum hands, a highlight. */
+        private fun drawClock(px: Int): Bitmap {
+            val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            val cx = px / 2f; val cy = px / 2f; val r = px * 0.46f
+            val p = Paint(Paint.ANTI_ALIAS_FLAG)
+            p.shader = android.graphics.LinearGradient(0f, 0f, 0f, px.toFloat(), 0xFFFCD34D.toInt(), 0xFFF59E0B.toInt(), android.graphics.Shader.TileMode.CLAMP)
+            c.drawCircle(cx, cy, r, p)
+            p.shader = null
+            p.style = Paint.Style.STROKE; p.strokeWidth = px * 0.05f; p.color = 0xFFD97706.toInt()
+            c.drawCircle(cx, cy, r - p.strokeWidth / 2f, p)
+            p.style = Paint.Style.FILL; p.color = 0xFFFFF8E7.toInt()
+            c.drawCircle(cx, cy, r * 0.72f, p)
+            p.color = 0xFF3B1A78.toInt(); p.style = Paint.Style.STROKE; p.strokeCap = Paint.Cap.ROUND
+            p.strokeWidth = px * 0.085f
+            c.drawLine(cx, cy, cx, cy - r * 0.48f, p)            // minute hand (12)
+            c.drawLine(cx, cy, cx + r * 0.34f, cy + r * 0.12f, p) // hour hand (~4)
+            p.style = Paint.Style.FILL
+            c.drawCircle(cx, cy, px * 0.06f, p)
+            p.color = 0x80FFFFFF.toInt()
+            c.drawOval(RectF(cx - r * 0.55f, cy - r * 0.92f, cx + r * 0.1f, cy - r * 0.6f), p)
+            return bmp
         }
 
-        private fun renderDots(context: Context, views: RemoteViews, prefix: String, slots: Int, modes: List<WidgetBridge.ModeEntry>) {
-            val dot = ids(prefix, "")
-            for (i in 0 until slots) {
+        /** Tiles into [slots] for [modes] (window [range]); each deep-links into its daily. */
+        private fun renderTiles(context: Context, views: RemoteViews, slots: IntArray, modes: List<WidgetBridge.ModeEntry>, range: IntRange) {
+            for ((slot, id) in slots.withIndex()) {
+                val i = range.first + slot
                 val m = modes.getOrNull(i)
-                if (m == null) { views.setViewVisibility(dot[i], View.GONE); continue }
-                views.setViewVisibility(dot[i], View.VISIBLE)
-                views.setInt(dot[i], "setColorFilter", when {
-                    m.played && m.won -> hex(m.colorHex)
-                    m.played -> LOST_GRAY
-                    else -> DOT_EMPTY
-                })
-            }
-        }
-
-        private fun renderChips(
-            context: Context,
-            views: RemoteViews,
-            prefix: String,
-            slots: Int,
-            modes: List<WidgetBridge.ModeEntry>,
-            requestBase: Int,
-            glyphDp: Float,
-            /** The W / L badge's size in this row's chip (a touch larger than the 15 dp icon). */
-            badgeDp: Float,
-        ) {
-            val cell = ids(prefix, "")
-            val bg = ids(prefix, "_bg")
-            val dash = ids(prefix, "_dash")
-            val icon = ids(prefix, "_icon")
-            val glyph = ids(prefix, "_glyph")
-            val density = context.resources.displayMetrics.density
-            for (i in 0 until slots) {
-                val m = modes.getOrNull(i)
-                if (m == null) {
+                if (m == null || i > range.last) {
                     // INVISIBLE keeps the row's weights, so a shorter roster stays aligned.
-                    views.setViewVisibility(cell[i], View.INVISIBLE)
+                    views.setViewVisibility(id, View.INVISIBLE)
                     continue
                 }
-                views.setViewVisibility(cell[i], View.VISIBLE)
-                val accent = hex(m.colorHex)
-                if (m.played) {
-                    // Solid accent tile (gray when lost) wearing today's result as the 3D W / L
-                    // badge art (ART_SPEC §17, the home cards' §4 badges), untinted. The
-                    // launcher re-applies onto the old views, so the tint is cleared
-                    // explicitly (a transparent SRC_ATOP filter draws nothing).
-                    views.setInt(bg[i], "setColorFilter", if (m.won) accent else LOST_GRAY)
-                    views.setInt(bg[i], "setImageAlpha", 255)
-                    views.setViewVisibility(dash[i], View.GONE)
-                    views.setViewVisibility(glyph[i], View.GONE)
-                    views.setViewVisibility(icon[i], View.VISIBLE)
-                    views.setImageViewResource(icon[i], if (m.won) R.drawable.icon3d_badge_w else R.drawable.icon3d_badge_l)
-                    views.setInt(icon[i], "setColorFilter", Color.TRANSPARENT)
-                    sizeIcon(views, icon[i], badgeDp)
-                } else {
-                    sizeIcon(views, icon[i], ICON_DP)
-                    // The "door": white ~72% tile, dashed accent border, the
-                    // mode's own home-menu icon.
-                    views.setInt(bg[i], "setColorFilter", Color.WHITE)
-                    views.setInt(bg[i], "setImageAlpha", 184) // 0.72
-                    views.setViewVisibility(dash[i], View.VISIBLE)
-                    views.setInt(dash[i], "setColorFilter", withAlpha(accent, 0.55f))
-                    val res = assetRes(m.iconAsset)
-                    if (res != null && m.iconKind == "hand" && m.iconText != null) {
-                        // Brand hand + digit overlay (iOS ModeIconView `.hand`), the
-                        // digit nudged down via top padding (RemoteViews has no offset).
-                        views.setViewVisibility(icon[i], View.VISIBLE)
-                        views.setImageViewResource(icon[i], res)
-                        views.setInt(icon[i], "setColorFilter", accent)
-                        views.setViewVisibility(glyph[i], View.VISIBLE)
-                        views.setTextViewText(glyph[i], m.iconText)
-                        views.setTextColor(glyph[i], accent)
-                        // DIP, not SP: the chip is a fixed square, so the user's
-                        // font scale must not grow the digit out of it.
-                        views.setTextViewTextSize(glyph[i], android.util.TypedValue.COMPLEX_UNIT_DIP, 8f)
-                        views.setViewPadding(glyph[i], 0, (6f * density).toInt(), 0, 0)
-                    } else if (res != null && (m.iconKind == "asset" || m.iconKind == "original" || m.iconKind == "hand")) {
-                        views.setViewVisibility(glyph[i], View.GONE)
-                        views.setViewVisibility(icon[i], View.VISIBLE)
-                        views.setImageViewResource(icon[i], res)
-                        views.setInt(icon[i], "setColorFilter", accent)
-                    } else {
-                        // Roman text / digit / glyph, accent, smaller when longer
-                        // than 2 chars (VIII). DIP on purpose (fixed chip).
-                        val t = m.iconText ?: m.glyph
-                        views.setViewVisibility(icon[i], View.GONE)
-                        views.setViewVisibility(glyph[i], View.VISIBLE)
-                        views.setTextViewText(glyph[i], t)
-                        views.setTextColor(glyph[i], accent)
-                        views.setViewPadding(glyph[i], 0, 0, 0, 0)
-                        views.setTextViewTextSize(
-                            glyph[i], android.util.TypedValue.COMPLEX_UNIT_DIP,
-                            if (t.length > 2) glyphDp * 0.75f else glyphDp,
-                        )
-                    }
-                }
-                // Every chip deep-links into that mode's daily as today (spec §5):
+                views.setViewVisibility(id, View.VISIBLE)
+                // The layout's padded game icon is only the widget-picker preview.
+                views.setViewPadding(id, 0, 0, 0, 0)
+                views.setImageViewBitmap(id, tileBitmap(context, m, m.played))
+                views.setContentDescription(id, "${m.title}, ${if (!m.played) "not played yet" else if (m.won) "won" else "played"}")
+                // Every tile deep-links into that mode's daily as today (spec §5):
                 // a finished one opens its solved board, like the home card.
-                views.setOnClickPendingIntent(cell[i], dailyIntent(context, requestBase + i, m.key))
+                views.setOnClickPendingIntent(id, dailyIntent(context, 1 + i, m.key))
             }
         }
 
-        /** The chip icon's size in the layouts (15 dp). */
-        private const val ICON_DP = 15f
+        private fun buildMedium(context: Context, snap: WidgetBridge.Snapshot, now: Calendar): RemoteViews {
+            val views = RemoteViews(context.packageName, R.layout.widget_daily)
+            applyWall(context, views, 2.1f)
+            castBitmap(context)?.let { views.setImageViewBitmap(R.id.w_cast, it) }
+            renderTiles(context, views, MEDIUM_TILES, snap.modes, 0 until MEDIUM_TILES.size)
 
-        /** Resizes a chip icon (API 31+ only; older launchers keep the layout's 15 dp). */
-        private fun sizeIcon(views: RemoteViews, id: Int, dp: Float) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                views.setViewLayoutWidth(id, dp, android.util.TypedValue.COMPLEX_UNIT_DIP)
-                views.setViewLayoutHeight(id, dp, android.util.TypedValue.COMPLEX_UNIT_DIP)
+            val rank = snap.rank
+            if (rank != null && rank > 0) {
+                views.setViewVisibility(R.id.w_side, View.VISIBLE)
+                views.setImageViewResource(R.id.w_rank_icon, if (rank == 1) R.drawable.icon3d_crown else R.drawable.icon3d_trophy)
+                views.setTextViewText(R.id.w_rank, "#$rank")
+                views.setContentDescription(R.id.w_side, "Rank $rank today")
+            } else {
+                // No rank today (signed out / not on the board yet): the chip goes away cleanly.
+                views.setViewVisibility(R.id.w_side, View.GONE)
             }
+
+            applyStats(context, views, snap, now)
+            // Anywhere that isn't a tile opens the app plainly.
+            views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, 0))
+            return views
         }
 
-        private fun groupedPoints(n: Int): String =
-            java.text.NumberFormat.getIntegerInstance(java.util.Locale.US).format(n.toLong())
+        private fun buildSmall(context: Context, snap: WidgetBridge.Snapshot, now: Calendar): RemoteViews {
+            val views = RemoteViews(context.packageName, R.layout.widget_daily_small)
+            applyWall(context, views, 1f)
+            val window = com.wordocious.app.data.SharePicks.smallWindow(snap.modes.map { it.played })
+            renderTiles(context, views, SMALL_TILES, snap.modes, window)
+            applyStats(context, views, snap, now)
+            views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, 0))
+            return views
+        }
 
         // ── Click targets ───────────────────────────────────────────────────
 
@@ -450,12 +361,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
 
         // ── Timed flips (the RemoteViews timeline) ──────────────────────────
 
-        private fun nextLocalMidnightMillis(now: Calendar): Long =
-            (now.clone() as Calendar).apply {
-                add(Calendar.DAY_OF_YEAR, 1)
-                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
+        private fun nextLocalMidnightMillis(now: Calendar): Long = WidgetStats.nextLocalMidnightMillis(now)
 
         private fun flipIntent(context: Context): PendingIntent =
             PendingIntent.getBroadcast(

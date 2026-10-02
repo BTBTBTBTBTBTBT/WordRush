@@ -65,6 +65,8 @@ struct AppHeaderView: View {
                 iconControl(.gear, label: "Settings") { showSettings = true }
             }
             .padding(.horizontal, 8)
+            // FINISH_SPEC §N4: the controls row sits 6 pt below the cast row.
+            .padding(.top, 6)
         }
         .padding(.bottom, 2)
         // §C5: the popup hangs under the controls row; the page below dims softly.
@@ -72,6 +74,8 @@ struct AppHeaderView: View {
         // Draw (and hit-test) the popup layer above the page content below the header.
         .zIndex(10)
         .animation(Theme.animation(.spring(response: 0.3, dampingFraction: 0.85)), value: pop)
+        .onChange(of: pop) { if $0 != nil { Feedback.whoosh() } }   // §U: popup open
+        .streakBumpFeedback(auth.headerStreak)                      // §U: streak +1
         .sheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
             MenuSheet(selection: $menuSelection).presentationDetents([.large])
         }
@@ -334,6 +338,14 @@ struct LivingCastHeader: View {
 
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     @State private var active: ActiveMove?
+    /// FINISH_SPEC §F2 fix: hidden while the cold-start intro runs; reports its
+    /// frames to the intro; plays the landing flourish.
+    @ObservedObject private var handoff = CastHandoff.shared
+    @Environment(\.pageTint) private var pageTint
+    /// FINISH_SPEC §X: re-render when the admin season preview flips (CastSkin reads it).
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
+    /// FINISH_SPEC §AA1: the crown's "You're Pro" sheet.
+    @State private var showProSheet = false
 
     private struct ActiveMove: Equatable {
         let id: MascotID
@@ -351,36 +363,62 @@ struct LivingCastHeader: View {
     static let overlap: CGFloat = 0.05
     /// Every other figure sits this much higher (the mockup's 7 px on a 393-pt row).
     static let stagger: CGFloat = 7
-    /// The row's side inset.
-    static let inset: CGFloat = 4
+    /// FINISH_SPEC §N3: the row spans ≈90% of the screen width, centered (not edge to edge).
+    static let widthShare: CGFloat = 0.90
+    /// The row's side inset (the 5% each side left by the 90% row).
+    static var inset: CGFloat { UIScreen.main.bounds.width * (1 - widthShare) / 2 }
+    /// §N3: breathing room under the status bar.
+    static let topMargin: CGFloat = 9
 
-    /// The figure size that spans the screen edge to edge.
+    /// The figure size that spans the row's 90% width.
     static var figure: CGFloat {
         let units = Mascots.cast.reduce(CGFloat(0)) { $0 + (visibleWidth[$1] ?? 1) }
             - CGFloat(Mascots.cast.count - 1) * overlap
         return max(28, (UIScreen.main.bounds.width - inset * 2) / units)
     }
 
-    /// The header's height: the figures, the stagger and (Pro) the crown's room.
+    /// The header's height: the top margin, the figures, the stagger and (Pro) the crown's room.
     static func height(pro: Bool) -> CGFloat {
         let s = figure
-        return s + stagger + (pro ? s * 0.22 : 2)
+        return topMargin + s + stagger + (pro ? s * 0.22 : 2)
     }
 
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
 
     var body: some View {
         let s = Self.figure
-        TimelineView(.animation(minimumInterval: 1 / 60, paused: active == nil || still)) { ctx in
+        TimelineView(.animation(minimumInterval: 1 / 60, paused: (active == nil && handoff.flourishStart == nil) || still)) { ctx in
             row(s, now: ctx.date)
+        }
+        // §F2 fix step 1: hidden (still laid out) while the intro runs; shown in the
+        // same frame the intro row is removed.
+        .opacity(handoff.introRunning ? 0 : 1)
+        .onPreferenceChange(CastFramesKey.self) { frames in
+            if handoff.introRunning { handoff.frames = frames }
         }
         .frame(maxWidth: .infinity)
         .frame(height: Self.height(pro: pro), alignment: .bottom)
+        // §N3: a soft elliptical ground shadow under the row (the page accent at ~14%, blurred).
+        .background(alignment: .bottom) {
+            Ellipse()
+                .fill(pageTint.accent.opacity(Theme.isDark ? 0.22 : 0.14))
+                .frame(height: s * 0.26)
+                .padding(.horizontal, s * 0.2)
+                .blur(radius: 7)
+                .offset(y: s * 0.06)
+                .opacity(handoff.introRunning ? 0 : 1)
+                .allowsHitTesting(false)
+        }
         .padding(.horizontal, Self.inset)
-        .allowsHitTesting(false)
+        // §AA1: only W's crown takes touches (each figure turns hit-testing off, and
+        // the row's containers have no content shape), so the page under the row
+        // still gets every other tap.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(pro ? "Wordocious Pro" : "Wordocious")
         .accessibilityAddTraits(.isHeader)
+        .modifier(ProCrownAccessibility(pro: pro) { showProSheet = true })
+        .sheet(isPresented: $showProSheet) { ProMemberSheet() }
+        .onChange(of: debugSeason) { _ in CastSkin.invalidate() }
         .task { await runMoves() }
     }
 
@@ -396,17 +434,26 @@ struct LivingCastHeader: View {
         let m = Mascots.cast[i]
         let vis: CGFloat = Self.visibleWidth[m] ?? 1
         let moving = active?.id == m
-        let pose: CastPose = moving ? CastMoves.pose(m.rawValue, elapsed: now.timeIntervalSince(active?.start ?? now)) : .identity
-        let spec = CastMoves.moves[m.rawValue]
+        let flourish = handoff.flourishStart.map { CastMoves.flourishPose(index: i, elapsed: now.timeIntervalSince($0)) }
+        let pose: CastPose = flourish ?? (moving ? CastMoves.pose(m.rawValue, elapsed: now.timeIntervalSince(active?.start ?? now)) : .identity)
+        let spec = flourish != nil ? CastMoves.moves["w"] : CastMoves.moves[m.rawValue]
         let anchor = UnitPoint(x: spec?.anchor.x ?? 0.5, y: spec?.anchor.y ?? 0.85)
         let skew = CGFloat(tan(pose.skewX * .pi / 180))
-        return Image(m.assetName).resizable().interpolation(.high).scaledToFit()
+        // §X: the season's skin (Halloween) when one is active, else the hero image.
+        return Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
             .frame(width: s, height: s)
+            // §F2 fix step 2: the figure's square on screen, for the intro to land on.
+            .background(GeometryReader { g in
+                Color.clear.preference(key: CastFramesKey.self, value: [m: g.frame(in: .global)])
+            })
             .frame(width: s * vis)
+            .allowsHitTesting(false)
             .overlay(alignment: .top) {
                 if pro && m == .w {
-                    // W's crown: ~45% of W's width, sitting on its top edge.
-                    Icon3D(.crown, size: s * 0.92 * 0.45)
+                    // §AA1: W's crown (the gold sprite, tilted ~-8°, a twinkle every ~8 s),
+                    // ~45% of W's width, sitting on its top edge. It rides inside W's
+                    // transforms below, so it hops / moves / flourishes with W.
+                    CastCrown(size: s * 0.92 * 0.45, still: still || Motion.lowPower) { showProSheet = true }
                         .offset(y: s * 0.115 - s * 0.92 * 0.45 * 0.72)
                 }
             }
@@ -425,7 +472,9 @@ struct LivingCastHeader: View {
         try? await Task.sleep(nanoseconds: UInt64(CastMoves.firstDelay * 1_000_000_000))
         var last: String?
         while !Task.isCancelled {
-            if still {
+            // No personality moves under the intro or its landing flourish.
+            // §AD: Low Power Mode also rests the idle moves (checked each round, so it's live).
+            if still || Motion.lowPower || handoff.introRunning || handoff.flourishStart != nil {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 continue
             }
@@ -434,6 +483,7 @@ struct LivingCastHeader: View {
             let duration = CastMoves.duration(id)
             let gap = CastMoves.interval(unit: Double.random(in: 0...1))
             if let m = MascotID(rawValue: id) { active = ActiveMove(id: m, start: Date()) }
+            if ["w", "d", "o3"].contains(id) { Feedback.hop(volume: 0.6) }   // §U: the hop / jump moves
             try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
             active = nil
             try? await Task.sleep(nanoseconds: UInt64(max(0.2, gap - duration) * 1_000_000_000))
@@ -447,5 +497,20 @@ struct CompactPopover: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 16.4, *) { content.presentationCompactAdaptation(.popover) }
         else { content }
+    }
+}
+
+/// §AA1: the header reads as one element ("Wordocious Pro"); for Pro it also offers
+/// the crown's action so VoiceOver can open the membership sheet.
+private struct ProCrownAccessibility: ViewModifier {
+    let pro: Bool
+    let open: () -> Void
+
+    func body(content: Content) -> some View {
+        if pro {
+            content.accessibilityAction(named: "Show Pro membership", open)
+        } else {
+            content
+        }
     }
 }

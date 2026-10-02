@@ -1,37 +1,75 @@
 import { GameMode, generateMatchSeed } from '@wordle-duel/core';
 import type { IMatchService, MatchEndedData } from './match-service';
 import { buildBotPlan, type BotPlan, type AdaptiveHint } from '@/lib/bot/bot-engine';
-import { BOT_PERSONAS, botArt, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import { botOfTheDay, canonicalBotId, type BotCastId } from '@wordle-duel/core';
+import { botArt, botPersona, isBotCastId, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
 import type { GhostRun } from '@/lib/bot/ghost-service';
 import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 
-/** Every way to pick a CPU opponent from the chooser. */
-export type CpuKind = BotTier | 'adaptive' | 'ghost' | 'daily';
+/**
+ * Every way to pick a CPU opponent: a cast bot by id (FINISH_SPEC D1: rip …
+ * webster), the Bot of the Day, or Your Ghost. The old tier kinds (easy /
+ * medium / hard / adaptive, from links made before the cast) still parse and
+ * map by difficulty to ivy / opal / dewey / umi (core LEGACY_BOT_IDS).
+ */
+export type CpuKind = BotCastId | 'ghost' | 'daily' | LegacyCpuKind;
+export type LegacyCpuKind = BotTier | 'adaptive';
 
-/** Opponent id sentinel encoding the chosen kind, e.g. "cpu:ghost". */
+const LEGACY_KIND_BOT: Record<LegacyCpuKind, BotCastId> = { easy: 'ivy', medium: 'opal', hard: 'dewey', adaptive: 'umi' };
+
+/** A `?cpu=` value (or an old kind) as a CpuKind, or null when it names nothing. */
+export function parseCpuKind(raw: string | null | undefined): CpuKind | null {
+  if (!raw) return null;
+  if (raw === 'ghost' || raw === 'daily') return raw;
+  if (raw in LEGACY_KIND_BOT) return raw as LegacyCpuKind;
+  const id = canonicalBotId(raw);
+  return isBotCastId(id) ? id : null;
+}
+
+/** The cast bot a kind plays as (the Bot of the Day: today's UTC bot), or null for the ghost. */
+export function castBotForKind(kind: CpuKind, todayUtc: string = new Date().toISOString().slice(0, 10)): BotCastId | null {
+  if (kind === 'ghost') return null;
+  if (kind === 'daily') return botOfTheDay(todayUtc).id;
+  if (kind in LEGACY_KIND_BOT) return LEGACY_KIND_BOT[kind as LegacyCpuKind];
+  return kind as BotCastId;
+}
+
+/** Opponent id sentinel encoding the chosen kind, e.g. "cpu:ghost", "cpu:scoot". */
 export function cpuOpponentIdForKind(kind: CpuKind): string {
   return `${CPU_OPPONENT_PREFIX}${kind}`;
 }
 
 /**
- * The ladder/progression bot id for a kind (VS overhaul §7): easy→rook,
- * medium→lexi, hard→nova, adaptive→adapt, Bot of the Day→daily, ghost→ghost.
+ * The ladder/progression bot id for a kind (core ladderAfterGame): the cast
+ * id (old tier kinds map), 'daily' for the Bot of the Day, 'ghost'.
  */
 export function botIdForKind(kind: CpuKind): string {
-  if (kind === 'adaptive') return 'adapt';
   if (kind === 'daily' || kind === 'ghost') return kind;
-  return BOT_PERSONAS[kind].id;
+  return castBotForKind(kind) ?? kind;
 }
 
-/** Display identity + underlying tier for any cpu opponent id. `avatar` is the bot's art URL. */
-export function cpuIdentity(oppId: string): { name: string; avatar: string; color: string; tier: BotTier } {
+/** The engine difficulty a kind plays at (its cast bot's tier; the ghost replays at hard pace). */
+export function engineDifficultyForKind(kind: CpuKind): BotDifficulty {
+  const id = castBotForKind(kind);
+  return id ? botPersona(id).difficulty : 'hard';
+}
+
+/** The cast bot's own solve range for a kind (null: adaptive / ghost). */
+export function guessRangeForKind(kind: CpuKind): readonly [number, number] | null {
+  const id = castBotForKind(kind);
+  return id ? botPersona(id).guesses : null;
+}
+
+/**
+ * Display identity + underlying tier for any cpu opponent id. `avatar` is the
+ * bot's art URL (its character's ready pose); `castId` is the character.
+ */
+export function cpuIdentity(oppId: string): { name: string; avatar: string; color: string; tier: BotTier; botId: string; castId: string | null } {
   const raw = oppId.slice(CPU_OPPONENT_PREFIX.length);
-  if (raw === 'ghost') return { name: 'Your Ghost', avatar: botArt('ghost'), color: '#64748b', tier: 'hard' };
-  // The Bot of the Day is Lexi on the day's shared puzzle (bot-personas BOT_OF_DAY_ID).
-  if (raw === 'daily') return { name: 'Lexi', avatar: botArt('lexi'), color: '#f59e0b', tier: 'medium' };
-  if (raw === 'adaptive') return { name: 'Adapt', avatar: botArt('adapt'), color: '#7c3aed', tier: 'medium' };
-  const p = BOT_PERSONAS[(raw as BotTier)] ?? BOT_PERSONAS.medium;
-  return { name: p.name, avatar: p.avatar, color: p.color, tier: p.tier };
+  if (raw === 'ghost') return { name: 'Your Ghost', avatar: botArt('ghost'), color: '#64748b', tier: 'hard', botId: 'ghost', castId: null };
+  const kind = parseCpuKind(raw) ?? 'opal';
+  const p = botPersona(castBotForKind(kind) ?? 'opal');
+  return { name: p.name, avatar: p.avatar, color: p.color, tier: p.tier, botId: p.id, castId: p.castId };
 }
 
 /** Extra config for special opponents (ghost pace / daily fixed seed). */
@@ -40,6 +78,8 @@ export interface BotConfig {
   ghost?: GhostRun;
   /** Fixed puzzle seed (Bot of the Day) instead of a random one. */
   fixedSeed?: string;
+  /** The cast bot's own solve range (core BOT_CAST `guesses`). */
+  guessRange?: readonly [number, number] | null;
   /** Opponent id sentinel — defaults to cpu:<difficulty>. */
   opponentId?: string;
   /**
@@ -206,6 +246,7 @@ export class LocalBotMatchService implements IMatchService {
     }
     return {
       adaptive: this.adaptive,
+      guessRange: this.config.guessRange ?? null,
       targetGuesses: this.config.ghost?.guessCount,
       targetSolveMs: this.config.ghost?.timeMs,
       forceSolve: this.config.ghost ? true : undefined,

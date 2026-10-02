@@ -48,7 +48,11 @@ import com.wordocious.app.data.FriendlyGamesService
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.GameTileSquare
 import com.wordocious.app.ui.GameTileStyle
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.CastPose
+import com.wordocious.app.ui.MascotId
+import com.wordocious.app.ui.squishClickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.drawBehind
 import com.wordocious.core.COIN_STAKES
 import com.wordocious.core.FRIENDLY_KINDS
 import com.wordocious.core.FriendlyKind
@@ -87,10 +91,11 @@ fun QuickPlaySheet(
     // A picker when no friend was chosen (or the one asked for isn't in your circle).
     val showPicker = remember { request.friendId == null || friends.none { it.id == request.friendId } }
 
+    // A1: a pink-tinted sheet (no white).
     ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, containerColor = FriendsPink.page,
+        onDismissRequest = onDismiss, sheetState = sheetState, containerColor = SHEET_TINT,
         dragHandle = {
-            Box(Modifier.padding(top = 10.dp, bottom = 4.dp).size(width = 40.dp, height = 5.dp).clip(RoundedCornerShape(50)).background(Color(0xFFD1D5DB)))
+            Box(Modifier.padding(top = 10.dp, bottom = 4.dp).size(width = 40.dp, height = 5.dp).clip(RoundedCornerShape(50)).background(friendsLine(FRIENDS_CARD_ACCENT, 0.5f)))
         },
     ) {
         Column(
@@ -111,7 +116,9 @@ fun QuickPlaySheet(
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ordered.forEach { f ->
                         Column(
-                            Modifier.width(58.dp).clickableNoRipple { friendId = f.id },
+                            Modifier.width(58.dp).squishClickable(
+                                label = "${f.username}${if (f.id == friendId) ", selected" else ""}", role = Role.RadioButton,
+                            ) { friendId = f.id },
                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
                         ) {
                             FriendFace(
@@ -128,7 +135,7 @@ fun QuickPlaySheet(
                 }
             }
 
-            // Friend header
+            // Friend header (C cheering beside it — A7: the banner's host is O1)
             if (friend != null) {
                 val on = friend.isOnline(now)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -149,6 +156,7 @@ fun QuickPlaySheet(
                             Text(record, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, maxLines = 1)
                         }
                     }
+                    CastPose(MascotId.C, "cheer", 56.dp)
                 }
             }
 
@@ -164,13 +172,16 @@ fun QuickPlaySheet(
                 FriendsLabel("WHAT'S ON THE LINE")
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     COIN_STAKES.forEach { s ->
+                        // A1 / A9: a tinted chip in Call It's gold; selected = stronger tint + ring.
                         val shape = RoundedCornerShape(50)
+                        val coin = FriendlyKind.COIN.color
                         Text(
                             s, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                            color = if (s == stake) FriendsPink.solid else FriendsPink.mid,
-                            modifier = Modifier.clip(shape).background(Color.White)
-                                .then(if (s == stake) Modifier.border(2.dp, FriendsPink.solid, shape) else Modifier)
-                                .clickableNoRipple { stake = s }
+                            color = if (s == stake) FriendsPink.heading else FriendsPink.mid,
+                            modifier = Modifier
+                                .squishClickable(label = s + if (s == stake) ", selected" else "", role = Role.RadioButton) { stake = s }
+                                .clip(shape).background(friendsWash(coin, if (s == stake) 0.3f else 0.12f))
+                                .border(if (s == stake) 2.dp else 1.5.dp, if (s == stake) coin else friendsLine(coin), shape)
                                 .padding(horizontal = 12.dp, vertical = 7.dp),
                         )
                     }
@@ -221,31 +232,41 @@ fun QuickPlaySheet(
 private fun GameTile(kind: FriendlyKind, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     GameTileSquare(
         accent = kind.color, label = kind.title, selected = selected, modifier = modifier,
-        surface = Color.White, labelColor = GameTileStyle.INK, onClick = onClick,
+        surface = friendsWash(kind.color, 0.06f), labelColor = GameTileStyle.INK, onClick = onClick,
     ) { chip -> FriendlyGameGlyph(kind, chip * 0.82f) }
 }
 
-private val TEAL = Color(0xFF0F766E)
-private val TEAL_SOFT = Color(0xFFCCFBF1)
+private val TEAL = Color(0xFF0D9488)
 
+/**
+ * A WORDOCIOUS card (VS Battle live / Race my run): a teal-tinted card with its top
+ * bar (A1), the swords, title + line, the lock on Pro; the whole card squishes (A9).
+ * [solid] = the stronger tint (the free live battle).
+ */
 @Composable
 private fun WordociousCard(
     title: String, sub: String, solid: Boolean, modifier: Modifier,
     locked: Boolean = false, enabled: Boolean = true, onClick: () -> Unit,
 ) {
-    val ink = if (solid) Color.White else TEAL
     Row(
-        modifier.clip(RoundedCornerShape(14.dp)).background(if (solid) TEAL else TEAL_SOFT)
+        modifier
+            .squishClickable(label = "$title, $sub${if (locked) ", Pro" else ""}", enabled = enabled) { onClick() }
             .alpha(if (enabled) 1f else 0.5f)
-            .clickableNoRipple { if (enabled) onClick() }
-            .padding(horizontal = 10.dp, vertical = 10.dp),
+            .clip(RoundedCornerShape(14.dp))
+            .background(friendsWash(TEAL, if (solid) 0.22f else 0.12f))
+            .drawBehind { drawRect(TEAL, size = androidx.compose.ui.geometry.Size(size.width, 5.dp.toPx())) }
+            .border(if (solid) 2.dp else 1.5.dp, if (solid) TEAL else friendsLine(TEAL), RoundedCornerShape(14.dp))
+            .padding(start = 10.dp, end = 10.dp, top = 13.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(painterResource(R.drawable.ic_swords), null, tint = ink, modifier = Modifier.size(16.dp))
+        Icon(painterResource(R.drawable.ic_swords), null, tint = TEAL, modifier = Modifier.size(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(sub, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ink.copy(alpha = 0.8f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sub, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (locked) Icon3D(Icon3DName.LOCK, 14.dp, contentDescription = "Pro") // ART_SPEC §5
     }
 }
+
+/** A1 the quick-play sheet's soft pink wash. */
+private val SHEET_TINT = Color(0xFFFFF3F9)

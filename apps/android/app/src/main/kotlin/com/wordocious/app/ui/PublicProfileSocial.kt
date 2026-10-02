@@ -33,7 +33,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -101,29 +100,42 @@ private fun shortDayLabel(day: String): String = runCatching {
     java.time.LocalDate.parse(day).format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
 }.getOrDefault(day)
 
-/** Card header caption — mock .cardtitle. */
+/** Card header caption — mock .cardtitle, as the finishing kit's FinishLabel. */
 @Composable
-private fun CardTitle(text: String) {
-    Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.2.sp)
+private fun CardTitle(text: String, accent: Color = SOCIAL_PURPLE) {
+    FinishLabel(text, color = darkenInk(accent))
 }
 
-/** The standard surface card used by every new section (mock .card). */
+/**
+ * The card every section sits on (mock .card) in the finishing look: a tinted card in
+ * [accent] with its top bar (A1); a tappable card squishes (A9).
+ */
 @Composable
 private fun SocialCard(
+    accent: Color = SOCIAL_PURPLE,
     onClick: (() -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .then(if (onClick != null) Modifier.clickableNoRipple(onClick) else Modifier)
-            .padding(14.dp),
+    TintedCard(
+        accent,
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.squishClickable(label = null, onClick = onClick) else Modifier),
+        corner = 18.dp, barHeight = 8.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
         verticalArrangement = Arrangement.spacedBy(9.dp),
         content = content,
     )
+}
+
+/** The profile-social accents. */
+private val SOCIAL_PURPLE = Color(0xFF7C3AED)
+private val SOCIAL_PINK = Color(0xFFEC4899)
+private val SOCIAL_GOLD = Color(0xFFF59E0B)
+private val SOCIAL_BLUE = Color(0xFF2563EB)
+
+/** A8 a dialog's close action: a medium candy button. */
+@Composable
+private fun DialogDone(label: String, onDismiss: () -> Unit) {
+    CandyButton(label, onClick = onDismiss, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
 }
 
 // ═══════════════════════ 1 · identity: presence + ring + chips ══════════════
@@ -250,21 +262,29 @@ private fun roundedSquareRingPath(topLeft: Offset, size: Size, radius: Float): a
 private data class ChipStyle(val fg: Color, val border: Color, val bg: Color)
 
 @Composable
-private fun IdentityChip(text: String, style: ChipStyle, onClick: (() -> Unit)? = null) {
-    Text(
-        if (onClick != null) "$text ›" else text,
-        fontSize = 10.sp, fontWeight = FontWeight.Black, color = style.fg, letterSpacing = 0.4.sp,
-        modifier = Modifier
+private fun IdentityChip(text: String, style: ChipStyle, onClick: (() -> Unit)? = null, art: GlyphArt? = null) {
+    Row(
+        Modifier
             .clip(RoundedCornerShape(50))
             .background(style.bg)
             .border(1.5.dp, style.border, RoundedCornerShape(50))
             .then(if (onClick != null) Modifier.clickableNoRipple(onClick) else Modifier)
             .padding(horizontal = 10.dp, vertical = 4.5.dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (art != null) GlyphArtImage(art, 14.dp)
+        Text(
+            if (onClick != null) "$text ›" else text,
+            fontSize = 10.sp, fontWeight = FontWeight.Black, color = style.fg, letterSpacing = 0.4.sp,
+        )
+    }
 }
 
-private fun archetypeEmoji(a: String): String = when (a) {
-    "GRINDER" -> "⛏️"; "SPEEDRUNNER" -> "⚡"; "SNIPER" -> "🎯"; "NIGHT_OWL" -> "🦉"; else -> "🏹"
+/** AL addendum 2: each archetype's badge art (was ⛏️ ⚡ 🎯 🦉 🏹 emoji). */
+private fun archetypeArt(a: String): GlyphArt = when (a) {
+    "GRINDER" -> GlyphArt.GRID; "SPEEDRUNNER" -> GlyphArt.ZAP; "SNIPER" -> GlyphArt.TARGET
+    "NIGHT_OWL" -> GlyphArt.SPARKLES; else -> GlyphArt.SWORDS
 }
 
 private fun archetypeLabel(a: String): String = a.replace('_', ' ')
@@ -286,12 +306,19 @@ fun IdentityChipsRow(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        IdentityChip("★ LEVEL $level", ChipStyle(Color(0xFFD97706), WTheme.goldBorder, WTheme.highlightGold))
+        // FINISH_SPEC V3: the tier badge with "LVL N" in soft numbers + the tier, on a tier-tinted pill.
+        Row(
+            Modifier.align(Alignment.CenterVertically)
+                .tintedPill(TierInk.accent(com.wordocious.core.levelTier(level)), 50.dp)
+                .padding(start = 6.dp, end = 11.dp, top = 5.dp, bottom = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) { LevelBadge(level, 26.dp, numberSize = 14.sp, prefix = "LVL", showTier = true) }
         if (persona != null) {
             IdentityChip(
-                "${archetypeEmoji(persona.archetype)} ${archetypeLabel(persona.archetype)}",
+                archetypeLabel(persona.archetype),
                 ChipStyle(BrandPurpleDeep, Color(0xFFC4B5FD), BrandPurpleDeep.copy(alpha = 0.08f)),
                 onClick = onArchetypeTap,
+                art = archetypeArt(persona.archetype),
             )
             persona.bestPercentile?.takeIf { it.topPct > 0 }?.let { pct ->
                 IdentityChip(
@@ -319,8 +346,10 @@ fun ArchetypeDialog(targetName: String, targetArchetype: String, onDismiss: () -
         }
     }
     AlertDialog(
+        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done", fontWeight = FontWeight.Black, color = WTheme.primary) } },
+        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
+        confirmButton = { DialogDone("Done", onDismiss) },
         title = { Text("Player archetypes", fontWeight = FontWeight.Black) },
         text = {
             Column(
@@ -343,13 +372,14 @@ fun ArchetypeDialog(targetName: String, targetArchetype: String, onDismiss: () -
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isTarget) BrandPurpleDeep.copy(alpha = 0.08f) else WTheme.surface)
-                            .border(1.5.dp, if (isTarget) BrandPurpleDeep else WTheme.border, RoundedCornerShape(12.dp))
+                            .background(accentWash(BrandPurpleDeep, if (isTarget) 0.2f else 0.08f))
+                            .border(1.5.dp, if (isTarget) BrandPurpleDeep else accentLine(BrandPurpleDeep), RoundedCornerShape(12.dp))
                             .padding(10.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("${archetypeEmoji(key)} ${archetypeLabel(key)}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (isTarget) BrandPurpleDeep else WTheme.text)
+                            GlyphArtImage(archetypeArt(key), 16.dp)
+                            Text(archetypeLabel(key), fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (isTarget) BrandPurpleDeep else WTheme.text)
                             if (isTarget) Text(targetName, fontSize = 9.sp, fontWeight = FontWeight.Black, color = BrandPurpleDeep)
                             if (key == myArchetype) Text("YOU", fontSize = 9.sp, fontWeight = FontWeight.Black, color = BrandPink)
                         }
@@ -371,21 +401,16 @@ fun YouVsThemCard(
     onCardTap: () -> Unit,
     onTodayTap: (ProfileService.SharedDaily) -> Unit,
 ) {
-    SocialCard(onClick = onCardTap) {
+    SocialCard(SOCIAL_PINK, onClick = onCardTap) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            CardTitle("YOU vs ${targetName.uppercase()}")
+            CardTitle("YOU vs ${targetName.uppercase()}", SOCIAL_PINK)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${h2h.viewerWins}", fontSize = 24.sp, fontWeight = FontWeight.Black,
-                    color = if (h2h.viewerWins >= h2h.targetWins) WTheme.primary else WTheme.text,
-                )
-                Text(" – ", fontSize = 24.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                Text(
-                    "${h2h.targetWins}", fontSize = 24.sp, fontWeight = FontWeight.Black,
-                    color = if (h2h.targetWins > h2h.viewerWins) BrandPink else WTheme.text,
-                )
+                // A2: the head-to-head as soft numbers (the leader's side in its color).
+                SoftNumber("${h2h.viewerWins}", 26.sp, color = if (h2h.viewerWins >= h2h.targetWins && !WTheme.isDark) BrandPurpleDeep else null)
+                SoftNumber(" – ", 26.sp)
+                SoftNumber("${h2h.targetWins}", 26.sp, color = if (h2h.targetWins > h2h.viewerWins) BrandPink else null)
             }
             Column(horizontalAlignment = Alignment.End) {
                 val lead = when {
@@ -401,11 +426,9 @@ fun YouVsThemCard(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
                     .clickableNoRipple { onTodayTap(todayShared) }
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .tintedPill(SOCIAL_PURPLE, 12.dp)
+                    .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -417,10 +440,7 @@ fun YouVsThemCard(
                 )
             }
         }
-        Text(
-            "🔒 Boards open only for dailies you've finished",
-            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        )
+        LockedNote()
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VsStat("AVG GUESSES", h2h.targetAvgGuess?.let { "%.1f".format(it) } ?: "—", h2h.viewerAvgGuess?.let { "%.1f".format(it) } ?: "—", Modifier.weight(1f))
             VsStat("AVG SOLVE", h2h.targetAvgTime?.let { clock(it) } ?: "—", h2h.viewerAvgTime?.let { clock(it) } ?: "—", Modifier.weight(1f))
@@ -434,9 +454,9 @@ private fun VsStat(label: String, them: String, you: String, modifier: Modifier 
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
         Row {
-            Text(them, fontSize = 12.sp, fontWeight = FontWeight.Black, color = BrandPink)
+            Text(them, style = softNumberStyle(14.sp, BrandPink))
             Text(" / ", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
-            Text(you, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+            Text(you, style = softNumberStyle(14.sp))
         }
     }
 }
@@ -445,8 +465,10 @@ private fun VsStat(label: String, them: String, you: String, modifier: Modifier 
 @Composable
 fun H2HDetailDialog(targetName: String, h2h: ProfileService.H2HSummary, onDismiss: () -> Unit) {
     AlertDialog(
+        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done", fontWeight = FontWeight.Black, color = WTheme.primary) } },
+        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
+        confirmButton = { DialogDone("Done", onDismiss) },
         title = { Text("You vs $targetName", fontWeight = FontWeight.Black) },
         text = {
             Column(
@@ -462,8 +484,8 @@ fun H2HDetailDialog(targetName: String, h2h: ProfileService.H2HSummary, onDismis
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .background(WTheme.surface)
-                            .border(1.dp, WTheme.border, RoundedCornerShape(10.dp))
+                            .background(accentWash(SOCIAL_PURPLE, 0.06f))
+                            .border(1.dp, accentLine(SOCIAL_PURPLE, 0.24f), RoundedCornerShape(10.dp))
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -487,10 +509,7 @@ fun H2HDetailDialog(targetName: String, h2h: ProfileService.H2HSummary, onDismis
                         }
                     }
                 }
-                Text(
-                    "🔒 Boards open only for dailies you've finished",
-                    fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                )
+                LockedNote()
             }
         },
     )
@@ -507,8 +526,10 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
     }
     val modeName = seedModeName(seed)
     AlertDialog(
+        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close", fontWeight = FontWeight.Black, color = WTheme.primary) } },
+        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
+        confirmButton = { DialogDone("Close", onDismiss) },
         title = { Text("$targetName · ${modeTitleFromDb(modeName)}", fontWeight = FontWeight.Black) },
         text = {
             when (val f = fetch) {
@@ -518,7 +539,7 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Text("🔒", fontSize = 28.sp)
+                    Icon3D(Icon3DName.LOCK, 40.dp)
                     Text(
                         "Finish today's ${modeTitleFromDb(modeName)} first — no spoilers",
                         fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center,
@@ -611,26 +632,26 @@ fun TrophyCaseCard(
     flawless: ProfileService.PersonaFlawless?,
     onTap: () -> Unit,
 ) {
-    SocialCard(onClick = onTap) {
+    SocialCard(SOCIAL_GOLD, onClick = onTap) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            CardTitle("TROPHY CASE")
+            CardTitle("TROPHY CASE", SOCIAL_GOLD)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            TrophyShelf("🥇", gold, "GOLD", highlight = true, Modifier.weight(1f))
-            TrophyShelf("🥈", silver, "SILVER", highlight = false, Modifier.weight(1f))
-            TrophyShelf("🥉", bronze, "BRONZE", highlight = false, Modifier.weight(1f))
+            TrophyShelf(GlyphArt.GOLD, gold, "GOLD", PodiumInk.medal(1), Modifier.weight(1f))
+            TrophyShelf(GlyphArt.SILVER, silver, "SILVER", PodiumInk.medal(2), Modifier.weight(1f))
+            TrophyShelf(GlyphArt.BRONZE, bronze, "BRONZE", PodiumInk.medal(3), Modifier.weight(1f))
         }
         flawless?.takeIf { it.count > 0 }?.let { fl ->
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(WTheme.surfaceHover)
-                    .padding(horizontal = 11.dp, vertical = 8.dp),
+                    .tintedPill(SOCIAL_PURPLE, 12.dp)
+                    .padding(start = 11.dp, end = 11.dp, top = 10.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("💎 Rarest: ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+                GlyphArtImage(GlyphArt.DIAMOND, 18.dp)
+                Text("Rarest: ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
                 Text("Flawless Victory ×${fl.count}", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = BrandPurpleDeep, modifier = Modifier.weight(1f))
                 Text("held by ${fl.pctOfPlayers}% of players", fontSize = 10.sp, fontWeight = FontWeight.Black, color = BrandPink)
             }
@@ -639,26 +660,26 @@ fun TrophyCaseCard(
 }
 
 @Composable
-private fun TrophyShelf(emoji: String, count: Int, cap: String, highlight: Boolean, modifier: Modifier = Modifier) {
+private fun TrophyShelf(art: GlyphArt, count: Int, cap: String, medal: Color, modifier: Modifier = Modifier) {
+    // A1: each shelf in its medal's tint with the 4 dp band; A2: the soft count.
     Column(
         modifier
-            .clip(RoundedCornerShape(13.dp))
-            .background(if (highlight) WTheme.highlightGold else WTheme.surface)
-            .border(1.5.dp, if (highlight) WTheme.goldBorder else WTheme.border, RoundedCornerShape(13.dp))
-            .padding(vertical = 8.dp),
+            .tintedPill(medal, 13.dp)
+            .padding(top = 10.dp, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Text(emoji, fontSize = 16.sp)
-        Text("$count", fontSize = 21.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        GlyphArtImage(art, 24.dp)
+        SoftNumber("$count", 22.sp)
         Text(cap, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, letterSpacing = 0.8.sp)
     }
 }
 
-private fun medalEmoji(type: String): String = when (type) {
-    "gold" -> "🥇"; "silver" -> "🥈"; "bronze" -> "🥉"; "perfect" -> "💎"
-    "streak_7", "streak_30", "streak_100" -> "🔥"
-    else -> "🏅"
+/** AL addendum 2: each medal type's art (was 🥇 🥈 🥉 💎 🔥 🏅 emoji). */
+private fun medalArt(type: String): GlyphArt = when (type) {
+    "gold" -> GlyphArt.GOLD; "silver" -> GlyphArt.SILVER; "bronze" -> GlyphArt.BRONZE; "perfect" -> GlyphArt.DIAMOND
+    "streak_7", "streak_30", "streak_100" -> GlyphArt.FLAME
+    else -> GlyphArt.MEDAL
 }
 
 private fun medalLabel(m: ProfileService.UserMedal): String = when (m.medalType) {
@@ -682,7 +703,7 @@ fun MedalHistorySheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = accentWash(SOCIAL_GOLD, 0.08f), dragHandle = null) {
         Column(
             Modifier.padding(horizontal = 16.dp, vertical = 18.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -697,17 +718,15 @@ fun MedalHistorySheet(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(WTheme.surface)
-                        .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
                         .then(
                             if (podiumable) Modifier.clickableNoRipple { onPodium(m.day, m.gameMode!!) } else Modifier,
                         )
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .tintedPill(medalTint(m.medalType), 12.dp)
+                        .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    ChromeGlyph(medalEmoji(m.medalType), 20.dp, 16.sp)
+                    GlyphArtImage(medalArt(m.medalType), 22.dp)
                     Column(Modifier.weight(1f)) {
                         Text(medalLabel(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(shortDayLabel(m.day), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -731,8 +750,10 @@ fun PodiumDialog(
         value = runCatching { ProfileService.fetchPodium(day, gameMode) }.getOrDefault(emptyList())
     }
     AlertDialog(
+        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close", fontWeight = FontWeight.Black, color = WTheme.primary) } },
+        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
+        confirmButton = { DialogDone("Close", onDismiss) },
         title = { Text("${modeTitleFromDb(gameMode)} · ${shortDayLabel(day)}", fontWeight = FontWeight.Black) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -740,20 +761,23 @@ fun PodiumDialog(
                     podium == null -> Text("Loading podium…", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     podium!!.isEmpty() -> Text("No podium recorded for this day.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     else -> podium!!.forEachIndexed { i, e ->
+                        // C2 / A1: each place on its medal's tint, a medal disc, the soft score.
+                        val medal = PodiumInk.medal(i + 1)
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (i == 0) WTheme.highlightGold else WTheme.surface)
-                                .border(1.5.dp, if (i == 0) WTheme.goldBorder else WTheme.border, RoundedCornerShape(10.dp))
                                 .clickableNoRipple { onOpenProfile(e.userId) }
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                                .tintedPill(medal, 10.dp)
+                                .padding(start = 10.dp, end = 12.dp, top = 11.dp, bottom = 9.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(listOf("🥇", "🥈", "🥉").getOrElse(i) { "🏅" }, fontSize = 15.sp)
-                            Text(e.username, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f))
-                            Text(formatScore(e.score), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
+                            Box(Modifier.size(22.dp).clip(CircleShape).background(medal), contentAlignment = Alignment.Center) {
+                                Text("${i + 1}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            }
+                            LetterTileAvatar(e.username, 26.dp)
+                            Text(e.username, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
+                            SoftNumber(formatScore(e.score), 14.sp)
                         }
                     }
                 }
@@ -764,12 +788,12 @@ fun PodiumDialog(
 
 // ═══════════════════════ 4 · Highlights ═════════════════════════════════════
 
-data class ProfileHighlight(val emoji: String, val big: String, val cap: String, val onTap: (() -> Unit)? = null)
+data class ProfileHighlight(val art: GlyphArt, val big: String, val cap: String, val onTap: (() -> Unit)? = null)
 
 @Composable
 fun HighlightsCard(highlights: List<ProfileHighlight>) {
     if (highlights.isEmpty()) return
-    SocialCard {
+    SocialCard(SOCIAL_PURPLE) {
         CardTitle("HIGHLIGHTS")
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
@@ -779,15 +803,13 @@ fun HighlightsCard(highlights: List<ProfileHighlight>) {
                 Column(
                     Modifier
                         .widthIn(min = 118.dp)
-                        .clip(RoundedCornerShape(13.dp))
-                        .background(WTheme.surface)
-                        .border(1.5.dp, WTheme.border, RoundedCornerShape(13.dp))
                         .then(if (h.onTap != null) Modifier.clickableNoRipple(h.onTap) else Modifier)
-                        .padding(horizontal = 11.dp, vertical = 10.dp),
+                        .tintedPill(SOCIAL_PINK, 13.dp)
+                        .padding(start = 11.dp, end = 11.dp, top = 12.dp, bottom = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    ChromeGlyph(h.emoji, 20.dp, 16.sp)
-                    Text(h.big, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    GlyphArtImage(h.art, 22.dp)
+                    Text(h.big, style = softNumberStyle(16.sp), maxLines = 1)
                     Text(h.cap, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
                 }
             }
@@ -803,8 +825,10 @@ fun StreakCalendarDialog(
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
+        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done", fontWeight = FontWeight.Black, color = WTheme.primary) } },
+        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
+        confirmButton = { DialogDone("Done", onDismiss) },
         title = { Text("$targetName · last 60 days", fontWeight = FontWeight.Black) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -866,7 +890,7 @@ private fun remember60Days(): List<String> = runCatching {
 
 // ═══════════════════════ 5 · Lately + nemesis ═══════════════════════════════
 
-data class LatelyItem(val emoji: String, val text: String, val whenLabel: String, val onTap: (() -> Unit)? = null)
+data class LatelyItem(val art: GlyphArt, val text: String, val whenLabel: String, val onTap: (() -> Unit)? = null)
 
 /** Build the feed: medals grouped per day (newest 3 days) + login streak. */
 fun buildLatelyItems(
@@ -896,13 +920,13 @@ fun buildLatelyItems(
                     perfect.takeIf { it > 0 }?.let { "$it perfect" },
                 ).joinToString(" · ")
             }
-            val emoji = when {
-                gold > 0 -> "🥇"; silver > 0 -> "🥈"; bronze > 0 -> "🥉"; else -> "💎"
+            val art = when {
+                gold > 0 -> GlyphArt.GOLD; silver > 0 -> GlyphArt.SILVER; bronze > 0 -> GlyphArt.BRONZE; else -> GlyphArt.DIAMOND
             }
-            items += LatelyItem(emoji, text, relativeDayLabel(day), onTap = onMedals)
+            items += LatelyItem(art, text, relativeDayLabel(day), onTap = onMedals)
         }
     if (loginStreak >= 2) {
-        items += LatelyItem("🔥", "On a $loginStreak-day login streak", "Today", onTap = onStreak)
+        items += LatelyItem(GlyphArt.FLAME, "On a $loginStreak-day login streak", "Today", onTap = onStreak)
     }
     return items
 }
@@ -914,10 +938,10 @@ fun LatelyCard(
     onNemesisTap: (String) -> Unit,
 ) {
     if (items.isEmpty() && nemesis == null) return
-    SocialCard {
-        CardTitle("LATELY")
+    SocialCard(SOCIAL_BLUE) {
+        CardTitle("LATELY", SOCIAL_BLUE)
         items.forEachIndexed { i, item ->
-            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.divider))
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(accentLine(SOCIAL_BLUE, 0.24f)))
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -927,9 +951,9 @@ fun LatelyCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(
-                    Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(WTheme.surfaceHover),
+                    Modifier.size(28.dp).miniGameCard(SOCIAL_BLUE, 9.dp),
                     contentAlignment = Alignment.Center,
-                ) { ChromeGlyph(item.emoji, 18.dp, 13.sp) }
+                ) { GlyphArtImage(item.art, 20.dp) }
                 Column(Modifier.weight(1f)) {
                     Text(item.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
                     Text(item.whenLabel, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
@@ -948,7 +972,8 @@ fun LatelyCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("⚔️ Most frequent rival: ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+                GlyphArtImage(GlyphArt.SWORDS, 18.dp)
+                Text("Most frequent rival: ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
                 Text(n.username, fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = BrandPink)
                 Text(
                     "— ${n.sharedBoards} shared boards",
@@ -957,5 +982,23 @@ fun LatelyCard(
                 )
             }
         }
+    }
+}
+
+/** A medal row's tint (gold / silver / bronze; perfect purple; streaks orange). */
+private fun medalTint(type: String): Color = when (type) {
+    "gold" -> PodiumInk.medal(1)
+    "silver" -> PodiumInk.medal(2)
+    "bronze" -> PodiumInk.medal(3)
+    "perfect" -> SOCIAL_PURPLE
+    else -> Color(0xFFF97316)
+}
+
+/** The no-spoilers note under You vs Them: the 3D lock + the words (was a 🔒 emoji). */
+@Composable
+private fun LockedNote() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon3D(Icon3DName.LOCK, 12.dp)
+        Text("Boards open only for dailies you've finished", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }

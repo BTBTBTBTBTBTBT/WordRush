@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { CandyButton } from '@/components/ui/candy-button';
-import { Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { Users } from 'lucide-react';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
-import Link from 'next/link';
+import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
@@ -16,14 +16,20 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
-import { Mascot } from '@/components/ui/mascot';
-import { MASCOT_LINES, gameHost } from '@/lib/mascots';
+import { MASCOT_LINES } from '@/lib/mascots';
 import { ArtScene } from '@/components/ui/art-scene';
 import { GAME_TITLE_ART_HEIGHT, PAGE_SCENES, gameTitleArtForDbKey, gameTitleArtLabel } from '@/lib/art';
 import { ArtTitle } from '@/components/ui/art-title';
-import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
+import { GameArt } from '@/components/ui/game-art';
+import { GameTileGlyph } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
-import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
+import {
+  BoardCard, BoardRow, DisclosureHeader, LB_GOLD, ResultCard, RowBadge, SECTION_LABEL, SWEEP_BADGE_COL, SegmentedPill, SweepBadge,
+} from '@/components/leaderboard/board-rows';
+import { boardAvatarFor } from '@/components/leaderboard/board-rows';
+import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
+import { rowBadge, solvedLine, splitPodium } from '@/lib/leaderboard-podium';
+import { alphaHex, cardBarStyle, softCard } from '@/lib/soft-surface';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
@@ -43,7 +49,6 @@ import {
   type SweepEntry,
   type SweepDetails,
 } from '@/lib/daily-service';
-import { requiredSweepCount } from '@/lib/daily-modes';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { guessRowLabel } from '@/lib/mode-stats';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
@@ -65,10 +70,13 @@ import {
   shareYesterdaySweepPodiumCard,
 } from '@/lib/leaderboard-share-flow';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
-import { SweepModeDots } from '@/components/leaderboard/sweep-mode-dots';
+import { SweepModeDots, sweepStatsText } from '@/components/leaderboard/sweep-mode-dots';
 import { PageBackground } from '@/components/ui/page-background';
 
 const getMode = modeByKey;
+
+/** The taunt sheet's accent (Friends pink). */
+const TAUNT_ACCENT = '#ec4899';
 
 // Session-lived stale-while-revalidate cache, keyed mode:day:user. A mode-chip
 // tap or a return visit paints the last-known rows instantly while the fresh
@@ -253,7 +261,7 @@ export default function DailyPage() {
   const fireTaunt = async (tauntId: string) => {
     if (!tauntTarget) return;
     const r = await sendTaunt(tauntTarget.id, tauntId);
-    setTauntStatus(r.sent ? 'Sent 😈' : r.alreadySent ? 'Already taunted them today' : 'Could not send');
+    setTauntStatus(r.sent ? 'Sent!' : r.alreadySent ? 'Already taunted them today' : 'Could not send');
     setTimeout(() => {
       setTauntTarget(null);
       setTauntStatus(null);
@@ -450,11 +458,29 @@ export default function DailyPage() {
     return e ? lbScoreLabels.get(e.composite_score) ?? formatScore(e.composite_score) : null;
   })();
 
-  // §212: photo → emoji → initial, left of every username — the boards
-  // wear faces, not just names.
-  // §212: photo → emoji → initial, left of every username.
-  const lbAvatar = (avatarUrl: string | null, avatarEmoji: string | null | undefined, username: string) =>
-    <BoardAvatar url={avatarUrl} emoji={avatarEmoji} name={username} />;
+
+  // C2: the ONE result card — how you solved it. Today's completion (on hand
+  // at once) wins; else your row on the board in hand (the top-50 list or the
+  // "your neighborhood" window). Sweep: your sweep row's totals.
+  const myCompletion = !isSweep && dailiesDay === getTodayLocal() ? todayDailies.get(selectedMode) ?? null : null;
+  const myEntry = user && !isSweep
+    ? leaderboard.find((r) => r.user_id === user.id) ?? rankWindow?.entries.find((r) => r.user_id === user.id) ?? null
+    : null;
+  const mySweepEntry = user && isSweep ? sweepLeaderboard.find((r) => r.user_id === user.id) ?? null : null;
+  const modeMeta = MODE_BY_DBKEY[selectedMode];
+  const mySolved = (() => {
+    if (mySweepEntry) return `${mySweepEntry.is_flawless ? 'Flawless' : 'Swept'} · ${sweepStatsText(mySweepEntry, sweepDetails.get(mySweepEntry.user_id), getTodayLocal())}`;
+    const sem = modeMeta?.guessSemantics ?? 'guesses';
+    const base = modeMeta?.guessBase ?? 1;
+    const line = myCompletion
+      ? solvedLine(sem, base, myCompletion.guesses, myCompletion.timeSeconds, myCompletion.won)
+      : myEntry ? solvedLine(sem, base, myEntry.guess_count, myEntry.time_seconds, myEntry.completed) : null;
+    if (!line) return null;
+    const h = myEntry ? formatHintsLabel(selectedMode, myEntry.hints_used) : null;
+    return h ? `${line} · ${h}` : line;
+  })();
+  const resultPoints = myPoints ?? (myCompletion && myCompletion.score > 0 ? formatScore(myCompletion.score) : null);
+  const showResult = !!userRank || !!myCompletion;
 
   // §216: on the FRIENDS board, the week's points leader wears the crown.
   const crownId = (() => {
@@ -465,10 +491,34 @@ export default function DailyPage() {
     entries.sort((a, b) => b.pts - a.pts);
     return entries.length > 0 && entries[0].pts > 0 ? entries[0].id : null;
   })();
+  const weekCrown = (id: string) =>
+    id === crownId ? <Icon3D name="crown" size={14} inline label="Leads the week" className="ml-1" /> : null;
 
-  // One row of the leaderboard — shared by the top-50 list and the
-  // "your neighborhood" rank window so they can never drift apart visually.
-  const renderLbRow = (entry: LeaderboardEntry, rank: number, scoreLabels = lbScoreLabels) => {
+  // More Games §11: the number reads through the mode's semantics — "0
+  // Mistakes", "5 Checks", "Par", "Hubbub" — never a bare "Guesses"; boards
+  // solved and hints ride along. The W / L badge is NOT here (C2a: its column).
+  const lbStatsText = (entry: LeaderboardEntry) => {
+    let s = `${guessRowLabel(modeMeta?.guessSemantics ?? 'guesses', modeMeta?.guessBase ?? 1, entry.guess_count)} · ${formatTime(entry.time_seconds)}`;
+    if (entry.total_boards > 1) s += ` · ${entry.boards_solved}/${entry.total_boards}`;
+    const h = formatHintsLabel(selectedMode, entry.hints_used);
+    return h ? `${s} · ${h}` : s;
+  };
+
+  // Friends board: one-tap canned taunt on any friend's row (§207) — a bare 3D bell.
+  const tauntButton = (entry: { user_id: string; username: string; avatar_url: string | null }) => (
+    <HeaderGlyph
+      icon="bell"
+      size={18}
+      label={`Taunt ${entry.username}`}
+      onClick={() => setTauntTarget({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url, level: 0 })}
+      style={{ minWidth: 36, minHeight: 36 }}
+    />
+  );
+
+  // One row of the leaderboard — shared by the list below the podium, the
+  // "your neighborhood" rank window and Yesterday's Winners, so they can never
+  // drift apart visually.
+  const renderLbRow = (entry: LeaderboardEntry, rank: number, i: number, scoreLabels = lbScoreLabels) => {
     const isCurrentUser = !!user && entry.user_id === user.id;
     return (
       // Doug's Aug-16 feedback: name on top, stats underneath, score alone on
@@ -477,43 +527,19 @@ export default function DailyPage() {
         key={entry.user_id}
         rank={rank}
         userId={entry.user_id}
+        avatar={boardAvatarFor(entry)}
         username={entry.username}
         avatarUrl={entry.avatar_url}
         avatarEmoji={entry.avatar_emoji}
         isMe={isCurrentUser}
-        nameSuffix={entry.user_id === crownId ? <Icon3D name="crown" size={14} inline label="Leads the week" className="ml-1" /> : null}
-        stats={
-          <>
-            <span className="truncate">
-              {/* More Games §11: the number reads through the mode's semantics —
-                  "0 Mistakes", "5 Checks", "Par", "Hubbub" — never a bare "Guesses". */}
-              {guessRowLabel(MODE_BY_DBKEY[selectedMode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[selectedMode]?.guessBase ?? 1, entry.guess_count)} · {formatTime(entry.time_seconds)}
-              {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
-              {(() => {
-                const h = formatHintsLabel(selectedMode, entry.hints_used);
-                return h ? ` · ${h}` : '';
-              })()}
-            </span>
-            {/* §13: the W / L badge art in place of the text chip. */}
-            <WinLossBadge won={entry.completed} />
-          </>
-        }
+        nameSuffix={weekCrown(entry.user_id)}
+        stats={<span className="truncate">{lbStatsText(entry)}</span>}
+        // C2a / §13: the W / L badge art in its own column, left of the points.
+        badge={<RowBadge kind={rowBadge(entry)} />}
         score={scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
-        trailing={
-          // Friends board: one-tap canned taunt on any friend's row (§207).
-          friendsOnly && user && !isCurrentUser ? (
-            <button
-              onClick={() =>
-                setTauntTarget({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url, level: 0 })
-              }
-              aria-label={`Taunt ${entry.username}`}
-              className="p-1 -mr-1 active:scale-95 transition-transform"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              <Icon3D name="bell" size={17} />
-            </button>
-          ) : null
-        }
+        stripe={i % 2 === 0}
+        divider={i > 0}
+        trailing={friendsOnly && user && !isCurrentUser ? tauntButton(entry) : null}
       />
     );
   };
@@ -521,96 +547,52 @@ export default function DailyPage() {
   // FRIENDS ghost row — a friend who hasn't played this mode today, in the
   // standard row shell at muted opacity. The taunt bell is the whole point:
   // peer pressure as a game mechanic.
-  const renderGhostRow = (f: FriendProfile) => (
-    <div
+  const renderGhostRow = (f: FriendProfile, i: number) => (
+    <BoardRow
       key={`ghost-${f.id}`}
-      className="flex items-center gap-3 px-3 py-2.5"
-      style={{ opacity: 0.55 }}
-    >
-      <span className="text-xs font-black w-[22px] text-center shrink-0" style={{ color: 'var(--color-text-muted)' }}>–</span>
-      <div className="flex-1 min-w-0">
-        <Link
-          href={`/profile/${f.id}`}
-          className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-          style={{ color: 'var(--color-text)' }}
-        >
-          {f.username}
-        </Link>
-        <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          Hasn&apos;t played yet
-        </div>
-      </div>
-      <button
-        onClick={() => setTauntTarget(f)}
-        aria-label={`Nudge ${f.username}`}
-        className="p-1 -mr-1 active:scale-95 transition-transform"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        <Icon3D name="bell" size={17} />
-      </button>
-    </div>
+      rank={null}
+      userId={f.id}
+      avatar={boardAvatarFor(f)}
+      username={f.username}
+      avatarUrl={f.avatar_url}
+      isMe={false}
+      stats={<span>Hasn&apos;t played yet</span>}
+      stripe={i % 2 === 0}
+      divider={i > 0}
+      dim
+      trailing={
+        <HeaderGlyph icon="bell" size={18} label={`Nudge ${f.username}`} onClick={() => setTauntTarget(f)} style={{ minWidth: 36, minHeight: 36 }} />
+      }
+    />
   );
 
-  // One row of the Sweep board — same shell + RankIcon as renderLbRow, but the
-  // three stats are total score · total time · modes-won, and the Win/Loss pill
-  // becomes a GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP" (completed all 9).
-  const renderSweepRow = (entry: SweepEntry, rank: number) => {
-    const isCurrentUser = user && entry.user_id === user.id;
-    const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
-    const det = sweepDetails.get(entry.user_id);
+  // One row of a Sweep board (today's or yesterday's): total score, total
+  // time · modes won · guesses · hints, the dot strip under it, and the GOLD
+  // "FLAWLESS" / VIOLET "SWEEP" pill in the badge column (C2a).
+  const renderSweepRow = (
+    entry: SweepEntry,
+    i: number,
+    { details, streaks, labels, day }: { details: Map<string, SweepDetails>; streaks: Map<string, number>; labels: Map<number, string>; day: string },
+  ) => {
+    const det = details.get(entry.user_id);
     return (
-      <div
+      <BoardRow
         key={entry.user_id}
-        className="flex items-center gap-3 px-3 py-2.5"
-        style={isCurrentUser ? YOUR_ROW : undefined}
-      >
-        <RankIcon rank={rank} />
-        {lbAvatar(entry.avatar_url, null, entry.username)}
-        {/* Same shape as renderLbRow (Doug's Aug-16 feedback): stats under the
-            name so the name keeps the row's flexible width. */}
-        {/* §236 (founder: stats "cut off"): the score rides the NAME line —
-            the name truncates harmlessly and the stats line owns the full
-            row width, so the words always fit. */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/profile/${entry.user_id}`}
-              className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity flex-1 min-w-0"
-              style={{ color: 'var(--color-text)' }}
-            >
-              {entry.username}
-              {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-            </Link>
-            <span className="font-black text-xs shrink-0" style={{ color: 'var(--color-text)' }}>
-              {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            {/* §223: guesses (and hints) are the numbers that actually explain
-                the ranking — the formula is guess-first, so 9 slow wins can
-                trail 8 sharp ones (founder double-take, Aug 18). */}
-            {/* §227: full words — "2h" read as hours, not hints. */}
-            {/* §246: wrap, never truncate — the hints segment fell off the end. */}
-            <span className="leading-snug">
-              {formatTime(entry.total_time)} · {entry.modes_won}/{requiredSweepCount(getTodayLocal())}
-              {det ? ` · ${det.guesses} guess${det.guesses === 1 ? '' : 'es'}` : ''}
-              {det && det.hints > 0 ? ` · ${det.hints} hint${det.hints === 1 ? '' : 's'}` : ''}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <SweepModeDots details={det} day={getTodayLocal()} />
-            <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
-              style={{ background: `${pillColor}22`, color: pillColor }}
-            >
-              {/* §248: a live streak shows its length on the pill. */}
-              {entry.is_flawless
-                ? ((flawlessStreaks.get(entry.user_id) ?? 0) >= 2 ? `FLAWLESS ×${flawlessStreaks.get(entry.user_id)}` : 'FLAWLESS')
-                : 'SWEEP'}
-            </span>
-          </div>
-        </div>
-      </div>
+        rank={entry.rank}
+        userId={entry.user_id}
+        avatar={boardAvatarFor(entry)}
+        username={entry.username}
+        avatarUrl={entry.avatar_url}
+        isMe={!!user && entry.user_id === user.id}
+        // §223: guesses (and hints) explain the ranking; §227 full words; §246 wrap, never truncate.
+        stats={<span className="leading-snug">{sweepStatsText(entry, det, day)}</span>}
+        below={<SweepModeDots details={det} day={day} />}
+        badge={<SweepBadge flawless={entry.is_flawless} streak={streaks.get(entry.user_id) ?? 0} />}
+        badgeWidth={SWEEP_BADGE_COL}
+        score={labels.get(entry.total_score) ?? formatScore(entry.total_score)}
+        stripe={i % 2 === 0}
+        divider={i > 0}
+      />
     );
   };
 
@@ -709,37 +691,90 @@ export default function DailyPage() {
     router.push(`${modeHref}?daily=true`);
   };
 
+  // TODAY'S BOARD, C2: the top three on the podium, the rest as rows below.
+  // Blocked users are hidden client-side; ranks keep their original positions
+  // (holes where blocked rows were) and exact (score, time) ties share a rank
+  // (§217). The friends board is dense by construction — its fetch is already
+  // restricted to friends∪me.
+  const boardDay = getTodayLocal();
+  const lbSplit = splitPodium(
+    leaderboard
+      .map((entry, index) => ({ entry, rank: competitionRank(leaderboard, index) }))
+      .filter(({ entry }) => !isBlocked(entry.user_id)),
+  );
+  // Blocked users are already filtered by the sweep service; the RPC's rank
+  // field is authoritative (handles ties), so use it directly.
+  const sweepSplit = splitPodium(sweepLeaderboard.map((entry) => ({ entry, rank: entry.rank })));
+  const lbPodium: PodiumPlace[] = lbSplit.podium.map(({ entry, rank }) => {
+    const me = !!user && entry.user_id === user.id;
+    return {
+      key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
+      avatarUrl: entry.avatar_url, avatarEmoji: entry.avatar_emoji, isMe: me,
+      points: lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score),
+      badge: <WinLossBadge won={entry.completed} size={15} />,
+      nameSuffix: weekCrown(entry.user_id),
+      extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{lbStatsText(entry)}</span>,
+      action: friendsOnly && user && !me ? tauntButton(entry) : undefined,
+    };
+  });
+  const sweepPodium: PodiumPlace[] = sweepSplit.podium.map(({ entry, rank }) => ({
+    avatar: boardAvatarFor(entry),
+    key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
+    avatarUrl: entry.avatar_url, isMe: !!user && entry.user_id === user.id,
+    points: sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score),
+    extra: (
+      <div className="flex flex-col items-center gap-1 max-w-full">
+        <SweepBadge flawless={entry.is_flawless} streak={flawlessStreaks.get(entry.user_id) ?? 0} />
+        <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>
+          {sweepStatsText(entry, sweepDetails.get(entry.user_id), boardDay)}
+        </span>
+        <SweepModeDots details={sweepDetails.get(entry.user_id)} day={boardDay} />
+      </div>
+    ),
+  }));
+  const sweepRowOpts = { details: sweepDetails, streaks: flawlessStreaks, labels: sweepScoreLabels, day: boardDay };
+
   return (
     <PageBackground tint="leaderboard" className="min-h-screen pb-20">
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4">
-        {/* The Leaderboard banner (spec §1): the day's title, date · reset
-            clock, All-time link, and the game picker (Wordocious + SWEEP chip,
-            then Puzzles). Replaces the old title, date row and mode grid. */}
-        <div className="mb-4">
+      {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): up to
+          1100 px wide — the day headline + picker keep the 560 column across
+          the top, then two columns: the Play / result / your board cards on the
+          left, TODAY'S BOARD + YESTERDAY'S WINNERS on the right. */}
+      <div className="max-w-lg page-wide mx-auto px-4">
+        {/* A6 + C2: the day's title as the headline on the wallpaper, then the
+            one game picker card (date · reset clock + ALL-TIME → on top, the
+            WORDOCIOUS row with the Sweep broom tile, then PUZZLES). */}
+        <div className="mb-4 page-col">
           <LeaderboardBanner today={today} selectedMode={selectedMode} onSelect={setSelectedMode} />
         </div>
 
-        {/* Play card (spec §2.1): the game-tile card style in the game's color. */}
-        <div className="relative overflow-hidden mb-4" style={gameTileSurface(color)}>
-          <GameTileBar accent={color} />
-          <div className="flex items-center gap-3 px-3 pt-4 pb-3">
-            <GameTileChip accent={color}>
-              <GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />
-            </GameTileChip>
+        <div className="page-grid-2">
+        <div>
+        {/* Play card (C2): tinted in the game's color with its top bar — the
+            title art, "N players today" and a medium candy pill. */}
+        <div className="relative overflow-hidden mb-4" style={softCard(color, { radius: 18 })}>
+          <div aria-hidden="true" style={cardBarStyle(color)} />
+          <div className="flex items-center gap-3" style={{ padding: '10px 12px 12px' }}>
+            {!titleArt && (
+              <GameArt
+                id={isSweep ? 'sweep' : mode.id}
+                size={44}
+                fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+              />
+            )}
             <div className="flex-1 min-w-0">
-              {/* ART_SPEC §10: the selected game's title art (lettering + host)
-                  in place of the game name and the host beside it. */}
+              {/* ART_SPEC §10: the selected game's title art (lettering + host). */}
               {titleArt ? (
-                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" priority={false} className="mb-0.5" />
+                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" level={2} priority={false} motion="none" className="mb-0.5" />
               ) : (
-                <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>
-                  {mode.title}
+                <div className="font-black truncate" style={{ fontSize: 17, color: 'var(--color-text)' }}>
+                  {isSweep ? 'Daily Sweep' : mode.title}
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                <Users className="w-3 h-3 shrink-0" />
+              <div className="flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
+                <Users className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">
                   {isSweep
                     ? `${playerCount} swept today`
@@ -749,15 +784,11 @@ export default function DailyPage() {
               {/* §223 microcopy: the sweep board pre-answers "why is a full sweep below
                   a near-miss" — it ranks by points, not wins. */}
               {isSweep && (
-                <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                   Ranked by total points across all modes
                 </div>
               )}
             </div>
-            {/* The selected game's host stands on the card's right side. */}
-            {!isSweep && !titleArt && gameHost(selectedMode) && (
-              <Mascot id={gameHost(selectedMode)!} size={44} motion="bob" />
-            )}
             {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
                 no Play button (just complete every sweep daily to appear here). */}
             {!isSweep && (
@@ -776,37 +807,45 @@ export default function DailyPage() {
           </div>
         </div>
 
-        {/* Your board (spec §2.2): per-mode only — Sweep has no board. */}
+        {/* C2: the ONE result card on gold — crown, "#1 of N today", how you
+            solved it, points ("Completed today" + "Your rank" merged). */}
+        {showResult && (
+          <ResultCard
+            rank={userRank?.rank ?? null}
+            ofLine={userRank ? `OF ${userRank.totalPlayers}${friendsOnly && !isSweep ? ' FRIENDS' : ''} TODAY` : null}
+            solved={mySolved}
+            points={resultPoints}
+            delta={
+              userRank ? (
+                <RankDeltaBadge
+                  mode={selectedMode}
+                  playType="solo"
+                  // The friends board keeps its own rank history (SWEEP is always global).
+                  pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
+                  currentRank={userRank.rank}
+                />
+              ) : null
+            }
+          />
+        )}
+
+        {/* Your finished board (§254), collapsible under the result — per-mode
+            only; Sweep has no board. */}
         {!isSweep && (
           <SoftCompletedCards>
             <CompletedDailyBoard modeId={selectedMode} />
           </SoftCompletedCards>
         )}
 
-        {/* Your rank (spec §2.3): big numerals, medal tint for the top 3. */}
-        {userRank && (
-          <YourRankCard
-            rank={userRank.rank}
-            ofLine={`OF ${userRank.totalPlayers}${friendsOnly && !isSweep ? ' FRIENDS' : ''} TODAY`}
-            points={myPoints}
-            delta={
-              <RankDeltaBadge
-                mode={selectedMode}
-                playType="solo"
-                // The friends board keeps its own rank history (SWEEP is always global).
-                pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
-                currentRank={userRank.rank}
-              />
-            }
-          />
-        )}
+        </div>
 
-        {/* TODAY'S BOARD (spec §2.4) — daily games only (the Play card says so),
-            so an Unlimited session never shows here. */}
+        <div>
+        {/* TODAY'S BOARD — daily games only (the Play card says so), so an
+            Unlimited session never shows here. */}
         <div className="flex items-center justify-between gap-2 mb-2 px-1">
           <div style={SECTION_LABEL}>TODAY&apos;S BOARD</div>
-          <div className="flex items-center gap-2">
-            {/* Everyone | Friends — a soft pill segmented control. */}
+          <div className="flex items-center gap-1">
+            {/* Everyone | Friends — the tinted segmented control. */}
             {!isSweep && user && (
               <SegmentedPill
                 label="Everyone or Friends"
@@ -817,40 +856,40 @@ export default function DailyPage() {
               />
             )}
             {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
-              <button
+              <HeaderGlyph
+                icon="share"
+                size={20}
+                label="Share leaderboard"
                 onClick={handleShareLeaderboard}
                 disabled={sharingLb}
-                aria-label="Share leaderboard"
-                className="p-1 -my-1 active:scale-95 transition-transform"
-                style={{ color: 'var(--color-text-secondary)', opacity: sharingLb ? 0.4 : 1 }}
-              >
-                <Icon3D name="share" size={20} />
-              </button>
+                style={{ minWidth: 40, opacity: sharingLb ? 0.4 : 1 }}
+              />
             )}
           </div>
         </div>
         <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
-        <div className="overflow-hidden p-1.5" style={SOFT_CARD}>
+        <BoardCard>
           {boardLoading ? (
             <LeaderboardSkeleton />
           ) : isSweep ? (
             sweepLeaderboard.length === 0 ? (
-              <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
                 <div className="flex justify-center mb-2"><ArtScene scene={PAGE_SCENES.empty} /></div>
                 <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
               </div>
             ) : (
-              // Blocked users are already filtered by the service; the RPC's
-              // rank field is authoritative (handles ties), so use it directly.
-              <div>{sweepLeaderboard.map((entry) => renderSweepRow(entry, entry.rank))}</div>
+              <div>
+                <Podium places={sweepPodium} label="Top three sweepers" />
+                {sweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i + (sweepPodium.length > 0 ? 1 : 0), sweepRowOpts))}
+              </div>
             )
           ) : leaderboard.length === 0 ? (
             friendsOnly && ghostFriends.length > 0 ? (
               // Nobody's played yet, but the friends list still renders as
               // ghost rows — the board should feel alive (and tauntable).
-              <div>{ghostFriends.map(renderGhostRow)}</div>
+              <div>{ghostFriends.map((f, i) => renderGhostRow(f, i))}</div>
             ) : (
-              <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
                 <div className="flex justify-center mb-2"><ArtScene scene={friendsOnly ? PAGE_SCENES.addFriend : PAGE_SCENES.empty} /></div>
                 <p className="text-xs font-bold">
                   {friendsOnly
@@ -858,28 +897,19 @@ export default function DailyPage() {
                     : 'No daily results yet. Be the first!'}
                 </p>
                 {friendsOnly && (
-                  <Link
-                    href="/friends"
-                    className="inline-block mt-3 px-4 py-2 rounded-xl text-xs font-black text-white btn-3d"
-                    style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
-                  >
+                  <CandyLink href="/friends" size="sm" color="purple" icon="plus" className="mt-3">
                     Add friends
-                  </Link>
+                  </CandyLink>
                 )}
               </div>
             )
           ) : (
             <div>
-              {/* Blocked users are hidden client-side; ranks keep their
-                  original positions (holes where blocked rows were). The
-                  friends board is dense by construction — its fetch is
-                  already restricted to friends∪me. */}
-              {leaderboard
-                .map((entry, index) => ({ entry, rank: competitionRank(leaderboard, index) }))
-                .filter(({ entry }) => !isBlocked(entry.user_id))
-                .map(({ entry, rank }) => renderLbRow(entry, rank))}
+              <Podium places={lbPodium} />
+              {/* Ranks 4+ (the stripes start after the podium). */}
+              {lbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (lbPodium.length > 0 ? 1 : 0)))}
               {/* Friends who haven't played this mode today. */}
-              {friendsOnly && ghostFriends.map(renderGhostRow)}
+              {friendsOnly && ghostFriends.map((f, i) => renderGhostRow(f, lbSplit.rest.length + i + 1))}
               {/* "Your neighborhood" — the rows around the user's rank when they
                   placed past the top 50 (e.g. #425 sees ~421–429, own row
                   highlighted). Same ordering as the list, so ranks agree. */}
@@ -887,124 +917,82 @@ export default function DailyPage() {
                 <>
                   <div
                     className="text-center py-1 text-sm font-black tracking-widest"
-                    style={{ color: 'var(--color-text-muted)' }}
+                    style={{ color: 'var(--color-text-secondary)', borderTop: `1px solid ${alphaHex(LB_GOLD, 0.16)}` }}
                   >
                     ···
                   </div>
                   {rankWindow.entries
                     .map((entry, index) => ({ entry, rank: rankWindow.startRank + index }))
                     .filter(({ entry }) => !isBlocked(entry.user_id))
-                    .map(({ entry, rank }) => renderLbRow(entry, rank))}
+                    .map(({ entry, rank }, i) => renderLbRow(entry, rank, i))}
                 </>
               )}
             </div>
           )}
-        </div>
+        </BoardCard>
         </PullToRefresh>
 
-        {/* YESTERDAY'S WINNERS (spec §2.5) — per-mode top 3, or yesterday's top
-            sweepers; the collapsible podium in a soft card. */}
-        <div className="w-full mt-5 mb-2 flex items-center gap-1.5 px-1">
-          <button
-            onClick={() => setShowYesterday(!showYesterday)}
-            aria-expanded={showYesterday}
-            className="flex-1 flex items-center gap-1.5 text-left"
-            style={SECTION_LABEL}
-          >
-            YESTERDAY&apos;S WINNERS
-            {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-          {/* Settled-podium share — only once the dropdown is open with rows. */}
-          {showYesterday && (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) && (
-            <button
-              onClick={handleSharePodium}
-              disabled={sharingPodium}
-              aria-label="Share yesterday's podium"
-              className="p-1 -my-1 active:scale-95 transition-transform"
-              style={{ color: 'var(--color-text-secondary)', opacity: sharingPodium ? 0.4 : 1 }}
-            >
-              <Icon3D name="share" size={20} />
-            </button>
-          )}
-        </div>
+        {/* YESTERDAY'S WINNERS — per-mode top 5, or yesterday's top sweepers;
+            collapsible, the same tinted card and rows as today's board. */}
+        <DisclosureHeader
+          label={<>YESTERDAY&apos;S WINNERS</>}
+          open={showYesterday}
+          onToggle={() => setShowYesterday(!showYesterday)}
+          right={
+            // Settled-podium share — only once the dropdown is open with rows.
+            showYesterday && (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) ? (
+              <HeaderGlyph
+                icon="share"
+                size={20}
+                label="Share yesterday's podium"
+                onClick={handleSharePodium}
+                disabled={sharingPodium}
+                style={{ minWidth: 40, opacity: sharingPodium ? 0.4 : 1 }}
+              />
+            ) : null
+          }
+        />
 
         {showYesterday && (
-          <div className="overflow-hidden mb-4 p-1.5" style={SOFT_CARD}>
+          <BoardCard className="mb-4">
             {yesterdayLoading ? (
               <LeaderboardSkeleton />
             ) : isSweep ? (
               yesterdaySweep.length === 0 ? (
-                <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>
                   No sweeps yesterday
                 </div>
               ) : (
                 <div>
                   {/* Full sweep rows (founder ask, Aug 17): the RPC already
-                      returns time + modes for any day — show them like today's
-                      board instead of the bare name/pill/score line. */}
-                  {yesterdaySweep.filter((e) => !isBlocked(e.user_id)).map((entry) => (
-                    <div key={entry.user_id} className="flex items-center gap-3 px-3 py-2.5">
-                      <RankIcon rank={entry.rank} />
-                      {lbAvatar(entry.avatar_url, null, entry.username)}
-                      {/* §236: score rides the name line; stats own the width. */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/profile/${entry.user_id}`}
-                            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity flex-1 min-w-0"
-                            style={{ color: 'var(--color-text)' }}
-                          >
-                            {entry.username}
-                          </Link>
-                          <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text-muted)' }}>
-                            {ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                          <span className="leading-snug">
-                            {formatTime(entry.total_time)} · {entry.modes_won}/{requiredSweepCount(getYesterdayLocal())}
-                            {(() => { const g = ySweepDetails.get(entry.user_id)?.guesses; return g !== undefined ? ` · ${g} guess${g === 1 ? '' : 'es'}` : ''; })()}
-                            {(() => { const h = ySweepDetails.get(entry.user_id)?.hints ?? 0; return h > 0 ? ` · ${h} hint${h === 1 ? '' : 's'}` : ''; })()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <SweepModeDots details={ySweepDetails.get(entry.user_id)} day={yesterday} />
-                          <span
-                            className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-1"
-                            style={{
-                              background: entry.is_flawless ? '#d9770622' : '#a78bfa22',
-                              color: entry.is_flawless ? '#d97706' : '#a78bfa',
-                            }}
-                          >
-                            {entry.is_flawless
-                              ? ((yFlawlessStreaks.get(entry.user_id) ?? 0) >= 2 ? `FLAWLESS ×${yFlawlessStreaks.get(entry.user_id)}` : 'FLAWLESS')
-                              : 'SWEEP'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      returns time + modes for any day — shown like today's board. */}
+                  {yesterdaySweep
+                    .filter((e) => !isBlocked(e.user_id))
+                    .map((entry, i) => renderSweepRow(entry, i, { details: ySweepDetails, streaks: yFlawlessStreaks, labels: ySweepScoreLabels, day: yesterday }))}
                 </div>
               )
             ) : yesterdayLeaderboard.length === 0 ? (
-              <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>
                 No results from yesterday
               </div>
             ) : (
               <div>
                 {/* Full daily rows (founder ask, Aug 11): clickable profiles,
-                    guesses + time detail, W/L pill — same renderer as today. */}
+                    guesses + time detail, W/L badge — same renderer as today. */}
                 {yesterdayLeaderboard
                   .map((entry, index) => ({ entry, rank: competitionRank(yesterdayLeaderboard, index) }))
                   .filter(({ entry }) => !isBlocked(entry.user_id))
-                  .map(({ entry, rank }) => renderLbRow(entry, rank, yLbScoreLabels))}
+                  .map(({ entry, rank }, i) => renderLbRow(entry, rank, i, yLbScoreLabels))}
               </div>
             )}
-          </div>
+          </BoardCard>
         )}
+        </div>
+        </div>
       </div>
 
-      {/* Canned-taunt picker (§207): fixed phrases, one per friend per day. */}
+      {/* Canned-taunt picker (§207): fixed phrases, one per friend per day —
+          a tinted sheet of candy buttons. */}
       {tauntTarget && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -1012,16 +1000,15 @@ export default function DailyPage() {
           onClick={() => { setTauntTarget(null); setTauntStatus(null); }}
         >
           <div
-            className="w-full max-w-sm overflow-hidden"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1.5px solid var(--color-border)',
-              borderRadius: '16px',
-            }}
+            role="dialog"
+            aria-label={`Taunt ${tauntTarget.username}`}
+            className="relative w-full max-w-sm overflow-hidden"
+            style={softCard(TAUNT_ACCENT, { radius: 20 })}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <p className="text-xs font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <div aria-hidden="true" style={cardBarStyle(TAUNT_ACCENT)} />
+            <div className="px-4 pt-3 pb-2">
+              <p className="text-xs font-black uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
                 Taunt {tauntTarget.username}
               </p>
             </div>
@@ -1030,24 +1017,15 @@ export default function DailyPage() {
                 {tauntStatus}
               </div>
             ) : (
-              <div>
+              <div className="flex flex-col gap-1.5 px-4 pb-4">
                 {FRIEND_TAUNTS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => fireTaunt(t.id)}
-                    className="w-full text-left px-4 py-3 text-xs font-extrabold transition-colors hover:opacity-80"
-                    style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
-                  >
+                  <CandyButton key={t.id} size="sm" color="pink" block onClick={() => fireTaunt(t.id)}>
                     {t.text}
-                  </button>
+                  </CandyButton>
                 ))}
-                <button
-                  onClick={() => setTauntTarget(null)}
-                  className="w-full px-4 py-3 text-xs font-extrabold"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
+                <CandyButton size="sm" color="peach" block onClick={() => setTauntTarget(null)} className="mt-1">
                   Cancel
-                </button>
+                </CandyButton>
               </div>
             )}
           </div>
@@ -1060,6 +1038,7 @@ export default function DailyPage() {
         open={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
         modeName={mode.title}
+        unlimitedHref={modeHref}
         onViewPuzzle={() => router.push(`${modeHref}?daily=true`)}
       />
     </PageBackground>

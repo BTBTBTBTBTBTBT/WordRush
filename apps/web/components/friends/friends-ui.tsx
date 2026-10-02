@@ -4,29 +4,50 @@ import { useEffect } from 'react';
 import { Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { PocketArt } from '@/components/ui/game-art';
-import { LetterTileAvatar, letterTileRadius } from '@/components/ui/letter-tile-avatar';
+import { PlayerAvatar } from '@/components/avatar/player-avatar';
+import { avatarRadiusPx } from '@/lib/avatar-render';
+import { CandyButton } from '@/components/ui/candy-button';
 import { GAME_ART_FILL } from '@/lib/art';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
-import { alphaHex, overAlpha } from '@/lib/soft-surface';
+import { FR_LOOK, frBar, frSurface } from '@/lib/friends-look';
+import { softMix } from '@/lib/soft-surface';
 
 // Shared pieces of the Friends tab and the pocket-game screens (Friends
-// overhaul §0): white cards with a soft shadow and no borders, caps section
-// labels, the OUTLINE game icons in colored rounded squares, avatars with the
-// green on-now ring, the flame streak and one bottom sheet.
+// overhaul §0; finishing build C4, docs/FINISH_SPEC.md): tinted cards with a
+// top bar (A1 — the page is light-only, so the washes mix over white), caps
+// section labels, the 3D game icons in tinted chips, letter-tile avatars with
+// the green on-now dot, the flame streak, candy pills (A8) and one tinted
+// bottom sheet.
 
-/** FINISH_SPEC A1 / WHITE_AUDIT lever 2: Friends cards take a soft wash of the Friends pink (over white: the page is light-only). */
-export const cardStyle: React.CSSProperties = {
-  background: `linear-gradient(${alphaHex('#ec4899', 0.09)}, ${alphaHex('#ec4899', 0.09)}), #ffffff`,
-  border: `1.5px solid ${alphaHex('#ec4899', overAlpha(0.28, 0.09))}`,
-  borderRadius: 14,
-  boxShadow: FR.cardShadow,
-};
+/** FINISH_SPEC A1 / WHITE_AUDIT lever 2: a Friends card takes a soft wash of the Friends pink (over white: the page is light-only). */
+export const cardStyle: React.CSSProperties = frSurface(FR_LOOK.pink, { radius: 16 });
 
-export function SectionLabel({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+/**
+ * A tinted Friends card (C4): the accent's wash, its border, the mockup
+ * shadow and (optionally) the 10 px top bar in `bar`.
+ */
+export function FrCard({ accent, bar, children, className = '', style, barHeight }: {
+  accent: string;
+  /** Top bar fill (a color or gradient); omit for no bar. */
+  bar?: string;
+  barHeight?: number;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div className={`relative overflow-hidden ${className}`} style={{ ...frSurface(accent), ...style }}>
+      {bar && <div aria-hidden="true" style={frBar(bar, barHeight)} />}
+      {children}
+    </div>
+  );
+}
+
+export function SectionLabel({ children, right, color = FR.label }: { children: React.ReactNode; right?: React.ReactNode; color?: string }) {
   return (
     <div className="flex items-center justify-between gap-2 pt-1">
-      <span className="text-[11px] font-black uppercase flex items-center gap-1.5" style={{ letterSpacing: 1.2, color: FR.label }}>{children}</span>
+      <span className="text-[11px] font-black uppercase flex items-center gap-1.5" style={{ letterSpacing: 1.2, color }}>{children}</span>
       {right}
     </div>
   );
@@ -79,7 +100,7 @@ export function GameIconSquare({ kind, size = 34 }: { kind: FriendlyKind; size?:
   return (
     <span
       className="flex items-center justify-center shrink-0"
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: `${color}1f` }}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: softMix(color, 0.14), border: `1.5px solid ${softMix(color, 0.32)}` }}
     >
       <GameGlyph kind={kind} size={Math.round(size * 0.5)} color={color} />
     </span>
@@ -87,42 +108,55 @@ export function GameIconSquare({ kind, size = 34 }: { kind: FriendlyKind; size?:
 }
 
 /**
- * A player's avatar with the green on-now ring + dot: their picture (circle), or
- * their letter tile (chosen emoji or initials, ART_SPEC §20) — the ring, pulse
- * halo and dot then follow the tile's rounded-square corners.
+ * A player's avatar with the green on-now ring + dot (FINISH_SPEC AN5 / AN6):
+ * their photo or their mascot, always a rounded square in their frame — the
+ * ring, pulse halo and dot follow its corners. AM2: `emoji` is never drawn.
  */
-export function FriendAvatar({ name, url, emoji, accent, size = 34, online = false, pulse = false }: {
-  name: string; url?: string | null; emoji?: string | null; accent?: string | null; size?: number; online?: boolean; pulse?: boolean;
+export function FriendAvatar({ name, url, accent, size = 34, online = false, pulse = false, pro, castId, level, userId, config, frame }: {
+  name: string; url?: string | null;
+  /** Retired (AM2): never drawn. */
+  emoji?: string | null;
+  accent?: string | null; size?: number; online?: boolean; pulse?: boolean;
+  /** FINISH_SPEC AA2: the row's Pro flag when the data carries one (else the signed-in Pro player's own avatar is crowned). */
+  pro?: boolean | null;
+  /** FINISH_SPEC AH (legacy): the row's avatar_cast_id / avatar_frame when the data carries them. */
+  castId?: string | null;
+  frame?: string | null;
+  level?: number | null;
+  /** FINISH_SPEC AN3: the row's user id (matches the signed-in player) and saved avatar_config. */
+  userId?: string | null;
+  config?: unknown;
 }) {
-  const dot = Math.max(8, Math.round(size * 0.26));
+  const dot = Math.max(10, Math.round(size * 0.3));
   const ring = online ? `0 0 0 2px ${FR.online}` : undefined;
-  const tileRadius = letterTileRadius(size);
+  const radius = avatarRadiusPx(size);
   return (
     <span className="relative shrink-0 inline-flex" style={{ width: size, height: size }}>
       {online && pulse && (
         <span
-          className={`absolute animate-pulse${url ? ' rounded-full' : ''}`}
-          style={{ inset: -4, background: `${FR.online}33`, borderRadius: url ? undefined : tileRadius + 4 }}
+          className="absolute motion-safe:animate-pulse"
+          style={{ inset: -4, background: `${FR.online}33`, borderRadius: radius + 4 }}
           aria-hidden="true"
         />
       )}
-      {url ? (
-        <span
-          className="relative rounded-full overflow-hidden flex items-center justify-center"
-          style={{ width: size, height: size, background: FR.soft, boxShadow: ring }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt={name} className="w-full h-full object-cover" />
-        </span>
-      ) : (
-        <LetterTileAvatar name={name} emoji={emoji} accent={accent} size={size} shadow={ring} />
-      )}
+      <PlayerAvatar
+        name={name}
+        userId={userId}
+        url={url}
+        accent={accent}
+        config={config}
+        castId={castId}
+        frame={frame}
+        level={level}
+        pro={pro}
+        size={size}
+        shadow={ring}
+        label={name}
+      />
       {online && (
         <span
           className="absolute rounded-full"
-          style={url
-            ? { width: dot, height: dot, right: -1, bottom: -1, background: FR.online, boxShadow: '0 0 0 2px #ffffff' }
-            : { width: dot, height: dot, right: -dot * 0.3, bottom: -dot * 0.3, background: FR.online, boxShadow: '0 0 0 2px #ffffff' }}
+          style={{ width: dot, height: dot, right: -dot * 0.3, bottom: -dot * 0.3, background: FR.online, boxShadow: '0 0 0 2px #ffffff', zIndex: 2 }}
           aria-label="On now"
         />
       )}
@@ -140,20 +174,50 @@ export function FlameCount({ days, label }: { days: number; label?: string }) {
   );
 }
 
-/** Solid pink or soft pink pill. */
-export function Pill({ children, onClick, solid = false, disabled = false, label }: {
+/**
+ * A small candy action (A8): `solid` = the pink candy, otherwise the quiet
+ * peach one (or `color`). Stops the row's own tap.
+ */
+export function Pill({ children, onClick, solid = false, disabled = false, label, color, icon }: {
   children: React.ReactNode; onClick?: () => void; solid?: boolean; disabled?: boolean; label?: string;
+  color?: 'purple' | 'pink' | 'amber' | 'teal' | 'peach';
+  icon?: React.ComponentProps<typeof CandyButton>['icon'];
 }) {
   return (
-    <button
-      type="button"
+    <CandyButton
+      size="sm"
+      color={color ?? (solid ? 'pink' : 'peach')}
+      icon={icon}
       onClick={(e) => { e.stopPropagation(); onClick?.(); }}
       disabled={disabled}
       aria-label={label}
-      className="shrink-0 px-3 font-black text-[11px] rounded-full transition-transform active:scale-95 disabled:opacity-50"
-      style={{ height: 28, background: solid ? FR.solid : FR.soft, color: solid ? '#ffffff' : FR.mid }}
+      className="shrink-0"
     >
       {children}
+    </CandyButton>
+  );
+}
+
+/**
+ * One of the six friend games (C4, mockup `.gt`): a small card tinted in the
+ * game's color with its own 7 px top bar, the 3D pocket icon, the title and a
+ * short line.
+ */
+export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKind; title: string; sub: string; onClick: () => void }) {
+  const color = KIND_COLOR[kind];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative overflow-hidden flex flex-col text-left"
+      style={{ ...frSurface(color, { radius: 16, shadow: false }), boxShadow: '0 6px 14px rgba(60, 30, 110, 0.08)' }}
+    >
+      <span aria-hidden="true" className="block w-full" style={frBar(color, 7)} />
+      <span className="flex flex-col gap-1" style={{ padding: '8px 8px 10px' }}>
+        <PocketArt kind={kind} size={34} fallback={<OutlineGlyph kind={kind} size={26} color={color} stroke={2.2} />} />
+        <span className="text-[12px] font-black leading-tight" style={{ color: FR_LOOK.ink }}>{title}</span>
+        <span className="text-[10px] font-bold leading-tight" style={{ color: FR_LOOK.sub }}>{sub}</span>
+      </span>
     </button>
   );
 }
@@ -168,16 +232,16 @@ export function Sheet({ onClose, children, label }: { onClose: () => void; child
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(15,23,42,0.35)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(42,22,80,0.35)' }} onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
         className="w-full max-w-md overflow-y-auto"
-        style={{ background: FR.page, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(15,23,42,0.18)' }}
+        style={{ background: softMix(FR_LOOK.pink, 0.08), borderTop: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(60,30,110,0.18)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: '#d1d5db' }} />
+        <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: softMix(FR_LOOK.pink, 0.4) }} />
         {children}
       </div>
     </div>

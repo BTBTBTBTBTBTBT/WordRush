@@ -99,9 +99,12 @@ fun TileView(
     val flip = remember(flipDelay) { Animatable(0f) }      // 0..1 over the whole turn
     val fade = remember(flipDelay) { Animatable(1f) }      // reduced-motion crossfade
     val bloom = remember(flipDelay) { Animatable(0f) }     // 0..1 glow intensity
+    val feedbackView = androidx.compose.ui.platform.LocalView.current
     LaunchedEffect(flipDelay) {
         if (!animateFlip) return@LaunchedEffect
         delay(flipDelay!!.toLong())
+        // Spec U: each tile of a reveal = flip · selection tick (simultaneous boards play once).
+        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.FLIP, feedbackView)
         if (reduced) {
             fade.animateTo(0.4f, tween(TileMotion.REDUCED_FLIP_MS / 2))
             showFinal = true
@@ -171,7 +174,20 @@ fun TileView(
     val celSY = remember(celebrate) { Animatable(1f) }
     val celRot = remember(celebrate) { Animatable(0f) }
     LaunchedEffect(celebrate) {
-        if (celebrate == null || reduced) return@LaunchedEffect
+        if (celebrate == null) return@LaunchedEffect
+        if (reduced) {
+            // Spec U: the correct row still "lands" (light haptic) without the motion.
+            if (celebrate == TileCelebration.HOP) {
+                delay(celebrateDelay.toLong() + TileMotion.HOP_MS)
+                com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.ROW_LAND, feedbackView)
+            }
+            return@LaunchedEffect
+        }
+        if (celebrate == TileCelebration.HOP) launch {
+            // Spec U: correct-row land = light haptic as the first tile comes down (once per row).
+            delay(celebrateDelay.toLong() + TileMotion.HOP_MS)
+            com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.ROW_LAND, feedbackView)
+        }
         delay(celebrateDelay.toLong())
         coroutineScope {
             when (celebrate) {

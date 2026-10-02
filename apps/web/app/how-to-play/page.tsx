@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { HOW_TO_PLAY, type HTPTileColor } from '@/lib/how-to-play-content';
-import { InfoPageHeader } from '@/components/ui/info-page-header';
-import { PageBackground } from '@/components/ui/page-background';
-import { onPageShadow } from '@/lib/art';
+import { LetterTile, type TileLook } from '@/components/game/letter-tile';
+import { CandyLink } from '@/components/ui/candy-button';
+import { InfoPageLayout, IntroCard, IntroText, SectionCard, infoAccent } from '@/components/ui/info-page';
+import { TOUR_HREF } from '@/lib/onboarding';
 
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
@@ -11,94 +11,83 @@ export const metadata: Metadata = {
     'Learn how to play Wordocious. Complete guide to every game mode: Classic, VS Battle, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, and the ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Scoring, streaks, medals, and tips for beginners.',
 };
 
-function TileExample({ letter, color }: { letter: string; color: HTPTileColor }) {
-  const bg: Record<string, string> = { green: '#7c3aed', yellow: '#f59e0b', gray: '#64748b', empty: 'var(--color-surface)' };
-  const text: Record<string, string> = { green: '#fff', yellow: '#fff', gray: '#fff', empty: 'var(--color-text)' };
-  const border: Record<string, string> = { green: '#7c3aed', yellow: '#f59e0b', gray: '#64748b', empty: 'var(--color-border)' };
-  return (
-    <span
-      className="inline-flex items-center justify-center font-black text-sm rounded"
-      style={{ width: 36, height: 36, background: bg[color], color: text[color], border: `2px solid ${border[color]}` }}
-    >
-      {letter}
-    </span>
-  );
-}
+/** HTP tile colors → the glossy game tile looks (B1). Unrevealed letters show on the frosted empty tile. */
+const TILE_LOOK: Record<HTPTileColor, TileLook> = { green: 'correct', yellow: 'present', gray: 'absent', empty: 'empty' };
 
-const cardStyle = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() } as const;
+function TileExample({ letter, color }: { letter: string; color: HTPTileColor }) {
+  return <LetterTile letter={letter} look={TILE_LOOK[color]} style={{ width: 36, ['--gt-font' as string]: '17px' }} />;
+}
 
 export default function HowToPlayPage() {
   return (
-    <PageBackground tint="home" className="min-h-screen pb-12">
-      <InfoPageHeader title="How to Play" art="art-title-howto" />
-      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Everything you need to know to get started</p>
-
-        <div className="space-y-4">
-          {HOW_TO_PLAY.map((s, i) => (
-            <div key={i} style={cardStyle} className="p-5">
-              <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>{s.title}</h2>
-
-              {s.intro && (
-                <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>{s.intro}</p>
-              )}
-
-              {s.bullets && (
-                <ul className="text-xs leading-relaxed space-y-1.5 mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-                  {s.bullets.map((b, j) => (
-                    <li key={j} className="flex gap-2">
-                      <span style={{ color: '#7c3aed' }}>&#8226;</span>
-                      <span>{b.strong && <strong style={{ color: 'var(--color-text)' }}>{b.strong}</strong>}{b.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {s.tilesHeading && (
-                <h3 className="text-xs font-black mb-2 mt-1" style={{ color: 'var(--color-text)' }}>{s.tilesHeading}</h3>
-              )}
-              {s.tiles && (
-                <div className="space-y-3">
-                  {s.tiles.map((t, j) => (
-                    <div key={j} className="flex items-center gap-3">
-                      <div className="flex gap-1 flex-shrink-0">
-                        {t.letters.map((l, k) => <TileExample key={k} letter={l.ch} color={l.color} />)}
-                      </div>
-                      <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                        <strong style={{ color: t.strongColor }}>{t.strong}</strong>{t.rest}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {s.modes && (
-                <div className="space-y-4">
-                  {s.modes.map((m, j) => (
-                    <div key={j}>
-                      <h3 className="text-xs font-black mb-1" style={{ color: m.accent }}>{m.name}</h3>
-                      <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{m.body}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {s.outro && (
-                <p className="text-xs leading-relaxed mt-3" style={{ color: 'var(--color-text-secondary)' }}>{s.outro}</p>
-              )}
-            </div>
-          ))}
-
-          {/* Links */}
-          <div style={cardStyle} className="p-5">
-            <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>More Information</h2>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/privacy" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>Privacy Policy</Link>
-              <Link href="/terms" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>Terms of Service</Link>
-            </div>
-          </div>
+    <InfoPageLayout title="How to Play" art="art-title-howto">
+      <IntroCard title="Everything you need to know to get started">
+        <IntroText>The rules, the tile colors and every mode, one card at a time.</IntroText>
+        {/* FINISH_SPEC AO: replay the welcome + quick tour (steps 1–2). */}
+        <div className="mt-3">
+          <CandyLink href={TOUR_HREF} color="purple" size="sm" icon="play">Take the tour</CandyLink>
         </div>
-      </div>
-    </PageBackground>
+      </IntroCard>
+
+      {HOW_TO_PLAY.map((s, i) => (
+        <SectionCard key={i} heading={s.title} accent={infoAccent(i)}>
+          {s.intro && (
+            <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>{s.intro}</p>
+          )}
+
+          {s.bullets && (
+            <ul className="text-xs leading-relaxed space-y-1.5 mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+              {s.bullets.map((b, j) => (
+                <li key={j} className="flex gap-2">
+                  <span aria-hidden="true" style={{ color: '#8b5cf6' }}>&#8226;</span>
+                  <span>{b.strong && <strong style={{ color: 'var(--color-text)' }}>{b.strong}</strong>}{b.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {s.tilesHeading && (
+            <h3 className="text-xs font-black mb-2 mt-1" style={{ color: 'var(--color-text)' }}>{s.tilesHeading}</h3>
+          )}
+          {s.tiles && (
+            <div className="space-y-3">
+              {s.tiles.map((t, j) => (
+                <div key={j} className="flex items-center gap-3">
+                  <div className="flex gap-1 flex-shrink-0">
+                    {t.letters.map((l, k) => <TileExample key={k} letter={l.ch} color={l.color} />)}
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                    <strong style={{ color: t.strongColor }}>{t.strong}</strong>{t.rest}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {s.modes && (
+            <div className="space-y-4">
+              {s.modes.map((m, j) => (
+                <div key={j}>
+                  <h3 className="text-xs font-black mb-1" style={{ color: m.accent }}>{m.name}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{m.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {s.outro && (
+            <p className="text-xs leading-relaxed mt-3" style={{ color: 'var(--color-text-secondary)' }}>{s.outro}</p>
+          )}
+        </SectionCard>
+      ))}
+
+      {/* Links (A8: candy buttons) */}
+      <SectionCard heading="More Information" accent={infoAccent(HOW_TO_PLAY.length)}>
+        <div className="flex flex-wrap gap-2 mt-1">
+          <CandyLink href="/privacy" color="peach" size="sm">Privacy Policy</CandyLink>
+          <CandyLink href="/terms" color="peach" size="sm">Terms of Service</CandyLink>
+        </div>
+      </SectionCard>
+    </InfoPageLayout>
   );
 }

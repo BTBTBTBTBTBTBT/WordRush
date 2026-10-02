@@ -4,7 +4,7 @@ import {
   incomingLine, ladderNextKind, liveTileSub, lobbyCount, raceTarget, recentSent, rowStates, sendPanelLine,
   sentLabel, sentStatus, sumRecord, todayTileLine, todaysBattle, utcCountdown, utcDay,
 } from './vs-lobby';
-import { emptyCpuProgression, foldLadder, botOfDayToday } from './bot/cpu-progression';
+import { emptyCpuProgression, foldLadder, botOfDayToday, migrateCpuProgression, LADDER_VERSION } from './bot/cpu-progression';
 
 // The VS overhaul's web glue (spec docs/VS_REDESIGN_SPEC.md). The shared words
 // are tested in packages/core; these pin the lobby's own lines and folds.
@@ -40,17 +40,18 @@ describe('VS lobby lines', () => {
   it('builds the PLAY tile lines', () => {
     expect(liveTileSub(2, 'OCTORDLE')).toBe('2 waiting now in OctoWord.');
     expect(liveTileSub(0, 'DUEL')).toBe('0 waiting now. A bot steps in at 0:15.');
-    expect(botsTileSub(0)).toBe('Ladder 0 of 4. Rook is next.');
-    expect(botsTileSub(3)).toBe('Ladder 3 of 4. Adapt is next.');
-    expect(botsTileSub(4)).toBe('Ladder cleared!');
+    expect(botsTileSub(0)).toBe('Ladder 0 of 10. Rip is next.');
+    expect(botsTileSub(5)).toBe('Ladder 5 of 10. Umi is next.');
+    expect(botsTileSub(9)).toBe('Ladder 9 of 10. Webster is next.');
+    expect(botsTileSub(10)).toBe('Ladder cleared!');
   });
 
   it('picks the ladder bot that steps in', () => {
-    expect(ladderNextKind(0)).toBe('easy');
-    expect(ladderNextKind(1)).toBe('medium');
-    expect(ladderNextKind(2)).toBe('hard');
-    expect(ladderNextKind(3)).toBe('adaptive');
-    expect(ladderNextKind(4)).toBe('adaptive');
+    expect(ladderNextKind(0)).toBe('rip');
+    expect(ladderNextKind(1)).toBe('ivy');
+    expect(ladderNextKind(5)).toBe('umi');
+    expect(ladderNextKind(9)).toBe('webster');
+    expect(ladderNextKind(10)).toBe('umi');
   });
 
   it('shows the honest lobby count', () => {
@@ -146,14 +147,22 @@ describe('result mini boards', () => {
 describe('progression', () => {
   it('folds bot games into the ladder (core ladderAfterGame)', () => {
     let p = emptyCpuProgression();
-    p = foldLadder(p, 'rook', true);
-    p = foldLadder(p, 'lexi', true); // not the next bot: no change
+    p = foldLadder(p, 'rip', true);
+    p = foldLadder(p, 'opal', true); // not the next bot: no change
     expect([p.ladderCleared, p.ladderRun]).toEqual([0, 1]);
-    p = foldLadder(foldLadder(p, 'rook', true), 'rook', true);
+    p = foldLadder(foldLadder(p, 'rip', true), 'rip', true);
     expect([p.ladderCleared, p.ladderRun]).toEqual([1, 0]);
-    p = foldLadder(foldLadder(p, 'lexi', true), 'lexi', false);
+    p = foldLadder(foldLadder(p, 'rook', true), 'ivy', false); // rook = ivy (old id)
     expect([p.ladderCleared, p.ladderRun]).toEqual([1, 0]);
     expect(foldLadder(p, 'daily', true)).toEqual(p);
+  });
+
+  it('migrates an old four-rung save to the cast ladder', () => {
+    expect([0, 1, 2, 3, 4].map((n) => migrateCpuProgression({ ladderCleared: n, ladderRun: 2 }).ladderCleared)).toEqual([0, 2, 4, 7, 10]);
+    const m = migrateCpuProgression({ ladderCleared: 2, ladderRun: 2, unlocked: ['nova', 'rook', 'ivy'] });
+    expect(m).toMatchObject({ ladderCleared: 4, ladderRun: 0, ladderVersion: LADDER_VERSION, unlocked: ['dewey', 'ivy'] });
+    // Already migrated: left alone.
+    expect(migrateCpuProgression({ ladderCleared: 3, ladderRun: 1, ladderVersion: LADDER_VERSION })).toMatchObject({ ladderCleared: 3, ladderRun: 1 });
   });
 
   it('reads today’s Bot of the Day', () => {

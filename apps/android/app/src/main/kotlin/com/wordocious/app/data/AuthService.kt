@@ -53,6 +53,14 @@ data class Profile(
     @SerialName("accent_color") val accentColor: String? = null,
     @SerialName("favorite_mode") val favoriteMode: String? = null,
     @SerialName("avatar_emoji") val avatarEmoji: String? = null,
+    // FINISH_SPEC AH (additive; the columns may not exist yet → null): the cast
+    // character worn as the avatar ("w", "o1", … AvatarCast.IDS) and the chosen
+    // level-tier frame ("bronze" … "diamond").
+    @SerialName("avatar_cast_id") val avatarCastId: String? = null,
+    @SerialName("avatar_frame") val avatarFrame: String? = null,
+    // FINISH_SPEC AN3 (additive; the column may not exist yet → null): the
+    // build-your-own mascot (core AvatarConfig, read with validateAvatar).
+    @SerialName("avatar_config") val avatarConfig: kotlinx.serialization.json.JsonElement? = null,
     // PRIVATE PROFILES (migration 20260806000001): world-readable flag; when
     // true, other players see only the teaser card and the four
     // /api/profile/[id]/* endpoints 403 for them.
@@ -212,7 +220,7 @@ object AuthService {
         // beat after a cold start; paint the last known row immediately and let
         // the real fetch overwrite it. Reverted below if no session restores.
         if (hadPersistedSession() && _profile.value == null) {
-            cachedProfileRow()?.let { _profile.value = it; _isAuthenticated.value = true }
+            cachedProfileRow()?.let { _profile.value = it; _isAuthenticated.value = true; runCatching { CastAvatars.recordOwn(it) } }
         }
         scope.launch {
             try {
@@ -670,6 +678,8 @@ object AuthService {
             // account (or a hand-off from guest play) starts clean.
             claimSavesFor(userId)
             _profile.value = result
+            // AH: the player's character / frame for every avatar on screen.
+            runCatching { CastAvatars.recordOwn(result) }
             result?.let {
                 cacheHeaderValues(it)
                 // §241: whole-row launch cache, cleared only on sign-out or a

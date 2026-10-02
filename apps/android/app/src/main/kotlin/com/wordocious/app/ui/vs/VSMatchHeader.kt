@@ -37,6 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.app.ui.FinishInk
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.core.BoardState
 import com.wordocious.core.GameMode
 import com.wordocious.core.TileState
@@ -75,19 +80,33 @@ fun TypingDots(dotSize: androidx.compose.ui.unit.Dp = 4.dp, color: Color = Color
     }
 }
 
-/** Moment callout — a soft white pill with a teal dot (VS polish §1: no
- *  gradient toast). */
+/**
+ * Moment callout (VS polish §1; FINISH_SPEC K1): an in-match notice — a tinted pill in
+ * the event's [accent] with its 4 dp top band, a small cast [pose] that fits the moment
+ * (O2 "gasp" by default: the opponent is close / solved a board; A7 callers pass a
+ * different character when O2 is on screen), the line in Nunito Black. Pops in with a
+ * spring (instant with Reduce Motion) and is announced politely.
+ */
 @Composable
-fun VsCalloutPill(text: String) {
+fun VsCalloutPill(
+    text: String,
+    accent: Color = Color(0xFFEC4899),
+    pose: Pair<com.wordocious.app.ui.MascotId, String>? = com.wordocious.app.ui.MascotId.O2 to "gasp",
+) {
+    val still = WTheme.reducedMotion
+    val pop = remember(text) { androidx.compose.animation.core.Animatable(if (still) 1f else 0.85f) }
+    LaunchedEffect(text) { if (!still) pop.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.5f, stiffness = 520f)) }
     Row(
         Modifier.padding(horizontal = 24.dp)
-            .shadow(6.dp, RoundedCornerShape(50), ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))
-            .clip(RoundedCornerShape(50)).background(Color.White)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+            .vsPill(accent, 50.dp, amount = 0.16f)
+            .semantics { liveRegion = LiveRegionMode.Polite; contentDescription = text }
+            .padding(start = if (pose != null) 4.dp else 14.dp, end = 14.dp, top = 5.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(VsTeal.ink))
-        Text(text, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, maxLines = 2)
+        if (pose != null) VsCastPose(pose.first, pose.second, 30.dp)
+        else Box(Modifier.size(7.dp).clip(CircleShape).background(accent))
+        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 2)
     }
 }

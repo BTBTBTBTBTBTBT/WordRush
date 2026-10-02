@@ -1,7 +1,8 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
-import { Icon3D } from '@/components/ui/icon3d';
+import Image from 'next/image';
+import { ART_SIZE, artSrc } from '@/lib/art';
+import { softBackground, softBorder, softShadow } from '@/lib/soft-surface';
 
 interface Props {
   /** Total dailies completed today (W + L combined). */
@@ -12,13 +13,32 @@ interface Props {
   total: number;
 }
 
+/** G4 looks: gold for a Sweep, pink for a Flawless, each with its wide cast art. */
+const LOOK = {
+  flawless: {
+    accent: '#ec4899',
+    bar: 'linear-gradient(90deg, #f9a8d4, #ec4899 55%, #c026d3)',
+    art: 'art-scene-banner-flawless' as const,
+    title: 'FLAWLESS VICTORY!',
+    ink: '#be185d',
+  },
+  sweep: {
+    accent: '#f5a524',
+    bar: 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)',
+    art: 'art-scene-banner-sweep' as const,
+    title: 'DAILY SWEEP!',
+    ink: '#b45309',
+  },
+};
+
 /**
- * Celebratory banner shown on both /profile and / (home) once the user
- * has played all N dailies today. Two variants:
+ * Celebratory banner once the user has played all N dailies today
+ * (docs/FINISH_SPEC.md G4): a tinted banner card with its own top bar (gold
+ * for a Daily Sweep, pink for a Flawless Victory) and the wide celebration
+ * art beside the headline, the whole group visible.
  *
- * - Flawless Victory (wins === total): gold gradient + trophy.
- * - Daily Sweep      (completed === total but with losses): purple/pink
- *   wordmark gradient + sparkles.
+ * - Flawless Victory (wins === total).
+ * - Daily Sweep      (completed === total but with losses).
  *
  * Returns null when dailies aren't all complete — callers can
  * unconditionally render it.
@@ -27,55 +47,42 @@ export function DailySweepBanner({ completed, wins, total }: Props) {
   if (completed < total) return null;
 
   const flawless = wins === total;
-
-  if (flawless) {
-    return (
-      <div
-        className="w-full flex flex-col items-center py-3 px-4"
-        style={{
-          background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-          border: '1.5px solid #f59e0b',
-          borderRadius: '14px',
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Icon3D name="trophy" size={20} />
-          <span
-            className="text-lg font-black text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}
-          >
-            FLAWLESS VICTORY!
-          </span>
-          <Icon3D name="trophy" size={20} />
-        </div>
-        <div className="text-[11px] font-extrabold mt-0.5" style={{ color: '#b45309' }}>
-          All {total} dailies won today · +600 XP earned
-        </div>
-      </div>
-    );
-  }
+  const look = flawless ? LOOK.flawless : LOOK.sweep;
+  const [w, h] = ART_SIZE[look.art];
 
   return (
     <div
-      className="w-full flex flex-col items-center py-3 px-4"
+      className="w-full overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #f5f3ff, #fce7f3)',
-        border: '1.5px solid #c4b5fd',
-        borderRadius: '14px',
+        background: softBackground(look.accent, 0.14),
+        border: softBorder(look.accent, 0.14),
+        borderRadius: 18,
+        boxShadow: softShadow(look.accent, 0.16),
       }}
     >
-      <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
-        <span
-          className="text-base font-black text-transparent bg-clip-text"
-          style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-        >
-          DAILY SWEEP!
-        </span>
-        <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
-      </div>
-      <div className="text-[11px] font-extrabold mt-0.5" style={{ color: '#6d28d9' }}>
-        All {total} dailies completed · +200 XP earned
+      <div aria-hidden="true" style={{ height: 10, background: look.bar }} />
+      <div className="flex items-center gap-2 py-2 pl-4 pr-2">
+        <div className="flex-1 min-w-0">
+          <div className="text-lg font-black leading-tight tint-ink" style={{ color: look.ink }}>
+            {look.title}
+          </div>
+          <div className="text-[11px] font-extrabold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            {flawless
+              ? <>All {total} dailies won today · +600 XP earned</>
+              : <>All {total} dailies completed · +200 XP earned</>}
+          </div>
+        </div>
+        <Image
+          src={artSrc(look.art)}
+          alt=""
+          aria-hidden="true"
+          width={w}
+          height={h}
+          draggable={false}
+          sizes="140px"
+          className="shrink-0 select-none pointer-events-none"
+          style={{ height: 86, width: 'auto', maxWidth: '48%', objectFit: 'contain' }}
+        />
       </div>
     </div>
   );

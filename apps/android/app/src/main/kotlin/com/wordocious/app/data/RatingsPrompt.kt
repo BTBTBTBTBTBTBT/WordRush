@@ -2,65 +2,19 @@ package com.wordocious.app.data
 
 import android.app.Activity
 import android.content.Context
-import androidx.core.content.pm.PackageInfoCompat
-import com.google.android.play.core.review.ReviewManagerFactory
-import kotlinx.coroutines.delay
 
 /**
- * Play in-app review with deliberate timing (replaces ReviewPrompter):
- * only after a WIN once the player has 5+ lifetime wins, at most once every
- * 14 days, and once per build (versionCode) — delayed ~2s so it never competes with
- * the confetti. NEVER on a loss or at launch. Play itself also quota-limits
- * the sheet: when it declines, launchReviewFlow shows no UI, which is fine.
+ * Legacy win-path hooks, kept so the game screens' call sites keep working. FINISH_SPEC AI:
+ * an ordinary win is no longer a review moment; the ONE review path is [StoreReview]
+ * (Flawless / Daily Sweep / 7-day streak milestone). [recordWin] still feeds it (first-play
+ * stamp, last result = win); [maybeAsk] no longer asks.
  */
 object RatingsPrompt {
-    private const val PREFS = "ratings_prompt"
-    private const val KEY_WINS = "win_count"
-    private const val KEY_LAST_ASK_MS = "last_ask_ms"
-    private const val MIN_WINS = 5
-    private const val MIN_INTERVAL_MS = 14L * 24 * 60 * 60 * 1000 // 14 days
+    /** Call on every post-game WIN. */
+    @Suppress("UNUSED_PARAMETER")
+    fun recordWin(context: Context) = StoreReview.notePlayed(won = true)
 
-    private fun prefs(context: Context) =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-
-    /** Bump the lifetime win counter — call on every post-game WIN. */
-    fun recordWin(context: Context) {
-        val p = prefs(context)
-        p.edit().putInt(KEY_WINS, p.getInt(KEY_WINS, 0) + 1).apply()
-    }
-
-    /**
-     * Ask for a review when all gates pass: wins >= 5, >= 14 days since the
-     * last ask, and not yet asked on this versionCode. Call from the WIN path
-     * only; suspends ~2s first so the celebration lands before the sheet.
-     */
-    suspend fun maybeAsk(activity: Activity) {
-        val p = prefs(activity)
-        if (p.getInt(KEY_WINS, 0) < MIN_WINS) return
-
-        val now = System.currentTimeMillis()
-        val lastAsk = p.getLong(KEY_LAST_ASK_MS, 0L)
-        if (lastAsk != 0L && now - lastAsk < MIN_INTERVAL_MS) return
-
-        // versionCode, not versionName: iOS keys this on CFBundleVersion (the
-        // build number), so the ask re-arms on every shipped build rather than
-        // once per marketing version.
-        val build = runCatching {
-            val info = activity.packageManager.getPackageInfo(activity.packageName, 0)
-            PackageInfoCompat.getLongVersionCode(info).toString()
-        }.getOrNull() ?: "0"
-        val buildKey = "asked-b$build"
-        if (p.getBoolean(buildKey, false)) return
-
-        // Mark BEFORE launching so a crash/quota-decline still consumes the ask.
-        p.edit().putLong(KEY_LAST_ASK_MS, now).putBoolean(buildKey, true).apply()
-
-        delay(2000) // let the win celebration land first
-        runCatching {
-            val manager = ReviewManagerFactory.create(activity)
-            manager.requestReviewFlow().addOnSuccessListener { info ->
-                manager.launchReviewFlow(activity, info)
-            }
-        }
-    }
+    /** No-op: plain wins don't ask any more (see [StoreReview]). */
+    @Suppress("UNUSED_PARAMETER", "RedundantSuspendModifier")
+    suspend fun maybeAsk(activity: Activity) { }
 }

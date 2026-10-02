@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Sparkles, Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { GameArt } from '@/components/ui/game-art';
+import { CandyButton } from '@/components/ui/candy-button';
+import { POPUP_ACCENT, POPUP_DIM, PoseArt, PopupBar, popupCard, softInput, softRow } from '@/components/ui/soft-popup';
+import { softIconTile } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 
@@ -89,33 +92,27 @@ export function WelcomeModal() {
     }
   };
 
+  // G5 first launch: a tinted window with the brand top bar, O1 cheering
+  // hello (a pose — A7: not the Home host W), feature rows on tinted mini-card
+  // icon tiles, a tinted name field, the purple candy CTA and the quiet peach Skip.
   return (
     <>
       {show && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-modal-overlay"
-          style={{ backgroundColor: 'rgba(26,26,46,0.55)' }}
+          style={{ backgroundColor: POPUP_DIM }}
         >
           <div
-            className="w-full max-w-sm overflow-hidden animate-modal-content"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1.5px solid var(--color-border)',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-            }}
+            className="w-full max-w-sm animate-modal-content"
+            style={popupCard(POPUP_ACCENT.brand, { share: 0.09 })}
           >
             {/* Gradient accent bar */}
-            <div
-              className="h-1.5"
-              style={{
-                background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)',
-              }}
-            />
+            <PopupBar accent={POPUP_ACCENT.brand} gradient="linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)" />
 
-            <div className="px-6 pt-6 pb-5">
-              {/* Logo */}
-              <div className="text-center mb-4">
+            <div className="px-6 pt-4 pb-5">
+              {/* Logo, with O1 cheering hello (A7: not the Home host W) */}
+              <div className="flex flex-col items-center text-center mb-4">
+                <PoseArt pose="art-pose-o1-cheer" size={88} priority className="art-pop" />
                 <h1
                   className="text-2xl font-black tracking-tight"
                   style={{
@@ -132,57 +129,22 @@ export function WelcomeModal() {
               </div>
 
               {/* Intro bullets */}
-              <div className="space-y-2.5 mb-5">
-                <div className="flex items-start gap-2.5">
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: '#f3f0ff' }}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+              <div className="space-y-2 mb-5">
+                {INTRO.map((row) => (
+                  <div key={row.title} className="flex items-center gap-2.5 p-2" style={softRow(row.accent, { radius: 14 })}>
+                    <div className="w-9 h-9 flex items-center justify-center flex-shrink-0" style={softIconTile(row.accent, { radius: 10 })}>
+                      {row.art}
+                    </div>
+                    <div>
+                      <p className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>
+                        {row.title}
+                      </p>
+                      <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                        {row.body}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>
-                      Daily Puzzles
-                    </p>
-                    <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      Eight daily word games and ten More Games, new every day
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: '#fdf2f8' }}
-                  >
-                    <Swords className="w-3.5 h-3.5" style={{ color: '#ec4899' }} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>
-                      Play with Friends
-                    </p>
-                    <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      Today's Race, a weekly finish and VS with friends
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: '#fffbeb' }}
-                  >
-                    <Icon3D name="trophy" size={14} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>
-                      Climb the Leaderboards
-                    </p>
-                    <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      Earn medals, build streaks, and track your stats
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* Username input */}
@@ -201,16 +163,11 @@ export function WelcomeModal() {
                   onKeyDown={(e) => { if (e.key === 'Enter' && !saving) handleSave(); }}
                   maxLength={20}
                   className="w-full px-3 py-2.5 text-sm font-bold outline-none transition-colors"
-                  style={{
-                    background: 'var(--color-bg)',
-                    border: `1.5px solid ${error ? '#ef4444' : 'var(--color-border)'}`,
-                    borderRadius: '10px',
-                    color: 'var(--color-text)',
-                  }}
+                  style={softInput(POPUP_ACCENT.brand, { invalid: !!error })}
                   placeholder="Your display name"
                 />
                 {error && (
-                  <p className="text-[10px] font-bold mt-1" style={{ color: '#ef4444' }}>
+                  <p className="text-[10px] font-bold mt-1" style={{ color: 'var(--color-loss-text)' }}>
                     {error}
                   </p>
                 )}
@@ -220,28 +177,16 @@ export function WelcomeModal() {
               </div>
 
               {/* CTA */}
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full py-3 text-sm font-black text-white transition-transform active:scale-[0.98] disabled:opacity-60"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 0 #4c1d95',
-                }}
-              >
+              <CandyButton color="purple" size="lg" block icon="play" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : "Let's Play!"}
-              </button>
+              </CandyButton>
 
               {/* Skip */}
-              <button
-                onClick={handleSkip}
-                disabled={saving}
-                className="w-full mt-2 py-1.5 text-[11px] font-bold transition-opacity hover:opacity-70 disabled:opacity-40"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Skip for now
-              </button>
+              <div className="flex justify-center mt-1">
+                <CandyButton color="peach" size="sm" onClick={handleSkip} disabled={saving}>
+                  Skip for now
+                </CandyButton>
+              </div>
             </div>
           </div>
         </div>
@@ -249,3 +194,10 @@ export function WelcomeModal() {
     </>
   );
 }
+
+/** The three intro rows: a 3D icon on a mini game card in each row's color. */
+const INTRO: { title: string; body: string; accent: string; art: React.ReactNode }[] = [
+  { title: 'Daily Puzzles', body: 'Eight daily word games and ten More Games, new every day', accent: '#7c3aed', art: <GameArt id="practice" size={24} /> },
+  { title: 'Play with Friends', body: "Today's Race, a weekly finish and VS with friends", accent: '#ec4899', art: <Icon3D name="tab-friends" size={24} /> },
+  { title: 'Climb the Leaderboards', body: 'Earn medals, build streaks, and track your stats', accent: '#f5a524', art: <Icon3D name="trophy" size={24} /> },
+];

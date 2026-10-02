@@ -78,6 +78,13 @@ struct FlipRevealTile: View {
     }
 
     private func run() {
+        // §U: each tile of a reveal — flip · selection (sound plays under Reduce
+        // Motion too); the winning row's landing — a light tap. Letterless tiles (the
+        // VS opponent's mini board) stay quiet — its row already gets a soft thunk.
+        if progress == 0 && !letter.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { Feedback.flip() }
+            if let hopAt, delay == 0 { DispatchQueue.main.asyncAfter(deadline: .now() + hopAt) { Feedback.rowLand() } }
+        }
         // Theme.reduceMotion = in-app toggle OR OS setting.
         guard !Theme.reduceMotion else { progress = 1; return }
         guard progress == 0 else { return }
@@ -172,6 +179,10 @@ struct BoardView: View {
     /// boards fill their cell exactly (web `1fr` rows / `gap-[2px]`). nil = square.
     var tileHeight: CGFloat? = nil
     var fillGap: CGFloat? = nil
+    /// §L: the zoomed (OctoWord) copy of a board — its tray takes the active state.
+    var zoomed: Bool = false
+    /// The mini tray's inner padding (BoardLayout sizes the grid around it).
+    var trayPadding: CGFloat? = nil
 
     /// Guess count observed at first appear — rows present then (resume/restore)
     /// never flip; only rows committed live during this session do (web parity).
@@ -198,13 +209,17 @@ struct BoardView: View {
         // Web parity: in multi-board modes a solved board gets a green frame +
         // ✓ badge the moment it's won; once the game is over, any unsolved board
         // gets a red frame. Single-board modes show no frame.
+        // §L: in multi-board modes every board is its own tray; the active
+        // Succession board / the zoomed OctoWord board gets the stronger tint + ring.
         .modifier(SolvedBoardFrame(won: vm.isMultiBoard && board.status == .won,
                                    lost: vm.isMultiBoard && vm.isFinished && board.status != .won,
                                    active: vm.isMultiBoard,
-                                   tileSize: tileSize))
-        // Sequence: dim locked (future) boards + highlight the active one.
+                                   tileSize: tileSize,
+                                   accent: ModeStyle.accent(vm.mode),
+                                   highlighted: zoomed || (vm.isSequence && seqActive && !seqDone),
+                                   padding: trayPadding))
+        // Sequence: dim locked (future) boards.
         .opacity(seqLocked ? 0.6 : 1)
-        .overlay(activeSeqBorder)
         .onAppear { if seenGuessCount < 0 { seenGuessCount = board.guesses.count } }
         .onChange(of: vm.shakeCount) { _ in playReject() }
     }
@@ -226,12 +241,6 @@ struct BoardView: View {
     private var seqDone: Bool { board.status == .won || board.status == .lost }
     private var seqLocked: Bool { vm.isSequence && !seqActive && !seqDone }
     private var seqShowColors: Bool { !vm.isSequence || seqActive || seqDone }
-
-    @ViewBuilder private var activeSeqBorder: some View {
-        if vm.isSequence && seqActive && !seqDone {
-            RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xFACC15), lineWidth: 2)
-        }
-    }
 
     @ViewBuilder
     private func rowView(_ row: Int) -> some View {
@@ -311,42 +320,60 @@ struct BoardView: View {
     }
 }
 
-/// Web-parity won/lost board treatment: green rounded frame (#4ade80 / bg
-/// #f0fdf4) + green ✓ badge for a solved board, red frame (#f87171 / bg
-/// #fef2f2) for a lost one. `active` reserves the frame padding for every board
-/// so the grid geometry stays stable whether or not a board is solved.
+/// FINISH_SPEC §L: every multi board (QuadWord / OctoWord / Succession /
+/// Deliverance, the completed recaps) sits on its own shared GAME TRAY — a soft
+/// wash of the game's accent, a 1.5-pt border, a 4-pt lip, gloss and shadow. A
+/// solved board's tray takes the gentle purple (won) wash + a ✓ badge; once the
+/// game is over an unsolved board's tray turns slate (lost). The active / zoomed
+/// board gets the stronger tint + ring. `active` reserves the tray for every board
+/// so the grid geometry stays stable whether or not a board is solved; a single
+/// board (active: false) draws no frame here (the game screen trays it itself).
 struct SolvedBoardFrame: ViewModifier {
     let won: Bool
     let lost: Bool
     var active: Bool = true
     var tileSize: CGFloat = 40
+    /// The game's accent (the tray wash).
+    var accent: Color = FinishInk.purple
+    /// The active / zoomed board of a multi-board game (stronger tint + ring).
+    var highlighted: Bool = false
+    /// Inner padding; nil = sized from the tile (mini boards stay compact).
+    var padding: CGFloat? = nil
 
+    /// The compact tray padding for a mini board (≤ 6 per side so the completed
+    /// grids' 12-pt frame budget still holds).
+    static func miniPadding(tileSize: CGFloat) -> CGFloat { max(4, min(6, tileSize * 0.3)) }
+    static func miniRadius(tileSize: CGFloat) -> CGFloat { max(10, min(18, tileSize * 0.7)) }
+
+    @ViewBuilder
     func body(content: Content) -> some View {
-        // Web: every multi board sits in a card — default border-gray-200 / white,
-        // green when solved, red when lost. Single board (active:false) = no frame.
-        // FINISH_SPEC §A1: no plain white — an idle board sits on a soft lilac wash.
-        let border: Color = won ? Color(hex: 0xA78BFA) : (lost ? Color(hex: 0xF87171) : (active ? Color(hex: 0xE2D3FF) : .clear))
-        let fill: Color = won ? Color(hex: 0xF5F3FF) : (lost ? Color(hex: 0xFEF2F2)
-            : (active ? (Theme.isDark ? Theme.surface : Color(hex: 0xF5EEFF).opacity(0.7)) : .clear))
         let badge = max(13, min(20, tileSize * 0.7))
-        return content
-            .padding(active ? 4 : 0)
-            .background(RoundedRectangle(cornerRadius: 8).fill(fill))
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(border, lineWidth: 2))
-            .overlay(alignment: .topTrailing) {
-                if won {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: badge * 0.55, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: badge, height: badge)
-                        .background(Circle().fill(Color(hex: 0x8B5CF6)))
-                        // Flush to the board's right edge (no rightward overhang):
-                        // the right-column boards sit against the post-game
-                        // ScrollView's clip bound, so a positive x-offset sheared
-                        // the badge. Keep a small upward float (top has room).
-                        .offset(x: 0, y: -badge * 0.3)
+        let state: GameTrayState = won ? .won : (lost ? .lost : (highlighted ? .active : .normal))
+        if active {
+            content
+                .gameTray(accent: accent, state: state, radius: Self.miniRadius(tileSize: tileSize),
+                          padding: padding ?? Self.miniPadding(tileSize: tileSize))
+                .overlay(alignment: .topTrailing) {
+                    if won {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: badge * 0.55, weight: .black))
+                            .foregroundStyle(.white)
+                            .frame(width: badge, height: badge)
+                            .background(Circle().fill(LinearGradient(colors: [Color(hex: 0xA66BFF), Color(hex: 0x6D28D9)],
+                                                                     startPoint: .top, endPoint: .bottom)))
+                            .overlay(Circle().strokeBorder(Color(hex: 0xF5C542), lineWidth: 1))
+                            .shadow(color: Color(hex: 0x4C1D95).opacity(0.3), radius: 2, x: 0, y: 1.5)
+                            // Flush to the board's right edge (no rightward overhang):
+                            // the right-column boards sit against the post-game
+                            // ScrollView's clip bound, so a positive x-offset sheared
+                            // the badge. Keep a small upward float (top has room).
+                            .offset(x: 0, y: -badge * 0.3)
+                            .accessibilityHidden(true)
+                    }
                 }
-            }
+        } else {
+            content
+        }
     }
 }
 
@@ -567,6 +594,11 @@ struct BoardLayout: View {
     @ObservedObject var vm: GameViewModel
     var availableWidth: CGFloat
     var fitHeight: CGFloat? = nil
+    /// §L: sit the single board on the shared game tray. Default = live play only
+    /// (`fitHeight` set); the finished recaps are trayed by their own call sites.
+    var tray: Bool? = nil
+
+    private var trayed: Bool { tray ?? (fitHeight != nil) }
 
     private var cols: Int { BoardSizing.boardColumns(boardCount: vm.boardCount) }
     private var boardRows: Int { BoardSizing.boardRows(boardCount: vm.boardCount) }
@@ -581,8 +613,11 @@ struct BoardLayout: View {
 
     /// The multi-board fill layout from the shared rule.
     private var multi: BoardSizing.Multi {
+        // §L: each mini board's tray pads both sides and adds its 4-pt lip below,
+        // so the height budget loses one lip per board row (exact: cellH − lip).
         BoardSizing.multi(boardCount: vm.boardCount, wordLength: vm.wordLength, rowsPerBoard: rowsPerBoard,
-                          width: Double(availableWidth), height: fitHeight.map(Double.init),
+                          width: Double(availableWidth),
+                          height: fitHeight.map { Double($0) - Double(CGFloat(boardRows) * GameTray.lip) / BoardSizing.heightFill },
                           boardGap: Double(boardGap), tileGap: Double(tileGap), framePad: Double(framePadTotal))
     }
 
@@ -598,7 +633,15 @@ struct BoardLayout: View {
     var body: some View {
         Group {
             if vm.boardCount == 1 {
-                BoardView(vm: vm, boardIndex: 0, tileSize: fittedTileSize())
+                // §L: the single Classic-family board sits on the shared game tray
+                // (purple wash once won, slate once lost).
+                if trayed {
+                    BoardView(vm: vm, boardIndex: 0, tileSize: fittedTileSize())
+                        .gameTray(accent: ModeStyle.accent(vm.mode), state: singleTrayState,
+                                  padding: singlePad)
+                } else {
+                    BoardView(vm: vm, boardIndex: 0, tileSize: fittedTileSize())
+                }
             } else {
                 multiGrid
             }
@@ -630,7 +673,9 @@ struct BoardLayout: View {
         let gridW = CGFloat(m.gridWidth)
         let areaH = fitHeight ?? availableWidth * 2.2
         let cellW = CGFloat(m.cellWidth)
-        let cellH = CGFloat(m.cellHeight ?? Double((areaH - CGFloat(boardRows - 1) * boardGap) / CGFloat(boardRows)))
+        // The tray's lip sits below each cell's sized height (§L).
+        let cellH = m.cellHeight.map { CGFloat($0) + GameTray.lip }
+            ?? (areaH - CGFloat(boardRows - 1) * boardGap) / CGFloat(boardRows)
         let gridH = cellH * CGFloat(boardRows) + CGFloat(boardRows - 1) * boardGap
         let r = i / cols, c = i % cols
         let srcMidX = CGFloat(c) * (cellW + boardGap) + cellW / 2
@@ -647,7 +692,8 @@ struct BoardLayout: View {
         let dy = (srcMidY - areaH / 2) * (1 - p)
         ZStack {
             Color.black.opacity(0.6 * p).onTapGesture { dismissExpanded() }
-            BoardView(vm: vm, boardIndex: i, tileSize: tileW, tileHeight: tileH, fillGap: tileGap)
+            BoardView(vm: vm, boardIndex: i, tileSize: tileW, tileHeight: tileH, fillGap: tileGap,
+                      zoomed: true, trayPadding: miniPad)
                 .scaleEffect(sc, anchor: .center)
                 .offset(x: dx, y: dy)
                 .onTapGesture { dismissExpanded() }
@@ -658,7 +704,15 @@ struct BoardLayout: View {
     // MARK: Multi-board fill layout — 8 pt between boards, 2 pt between tiles.
     private let boardGap: CGFloat = 8
     private let tileGap: CGFloat = 2
-    private let framePadTotal: CGFloat = 8   // SolvedBoardFrame .padding(4) per side
+    /// §L: each mini board's tray padding (OctoWord stays compact).
+    private var miniPad: CGFloat { vm.boardCount > 4 ? 5 : 7 }
+    private var framePadTotal: CGFloat { miniPad * 2 }
+    /// §L: the single board's tray padding (10–12 pt; a touch less on tiny phones).
+    private var singlePad: CGFloat { availableWidth < 340 ? 8 : GameTray.padding }
+    private var singleTrayState: GameTrayState {
+        guard vm.isFinished else { return .normal }
+        return vm.board(0).status == .won ? .won : .lost
+    }
 
     private var multiGrid: some View {
         let n = vm.boardCount
@@ -672,7 +726,8 @@ struct BoardLayout: View {
                     ForEach(0..<cols, id: \.self) { c in
                         let i = r * cols + c
                         if i < n {
-                            BoardView(vm: vm, boardIndex: i, tileSize: tileW, tileHeight: tileH, fillGap: tileGap)
+                            BoardView(vm: vm, boardIndex: i, tileSize: tileW, tileHeight: tileH, fillGap: tileGap,
+                                      trayPadding: miniPad)
                                 .frame(width: cellW)
                                 // Hide the mini while it's zoomed; the overlay copy morphs over it.
                                 .opacity(expandedIndex == i ? 0 : 1)
@@ -698,9 +753,13 @@ struct BoardLayout: View {
 
     /// §B5: the largest square tile that fits the width (2% margins) and, in play,
     /// the height between the title and the keyboard. Inter-tile spacing is
-    /// `tileSize * 0.1` (see BoardView.spacing).
+    /// `tileSize * 0.1` (see BoardView.spacing). §L: the tray's padding (both
+    /// sides) and its 4-pt lip come out of the budget first so it never overflows.
     private func fittedTileSize() -> CGFloat {
-        CGFloat(BoardSizing.squareTile(columns: vm.wordLength, rows: rowsPerBoard,
-                                       width: Double(availableWidth), height: fitHeight.map(Double.init)))
+        let pad = trayed ? singlePad * 2 : 0
+        let lip = trayed ? GameTray.lip + 4 : 0
+        return CGFloat(BoardSizing.squareTile(columns: vm.wordLength, rows: rowsPerBoard,
+                                              width: Double(availableWidth - pad / CGFloat(BoardSizing.widthFill)),
+                                              height: fitHeight.map { Double($0 - (pad + lip) / CGFloat(BoardSizing.heightFill)) }))
     }
 }

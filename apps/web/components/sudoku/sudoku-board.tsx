@@ -2,10 +2,13 @@
 
 import { memo } from 'react';
 import type { SudokuState } from '@wordle-duel/core';
+import { GameTray } from '@/components/ui/game-tray';
+import { traySeam } from '@/lib/game-tray';
+import { trayStateFor } from '@/lib/tray-fit';
 
 // The board (More Games §8; FINISH_SPEC B1 "the same tiles carry digits 0–9"):
-// nine 3×3 boxes, each a soft frosted panel with a lilac border, holding the
-// shared glossy tiles. A given is a plain light tile with a dark purple digit;
+// nine 3×3 boxes on the shared game tray (FINISH_SPEC L), split by soft seams,
+// holding the shared glossy tiles. A given is a plain light tile with a dark purple digit;
 // the player's digits are purple tiles, hint digits gold, a wrong digit the
 // red conflict tile; an empty cell is frosted glass. The selected cell takes a
 // purple ring with its row, column and box washed lilac; every cell holding
@@ -87,32 +90,37 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
     );
   };
 
+  // FINISH_SPEC L: the board sits on the shared game tray; the 3×3 boxes are
+  // split by soft darker seams in the tray's color (traySeam), never black lines.
+  const trayState = trayStateFor(state.status);
+  const seam = `2px solid ${traySeam(trayState === 'won' ? '#7c3aed' : trayState === 'lost' ? '#6b7891' : SUDOKU_ACCENT, 0.4)}`;
   return (
-    <div
-      className="w-full mx-auto select-none"
-      style={{ maxWidth: maxSize, aspectRatio: '1 / 1', ['--gt-font' as string]: `min(${Math.round(maxSize / 9 * 0.56)}px, 5.4vw)` } as React.CSSProperties}
-      role="grid"
-      aria-label="Sudocious board"
-    >
-      <div className="grid w-full h-full" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: '1.6%' }}>
-        {Array.from({ length: 9 }, (_, box) => (
-          <div
-            key={box}
-            className="grid"
-            style={{
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gridTemplateRows: 'repeat(3, 1fr)',
-              gap: '4%',
-              padding: '4%',
-              borderRadius: 14,
-              background: 'rgba(245, 238, 255, 0.55)',
-              border: '2px solid rgba(124, 58, 237, 0.25)',
-            }}
-          >
-            {Array.from({ length: 9 }, (_, slot) => cell(cellAt(box, slot)))}
-          </div>
-        ))}
+    <GameTray accent={SUDOKU_ACCENT} state={trayState} className="w-full mx-auto" style={{ maxWidth: maxSize }}>
+      <div
+        className="w-full select-none"
+        style={{ aspectRatio: '1 / 1', ['--gt-font' as string]: `min(${Math.round(maxSize / 9 * 0.56)}px, 5.4vw)` } as React.CSSProperties}
+        role="grid"
+        aria-label="Sudocious board"
+      >
+        <div className="grid w-full h-full" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)' }}>
+          {Array.from({ length: 9 }, (_, box) => (
+            <div
+              key={box}
+              className="grid"
+              style={{
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gridTemplateRows: 'repeat(3, 1fr)',
+                gap: '4%',
+                padding: '4%',
+                borderRight: box % 3 < 2 ? seam : undefined,
+                borderBottom: box < 6 ? seam : undefined,
+              }}
+            >
+              {Array.from({ length: 9 }, (_, slot) => cell(cellAt(box, slot)))}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </GameTray>
   );
 });

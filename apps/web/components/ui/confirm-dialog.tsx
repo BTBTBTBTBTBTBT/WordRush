@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { CandyButton } from '@/components/ui/candy-button';
+import { darken } from '@/lib/soft-surface';
+
+/** The destructive confirm's red candy (the candy recipe in red). */
+const DANGER = { ['--candy-1' as string]: '#f87171', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: darken('#dc2626', 0.35) } as React.CSSProperties;
 
 // Branded replacement for window.confirm — the native dialog can't be styled,
 // so anywhere a destructive action needs a "you sure?" gets this card instead.
@@ -77,20 +82,13 @@ export function ConfirmDialogHost() {
         <h2 className="text-base font-black mb-1" style={{ color: 'var(--color-text)' }}>{title}</h2>
         <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>{message}</p>
         <div className="flex gap-2">
-          <button
-            onClick={() => settle(false)}
-            className="flex-1 py-2.5 rounded-xl text-sm font-black"
-            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-          >
+          {/* FINISH_SPEC A8: candy buttons — quiet peach keep, a red candy for the destructive confirm. */}
+          <CandyButton size="md" color="peach" className="flex-1 min-w-0" onClick={() => settle(false)}>
             {cancelText}
-          </button>
-          <button
-            onClick={() => settle(true)}
-            className="flex-1 py-2.5 rounded-xl text-sm font-black text-white btn-3d"
-            style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', boxShadow: '0 4px 0 #7f1d1d' }}
-          >
+          </CandyButton>
+          <CandyButton size="md" color="pink" className="flex-1 min-w-0" style={DANGER} onClick={() => settle(true)}>
             {confirmText}
-          </button>
+          </CandyButton>
         </div>
       </div>
     </div>

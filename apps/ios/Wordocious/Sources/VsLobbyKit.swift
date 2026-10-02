@@ -162,6 +162,226 @@ enum VsLobbyKit {
     static func stepInKind(isDaily: Bool) -> CpuKind {
         isDaily ? .medium : BotPersonas.kind(forBotId: CpuProgressionStore.load().nextLadderBot)
     }
+
+    // MARK: FINISH_SPEC §D3 — the cast in the VS look
+
+    /// §A2 soft-number ink (VS pages are drawn light in every theme).
+    static let numberInk = Color(hex: 0x3B1A78)
+    /// The card heading ink on tinted cards.
+    static let titleInk = Color(hex: 0x2A1650)
+    static let mutedInk = Color(hex: 0x6F5F8F)
+    /// The boss rung / trophy gold.
+    static let gold = Color(hex: 0xF5A524)
+    static let slate = Color(hex: 0x64748B)
+    /// The VS page accent (teal) and its top bar.
+    static let tealBar = [Color(hex: 0x14B8A6), Color(hex: 0x0891B2)]
+    static let purpleBar = [Color(hex: 0xA66BFF), Color(hex: 0x7C3AED)]
+    static let goldBar = [Color(hex: 0xFFD166), Color(hex: 0xF59E0B)]
+    static let slateBar = [Color(hex: 0x94A3B8), Color(hex: 0x64748B)]
+
+    /// The art name of Your Ghost (the player's best-run replay).
+    static let ghostArt = "bot-ghost"
+
+    /// A cast bot's own color (any bot id; the ghost → VS teal).
+    static func castColor(_ botId: String) -> Color {
+        botId == "ghost" ? ink : Color(hex: UInt(BotPersonas.persona(botId).color))
+    }
+
+    /// The character a bot's art (`mascot-<id>`) draws; nil for the ghost / anything else.
+    static func mascot(fromArt art: String?) -> MascotID? {
+        guard let art, art.hasPrefix("mascot-") else { return nil }
+        return MascotID(rawValue: String(art.dropFirst("mascot-".count)))
+    }
+
+    /// A character's cast color (the persona it plays as).
+    static func castColor(_ m: MascotID) -> Color {
+        BotPersonas.cast.first { $0.mascot == m }.map { Color(hex: UInt($0.color)) } ?? purple
+    }
+
+    /// The bot a CPU identity plays as (the Bot of the Day's own character); nil
+    /// for Your Ghost and for people.
+    static func castId(_ id: CpuIdentity?) -> String? { id?.persona?.id }
+}
+
+// MARK: - §A1 / §A2 VS surfaces (light in every theme — the VS pages are light-only)
+
+extension View {
+    /// FINISH_SPEC §A1 on the VS pages: a page card with no plain white — a soft
+    /// wash of `accent`, a 1.5-pt accent border and (optionally) the game card's top
+    /// bar. Unlike the theme-aware `.tintedCard`, it stays on the light look in dark
+    /// mode (the VS pages and their fixed inks are drawn light in every theme).
+    func vsTinted(_ accent: Color, bar: [Color]? = nil, radius: CGFloat = 20, barHeight: CGFloat = 10,
+                  tint: Double = 0.08, line: Double = 0.26) -> some View {
+        modifier(VSTintedCard(accent: accent, bar: bar, radius: radius, barHeight: barHeight, tint: tint, line: line))
+    }
+
+    /// §A2 soft numbers on the light VS surfaces: Nunito Black, dark purple
+    /// #3b1a78, tabular digits, a soft white lift.
+    func vsNumber(_ size: CGFloat, color: Color = VsLobbyKit.numberInk) -> some View {
+        self.font(Brand.font(size, .black))
+            .monospacedDigit()
+            .foregroundStyle(color)
+            .shadow(color: .white.opacity(0.8), radius: 0, x: 0, y: 1)
+            .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: max(2, size * 0.12), x: 0, y: max(1, size * 0.08))
+    }
+
+    /// §A1 a small stat / icon tile on the VS pages: the 13% wash (22% `strong`),
+    /// a 1.5-pt 34% border, the 4-pt inset accent top bar and a soft accent shadow.
+    func vsTile(_ accent: Color, strong: Bool = false, radius: CGFloat = 14) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return self
+            .padding(.top, 2)
+            .background {
+                ZStack(alignment: .top) {
+                    shape.fill(accent.wash(strong ? 0.22 : 0.13))
+                    accent.frame(height: 4)
+                }
+                .clipShape(shape)
+            }
+            .overlay(shape.stroke(accent.wash(strong ? 0.5 : 0.34), lineWidth: strong ? 2 : 1.5).allowsHitTesting(false))
+            .shadow(color: accent.opacity(0.14), radius: 5, x: 0, y: 3)
+    }
+
+    /// The soft striped list row on a light VS card.
+    func vsStripedRow(_ index: Int, accent: Color = VsLobbyKit.ink) -> some View {
+        self
+            .background(index % 2 == 0 ? accent.wash(0.10).opacity(0.75) : Color.clear)
+            .overlay(alignment: .top) {
+                if index > 0 { Rectangle().fill(accent.opacity(0.10)).frame(height: 1) }
+            }
+    }
+}
+
+private struct VSTintedCard: ViewModifier {
+    let accent: Color
+    var bar: [Color]?
+    var radius: CGFloat
+    var barHeight: CGFloat
+    var tint: Double
+    var line: Double
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return VStack(spacing: 0) {
+            if let bar {
+                LinearGradient(colors: bar.count > 1 ? bar : [bar.first ?? accent, bar.first ?? accent],
+                               startPoint: .leading, endPoint: .trailing)
+                    .frame(height: barHeight)
+            }
+            content
+        }
+        .background(shape.fill(accent.wash(tint)))
+        .clipShape(shape)
+        .overlay(shape.stroke(accent.wash(line), lineWidth: 1.5).allowsHitTesting(false))
+        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)
+    }
+}
+
+/// A candy button's LOOK as a non-interactive tag, for inside a tappable card or
+/// row (the card / link keeps the tap): the §A8 candy pill, hit-testing off.
+struct VSCandyTag: View {
+    let title: String
+    var symbol: String? = nil
+    var variant: CandyButtonStyle.Variant = .teal
+    var size: CandyButtonStyle.Size = .small
+    var showLock = false
+
+    var body: some View {
+        Button(action: {}) {
+            CandyLabel(title: title, symbol: symbol) {
+                if showLock { Icon3D(.lock, size: 14) }
+            }
+        }
+        .buttonStyle(CandyButtonStyle(variant: variant, size: size, fullWidth: false))
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Your Ghost (§D1): the player's best-run replay, drawn as a FADED copy of the
+/// signed-in player's own letter tile — never a bot.
+struct VSGhostTile: View {
+    var size: CGFloat = 40
+    @ObservedObject private var auth = AuthService.shared
+
+    var body: some View {
+        LetterTileAvatar(username: auth.profile?.username ?? "You", size: size)
+            .opacity(0.45)
+            .overlay(
+                RoundedRectangle(cornerRadius: size * LetterTileAvatar.cornerFraction, style: .continuous)
+                    .strokeBorder(VsLobbyKit.purple.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
+            )
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
+/// A kind, in-character banter line in a soft speech bubble (CPU matches only —
+/// never for people or the ghost). `accent` is the bot's own color.
+struct VSBanterBubble: View {
+    let line: String
+    var accent: Color = VsLobbyKit.ink
+    /// The bubble's tail: pointing up (under the speaker) or left (beside it).
+    var tailUp = true
+
+    var body: some View {
+        Text("“\(line)”")
+            .font(Brand.font(13, .heavy))
+            .foregroundStyle(VsLobbyKit.titleInk)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 14).padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(accent.wash(0.12))
+            )
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(accent.wash(0.34), lineWidth: 1.5))
+            .overlay(alignment: tailUp ? .top : .leading) {
+                VSBubbleTail()
+                    .fill(accent.wash(0.12))
+                    .overlay(VSBubbleTail().stroke(accent.wash(0.34), lineWidth: 1.5))
+                    .frame(width: 14, height: 8)
+                    .rotationEffect(.degrees(tailUp ? 0 : -90))
+                    .offset(x: tailUp ? 0 : -10, y: tailUp ? -7 : 0)
+            }
+            .shadow(color: accent.opacity(0.14), radius: 6, x: 0, y: 3)
+            .accessibilityLabel(line)
+    }
+}
+
+/// The speech bubble's little tail (an upward triangle, open at the base).
+private struct VSBubbleTail: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.midX, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        return p
+    }
+}
+
+/// An art image guarded by `ArtAsset.exists` (decorative), else `fallback`.
+struct VSArt<Fallback: View>: View {
+    let name: String
+    var height: CGFloat? = nil
+    var maxWidth: CGFloat? = nil
+    @ViewBuilder var fallback: () -> Fallback
+
+    var body: some View {
+        if ArtAsset.exists(name) {
+            Image(name).resizable().interpolation(.high).scaledToFit()
+                .frame(maxWidth: maxWidth, maxHeight: height)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            fallback()
+        }
+    }
+}
+
+extension VSArt where Fallback == EmptyView {
+    init(_ name: String, height: CGFloat? = nil, maxWidth: CGFloat? = nil) {
+        self.init(name: name, height: height, maxWidth: maxWidth) { EmptyView() }
+    }
 }
 
 // MARK: - Views
@@ -175,10 +395,11 @@ struct VSSectionLabel: View {
 }
 
 extension View {
-    /// §0 card: white, radius 14, no border; ART_SPEC §11: its soft shadow is
-    /// tinted toward the page's accent (teal on VS, pink on Friends).
-    func vsCard(radius: CGFloat = 14) -> some View {
-        modifier(VSCardSurface(radius: radius))
+    /// §0 card → FINISH_SPEC §A1: a soft wash of the page's accent (VS teal) with a
+    /// matching 1.5-pt border and the page-tinted lift; `bar` adds the game card's
+    /// top bar in the accent.
+    func vsCard(radius: CGFloat = 18, bar: Bool = false) -> some View {
+        modifier(VSCardSurface(radius: radius, bar: bar))
     }
 }
 
@@ -186,30 +407,48 @@ extension View {
 /// page's accent (VS teal) with a matching 1.5-pt border and the page-tinted lift.
 private struct VSCardSurface: ViewModifier {
     let radius: CGFloat
+    var bar: Bool = false
     @Environment(\.pageTint) private var tint
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        return content
-            .background(shape.fill(tint.accent.wash(0.08)).pageCardShadow())
-            .overlay(shape.stroke(tint.accent.wash(0.26), lineWidth: 1.5).allowsHitTesting(false))
+        return VStack(spacing: 0) {
+            if bar {
+                LinearGradient(colors: [tint.accent.wash(0.75), tint.accent], startPoint: .leading, endPoint: .trailing)
+                    .frame(height: 8)
+            }
+            content
+        }
+        .background(shape.fill(tint.accent.wash(0.08)))
+        .clipShape(shape)
+        .overlay(shape.stroke(tint.accent.wash(0.26), lineWidth: 1.5).allowsHitTesting(false))
+        .pageCardShadow()
     }
 }
 
-/// Bot art in a circle — every place a bot appears (§9, never emoji).
+/// Bot art in a circle — every place a bot appears (§9, never emoji). FINISH_SPEC
+/// §D1: a cast bot is its own character on a soft wash of its color (pass a
+/// `background` to override); Your Ghost is the player's faded letter tile.
 struct BotArtCircle: View {
     let art: String
     var size: CGFloat = 36
-    var background: Color = VsLobbyKit.soft
+    var background: Color? = nil
     var body: some View {
-        ZStack {
-            Circle().fill(background)
-            Image(art).resizable().interpolation(.high).scaledToFit()
-                .padding(size * 0.06)
+        if art == VsLobbyKit.ghostArt {
+            VSGhostTile(size: size)
+        } else {
+            let m = VsLobbyKit.mascot(fromArt: art)
+            ZStack {
+                Circle().fill(background ?? m.map { VsLobbyKit.castColor($0).wash(0.18) } ?? VsLobbyKit.soft)
+                Image(art).resizable().interpolation(.high).scaledToFit()
+                    .padding(size * 0.06)
+            }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+            .overlay(Circle().strokeBorder((m.map { VsLobbyKit.castColor($0) } ?? VsLobbyKit.ink).wash(0.4),
+                                           lineWidth: background == Color.clear ? 0 : 1.5))
+            .accessibilityHidden(true)
         }
-        .frame(width: size, height: size)
-        .clipShape(Circle())
-        .accessibilityHidden(true)
     }
 }
 
@@ -248,7 +487,8 @@ struct VSModeChip: View {
 }
 
 /// A mode's real home icon on a small tile: selected = filled with the mode
-/// color + glow + white icon; otherwise white with the colored icon.
+/// color + glow + white icon; otherwise a §A1 mini game card (soft wash of the
+/// mode color, border, 3-pt top bar) with the colored icon.
 struct VSModeGlyphTile: View {
     let mode: GameMode
     let selected: Bool
@@ -260,7 +500,13 @@ struct VSModeGlyphTile: View {
             if selected {
                 shape.fill(accent).shadow(color: accent.opacity(0.6), radius: 5)
             } else {
-                shape.fill(Color.white).shadow(color: Color(hex: 0x4C1D95).opacity(0.08), radius: 2, y: 1)
+                ZStack(alignment: .top) {
+                    shape.fill(accent.wash(0.13))
+                    accent.frame(height: max(2, size * 0.09))
+                }
+                .clipShape(shape)
+                .overlay(shape.stroke(accent.wash(0.34), lineWidth: 1.2))
+                .shadow(color: accent.opacity(0.16), radius: 3, y: 2)
             }
             if let h = VsLobbyKit.home(mode) {
                 BannerGlyph(icon: h.icon, ink: selected ? .white : accent, accent: accent, solid: selected, size: size * 0.5)
@@ -270,38 +516,42 @@ struct VSModeGlyphTile: View {
     }
 }
 
-/// Solid teal caps button (primary VS action).
+/// The primary VS action — FINISH_SPEC §A8: a large glossy candy pill (purple
+/// primary; pass `variant` for the others), with an optional small subtitle line.
 struct VSPrimaryButton: View {
     let title: String
     var subtitle: String? = nil
-    var color: Color = VsLobbyKit.ink
+    var variant: CandyButtonStyle.Variant = .purple
+    var symbol: String? = nil
     var disabled = false
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                Text(title).font(Brand.font(14, .black)).tracking(0.6)
-                if let subtitle { Text(subtitle).font(Brand.font(10.5, .bold)).opacity(0.85) }
+            if let subtitle {
+                VStack(spacing: 1) {
+                    OutlinedText(text: title.uppercased(), size: 15, width: 1.5).minimumScaleFactor(0.7)
+                    Text(subtitle).font(Brand.font(10.5, .heavy))
+                        .foregroundStyle(variant == .peach ? VsLobbyKit.numberInk : .white.opacity(0.95))
+                        .shadow(color: VsLobbyKit.numberInk.opacity(0.5), radius: 1, x: 0, y: 1)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+                .accessibilityElement(children: .combine)
+            } else {
+                CandyLabel(title: title, symbol: symbol)
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity).padding(.vertical, subtitle == nil ? 14 : 10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(disabled ? Color(hex: 0x9CA3AF) : color))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(CandyButtonStyle(variant: variant, size: .large))
         .disabled(disabled)
     }
 }
 
-/// Soft pill (`#ccfbf1` bg, teal text) — JOIN, Challenge, Race it, KEEP WAITING.
+/// A small candy tag (JOIN, Challenge, Race it) — FINISH_SPEC §A8. Drawn as a
+/// label inside a tappable row / link, so the row keeps the tap.
 struct VSSoftPill: View {
     let title: String
-    var bg: Color = VsLobbyKit.soft
-    var fg: Color = VsLobbyKit.ink
+    var variant: CandyButtonStyle.Variant = .teal
     var body: some View {
-        Text(title).font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(fg)
-            .padding(.horizontal, 12).frame(height: 30)
-            .background(Capsule().fill(bg))
+        VSCandyTag(title: title, variant: variant)
     }
 }
 
@@ -368,8 +618,9 @@ struct SearchRing: View {
                 .stroke(VsLobbyKit.ink, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .frame(width: 118, height: 118)
+            Circle().fill(VsLobbyKit.ink.wash(0.10)).frame(width: 104, height: 104)
             Text("\(secs / 60):\(String(format: "%02d", secs % 60))")
-                .font(Brand.font(28, .black)).monospacedDigit().foregroundStyle(VsLobbyKit.deep)
+                .vsNumber(30)
         }
         .frame(width: 140, height: 140)
         .onAppear {
@@ -424,48 +675,37 @@ struct VSTagPill: View {
     }
 }
 
-/// Small soft gray caps pill — LEAVE / CANCEL on the VS screens.
+/// A quiet action — LEAVE / CANCEL on the VS screens: FINISH_SPEC §A8's soft
+/// peach candy pill (small, hugging its label).
 struct VSGreyPill: View {
     let title: String
     var icon: String? = nil
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                if let icon { Image(systemName: icon).font(.system(size: 10, weight: .black)) }
-                Text(title).font(Brand.font(11, .black)).tracking(0.6)
-            }
-            .foregroundStyle(VsLobbyKit.sub)
-            .padding(.horizontal, 16).frame(height: 32)
-            .background(Capsule().fill(Color(hex: 0xEEF0F3)))
-            .contentShape(Capsule())
+            CandyLabel(title: title, symbol: icon)
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
     }
 }
 
-/// Soft lavender caps button (`#ede9fe` bg, `#6d28d9` text) — the result
-/// screens' secondary actions (HOME, SHARE, DECLINE).
+/// The result screens' secondary actions (HOME, SHARE, DECLINE) — FINISH_SPEC
+/// §A8 candy pills (pink secondary by default; peach for the quiet ones). Icons
+/// from the 3D set (share, home) sit in the label.
 struct VSSoftPurpleButton: View {
     let title: String
     var icon: String? = nil
+    var variant: CandyButtonStyle.Variant = .pink
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
-                if let icon {
-                    // ART_SPEC §5: share / lock / bell … draw the 3D icon set.
-                    if let i3d = Icon3DName.forHeaderSymbol(icon) { Icon3D(i3d, size: 15) }
-                    else { Image(systemName: icon).font(.system(size: 12, weight: .black)) }
-                }
-                Text(title).font(Brand.font(14, .black)).tracking(0.6)
+            if let icon, let i3d = Icon3DName.forHeaderSymbol(icon) {
+                CandyLabel(title: title) { Icon3D(i3d, size: 20) }
+            } else {
+                CandyLabel(title: title, symbol: icon)
             }
-            .foregroundStyle(VsLobbyKit.purpleSub)
-            .frame(maxWidth: .infinity).padding(.vertical, 14)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEDE9FE)))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(CandyButtonStyle(variant: variant, size: .large))
     }
 }
 
@@ -488,8 +728,9 @@ struct VSRingSpinner: View {
 }
 
 /// VS loading / entry screen (VS polish spec §2): the mode icon in its color,
-/// a teal ring spinner and `LOADING <MODE>` on the VS page color — never bare
-/// text or a blank screen. Bots add their art + a "Matching you with…" line.
+/// the cast loader and `LOADING <MODE>` on the VS page color — never bare text or
+/// a blank screen. FINISH_SPEC §D3: a bot stands ready in character (its "ready"
+/// pose) over a "Matching you with…" line.
 struct VSLoadingView: View {
     let mode: GameMode?
     /// Replaces `LOADING <MODE>` (e.g. "LOADING CHALLENGE" before the mode is known).
@@ -498,20 +739,27 @@ struct VSLoadingView: View {
     var line: String? = nil
 
     var body: some View {
+        let m = VsLobbyKit.mascot(fromArt: botArt)
         VStack(spacing: 16) {
-            if let mode { VSModeGlyphTile(mode: mode, selected: false, size: 48) }
+            if let m {
+                PoseImage(m, "ready", height: 132)
+            } else if let mode {
+                VSModeGlyphTile(mode: mode, selected: false, size: 48)
+            }
             // The cast's staggered wave replaces the spinner; LOADING <MODE> stays and
             // D voices a rotating tip (MASCOT_SPEC §3/§6).
             CastLoader(label: title ?? "LOADING \(mode.map { VsLobbyKit.modeName($0).uppercased() } ?? "")",
                        labelColor: VsLobbyKit.label, showTips: botArt == nil && line == nil, tipColor: VsLobbyKit.sub)
             if botArt != nil || line != nil {
                 HStack(spacing: 8) {
-                    if let botArt { BotArtCircle(art: botArt, size: 30) }
+                    if let botArt, m == nil { BotArtCircle(art: botArt, size: 30) }
                     if let line {
-                        Text(line).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                        Text(line).font(Brand.font(13, .heavy)).foregroundStyle(VsLobbyKit.titleInk)
                             .multilineTextAlignment(.center)
                     }
                 }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .vsTinted(m.map { VsLobbyKit.castColor($0) } ?? VsLobbyKit.ink, radius: 16, tint: 0.10)
                 .padding(.top, 2)
             }
         }
@@ -522,7 +770,7 @@ struct VSLoadingView: View {
 }
 
 /// Soft VS confirm card over a dim backdrop (forfeit and friends): caps title,
-/// a short message, a purple primary and a soft secondary action.
+/// a short message, a purple candy primary and a quiet peach candy secondary.
 struct VSConfirmCard: View {
     let title: String
     let message: String
@@ -536,22 +784,16 @@ struct VSConfirmCard: View {
         ZStack {
             Color.black.opacity(0.35).ignoresSafeArea().onTapGesture(perform: onPrimary)
             VStack(spacing: 12) {
-                Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                     .multilineTextAlignment(.center)
-                Text(message).font(Brand.font(13, .bold)).foregroundStyle(VsLobbyKit.sub)
+                Text(message).font(Brand.font(13, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                VSPrimaryButton(title: primary, color: VsLobbyKit.purple, action: onPrimary).padding(.top, 4)
-                Button(action: onSecondary) {
-                    Text(secondary).font(Brand.font(14, .black)).tracking(0.6)
-                        .foregroundStyle(secondaryDestructive ? Color(hex: 0xB91C1C) : VsLobbyKit.purpleSub)
-                        .frame(maxWidth: .infinity).padding(.vertical, 14)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEDE9FE)))
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PressableStyle())
+                VSPrimaryButton(title: primary, action: onPrimary).padding(.top, 4)
+                Button(action: onSecondary) { CandyLabel(title: secondary) }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .large))
             }
             .padding(18).frame(maxWidth: 340)
-            .vsCard(radius: 16)
+            .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar)
             .padding(.horizontal, 24)
         }
         .transition(.opacity)

@@ -1,20 +1,51 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { XCircle, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
 import { recordGauntletGame } from '@/lib/gauntlet-stats';
+import { feedback } from '@/lib/sound-events';
 import { shareResult } from '@/lib/share-utils';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
-import { ClockGlyph, PlayAgainButton, ShareGlyph } from '@/components/game/result-line';
+import { FinishedDock } from '@/components/game/finished-kit';
+import { FinishedScreen } from '@/components/game/finished-screen';
+import { ClockGlyph } from '@/components/game/result-line';
 import { LetterTile, tileLook } from '@/components/game/letter-tile';
 import { miniBoardFrame } from '@/components/game/multi-board';
+import { modeTrayAccent } from '@/lib/tray-fit';
 import { SoftNum } from '@/components/ui/soft-number';
-import { softPill } from '@/lib/soft-surface';
+import { accentInk, alphaHex, cardBarStyle, darken, softCard, softPill } from '@/lib/soft-surface';
+import { GameTray } from '@/components/ui/game-tray';
+import { Confetti } from '@/components/effects/confetti';
+import { ART_SIZE, artSrc } from '@/lib/art';
+import { GAUNTLET_ACCENT, GAUNTLET_LOST_POSES, starRow } from '@/lib/gauntlet-look';
+
+const CHAMPION = 'art-scene-gauntlet-champion' as const;
+
+/** Q: one gold star of the 5-star row (filled gold, or soft gray), popping in 90 ms apart. */
+function Star({ on, index, size = 30 }: { on: boolean; index: number; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="star-pop"
+      style={{ ['--star-d' as string]: `${index * 90}ms`, filter: on ? 'drop-shadow(0 2px 2px rgba(162, 75, 14, 0.35))' : undefined } as React.CSSProperties}
+    >
+      <defs>
+        <linearGradient id={`gstar-${on ? 'on' : 'off'}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={on ? '#ffe08a' : '#e6e2ee'} />
+          <stop offset="1" stopColor={on ? '#f5a524' : '#c9c3d6'} />
+        </linearGradient>
+      </defs>
+      <path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill={`url(#gstar-${on ? 'on' : 'off'})`} stroke={on ? '#b4690e' : '#b9b2c8'} strokeWidth={1} strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 interface GauntletResultsProps {
   won: boolean;
@@ -22,6 +53,7 @@ interface GauntletResultsProps {
   stageResults: GauntletStageResult[];
   totalTimeMs: number;
   onPlayAgain: () => void;
+  /** Kept for callers. R2: the dock (Next daily / Leaderboard) and the tab bar now carry the way out, so the old "Play again tomorrow" Home candy is gone. */
   onHome: () => void;
   showPlayAgain?: boolean;
   isDaily?: boolean;
@@ -32,6 +64,12 @@ interface GauntletResultsProps {
   /** The daily puzzle's day (YYYY-MM-DD) — picks the scoring formula on the
    *  breakdown card (pre-cutover days render with the frozen V1 formula). */
   day?: string;
+}
+
+/** A stat tile's label in its accent's ink (legible on the dark card too). */
+function StatLabel({ accent, ink, children }: { accent: string; ink: string; children: React.ReactNode }) {
+  const c = accentInk(accent, ink);
+  return <div className={`text-[10px] font-black uppercase mt-1 ${c.className}`} style={{ letterSpacing: '0.12em', ...c.style }}>{children}</div>;
 }
 
 function formatTime(ms: number): string {
@@ -47,7 +85,6 @@ export function GauntletResults({
   stageResults,
   totalTimeMs,
   onPlayAgain,
-  onHome,
   showPlayAgain = true,
   isDaily,
   recordOnMount = true,
@@ -65,6 +102,12 @@ export function GauntletResults({
     return sum + (r.boardsSnapshot?.filter(b => b.status === GameStatus.WON).length ?? 0);
   }, 0);
   const cumulativeTotalBoards = stages.reduce((sum, s) => sum + s.boardCount, 0) || 21;
+  // Q (LOST): the failed stage's unsolved answers, revealed on glossy tiles.
+  const failedResult = stageResults.find((r) => r.status === GameStatus.LOST);
+  const failedAnswers = (failedResult?.boardsSnapshot ?? [])
+    .filter((b) => b.status !== GameStatus.WON)
+    .map((b) => b.solution.toUpperCase())
+    .slice(0, 4);
   const [copied, setCopied] = useState(false);
   // Stage index currently being reviewed in the modal — null = closed.
   // Drives the "Review" modal that surfaces each stage's final board
@@ -122,173 +165,219 @@ export function GauntletResults({
   useEffect(() => {
     if (recordOnMount) recordGauntletGame(won, totalGuesses, totalTimeMs);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // FINISH_SPEC U: Gauntlet champion = `celebrate` (with the champion scene + confetti).
+  useEffect(() => { if (won) feedback('celebrate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Q's hero scene fills the card's width at most; on a short phone it gives
+  // up height first (flex-shrink), so the card + dock fit one screen (R2).
+  const [cw, ch] = ART_SIZE[CHAMPION];
+  const sceneMax = `calc((min(100vw - 24px, 512px) - 32px) * ${(ch / cw).toFixed(4)})`;
 
   return (
     <div
-      className="h-screen-stable overflow-y-auto p-4"
+      className="h-screen-stable flex flex-col"
       style={{
         backgroundColor: 'var(--color-bg)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
+        paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
+        // R2: the column ends above the docked tab bar (BottomNav publishes its room).
+        paddingBottom: 'var(--bottom-nav-h, calc(env(safe-area-inset-bottom, 0px) + 76px))',
       }}
     >
-      <div
-        className="max-w-lg w-full mx-auto space-y-6 py-6 animate-fade-in-scale"
-      >
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="animate-fade-in-scale" style={{ animationDelay: '0.2s' }}>
-            {won ? (
-              <Icon3D name="trophy" size={80} className="mx-auto" />
-            ) : (
-              <XCircle className="w-20 h-20 text-red-400 mx-auto" />
-            )}
-          </div>
-          <h1
-            className={`text-5xl font-black animate-fade-in-up ${
-              won
-                ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400'
-                : 'text-red-300'
-            }`}
+      {won && <Confetti />}
+      {/* FINISH_SPEC R2: one screen — Q's amber hero card sized to the room
+          left, the daily rank, then the dock (share · Next daily /
+          Leaderboard · the Unlimited card; Pro unlimited runs get NEW PUZZLE).
+          The score breakdown + the per-stage rows sit under "More". */}
+      <FinishedScreen
+        fit="self"
+        strip={null}
+        sub={isDaily ? <DailyRankBadge gameMode="GAUNTLET" /> : undefined}
+        board={
+          // FINISH_SPEC Q: the amber hero card. WON: the champion scene springs
+          // in, then bobs gently, with one confetti burst; LOST: R with cocoa +
+          // I's good game (kind, never sad) and the failed stage's answer on
+          // glossy tiles. Then the headline, the 5-star row and the stat pills.
+          <div
+            className="relative overflow-hidden text-center w-full max-w-lg max-h-full flex flex-col animate-fade-in-scale"
+            style={{ ...softCard(GAUNTLET_ACCENT, { radius: 24 }), ...(won ? null : { background: `linear-gradient(${alphaHex(GAUNTLET_ACCENT, 0.07)}, ${alphaHex(GAUNTLET_ACCENT, 0.07)}), var(--color-card-base, #ffffff)` }) }}
           >
-            {won ? 'GAUNTLET CLEARED!' : 'GAUNTLET FAILED'}
-          </h1>
-          {/* Actions at the top (FINISH_SPEC B6: the 3D share icon, no Home text
-              link — the tab bar's Home is right below; Play again a candy button). */}
-          <div className="flex items-center justify-center gap-3 pt-1">
-            <ShareGlyph onShare={handleShare} copied={copied} />
-            {showPlayAgain && <PlayAgainButton onClick={onPlayAgain} won={won} />}
-          </div>
-          {isDaily && (
-            <div className="flex justify-center">
-              <DailyRankBadge gameMode="GAUNTLET" />
-            </div>
-          )}
-        </div>
-
-        {/* Summary Stats */}
-        <div
-          className="grid grid-cols-3 gap-3 animate-fade-in-up"
-          style={{ animationDelay: '0.6s' }}
-        >
-          {/* A1 + A2: three tinted stat tiles with 3D icons and soft numbers. */}
-          <div className="text-center" style={{ ...softPill('#f5a524', { radius: 14 }), padding: '14px 6px 10px' }}>
-            <Icon3D name="trophy" size={22} className="mx-auto mb-1" />
-            <SoftNum size={24} as="div">{stagesCompleted}/5</SoftNum>
-            <div className="text-[10px] font-black uppercase mt-1" style={{ letterSpacing: '0.12em', color: '#a2560c' }}>Stages</div>
-          </div>
-          <div className="text-center" style={{ ...softPill('#7c3aed', { radius: 14 }), padding: '14px 6px 10px' }}>
-            <Icon3D name="badge-check" size={22} className="mx-auto mb-1" />
-            <SoftNum size={24} as="div">{totalGuesses}</SoftNum>
-            <div className="text-[10px] font-black uppercase mt-1" style={{ letterSpacing: '0.12em', color: '#6d28d9' }}>Guesses</div>
-          </div>
-          <div className="text-center" style={{ ...softPill('#2563eb', { radius: 14 }), padding: '14px 6px 10px' }}>
-            <span className="flex justify-center mb-1"><ClockGlyph size={22} /></span>
-            <SoftNum size={24} as="div">{formatTime(totalTimeMs)}</SoftNum>
-            <div className="text-[10px] font-black uppercase mt-1" style={{ letterSpacing: '0.12em', color: '#2456a8' }}>Time</div>
-          </div>
-        </div>
-
-        {/* Composite-score breakdown — same formula as the leaderboard. */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
-          <ScoreBreakdownCard
-            gameMode="GAUNTLET"
-            completed={won}
-            guessCount={totalGuesses}
-            timeSeconds={Math.floor(totalTimeMs / 1000)}
-            boardsSolved={cumulativeBoardsSolved}
-            totalBoards={cumulativeTotalBoards}
-            stagesCompleted={stagesCompleted}
-            day={day}
-          />
-          {isDaily && <NextDailyCta currentMode="GAUNTLET" />}
-        </div>
-
-        {/* Per-Stage Breakdown */}
-        <div
-          className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 space-y-2 animate-fade-in-up"
-          style={{ animationDelay: '0.8s' }}
-        >
-          <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider">Stage Breakdown</h3>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-violet-500">Tap a stage to see results</span>
-          </div>
-          {stages.map((stage, i) => {
-            const result = stageResults.find(r => r.stageIndex === i);
-            const isCompleted = result?.status === GameStatus.WON;
-            const isFailed = result?.status === GameStatus.LOST;
-            // Only offer Review when we actually captured the final
-            // boards. Older saved sessions that completed before the
-            // snapshot landed still show the summary row, just not
-            // tappable (no ">" chevron on rows, ART_SPEC §21.4).
-            const canReview = !!result?.boardsSnapshot?.length;
-
-            const rowContent = (
-              <>
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    isCompleted ? 'bg-violet-500/30 text-violet-600' :
-                    isFailed ? 'bg-red-500/30 text-red-300' :
-                    'bg-gray-100 text-gray-300'
-                  }`}>
-                    {i + 1}
+            <div aria-hidden="true" className="shrink-0" style={cardBarStyle(GAUNTLET_ACCENT)} />
+            <div className="flex-1 min-h-0 flex flex-col items-center gap-2 px-4 pt-2.5 pb-3">
+              {won ? (
+                <div className="relative w-full min-h-0" style={{ height: sceneMax, flex: '0 1 auto' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={artSrc(CHAMPION)} alt="" aria-hidden="true" width={cw} height={ch}
+                    className="champ-in absolute inset-0 w-full h-full object-contain" />
+                </div>
+              ) : (
+                <div className="relative w-full min-h-0" style={{ height: 124, flex: '0 1 auto' }}>
+                  <div className="absolute inset-0 flex items-end justify-center gap-2">
+                    {GAUNTLET_LOST_POSES.map((pose, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={pose} src={artSrc(pose)} alt="" aria-hidden="true" width={320} height={320}
+                        className="intro-pop h-full w-auto max-h-[124px] object-contain" style={{ aspectRatio: '1 / 1', animationDelay: `${i * 120}ms` }} />
+                    ))}
                   </div>
-                  <span className={`font-bold ${
-                    isCompleted ? 'text-violet-600' :
-                    isFailed ? 'text-red-300' :
-                    'text-gray-300'
-                  }`}>
-                    {stage.name}
-                  </span>
                 </div>
-                <div className="flex items-center gap-3 text-sm">
-                  {result ? (
-                    <>
-                      <span className="text-gray-400">
-                        {result.guesses} guess{result.guesses !== 1 ? 'es' : ''}
-                      </span>
-                      <span className="text-gray-400">
-                        {formatTime(result.timeMs)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-gray-300">—</span>
-                  )}
-                </div>
-              </>
-            );
-
-            const className = `flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors ${
-              isCompleted
-                ? 'bg-violet-500/10 border border-violet-400/20' + (canReview ? ' hover:bg-violet-500/20 active:bg-violet-500/20' : '')
-                : isFailed
-                  ? 'bg-red-500/10 border border-red-400/20' + (canReview ? ' hover:bg-red-500/20 active:bg-red-500/20' : '')
-                  : 'bg-gray-50 border border-white/5'
-            }`;
-
-            return (
-              <div
-                key={i}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${0.9 + i * 0.1}s` }}
-              >
-                {canReview ? (
-                  <button
-                    type="button"
-                    onClick={() => setReviewStageIndex(i)}
-                    className={className}
-                    aria-label={`Review ${stage.name}`}
-                  >
-                    {rowContent}
-                  </button>
-                ) : (
-                  <div className={className}>{rowContent}</div>
-                )}
+              )}
+              <h1 className="m-0 shrink-0 animate-fade-in-up">
+                <SoftNum size={28} as="div" className="soft-num-auto" style={{ letterSpacing: '0.02em' }}>{won ? 'GAUNTLET CLEARED!' : 'SO CLOSE!'}</SoftNum>
+              </h1>
+              {/* The 5-star row: one per cleared stage (filled gold), the rest soft gray. */}
+              <div className="shrink-0 flex items-center justify-center gap-1" role="img" aria-label={`${stagesCompleted} of ${stages.length || 5} stages cleared`}>
+                {starRow(stages.length || 5, stagesCompleted).map((on, i) => <Star key={i} on={on} index={i} size={26} />)}
               </div>
-            );
-          })}
-        </div>
+              {/* A1 + A2: three tinted stat pills with 3D icons and soft numbers. */}
+              <div className="shrink-0 grid grid-cols-3 gap-2 w-full">
+                <div className="text-center" style={{ ...softPill('#f5a524', { radius: 14 }), padding: '8px 4px 6px' }}>
+                  <Icon3D name="trophy" size={18} className="mx-auto mb-0.5" />
+                  <SoftNum size={20} as="div" className="soft-num-auto">{stagesCompleted}/{stages.length || 5}</SoftNum>
+                  <StatLabel accent="#f5a524" ink="#a2560c">Stages</StatLabel>
+                </div>
+                <div className="text-center" style={{ ...softPill('#2563eb', { radius: 14 }), padding: '8px 4px 6px' }}>
+                  <span className="flex justify-center mb-0.5"><ClockGlyph size={18} /></span>
+                  <SoftNum size={20} as="div" className="soft-num-auto">{formatTime(totalTimeMs)}</SoftNum>
+                  <StatLabel accent="#2563eb" ink="#2456a8">Time</StatLabel>
+                </div>
+                <div className="text-center" style={{ ...softPill('#7c3aed', { radius: 14 }), padding: '8px 4px 6px' }}>
+                  <Icon3D name="badge-check" size={18} className="mx-auto mb-0.5" />
+                  <SoftNum size={20} as="div" className="soft-num-auto">{totalGuesses}</SoftNum>
+                  <StatLabel accent="#7c3aed" ink="#6d28d9">Guesses</StatLabel>
+                </div>
+              </div>
+              {/* LOST: the failed stage's answer(s) revealed on glossy tiles (two columns past one word). */}
+              {!won && failedAnswers.length > 0 && (
+                <div className="shrink-0 flex flex-col items-center gap-1 w-full" aria-label={`The answer${failedAnswers.length === 1 ? ' was' : 's were'} ${failedAnswers.join(', ')}`}>
+                  <div className="text-[10px] font-black uppercase" style={{ color: darken(GAUNTLET_ACCENT, 0.35), letterSpacing: '0.12em' }}>
+                    {failedAnswers.length === 1 ? 'The answer' : 'The answers'}
+                  </div>
+                  <div className={failedAnswers.length === 1 ? 'flex justify-center' : 'grid grid-cols-2 gap-x-3 gap-y-1 justify-items-center'}>
+                    {failedAnswers.map((word) => {
+                      const t = failedAnswers.length === 1 ? 30 : 24;
+                      return (
+                        <div key={word} className="flex gap-1" aria-hidden="true">
+                          {word.split('').map((ch, k) => (
+                            <LetterTile key={k} letter={ch} look="correct" pop={false} style={{ width: t, height: t, ['--gt-font' as string]: `${Math.round(t / 2)}px` } as React.CSSProperties} />
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        }
+        dock={
+          // Actions (B6 + R2: the 3D share icon, the primary candy, the Unlimited card).
+          <FinishedDock
+            currentMode="GAUNTLET"
+            isDaily={!!isDaily}
+            onShare={handleShare}
+            copied={copied}
+            onNewPuzzle={showPlayAgain ? onPlayAgain : undefined}
+          />
+        }
+        moreLabel="Stages + score"
+        moreAccent={GAUNTLET_ACCENT}
+        more={
+          <div className="flex flex-col gap-3">
+            {/* Composite-score breakdown — same formula as the leaderboard. */}
+            <ScoreBreakdownCard
+              gameMode="GAUNTLET"
+              completed={won}
+              guessCount={totalGuesses}
+              timeSeconds={Math.floor(totalTimeMs / 1000)}
+              boardsSolved={cumulativeBoardsSolved}
+              totalBoards={cumulativeTotalBoards}
+              stagesCompleted={stagesCompleted}
+              day={day}
+            />
+              {/* Per-Stage Breakdown */}
+              {/* L: the per-stage rows sit on the shared game tray, each with its W / L badge. */}
+              <GameTray accent={GAUNTLET_ACCENT} state={won ? 'won' : 'lost'} className="space-y-2">
+                <div className="flex items-baseline justify-between mb-3">
+                  <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Stage Breakdown</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Tap a stage to see results</span>
+                </div>
+                {stages.map((stage, i) => {
+                  const result = stageResults.find(r => r.stageIndex === i);
+                  const isCompleted = result?.status === GameStatus.WON;
+                  const isFailed = result?.status === GameStatus.LOST;
+                  // Only offer Review when we actually captured the final
+                  // boards. Older saved sessions that completed before the
+                  // snapshot landed still show the summary row, just not
+                  // tappable (no ">" chevron on rows, ART_SPEC §21.4).
+                  const canReview = !!result?.boardsSnapshot?.length;
 
-      </div>
+                  const rowContent = (
+                    <>
+                      <div className="flex items-center gap-3">
+                        {isCompleted || isFailed ? (
+                          <Icon3D name={isCompleted ? 'badge-w' : 'badge-l'} size={22} label={isCompleted ? `Stage ${i + 1} won` : `Stage ${i + 1} lost`} />
+                        ) : (
+                          <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs font-black" style={{ background: alphaHex(GAUNTLET_ACCENT, 0.12), color: 'var(--color-text-muted)' }}>
+                            {i + 1}
+                          </div>
+                        )}
+                        <span className={`font-bold ${
+                          isCompleted ? 'text-violet-600' :
+                          isFailed ? 'text-red-500' :
+                          'text-gray-300'
+                        }`}>
+                          {stage.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        {result ? (
+                          <>
+                            <span className="text-gray-400">
+                              {result.guesses} guess{result.guesses !== 1 ? 'es' : ''}
+                            </span>
+                            <span className="text-gray-400">
+                              {formatTime(result.timeMs)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </div>
+                    </>
+                  );
+
+                  const className = `flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors ${
+                    isCompleted
+                      ? 'bg-violet-500/10 border border-violet-400/20' + (canReview ? ' hover:bg-violet-500/20 active:bg-violet-500/20' : '')
+                      : isFailed
+                        ? 'bg-red-500/10 border border-red-400/20' + (canReview ? ' hover:bg-red-500/20 active:bg-red-500/20' : '')
+                        : 'bg-slate-500/10 border border-slate-400/20'
+                  }`;
+
+                  return (
+                    <div
+                      key={i}
+                      className="animate-fade-in-up"
+                      style={{ animationDelay: `${0.9 + i * 0.1}s` }}
+                    >
+                      {canReview ? (
+                        <button
+                          type="button"
+                          onClick={() => setReviewStageIndex(i)}
+                          className={className}
+                          aria-label={`Review ${stage.name}`}
+                        >
+                          {rowContent}
+                        </button>
+                      ) : (
+                        <div className={className}>{rowContent}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </GameTray>
+          </div>
+        }
+      />
 
       {reviewStage && reviewResult?.boardsSnapshot?.length && (
           <StageReviewModal
@@ -362,7 +451,7 @@ function StageReviewModal({
             Aligning the pill position to each board's slot in the
             MiniBoard grid below makes it trivial to eyeball "this is
             the board I failed" without reading the colors. */}
-        <div className="rounded-xl px-3 py-2 mb-4" style={{ background: 'linear-gradient(#7c3aed10, #7c3aed10), var(--color-card-base, #ffffff)', border: '1.5px solid #e2d3ff' }}>
+        <div className="rounded-xl px-3 py-2 mb-4" style={{ background: 'linear-gradient(#7c3aed10, #7c3aed10), var(--color-card-base, #ffffff)', border: '1.5px solid rgba(124, 58, 237, 0.18)' }}>
           <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
             {solutionsLabel}
           </div>
@@ -446,8 +535,8 @@ function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: bo
   // Wordle and Quordle reviews fit on screen without scrolling.
   return (
     <div
-      className="p-1.5 rounded-lg border-2 h-full min-h-0 min-w-0 flex flex-col"
-      style={{ ...miniBoardFrame(won ? 'WON' : lost ? 'LOST' : 'PLAYING'), ['--gt-font' as string]: '11px' }}
+      className="h-full min-h-0 min-w-0 flex flex-col"
+      style={{ ...miniBoardFrame(won ? 'WON' : lost ? 'LOST' : 'PLAYING', modeTrayAccent('GAUNTLET'), { padding: 6 }), ['--gt-font' as string]: '11px' }}
     >
       <div
         className="grid gap-[2px] flex-1 min-h-0"

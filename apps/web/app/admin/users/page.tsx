@@ -163,6 +163,7 @@ export default function AdminUsersPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
+              aria-label="Previous page"
               disabled={page === 1}
               className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -170,6 +171,7 @@ export default function AdminUsersPage() {
             </button>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              aria-label="Next page"
               disabled={page === totalPages}
               className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >

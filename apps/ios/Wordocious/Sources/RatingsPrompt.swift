@@ -1,54 +1,48 @@
 import StoreKit
 import SwiftUI
+import WordociousCore
 #if canImport(UIKit)
 import UIKit
 #endif
 
-/// App Store review prompt (ASO lever), asked only at a high point and heavily
-/// throttled so it stays App Review-safe and never nags:
-///   (a) lifetime WIN count >= 5 (recordWin() increments the counter),
-///   (b) at least 14 days since the last ask,
-///   (c) never more than once per build (CFBundleVersion).
-/// Callers invoke recordWin() + maybeAsk() from the post-game WIN path only —
-/// never on a loss, never at launch. maybeAsk() waits ~2s so the system alert
-/// doesn't collide with the confetti / XP toast.
+/// App Store review prompt — FINISH_SPEC §AI (founder 10-02): asked ONLY at a happy
+/// moment (right after a Flawless, a Daily Sweep, or a 7-day streak milestone), never
+/// in the first 3 days of play, at most once per 120 days, never after a loss
+/// (core `ReviewPromptPolicy`). No custom "do you like us?" pre-prompt (Apple 5.6.1):
+/// the celebration finishes, then the system prompt is requested.
 ///
-/// Replaces the earlier ReviewPrompter (streak >= 3, once per marketing
-/// version) — one review prompt policy, not two competing ones.
+/// The per-game win path still calls `recordWin()` / `maybeAsk()`; those now only
+/// note the first day of play (no prompt after an ordinary win).
 enum RatingsPrompt {
-    private static let winCountKey = "ratings-win-count"
-    private static let lastAskKey = "ratings-last-ask"
-    private static let minWins = 5
-    private static let minDaysBetweenAsks = 14.0
+    private static let firstPlayKey = "ratings-first-play-day"
+    private static let lastAskDayKey = "ratings-last-ask-day"
 
-    /// Count a WON game (call once per won game, from the win path only).
-    static func recordWin() {
+    private static func today() -> String { LeaderboardService.todayLocal() }
+
+    /// Note the first day this device saw the player play.
+    static func notePlay() {
         let d = UserDefaults.standard
-        d.set(d.integer(forKey: winCountKey) + 1, forKey: winCountKey)
+        if d.string(forKey: firstPlayKey) == nil { d.set(today(), forKey: firstPlayKey) }
     }
 
+    /// Kept for the win paths: records play only.
+    static func recordWin() { notePlay() }
+
+    /// Kept for the win paths: an ordinary win is no longer a review moment (§AI).
     @MainActor
-    static func maybeAsk() {
+    static func maybeAsk() { notePlay() }
+
+    /// §AI: a happy moment (Flawless, Daily Sweep, 7-day streak milestone). Asks the
+    /// system prompt after the celebration has had time to land, if the policy allows.
+    @MainActor
+    static func happyMoment(afterLoss: Bool = false, delay: Double = 3.0) {
+        notePlay()
         let d = UserDefaults.standard
-
-        // (a) Lifetime wins.
-        guard d.integer(forKey: winCountKey) >= minWins else { return }
-
-        // (b) 14-day cooldown between asks.
-        if let last = d.object(forKey: lastAskKey) as? Date,
-           Date().timeIntervalSince(last) < minDaysBetweenAsks * 86_400 { return }
-
-        // (c) Once per build.
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
-        let buildKey = "ratings-asked-b\(build)"
-        guard !d.bool(forKey: buildKey) else { return }
-
-        d.set(true, forKey: buildKey)
-        d.set(Date(), forKey: lastAskKey)
-
+        guard ReviewPromptPolicy.shouldAsk(today: today(), firstPlayDay: d.string(forKey: firstPlayKey),
+                                           lastAskDay: d.string(forKey: lastAskDayKey), afterLoss: afterLoss) else { return }
+        d.set(today(), forKey: lastAskDayKey)
         #if canImport(UIKit)
-        // Let the win celebration (confetti / XP toast) land first.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             guard let scene = UIApplication.shared.connectedScenes
                 .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene else { return }
             SKStoreReviewController.requestReview(in: scene)

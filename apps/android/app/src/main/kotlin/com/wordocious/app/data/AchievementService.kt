@@ -21,7 +21,7 @@ object AchievementService {
     @Serializable
     data class AchievementDef(
         val key: String, val name: String, val description: String, val category: String,
-        val icon: String? = null,   // present in /api/achievements; unused for rendering
+        val icon: String? = null,   // present in /api/achievements; picks the badge art (ui/BadgeKit.kt BadgeArt)
     )
 
 
@@ -36,6 +36,21 @@ object AchievementService {
             .map { it.achievementKey }
             .toSet()
     }.getOrElse { emptySet() }
+
+    @Serializable
+    private data class DatedRow(
+        @SerialName("achievement_key") val achievementKey: String,
+        @SerialName("unlocked_at") val unlockedAt: String? = null,
+    )
+
+    /** FINISH_SPEC V1: key → `unlocked_at` (ISO) for the user's unlocked achievements (the grid's dates). */
+    suspend fun fetchUnlockedDates(userId: String): Map<String, String> = runCatching {
+        SupabaseConfig.client.postgrest["achievements"]
+            .select(Columns.raw("achievement_key, unlocked_at")) { filter { eq("user_id", userId) } }
+            .decodeList<DatedRow>()
+            .mapNotNull { r -> r.unlockedAt?.let { r.achievementKey to it } }
+            .toMap()
+    }.getOrElse { emptyMap() }
 
     // ============================================================
     // Unlock detection — 1:1 port of web checkAchievements()
@@ -788,4 +803,6 @@ object AchievementService {
 
         unlocked.toList()
     }.getOrElse { emptyList() }
+        // FINISH_SPEC V2: queue the unlock popup(s) for what this game just unlocked.
+        .also { com.wordocious.app.ui.BadgeMoments.achievements(it) }
 }

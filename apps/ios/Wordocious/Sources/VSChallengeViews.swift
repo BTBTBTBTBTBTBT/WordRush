@@ -15,7 +15,7 @@ struct VSMiniRunBoard: View {
 
     private static let correct = Color(hex: 0x7C3AED)
     private static let present = Color(hex: 0xF59E0B)
-    private static let absent = Color(hex: 0xCBD5E1)
+    private static let absent = Color(hex: 0x94A3B8)
 
     private func color(_ s: TileState) -> Color {
         switch s {
@@ -60,10 +60,20 @@ struct VSMiniRunBoard: View {
         }
     }
 
+    /// A tiny glossy square (§B1 look at mini size): the color, a top gloss and a
+    /// darker lip.
     private func square(_ c: Color) -> some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous).fill(c)
-            .frame(width: tile, height: tile)
-            .shadow(color: c == Self.correct ? Self.correct.opacity(0.45) : .clear, radius: 3)
+        let shape = RoundedRectangle(cornerRadius: max(3, tile * 0.24), style: .continuous)
+        return ZStack(alignment: .top) {
+            shape.fill(Color.black.mixed(over: c, 0.3))
+            shape.fill(LinearGradient(colors: [Color.white.mixed(over: c, 0.25), c], startPoint: .top, endPoint: .bottom))
+                .padding(.bottom, max(1, tile * 0.08))
+            shape.fill(LinearGradient(colors: [Color.white.opacity(0.45), Color.white.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .frame(height: tile * 0.38)
+                .padding(.horizontal, tile * 0.1).padding(.top, 1)
+        }
+        .frame(width: tile, height: tile)
+        .shadow(color: c == Self.correct ? Self.correct.opacity(0.35) : .clear, radius: 3)
     }
 }
 
@@ -113,10 +123,9 @@ struct VSChallengeResultView: View {
     }
 
     private var window: some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         let draw = outcome.outcome == .draw
-        let mineBg = draw ? Color(hex: 0xECE8FF) : (won ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
-        let theirBg = draw ? Color(hex: 0xECE8FF) : (lost ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
+        let tone: Color = won ? VsLobbyKit.purple : (draw ? Color(hex: 0x8B5CF6) : VsLobbyKit.slate)
+        let bar: [Color] = won ? VsLobbyKit.purpleBar : (draw ? [Color(hex: 0xC4B5FD), Color(hex: 0x8B5CF6)] : VsLobbyKit.slateBar)
         // ART_SPEC §6: YOU WIN! / YOU LOSE / DRAW lettering in place of the text
         // headline (centered, the share button kept on the right); text is the fallback.
         let moment: MomentArt = won ? .youwin : (lost ? .youlose : .draw)
@@ -131,13 +140,14 @@ struct VSChallengeResultView: View {
                         Image("swords").renderingMode(.template).resizable().scaledToFit()
                             .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
                         Text(VsLobby.challengeHeadline(outcome.outcome, from: name))
-                            .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                            .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                             .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     ShareLink(item: VsChallengeService.shareURL(code), message: Text(shareText)) {
-                        Icon3D(.share, size: 22).frame(width: 34, height: 34)
+                        Icon3D(.share, size: 24).frame(width: 44, height: 44).contentShape(Rectangle())
                     }
+                    .buttonStyle(.squishIcon)
                     .accessibilityLabel("Share the result")
                 }
                 HStack(spacing: 6) {
@@ -150,57 +160,62 @@ struct VSChallengeResultView: View {
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(Color.white.opacity(0.5))
 
-            HStack(alignment: .top, spacing: 0) {
-                column(label: "YOU", run: outcome.mine, winner: won).frame(maxWidth: .infinity)
-                column(label: "@\(name.uppercased())", run: outcome.theirs, winner: lost).frame(maxWidth: .infinity)
+            HStack(alignment: .top, spacing: 8) {
+                column(label: "YOU", run: outcome.mine, winner: won, accent: VsLobbyKit.purple).frame(maxWidth: .infinity)
+                column(label: "@\(name.uppercased())", run: outcome.theirs, winner: lost, accent: Color(hex: 0xEC4899)).frame(maxWidth: .infinity)
             }
-            .padding(.vertical, 14)
+            .padding(.horizontal, 10).padding(.bottom, 12)
         }
-        .background {
-            ZStack {
-                HStack(spacing: 0) { mineBg; theirBg }
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                if won && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
+        .vsTinted(tone, bar: bar, tint: 0.10, line: 0.32)
+        .overlay {
+            if won && !Theme.reduceMotion {
+                BannerSweep().allowsHitTesting(false)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
         }
-        .clipShape(shape)
-        .shadow(color: Color(hex: 0x4C1D95).opacity(0.08), radius: 7, x: 0, y: 4)
     }
 
-    private func column(label: String, run: VsChallengeRun, winner: Bool) -> some View {
+    private func column(label: String, run: VsChallengeRun, winner: Bool, accent: Color) -> some View {
         VStack(spacing: 8) {
             HStack(spacing: 4) {
-                if winner { Icon3D(.trophy, size: 12) }
-                Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.purpleSub).lineLimit(1)
+                if winner { Icon3D(.crown, size: 14) }
+                Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
+            // §L: the mini run on the shared game tray in the mode's color.
             VSMiniRunBoard(run: run)
-            Text(VsLobby.vsClock(run.timeMs)).font(Brand.font(22, .black)).monospacedDigit().foregroundStyle(VsLobbyKit.purpleInk)
+                .gameTray(accent: VsLobbyKit.accent(mode), state: run.solved ? .won : .lost, radius: 14, padding: 8, lightOnly: true)
+            Text(VsLobby.vsClock(run.timeMs)).vsNumber(24)
             Text(run.solved ? "SOLVED IN \(run.guesses)" : "NOT SOLVED")
-                .font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.purpleSub)
+                .font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.mutedInk)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6).padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .vsTile(winner ? VsLobbyKit.gold : accent, strong: winner)
     }
 
     private var h2hCard: some View {
         HStack(spacing: 12) {
             VSInitialAvatar(name: name, size: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text("YOU AND @\(name.uppercased())").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.label)
+                Text("YOU AND @\(name.uppercased())").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.mutedInk)
                 Text(headToHead.map { HeadToHeadService.headToHeadLine(opponentName: name, $0) } ?? "Head-to-head…")
-                    .font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.purpleInk)
+                    .font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
             }
             Spacer(minLength: 4)
             if let xp = xpGain, xp > 0 {
-                Text("+\(xp) XP").font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x92400E))
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Capsule().fill(Color(hex: 0xFEF3C7)))
-                    .overlay(Capsule().stroke(Color(hex: 0xFCD34D), lineWidth: 1))
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("+\(xp)").vsNumber(15)
+                    Text("XP").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x92400E))
+                }
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(VsLobbyKit.gold.wash(0.16)))
+                .overlay(Capsule().stroke(VsLobbyKit.gold.wash(0.45), lineWidth: 1.5))
+                .accessibilityElement(children: .combine)
             }
         }
-        .padding(14).vsCard(radius: 14)
+        .padding(14).vsTinted(Color(hex: 0xEC4899), radius: 18)
     }
 
     private var buttons: some View {
@@ -208,29 +223,27 @@ struct VSChallengeResultView: View {
             NavigationLink {
                 if auth.isProActive { VSFriendPage(mode: mode, preselected: [opponentId]) } else { ProView() }
             } label: {
-                VStack(spacing: 2) {
-                    Text("CHALLENGE BACK").font(Brand.font(14, .black)).tracking(0.6)
-                    Text("new puzzle, \(name) races you").font(Brand.font(10.5, .bold)).opacity(0.85)
+                VStack(spacing: 1) {
+                    OutlinedText(text: "CHALLENGE BACK", size: 15, width: 1.5)
+                    Text("new puzzle, \(name) races you").font(Brand.font(10.5, .heavy)).foregroundStyle(.white.opacity(0.95))
+                        .shadow(color: VsLobbyKit.numberInk.opacity(0.5), radius: 1, x: 0, y: 1)
+                        .lineLimit(1).minimumScaleFactor(0.7)
                 }
-                .foregroundStyle(.white).frame(maxWidth: .infinity).padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.purple))
+                .accessibilityElement(children: .combine)
             }
-            .buttonStyle(PressableStyle())
-            Button(action: onHome) {
-                Text("VS HOME").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.purpleSub)
-                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEDE9FE)))
-            }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+            VSSoftPurpleButton(title: "VS HOME", icon: "house.fill", variant: .peach, action: onHome)
         }
     }
 
     private var shareText: String {
+        // FINISH_SPEC §S4: the shared caption bank; the link rides as the ShareLink item.
         let m = VsLobbyKit.modeName(mode)
+        let day = LeaderboardService.todayLocal()
         switch outcome.outcome {
-        case .win: return "I beat \(name)’s Wordocious \(m) run (\(margin.lowercased())). Race it — code \(code)"
-        case .loss: return "\(name)’s Wordocious \(m) run held against me. Can you beat it? Code \(code)"
-        case .draw: return "Dead heat with \(name) on Wordocious \(m). Race it — code \(code)"
+        case .win: return ShareCopy.caption(.vsWin(opponent: name), game: m, date: day)
+        case .loss: return ShareCopy.caption(.vsLoss(opponent: name), game: m, date: day)
+        case .draw: return ShareCopy.caption(.vsDraw(opponent: name), game: m, date: day)
         }
     }
 }
@@ -248,11 +261,13 @@ struct VSChallengeSentView: View {
             VStack(spacing: 16) {
                 Wordmark(size: 22).padding(.top, 10)
                 VStack(spacing: 12) {
-                    Text(headline).font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                    Text(headline).font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                     if let run = vm.sentRun {
                         Text(subline(run)).font(Brand.font(10.5, .heavy)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleSub)
                             .multilineTextAlignment(.center)
-                        VSMiniRunBoard(run: run, tile: 18).padding(.vertical, 6)
+                        VSMiniRunBoard(run: run, tile: 18)
+                            .gameTray(accent: VsLobbyKit.accent(mode), state: run.solved ? .won : .lost, radius: 16, padding: 10, lightOnly: true)
+                            .padding(.vertical, 6)
                     }
                     switch vm.sendState {
                     case .sending:
@@ -262,17 +277,17 @@ struct VSChallengeSentView: View {
                             .multilineTextAlignment(.center)
                     case .sent:
                         Text("They get a notification with your time to beat.")
-                            .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub).multilineTextAlignment(.center)
+                            .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center)
                     }
                 }
                 .padding(18).frame(maxWidth: .infinity)
-                .background {
-                    ZStack {
-                        LinearGradient(colors: [Color(hex: 0xEBD6FD), Color(hex: 0xE2E6FF)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        if case .sent = vm.sendState, !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
+                .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar, tint: 0.10, line: 0.3)
+                .overlay {
+                    if case .sent = vm.sendState, !Theme.reduceMotion {
+                        BannerSweep().allowsHitTesting(false)
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 VStack(spacing: 10) {
                     switch vm.sendState {
@@ -280,25 +295,19 @@ struct VSChallengeSentView: View {
                         if vm.sendTarget?.link == true {
                             ShareLink(item: VsChallengeService.shareURL(code),
                                       message: Text(VsChallengeService.shareText(mode: mode, code: code))) {
-                                Text("SHARE LINK").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.purple))
+                                CandyLabel(title: "Share link") { Icon3D(.share, size: 20) }
                             }
+                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
                             .simultaneousGesture(TapGesture().onEnded {
                                 ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "vs_challenge")
                             })
                         }
                     case .failed:
-                        VSPrimaryButton(title: "TRY AGAIN", color: VsLobbyKit.purple) { vm.sendChallenge() }
+                        VSPrimaryButton(title: "TRY AGAIN", symbol: "arrow.clockwise") { vm.sendChallenge() }
                     case .sending:
                         EmptyView()
                     }
-                    Button(action: onHome) {
-                        Text("VS HOME").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.purpleSub)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
-                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEDE9FE)))
-                    }
-                    .buttonStyle(PressableStyle())
+                    VSSoftPurpleButton(title: "VS HOME", icon: "house.fill", variant: .peach, action: onHome)
                 }
             }
             .padding(.horizontal, 16).padding(.bottom, 32)
@@ -426,14 +435,14 @@ struct VSChallengeRaceView: View {
         VStack(spacing: 14) {
             Image("swords").renderingMode(.template).resizable().scaledToFit()
                 .frame(width: 36, height: 36).foregroundStyle(VsLobbyKit.ink)
-            Text(title).font(Brand.font(17, .black)).foregroundStyle(VsLobbyKit.deep).multilineTextAlignment(.center)
-            if let sub { Text(sub).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub).multilineTextAlignment(.center) }
+            Text(title).font(Brand.font(17, .black)).foregroundStyle(VsLobbyKit.titleInk).multilineTextAlignment(.center)
+            if let sub { Text(sub).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center) }
             if !auth.isAuthenticated {
                 VSPrimaryButton(title: "SIGN IN") { showAuth = true }
             }
-            VSPrimaryButton(title: "VS HOME") { dismiss() }
+            VSPrimaryButton(title: "VS HOME", variant: auth.isAuthenticated ? .purple : .peach) { dismiss() }
         }
-        .padding(20).frame(maxWidth: .infinity).vsCard(radius: 16)
+        .padding(20).frame(maxWidth: .infinity).vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
     }
 
     /// The frosted teal intro: RACE @DOUG'S RUN, the mode, the target, START.
@@ -442,7 +451,7 @@ struct VSChallengeRaceView: View {
         let target = c.run.solved ? "Solved in \(c.run.guesses) · \(VsLobby.vsClock(c.run.timeMs))" : "Not solved — just solve it"
         return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("RACE @\(name.uppercased())’S RUN").font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+                Text("RACE @\(name.uppercased())’S RUN").font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                 HStack(spacing: 8) {
                     VSModeChip(mode: c.mode)
                     Spacer()
@@ -450,37 +459,35 @@ struct VSChallengeRaceView: View {
                 }
             }
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.5))
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
                     AvatarView(url: c.challenger.avatarUrl, username: name, size: 52)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("TIME TO BEAT").font(Brand.font(10, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
-                        Text(target).font(Brand.font(18, .black)).foregroundStyle(VsLobbyKit.deep)
+                        Text(target).vsNumber(18)
+                            .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     Spacer(minLength: 0)
                 }
                 Text("Same puzzle. \(name)’s pace plays out beside you.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                    .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                VSPrimaryButton(title: "START") { Haptics.tap(); phase = .playing(c) }
+                VSPrimaryButton(title: "START", symbol: "play.fill") { Haptics.tap(); phase = .playing(c) }
             }
             .padding(14)
         }
-        .background(LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color(hex: 0x134E4A).opacity(0.08), radius: 7, x: 0, y: 4)
+        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar, tint: 0.10, line: 0.3)
     }
 
     /// Your own challenge: who raced it so far.
     private func mineCard(_ c: VsChallenge, _ sent: VsSentChallenge?) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("YOUR CHALLENGE").font(Brand.font(16, .black)).foregroundStyle(VsLobbyKit.deep)
+                Text("YOUR CHALLENGE").font(Brand.font(16, .black)).foregroundStyle(VsLobbyKit.titleInk)
                 Spacer()
                 VSModeChip(mode: c.mode)
             }
-            Text("Your run: \(c.run.summary)").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+            Text("Your run: \(c.run.summary)").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
             let results = sent?.results ?? []
             if results.isEmpty {
                 // R asleep: quiet in here (MASCOT_SPEC §1, ART_SPEC §7), kept small inside the card.
@@ -489,18 +496,27 @@ struct VSChallengeRaceView: View {
                     Text("Nobody has raced it yet.").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.label)
                 }
             } else {
-                ForEach(Array(results.enumerated()), id: \.offset) { _, r in
-                    HStack {
-                        VSInitialAvatar(name: r.username, size: 28)
-                        Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
-                        Spacer()
-                        Text(r.outcome == "win" ? "you won" : r.outcome == "loss" ? "\(r.username) won" : "draw")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(r.outcome == "loss" ? VsLobbyKit.label : VsLobbyKit.ink)
+                VStack(spacing: 0) {
+                    ForEach(Array(results.enumerated()), id: \.offset) { i, r in
+                        HStack {
+                            VSInitialAvatar(name: r.username, size: 28)
+                            Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                            Spacer()
+                            if r.outcome == "win" || r.outcome == "loss" {
+                                // From YOUR side: "win" = you won (W), "loss" = they beat it (L).
+                                RowResultBadge(won: r.outcome == "win", size: 18)
+                            }
+                            Text(r.outcome == "win" ? "you won" : r.outcome == "loss" ? "\(r.username) won" : "draw")
+                                .font(Brand.font(11, .heavy)).foregroundStyle(r.outcome == "loss" ? VsLobbyKit.mutedInk : VsLobbyKit.ink)
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 8)
+                        .vsStripedRow(i)
                     }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
-            VSPrimaryButton(title: "VS HOME") { dismiss() }
+            VSPrimaryButton(title: "VS HOME", variant: .peach) { dismiss() }
         }
-        .padding(16).vsCard(radius: 16)
+        .padding(16).vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
     }
 }

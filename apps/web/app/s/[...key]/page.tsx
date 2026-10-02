@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { buildCopy, MODE_ROUTE, parseLeaderboardShare, type SP } from '@/lib/share-page-copy';
+import { CandyLink } from '@/components/ui/candy-button';
+import { PageBackground } from '@/components/ui/page-background';
+import { buildCopy, funShareTitle, MODE_ROUTE, parseLeaderboardShare, type SP } from '@/lib/share-page-copy';
 import LiveBoardSection from '@/components/share/live-board-section';
 import { GetAppBadges } from '@/components/share/get-app-badges';
 import { ShareLandingBeacon } from '@/components/share/share-landing-beacon';
@@ -29,7 +30,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const key = params.key ?? [];
   const img = imageUrl(key);
-  const { title, description } = buildCopy(searchParams, key);
+  const { description } = buildCopy(searchParams, key);
+  // FINISH_SPEC S4: the fun line from the shared caption bank.
+  const title = funShareTitle(searchParams, key);
   const w = Number(str(searchParams.w)) || 1080;
   const h = Number(str(searchParams.h)) || 1080;
 
@@ -81,6 +84,7 @@ export default function SharePage(
   const lbInfo = parseLeaderboardShare(searchParams, key);
 
   return (
+    <PageBackground tint="home">
     <main
       style={{
         minHeight: '100vh',
@@ -90,7 +94,7 @@ export default function SharePage(
         justifyContent: 'center',
         gap: 24,
         padding: 24,
-        backgroundColor: 'var(--color-bg)',
+        position: 'relative',
       }}
     >
       {/* Share-outcome tracking: logs the landing to landing_visits and drops
@@ -113,12 +117,14 @@ export default function SharePage(
       <img
         src={img}
         alt={title}
+        width={1080}
+        height={1350}
         style={{
           maxWidth: 'min(92vw, 480px)',
           width: '100%',
           height: 'auto',
-          borderRadius: 16,
-          boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+          borderRadius: 22,
+          boxShadow: '0 18px 36px rgba(60, 30, 110, 0.25)',
         }}
       />
 
@@ -127,25 +133,19 @@ export default function SharePage(
       )}
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Link
-          href={playHref}
-          className="px-6 py-3 rounded-xl text-white font-black"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-        >
+        {/* A8: candy buttons (purple primary, pink secondary). */}
+        <CandyLink href={playHref} color="purple" size="lg" icon="play">
           {ctaLabel}
-        </Link>
-        <Link
-          href="/"
-          className="px-6 py-3 rounded-xl font-black"
-          style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
-        >
+        </CandyLink>
+        <CandyLink href="/" color="pink" size="lg">
           Wordocious Home
-        </Link>
+        </CandyLink>
       </div>
 
       {/* §219: store badges — the visitor's platform first, both on desktop.
           Android especially: no smart-banner equivalent exists there. */}
       <GetAppBadges />
     </main>
+    </PageBackground>
   );
 }

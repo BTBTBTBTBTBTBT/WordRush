@@ -221,7 +221,8 @@ enum VsChallengeService {
     /// The link a challenge shares, and the text that rides with it.
     static func shareURL(_ code: String) -> URL { URL(string: "https://wordocious.com/vs/challenge/\(code)")! }
     static func shareText(mode: GameMode, code: String) -> String {
-        "Race my Wordocious \(VsLobbyKit.modeName(mode)) run — code \(code)"
+        // FINISH_SPEC §S4: the shared VS invite copy; the link rides as the ShareLink item.
+        ShareCopy.vsInvite(game: VsLobbyKit.modeName(mode), url: "").trimmingCharacters(in: .whitespaces)
     }
 }
 

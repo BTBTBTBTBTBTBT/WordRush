@@ -1,6 +1,8 @@
 'use client';
 
+import { REVEAL } from '@/lib/tile-motion';
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { modeColor } from '@/lib/vs-lobby';
 import { GameMode, GameStatus, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import { Keyboard } from '@/components/game/keyboard';
@@ -66,7 +68,7 @@ export function VsQuadword({ seed, mode, solutions, onBoardSolved, onCompleted, 
       setError(msg);
       playInvalid();
       setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
       setTimeout(() => setError(''), 1500);
     };
 
@@ -131,7 +133,8 @@ export function VsQuadword({ seed, mode, solutions, onBoardSolved, onCompleted, 
 
       {/* Boards */}
       <div className="flex-1 min-h-0 px-2 pt-2 pb-2 overflow-hidden">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        {/* FINISH_SPEC L: each mini board a game tray in the mode's accent (the zoomed one active). */}
+        <MultiBoard accent={modeColor(mode)} boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 
       {/* Keyboard */}

@@ -33,9 +33,18 @@ describe('reveal timing', () => {
     expect(REVEAL.end(0)).toBe(720);
   });
 
-  it('hops 560 ms, 90 ms apart, and fits the not-a-word clear inside the games’ 600 ms window', () => {
+  it('hops 560 ms, 90 ms apart', () => {
     expect(REVEAL.hopMs).toBe(560);
     expect(REVEAL.hopStagger).toBe(90);
-    expect(REVEAL.outStart + 4 * REVEAL.outStagger).toBeLessThan(600);
+  });
+
+  it('holds a not-a-word reject ~1 s in red, then clears right to left 90 ms apart (iOS parity)', () => {
+    expect(REVEAL.badMs).toBe(1000);
+    expect(REVEAL.outStart).toBe(1000);
+    expect(REVEAL.outStagger).toBe(90);
+    // The games block input until the last (leftmost) letter is gone.
+    expect(REVEAL.rejectMs(5)).toBe(1000 + 4 * 90 + 220);
+    expect(REVEAL.rejectMs(7)).toBe(1000 + 6 * 90 + 220);
+    expect(REVEAL.rejectMs(0)).toBe(1220);
   });
 });

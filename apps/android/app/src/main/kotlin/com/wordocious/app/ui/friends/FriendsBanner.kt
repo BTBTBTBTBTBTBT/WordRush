@@ -8,11 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -22,37 +21,37 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.FriendsService
-import com.wordocious.app.ui.BANNER_HOST_CLEAR
-import com.wordocious.app.ui.BANNER_HOST_PEEK
-import com.wordocious.app.ui.BannerHost
 import com.wordocious.app.ui.CappedFontScale
-import com.wordocious.app.ui.Mascot
-import com.wordocious.app.ui.Mascots
+import com.wordocious.app.ui.CastPose
+import com.wordocious.app.ui.FinishInk
 import com.wordocious.app.ui.LocalTabHidden
+import com.wordocious.app.ui.Mascot
+import com.wordocious.app.ui.MascotId
+import com.wordocious.app.ui.Mascots
+import com.wordocious.app.ui.PodiumInk
 import com.wordocious.app.ui.RaceRow
 import com.wordocious.app.ui.awaitShown
 import com.wordocious.app.ui.bannerShimmer
-import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.racePts
+import com.wordocious.app.ui.softNumberStyle
+import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.FriendsBannerInput
 import com.wordocious.core.friendsBannerClockLine
 import com.wordocious.core.friendsBannerHeadline
 import kotlinx.coroutines.delay
+
 
 /** The best live friend streak for the TODAY'S RACE row ("DOUG 12 DAYS"). */
 data class BestFriendStreak(val name: String, val days: Int)
@@ -74,12 +73,15 @@ fun friendsBannerInput(friendCount: Int, online: List<String>, rows: List<RaceRo
     )
 }
 
+
 /**
- * The Friends banner (Friends overhaul §2.2, board AD): one window like the
- * home and VS banners — a frosted strip with the core headline and the clock
- * line, an ON NOW row (faces of friends on now, or who was here last) and a
- * TODAY'S RACE row (top three chips + the best friend streak). Pink-to-lavender,
- * one shimmer while anyone is on. Words come from core FriendlyGames.kt.
+ * The Friends banner (Friends overhaul §2.2 → FINISH_SPEC C4, stats-friends-polish
+ * mockup): a pink-tinted card (#fff0f7 / #ffd3e7) with a pink → gold top bar and O1
+ * cheering on the right — the core headline ("OLIVER LEADS TODAY'S RACE") and the
+ * clock line, ON NOW (online friends as letter tiles with a green dot, or who was here
+ * last) and TODAY'S RACE (the top three as medal-colored chips with soft numbers + the
+ * best friend streak). One shimmer while anyone is on. Words come from core
+ * FriendlyGames.kt. Fixed light, like the Friends page.
  */
 @Composable
 fun FriendsBannerView(
@@ -100,127 +102,133 @@ fun FriendsBannerView(
     val headline = friendsBannerHeadline(input)
     val clockLine = friendsBannerClockLine(input, clock)
     val shimmer = online.isNotEmpty() && !WTheme.reducedMotion
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(20.dp)
     val best = friends.mapNotNull { f -> (f.friendStreak ?: 0).takeIf { it > 0 }?.let { BestFriendStreak(f.username, it) } }
         .maxByOrNull { it.days }
 
     CappedFontScale {
-        // The host (O1, the cheerleader: MASCOT_SPEC §1–§2) peeks over the strip's top edge.
-        Box(Modifier.fillMaxWidth().padding(top = BANNER_HOST_PEEK)) {
-        Column(
+        Box(
             Modifier.fillMaxWidth()
-                .friendsBannerGlow()
+                .shadow(6.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
                 .clip(shape)
-                .drawBehind {
-                    drawRect(Brush.verticalGradient(listOf(Color(0xFFFCE7F3), Color(0xFFEDE9FE))))
-                    drawRect(Brush.linearGradient(
-                        0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                        start = Offset.Zero, end = Offset(size.width, size.height),
-                    ))
-                }
-                .then(if (shimmer) Modifier.bannerShimmer() else Modifier),
+                .background(BANNER_TINT)
+                .then(if (shimmer) Modifier.bannerShimmer() else Modifier)
+                .border(1.5.dp, BANNER_LINE, shape),
         ) {
-            // Frosted strip
-            Column(
-                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                    .padding(start = 12.dp, top = 12.dp, end = 10.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                // Larger and glowing (founder 2026-10-01): 22 sp / 900 with a soft pink glow.
-                Text(
-                    headline, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
-                    color = FriendsPink.ink, maxLines = 2, modifier = Modifier.heightIn(min = 26.dp).padding(end = BANNER_HOST_CLEAR - 2.dp),
-                    style = androidx.compose.ui.text.TextStyle(
-                        shadow = androidx.compose.ui.graphics.Shadow(Color(0x8CDB2777), Offset.Zero, blurRadius = 16f),
-                    ),
-                )
-                Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = FriendsPink.mid)
-            }
-            // ON NOW
-            Column(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("ON NOW", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = FriendsPink.mid)
-                    if (online.isNotEmpty()) {
-                        Text("${online.size}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = FriendsPink.green)
+            Column(Modifier.fillMaxWidth()) {
+                // The pink → gold top bar.
+                Box(Modifier.fillMaxWidth().height(10.dp).background(Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFFF59E0B)))))
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            headline.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, lineHeight = 1.1.em,
+                            color = BANNER_HEAD, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.heightIn(min = 24.dp).padding(end = 80.dp).semantics { heading() },
+                        )
+                        Text(
+                            clockLine.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.06.em,
+                            color = BANNER_INK, modifier = Modifier.padding(end = 80.dp),
+                        )
                     }
-                }
-                if (online.isEmpty()) {
-                    Text(
-                        nobodyOnLine(friends, nowMs), fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                        color = FriendsPink.sub, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        online.take(5).forEach { f ->
-                            Column(
-                                Modifier.width(52.dp).clickableNoRipple { onFace(f) },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(3.dp),
-                            ) {
-                                FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 40.dp, online = true)
+                    // ON NOW
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            FriendsLabel("ON NOW", color = BANNER_INK)
+                            Spacer(Modifier.weight(1f))
+                            if (online.isNotEmpty()) Text("${online.size}", style = softNumberStyle(13.sp, FinishInk.softNumber))
+                        }
+                        if (online.isEmpty()) {
+                            Text(
+                                nobodyOnLine(friends, nowMs), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                                color = BANNER_FACES, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            )
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                online.take(5).forEach { f ->
+                                    Box(
+                                        Modifier.squishClickable(
+                                            label = "${f.username}, on now${f.activity?.let { ", in $it" } ?: ""}. Play a game",
+                                        ) { onFace(f) },
+                                    ) {
+                                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 34.dp, online = true, presenceRing = false)
+                                    }
+                                }
                                 Text(
-                                    f.username, fontSize = 10.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                                    onNowLine(online), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = BANNER_FACES,
+                                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                                 )
-                                Text(
-                                    f.activity?.let { "in $it" } ?: "on now", fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                                    color = FriendsPink.green, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                                )
+                            }
+                        }
+                    }
+                    // TODAY'S RACE (the whole row opens the full race)
+                    Column(
+                        Modifier.fillMaxWidth().squishClickable(label = "Today's race, see everyone", onClick = onRace),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            FriendsLabel("TODAY’S RACE", color = BANNER_INK)
+                            Spacer(Modifier.weight(1f))
+                            best?.let { FlameCount("${it.name.uppercase()} ${it.days} ${if (it.days == 1) "DAY" else "DAYS"}") }
+                        }
+                        if (rows.size <= 1) {
+                            // I's voice (MASCOT_SPEC §6).
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Mascot(Mascots.addFriends, 24.dp)
+                                Text(Mascots.addFriendLine, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = BANNER_FACES)
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                raceChips(rows).forEach { r -> RaceChip(r, Modifier.weight(1f)) }
                             }
                         }
                     }
                 }
             }
-            // TODAY'S RACE
-            Column(
-                Modifier.fillMaxWidth().clickableNoRipple(onRace).padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("TODAY’S RACE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = FriendsPink.mid)
-                    Spacer(Modifier.weight(1f))
-                    best?.let { FlameCount("${it.name.uppercase()} ${it.days} ${if (it.days == 1) "DAY" else "DAYS"}") }
-                }
-                if (rows.size <= 1) {
-                    // I's voice (MASCOT_SPEC §6).
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Mascot(Mascots.addFriends, 24.dp)
-                        Text(Mascots.addFriendLine, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
-                    }
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        raceChips(rows).forEach { r -> RaceChip(r, Modifier.weight(1f)) }
-                    }
-                }
-            }
-        }
-        BannerHost(Mascots.friends, Modifier.align(Alignment.TopEnd))
+            // The host: O1, the cheerleader, cheering on the right (decorative).
+            CastPose(MascotId.O1, "cheer", 78.dp, Modifier.align(Alignment.TopEnd).padding(top = 14.dp, end = 8.dp))
         }
     }
 }
 
+/** The banner's card inks (stats-friends-polish `.banner`). */
+private val BANNER_TINT = Color(0xFFFFF0F7)
+private val BANNER_LINE = Color(0xFFFFD3E7)
+private val BANNER_HEAD = Color(0xFF7A1F55)
+private val BANNER_INK = Color(0xFFB0306F)
+private val BANNER_FACES = Color(0xFF8A4A6E)
+
+/** "Doug is in Gauntlet" / "Doug is on now" (+ "+2 more") beside the ON NOW faces. */
+internal fun onNowLine(online: List<FriendsService.FriendProfile>): String {
+    val f = online.firstOrNull() ?: return ""
+    val lead = f.activity?.let { "${f.username} is in $it" } ?: "${f.username} is on now"
+    val more = online.size - 1
+    return if (more > 0) "$lead · +$more more" else lead
+}
+
+/** A TODAY'S RACE chip: the rank on a medal-colored disc, the name and the soft points, on its medal's tint. */
 @Composable
 private fun RaceChip(r: RaceRow, modifier: Modifier) {
-    val shape = RoundedCornerShape(10.dp)
-    val medal = when (r.rank) { 1 -> Color(0xFFF59E0B); 2 -> Color(0xFF9CA3AF); 3 -> Color(0xFFB45309); else -> Color(0xFFCBD5E1) }
+    val shape = RoundedCornerShape(50)
+    val medal = if (r.rank in 1..3) PodiumInk.medal(r.rank) else Color(0xFF7C3AED)
     Row(
-        modifier.clip(shape).background(Color.White.copy(alpha = 0.85f))
-            .then(if (r.me) Modifier.border(2.dp, FriendsPink.solid, shape) else Modifier)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier.clip(shape).background(friendsWash(medal, 0.16f))
+            .border(if (r.me) 2.dp else 1.5.dp, if (r.me) Color(0xFF7C3AED) else friendsLine(medal, 0.4f), shape)
+            .padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 4.dp)
+            .semantics(mergeDescendants = true) { },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Box(Modifier.size(18.dp).clip(CircleShape).background(medal), Alignment.Center) {
-            Text("${r.rank}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
+        Box(Modifier.size(22.dp).clip(CircleShape).background(medal), Alignment.Center) {
+            Text("${r.rank}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1)
         }
         Column(Modifier.weight(1f)) {
             Text(
                 if (r.me) "YOU" else r.username.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black,
-                color = FriendsPink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 90.dp),
+                color = Color(0xFF5A2342), maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            Text(racePts(r.points), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.mid, maxLines = 1)
+            Text(racePts(r.points), style = softNumberStyle(13.sp, FinishInk.softNumber), maxLines = 1)
         }
     }
 }
@@ -246,16 +254,3 @@ fun nobodyOnLine(friends: List<FriendsService.FriendProfile>, nowMs: Long): Stri
     return "Nobody's on right now · ${last.first.username} was here $ago"
 }
 
-/** The home banner's soft violet shadow (0 4px 14px rgba(76,29,149,0.08)). */
-private fun Modifier.friendsBannerGlow(): Modifier = drawBehind {
-    val blur = 14.dp.toPx()
-    val dy = 4.dp.toPx()
-    val r = 16.dp.toPx()
-    drawIntoCanvas { canvas ->
-        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color(0xFF4C1D95).copy(alpha = 0.08f).toArgb()
-            maskFilter = android.graphics.BlurMaskFilter(blur / 2f, android.graphics.BlurMaskFilter.Blur.NORMAL)
-        }
-        canvas.nativeCanvas.drawRoundRect(0f, dy, size.width, size.height + dy, r, r, paint)
-    }
-}

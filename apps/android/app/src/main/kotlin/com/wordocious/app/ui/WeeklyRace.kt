@@ -33,6 +33,8 @@ import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 
 // The Sunday finish (§294, Friends D3.3) — Android twin of web
 // lib/weekly-race.ts (ordinal) and components/stats/weekly-finishes.tsx. The
@@ -107,10 +109,14 @@ fun WeeklyFinishesCard(userId: String) {
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-            listOf("🥇" to count(1), "🥈" to count(2), "🥉" to count(3)).forEach { (medal, n) ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(medal, fontSize = 18.sp)
-                    Text("$n", fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            // AL addendum 2: medal art (not 🥇 🥈 🥉 emoji); TalkBack reads "2 first-place finishes".
+            listOf(Triple(GlyphArt.GOLD, count(1), "first"), Triple(GlyphArt.SILVER, count(2), "second"), Triple(GlyphArt.BRONZE, count(3), "third")).forEach { (medal, n, place) ->
+                Column(
+                    Modifier.clearAndSetSemantics { contentDescription = "$n $place-place ${if (n == 1) "finish" else "finishes"}" },
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    GlyphArtImage(medal, 24.dp)
+                    SoftNumber("$n", 16.sp)
                 }
             }
         }

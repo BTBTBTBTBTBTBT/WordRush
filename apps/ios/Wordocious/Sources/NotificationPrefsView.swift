@@ -21,8 +21,9 @@ enum PushCategories {
     }
 }
 
-/// The bell in the FRIENDS card header: the 3D bell, slashed when any category
-/// is off; tapping opens the prefs sheet.
+/// The old bell from beside the FRIENDS title (FINISH_SPEC §C4b moved the prefs to
+/// Settings → Notifications). Kept for any remaining caller; the Friends tab no
+/// longer shows it.
 struct NotificationPrefsButton: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var open = false
@@ -31,12 +32,11 @@ struct NotificationPrefsButton: View {
         if auth.profile != nil {
             let anyOff = PushCategories.anyOff(auth.profile?.notificationPrefs)
             Button { open = true } label: {
-                // A header action: the shared soft white circle (HEADER_SPEC §4).
                 // ART_SPEC §5: the 3D bell; slashed + dimmed when a category is off.
                 HeaderCircleLabel(glyph: anyOff ? .mutedIcon(.bell) : .icon(.bell), size: 32,
                                   tint: anyOff ? Theme.textMuted : PageHeaderStyle.ink)
             }
-            .buttonStyle(.squish)
+            .buttonStyle(.squishIcon)
             .accessibilityLabel("Friends notification settings")
             .sheet(isPresented: $open) {
                 NotificationPrefsSheet().presentationDetents([.medium])
@@ -45,10 +45,11 @@ struct NotificationPrefsButton: View {
     }
 }
 
-/// The four categories with toggles; each flip writes profiles.notification_prefs
-/// for the owner (the Simulate Pro update → refreshProfile pattern) so every
-/// surface agrees.
-struct NotificationPrefsSheet: View {
+/// The four Friends push categories as toggles — one tinted row each (§A1). Each
+/// flip writes profiles.notification_prefs for the owner (the Simulate Pro update →
+/// refreshProfile pattern) so every surface agrees. Shared by the prefs sheet and
+/// Settings → Notifications.
+struct NotificationPrefsToggles: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var saving: String?
 
@@ -56,29 +57,22 @@ struct NotificationPrefsSheet: View {
 
     var body: some View {
         let prefs = auth.profile?.notificationPrefs ?? [:]
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Friends notifications")
-                .font(Brand.font(10, .black)).tracking(0.8).textCase(.uppercase)
-                .foregroundStyle(Theme.textMuted)
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(PushCategories.all) { c in
                 let on = prefs[c.key] != false
                 Toggle(isOn: Binding(get: { on }, set: { _ in toggle(c.key, prefs: prefs) })) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(c.label).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
-                        Text(c.hint).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                        Text(c.label).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                        Text(c.hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
                     }
                 }
                 .tint(Color(hex: 0x7C3AED))
                 .disabled(saving != nil)
                 .opacity(saving == c.key ? 0.5 : 1)
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .tintedPill(Color(hex: 0x7C3AED), radius: 14)
             }
-            Text("Friend requests always come through.")
-                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-            Spacer(minLength: 0)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .pageBackground(.home)
     }
 
     private func toggle(_ key: String, prefs: [String: Bool]) {
@@ -93,6 +87,22 @@ struct NotificationPrefsSheet: View {
             await auth.refreshProfile()
             saving = nil
         }
+    }
+}
+
+/// The prefs sheet: the label, the four toggles and the friend-request note.
+struct NotificationPrefsSheet: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            FinishLabel("Friends notifications")
+            NotificationPrefsToggles()
+            Text("Friend requests always come through.")
+                .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .pageBackground(.home)
     }
 }
 

@@ -139,7 +139,10 @@ enum Brand {
     /// something everywhere — which it previously did not, anywhere — while
     /// keeping the board playable. Accessibility sizes beyond this are served
     /// by system Zoom rather than by breaking the grid.
-    private static let maxScale: CGFloat = 1.6
+    ///
+    /// FINISH_SPEC §AB: Larger Text reaches 200% (cards grow, nothing clips);
+    /// board glyphs use `fixedFont` and key caps shrink their letters to fit.
+    static let maxScale: CGFloat = 2.0
 
     /// Text that should track the user's Larger Text setting — i.e. all of it
     /// except glyphs whose size is derived from a container (see fixedFont).

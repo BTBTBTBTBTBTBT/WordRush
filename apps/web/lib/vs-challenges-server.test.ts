@@ -19,7 +19,11 @@ describe('vs challenge server helpers', () => {
   });
   it('maps a row to the public view', () => {
     const v = toView({ code: 'ABCDEFGH', game_mode: 'DUEL', seed: 's', challenger_id: 'u', solved: true, boards_solved: 1, total_boards: 1, guesses: 4, time_ms: 1000, guess_log: null, solutions: ['X'], created_at: 'c', expires_at: 'e', is_link: false }, { username: 'doug' });
-    expect(v.challenger).toEqual({ id: 'u', username: 'doug', avatarUrl: null });
+    // isProActive is mocked to true in this file (the real rule is covered by avatar-fields-server.test.ts).
+    expect(v.challenger).toEqual({ id: 'u', username: 'doug', avatarUrl: null, avatar_cast_id: null, avatar_frame: null, avatar_config: null, is_pro: true });
+    // FINISH_SPEC AH/AN3: the challenger's avatar choice rides along when selected.
+    const w = toView({ challenger_id: 'u' }, { username: 'doug', is_pro: true, pro_expires_at: null, avatar_cast_id: 'w', avatar_frame: 'gold', avatar_config: { v: 1 } });
+    expect(w.challenger).toMatchObject({ avatar_cast_id: 'w', avatar_frame: 'gold', avatar_config: { v: 1 }, is_pro: true });
     expect(v.run.guessLog).toEqual([]);
   });
 });

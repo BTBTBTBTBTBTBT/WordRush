@@ -12,6 +12,10 @@ struct ProView: View {
     @State private var showAuth = false
 
     private let gold = Color(hex: 0xD97706)
+    /// FINISH_SPEC §G1: the gold card family (tint, line, top bar).
+    private static let goldTint = Color(hex: 0xF5A524)
+    private static let goldBar = [Color(hex: 0xF5A524), Color(hex: 0xFFD166)]
+    private static let ink = Color(hex: 0x8A4A12)
 
     /// Fallback prices (PRO_PLANS in lib/payment/types.ts) shown only if the
     /// App Store products haven't loaded yet.
@@ -23,17 +27,19 @@ struct ProView: View {
     private func isPurchasing(_ plan: StoreManager.Plan) -> Bool { store.purchasingId == plan.rawValue }
     private func buy(_ plan: StoreManager.Plan) { Task { await store.purchase(plan) } }
 
-    private struct Benefit { let symbol: String; let asset: String?; let text: String }
+    /// §G1: each benefit row wears a 3D icon (a game icon where one fits).
+    private enum BenefitIcon { case icon(Icon3DName), game(String) }
+    private struct Benefit { let icon: BenefitIcon; let text: String }
     private let benefits: [Benefit] = [
-        .init(symbol: "eye.slash.fill", asset: nil, text: "Ad-free experience — no interruptions, ever"),
-        .init(symbol: "square.grid.3x3.fill", asset: "wordle-grid", text: "Unlimited replays of every game mode, any time"),
-        .init(symbol: "", asset: "swords", text: "VS mode on every game — challenge friends in every mode"),
-        .init(symbol: "cpu", asset: nil, text: "Practice against the CPU — Easy, Medium & Hard bots, anytime"),
-        .init(symbol: "envelope.fill", asset: nil, text: "Invite friends to private matches by link or username"),
-        .init(symbol: "", asset: "shield", text: "4 streak shields credited each billing period"),
-        .init(symbol: "sparkles", asset: nil, text: "Pro badge on profile & leaderboards"),
-        .init(symbol: "chart.bar.fill", asset: nil, text: "Extended stats — win rate trends & avg speed per mode"),
-        .init(symbol: "bolt.fill", asset: nil, text: "Early access to new game modes"),
+        .init(icon: .icon(.lock), text: "Ad-free experience — no interruptions, ever"),
+        .init(icon: .game("game-practice"), text: "Unlimited replays of every game mode, any time"),
+        .init(icon: .game("game-vs"), text: "VS mode on every game — challenge friends in every mode"),
+        .init(icon: .icon(.trophy), text: "Battle all ten of the cast — Rip to Webster, any time"),
+        .init(icon: .icon(.addFriend), text: "Invite friends to private matches by link or username"),
+        .init(icon: .icon(.shield), text: "4 streak shields credited each billing period"),
+        .init(icon: .icon(.crown), text: "Pro badge on profile & leaderboards"),
+        .init(icon: .icon(.tabStats), text: "Extended stats — win rate trends & avg speed per mode"),
+        .init(icon: .icon(.flame), text: "Early access to new game modes"),
     ]
 
     var body: some View {
@@ -51,7 +57,7 @@ struct ProView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
+                    HeaderCircleButton(.icon(.back), size: 44, label: "Close") { dismiss() }
                 }
             }
             .alert("Purchase issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } })) {
@@ -61,89 +67,99 @@ struct ProView: View {
             }
             .sheet(isPresented: $showAuth) { AuthView() }
         }
+        // FINISH_SPEC §AP: LET'S PLAY on Welcome to Pro takes the player back to where
+        // they were — the Pro page closes itself behind it.
+        .onReceive(ProWelcomeCenter.shared.$finishToken.dropFirst()) { _ in
+            if auth.isProActive { dismiss() }
+        }
     }
 
     // Pro is account-based — a guest must sign in before subscribing so the
     // purchase can be tied to an account (appAccountToken → entitlement).
     private var guestPrompt: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Text("Sign in to go Pro")
-                .font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                .font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
             Text("Create a free account or sign in first — Pro unlocks unlimited replays, VS on every mode, and more, tied to your account.")
-                .font(Brand.font(13, .medium)).foregroundStyle(Theme.textSecondary)
+                .font(Brand.font(13, .medium)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center)
-            Button { showAuth = true } label: {
-                Text("Sign in").font(Brand.font(15, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
-            }.buttonStyle(.squish)
+            Button { showAuth = true } label: { CandyLabel(title: "Sign in", symbol: "person.fill") }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
         }
-        .padding(20).padding(.top, 8)
+        .padding(20)
+        .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.10, line: 0.30)
+        .padding(.top, 8)
     }
 
+    /// §G1: the crowned W (`art-scene-pro-crown`) large at the top, the gold GO PRO
+    /// caps under it (the whole-cast GO PRO art would draw W twice — §A7).
     private var header: some View {
         VStack(spacing: 6) {
-            // ART_SPEC §2: the whole-cast GO PRO art (gold lettering; it replaces W's host spot).
-            ArtTitle(.gopro, colors: PageHeaderStyle.gold)
-                .frame(maxWidth: .infinity)
+            if ArtAsset.exists("art-scene-pro-crown") {
+                Image("art-scene-pro-crown").resizable().interpolation(.high).scaledToFit()
+                    .frame(maxWidth: 300, maxHeight: 170)
+                    .accessibilityHidden(true)
+            }
+            PageTitle("Go Pro", colors: PageHeaderStyle.gold, size: 30)
             Text("Play unlimited & ad-free — every mode, any time")
-                .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
+                .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
         }
-        .padding(.top, 12).padding(.bottom, 24)
+        .padding(.top, 4).padding(.bottom, 18)
     }
 
     private var activePro: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                Icon3D(.crown, size: 18)
-                Text("ACTIVE PRO").font(Brand.caption(13)).foregroundStyle(.white)
+                Icon3D(.crown, size: 26)
+                Text("ACTIVE PRO").font(Brand.font(15, .black)).tracking(1.2).foregroundStyle(Self.ink)
             }
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), gold], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            Text("You're enjoying all Pro benefits!").font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
+            Text("You're enjoying all Pro benefits!").font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
         }
-        .padding(28).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+        .padding(24).frame(maxWidth: .infinity)
+        .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.12, line: 0.32)
     }
 
     private var plansContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("BENEFITS")
-            ForEach(0..<benefits.count, id: \.self) { i in benefitRow(benefits[i]) }
+        VStack(alignment: .leading, spacing: 10) {
+            FinishLabel("Benefits", color: Self.ink)
+            VStack(spacing: 0) {
+                ForEach(0..<benefits.count, id: \.self) { i in benefitRow(benefits[i]).stripedRow(i, accent: Self.goldTint) }
+            }
+            .padding(.bottom, 4)
+            .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.08, line: 0.26)
 
-            sectionHeader("CHOOSE YOUR PLAN").padding(.top, 8)
+            FinishLabel("Choose your plan", color: Self.ink).padding(.top, 8)
             planCard(title: "Monthly", price: displayPrice(.monthly, fallback: monthlyPrice), unit: "/mo", note: "Cancel anytime",
-                     gradient: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], best: false,
+                     accent: Color(hex: 0x7C3AED), variant: .purple, best: false,
                      loading: isPurchasing(.monthly), action: { buy(.monthly) }, cta: "Subscribe Monthly")
             planCard(title: "Yearly", price: displayPrice(.yearly, fallback: yearlyPrice), unit: "/yr", note: "$5/mo billed annually",
-                     gradient: [Color(hex: 0xF59E0B), gold], best: true,
+                     accent: Self.goldTint, variant: .amber, best: true,
                      loading: isPurchasing(.yearly), action: { buy(.yearly) }, cta: "Subscribe Yearly")
 
             HStack(spacing: 10) {
-                Rectangle().fill(Theme.border).frame(height: 1)
-                Text("OR TRY IT FIRST").font(Brand.font(10, .heavy)).tracking(0.5).foregroundStyle(Theme.textMuted)
-                Rectangle().fill(Theme.border).frame(height: 1)
+                Rectangle().fill(Self.goldTint.opacity(0.3)).frame(height: 1)
+                Text("OR TRY IT FIRST").font(Brand.font(10, .heavy)).tracking(0.5).foregroundStyle(FinishInk.secondary)
+                Rectangle().fill(Self.goldTint.opacity(0.3)).frame(height: 1)
             }.padding(.top, 6)
             Button { buy(.day) } label: {
-                HStack(spacing: 6) {
-                    if isPurchasing(.day) { ProgressView().tint(Theme.primary) }
-                    Text("Just today — \(displayPrice(.day, fallback: dayPrice)) for 24 hours of Pro →")
-                        .font(Brand.font(14, .black)).foregroundStyle(Theme.primary)
+                HStack(spacing: 8) {
+                    if isPurchasing(.day) { ProgressView().tint(.white) }
+                    CandyLabel(title: "Just today — \(displayPrice(.day, fallback: dayPrice)) for 24 hours", symbol: "bolt.fill")
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-            }.disabled(store.purchasingId != nil)
+            }
+            .buttonStyle(CandyButtonStyle(variant: .teal, size: .medium))
+            .disabled(store.purchasingId != nil)
             Text("Eight day passes cost more than a month of Pro.")
-                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                 .frame(maxWidth: .infinity).multilineTextAlignment(.center)
 
             // Restore + required subscription disclosure (App Store Review Guideline 3.1.2).
             Button { Task { await store.restore() } } label: {
-                Text("Restore Purchases").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 10)
-            }.padding(.top, 4)
+                CandyLabel(title: "Restore Purchases", symbol: "arrow.clockwise")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+            .frame(maxWidth: .infinity)
+            .padding(.top, 4)
 
             subscriptionDisclosure.padding(.top, 2)
         }
@@ -152,68 +168,72 @@ struct ProView: View {
     private var subscriptionDisclosure: some View {
         VStack(spacing: 6) {
             Text("Monthly ($\(monthlyPrice)) and Yearly ($\(yearlyPrice)) are auto-renewing subscriptions. Payment is charged to your Apple Account at confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the period ends; manage or cancel in Settings → Apple Account. The Day Pass is a one-time 24-hour purchase and does not renew.")
-                .font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(10, .regular)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 Link("Terms of Service", destination: URL(string: "https://wordocious.com/terms")!)
-                Text("·").foregroundStyle(Theme.textMuted)
+                Text("·").foregroundStyle(FinishInk.secondary)
                 Link("Privacy Policy", destination: URL(string: "https://wordocious.com/privacy")!)
             }
-            .font(Brand.font(10, .bold)).tint(Theme.primary)
+            .font(Brand.font(10, .bold)).tint(Theme.isDark ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9))
         }
-    }
-
-    private func sectionHeader(_ t: String) -> some View {
-        Text(t).font(Brand.font(11, .heavy)).tracking(1.1).foregroundStyle(Theme.textMuted)
     }
 
     private func benefitRow(_ b: Benefit) -> some View {
         HStack(spacing: 12) {
             Group {
-                if b.asset == "shield" {
-                    // The streak shield wears the 3D icon set (HEADER_SPEC §2).
-                    Icon3D(.shield, size: 24)
-                } else if let asset = b.asset {
-                    Image(asset).renderingMode(.template).resizable().scaledToFit().frame(width: 20, height: 20)
-                } else {
-                    Image(systemName: b.symbol).font(.system(size: 20))
+                switch b.icon {
+                case .icon(let i): Icon3D(i, size: 26)
+                case .game(let g):
+                    if ArtAsset.exists(g) { GameArtImage(asset: g, size: 28) } else { Icon3D(.crown, size: 26) }
                 }
-            }.foregroundStyle(gold).frame(width: 24)
-            Text(b.text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+            }
+            .frame(width: 30)
+            Text(b.text).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.heading)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(.horizontal, 14).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
+    /// §G1: a plan as a tinted card; the best-value plan wears the stronger tint + a
+    /// 2-pt gold ring, and its CTA is the large amber candy.
     private func planCard(title: String, price: String, unit: String, note: String,
-                          gradient: [Color], best: Bool, loading: Bool, action: @escaping () -> Void, cta: String) -> some View {
+                          accent: Color, variant: CandyButtonStyle.Variant, best: Bool, loading: Bool,
+                          action: @escaping () -> Void, cta: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-            (Text(price).font(Brand.font(30, .black)) + Text(unit).font(Brand.font(14, .bold)).foregroundColor(Theme.textMuted))
-                .foregroundStyle(Theme.textPrimary)
-            Text(note).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).padding(.bottom, 8)
+            Text(title.uppercased()).font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(FinishInk.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(price).softNumber(30)
+                Text(unit).font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
+            }
+            Text(note).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).padding(.bottom, 8)
             Button(action: action) {
                 HStack(spacing: 8) {
                     if loading { ProgressView().tint(.white) }
-                    Text(loading ? "Processing…" : cta).font(Brand.font(14, .black)).foregroundStyle(.white)
+                    CandyLabel(title: loading ? "Processing…" : cta, symbol: loading ? nil : "crown.fill")
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)))
             }
+            .buttonStyle(CandyButtonStyle(variant: variant, size: .large))
             .disabled(store.purchasingId != nil)
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(best ? Color(hex: 0xFDE68A) : Theme.border, lineWidth: 1.5))
+        .tintedCard(accent: accent, bar: best ? Self.goldBar : [accent, accent.wash(0.55)],
+                    tint: best ? 0.16 : 0.08, line: best ? 0.40 : 0.26)
+        .overlay {
+            if best {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color(hex: 0xF5C542), lineWidth: 2)
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             if best {
-                Text("BEST VALUE").font(Brand.font(10, .black)).foregroundStyle(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 2)
-                    .background(Capsule().fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
-                    .padding(.trailing, 16).offset(y: -10)   // float over the top border (web: -top-2.5 right-4)
+                Text("BEST VALUE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Self.ink)
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .tintedPill(Self.goldTint)
+                    .padding(.trailing, 14).padding(.top, 18)
             }
         }
     }

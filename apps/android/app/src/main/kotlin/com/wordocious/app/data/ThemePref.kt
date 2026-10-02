@@ -29,6 +29,8 @@ object ThemePref {
                 1f,
             ) == 0f
         }.getOrDefault(false)
+        // FINISH_SPEC AD: Battery Saver calms ambient motion too (kept live by a receiver).
+        com.wordocious.app.ui.theme.PowerSaveWatcher.start(App.instance)
     }
 
     fun set(key: String) {

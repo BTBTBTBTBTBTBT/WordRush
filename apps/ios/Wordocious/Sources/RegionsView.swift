@@ -133,7 +133,7 @@ final class RegionsVM: ObservableObject {
             let wrong = (Int(ch(state.solution, cell / n).asciiValue!) - 48) != cell % n
             dispatch(.undo)
             dispatch(.commit(cell: cell))
-            if wrong && !isFinished { Haptics.error(); SoundManager.shared.playInvalid() } else { SoundManager.shared.playKeyTap() }
+            if wrong && !isFinished { Haptics.warning(); SoundManager.shared.playInvalid() } else { SoundManager.shared.playKeyTap() }
             return
         }
         lastTap = (cell, now, cur)
@@ -154,7 +154,7 @@ final class RegionsVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = state.mistakes + 1, used = state.hintsUsed
         let row = regionsMatchRow(state)
@@ -196,24 +196,47 @@ struct RegionsView: View {
         ZStack {
             PageBackground(tint: .forGame(.regions))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView { VStack(spacing: 10) { header; board.padding(.horizontal, 6); result }.padding(.horizontal, 10) }
+                // FINISH_SPEC §R2: one screen — title + the compact result strip, the
+                // board on its won / lost tray scaled to the height left, then the dock
+                // (share + the daily CTAs / the Unlimited card); the score card below.
+                FinishedScreenLayout {
+                    VStack(spacing: 6) { header; result }
+                } board: { _ in
+                    board.padding(.horizontal, 6)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "REGIONS", game: "Starsweep", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?(vm.n) } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    VStack(spacing: 10) {
+                        if vm.isDaily { DailyRankBadge(gameMode: .regions) }
+                        finishedCards
+                    }
+                }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
-                    if !vm.isDaily && isPro { sizePicker }
+                    // FINISH_SPEC §Z: the Unlimited picker's slot is reserved in Daily too
+                    // (empty there), so a Pro's board sits at the same spot in both modes.
+                    let slots = GameHeaderLayout.slots(mode: vm.isDaily ? .daily : .unlimited, offersPicker: isPro)
+                    if slots.pickerHeight > 0 {
+                        sizePicker
+                            .frame(height: CGFloat(slots.pickerHeight))
+                            .opacity(slots.showsPicker ? 1 : 0)
+                            .allowsHitTesting(slots.showsPicker)
+                            .accessibilityHidden(!slots.showsPicker)
+                    }
                     Spacer(minLength: 4)
                     board.padding(.horizontal, 6)
                     Spacer(minLength: 4)
-                    Text(vm.remaining == vm.n && vm.state.history.isEmpty ? "Tap for a black star · double-tap to play it" : "\(vm.remaining) star\(vm.remaining == 1 ? "" : "s") left")
-                        .font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                    starsLeft
                     RegionsPad(vm: vm).padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -261,50 +284,73 @@ struct RegionsView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
+    /// The status line's ink (the game kit's #6a4fa0; themed in Dark) — matches GameScreen.
+    private static var statusInk: Color { Theme.isDark ? Theme.textMuted : Color(hex: 0x6A4FA0) }
+
     private var header: some View {
         VStack(spacing: 4) {
             Text("STARSWEEP").font(Brand.font(24, .black)).foregroundStyle(regionsAccent)
                 .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.regions)
-            HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                Text(vm.sizeLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                HStack(spacing: 3) {
-                    Text("Mistakes").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                    ForEach(0..<REGIONS_MAX_MISTAKES, id: \.self) { i in
-                        Circle().fill(i < vm.mistakes ? Color(hex: 0xDC2626) : Theme.borderLight).frame(width: 8, height: 8)
-                    }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(vm.mistakes) of \(REGIONS_MAX_MISTAKES) mistakes")
+            // FINISH_SPEC §B4: the status line under the title; numbers are soft numbers (§A2).
+            HStack(spacing: 10) {
+                if vm.isDaily { Text("#\(vm.dailyNumber)").softNumber(13) }
+                Text(vm.sizeLabel).font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
                 if !vm.isFinished {
+                    HStack(spacing: 4) {
+                        Text("Mistakes").font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
+                        StarsweepMistakeDots(used: vm.mistakes, total: REGIONS_MAX_MISTAKES)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(vm.mistakes) of \(REGIONS_MAX_MISTAKES) mistakes")
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        HStack(spacing: 2) {
-                            Image(systemName: "clock").font(.system(size: 9))
-                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").softNumber(13)
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
         }
     }
 
-    /// Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 capsules; switching starts a fresh board.
+    /// Under the board: the first-move tip, then "N stars left" with a soft number.
+    @ViewBuilder private var starsLeft: some View {
+        if vm.remaining == vm.n && vm.state.history.isEmpty {
+            Text("Tap for a black star · double-tap to play it")
+                .font(Brand.font(11, .heavy)).foregroundStyle(Self.statusInk)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(vm.remaining)").softNumber(15)
+                Text("star\(vm.remaining == 1 ? "" : "s") left").font(Brand.font(11, .heavy)).foregroundStyle(Self.statusInk)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(vm.remaining) star\(vm.remaining == 1 ? "" : "s") left")
+        }
+    }
+
+    /// Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 tinted chips (selected = stronger tint +
+    /// accent ring); switching starts a fresh board.
     private var sizePicker: some View {
         HStack(spacing: 8) {
             ForEach(regionsSizes, id: \.self) { n in
                 let active = n == vm.n
+                let dark = Theme.isDark
+                let shape = Capsule(style: .continuous)
                 Button { if !active { onPlayAgain?(n) } } label: {
-                    Text(regionsSizeLabel[n] ?? "\(n)").font(Brand.font(11, .heavy))
-                        .foregroundStyle(active ? .white : regionsAccent)
-                        .padding(.horizontal, 12).padding(.vertical, 5)
-                        .background(Capsule().fill(active ? regionsAccent : Color.clear))
-                        .overlay(Capsule().stroke(regionsAccent.opacity(active ? 1 : 0.35), lineWidth: 1.5))
+                    Text(regionsSizeLabel[n] ?? "\(n)").font(Brand.font(12, .black)).monospacedDigit()
+                        .foregroundStyle(active ? FinishInk.number : FinishInk.secondary)
+                        .padding(.horizontal, 13).padding(.vertical, 6)
+                        .background(shape.fill(dark ? regionsAccent.opacity(active ? 0.28 : 0.12)
+                                                    : regionsAccent.wash(active ? 0.26 : 0.12)))
+                        .overlay(shape.strokeBorder(active ? regionsAccent : (dark ? regionsAccent.opacity(0.4) : regionsAccent.wash(0.32)),
+                                                    lineWidth: active ? 2 : 1.5))
+                        .overlay(active ? shape.inset(by: -3).stroke(regionsAccent.opacity(0.22), lineWidth: 3) : nil)
                 }
                 .buttonStyle(.squish)
                 .accessibilityAddTraits(active ? .isSelected : [])
             }
         }
+        .padding(.vertical, 2)
     }
 
     private var board: some View {
@@ -314,34 +360,52 @@ struct RegionsView: View {
         }
     }
 
+    /// FINISH_SPEC §B6 result line: the headline, then tinted pills (purple mistakes,
+    /// blue time) with 3D icons + soft numbers and the bare 3D share icon (no "Home"
+    /// text link — the house up top does that); Pro Unlimited's Play Again is an amber
+    /// candy button.
+    /// FINISH_SPEC §R2 result: the headline and the compact one-line strip (badge ·
+    /// mistakes · time · points); the share icon and Play Again live in the dock.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let remaining = vm.remaining
-        return VStack(spacing: 10) {
-            Text(won ? "Board cleared" : "Out of mistakes")
-                .font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
-            Text(won
-                 ? "\(formatGuessStat(semantics: "mistakes", guessBase: 1, guessCount: vm.mistakes + 1)) · \(timeText(secs))\(vm.hintsUsed > 0 ? " · \(vm.hintsUsed) hint\(vm.hintsUsed == 1 ? "" : "s")" : "")"
-                 : "\(remaining) star\(remaining == 1 ? "" : "s") left · \(timeText(secs))")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain(vm.n) } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Color(hex: 0xD97706))
-                }
+        let summary = won
+            ? "\(formatGuessStat(semantics: "mistakes", guessBase: 1, guessCount: vm.mistakes + 1)) · \(timeText(secs))\(vm.hintsUsed > 0 ? " · \(vm.hintsUsed) hint\(vm.hintsUsed == 1 ? "" : "s")" : "")"
+            : "\(remaining) star\(remaining == 1 ? "" : "s") left · \(timeText(secs))"
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? "Board cleared" : "Out of mistakes", won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.mistakes)", vm.mistakes == 1 ? "mistake" : "mistakes"),
+                                                  (puzClock(secs), "time")],
+                                points: points)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(summary)
+            if !won || vm.hintsUsed > 0 {
+                Text(won ? "\(vm.hintsUsed) hint\(vm.hintsUsed == 1 ? "" : "s") used" : "\(remaining) star\(remaining == 1 ? "" : "s") left")
+                    .font(Brand.font(12, .bold))
+                    .foregroundStyle(won ? FinishInk.secondary : Color(hex: 0xE11D48))
+                    .accessibilityHidden(true)
             }
-            .foregroundStyle(regionsAccent).padding(.top, 2)
-            if vm.isDaily { DailyRankBadge(gameMode: .regions) }
+        }
+    }
+
+    private var points: Int {
+        Int(DailyScoring.breakdown(gameMode: GameMode.regions.rawValue, completed: vm.state.status == .won,
+                                   guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
+                                   boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
+                                   hintsUsed: vm.hintsUsed).total)
+    }
+
+    /// The score card (lavender, phase 1's ScoreBreakdownView) and the next-daily CTAs.
+    private var finishedCards: some View {
+        let won = vm.state.status == .won
+        return VStack(spacing: 10) {
             ScoreBreakdownView(gameMode: GameMode.regions.rawValue, completed: won,
-                               guessCount: vm.mistakes + 1, timeSeconds: secs,
+                               guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
                                boardsSolved: won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "REGIONS") }
         }
-        .padding(.vertical, 12)
+        .padding(.bottom, 12)
     }
 
     private func timeText(_ s: Int) -> String { s >= 60 ? "\(s / 60):\(String(format: "%02d", s % 60))" : "\(s)s" }
@@ -363,104 +427,86 @@ struct RegionsView: View {
 
 // MARK: - Board
 
-/// The soft region tints — the same nine the web board and share card use.
+/// The soft region tints the share card uses (the live board draws `StarsweepPalette`).
 let regionsTints: [Color] = [
     Color(hex: 0xEDE9FE), Color(hex: 0xD1FAE5), Color(hex: 0xE0F2FE), Color(hex: 0xFCE7F3), Color(hex: 0xFEF9C3),
     Color(hex: 0xCCFBF1), Color(hex: 0xFFEDD5), Color(hex: 0xECFCCB), Color(hex: 0xE2E8F0),
 ]
 
-/// ONE continuous ruled board like the Sudoku board: heavy rules between
-/// regions, hairlines within a region, regions washed in soft tints (the heavy
-/// borders carry the shape, never color alone). Star in the dark text color,
-/// wrong star red, hint star violet, cross-out a small muted ×. The focused
-/// cell wears a thin accent inset ring.
+/// FINISH_SPEC §H + §L: the board as soft glossy candy tiles on the shared game
+/// tray. Each region is a pastel of its own hue (`StarsweepPalette`, region index →
+/// color); tiles of one region sit on the region's bed with a small gap, and region
+/// borders read as a slightly thicker gap with a darker seam in the tray color (no
+/// black lines, no plain white). Pieces are the glossy `art-starsweep-*` art at
+/// ~78% of a cell. The focused cell wears a purple ring. Solved: the tray takes the
+/// won (purple) / lost (slate) wash.
 struct RegionsBoardView: View {
     let state: RegionsState
     let focused: Int?
     var revealSolution = false
     let onTap: (Int) -> Void
 
-    private let rule = Color(hex: 0x4C1D95).opacity(0.22), heavy = Color(hex: 0x4C1D95)
-    private let hint = Color(hex: 0x8B5CF6), wrong = Color(hex: 0xDC2626), cross = Color(hex: 0x6B7280)
-
     private func ch(_ s: String, _ i: Int) -> Character { s[s.index(s.startIndex, offsetBy: i)] }
+
+    private var trayState: GameTrayState {
+        switch state.status {
+        case .won: return .won
+        case .lost: return .lost
+        case .playing: return .normal
+        }
+    }
 
     var body: some View {
         let n = state.n
+        let tray = trayState
         GeometryReader { geo in
-            // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered).
-            let cell = CGFloat(BoardSizing.fitTile(widthUnits: Double(n), heightUnits: Double(n),
+            // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered),
+            // leaving room for the tray's padding on every side + its 4-pt lip.
+            let cell = CGFloat(BoardSizing.fitTile(widthUnits: Double(n), fixedWidth: Double(GameTray.padding * 2),
+                                                   heightUnits: Double(n), fixedHeight: Double(GameTray.padding * 2 + GameTray.lip),
                                                    width: Double(geo.size.width), height: Double(geo.size.height),
                                                    maxTile: 120, minTile: 4))
             let side = cell * CGFloat(n)
             let reg = Array(state.regions), b = Array(state.board), h = Array(state.hintMask), w = Array(state.wrongMask)
             let sol = Array(state.solution)
-            ZStack {
-                VStack(spacing: 0) {
-                    ForEach(0..<n, id: \.self) { r in
-                        HStack(spacing: 0) {
-                            ForEach(0..<n, id: \.self) { c in
-                                let i = r * n + c
-                                let g = Int(reg[i].asciiValue!) - 48
-                                let missing = revealSolution && b[i] != "*" && (Int(sol[r].asciiValue!) - 48) == c
-                                cellView(i, mark: b[i], tint: regionsTints[g % regionsTints.count], hinted: h[i] == "1", isWrong: w[i] == "1",
-                                         missing: missing, cell: cell, region: g)
-                            }
-                        }
-                    }
-                }
-                // Rules — hairline within a region, heavy where the region changes.
-                Canvas { ctx, _ in
-                    for r in 0..<n {
-                        for c in 0..<n {
+            VStack(spacing: 0) {
+                ForEach(0..<n, id: \.self) { r in
+                    HStack(spacing: 0) {
+                        ForEach(0..<n, id: \.self) { c in
                             let i = r * n + c
-                            if c < n - 1 {
-                                let hv = reg[i + 1] != reg[i]
-                                let wd: CGFloat = hv ? 2.5 : 1
-                                ctx.fill(Path(CGRect(x: CGFloat(c + 1) * cell - wd / 2, y: CGFloat(r) * cell, width: wd, height: cell)), with: .color(hv ? heavy : rule))
-                            }
-                            if r < n - 1 {
-                                let hv = reg[i + n] != reg[i]
-                                let wd: CGFloat = hv ? 2.5 : 1
-                                ctx.fill(Path(CGRect(x: CGFloat(c) * cell, y: CGFloat(r + 1) * cell - wd / 2, width: cell, height: wd)), with: .color(hv ? heavy : rule))
-                            }
+                            let g = Int(reg[i].asciiValue!) - 48
+                            let missing = revealSolution && b[i] != "*" && (Int(sol[r].asciiValue!) - 48) == c
+                            let edges = StarsweepEdges(top: r > 0 && reg[i - n] != reg[i],
+                                                       bottom: r < n - 1 && reg[i + n] != reg[i],
+                                                       leading: c > 0 && reg[i - 1] != reg[i],
+                                                       trailing: c < n - 1 && reg[i + 1] != reg[i])
+                            cellView(i, mark: b[i], hinted: h[i] == "1", isWrong: w[i] == "1",
+                                     missing: missing, cell: cell, region: g, edges: edges)
                         }
                     }
                 }
-                .allowsHitTesting(false)
             }
             .frame(width: side, height: side)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(heavy, lineWidth: 2.5))
+            // The seams between regions: a soft darker line in the tray's color.
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(GameTray.seam(GameTray.ink(regionsAccent, tray), strong: true)))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .gameTray(accent: regionsAccent, state: tray)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: 420)
+        .frame(maxWidth: 420 + GameTray.padding * 2)
         .accessibilityLabel("Starsweep board")
     }
 
     @ViewBuilder
-    private func cellView(_ i: Int, mark: Character, tint: Color, hinted: Bool, isWrong: Bool, missing: Bool, cell: CGFloat, region: Int) -> some View {
+    private func cellView(_ i: Int, mark: Character, hinted: Bool, isWrong: Bool, missing: Bool, cell: CGFloat,
+                          region: Int, edges: StarsweepEdges) -> some View {
         let n = state.n
-        let starColor: Color = isWrong ? wrong : hinted ? hint : Color(hex: 0x7C3AED)   // correct = Wordocious purple (founder, 2026-09-28)
         Button { onTap(i) } label: {
-            ZStack {
-                Rectangle().fill(tint)
-                if mark == "*" {
-                    Image(systemName: "star.fill").font(.system(size: cell * 0.5, weight: .bold)).foregroundStyle(starColor)
-                } else if mark == "o" {
-                    // Black star: placed, not yet played (double-tap judges it).
-                    Image(systemName: "star.fill").font(.system(size: cell * 0.5, weight: .bold)).foregroundStyle(Color(hex: 0x1F2937))
-                } else if mark == "x" {
-                    Image(systemName: "xmark").font(.system(size: cell * 0.34, weight: .bold)).foregroundStyle(cross)
-                } else if missing {
-                    Image(systemName: "star.fill").font(.system(size: cell * 0.5, weight: .bold)).foregroundStyle(Theme.textMuted.opacity(0.55))
-                }
-                if i == focused { Rectangle().stroke(regionsAccent, lineWidth: 2).padding(1) }
-            }
-            .frame(width: cell, height: cell)
-            .contentShape(Rectangle())
+            StarsweepCell(mark: mark, hinted: hinted, wrong: isWrong, missing: missing, focused: i == focused,
+                          region: region, edges: edges, cell: cell)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
         .accessibilityLabel("Row \(i / n + 1) column \(i % n + 1), region \(region + 1), \(mark == "*" ? (isWrong ? "wrong star" : "star") : mark == "o" ? "black star, double-tap to play" : mark == "x" ? "crossed out" : "empty")")
@@ -470,32 +516,22 @@ struct RegionsBoardView: View {
 
 // MARK: - Pad
 
-/// Action row — Undo · Erase · Auto-cross · Hint, each with its icon (§19).
-/// Auto-cross is a toggle: fixed label, state shown by filling with the accent.
+/// Action row — Undo · Erase · Auto-cross · Hint, each with its icon (§19), as
+/// small round candy buttons (FINISH_SPEC §A8 / §H) captioned underneath: peach for
+/// the quiet tools, Auto-cross purple while it's on (a toggle: fixed label, state
+/// shown by the fill), Hint amber.
 struct RegionsPad: View {
     @ObservedObject var vm: RegionsVM
 
     var body: some View {
-        HStack(spacing: 8) {
-            capsule("Undo", "arrow.uturn.backward", dim: vm.state.history.isEmpty) { vm.undo() }
-            capsule("Erase", "eraser", dim: !vm.canErase) { vm.erase() }
-            capsule("Auto-cross", "xmark", active: vm.state.autoCross) { vm.toggleAutoCross() }
-            capsule(vm.hintsUsed > 0 ? "Hint · \(vm.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
+        HStack(alignment: .top, spacing: 6) {
+            StarsweepTool(label: "Undo", symbol: "arrow.uturn.backward", dim: vm.state.history.isEmpty) { vm.undo() }
+            StarsweepTool(label: "Erase", symbol: "eraser", dim: !vm.canErase) { vm.erase() }
+            StarsweepTool(label: "Auto-cross", symbol: "xmark", variant: vm.state.autoCross ? .purple : .peach,
+                          active: vm.state.autoCross) { vm.toggleAutoCross() }
+            StarsweepTool(label: vm.hintsUsed > 0 ? "Hint · \(vm.hintsUsed)" : "Hint", symbol: "lightbulb.fill",
+                          variant: .amber) { vm.hint() }
         }
         .padding(.horizontal, 2)
-    }
-
-    private func capsule(_ label: String, _ symbol: String, active: Bool = false, dim: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .foregroundStyle(dim ? Theme.textMuted.opacity(0.5) : active ? .white : regionsAccent)
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Capsule().fill(active ? regionsAccent : (dim ? Color.clear : regionsAccent.opacity(0.05))))
-                .overlay(Capsule().stroke(dim ? Theme.border : (active ? regionsAccent : regionsAccent.opacity(0.4)), lineWidth: 1.5))
-        }
-        .buttonStyle(.squish)
-        .disabled(dim)
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(active ? .isSelected : [])
     }
 }

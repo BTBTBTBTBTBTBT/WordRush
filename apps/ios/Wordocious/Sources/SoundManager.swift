@@ -1,74 +1,364 @@
 import AVFoundation
+import SwiftUI
+import UIKit
 
-/// Synthesized sound effects mirroring the web `lib/sounds.ts` (key taps +
-/// win/loss/invalid jingles) so the Settings "Sound Effects" toggle does
-/// something. Tones are generated on the fly via AVAudioEngine — no bundled
-/// assets. Uses the `.ambient` session so effects respect the ringer/mute
-/// switch and never interrupt background audio. Gated by `pref-sound`
-/// (default on); the native haptics are unchanged and fire alongside these.
+// FINISH_SPEC §U — sound + haptics.
+//
+// `SoundManager` is THE sound service: the 16-sound pack
+// (Resources/Sounds/sfx-<name>.m4a, docs/design/brand/sounds/make-sounds.py) is
+// decoded once into PCM buffers and played through a small AVAudioEngine voice
+// pool (each voice = player node → varispeed, so `tap` can wobble its pitch ±3%).
+// The session is `.ambient` + `.mixWithOthers`: the ring/mute switch silences it
+// and the user's music keeps playing. Master volume 0.6. Gated by `pref-sound`
+// (default on; Sound off mutes everything). Reduce Motion never mutes sound.
+//
+// `Haptics` is the haptic service, gated by `pref-haptics` (default on).
+// `Feedback` is the spec's event map (sound · haptic) — prefer it at call sites.
+
 final class SoundManager {
+    /// The sound pack (file `sfx-<rawValue>.m4a`).
+    enum Effect: String, CaseIterable {
+        case tap, delete, flip, press, release, hop, invalid, win, lose
+        case celebrate, streak, tick, notify, unlock, vs, whoosh
+
+        /// Per-sound gain under the master volume (the tiny UI sounds sit lower).
+        var gain: Float {
+            switch self {
+            case .tap: return 0.8
+            case .delete: return 0.8
+            case .flip: return 0.75
+            case .press: return 0.55
+            case .release: return 0.45
+            case .tick: return 0.55
+            case .hop: return 0.6
+            case .whoosh: return 0.6
+            default: return 1
+            }
+        }
+
+        /// The shortest gap between two plays of this sound (multi-board flips land
+        /// together; the count-up tick is capped at 12/s; jingles never stack).
+        var minGap: TimeInterval {
+            switch self {
+            case .tap, .delete: return 0.02
+            case .flip: return 0.045
+            case .press, .release: return 0.06
+            case .tick: return 1.0 / 12
+            case .hop: return 0.12
+            case .whoosh: return 0.2
+            case .invalid: return 0.2
+            case .notify: return 0.25
+            default: return 0.5
+            }
+        }
+    }
+
     static let shared = SoundManager()
+    static let masterVolume: Float = 0.6
 
-    private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
-    private let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)!
-    private var started = false
-
-    private init() {}
-
-    /// Default ON unless the user explicitly turned it off.
-    private var enabled: Bool {
+    /// `pref-sound`, default ON unless the user explicitly turned it off.
+    static var enabled: Bool {
         UserDefaults.standard.object(forKey: "pref-sound") == nil
             ? true
             : UserDefaults.standard.bool(forKey: "pref-sound")
     }
 
-    private func ensureStarted() {
-        guard !started else { return }
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
+    private final class Voice {
+        let node = AVAudioPlayerNode()
+        let pitch = AVAudioUnitVarispeed()
+        var busyUntil: TimeInterval = 0
+    }
+
+    /// All engine work happens on this queue (never the main thread).
+    private let queue = DispatchQueue(label: "com.wordocious.sound", qos: .userInitiated)
+    private let engine = AVAudioEngine()
+    private let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)!
+    private var voices: [Voice] = []
+    private var buffers: [Effect: AVAudioPCMBuffer] = [:]
+    private var lastPlayed: [Effect: TimeInterval] = [:]
+    private var sessionReady = false
+    private static let voiceCount = 6
+
+    private init() {
+        queue.async { self.setUp() }
+        // Let the engine go while backgrounded; the next play restarts it.
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification,
+                                               object: nil, queue: nil) { [weak self] _ in
+            self?.queue.async { self?.engine.pause() }
+        }
+    }
+
+    /// Touch at launch so the 16 sounds decode before the first key press.
+    func preload() {}
+
+    // MARK: Playing
+
+    /// Play one sound from the pack (no-op when Sound is off).
+    func play(_ effect: Effect, volume: Float = 1) {
+        guard Self.enabled else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        queue.async { self.fire(effect, at: now, volume: volume) }
+    }
+
+    // Legacy names (callers keep compiling) mapped onto the new pack.
+    /// Key press: `tap`, its pitch varied ±3% per press.
+    func playKeyTap() { play(.tap) }
+    /// Backspace / delete.
+    func playDelete() { play(.delete) }
+    /// The match-intro splash stinger.
+    func playVsStinger() { play(.vs) }
+    /// The opponent landing a guess row (a soft tile flip).
+    func playOpponentThunk() { play(.flip, volume: 0.8) }
+    /// Not a word / a wrong move.
+    func playInvalid() { play(.invalid) }
+    /// The win popup.
+    func playSuccess() { play(.win) }
+    /// The loss popup.
+    func playGameOver() { play(.lose) }
+    /// A partial success mid-game (a found word, a solved group / board / stage —
+    /// never the finish): `notify` at 0.7. Partial successes never play `win`.
+    func playFound() { play(.notify, volume: 0.7) }
+
+    private func fire(_ e: Effect, at now: TimeInterval, volume: Float) {
+        if let last = lastPlayed[e], now - last < e.minGap { return }
+        guard let buf = buffers[e], startIfNeeded() else { return }
+        lastPlayed[e] = now
+        let v = voices.first(where: { $0.busyUntil <= now }) ?? voices.min(by: { $0.busyUntil < $1.busyUntil })!
+        let rate: Float = e == .tap ? Float.random(in: 0.97...1.03) : 1
+        v.pitch.rate = rate
+        v.node.volume = min(1, e.gain * volume)
+        v.busyUntil = now + Double(buf.frameLength) / format.sampleRate / Double(rate)
+        v.node.scheduleBuffer(buf, at: nil, options: .interrupts, completionHandler: nil)
+        if !v.node.isPlaying { v.node.play() }
+    }
+
+    // MARK: Setup
+
+    private func setUp() {
+        for e in Effect.allCases {
+            if let url = Self.url(for: e), let buf = load(url) { buffers[e] = buf }
+        }
+        for _ in 0..<Self.voiceCount {
+            let v = Voice()
+            engine.attach(v.node)
+            engine.attach(v.pitch)
+            engine.connect(v.node, to: v.pitch, format: format)
+            engine.connect(v.pitch, to: engine.mainMixerNode, format: format)
+            voices.append(v)
+        }
+        engine.mainMixerNode.outputVolume = Self.masterVolume
+        engine.prepare()
+    }
+
+    /// Start the session + engine on first use (and after an interruption, a route
+    /// change or the app coming back — the engine stops itself in those cases).
+    private func startIfNeeded() -> Bool {
+        if engine.isRunning { return true }
+        guard !voices.isEmpty else { return false }
         do {
-            try AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
-            try AVAudioSession.sharedInstance().setActive(true)
+            let session = AVAudioSession.sharedInstance()
+            if !sessionReady {
+                try session.setCategory(.ambient, options: [.mixWithOthers])
+                sessionReady = true
+            }
+            try session.setActive(true)
             try engine.start()
-            player.play()
-            started = true
+            return true
         } catch {
-            started = false
+            return false
         }
     }
 
-    /// Schedule one sine tone with a smooth fade-out (so it doesn't click),
-    /// optionally after `delay` seconds — used to chain jingle notes.
-    private func tone(_ freq: Double, _ duration: Double, _ volume: Float, delay: Double = 0) {
-        let sr = format.sampleRate
-        let frames = AVAudioFrameCount(sr * duration)
-        guard frames > 0, let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return }
-        buf.frameLength = frames
-        guard let ch = buf.floatChannelData?[0] else { return }
-        let w = 2.0 * Double.pi * freq
-        for i in 0..<Int(frames) {
-            let t = Double(i) / sr
-            let env = Float(pow(1.0 - Double(i) / Double(frames), 1.5)) // fade to silence
-            ch[i] = Float(sin(w * t)) * volume * env
-        }
-        let fire = { [weak self] in
-            guard let self else { return }
-            self.ensureStarted()
-            guard self.started else { return }
-            self.player.scheduleBuffer(buf, at: nil, options: [], completionHandler: nil)
-        }
-        if delay > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: fire) }
-        else { fire() }
+    private static func url(for e: Effect) -> URL? {
+        let name = "sfx-\(e.rawValue)"
+        return Bundle.main.url(forResource: name, withExtension: "m4a")
+            ?? Bundle.main.url(forResource: name, withExtension: "m4a", subdirectory: "Sounds")
     }
 
-    // Frequencies/timings mirror lib/sounds.ts.
-    func playKeyTap()  { guard enabled else { return }; tone(800, 0.04, 0.06) }
-    /// Two-note "VS" stinger for the match-intro splash (playVsStinger).
-    func playVsStinger() { guard enabled else { return }; tone(392, 0.10, 0.10); tone(523, 0.18, 0.10, delay: 0.10) }
-    /// Soft thunk played whenever the opponent lands a guess row (playOpponentThunk).
-    func playOpponentThunk() { guard enabled else { return }; tone(220, 0.06, 0.05) }
-    func playInvalid() { guard enabled else { return }; tone(200, 0.15, 0.08); tone(150, 0.15, 0.06, delay: 0.08) }
-    func playSuccess() { guard enabled else { return }; tone(523, 0.12, 0.10); tone(659, 0.12, 0.10, delay: 0.10); tone(784, 0.20, 0.12, delay: 0.20) }
-    func playGameOver(){ guard enabled else { return }; tone(392, 0.20, 0.10); tone(330, 0.20, 0.10, delay: 0.15); tone(262, 0.30, 0.08, delay: 0.30) }
+    /// Decode a file into a buffer in the engine's format (converting if needed).
+    private func load(_ url: URL) -> AVAudioPCMBuffer? {
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let src = file.processingFormat
+        guard let raw = AVAudioPCMBuffer(pcmFormat: src, frameCapacity: AVAudioFrameCount(file.length)),
+              (try? file.read(into: raw)) != nil else { return nil }
+        if src.sampleRate == format.sampleRate && src.channelCount == format.channelCount
+            && src.commonFormat == format.commonFormat && src.isInterleaved == format.isInterleaved {
+            return raw
+        }
+        guard let conv = AVAudioConverter(from: src, to: format) else { return nil }
+        let cap = AVAudioFrameCount(Double(raw.frameLength) * format.sampleRate / src.sampleRate) + 1024
+        guard let out = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: cap) else { return nil }
+        var fed = false
+        var err: NSError?
+        _ = conv.convert(to: out, error: &err) { _, status in
+            if fed { status.pointee = .endOfStream; return nil }
+            fed = true
+            status.pointee = .haveData
+            return raw
+        }
+        return err == nil && out.frameLength > 0 ? out : nil
+    }
+}
+
+// MARK: - Haptics
+
+/// Native haptics — gated by the Settings "Haptics" toggle (`pref-haptics`,
+/// default on); no-ops cleanly off-device. Safe to call from any thread.
+enum Haptics {
+    /// `pref-haptics`, default ON unless the user explicitly turned it off.
+    static var enabled: Bool {
+        UserDefaults.standard.object(forKey: "pref-haptics") == nil
+            ? true
+            : UserDefaults.standard.bool(forKey: "pref-haptics")
+    }
+
+    /// Light impact (key press, delete, row land, notices).
+    static func tap() { light() }
+    static func light() { impact(.light) }
+    static func medium() { impact(.medium) }
+    static func heavy() { impact(.heavy) }
+    /// The candy / squish press.
+    static func soft() { impact(.soft) }
+
+    /// A selection tick (each tile of a reveal).
+    static func selection() {
+        run { UISelectionFeedbackGenerator().selectionChanged() }
+    }
+
+    static func success() { notify(.success) }
+    static func error() { notify(.error) }
+    static func warning() { notify(.warning) }
+
+    /// Sweep / Flawless / Gauntlet champion / ladder cleared: success, then a heavy thump.
+    static func celebrate() {
+        success()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { heavy() }
+    }
+
+    private static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        run { UIImpactFeedbackGenerator(style: style).impactOccurred() }
+    }
+
+    private static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        run { UINotificationFeedbackGenerator().notificationOccurred(type) }
+    }
+
+    private static func run(_ body: @escaping () -> Void) {
+        guard enabled else { return }
+        if Thread.isMainThread { body() } else { DispatchQueue.main.async(execute: body) }
+    }
+}
+
+// MARK: - The event map (FINISH_SPEC §U)
+
+/// One call per moment: the spec's sound · haptic pair, deduped so moments that
+/// fire together (multi-board flips, the notice + the Friends badge) land once.
+enum Feedback {
+    private static var last: [String: TimeInterval] = [:]
+    private static let lock = NSLock()
+
+    /// True when `key` hasn't fired within `gap` seconds (and marks it fired).
+    private static func once(_ key: String, _ gap: TimeInterval) -> Bool {
+        let now = ProcessInfo.processInfo.systemUptime
+        lock.lock(); defer { lock.unlock() }
+        if let t = last[key], now - t < gap { return false }
+        last[key] = now
+        return true
+    }
+
+    /// Key press: tap · light.
+    static func keyTap() { SoundManager.shared.playKeyTap(); Haptics.light() }
+    /// Delete / backspace: delete · light.
+    static func delete() { SoundManager.shared.playDelete(); Haptics.light() }
+    /// Each tile of a reveal: flip · selection.
+    static func flip() {
+        guard once("flip", 0.045) else { return }
+        SoundManager.shared.play(.flip); Haptics.selection()
+    }
+    /// The correct row lands: — · light.
+    static func rowLand() { if once("rowLand", 0.3) { Haptics.light() } }
+    /// Not a word: invalid · warning.
+    static func notAWord() {
+        guard once("invalid", 0.2) else { return }
+        SoundManager.shared.playInvalid(); Haptics.warning()
+    }
+
+    /// Candy / squish buttons: press · soft on touch-down, release · — on let-go
+    /// (only right after a press, so a cancelled scroll-touch stays quiet).
+    static func press(_ down: Bool) {
+        if down {
+            guard once("press", 0.06) else { return }
+            pressedAt = ProcessInfo.processInfo.systemUptime
+            SoundManager.shared.play(.press); Haptics.soft()
+        } else {
+            guard let t = pressedAt, ProcessInfo.processInfo.systemUptime - t < 1.5 else { return }
+            pressedAt = nil
+            SoundManager.shared.play(.release)
+        }
+    }
+    private static var pressedAt: TimeInterval?
+
+    /// A partial success (found word, solved group / board / stage): notify @0.7 · light.
+    static func found() { SoundManager.shared.playFound(); Haptics.light() }
+    /// A cast hop / mascot spring-in: hop · —.
+    static func hop(volume: Float = 1) { SoundManager.shared.play(.hop, volume: volume) }
+    /// The win popup: win · success.
+    static func win() { if once("end", 0.8) { SoundManager.shared.playSuccess(); Haptics.success() } }
+    /// The loss popup: lose · soft.
+    static func lose() { if once("end", 0.8) { SoundManager.shared.playGameOver(); Haptics.soft() } }
+    /// Sweep / Flawless / Gauntlet champion / ladder cleared: celebrate · success+heavy.
+    static func celebrate() {
+        guard once("celebrate", 1.5) else { return }
+        SoundManager.shared.play(.celebrate); Haptics.celebrate()
+    }
+    /// Streak +1 / shield saved: streak · medium.
+    static func streak() {
+        guard once("streak", 1.5) else { return }
+        SoundManager.shared.play(.streak); Haptics.medium()
+    }
+    /// The points count-up: tick · — (≤ 12/s).
+    static func tick() { SoundManager.shared.play(.tick) }
+    /// In-app notice / Friends badge arrival: notify · light.
+    static func notify() {
+        guard once("notify", 1.0) else { return }
+        SoundManager.shared.play(.notify); Haptics.light()
+    }
+    /// Achievement unlock: unlock · success.
+    static func unlock() {
+        guard once("unlock", 0.8) else { return }
+        SoundManager.shared.play(.unlock); Haptics.success()
+    }
+    /// VS match found / start: vs · medium.
+    static func vs() {
+        guard once("vs", 0.8) else { return }
+        SoundManager.shared.playVsStinger(); Haptics.medium()
+    }
+    /// A popup / sheet opening: whoosh · —.
+    static func whoosh() { SoundManager.shared.play(.whoosh) }
+}
+
+// MARK: - Streak +1
+
+/// Fires `Feedback.streak()` when the watched daily streak grows by one while the
+/// view is alive (after the win jingle has had its moment). Usage:
+/// `.streakBumpFeedback(auth.headerStreak)`.
+private struct StreakBumpFeedback: ViewModifier {
+    let streak: Int?
+    @State private var seen: Int?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { if seen == nil { seen = streak } }
+            .onChange(of: streak) { new in
+                if let new, let old = seen, new == old + 1 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { Feedback.streak() }
+                }
+                if let new { seen = new }
+            }
+    }
+}
+
+extension View {
+    /// FINISH_SPEC §U: streak +1 → streak · medium.
+    func streakBumpFeedback(_ streak: Int?) -> some View { modifier(StreakBumpFeedback(streak: streak)) }
 }

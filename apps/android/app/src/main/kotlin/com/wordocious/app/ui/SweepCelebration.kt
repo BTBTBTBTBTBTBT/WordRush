@@ -1,64 +1,52 @@
 package com.wordocious.app.ui
 
-
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.R
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.data.DailySweepShare
 import com.wordocious.app.ui.theme.WTheme
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
- * One-time-per-day Daily Sweep / Flawless Victory celebration overlay. Distinct
- * effects from the per-game victory confetti: Daily Sweep = violet/pink sparkle
- * burst; Flawless = gold firework burst. Mirrors web sweep-celebration.tsx +
- * iOS SweepCelebrationView.
+ * One-time-per-day Daily Sweep / Flawless Victory celebration (FINISH_SPEC G3): a
+ * full-screen overlay tinted in the moment's color (pink for Flawless, gold for the
+ * Sweep), the existing moment lettering, the big scene art springing in with a bounce
+ * (`art_scene_flawless_star` / `art_scene_sweep_broom`) on a soft glow, the totals as
+ * soft-number stat tiles, the per-game results as mini game cards with W / L badges,
+ * confetti, and candy CTAs (Share + Close). Reduce Motion: no spring, no confetti.
+ * Mirrors web sweep-celebration.tsx + iOS SweepCelebrationView.
  */
 @Composable
 fun SweepCelebration(
@@ -66,8 +54,8 @@ fun SweepCelebration(
     onShare: () -> Unit,
     onClose: () -> Unit,
     /** false = the Daily Sweep; true = the More Games Sweep (founder, 2026-09-26) — the same
-     *  celebration over the ten More Games dailies, indigo instead of violet, never awarding
-     *  anything and never using the Daily Sweep wording. */
+     *  celebration over the ten More Games dailies, never awarding anything and never using
+     *  the Daily Sweep wording. */
     more: Boolean = false,
 ) {
     val totals = remember(byMode, more) {
@@ -76,210 +64,130 @@ fun SweepCelebration(
     }
     val flawless = if (more) moreSweepTier(byMode) == MoreSweepTier.FLAWLESS else totals.flawless
     val rows = remember(byMode, more) { DailySweepShare.rows(byMode, more) }
-    val sweepA = if (more) Color(0xFF6366F1) else Color(0xFFA78BFA)
-    val sweepB = if (more) Color(0xFF4F46E5) else Color(0xFFEC4899)
     val title = if (flawless) (if (more) MoreSweepTier.FLAWLESS.title else "FLAWLESS VICTORY!")
                 else (if (more) MoreSweepTier.SWEEP.title else "DAILY SWEEP!")
-    val noun = if (more) "More Games puzzles" else "daily puzzles"
-
-    val cardGrad = if (flawless) listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7))
-                   else if (more) listOf(Color(0xFFEEF2FF), Color(0xFFE0E7FF)) else listOf(Color(0xFFFAF5FF), Color(0xFFFCE7F3))
-    val barGrad = if (flawless) listOf(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFFBBF24))
-                  else listOf(sweepA, sweepB, sweepA)
-    val borderC = if (flawless) Color(0xFFF59E0B) else if (more) Color(0xFFA5B4FC) else Color(0xFFC4B5FD)
-    val accentText = if (flawless) Color(0xFFB45309) else if (more) Color(0xFF4338CA) else Color(0xFF6D28D9)
+    val noun = if (more) "puzzles" else "daily puzzles"
+    // G3: the moment's color — pink for Flawless, gold for the Sweep.
+    val accent = if (flawless) MomentInk.flawless else MomentInk.sweep
+    val ink = darkenInk(accent)
+    val dark = WTheme.isDark
+    // FINISH_SPEC AI: the store review ask rides the END of the Daily Sweep / Flawless
+    // celebration (not the More Games sweep); every gate lives in StoreReview.
+    val reviewActivity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    val closeAndMaybeReview: () -> Unit = {
+        onClose()
+        if (!more) reviewActivity?.let {
+            com.wordocious.app.data.StoreReview.maybeAsk(
+                it, if (flawless) com.wordocious.app.data.StoreReview.Moment.FLAWLESS else com.wordocious.app.data.StoreReview.Moment.DAILY_SWEEP,
+            )
+        }
+    }
 
     // iOS fires the success haptic + jingle on appear — the biggest daily
     // milestone shouldn't land quieter than an ordinary win.
-    val haptics = LocalHapticFeedback.current
+    // Spec U: Sweep / Flawless = celebrate · success + heavy.
+    val feedbackView = androidx.compose.ui.platform.LocalView.current
     LaunchedEffect(Unit) {
-        com.wordocious.app.data.SoundManager.playSuccess()
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.CELEBRATE, feedbackView)
     }
+    // The page fades in (instant under Reduce Motion).
+    val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
+    LaunchedEffect(Unit) { if (appear.value < 1f) appear.animateTo(1f, tween(220)) }
 
-    // Diagonal foil shimmer sweeping the card (iOS FoilShimmer) — stronger for
-    // Flawless, off entirely under reduced motion.
-    val shimmerAlpha = if (WTheme.reducedMotion) 0f else if (flawless) 0.7f else 0.45f
-    val foil = rememberInfiniteTransition(label = "foil")
-    val foilPhase by foil.animateFloat(
-        initialValue = -1f, targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Restart),
-        label = "foilPhase",
-    )
-
+    androidx.activity.compose.BackHandler(onBack = closeAndMaybeReview)
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onClose() },
-        contentAlignment = Alignment.Center,
+        Modifier.fillMaxSize()
+            .graphicsLayer { alpha = appear.value }
+            .background(
+                if (dark) Brush.verticalGradient(listOf(accent.copy(alpha = 0.32f).compositeOver(Color(0xFF15101F)), Color(0xFF15101F)))
+                else Brush.verticalGradient(listOf(Wash.mix(accent, 0.30f), Wash.mix(accent, 0.12f), Wash.mix(accent, 0.20f))),
+            )
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
     ) {
-        ParticleBurst(flawless, more)
-
         Column(
-            Modifier.padding(horizontal = 24.dp).fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(Brush.verticalGradient(cardGrad))
-                .drawBehind {
-                    if (shimmerAlpha <= 0f) return@drawBehind
-                    val bandW = size.width * 0.4f
-                    val x = foilPhase * size.width * 1.6f
-                    rotate(-18f) {
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                listOf(Color.Transparent, Color.White.copy(alpha = shimmerAlpha), Color.Transparent),
-                                startX = x, endX = x + bandW,
-                            ),
-                            topLeft = Offset(x, -size.height),
-                            size = Size(bandW, size.height * 3f),
-                        )
-                    }
-                }
-                .border(1.5.dp, borderC, RoundedCornerShape(18.dp))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp).padding(bottom = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Top accent bar (web parity).
-            Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(barGrad)))
-
-            Column(
-                Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                PopupClose(closeAndMaybeReview, tint = if (dark) WTheme.text else ink)
+            }
+            // Moment lettering (ART_SPEC §6): SWEEP! / FLAWLESS!, read as the full title.
+            MomentTitle(
+                if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
+                contentDescription = titleCaseLabel(title),
+                widthFraction = 0.82f, maxHeight = 84.dp,
+            )
+            // G3: the big scene art springing in with a bounce on a soft glow.
+            SceneArtPop(
+                if (flawless) R.drawable.art_scene_flawless_star else R.drawable.art_scene_sweep_broom,
+                height = 210.dp, glow = Color.White, delayMs = 120,
+            )
+            Text(
+                if (flawless) "All ${totals.total} $noun won today" else "All ${totals.total} $noun completed today",
+                fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (dark) WTheme.text else ink,
+                textAlign = TextAlign.Center,
+            )
+            // A2: the totals as soft-number stat tiles in the moment's color.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TintedStatTile(accent, "WON", "${totals.won}/${totals.total}", Modifier.weight(1f), valueSize = 22.sp, bar = true)
+                TintedStatTile(accent, "TOTAL TIME", fmt(totals.totalTimeSeconds), Modifier.weight(1f), valueSize = 22.sp, bar = true)
+                TintedStatTile(accent, "TOTAL PTS", formatScore(totals.totalScore.toDouble()), Modifier.weight(1f), valueSize = 22.sp, bar = true)
+            }
+            // Per-game results: mini game cards (tinted by game) with their W / L badge.
+            TintedCard(
+                accent, Modifier.fillMaxWidth(), corner = 18.dp,
+                contentPadding = PaddingValues(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // The whole cast jumps in a left-to-right wave, twice, over the confetti;
-                // Flawless crowns W (MASCOT_SPEC §3). Tiles shrink to fit a narrow card.
-                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val tile = minOf(30.dp, (maxWidth - 2.dp * 9) / 10)
-                    CastRow(
-                        tile, motion = MascotMotion.WAVE, hop = 14.dp, staggerMs = 60, repeats = 2,
-                        crown = flawless,
-                    )
-                }
-                // Moment lettering (ART_SPEC §6): SWEEP! / FLAWLESS!, read as the full title.
-                MomentTitle(
-                    if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
-                    contentDescription = titleCaseLabel(title),
-                )
-                Text(
-                    if (flawless) "All ${totals.total} $noun won today" else "All ${totals.total} $noun completed today",
-                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accentText,
-                )
-
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    stat("${totals.won}/${totals.total}", "Won")
-                    stat(fmt(totals.totalTimeSeconds), "Total Time")
-                    stat(formatScore(totals.totalScore.toDouble()), "Total Pts")
-                }
-
-                // Per-game list (3 columns)
-                Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(FinishInk.lavender.copy(alpha = 0.6f)).padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    rows.chunked(3).forEach { triple ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            triple.forEach { r ->
-                                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                    // Real game icon (same as the home cards) in an accent box;
-                                    // falls back to the letter glyph if the mode can't be resolved.
-                                    val card = runCatching { com.wordocious.core.GameMode.valueOf(r.dbKey) }.getOrNull()?.let { modeCardFor(it) }
-                                    // iOS ModeIconView: accent at 8% behind an accent-tinted
-                                    // glyph, corner = box * 0.27. The letter FALLBACK is the
-                                    // other way round — a SOLID accent chip with a white
-                                    // glyph — so it stays legible without a real icon to read.
-                                    Box(
-                                        Modifier.size(22.dp).clip(RoundedCornerShape(6.dp))
-                                            .background(if (card != null) Color(r.accent).copy(alpha = 0.08f) else Color(r.accent)),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        if (card != null) ModeGlyph(card, tint = Color(r.accent), box = 22.dp)
-                                        else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                    }
-                                    // weight(1f) so the LABEL absorbs the squeeze, not the trailing mark: an
-                                    // unweighted label ate the whole row and the win/loss ✓ was
-                                    // measured to zero width and never drawn. Fixed ink because the
-                                    // card gradient is a fixed pastel (#FAF5FF) — themed text on it
-                                    // is 1.05:1 in Dark.
-                                    Text(r.label, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF1A1A2E), maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false))
-                                    Spacer(Modifier.weight(1f))
-                                    Text(if (r.won) "✓" else "✗", fontSize = 12.sp, fontWeight = FontWeight.Black,
-                                        color = if (r.won) Color(0xFF16A34A) else Color(0xFFDC2626))
-                                }
-                            }
-                            repeat(3 - triple.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                }
-
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                            .background(Brush.horizontalGradient(if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309)) else (if (more) listOf(Color(0xFF4F46E5), Color(0xFF6366F1)) else listOf(Color(0xFF7C3AED), Color(0xFFEC4899)))))
-                            .clickable { onShare() }.padding(vertical = 11.dp),
-                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Share, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Share", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
-                    }
-                    Row(
-                        Modifier.clip(RoundedCornerShape(12.dp)).background(FinishInk.lavender.copy(alpha = 0.8f))
-                            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
-                            .clickable { onClose() }.padding(horizontal = 18.dp, vertical = 11.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Close, null, tint = accentText, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(5.dp))
-                        Text("Close", fontSize = 15.sp, fontWeight = FontWeight.Black, color = accentText)
+                rows.chunked(3).forEach { triple ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        triple.forEach { r -> SweepResultCell(r, Modifier.weight(1f)) }
+                        repeat(3 - triple.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
+            Spacer(Modifier.height(2.dp))
+            CandyButton(
+                "Share", onClick = onShare,
+                color = if (flawless) CandyColor.PINK else CandyColor.AMBER,
+                size = CandySize.LARGE, icon = CandyIcon.SHARE, fill = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            CandyButton(
+                "Close", onClick = closeAndMaybeReview, color = CandyColor.PEACH, size = CandySize.MEDIUM,
+                fill = true, modifier = Modifier.fillMaxWidth(0.6f),
+            )
         }
+        // G3: confetti in the moment's colors (off with Reduce Motion).
+        PopupConfetti(if (flawless) MomentInk.flawlessConfetti else MomentInk.sweepConfetti)
     }
 }
 
+/** One game in the results grid: its icon as a mini game card, the short label, the W / L badge. */
 @Composable
-private fun stat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Fixed ink: the card gradient behind these stats is a fixed pastel.
-        // A2: a soft number.
-        SoftNumber(value, 20.sp, color = FinishInk.softNumber)
-        Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
-    }
-}
-
-/** Radial burst of sparkles (Sweep) or glowing dots (Flawless) from center. */
-@Composable
-private fun ParticleBurst(flawless: Boolean, more: Boolean = false) {
-    val count = if (flawless) 28 else 20
-    val transition = rememberInfiniteTransition(label = "burst")
-    Box(Modifier.fillMaxSize()) {
-        repeat(count) { i ->
-            // iOS staggers each particle by (i % 7) * 0.12s and eases out, so the
-            // burst shimmers continuously instead of pulsing as one synced ring.
-            val t by transition.animateFloat(
-                initialValue = 0f, targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    tween(if (flawless) 1600 else 1900, delayMillis = (i % 7) * 120, easing = EaseOut),
-                    RepeatMode.Restart,
-                ),
-                label = "t$i",
-            )
-            val angle = i.toDouble() / count * Math.PI * 2 + (i % 2) * 0.4
-            val dist = (if (flawless) 180.0 else 140.0) + (i % 5) * 22
-            val dx = (cos(angle) * dist * t).dp
-            val dy = (sin(angle) * dist * t).dp
-            val sz = (if (flawless) 10 + (i % 4) * 4 else 8 + (i % 3) * 3).dp
-            Box(
-                Modifier.align(Alignment.Center)
-                    .offset(x = dx, y = dy)
-                    .size(sz)
-                    .clip(if (flawless) RoundedCornerShape(50) else RoundedCornerShape(2.dp))
-                    .background((if (flawless) Color(0xFFF59E0B) else if (i % 2 == 0) (if (more) Color(0xFFA5B4FC) else Color(0xFFC4B5FD)) else (if (more) Color(0xFF818CF8) else Color(0xFFF9A8D4))).copy(alpha = (1f - t)))
-            )
+private fun SweepResultCell(r: DailySweepShare.Row, modifier: Modifier) {
+    val accent = Color(r.accent)
+    val card = runCatching { com.wordocious.core.GameMode.valueOf(r.dbKey) }.getOrNull()?.let { modeCardFor(it) }
+        ?: modeCardForKey(r.dbKey)
+    Row(
+        modifier.semantics(mergeDescendants = true) { contentDescription = r.label + if (r.won) ", won" else ", lost" },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(Modifier.size(28.dp).miniGameCard(accent, 8.dp), contentAlignment = Alignment.Center) {
+            if (card != null) ModeGlyph(card, tint = accent, box = 24.dp)
+            else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = darkenInk(accent))
         }
+        // weight(1f, fill = false) so the LABEL absorbs the squeeze, not the badge.
+        Text(
+            r.label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+            color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Spacer(Modifier.weight(1f))
+        ResultBadge(r.won, size = 16.dp)
     }
 }
 

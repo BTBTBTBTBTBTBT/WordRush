@@ -198,109 +198,137 @@ fun PostGameScreen(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().gameBackground { appBackground() }.statusBarsPadding()) {
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp)
-                // B6: the controls row overlays the top; the title art (non-PN) clears it itself.
-                .padding(top = if (mode == GameMode.PROPERNOUNDLE) 12.dp else 0.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // Web parity: Play Again only on non-daily (Unlimited) games for Pro.
-            val playAgain = if (seed.startsWith("unlimited-") &&
-                com.wordocious.app.data.AuthService.isProActive
-            ) onPlayAgain else null
-            val isDailySeed = seed == com.wordocious.app.todayLocalSeed(mode.name)
-            val pnPuzzle = if (mode == GameMode.PROPERNOUNDLE) {
-                androidx.compose.runtime.remember(board.solution) {
-                    com.wordocious.core.ProperNoundle.puzzleFor(board.solution)
-                }
-            } else null
+    // FINISH_SPEC R2: the finished screen fits one screen — header, the one-line result
+    // strip, the board(s) scaled to the height left, then the action dock (share · Next
+    // daily / Leaderboard · More, and the Pro Unlimited card). The score breakdown, the
+    // definition, the rank badge and ProperNoundle's photo + clue live behind "More".
+    // Web parity: Play Again (now the Unlimited card's NEW PUZZLE) only on non-daily
+    // (Unlimited) games for Pro.
+    val playAgain = if (seed.startsWith("unlimited-") &&
+        com.wordocious.app.data.AuthService.isProActive
+    ) onPlayAgain else null
+    val isDailySeed = seed == com.wordocious.app.todayLocalSeed(mode.name)
+    val pnPuzzle = if (mode == GameMode.PROPERNOUNDLE) {
+        androidx.compose.runtime.remember(board.solution) {
+            com.wordocious.core.ProperNoundle.puzzleFor(board.solution)
+        }
+    } else null
+    val day = com.wordocious.core.getDailySeedDate(seed)
+    val points = remember(state, elapsedSeconds, hintsUsed) {
+        DailyScoring.breakdown(
+            mode.name, won, guessCount, elapsedSeconds, cardBoardsSolved, cardTotalBoards, hintsUsed,
+            stagesCompleted, bestCorrectLetters, day,
+        ).total.toInt()
+    }
+    val stripItems = buildList {
+        if (multiBoard) add(stripCount("$boardsSolved/$totalBoards", "boards", accent = Color(0xFFF5A524)))
+        add(
+            stripCount(
+                if (won || board.maxGuesses <= 0) "$guessCount" else "$guessCount/${board.maxGuesses}",
+                if (guessCount == 1) "guess" else "guesses", glyph = StripGlyph.CROWN,
+            ),
+        )
+        add(stripTime(elapsedSeconds))
+        add(stripPoints(points))
+    }
 
-            if (mode == GameMode.PROPERNOUNDLE) {
-                // iOS ProperNoundleView keeps its IN-PLAY header on the finished
-                // screen (`isFinished` renders header → NoundleBoard → result):
-                // flat red 24sp title, then the category capsule / daily puzzle
-                // number / letter-count meta row (only the live timer hides on
-                // finish), then the revealed Clue if the player bought it. This
-                // screen used to drop the header entirely, so the post-game
-                // opened cold on the result text with no mode identity.
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        com.wordocious.app.ui.modeTitle(mode),
-                        color = Color(0xFFDC2626), fontSize = 24.sp, fontWeight = FontWeight.Black,
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        pnPuzzle?.themeCategory?.let { PnCategoryPill(it) }
-                        if (seed.startsWith("daily-")) {
+    Box(modifier = Modifier.fillMaxSize().gameBackground { appBackground() }.statusBarsPadding()) {
+        FinishedScreen(
+            horizontalPadding = 12.dp,
+            header = {
+                if (mode == GameMode.PROPERNOUNDLE) {
+                    // iOS ProperNoundleView keeps its IN-PLAY header on the finished
+                    // screen (`isFinished` renders header → NoundleBoard → result):
+                    // flat red 24sp title, then the category capsule / daily puzzle
+                    // number / letter-count meta row (only the live timer hides on
+                    // finish), then the revealed Clue if the player bought it. This
+                    // screen used to drop the header entirely, so the post-game
+                    // opened cold on the result text with no mode identity.
+                    Column(
+                        Modifier.padding(top = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            com.wordocious.app.ui.modeTitle(mode),
+                            color = Color(0xFFDC2626), fontSize = 24.sp, fontWeight = FontWeight.Black,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pnPuzzle?.themeCategory?.let { PnCategoryPill(it) }
+                            if (seed.startsWith("daily-")) {
+                                Text(
+                                    "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
+                                    color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                )
+                            }
                             Text(
-                                "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
+                                "${board.solution.length} letters",
                                 color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                             )
                         }
-                        Text(
-                            "${board.solution.length} letters",
-                            color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                        )
+                        pnRevealedClue?.let {
+                            Text(
+                                it, color = WTheme.textSecondary, fontSize = 12.sp,
+                                fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center, maxLines = 3,
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                            )
+                        }
                     }
-                    pnRevealedClue?.let {
+                } else {
+                    // B6 / B4: the game's title art under the controls row.
+                    com.wordocious.app.ui.HostedGameTitle(mode.name) {
                         Text(
-                            it, color = WTheme.textSecondary, fontSize = 12.sp,
-                            fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 20.dp),
+                            modeTitle(mode), fontSize = 28.sp, fontWeight = FontWeight.Black,
+                            style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito),
+                            modifier = Modifier.padding(top = com.wordocious.app.ui.GAME_CORNER_ROW),
                         )
                     }
                 }
-            } else {
-                // B6 / B4: the game's title art under the controls row, then the result line.
-                com.wordocious.app.ui.HostedGameTitle(mode.name) {
-                    Text(
-                        modeTitle(mode), fontSize = 28.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito),
-                        modifier = Modifier.padding(top = com.wordocious.app.ui.GAME_CORNER_ROW),
-                    )
-                }
-                FinishedResultLine(
-                    won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
-                    timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
+            },
+            strip = { ResultStrip(won, stripItems) },
+            dock = {
+                FinishedDock(
+                    mode = mode, isDaily = isDailySeed && onOpenDaily != null, accent = accent,
                     onShare = onSharePressed,
+                    onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                    onNewPuzzle = playAgain, onOtherGames = onBack,
+                    more = {
+                        // Daily-only, like iOS GameScreen (`if vm.isDaily`) — an Unlimited
+                        // game's result has nothing to do with today's leaderboard.
+                        if (isDailySeed) DailyRankBadge(mode)
+                        if (mode == GameMode.PROPERNOUNDLE) PnMoreDetails(pnPuzzle, won, context)
+                        ScoreBreakdownCard(
+                            mode = mode, won = won, guessCount = guessCount, elapsedSeconds = elapsedSeconds,
+                            boardsSolved = cardBoardsSolved, totalBoards = cardTotalBoards, hintsUsed = hintsUsed,
+                            stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
+                            day = day,
+                        )
+                        // B6: today's word on its green card (single-board modes; "No definition" fallback).
+                        if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
+                            DefinitionCard(solution, showTiles = true)
+                        }
+                    },
                 )
-                if (playAgain != null) {
-                    com.wordocious.app.ui.CandyButton(
-                        if (won) "Play again" else "Try again", onClick = playAgain,
-                        color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
-                        icon = com.wordocious.app.ui.CandyIcon.PLAY,
-                    )
-                }
-                // Daily-only, like iOS GameScreen (`if vm.isDaily`) — an Unlimited
-                // game's result has nothing to do with today's leaderboard.
-                // (ProperNoundle's badge sits under its action row instead, below.)
-                if (isDailySeed) DailyRankBadge(mode)
-            }
-
+            },
+        ) { maxW, maxH ->
             // Board reveal (the actual finished board with colors). iOS puts the
             // board directly under the header in EVERY mode — ProperNoundle
-            // included: its result block (photo/name/bio) renders BELOW the
-            // board, not above it.
+            // included: its result (the name) renders BELOW the board.
             if (multiBoard) {
-                // Compact uniform recap (completed-daily-board sizing) — the
-                // in-play MultiBoardLayout rendered 2-column modes
-                // (QuadWord/Deliverance) zoomed huge post-game while OctoWord's
-                // 4 columns looked right (iOS build-87 parity). §233: on a loss
-                // the unsolved boards spell out their missed word — the tap-
-                // through GAME OVER overlay was the only reveal, and Doug's
-                // screenshot showed the persistent screen kept the answer secret.
-                CompletedBoardsRecapGrid(state.boards, revealMissed = !won)
+                // R2: the 2×2 / 4-across mini grid sized to the height left. §233: on a
+                // loss the unsolved boards spell out their missed word.
+                FinishedBoardsGrid(state.boards, revealMissed = !won, maxWidth = maxW, maxHeight = maxH)
             } else {
-                Box(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
+                // ProperNoundle's name line, or a loss's answer tiles, sit under the board.
+                val reserve = when {
+                    mode == GameMode.PROPERNOUNDLE -> 48.dp
+                    !won -> 54.dp
+                    else -> 0.dp
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     SingleBoard(
                         board = board, currentGuess = "",
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                        modifier = Modifier.fillMaxWidth().height((maxH - reserve).coerceAtLeast(60.dp)),
                         animateLastRow = false,
                         // The in-play board splits a multi-word ProperNoundle answer
                         // on its word boundaries (iOS NoundleBoard); omitting the
@@ -309,87 +337,66 @@ fun PostGameScreen(
                         // finished as eleven undifferentiated squares.
                         wordGroups = pnPuzzle?.let { com.wordocious.core.ProperNoundle.wordGroups(it.display) },
                     )
+                    if (mode == GameMode.PROPERNOUNDLE) {
+                        // iOS ProperNoundleView.result: win = the purple name; loss =
+                        // "The answer was: X" in red.
+                        FinishedNote(
+                            if (won) (pnPuzzle?.display ?: solution) else "The answer was: ${pnPuzzle?.display ?: solution}",
+                            if (won) Color(0xFF7C3AED) else Color(0xFFEF4444),
+                        )
+                    } else if (!won) {
+                        FinishedAnswer(solution, maxWidth = minOf(maxW, 360.dp))
+                    }
                 }
-            }
-
-            // ProperNoundle result block — iOS ProperNoundleView.result, in its
-            // exact order: Wikipedia photo → display name (win = purple name;
-            // loss = "The answer was: X" in red) → win-only solved line → full
-            // un-redacted clue (the bio doubles as the definition) → icon action
-            // row → rank badge. The score card follows below, shared.
-            if (mode == GameMode.PROPERNOUNDLE) {
-                val imageUrl by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = pnPuzzle?.id) {
-                    value = pnPuzzle?.let { com.wordocious.app.data.WikipediaHint.fetchImageUrl(it.display, it.wikiTitle) }
-                }
-                imageUrl?.let { url ->
-                    coil.compose.AsyncImage(
-                        // Explicit request so the load carries an app-identifying
-                        // User-Agent: upload.wikimedia.org 403s Coil/OkHttp's
-                        // default "okhttp/x" UA (Wikimedia UA policy), which left
-                        // a bordered-but-EMPTY photo frame on real devices while
-                        // iOS's URLSession UA sailed through.
-                        model = coil.request.ImageRequest.Builder(context)
-                            .data(url)
-                            .setHeader("User-Agent", com.wordocious.app.data.WikipediaHint.USER_AGENT)
-                            .build(),
-                        contentDescription = null,
-                        // Whole image, no crop (founder, Aug 11): Crop in a
-                        // 64dp square beheaded portrait engravings — fit the
-                        // intrinsic aspect within a 160dp cap.
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                        modifier = Modifier
-                            .sizeIn(maxWidth = 160.dp, maxHeight = 160.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(2.dp, if (won) Color(0xFF7C3AED) else Color(0xFFDC2626), RoundedCornerShape(12.dp)),
-                    )
-                }
-                Text(
-                    if (won) (pnPuzzle?.display ?: solution) else "The answer was: ${pnPuzzle?.display ?: solution}",
-                    fontSize = 20.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
-                    color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444),
-                )
-                if (won) {
-                    Text(
-                        "Solved in $guessCount ${if (guessCount == 1) "guess" else "guesses"} · ${pnTime(elapsedSeconds)}",
-                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    )
-                }
-                // Full (un-redacted) Wikipedia clue — doubles as the definition.
-                val clue by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = pnPuzzle?.id) {
-                    value = pnPuzzle?.let { com.wordocious.app.data.WikipediaHint.fetch(it.display, it.wikiTitle, redact = false) ?: it.hint }
-                }
-                clue?.let {
-                    Text(
-                        it, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    )
-                }
-                PnResultActions(onHome = onBack, onShare = onSharePressed, onPlayAgain = playAgain)
-                if (isDailySeed) DailyRankBadge(mode)
-            }
-
-            ScoreBreakdownCard(
-                mode = mode, won = won, guessCount = guessCount, elapsedSeconds = elapsedSeconds,
-                boardsSolved = cardBoardsSolved, totalBoards = cardTotalBoards, hintsUsed = hintsUsed,
-                stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
-                day = seed?.let { com.wordocious.core.getDailySeedDate(it) },
-            )
-
-            // B6: today's word on its green card (single-board modes; "No definition" fallback).
-            if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
-                DefinitionCard(solution, showTiles = true)
-            }
-
-            // U3 / B6: the CTAs — next daily (gold), this game's leaderboard (purple), keep
-            // playing Unlimited (soft) — DAILY games only (seed == today's daily seed).
-            if (onOpenDaily != null && seed == com.wordocious.app.todayLocalSeed(mode.name)) {
-                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
             }
         }
 
         CornerHomeButton(accent, onBack)
         PostGameHelpButton(mode, accent)
+    }
+}
+
+/**
+ * ProperNoundle's "More" details — iOS ProperNoundleView.result's Wikipedia photo and
+ * the full (un-redacted) clue, which doubles as the definition.
+ */
+@Composable
+private fun PnMoreDetails(pnPuzzle: com.wordocious.core.NPuzzle?, won: Boolean, context: android.content.Context) {
+    val imageUrl by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = pnPuzzle?.id) {
+        value = pnPuzzle?.let { com.wordocious.app.data.WikipediaHint.fetchImageUrl(it.display, it.wikiTitle) }
+    }
+    imageUrl?.let { url ->
+        coil.compose.AsyncImage(
+            // Explicit request so the load carries an app-identifying
+            // User-Agent: upload.wikimedia.org 403s Coil/OkHttp's
+            // default "okhttp/x" UA (Wikimedia UA policy), which left
+            // a bordered-but-EMPTY photo frame on real devices while
+            // iOS's URLSession UA sailed through.
+            model = coil.request.ImageRequest.Builder(context)
+                .data(url)
+                .setHeader("User-Agent", com.wordocious.app.data.WikipediaHint.USER_AGENT)
+                .build(),
+            contentDescription = null,
+            // Whole image, no crop (founder, Aug 11): Crop in a
+            // 64dp square beheaded portrait engravings — fit the
+            // intrinsic aspect within a 160dp cap.
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+            modifier = Modifier
+                .sizeIn(maxWidth = 160.dp, maxHeight = 160.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .border(2.dp, if (won) Color(0xFF7C3AED) else Color(0xFFDC2626), RoundedCornerShape(12.dp)),
+        )
+    }
+    // Full (un-redacted) Wikipedia clue — doubles as the definition.
+    val clue by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = pnPuzzle?.id) {
+        value = pnPuzzle?.let { com.wordocious.app.data.WikipediaHint.fetch(it.display, it.wikiTitle, redact = false) ?: it.hint }
+    }
+    clue?.let {
+        Text(
+            it, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+        )
     }
 }
 
@@ -416,11 +423,10 @@ internal fun CornerHomeButton(accent: Color, onBack: () -> Unit) {
 }
 
 /**
- * Full Gauntlet results screen — ports iOS GauntletResultsView: 60dp trophy /
- * ✗ icon, CLEARED/FAILED gradient headline, Home·Share·Play Again links, daily
- * rank badge, three boxed RUN-level stat cards (the run's stages/guesses/time,
- * not the final stage's), score breakdown, next-daily handoff, then the stage
- * breakdown — all on a staggered fade-and-rise entrance.
+ * Full Gauntlet results screen — FINISH_SPEC Q: the custom Gauntlet finish (amber hero
+ * card with the champion scene / R + I poses, the 5-star row, soft-number stat pills,
+ * the B6 actions), then the score breakdown, the next-daily handoff and the stage
+ * breakdown on the game tray. Built in GauntletFinish.kt (same data, same callbacks).
  */
 @Composable
 private fun GauntletResultsScreen(
@@ -430,238 +436,15 @@ private fun GauntletResultsScreen(
     onOpenUnlimited: ((GameMode) -> Unit)? = null,
     onOpenLeaderboard: ((GameMode) -> Unit)? = null,
 ) {
-    val cleared = g.stageResults.count { it.status == GameStatus.WON }
-    val totalGuesses = g.stageResults.sumOf { it.guesses }
-    val totalTimeMs = g.stageResults.sumOf { it.timeMs }.takeIf { it > 0 } ?: (elapsedSeconds * 1000)
-    val cumBoards = g.stageResults.sumOf { r ->
-        if (r.status == GameStatus.WON) (g.stages.firstOrNull { it.stageIndex == r.stageIndex }?.boardCount ?: 0)
-        else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
-    }
-    val cumTotal = max(1, g.stages.sumOf { it.boardCount })
-    val isDaily = seed == com.wordocious.app.todayLocalSeed(GameMode.GAUNTLET.name)
-
-    var appeared by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { appeared = true }
-    val iconScale by androidx.compose.animation.core.animateFloatAsState(
-        if (appeared) 1f else 0.6f,
-        androidx.compose.animation.core.tween(if (WTheme.reducedMotion) 0 else 400, 50, androidx.compose.animation.core.EaseOut),
-        label = "gauntletIcon",
+    GauntletFinishScreen(
+        g = g, won = won, seed = seed, elapsedSeconds = elapsedSeconds, hintsUsed = hintsUsed,
+        onHome = onHome, onShare = onShare, onPlayAgain = onPlayAgain, onOpenDaily = onOpenDaily,
+        onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard,
     )
-
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (won) {
-                com.wordocious.app.ui.Icon3D(
-                    com.wordocious.app.ui.Icon3DName.TROPHY, 64.dp,
-                    Modifier.graphicsLayer { scaleX = iconScale; scaleY = iconScale; alpha = iconScale },
-                )
-            } else {
-                Icon(
-                    Icons.Filled.Cancel, null,
-                    tint = Color(0xFFF87171),
-                    modifier = Modifier.size(60.dp)
-                        .graphicsLayer { scaleX = iconScale; scaleY = iconScale; alpha = iconScale },
-                )
-            }
-            if (won) {
-                Text(
-                    "GAUNTLET CLEARED!", fontSize = 34.sp, fontWeight = FontWeight.Black,
-                    textAlign = TextAlign.Center, modifier = Modifier.riseIn(appeared, 150),
-                    style = TextStyle(
-                        brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC))),
-                        fontFamily = Nunito,
-                    ),
-                )
-            } else {
-                Text(
-                    "GAUNTLET FAILED", fontSize = 34.sp, fontWeight = FontWeight.Black,
-                    color = Color(0xFFFCA5A5), textAlign = TextAlign.Center,
-                    modifier = Modifier.riseIn(appeared, 150),
-                )
-            }
-            // B6: no "Home" text link (the house in the controls row goes home); Share is the
-            // 3D share icon; Play Again a candy button (A8).
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.riseIn(appeared, 250),
-            ) {
-                @Suppress("UNUSED_VARIABLE") val home = onHome
-                com.wordocious.app.ui.SoftControl(com.wordocious.app.ui.Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp)
-                if (onPlayAgain != null) {
-                    com.wordocious.app.ui.CandyButton(
-                        "Play again", onClick = onPlayAgain,
-                        color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
-                        icon = com.wordocious.app.ui.CandyIcon.PLAY,
-                    )
-                }
-            }
-            if (isDaily) Box(Modifier.riseIn(appeared, 300)) { DailyRankBadge(GameMode.GAUNTLET) }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth().riseIn(appeared, 400),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            GauntletStatCard(com.wordocious.app.ui.Icon3DName.TROPHY, Color(0xFF7C3AED), "$cleared/${g.totalStages}", "Stages", Modifier.weight(1f))
-            GauntletStatCard(Icons.Filled.Tag, Color(0xFF60A5FA), "$totalGuesses", "Guesses", Modifier.weight(1f))
-            GauntletStatCard(Icons.Filled.Schedule, Color(0xFFFB923C), fmtRunTime(totalTimeMs), "Time", Modifier.weight(1f))
-        }
-
-        Box(Modifier.riseIn(appeared, 500)) {
-            ScoreBreakdownCard(
-                mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses,
-                elapsedSeconds = totalTimeMs / 1000, boardsSolved = cumBoards, totalBoards = cumTotal,
-                hintsUsed = hintsUsed, stagesCompleted = cleared,
-                day = com.wordocious.core.getDailySeedDate(seed),
-            )
-        }
-
-        if (onOpenDaily != null && isDaily) {
-            Box(Modifier.riseIn(appeared, 550)) {
-                NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
-            }
-        }
-
-        // Same breakdown the Completed-Today card and the VS result screen use —
-        // iOS reuses one GauntletCompletedView here too. This screen previously
-        // had its own card whose rows put the ✓/✗ on the RIGHT with no badge, no
-        // stage time and no expand affordance, and opened a hardcoded-white
-        // Dialog (unreadable in dark) instead of expanding in place.
-        Box(Modifier.riseIn(appeared, 600)) {
-            GauntletStageBreakdown(
-                g = g,
-                totalMs = totalTimeMs,
-                showSummary = false,      // the boxed stat cards above already say it
-                showStageHeader = true,
-            )
-        }
-    }
-}
-
-/** iOS RiseIn: fade in while rising 14pt, eased out after [delayMs]. */
-@Composable
-private fun Modifier.riseIn(appeared: Boolean, delayMs: Int): Modifier {
-    val reduced = WTheme.reducedMotion
-    val t by androidx.compose.animation.core.animateFloatAsState(
-        if (appeared) 1f else 0f,
-        androidx.compose.animation.core.tween(
-            if (reduced) 0 else 400, if (reduced) 0 else delayMs, androidx.compose.animation.core.EaseOut,
-        ),
-        label = "riseIn",
-    )
-    return this.graphicsLayer { alpha = t; translationY = (1f - t) * 14.dp.toPx() }
-}
-
-/** Boxed run stat (iOS GauntletResultsView.statCard). */
-@Composable
-private fun GauntletStatCard(
-    /** An ImageVector, or a 3D set icon (HEADER_SPEC §2). */
-    icon: Any, color: Color,
-    value: String, label: String, modifier: Modifier = Modifier,
-) {
-    // A1 / A2: a tinted stat tile in its own color with a top bar and a soft number.
-    Column(
-        modifier = modifier.clip(RoundedCornerShape(14.dp))
-            .background(com.wordocious.app.ui.accentWash(color, 0.12f))
-            .drawWithContent { drawContent(); drawRect(color, size = androidx.compose.ui.geometry.Size(size.width, 4.dp.toPx())) }
-            .border(1.5.dp, com.wordocious.app.ui.accentLine(color, 0.30f), RoundedCornerShape(14.dp)).padding(vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        when (icon) {
-            is com.wordocious.app.ui.Icon3DName -> com.wordocious.app.ui.Icon3D(icon, 22.dp)
-            is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
-        }
-        com.wordocious.app.ui.SoftNumber(value, 22.sp)
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-    }
-}
-
-/** iOS GauntletResultsView.fmt — compact "45s" / "2m 5s" from milliseconds. */
-private fun fmtRunTime(ms: Int): String {
-    val s = ms / 1000
-    return if (s < 60) "${s}s" else "${s / 60}m ${s % 60}s"
 }
 
 /** m:ss clock string. */
 private fun clock(s: Int): String = "%d:%02d".format(s / 60, s % 60)
-
-/** Web/iOS ProperNoundle formatTime: "m:ss" at a minute or more, else "Ns". */
-private fun pnTime(s: Int): String = if (s >= 60) "%d:%02d".format(s / 60, s % 60) else "${s}s"
-
-/**
- * ProperNoundle result actions — iOS ProperNoundleView.result renders Home /
- * Share / Play Again as icon+label buttons tinted the PN accent, not as the
- * generic underlined text links every other mode uses.
- */
-@Composable
-private fun PnResultActions(@Suppress("UNUSED_PARAMETER") onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)?) {
-    // B6 / A8: no text links — the 3D share icon and a candy Play Again (the house in
-    // the controls row goes home).
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 2.dp),
-    ) {
-        com.wordocious.app.ui.SoftControl(com.wordocious.app.ui.Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp)
-        onPlayAgain?.let {
-            com.wordocious.app.ui.CandyButton(
-                "Play again", onClick = it,
-                color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
-                icon = com.wordocious.app.ui.CandyIcon.PLAY,
-            )
-        }
-    }
-}
-
-/**
- * FINISH_SPEC B6 the finished game's result line: tinted pills with 3D icons and soft
- * numbers — guesses (purple), time (blue), plus boards solved (gold) on multi-board
- * games — and the 3D share icon (no "Home" / "Share" text links: the house in the
- * controls row goes home). A loss adds one short line under it.
- */
-@Composable
-private fun FinishedResultLine(
-    won: Boolean, guessCount: Int, maxGuesses: Int,
-    timeSeconds: Int, boardsSolved: Int, totalBoards: Int,
-    onShare: () -> Unit,
-) {
-    val isMulti = totalBoards > 1
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        ) {
-            if (isMulti) {
-                ResultPill(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, "$boardsSolved/$totalBoards", "boards", Color(0xFFF5A524))
-            }
-            ResultPill(
-                com.wordocious.app.ui.Icon3DName.CROWN,
-                if (won || maxGuesses <= 0) "$guessCount" else "$guessCount/$maxGuesses",
-                if (guessCount == 1) "guess" else "guesses", Color(0xFF7C3AED),
-            )
-            ResultPill(com.wordocious.app.ui.Icon3DName.TROPHY, clock(timeSeconds), "time", Color(0xFF2563EB))
-            com.wordocious.app.ui.SoftControl(
-                com.wordocious.app.ui.Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp,
-            )
-        }
-        if (!won) {
-            Text(
-                if (isMulti) "$boardsSolved of $totalBoards solved" else "Out of guesses",
-                fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFE0526B), textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
 
 /** B6 a result pill: the accent's wash + line, a 4 dp accent bar, a 3D icon, a soft number and its label. */
 @Composable
@@ -760,7 +543,7 @@ internal fun ScoreBreakdownCard(
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "${b.total.toInt()} points" }) {
                 com.wordocious.app.ui.SoftNumber("%,d".format(b.total.toInt()), 30.sp)
-                Text("PTS", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9), letterSpacing = 1.2.sp, modifier = Modifier.padding(bottom = 3.dp))
+                Text("PTS", fontSize = 12.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.darkSafe(Color(0xFF6D28D9), com.wordocious.app.ui.DarkInk.violet), letterSpacing = 1.2.sp, modifier = Modifier.padding(bottom = 3.dp))
             }
         }
         var first = true
@@ -852,37 +635,11 @@ internal fun NextDailyRow(
     // guest's completions map is always empty and "next" would be a lie (iOS
     // PostGameViews wraps the whole CTA in the same check).
     if (AuthService.profile.value == null) return
-    // Seed from the day-keyed cache (updated the instant this game recorded via
-    // noteCompletion), then confirm against the server; re-fetch on completionTick.
-    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
-    val completions by produceState(
-        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache(), key1 = tick,
-    ) {
-        value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
-    }
-    // First unplayed daily in home-grid order. The just-finished mode is
-    // excluded outright — its row can lag the record pipeline (or never exist
-    // for guests) and it's never a sensible "next".
-    // Handoff order (More Games Stage 4/9): a sweep game hands to the next
-    // unplayed sweep game; a More Games title (ProperNoundle, Sudoku…) hands to
-    // the next unplayed More Games title this viewer can see, THEN the sweep.
-    // The sweep never hands into More Games.
-    val sweepKeys = com.wordocious.app.data.DailyCompletionsService.SWEEP_KEYS
-    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
-    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
-    val fromMoreGames = currentMode.name !in sweepKeys
-    val nextMore = if (!fromMoreGames) null else com.wordocious.app.ui.MORE_CARDS.firstOrNull { c ->
-        c.engineMode != null && c.dailyEligible && c.engineMode != currentMode &&
-            com.wordocious.app.data.FlagsService.isOn(c.flagKey, flagTable, flagsLoaded) &&
-            completions[c.engineMode.name] == null
-    }
-    val nextSweep = com.wordocious.app.ui.MODE_CARDS.firstOrNull { c ->
-        c.engineMode != null && c.engineMode.name in sweepKeys && c.engineMode != currentMode && completions[c.engineMode.name] == null
-    }
-    val next = nextMore ?: nextSweep
-    val sweepTotal = com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
-    val allDone = next == null &&
-        com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size >= sweepTotal
+    // The handoff order lives in [rememberNextDaily] (shared with the R2 FinishedDock).
+    val nd = rememberNextDaily(currentMode)
+    val next = nd.next
+    val sweepTotal = nd.sweepTotal
+    val allDone = nd.allDone
     // next == null with the sweep incomplete can't normally happen (next covers
     // every gap); render nothing rather than a wrong claim if state is mid-flight.
     if (next == null && !allDone) return
@@ -910,7 +667,7 @@ internal fun NextDailyRow(
                 com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 20.dp)
                 Text(
                     "All $sweepTotal dailies done. Sweep complete!",
-                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.purpleTextInk,
                 )
             }
         }
@@ -946,19 +703,6 @@ internal fun NextDailyRow(
                 leading = { CtaGameIcon(com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.id) },
             )
         }
-    }
-}
-
-/** A CTA's leading game icon (the glossy 3D game art), decorative. */
-@Composable
-private fun CtaGameIcon(modeId: String?) {
-    val art = com.wordocious.app.ui.gameArtRes(modeId)
-    if (art != null) {
-        androidx.compose.foundation.Image(
-            androidx.compose.ui.res.painterResource(art), contentDescription = null, modifier = Modifier.size(28.dp),
-        )
-    } else {
-        com.wordocious.app.ui.CandyGlyph(com.wordocious.app.ui.CandyIcon.ARROW, 20.dp)
     }
 }
 

@@ -1,42 +1,45 @@
 package com.wordocious.app.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.R
+import com.wordocious.app.data.BotArt
+import com.wordocious.app.data.CpuProgressionStore
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.BotCast
 
 /**
  * VS Battle as a full-width tile at the very bottom of the game area (founder + JP,
  * 2026-09-26): the VS card and the old LIVE strip merged — VS icon and accent,
  * "VS Battle", the live pulse + player count, Invite for Pro. The grid above is
- * exactly the eight sweep games. Mirrors web vs-live-tile.tsx / iOS VSLiveTile.swift.
+ * exactly the eight sweep games. FINISH_SPEC O2 (10-02): the faceoff art as a small hero,
+ * the status line, Bot of the day and PLAY / INVITE candy buttons; Home's VS BATTLE
+ * section title sits above it (O1). Mirrors web vs-live-tile.tsx / iOS VSLiveTile.swift.
  */
 @Composable
 fun VSLiveTile(
@@ -75,59 +78,89 @@ fun VSLiveTile(
     val done = !unlimitedMode && vsDailyWon != null
     val countText = count?.let { "$it ${if (it == 1) "player" else "players"} online" } ?: "Players online"
     val subtitle = when {
-        done -> if (vsDailyWon == true) "Today's battle won" else "Today's battle lost"
+        done -> if (vsDailyWon == true) "Battle won!" else "Today's battle lost"
         unlimitedMode -> card.desc
         else -> "Today's shared battle"
     }
+    // D2: today's Bot of the Day (seeded on the UTC day), its cast VS "ready" pose.
+    val bot = remember { BotCast.botOfTheDay(CpuProgressionStore.todayUtc()) }
+    val muted = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted
 
-    // ART_SPEC §21.5: the exact Home game-card treatment (surface, radius, shadow, the
-    // colored top band in the VS accent, the card's inner padding). A completed daily wears
-    // the game cards' done tint + accent border so today's battle never looks unplayed
-    // (founder, 2026-09-26); the W/L badge sits at the end of the title line (§21.1).
+    // FINISH_SPEC O2 (same place, same data, no drastic change): the exact Home game-card
+    // treatment (§21.5) in the VS teal — tinted face, the colored top band, the card's
+    // inner padding; a completed daily wears the done tint. Left: the W-vs-S faceoff art
+    // as a small hero (~40% of the card, the two characters and the bolt). Right: LIVE ·
+    // N players online with the pulsing dot, today's status line (+ the W / L badge,
+    // §21.1), the Bot of the day line, then PLAY (teal candy) and INVITE (peach, Pro).
     GameCardFrame(accent, done = done) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(Modifier.weight(1f).clickableNoRipple(onOpen), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
-                    ModeGlyph(card, accent, 36.dp)
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Image(
+                painterResource(R.drawable.art_scene_vs_faceoff),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth(0.4f).widthIn(max = 170.dp).aspectRatio(FACEOFF_ASPECT)
+                    .squishClickable(onClick = onOpen).clearAndSetSemantics { },
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                // A9: the info block opens the lobby and squishes; TalkBack reads it as one button.
+                Column(
+                    Modifier.fillMaxWidth().squishClickable("${card.title}, $countText, $subtitle, Bot of the day: ${bot.name}", card = true, onClick = onOpen),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        LivePulseDot()
+                        Text("LIVE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
+                        Text(
+                            "· $countText", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = muted, fontFamily = Nunito,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                            subtitle, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                         )
                         if (done) {
                             Spacer(Modifier.width(4.dp))
                             TitleLineBadge(won = vsDailyWon == true)
                         }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        LivePulseDot()
-                        Text("LIVE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        Text("· $countText", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Image(
+                            painterResource(BotArt.pose(bot.id, "ready")), contentDescription = null,
+                            modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+                        )
+                        Text(
+                            "Bot of the day: ${bot.name}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = muted,
+                            fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
                     }
-                    Text(subtitle, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-            }
-            if (isPro) {
-                // Soft pill in the tile's own teal (founder, 2026-10-01: the hot-pink 3D
-                // button shouted over the tile). Same tap: the Invite modal.
                 Row(
-                    Modifier.height(32.dp).clip(CircleShape)
-                        .background(accent.copy(alpha = 0.08f))
-                        .border(1.5.dp, accent.copy(alpha = 0.33f), CircleShape)
-                        .clickable { onInvite() }
-                        .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    Modifier.padding(top = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon3D(Icon3DName.ADD_FRIEND, 17.dp) // ART_SPEC §5
-                    Text("Invite", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F766E))
+                    // A8: PLAY is the card's primary candy (teal, the VS color) — same tap as the card.
+                    CandyButton(
+                        "PLAY", onClick = onOpen, color = CandyColor.TEAL, size = CandySize.SMALL,
+                        icon = CandyIcon.PLAY, contentDescription = "Play ${card.title}",
+                    )
+                    if (isPro) {
+                        // Same tap as before: the Invite modal. Peach = the quiet secondary.
+                        CandyButton(
+                            "INVITE", onClick = onInvite, color = CandyColor.PEACH, size = CandySize.SMALL,
+                            leading = { Icon3D(Icon3DName.ADD_FRIEND, 16.dp) }, // ART_SPEC §5
+                            contentDescription = "Invite",
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+/** The faceoff art's aspect (1200 × 638). */
+private const val FACEOFF_ASPECT = 1200f / 638f

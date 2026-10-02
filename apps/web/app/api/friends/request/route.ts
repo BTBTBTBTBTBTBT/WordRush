@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, pairBlocked, getFriendship, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -105,7 +106,8 @@ export async function POST(req: NextRequest) {
 
   const myName = await usernameOf(admin, me);
   void broadcastPush(
-    { title: '🤝 Friend request', body: `${myName} wants to be friends on Wordocious`, url: `/profile/${me}` },
+    // FINISH_SPEC AE: the shared cast-voice push copy.
+    { title: PUSH_TITLE, body: pushCopy('friendRequest', { name: myName }), url: `/profile/${me}` },
     new Set([target.id]),
   ).catch(() => {});
 

@@ -1,9 +1,9 @@
 'use client';
 
 // THE FRIENDS TAB (Friends overhaul, founder-approved 2026-10-01; spec
-// docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom (under the shared AppHeader):
-// the controls row (bell = notification prefs, add-friend jumps to Add by
-// username), the Friends banner (ON NOW + TODAY'S RACE, the full race in a
+// docs/FRIENDS_REDESIGN_SPEC.md §2; finishing build C4 + C4b, docs/FINISH_SPEC.md).
+// Top to bottom (under the shared AppHeader): the FRIENDS headline (nothing
+// beside it — the notification prefs moved into Settings), the Friends banner (ON NOW + TODAY'S RACE, the full race in a
 // sheet), YOUR TURN, PLAY WITH
 // FRIENDS, THIS WEEK'S RACE, YOUR FRIENDS (presence, friend streak, one action
 // pill), INVITES, MOMENTS with reactions, and Add by username + share link. The
@@ -11,12 +11,16 @@
 // §212/§216/§225/§232/§238 (rows, weekly race), D3 (Today's Race, feed).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Users, Check, X, Send, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { HeaderCircle } from '@/components/ui/page-header';
-import { ArtTitle } from '@/components/ui/art-title';
+import { Users, X, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { PageHeadline } from '@/components/ui/page-headline';
+import { CandyButton, CandyIcon, candyClass } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { CandyBadge } from '@/components/ui/candy-badge';
 import { Icon3D } from '@/components/ui/icon3d';
+import { UiIcon } from '@/components/ui/ui-icon';
 import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
@@ -36,12 +40,22 @@ import {
   raceChips, sortActiveGames,
 } from '@/lib/friends-play';
 import { TodaysRace } from './todays-race';
-import { NotificationPrefs } from './notification-prefs';
 import { ActivityFeed } from './activity-feed';
 import { FriendsBanner } from './friends-banner';
 import { QuickPlaySheet } from './quick-play-sheet';
-import { FlameCount, FriendAvatar, GameGlyph, GameIconSquare, Pill, SectionLabel, Sheet, cardStyle } from './friends-ui';
-import { GameTile } from '@/components/ui/game-tile';
+import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
+import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, trackRequests } from '@/lib/invite-screens';
+import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends-look';
+import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
+import { softMix } from '@/lib/soft-surface';
+import { LevelBadge } from '@/components/badges/badge-art';
+
+/** The add-friend window's cast pose: I reaching out (not the Friends host, O1 — A7). */
+const ADD_POSE = poseArt('i', 'reach');
+
+/** A danger candy (Unfriend): the candy look recolored red. */
+const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
 
 /** Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11). */
 function isNewFriend(f: FriendProfile): boolean {
@@ -77,7 +91,7 @@ type SheetState =
 export function FriendsPanel() {
   const { user, profile, isProActive } = useAuth();
   const router = useRouter();
-  const [, force] = useState(0);
+  const [ver, force] = useState(0);
   const [username, setUsername] = useState('');
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -95,6 +109,17 @@ export function FriendsPanel() {
   const [unfriendTarget, setUnfriendTarget] = useState<FriendProfile | null>(null);
   const [sheet, setSheet] = useState<SheetState>(null);
   const [challenging, setChallenging] = useState<string | null>(null);
+  /** T1: the request just sent ("@name"), shown on the invite-sent card until Done. */
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  /** T3: the friend just made (accepted here, a mutual request, or — the inviter's side — a watched request accepted). */
+  const [newFriend, setNewFriend] = useState<(InvitePerson & { id: string }) | null>(null);
+  /** T4: the gift-shield notice (shield-guard art). */
+  const [shieldNote, setShieldNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!shieldNote) return;
+    const t = setTimeout(() => setShieldNote(null), 3500);
+    return () => clearTimeout(t);
+  }, [shieldNote]);
   const [games, setGames] = useState<GameView[]>(() => getActiveGames());
   useEffect(() => {
     if (!menuFor) return;
@@ -127,6 +152,22 @@ export function FriendsPanel() {
     const t = setTimeout(() => setNote(null), 2500);
     return () => clearTimeout(t);
   }, [note]);
+
+  // T3, the inviter's side: this browser watches the requests you sent (per
+  // account, in localStorage); when one shows up in your friends list (the
+  // digest refreshes every 60 s while the tab is open, and on every visit)
+  // the NEW FRIENDS! window celebrates it once.
+  useEffect(() => {
+    if (!user || !friendsLoaded()) return;
+    const key = `${WATCHED_REQUESTS_KEY}:${user.id}`;
+    let watched: string[] = [];
+    try { watched = parseWatched(window.localStorage.getItem(key)); } catch { /* storage blocked */ }
+    const list = getFriends();
+    const { accepted, watch } = trackRequests(watched, getOutgoing().map((r) => r.id), list.map((f) => f.id));
+    try { window.localStorage.setItem(key, JSON.stringify(watch)); } catch { /* storage blocked */ }
+    const f = accepted.length > 0 ? list.find((x) => x.id.toLowerCase() === accepted[0].toLowerCase()) : undefined;
+    if (f) setNewFriend((cur) => cur ?? { id: f.id, name: f.username, url: f.avatar_url, emoji: f.avatar_emoji });
+  }, [user, settled, ver]);
 
   useEffect(() => {
     const q = username.trim().replace(/^@/, '');
@@ -280,19 +321,19 @@ export function FriendsPanel() {
       const r = await sendTaunt(f.id, 'slowpoke');
       if (r.sent) n += 1;
     }
-    setNote(n > 0 ? `Nudged ${n} friend${n === 1 ? '' : 's'} 🔔` : 'Everyone already nudged today');
+    setNote(n > 0 ? `Nudged ${n} friend${n === 1 ? '' : 's'}!` : 'Everyone already nudged today');
   };
 
   const fireTaunt = async (tauntId: string) => {
     if (!tauntTarget) return;
     const r = await sendTaunt(tauntTarget.id, tauntId);
-    setTauntStatus(r.sent ? 'Sent 😈' : r.alreadySent ? 'Already taunted them today' : 'Could not send');
+    setTauntStatus(r.sent ? 'Sent!' : r.alreadySent ? 'Already taunted them today' : 'Could not send');
     setTimeout(() => { setTauntTarget(null); setTauntStatus(null); }, 1400);
   };
 
   const sayHi = async (f: FriendProfile) => {
     const r = await sendTaunt(f.id, 'hi');
-    setNote(r.sent ? `👋 sent to ${f.username}!` : r.alreadySent ? 'Already said hi today' : 'Could not send');
+    setNote(r.sent ? `Hi sent to ${f.username}!` : r.alreadySent ? 'Already said hi today' : 'Could not send');
   };
 
   const challenge = async (f: FriendProfile) => {
@@ -301,7 +342,7 @@ export function FriendsPanel() {
     try {
       const r = await challengeFriend(f.id, 'DUEL');
       if ('error' in r) { setNote(r.error); return; }
-      setNote(`Challenge sent to ${f.username} ⚔️`);
+      setNote(`Challenge sent to ${f.username}!`);
       router.push(`${vsHrefForMode('DUEL')}?inviteCode=${r.code}`);
     } finally {
       setChallenging(null);
@@ -309,7 +350,7 @@ export function FriendsPanel() {
   };
 
   const shareInvite = async () => {
-    let text = `Add me on Wordocious — I'm ${profile?.username ?? ''}`.trim();
+    let text = `Add me on Wordocious! I'm ${profile?.username ?? ''}`.trim();
     let url = `https://wordocious.com/profile/${myId}`;
     // D3: a Pro player's open referral code is the better door.
     if (isProActive) {
@@ -325,10 +366,12 @@ export function FriendsPanel() {
         const code = data?.[0]?.code as string | undefined;
         if (code) {
           url = `https://wordocious.com/join/${code}`;
-          text = `I'm gifting you 7 days of Wordocious Pro — add me once you're in: ${profile?.username ?? ''}`.trim();
+          text = `${giftShareText(url)} Add me once you're in: ${profile?.username ?? ''}`.trim();
         }
       } catch {}
     }
+    // FINISH_SPEC S4: the shared invite copy for the plain invite; the gift line stays for referrals. The link stays.
+    if (!url.includes('/join/')) text = inviteShareText(url);
     if (typeof navigator.share === 'function') {
       try { await navigator.share({ text, url }); } catch { /* user closed the sheet */ }
       return;
@@ -349,7 +392,10 @@ export function FriendsPanel() {
       const r = await requestFriend({ username: name });
       if ('error' in r) setNote(r.error);
       else {
-        setNote(r.status === 'accepted' ? 'You’re now friends! 🎉' : 'Request sent 🤝');
+        // T1 / T3: the invite-sent card, or NEW FRIENDS! on a mutual request.
+        const clean = name.replace(/^@+/, '');
+        if (r.status === 'accepted') setNewFriend({ id: r.friendId, name: clean });
+        else setSentTo(`@${clean}`);
         setUsername('');
       }
     } finally {
@@ -358,34 +404,29 @@ export function FriendsPanel() {
   };
 
   const myTurnCount = sortedGames.filter((g) => g.yourTurn).length;
-  const menuItem = (label: React.ReactNode, onClick: () => void, color: string = FR.text) => (
+  const menuItem = (label: React.ReactNode, onClick: () => void, color: string = FR_LOOK.ink) => (
     <button
       onClick={onClick}
-      className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-      style={{ color, borderTop: '1px solid #f1f5f9' }}
+      className="w-full text-left px-3 py-2 text-xs font-extrabold"
+      style={{ color, borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.14)}` }}
     >
       {label}
     </button>
   );
+  const [addW, addH] = ART_SIZE[ADD_POSE];
 
   return (
     <div className="space-y-3.5">
-      {/* 1. Title + controls row (founder, 2026-10-02): the shared AppHeader above the
-          page is the Friends header. The whole-cast FRIENDS title art (docs/ART_SPEC.md
-          §2) fills the leading space; the bell and add-friend circles sit beside it. */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0">
-          <ArtTitle name="art-title-friends" label="Friends" align="left" maxWidth={300} />
-        </div>
-        <NotificationPrefs />
-        <HeaderCircle label="Add a friend" onClick={jumpToAdd}>
-          <Icon3D name="add-friend" size={22} />
-        </HeaderCircle>
-      </div>
+      {/* 1. FRIENDS headline (FINISH_SPEC A6 + C4b): the whole-cast title art full
+          width, edge to edge, right on the wallpaper — nothing beside it. The bell
+          (notification prefs) moved into Settings → Notifications; "Add a friend" is
+          the candy button in the YOUR FRIENDS header. */}
+      <PageHeadline name="art-title-friends" label="Friends" />
 
-      {/* 2. Friends banner */}
+      {/* 2. Friends banner (FINISH_SPEC AG: the 560 column on desktop web) */}
+      <div className="page-col">
       {pending ? (
-        <div className="animate-pulse" style={{ height: 196, marginTop: 16, borderRadius: 16, background: 'linear-gradient(180deg, #fce7f3, #ede9fe)' }} aria-hidden />
+        <div className="animate-pulse" style={{ ...frSurface(FR_LOOK.pink), height: 196 }} aria-hidden />
       ) : (
         <FriendsBanner
           input={bannerInput}
@@ -399,54 +440,73 @@ export function FriendsPanel() {
           onAddFriend={jumpToAdd}
         />
       )}
+      </div>
 
+      {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): two
+          columns — your turn, play with friends and the race on the left; your
+          friends, invites, moments and add a friend on the right. */}
+      <div className="page-grid-2 space-y-3.5">
+      <div className="space-y-3.5">
       {/* 4. YOUR TURN (only with active games) */}
       {sortedGames.length > 0 && (
         <>
-          <SectionLabel>
+          <SectionLabel color={FR_LOOK.playLabel}>
             Your turn
-            {myTurnCount > 0 && (
-              <span className="px-1.5 rounded-full text-[10px] font-black text-white" style={{ background: FR.solid, letterSpacing: 0 }}>{myTurnCount}</span>
-            )}
+            {/* M: the same candy badge as the Friends tab, so the waiting games are easy to find. */}
+            <CandyBadge count={myTurnCount} size={16} label={`${myTurnCount} waiting`} />
           </SectionLabel>
           <div className="space-y-2">
-            {sortedGames.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => router.push(`/friends/games/${g.id}`)}
-                className="w-full flex items-center gap-3 p-3 text-left transition-transform active:scale-[0.99]"
-                style={cardStyle}
-              >
-                <GameIconSquare kind={g.kind} size={36} />
-                <span className="flex-1 min-w-0">
-                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>{g.title} vs @{g.opponent.username}</span>
-                  <span className="block text-[11.5px] font-extrabold truncate" style={{ color: FR.solid }}>{g.line}</span>
-                </span>
-                <span
-                  className="shrink-0 px-3 flex items-center text-[11px] font-black rounded-full"
-                  style={{ height: 28, background: g.yourTurn ? FR.solid : FR.soft, color: g.yourTurn ? '#ffffff' : FR.mid }}
+            {sortedGames.map((g) => {
+              const accent = KIND_COLOR[g.kind];
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => router.push(`/friends/games/${g.id}`)}
+                  className="relative overflow-hidden w-full flex items-center gap-3 text-left"
+                  style={{ ...frSurface(accent, { radius: 16 }), padding: '14px 12px 10px' }}
                 >
-                  {g.yourTurn ? 'PLAY' : 'WAITING'}
-                </span>
-              </button>
-            ))}
+                  <span aria-hidden="true" className="absolute top-0 left-0 right-0" style={frBar(accent, 5)} />
+                  <span className="relative shrink-0">
+                    <GameIconSquare kind={g.kind} size={36} />
+                    {g.yourTurn && <CandyBadge count={1} size={16} style={{ position: 'absolute', top: -6, right: -6 }} />}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>{g.title} vs @{g.opponent.username}</span>
+                    <span className="block text-[11.5px] font-extrabold truncate" style={{ color: FR_LOOK.bannerClock }}>{g.line}</span>
+                  </span>
+                  {g.yourTurn ? (
+                    <span className={candyClass({ color: 'pink', size: 'sm', extra: 'shrink-0' })}>
+                      <CandyIcon name="play" size={14} />
+                      <span className="candy-label">Play</span>
+                    </span>
+                  ) : (
+                    <span
+                      className="shrink-0 px-3 flex items-center text-[11px] font-black rounded-full"
+                      style={{ height: 28, background: softMix(FR_LOOK.lavender, 0.12), border: `1.5px solid ${softMix(FR_LOOK.lavender, 0.32)}`, color: '#5b3c96' }}
+                    >
+                      WAITING
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </>
       )}
 
-      {/* 5. PLAY WITH FRIENDS */}
-      <SectionLabel right={<span className="text-[10px] font-black" style={{ color: FR.label, letterSpacing: 0.8 }}>TAP A GAME, PICK A FRIEND</span>}>
+      {/* 5. PLAY WITH FRIENDS — six small tinted cards, each with its own top bar (C4). */}
+      <SectionLabel
+        color={FR_LOOK.playLabel}
+        right={<span className="text-[10px] font-black" style={{ color: FR_LOOK.playLabel, letterSpacing: 0.8 }}>TAP A GAME, PICK A FRIEND</span>}
+      >
         Play with friends
       </SectionLabel>
       <div className="grid grid-cols-3 gap-2">
         {FRIENDLY_KINDS.map((k) => (
-          // One game-tile style (docs/GAME_TILE_STYLE.md): the home card's tint, border and top bar.
-          <GameTile
+          <PocketGameCard
             key={k}
-            accent={KIND_COLOR[k]}
-            tone="light"
-            glyph={<GameGlyph kind={k} size={16} color={KIND_COLOR[k]} stroke={2.2} />}
+            kind={k}
             title={FRIENDLY_TITLES[k]}
             sub={KIND_SUB[k]}
             onClick={() => {
@@ -457,39 +517,41 @@ export function FriendsPanel() {
         ))}
       </div>
 
-      {/* 6. THIS WEEK'S RACE (§212) */}
+      {/* 6. THIS WEEK'S RACE (§212) — the podium on a warm gold card (C4). */}
       {podium.length > 0 && (
-        <>
-          <SectionLabel right={
-            <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: FR.label }}>
-              <span>{weekEndsLabel}</span>
-              {raceStarted && (
-                <button
-                  onClick={shareRace}
-                  disabled={sharingRace}
-                  aria-label="Share weekly race"
-                  className="p-1 -my-1 active:scale-95 transition-transform"
-                  style={{ color: FR.label, opacity: sharingRace ? 0.4 : 1 }}
-                >
-                  <Icon3D name="share" size={17} />
-                </button>
-              )}
-            </span>
-          }>This week&apos;s race</SectionLabel>
-          <div className="p-3" style={cardStyle}>
+        <FrCard accent={FR_LOOK.gold} bar={FR_LOOK.goldBar}>
+          <div className="flex flex-col gap-2" style={{ padding: '12px 14px' }}>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.goldInk }}>This week&apos;s race</h2>
+              <span className="flex items-center gap-1 text-[10px] font-black uppercase" style={{ color: FR_LOOK.goldInk, letterSpacing: 0.6 }}>
+                <span>{weekEndsLabel}</span>
+                {raceStarted && (
+                  <button
+                    onClick={shareRace}
+                    disabled={sharingRace}
+                    aria-label="Share weekly race"
+                    className="hdr-glyph flex items-center justify-center -my-2"
+                    style={{ minWidth: 34, minHeight: 34, opacity: sharingRace ? 0.4 : 1 }}
+                  >
+                    <Icon3D name="share" size={20} />
+                  </button>
+                )}
+              </span>
+            </div>
             {(() => {
               const r = getLastWeekResult();
               if (!r) return null;
               const win = r.rank === 1;
+              const tone = win ? FR_LOOK.gold : FR_LOOK.lavender;
               return (
                 <div
-                  className="flex items-center gap-2 px-3 py-2 mb-1"
-                  style={{ background: win ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f8f7ff', borderRadius: 12 }}
+                  className="flex items-center gap-2 px-3 py-2"
+                  style={{ background: softMix(tone, win ? 0.24 : 0.1), border: `1.5px solid ${softMix(tone, 0.34)}`, borderRadius: 12 }}
                 >
-                  {win ? <Icon3D name="crown" size={20} /> : <span className="text-base">🏁</span>}
-                  <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : FR.text }}>
+                  {win ? <Icon3D name="crown" size={20} /> : <UiIcon name={r.rank === 2 ? 'medal-silver' : r.rank === 3 ? 'medal-bronze' : 'medal'} size={20} />}
+                  <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : FR_LOOK.ink }}>
                     Last week you finished <b>{ordinalOf(r.rank)} of {r.circleSize}</b> · {r.points.toLocaleString()} pts
-                    {!win && r.winnerName ? <span style={{ color: FR.label }}> · <Icon3D name="crown" size={13} inline /> {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
+                    {!win && r.winnerName ? <span style={{ color: FR_LOOK.sub }}> · <Icon3D name="crown" size={13} inline /> {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
                   </span>
                 </div>
               );
@@ -498,8 +560,9 @@ export function FriendsPanel() {
               <button
                 type="button"
                 onClick={() => pastWeeks.length > 1 && setShowPastWeeks((v) => !v)}
-                className="flex items-center gap-1 text-[10px] font-bold mt-0.5"
-                style={{ color: FR.label, cursor: pastWeeks.length > 1 ? 'pointer' : 'default' }}
+                aria-expanded={pastWeeks.length > 1 ? showPastWeeks : undefined}
+                className="flex items-center gap-1 text-[10.5px] font-extrabold text-left"
+                style={{ color: FR_LOOK.goldInk, cursor: pastWeeks.length > 1 ? 'pointer' : 'default' }}
               >
                 <span>Last week: <Icon3D name="crown" size={13} inline /> {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts</span>
                 {pastWeeks.length > 1 && (
@@ -508,224 +571,260 @@ export function FriendsPanel() {
               </button>
             )}
             {showPastWeeks && pastWeeks.filter((w) => w.k > 0).map((w) => (
-              <div key={w.k} className="text-[10px] font-bold mt-0.5 pl-1" style={{ color: FR.label }}>
+              <div key={w.k} className="text-[10px] font-bold pl-1" style={{ color: FR_LOOK.goldInk }}>
                 {pastWeekLabel(w.k)}: <Icon3D name="crown" size={13} inline /> {w.name} · {w.pts.toLocaleString()} pts
               </div>
             ))}
-            <div className="flex items-end justify-center gap-5 py-2">
-              {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
-                const e = podium[i];
-                const medal = ['🥇', '🥈', '🥉'][i];
+            {/* The podium (the Leaderboard's): gold / silver / bronze steps, letter-tile
+                avatars, the crown on first place once the race has points. */}
+            <div className="grid grid-cols-3 items-end gap-2" style={{ padding: '8px 8px 0' }}>
+              {podiumSlots(podium.length).map((slot) => {
+                const e = podium[slot.index];
                 return (
                   <Link
                     key={e.id}
                     href={e.me ? '/profile' : `/profile/${e.id}`}
-                    className={`flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity ${i === 0 ? '-mt-2' : ''}`}
+                    className="grid justify-items-center min-w-0"
+                    style={{ gridColumn: slot.column, gridRow: 1, gap: 3 }}
                   >
-                    <span className={i === 0 ? 'text-lg' : 'text-sm'}>{raceStarted ? medal : '🏁'}</span>
+                    {slot.place === 1 && raceStarted && (
+                      <Icon3D name="crown" size={24} className="relative" style={{ marginBottom: -6, zIndex: 2 }} label="Leads the week" />
+                    )}
                     <FriendAvatar
                       // Your own entry is labeled "You" but its tile shows your real initials + accent (§20).
                       name={e.me && profile ? profile.username : e.username}
                       url={e.avatar_url}
                       emoji={e.avatar_emoji}
                       accent={e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null}
-                      size={i === 0 ? 40 : 34}
+                      size={slot.avatar}
                     />
-                    <span className="text-[9.5px] font-black truncate max-w-[80px]" style={{ color: e.me ? FR.ink : FR.text }}>{e.username}</span>
-                    <span className="text-[9.5px] font-bold" style={{ color: FR.label }}>{e.pts.toLocaleString()} pts</span>
+                    <span className="text-[12px] font-black truncate max-w-full" style={{ color: FR_LOOK.ink }}>{e.username}</span>
+                    <SoftNum size={12}>{e.pts.toLocaleString()}</SoftNum>
+                    <span
+                      className="w-full flex items-center justify-center font-black text-white"
+                      style={{
+                        height: slot.step, borderRadius: '12px 12px 0 0', fontSize: 20,
+                        background: `linear-gradient(${slot.from}, ${slot.to})`,
+                        textShadow: '0 1px 2px rgba(59,26,120,0.35)',
+                      }}
+                      aria-label={`${ordinal(slot.place)} place`}
+                    >
+                      {slot.place}
+                    </span>
                   </Link>
                 );
               })}
             </div>
             {standings.length > 3 && (
-              <div className="space-y-1 mt-1">
+              <div className="overflow-hidden" style={{ borderRadius: 12, border: `1.5px solid ${softMix(FR_LOOK.gold, 0.3)}` }}>
                 {standings.slice(3).map((e, i) => (
-                  <Link key={e.id} href={e.me ? '/profile' : `/profile/${e.id}`} className="flex items-center gap-2 px-2 hover:opacity-80 transition-opacity">
-                    <span className="text-[10px] font-black w-7 shrink-0 text-right" style={{ color: FR.label }}>{ordinal(i + 4)}</span>
-                    <span className="text-[10px] font-extrabold truncate flex-1 min-w-0" style={{ color: e.me ? FR.ink : FR.text }}>{e.username}</span>
-                    <span className="text-[10px] font-bold shrink-0" style={{ color: FR.label }}>{e.pts.toLocaleString()} pts</span>
+                  <Link
+                    key={e.id}
+                    href={e.me ? '/profile' : `/profile/${e.id}`}
+                    className="flex items-center gap-2 px-3 py-1.5"
+                    style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(FR_LOOK.gold, 0.2)}` }}
+                  >
+                    <SoftNum size={12} className="w-8 shrink-0 text-right">{ordinal(i + 4)}</SoftNum>
+                    <span className="text-[11.5px] font-extrabold truncate flex-1 min-w-0" style={{ color: e.me ? FR.ink : FR_LOOK.ink }}>{e.username}</span>
+                    <SoftNum size={12} className="shrink-0">{e.pts.toLocaleString()}</SoftNum>
                   </Link>
                 ))}
               </div>
             )}
             {!raceStarted && (
-              <p className="text-center text-[10px] font-bold" style={{ color: FR.label }}>Race resets Mondays — first daily takes the lead.</p>
+              <p className="text-center text-[10.5px] font-bold" style={{ color: FR_LOOK.goldInk }}>Race resets Mondays — first daily takes the lead.</p>
             )}
           </div>
-        </>
+        </FrCard>
       )}
+      </div>
 
-      {/* 7. YOUR FRIENDS */}
-      <SectionLabel right={slackers.length > 0 ? (
-        <button
-          type="button"
-          onClick={nudgeAll}
-          aria-label="Nudge all friends who haven't played today"
-          className="text-[11px] font-black"
-          style={{ color: FR.solid }}
-        >
-          Nudge all who haven&apos;t played
-        </button>
-      ) : undefined}>
-        Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
-      </SectionLabel>
-      {pending ? (
-        <div className="space-y-2 animate-pulse" aria-hidden>
-          {[0, 1, 2].map((i) => <div key={i} className="h-12 rounded-xl" style={{ background: '#ffffff' }} />)}
+      <div className="space-y-3.5">
+      {/* 7. YOUR FRIENDS — a lavender card with soft striped rows and chunky candy
+          Play / Challenge / Nudge buttons (C4); "Add a friend" lives in its header (C4b). */}
+      <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>
+        <div className="flex items-center justify-between gap-2" style={{ padding: '10px 12px 8px 14px' }}>
+          <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: '#5b3c96' }}>
+            Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
+          </h2>
+          <CandyButton size="sm" color="pink" icon="plus" onClick={jumpToAdd} className="shrink-0">Add a friend</CandyButton>
         </div>
-      ) : friends.length > 0 ? (
-        <div style={cardStyle}>
-          {friends.map((f, i) => {
-            const line = friendLine(f, now, SWEEP_MODES.length);
-            const action = friendAction(f, now);
-            return (
-              <div
-                key={f.id}
-                className="relative flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
-                style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('a,button')) return;
-                  router.push(`/profile/${f.id}`);
-                }}
-              >
-                <Link href={`/profile/${f.id}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={36} online={line.online} />
-                  <span className="flex-1 min-w-0">
-                    <span className="flex items-center gap-1 text-[13px] font-black truncate" style={{ color: FR.text }}>
-                      <span className="truncate">@{f.username}</span>
-                      {f.id === crownId && <Icon3D name="crown" size={14} label="Leads the week" className="shrink-0" />}
-                      {isNewFriend(f) && (
-                        <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>NEW</span>
-                      )}
-                      {friendversary(f) !== null && (
-                        <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>🎉 {friendversary(f)} DAYS</span>
-                      )}
-                    </span>
-                    <span className="block text-[11px] font-bold truncate" style={{ color: line.online ? FR.online : FR.label }}>{line.text}</span>
-                  </span>
-                </Link>
-                <FlameCount days={f.friendStreak ?? 0} />
-                {action === 'play' && <Pill solid onClick={() => openPlay(f)} label={`Play with ${f.username}`}>Play</Pill>}
-                {action === 'challenge' && (
-                  <Pill onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`}>
-                    {challenging === f.id ? 'Sending…' : 'Challenge'}
-                  </Pill>
-                )}
-                {action === 'nudge' && <Pill onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</Pill>}
-                <span className="relative shrink-0">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setMenuFor((m) => (m === f.id ? null : f.id)); }}
-                    aria-label={`More options for ${f.username}`}
-                    className="w-6 h-7 flex items-center justify-center rounded-lg hover:opacity-80 transition-opacity"
-                  >
-                    <MoreHorizontal className="w-4 h-4" style={{ color: FR.label }} />
-                  </button>
-                  {menuFor === f.id && (
-                    <div
-                      className="absolute right-0 top-8 z-40 w-40 overflow-hidden"
-                      style={{ background: '#ffffff', borderRadius: 12, boxShadow: '0 8px 24px rgba(15,23,42,0.16)' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => { setMenuFor(null); router.push(`/profile/${f.id}`); }}
-                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-                        style={{ color: FR.text }}
-                      >
-                        View profile
-                      </button>
-                      {menuItem('Play a quick game', () => { setMenuFor(null); openPlay(f); }, FR.solid)}
-                      {menuItem('Challenge ⚔️', () => { setMenuFor(null); void challenge(f); }, FR.solid)}
-                      {menuItem('Taunt', () => { setMenuFor(null); setTauntTarget(f); })}
-                      {isNewFriend(f) && menuItem('👋 Say hi', () => { setMenuFor(null); void sayHi(f); })}
-                      {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && menuItem(<span className="inline-flex items-center gap-1"><Icon3D name="shield" size={14} /> Gift a shield</span>, async () => {
-                        setMenuFor(null);
-                        const r = await giftShield(f.id);
-                        setNote('error' in r ? r.error : `🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left`);
-                      }, '#0d9488')}
-                      {menuItem('Unfriend', () => { setMenuFor(null); setUnfriendTarget(f); }, '#dc2626')}
-                    </div>
-                  )}
-                </span>
+        {pending ? (
+          <div className="animate-pulse" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="px-3 py-2.5" style={{ background: rowStripe(i), borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}>
+                <div className="h-8 rounded-xl" style={{ background: softMix(FR_LOOK.lavender, 0.16) }} />
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        !pending && (
-          <div className="p-4 space-y-1.5 text-xs font-bold" style={{ ...cardStyle, color: FR.label }}>
-            <p>1. Add friends below by username, or from the <span style={{ color: FR.solid }}>Add Friend</span> button on any player&apos;s profile.</p>
+            ))}
+          </div>
+        ) : friends.length > 0 ? (
+          <div>
+            {friends.map((f, i) => {
+              const line = friendLine(f, now, SWEEP_MODES.length);
+              const action = friendAction(f, now);
+              return (
+                <div
+                  key={f.id}
+                  className="relative flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
+                  style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('a,button')) return;
+                    router.push(`/profile/${f.id}`);
+                  }}
+                >
+                  <Link href={`/profile/${f.id}`} className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={38} online={line.online} />
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-1 text-[14px] font-black truncate" style={{ color: FR_LOOK.ink }}>
+                        <span className="truncate">@{f.username}</span>
+                        {f.level ? <LevelBadge level={f.level} size={16} numberSize={11} numberClassName="" /> : null}
+                        {f.id === crownId && <Icon3D name="crown" size={14} label="Leads the week" className="shrink-0" />}
+                        {isNewFriend(f) && (
+                          <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>NEW</span>
+                        )}
+                        {friendversary(f) !== null && (
+                          <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>{friendversary(f)} DAYS</span>
+                        )}
+                      </span>
+                      <span className="block text-[11px] font-bold truncate" style={{ color: line.online ? '#047857' : FR_LOOK.rowSub }}>{line.text}</span>
+                    </span>
+                  </Link>
+                  <FlameCount days={f.friendStreak ?? 0} />
+                  {action === 'play' && <Pill color="purple" icon="play" onClick={() => openPlay(f)} label={`Play with ${f.username}`}>Play</Pill>}
+                  {action === 'challenge' && (
+                    <Pill color="pink" onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`}>
+                      {challenging === f.id ? 'Sending…' : 'Challenge'}
+                    </Pill>
+                  )}
+                  {action === 'nudge' && <Pill color="amber" onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</Pill>}
+                  <span className="relative shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMenuFor((m) => (m === f.id ? null : f.id)); }}
+                      aria-label={`More options for ${f.username}`}
+                      aria-expanded={menuFor === f.id}
+                      className={candyClass({ color: 'peach', size: 'sm' })}
+                      style={{ width: 32, padding: 0 }}
+                    >
+                      <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    {menuFor === f.id && (
+                      <div
+                        className="absolute right-0 top-10 z-40 w-44 overflow-hidden"
+                        style={{ ...frSurface(FR_LOOK.lavender, { share: 0.08, radius: 14 }), boxShadow: '0 10px 26px rgba(60,30,110,0.2)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => { setMenuFor(null); router.push(`/profile/${f.id}`); }}
+                          className="w-full text-left px-3 py-2 text-xs font-extrabold"
+                          style={{ color: FR_LOOK.ink }}
+                        >
+                          View profile
+                        </button>
+                        {menuItem('Play a quick game', () => { setMenuFor(null); openPlay(f); }, FR.solid)}
+                        {menuItem(<span className="inline-flex items-center gap-1"><UiIcon name="swords" size={14} /> Challenge</span>, () => { setMenuFor(null); void challenge(f); }, FR.solid)}
+                        {menuItem('Taunt', () => { setMenuFor(null); setTauntTarget(f); })}
+                        {isNewFriend(f) && menuItem('Say hi', () => { setMenuFor(null); void sayHi(f); })}
+                        {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && menuItem(<span className="inline-flex items-center gap-1"><Icon3D name="shield" size={14} /> Gift a shield</span>, async () => {
+                          setMenuFor(null);
+                          const r = await giftShield(f.id);
+                          if ('error' in r) setNote(r.error);
+                          else setShieldNote(`Shield sent to ${f.username} · ${r.shieldsLeft} left`);
+                        }, '#0d9488')}
+                        {menuItem('Unfriend', () => { setMenuFor(null); setUnfriendTarget(f); }, '#dc2626')}
+                      </div>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+            {/* §216: one tap nudges every friend who hasn't played today. */}
+            {slackers.length > 0 && (
+              <div className="flex items-center justify-between gap-2 px-3 pt-2.5 pb-2" style={{ borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}>
+                <span className="text-[11px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>
+                  <SoftNum size={12}>{slackers.length}</SoftNum> {slackers.length === 1 ? 'friend hasn’t' : 'friends haven’t'} played today
+                </span>
+                <CandyButton
+                  size="sm"
+                  color="amber"
+                  icon={<Icon3D name="bell" size={16} />}
+                  onClick={nudgeAll}
+                  aria-label="Nudge all friends who haven't played today"
+                  className="shrink-0"
+                >
+                  Nudge all
+                </CandyButton>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs font-bold" style={{ color: FR_LOOK.rowSub }}>
+            <p>1. Add friends by username with <span style={{ color: FR.solid }}>Add a friend</span>, or from the <span style={{ color: FR.solid }}>Add Friend</span> button on any player&apos;s profile.</p>
             <p>2. Requests you send and receive land right here.</p>
             <p>3. Once a friend accepts, race them every day and play quick games together.</p>
           </div>
-        )
-      )}
-      {note && <p className="text-xs font-extrabold px-1" style={{ color: FR.mid }}>{note}</p>}
+        )}
+      </FrCard>
+      {note && <p className="text-xs font-extrabold px-1" style={{ color: FR.mid }} role="status">{note}</p>}
+      {shieldNote && <ShieldNotice onDismiss={() => setShieldNote(null)}>{shieldNote}</ShieldNotice>}
 
       {/* 7b. INVITES (only with requests in flight; founder 2026-10-01: under YOUR FRIENDS) */}
       {(incoming.length > 0 || outgoing.length > 0) && (
-        <>
-          <SectionLabel>
-            Invites
-            <span className="px-1.5 rounded-full text-[10px] font-black text-white" style={{ background: FR.solid, letterSpacing: 0 }}>{incoming.length + outgoing.length}</span>
-          </SectionLabel>
-          <div style={cardStyle}>
-            {incoming.map((r, i) => (
-              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}>
-                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
-                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
-                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Wants to be friends</span>
-                </Link>
-                <button
-                  onClick={() => acceptFriend(r.id)}
-                  aria-label={`Accept ${r.username}`}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: FR.solid, color: '#ffffff' }}
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => declineFriend(r.id)}
-                  aria-label={`Decline ${r.username}`}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: FR.soft, color: FR.mid }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-            {outgoing.map((r, i) => (
-              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 && incoming.length === 0 ? undefined : '1px solid #f1f5f9' }}>
-                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
-                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
-                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Sent · waiting {agoShort(r.requestedAt)}</span>
-                </Link>
-                <Pill
-                  disabled={withinDay(r.remindedAt)}
-                  label={`Remind ${r.username}`}
-                  onClick={async () => {
-                    const res = await remindFriend(r.id);
-                    setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
-                  }}
-                >
-                  {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
-                </Pill>
-                <button
-                  onClick={() => declineFriend(r.id)}
-                  aria-label={`Cancel request to ${r.username}`}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: '#f1f5f9', color: FR.label }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+        <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.pink}>
+          <div className="flex items-center gap-1.5" style={{ padding: '10px 14px 8px' }}>
+            <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.bannerClock }}>Invites</h2>
+            {/* M: requests waiting on you wear the Friends tab's candy badge. */}
+            <CandyBadge count={incoming.length} size={16} label={`${incoming.length} waiting`} />
           </div>
+          {incoming.map((r, i) => (
+            <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.12)}` }}>
+              <span className="relative shrink-0 inline-flex">
+                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+                <CandyBadge count={1} size={14} style={{ position: 'absolute', top: -5, right: -5 }} />
+              </span>
+              <Link href={`/profile/${r.id}`} className="flex-1 min-w-0">
+                <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{r.username}</span>
+                <span className="block text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>Wants to be friends</span>
+              </Link>
+              {/* T2: Accept = green candy; T3: NEW FRIENDS! once accepted. */}
+              <CandyButton
+                size="sm"
+                icon="check"
+                onClick={() => { void acceptFriend(r.id); setNewFriend({ id: r.id, name: r.username, url: r.avatar_url, emoji: r.avatar_emoji }); }}
+                aria-label={`Accept ${r.username}`}
+                style={{ width: 32, padding: 0, ...GREEN_CANDY }}
+              />
+              <CandyButton size="sm" color="peach" icon={<X className="w-4 h-4" aria-hidden="true" />} onClick={() => declineFriend(r.id)} aria-label={`Decline ${r.username}`} style={{ width: 32, padding: 0 }} />
+            </div>
+          ))}
+          {outgoing.map((r, i) => (
+            <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(incoming.length + i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.12)}` }}>
+              <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+              <Link href={`/profile/${r.id}`} className="flex-1 min-w-0">
+                <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{r.username}</span>
+                <span className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
+                  {/* T1: request-pending rows wear the small glossy Pending pill. */}
+                  <PendingPill />
+                  {agoShort(r.requestedAt) && <span>waiting {agoShort(r.requestedAt)}</span>}
+                </span>
+              </Link>
+              <Pill
+                color="amber"
+                disabled={withinDay(r.remindedAt)}
+                label={`Remind ${r.username}`}
+                onClick={async () => {
+                  const res = await remindFriend(r.id);
+                  setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username}!`);
+                }}
+              >
+                {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
+              </Pill>
+              <CandyButton size="sm" color="peach" icon={<X className="w-4 h-4" aria-hidden="true" />} onClick={() => declineFriend(r.id)} aria-label={`Cancel request to ${r.username}`} style={{ width: 32, padding: 0 }} />
+            </div>
+          ))}
           {inviteNote && (
-            <p className="text-xs font-extrabold cursor-pointer px-1" style={{ color: FR.label }} onClick={() => setInviteNote(null)}>{inviteNote}</p>
+            <p className="text-xs font-extrabold cursor-pointer px-3 pb-2.5" style={{ color: FR_LOOK.rowSub }} onClick={() => setInviteNote(null)} role="status">{inviteNote}</p>
           )}
-        </>
+        </FrCard>
       )}
 
       {/* 8. MOMENTS */}
@@ -736,68 +835,102 @@ export function FriendsPanel() {
         }}
       />
 
-      {/* 9. Add by username + share invite link */}
-      <SectionLabel><Users className="w-3.5 h-3.5" /> Add a friend</SectionLabel>
-      <div className="p-3 space-y-2.5" style={cardStyle}>
-        <div className="flex items-center gap-2">
-          <input
-            ref={addRef}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            placeholder="Add by username"
-            aria-label="Add by username"
-            className="flex-1 min-w-0 px-3 py-2 text-[13px] font-bold outline-none"
-            style={{ background: '#f8fafc', borderRadius: 10, color: FR.text }}
-          />
-          <button
-            onClick={handleAdd}
-            disabled={sending || !username.trim()}
-            aria-label="Send friend request"
-            className="px-4 py-2 rounded-full text-[12px] font-black text-white disabled:opacity-50 flex items-center gap-1.5"
-            style={{ background: FR.solid }}
-          >
-            <Icon3D name="add-friend" size={17} /> ADD
-          </button>
-        </div>
-        {suggestions.length > 0 && (
-          <div className="space-y-1">
-            {suggestions.map((u) => (
-              <button
-                key={u.id}
-                onClick={async () => {
-                  if (sending) return;
-                  setSending(true);
-                  setSuggestions([]);
-                  try {
-                    const r = await requestFriend({ addresseeId: u.id });
-                    if ('error' in r) setNote(r.error);
-                    else {
-                      setNote(r.status === 'accepted' ? 'You’re now friends! 🎉' : `Request sent to ${u.username} 🤝`);
-                      setUsername('');
-                    }
-                  } finally {
-                    setSending(false);
-                  }
-                }}
-                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-left hover:opacity-80 transition-opacity"
-                style={{ background: '#f8f7ff' }}
-              >
-                <FriendAvatar name={u.username} url={u.avatar_url} emoji={u.avatar_emoji} size={30} />
-                <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: FR.text }}>{u.username}</span>
-                <span className="text-[10px] font-bold" style={{ color: FR.label }}>Lvl {u.level}</span>
-                <Icon3D name="add-friend" size={17} />
-              </button>
-            ))}
+      {/* T1: a request just sent — the invite-sent card (Send another / Done). */}
+      {sentTo && (
+        <InviteSentCard
+          name={sentTo}
+          note="They'll see your request in their Friends tab."
+          onSendAnother={() => { setSentTo(null); jumpToAdd(); }}
+          onDone={() => setSentTo(null)}
+        />
+      )}
+
+      {/* 9. ADD A FRIEND (the add-friend window, G5): by username + the share link,
+          with I reaching out (a pose, not the Friends host — A7). */}
+      <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.bannerBar}>
+        <div className="flex flex-col gap-2.5" style={{ padding: '10px 14px 12px' }}>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <h2 className="m-0 flex items-center gap-1.5 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.bannerClock }}>
+                <Users className="w-3.5 h-3.5" aria-hidden="true" /> Add a friend
+              </h2>
+              <p className="m-0 mt-1 text-[12px] font-bold" style={{ color: FR_LOOK.bannerSub }}>
+                Find them by username, or send your link.
+              </p>
+            </div>
+            <Image
+              src={artSrc(ADD_POSE)}
+              alt=""
+              aria-hidden
+              width={addW}
+              height={addH}
+              loading="lazy"
+              draggable={false}
+              className="shrink-0 pointer-events-none select-none"
+              style={{ width: 64, height: 64, objectFit: 'contain', marginTop: -6, marginBottom: -8 }}
+            />
           </div>
-        )}
-        <button
-          onClick={shareInvite}
-          className="flex items-center gap-1.5 text-[11px] font-black hover:opacity-80 transition-opacity"
-          style={{ color: FR.mid }}
-        >
-          <Send className="w-3.5 h-3.5" /> Share invite link
-        </button>
+          <div className="flex items-center gap-2">
+            <input
+              ref={addRef}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              placeholder="Add by username"
+              aria-label="Add by username"
+              className="flex-1 min-w-0 px-3 text-[13px] font-bold outline-none"
+              style={{ height: 36, background: softMix(FR_LOOK.pink, 0.05), border: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: 12, color: FR_LOOK.ink }}
+            />
+            <CandyButton
+              size="sm"
+              color="pink"
+              icon={<Icon3D name="add-friend" size={16} />}
+              onClick={handleAdd}
+              disabled={sending || !username.trim()}
+              aria-label="Send friend request"
+              className="shrink-0"
+            >
+              Add
+            </CandyButton>
+          </div>
+          {suggestions.length > 0 && (
+            <div className="space-y-1">
+              {suggestions.map((u) => (
+                <button
+                  key={u.id}
+                  onClick={async () => {
+                    if (sending) return;
+                    setSending(true);
+                    setSuggestions([]);
+                    try {
+                      const r = await requestFriend({ addresseeId: u.id });
+                      if ('error' in r) setNote(r.error);
+                      else {
+                        if (r.status === 'accepted') setNewFriend({ id: u.id, name: u.username, url: u.avatar_url, emoji: u.avatar_emoji });
+                        else setSentTo(`@${u.username}`);
+                        setUsername('');
+                      }
+                    } finally {
+                      setSending(false);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2.5 px-2 py-1.5 text-left"
+                  style={{ background: softMix(FR_LOOK.lavender, 0.1), border: `1.5px solid ${softMix(FR_LOOK.lavender, 0.26)}`, borderRadius: 12 }}
+                >
+                  <FriendAvatar name={u.username} url={u.avatar_url} emoji={u.avatar_emoji} size={30} />
+                  <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: FR_LOOK.ink }}>{u.username}</span>
+                  <LevelBadge level={u.level} size={18} numberSize={11} numberClassName="" />
+                  <Icon3D name="add-friend" size={17} />
+                </button>
+              ))}
+            </div>
+          )}
+          <div>
+            <CandyButton size="sm" color="purple" icon="share" onClick={shareInvite}>Share invite link</CandyButton>
+          </div>
+        </div>
+      </FrCard>
+      </div>
       </div>
 
       {/* Sheets + modals */}
@@ -828,59 +961,91 @@ export function FriendsPanel() {
       {tauntTarget && (
         <div
           className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(15,23,42,0.45)' }}
+          style={{ background: 'rgba(42,22,80,0.45)' }}
           onClick={() => { setTauntTarget(null); setTauntStatus(null); }}
         >
-          <div className="w-full max-w-sm overflow-hidden" style={{ background: '#ffffff', borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Nudge ${tauntTarget.username}`}
+            className="w-full max-w-sm overflow-hidden"
+            style={frSurface(FR_LOOK.pink, { share: 0.08 })}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div aria-hidden="true" style={frBar(FR_LOOK.bannerBar)} />
             <div className="px-4 py-3">
-              <p className="text-[11px] font-black uppercase" style={{ color: FR.label, letterSpacing: 1.2 }}>Nudge {tauntTarget.username}</p>
+              <p className="text-[11px] font-black uppercase" style={{ color: FR_LOOK.bannerClock, letterSpacing: 1.2 }}>Nudge {tauntTarget.username}</p>
             </div>
             {tauntStatus ? (
-              <div className="p-6 text-center text-sm font-extrabold" style={{ color: FR.text }}>{tauntStatus}</div>
+              <div className="p-6 text-center text-sm font-extrabold" style={{ color: FR_LOOK.ink }} role="status">{tauntStatus}</div>
             ) : (
               <div>
-                {FRIEND_TAUNTS.map((t) => (
+                {FRIEND_TAUNTS.map((t, i) => (
                   <button
                     key={t.id}
                     onClick={() => fireTaunt(t.id)}
-                    className="w-full text-left px-4 py-3 text-xs font-extrabold transition-colors hover:opacity-80"
-                    style={{ color: FR.text, borderTop: '1px solid #f1f5f9' }}
+                    className="w-full text-left px-4 py-3 text-xs font-extrabold"
+                    style={{ color: FR_LOOK.ink, background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.14)}` }}
                   >
                     {t.text}
                   </button>
                 ))}
-                <button onClick={() => setTauntTarget(null)} className="w-full px-4 py-3 text-xs font-extrabold" style={{ color: FR.label, borderTop: '1px solid #f1f5f9' }}>
-                  Cancel
-                </button>
+                <div className="px-4 pt-3 pb-4" style={{ borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.14)}` }}>
+                  <CandyButton size="md" color="peach" block onClick={() => setTauntTarget(null)}>Cancel</CandyButton>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
 
+      {newFriend && (
+        <NewFriendsModal
+          me={{
+            name: profile?.username ?? 'You',
+            url: profile?.avatar_url ?? null,
+            emoji: (profile as { avatar_emoji?: string | null } | null)?.avatar_emoji ?? null,
+            accent: (profile as { accent_color?: string | null } | null)?.accent_color ?? null,
+          }}
+          friend={newFriend}
+          onChallenge={() => { const id = newFriend.id; setNewFriend(null); router.push(isProActive ? `/vs/friend?friend=${id}` : '/pro'); }}
+          onSeeFriends={() => setNewFriend(null)}
+          onClose={() => setNewFriend(null)}
+        />
+      )}
+
       {unfriendTarget && (
         <div
           className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(15,23,42,0.45)' }}
+          style={{ background: 'rgba(42,22,80,0.45)' }}
           onClick={() => setUnfriendTarget(null)}
         >
-          <div className="w-full max-w-sm overflow-hidden" style={{ background: '#ffffff', borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
-            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: FR.text }}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Unfriend ${unfriendTarget.username}`}
+            className="w-full max-w-sm overflow-hidden"
+            style={frSurface(FR_LOOK.lavender, { share: 0.08 })}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div aria-hidden="true" style={frBar(FR_LOOK.lavenderBar)} />
+            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: FR_LOOK.ink }}>
               Unfriend {unfriendTarget.username}? You can re-add them anytime.
             </p>
-            <div className="flex" style={{ borderTop: '1px solid #f1f5f9' }}>
-              <button onClick={() => setUnfriendTarget(null)} className="flex-1 px-4 py-3 text-xs font-extrabold" style={{ color: FR.label }}>Cancel</button>
-              <button
+            <div className="flex gap-2.5 px-4 pb-4">
+              <CandyButton size="md" color="peach" block onClick={() => setUnfriendTarget(null)}>Cancel</CandyButton>
+              <CandyButton
+                size="md"
+                block
+                style={DANGER}
                 onClick={async () => {
                   const f = unfriendTarget;
                   setUnfriendTarget(null);
                   await removeFriend(f.id);
                 }}
-                className="flex-1 px-4 py-3 text-xs font-black"
-                style={{ color: '#dc2626', borderLeft: '1px solid #f1f5f9' }}
               >
                 Unfriend
-              </button>
+              </CandyButton>
             </div>
           </div>
         </div>

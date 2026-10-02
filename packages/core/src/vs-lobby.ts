@@ -8,6 +8,8 @@
 // reach the SAME outcomes: the Swift and Kotlin ports assert against
 // vs-lobby-fixtures.json (scripts/gen-parity-fixtures.ts).
 
+import { BOT_CAST_IDS, botCastMember, canonicalBotId, type BotCastId } from './bot-cast';
+
 /** The nine VS modes in lobby-strip order (db keys). */
 export const VS_MODE_ORDER = ['DUEL', 'DUEL_6', 'DUEL_7', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'] as const;
 
@@ -151,13 +153,16 @@ export function challengeHeadline(outcome: 'win' | 'loss' | 'draw', from: string
 
 // ── The bot ladder ──────────────────────────────────────────────────────────
 
-/** Ladder order: Rook (easy) → Lexi (medium) → Nova (hard) → Adapt (matches you). */
-export const LADDER_BOTS = ['rook', 'lexi', 'nova', 'adapt'] as const;
+/**
+ * Ladder order (FINISH_SPEC D1, bot-cast.ts): Rip → Ivy → Ollie → Opal → Cosmo
+ * → Umi (adaptive) → Ozzy → Dewey → Scoot → Webster (the boss).
+ */
+export const LADDER_BOTS: readonly BotCastId[] = BOT_CAST_IDS;
 /** Wins in a row against the next bot that clear its rung. */
 export const LADDER_CLEAR_RUN = 3;
 
 export interface BotLadderState {
-  /** Rungs cleared, 0–4. */
+  /** Rungs cleared, 0–10. */
   cleared: number;
   /** Current wins in a row against the next bot (LADDER_BOTS[cleared]). */
   run: number;
@@ -167,11 +172,12 @@ export interface BotLadderState {
  * Fold one finished bot game into the ladder. Only games against the NEXT
  * bot count: a win adds to the run (three clear the rung), a loss resets the
  * run. Games against other bots (or the Bot of the Day / Beat your best)
- * leave the ladder alone.
+ * leave the ladder alone. Old ids (rook, lexi, nova, adapt) count as their
+ * cast replacement (canonicalBotId).
  */
 export function ladderAfterGame(s: BotLadderState, botId: string, won: boolean): BotLadderState {
   if (s.cleared >= LADDER_BOTS.length) return { cleared: LADDER_BOTS.length, run: 0 };
-  if (botId !== LADDER_BOTS[s.cleared]) return { ...s };
+  if (canonicalBotId(botId) !== LADDER_BOTS[s.cleared]) return { ...s };
   if (!won) return { cleared: s.cleared, run: 0 };
   const run = s.run + 1;
   return run >= LADDER_CLEAR_RUN ? { cleared: s.cleared + 1, run: 0 } : { cleared: s.cleared, run };
@@ -179,9 +185,9 @@ export function ladderAfterGame(s: BotLadderState, botId: string, won: boolean):
 
 export type RungState = 'cleared' | 'next' | 'locked';
 
-/** Each rung's state and its line ("Cleared", "Win 3 in a row to clear · 1 so far", "Clear Nova to unlock"). */
+/** Each rung's state and its line ("Cleared", "Win 3 in a row to clear · 1 so far", "Clear Rip to unlock"). */
 export function ladderRungs(s: BotLadderState): Array<{ id: string; state: RungState; line: string }> {
-  const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+  const name = (id: string) => botCastMember(id)?.name ?? id;
   return LADDER_BOTS.map((id, i) => {
     if (i < s.cleared) return { id, state: 'cleared' as const, line: 'Cleared' };
     if (i === s.cleared) return { id, state: 'next' as const, line: `Win ${LADDER_CLEAR_RUN} in a row to clear · ${s.run} so far` };

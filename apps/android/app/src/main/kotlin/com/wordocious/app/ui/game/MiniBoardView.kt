@@ -35,9 +35,8 @@ import com.wordocious.core.evaluateGuess
 /**
  * A compact board card used inside multi-board layouts (QuadWord/OctoWord/etc).
  * Matches the web's `MiniBoard` component precisely:
- *   - border-gray-200/white when PLAYING
- *   - border-green-400/bg-green-50 when WON, green ✓ badge top-right
- *   - border-red-400/bg-red-50 when LOST
+ *   - FINISH_SPEC L: a game tray (accent wash) when PLAYING, the stronger tint + ring
+ *     when active / zoomed, a purple wash when WON (purple ✓ badge top-right), slate when LOST
  *   - prefill rows at 75% opacity above the player rows
  *   - current guess shown in the next available row
  *   - tile flip animation on last submitted row (stagger 80ms/tile)
@@ -67,23 +66,15 @@ fun MiniBoardView(
     val isLost = board.status == GameStatus.LOST
     val isPlaying = board.status == GameStatus.PLAYING
 
-    // FINISH_SPEC A1 / B1: the board panel is frosted glass over the game wallpaper with a
-    // faint lilac line (never plain white); won = a soft lavender wash, lost = a soft rose.
-    val dark = WTheme.isDark
-    val borderColor = when {
-        active -> Color(0xFFFACC15)  // active board yellow border (spec)
-        isWon -> Color(0xFFA78BFA)
-        isLost -> Color(0xFFF87171)
-        dark -> WTheme.border
-        else -> Color(0x407C3AED)
-    }
-    val bgColor = when {
-        dark -> if (isWon) Color(0xFF2E1065).copy(alpha = 0.5f) else if (isLost) Color(0xFF450A0A).copy(alpha = 0.4f) else WTheme.surface.copy(alpha = 0.6f)
-        isWon -> Color(0xFFEFE6FF)
-        isLost -> Color(0xFFFDECEF)
-        // No locked tint: iOS conveys locked purely by the 0.6 dim that
-        // MultiBoardLayout applies.
-        else -> Color.White.copy(alpha = 0.45f)
+    // FINISH_SPEC L: each mini board is its own game tray (the game's accent wash, line,
+    // lip and gloss — never plain white); the active / zoomed board takes the stronger
+    // tint + ring, a solved board the purple wash, a failed one the slate wash.
+    val trayAccent = com.wordocious.app.ui.LocalGameTint.current ?: Color(0xFF7C3AED)
+    val trayState = when {
+        isWon -> TrayState.WON
+        isLost -> TrayState.LOST
+        active || isExpanded -> TrayState.ACTIVE
+        else -> TrayState.PLAYING
     }
 
     val prefills = board.prefilledGuesses ?: emptyList()
@@ -112,11 +103,11 @@ fun MiniBoardView(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(8.dp))
-                .background(bgColor)
-                .border(if (active) 2.dp else 1.5.dp, borderColor, RoundedCornerShape(8.dp))
                 .then(if (onClick != null) Modifier.clickableNoRippleBox(onClick) else Modifier)
-                .padding(4.dp),
+                .gameTray(
+                    trayAccent, trayState, corner = 12.dp,
+                    padding = androidx.compose.foundation.layout.PaddingValues(4.dp), shadow = !isExpanded,
+                ),
         ) {
         // Grid of rows filling height equally (like web `grid-template-rows: repeat(N, 1fr)`)
         Column(
@@ -222,14 +213,11 @@ fun MiniBoardView(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(y = (-5).dp)
-                    .size(18.dp)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(Color(0xFF8B5CF6)),
+                    .size(18.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                // lineHeight pinned: the inherited bodyLarge 24sp line box shoved
-                // the glyph below-center of an 18dp badge (same bug as the tiles).
-                Text("✓", color = Color.White, fontSize = 10.sp, lineHeight = 10.sp, fontWeight = FontWeight.Black)
+                // AL addendum 2: the 3D check badge (its own disc), not a ✓ glyph on a purple dot.
+                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 18.dp)
             }
         }
     }

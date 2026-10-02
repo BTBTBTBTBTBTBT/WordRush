@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Swords, X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import Link from 'next/link';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { cardBarStyle, softCard } from '@/lib/soft-surface';
+import { poseSrc } from '@/lib/art';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
@@ -43,18 +45,19 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
         >
           <div
             ref={focusRef}
-            className="w-full max-w-sm p-6 text-center animate-modal-content"
-            style={{
-              background: 'var(--color-surface)',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-            }}
+            className="w-full max-w-sm overflow-hidden text-center animate-modal-content"
+            // A1: a tinted purple sheet with the game-card top bar (dark mode keeps its dark surface).
+            style={{ ...softCard('#7c3aed', { radius: 22 }), boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
             onClick={e => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Daily VS limit reached"
           >
-            <Swords className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--color-text-muted)' }} />
+            <div aria-hidden="true" style={cardBarStyle('#7c3aed')} />
+            <div className="p-6 pt-4">
+            {/* R with cocoa: rest up, the next free match is tomorrow (decorative). */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={poseSrc('r', 'cocoa')} alt="" aria-hidden="true" width={84} height={84} draggable={false} className="mx-auto mb-2" style={{ width: 84, height: 84, objectFit: 'contain' }} />
             <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>
               Daily VS Used
             </h2>
@@ -63,34 +66,19 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
             </p>
 
             <div
-              className="inline-block px-4 py-2 rounded-lg mb-4"
-              style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border)' }}
+              className="inline-flex items-baseline gap-1.5 px-4 py-2 mb-4"
+              style={softCard('#7c3aed', { radius: 999, shadow: false })}
             >
-              <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>
-                Resets in {countdown}
-              </span>
+              <span className="text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>Resets in</span>
+              <SoftNum size={16}>{countdown}</SoftNum>
             </div>
 
-            <Link href="/pro" onClick={onClose}>
-              <button
-                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d mb-3"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  boxShadow: '0 4px 0 #92400e',
-                }}
-              >
-                <Icon3D name="crown" size={16} inline className="mr-1" />
-                Upgrade to Pro
-              </button>
-            </Link>
+            <CandyLink href="/pro" onClick={onClose} color="amber" size="lg" block icon={<Icon3D name="crown" size={20} />} className="mb-3">
+              Upgrade to Pro
+            </CandyLink>
 
-            <button
-              onClick={onClose}
-              className="text-xs font-bold"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              Come back tomorrow
-            </button>
+            <CandyButton color="peach" size="sm" onClick={onClose}>Come back tomorrow</CandyButton>
+            </div>
           </div>
         </div>
       )}

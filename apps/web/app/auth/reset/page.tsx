@@ -6,6 +6,9 @@ import { Suspense } from 'react';
 import { Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
+import { CandyButton } from '@/components/ui/candy-button';
+import { barCard, softInput, softNotice } from '@/components/ui/soft-popup';
+import { softBackground } from '@/lib/soft-surface';
 
 // Recovery landing for the password-reset email. Supabase links here either
 // with ?code= (PKCE) or with tokens in the URL hash (implicit); we handle both:
@@ -76,7 +79,7 @@ function ResetPasswordInner() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center px-6"
-      style={{ backgroundColor: 'var(--color-bg)' }}
+      style={{ background: softBackground('#7c3aed', 0.07) }}
     >
       <div className="w-full max-w-sm space-y-6">
         {/* Branding — identical to LoginScreen */}
@@ -98,12 +101,7 @@ function ResetPasswordInner() {
 
         <div
           className="p-6 space-y-4"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid #c4b5fd',
-            borderRadius: '20px',
-            boxShadow: '0 4px 24px rgba(124, 58, 237, 0.08)',
-          }}
+          style={barCard()}
         >
           <h2 className="text-lg font-black text-center" style={{ color: 'var(--color-text)' }}>
             Set a New Password
@@ -117,26 +115,18 @@ function ResetPasswordInner() {
             <div className="space-y-3">
               <div
                 className="p-3 rounded-xl text-xs font-bold"
-                style={{ background: 'var(--color-loss-bg)', border: '1px solid #fecaca', color: 'var(--color-loss-text)' }}
+                style={softNotice('error')}
               >
                 {linkError}
               </div>
-              <button
-                type="button"
-                onClick={() => router.replace('/')}
-                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  boxShadow: '0 4px 0 #4c1d95',
-                }}
-              >
+              <CandyButton color="purple" size="lg" block type="button" onClick={() => router.replace('/')}>
                 Back to Wordocious
-              </button>
+              </CandyButton>
             </div>
           ) : done ? (
             <div
               className="p-3 rounded-xl text-xs font-bold text-center"
-              style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857' }}
+              style={softNotice('success')}
             >
               Password updated! Taking you to the game...
             </div>
@@ -156,11 +146,7 @@ function ResetPasswordInner() {
                   minLength={6}
                   autoFocus
                   className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={{
-                    color: 'var(--color-text)',
-                    background: 'var(--color-bg)',
-                    border: '1.5px solid var(--color-border)',
-                  }}
+                  style={softInput()}
                 />
               </div>
 
@@ -177,34 +163,22 @@ function ResetPasswordInner() {
                   required
                   minLength={6}
                   className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={{
-                    color: 'var(--color-text)',
-                    background: 'var(--color-bg)',
-                    border: '1.5px solid var(--color-border)',
-                  }}
+                  style={softInput()}
                 />
               </div>
 
               {error && (
                 <div
                   className="p-3 rounded-xl text-xs font-bold"
-                  style={{ background: 'var(--color-loss-bg)', border: '1px solid #fecaca', color: 'var(--color-loss-text)' }}
+                  style={softNotice('error')}
                 >
                   {error}
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  boxShadow: '0 4px 0 #4c1d95',
-                }}
-              >
+              <CandyButton color="purple" size="lg" block type="submit" disabled={loading}>
                 {loading ? 'Saving...' : 'Save New Password'}
-              </button>
+              </CandyButton>
             </form>
           )}
         </div>

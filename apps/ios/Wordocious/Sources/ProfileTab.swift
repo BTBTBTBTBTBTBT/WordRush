@@ -4,16 +4,19 @@ import WordociousCore
 /// STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
 /// and Records merge into one Stats tab that "flows like butter"). Port of
 /// app/stats/page.tsx:
-///   player card → StatsRail → ONE page below it, chosen from the rail:
+///   STATS headline → player card → the game picker window (GamePickerCard,
+///   FINISH_SPEC §C3 — the Leaderboard's picker) → ONE page below it:
 ///   Today (landing, TodayCard + the five newest games) · a game page per
 ///   daily mode (Solo | VS toggle where a live VS board exists, today's line,
 ///   the §18 registry stats) · All-time (snapshot hero, Your Records, every
 ///   chart, Signature, Standing trend, Progression, VS — record + rivalries +
 ///   Bots + a word-game board — then Recent Matches).
-/// A horizontal swipe on the page moves one rail chip; hold Today (or the grid
-/// button) for every game at once. Zero new fetches beyond the old page except
+/// The Sweep tile opens a Sweep page (streaks + sweep records). A horizontal
+/// swipe on the page moves one step through the picker. Zero new fetches beyond the old page except
 /// today's VS result, the sweep streak and today's standing.
 struct ProfileTab: View {
+    /// §AJ: a footer tap pops this tab's stack (token).
+    @ObservedObject private var tabRouter = TabRouterModel.shared
     @EnvironmentObject private var auth: AuthService
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
@@ -57,6 +60,10 @@ struct ProfileTab: View {
     /// its charts or show the Bots note up top. Web `vsTab`.
     @State private var vsSectionTab = "vs"
     @State private var unlockedAchievements: Set<String> = []
+    /// §V1: key → `unlocked_at` (the date under each unlocked badge).
+    @State private var achievementDates: [String: String] = [:]
+    /// §V1: the badge tapped in the grid (its detail sheet).
+    @State private var achievementDetail: AchievementDef?
     @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
     @State private var showAllMedals = false
@@ -110,8 +117,26 @@ struct ProfileTab: View {
     private var visibleMore: [HomeMode] {
         moreModes.filter { $0.dailyEligible && $0.dbKey != nil && FlagsService.shared.isOn($0.flagKey) }
     }
-    private var railItems: [StatsRailItem] {
-        buildStatsRailItems(sweep: dailyTiles, more: visibleMore, byMode: completions.byMode)
+    /// FINISH_SPEC §C3: the picker window's order — Today, All-time, the WORDOCIOUS
+    /// row (the same filter `GamePickerCard` draws), the Sweep tile, then the PUZZLES
+    /// row. The horizontal swipe walks it one step at a time.
+    private var pickerOrder: [String] {
+        let flags = FlagsService.shared
+        let words = homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }.compactMap(\.dbKey)
+        let puzzles: [String] = homeModes.contains(where: { $0.id == "more" && flags.isOn($0.flagKey) })
+            ? moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) }).compactMap(\.dbKey) : []
+        return [StatsRailKey.today, StatsRailKey.all] + words + [GamePicker.sweep] + puzzles
+    }
+    /// Today's W / L per game for the picker tiles (completed → won, as the old rail dot).
+    private var todayResults: [String: Bool] { completions.byMode.mapValues { $0.completed } }
+    /// The picker header's label: what the page below shows.
+    private var pickerTitle: String {
+        switch selected {
+        case StatsRailKey.today: return "Today"
+        case StatsRailKey.all: return "All-time"
+        case GamePicker.sweep: return "Daily Sweep"
+        default: return selectedMeta?.title ?? "Today"
+        }
     }
     /// Word-engine games and ProperNoundle have live VS boards; the More Games titles do not.
     private func hasVs(_ dbKey: String) -> Bool {
@@ -143,7 +168,7 @@ struct ProfileTab: View {
         }
         withTransaction(t) {
             selected = key
-            if key != StatsRailKey.all && key != StatsRailKey.today && !hasVs(key) {
+            if key != StatsRailKey.all && key != StatsRailKey.today && key != GamePicker.sweep && !hasVs(key) {
                 activeTab = "solo"
             }
         }
@@ -161,19 +186,20 @@ struct ProfileTab: View {
         withTransaction(tx) { vsSectionTab = t }
     }
 
-    /// Swipe on the page moves one chip along the rail (founder: no 19-page
+    /// Swipe on the page moves one step through the picker (founder: no 19-page
     /// swipe — but a swipe between neighbors is the natural gesture).
     private func step(_ delta: Int) {
-        let items = railItems
-        guard let i = items.firstIndex(where: { $0.key == selected }) else { return }
+        let items = pickerOrder
+        guard let i = items.firstIndex(of: selected) else { return }
         let j = i + delta
         guard items.indices.contains(j) else { return }
         Haptics.tap()
-        select(items[j].key)
+        select(items[j])
     }
 
     var body: some View {
         NavigationStack {
+            Group {
             ZStack {
                 PageBackground(tint: .stats)
                 VStack(spacing: 0) {
@@ -190,6 +216,7 @@ struct ProfileTab: View {
                         signedOut
                     }
                 }
+                .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
             }
             .environment(\.pageTint, .stats)
             .toolbar(.hidden, for: .navigationBar)
@@ -241,7 +268,7 @@ struct ProfileTab: View {
                     async let sweepF = MatchStatsService.dailySweepStats()
                     async let standingF = StatsDeepService.todayDailyStanding()
                     async let statsF = UserStatsService.fetch(userId: uid)
-                    async let achievementsF = AchievementService.fetchUnlocked(userId: uid)
+                    async let achievementsF = AchievementService.fetchUnlockedDates(userId: uid)
                     async let medalsF = MedalsService.recent(userId: uid, limit: 120)
                     async let weekF = MatchStatsService.activityCalendar(days: 7)
                     async let socialF = ProfileExtras.socialLinks(userId: uid)
@@ -273,7 +300,7 @@ struct ProfileTab: View {
                     guard !Task.isCancelled else { return }
                     var t = Transaction(); t.disablesAnimations = true
                     withTransaction(t) {
-                        statRows = fStats; unlockedAchievements = fAch; medals = fMedals; socialLinks = fSocial
+                        statRows = fStats; unlockedAchievements = Set(fAch.keys); achievementDates = fAch; medals = fMedals; socialLinks = fSocial
                         opponentNames = fNames; setRecent(fMatches)
                         gamesThisWeek = fWeekTotal; sevenDayTotal = fSeven
                         vsDailyWon = fVs; sweepStats = fSweep; standing = fStanding; yours = fYours
@@ -287,6 +314,7 @@ struct ProfileTab: View {
                     memo.set("standing:\(uid)", standing)
                     memo.set("statRows:\(uid)", statRows)
                     memo.set("achievements:\(uid)", unlockedAchievements)
+                    memo.set("achievementDates:\(uid)", achievementDates)
                     memo.set("medals:\(uid)", medals)
                     memo.set("socialLinks:\(uid)", socialLinks)
                     memo.set("recentMatches:\(uid)", recentMatches)
@@ -301,7 +329,11 @@ struct ProfileTab: View {
             // Banner inside the NavigationStack so the ScrollView insets for it
             // (the Sign-out button stays scrollable above the banner) and it
             // doesn't leak onto pushed detail views.
+                    }
+            // §AJ: this tab's root (a push over it is tracked) — a footer tap pops it.
+            .tabRootTracked(.stats)
         }
+        .id(TabRouterModel.shared.token(.stats))
     }
 
     /// Paint from the session memo in one pass (no animation). Cheap and synchronous,
@@ -312,6 +344,7 @@ struct ProfileTab: View {
         withTransaction(t) {
             if let v: [UserStatRow] = memo.get("statRows:\(uid)") { statRows = v }
             if let v: Set<String> = memo.get("achievements:\(uid)") { unlockedAchievements = v }
+            if let v: [String: String] = memo.get("achievementDates:\(uid)") { achievementDates = v }
             if let v: [MedalRow] = memo.get("medals:\(uid)") { medals = v }
             if let v: [String: String] = memo.get("socialLinks:\(uid)") { socialLinks = v }
             if let v: [PublicProfileService.RecentMatch] = memo.get("recentMatches:\(uid)") {
@@ -347,7 +380,8 @@ struct ProfileTab: View {
         VStack(spacing: 16) {
             Image(systemName: "person.crop.circle").font(.system(size: 64)).foregroundStyle(Theme.textMuted)
             Text("Sign in to track your stats").font(Brand.headline()).foregroundStyle(Theme.textPrimary)
-            Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
+            Button { showAuth = true } label: { CandyLabel(title: "Sign in") }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
         }
         .sheet(isPresented: $showAuth) { AuthView() }
     }
@@ -362,12 +396,14 @@ struct ProfileTab: View {
             VStack(spacing: 16) {
                 statsTitle
                 header(p)
-                StatsRail(items: railItems, selected: $selected, onSelect: select)
+                gamePicker
                 Group {
                     if selected == StatsRailKey.today {
                         todayPage
                     } else if selected == StatsRailKey.all {
                         allTimePage(p)
+                    } else if selected == GamePicker.sweep {
+                        sweepPage
                     } else if let m = selectedMeta, let gm = GameMode(rawValue: selected) {
                         gamePage(p, meta: m, mode: gm)
                     } else {
@@ -425,6 +461,46 @@ struct ProfileTab: View {
         }
     }
 
+    /// The Sweep tile's page (FINISH_SPEC §C2b / §C3): today's sweep progress and the
+    /// sweep + flawless runs as tinted tiles, then the Daily Sweeps and Puzzles Sweeps
+    /// record cards and the daily points trend (sweep / flawless days marked). All
+    /// from data the page already holds (no new fetches).
+    @ViewBuilder private var sweepPage: some View {
+        let done = completions.completedCount
+        let total = DailyCompletionsStore.totalDailyModes
+        HStack(spacing: 10) {
+            StatsTile(label: "Today", value: "\(done) / \(total)",
+                      sub: completions.flawless ? "Flawless victory!" : (completions.allDone ? "Daily Sweep!" : "dailies played"),
+                      accent: StatsTileColor.blue.accent, ink: StatsTileColor.blue.ink) {
+                Icon3D(.badgeCheck, size: 22)
+            }
+            StatsTile(label: "Sweep streak", value: "\(sweepStats.currentSweepStreak)",
+                      sub: sweepStats.currentSweepStreak == 1 ? "day in a row" : "days in a row",
+                      accent: StatsTileColor.gold.accent, ink: StatsTileColor.gold.ink) {
+                if ArtAsset.exists("game-sweep") { GameArtImage(asset: "game-sweep", size: 22) }
+                else { Icon3D(.flame, size: 22) }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 10) {
+            StatsTile(label: "Flawless streak", value: "\(sweepStats.currentFlawlessStreak)",
+                      sub: "best \(sweepStats.bestFlawlessStreak)",
+                      accent: StatsTileColor.pink.accent, ink: StatsTileColor.pink.ink) {
+                Icon3D(.trophy, size: 22)
+            }
+            StatsTile(label: "Puzzles streak", value: "\(puzzleStreaks.sweep)",
+                      sub: puzzleStreaks.flawless >= 2 ? "\(puzzleStreaks.flawless) flawless" : (puzzleStreaks.sweep == 1 ? "day" : "days"),
+                      accent: StatsTileColor.purple.accent, ink: StatsTileColor.purple.ink) {
+                Icon3D(.flame, size: 22)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        SectionHeader("Your Records", accent: Color(hex: 0xD97706))
+        SweepRecordsCard(sweep: sweepStats, sweepRankToday: yours.sweepRankToday, sweepRankAllTime: yours.sweepRankAllTime)
+        PuzzleSweepsCard(totals: puzzleTotals)
+        DailyPointsChartCard(puzzleKeys: visibleMore.compactMap(\.dbKey))
+    }
+
     /// A game page: Solo | VS toggle (live boards only), today's line, then the
     /// EXISTING per-mode stats content (registry cells, dashboard, deep insights).
     @ViewBuilder private func gamePage(_ p: Profile, meta m: HomeMode, mode gm: GameMode) -> some View {
@@ -453,15 +529,14 @@ struct ProfileTab: View {
         if ModeGen.byDbKey(mode.rawValue)?.group == "more",
            let agg = (modeCells[key] ?? StatsMemo.shared.get(key))?.aggregates, agg.games > 0 {
             HStack(spacing: 8) {
-                Text("HINTS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(accent)
+                FinishLabel("Hints", color: accent.mixed(over: .black, 0.75))
                 Text("\(WordociousCore.ModeStats.avg1(agg.hintsTotal, agg.games)) per game · \(agg.noHintWins) no-hint \(agg.noHintWins == 1 ? "win" : "wins")")
-                    .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
+                    .font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.heading)
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+            .padding(.horizontal, 12).padding(.top, 11).padding(.bottom, 8)
+            .tintedPill(accent, radius: 12)
         }
     }
 
@@ -479,19 +554,23 @@ struct ProfileTab: View {
             s += " · \(f.string(from: NSNumber(value: pts)) ?? "\(pts)") pts"
             return s
         }()
-        return Button { openDaily(m) } label: {
-            HStack(spacing: 12) {
-                Text("TODAY").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(m.accent)
-                Text(text).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+        let ink = Theme.isDark ? Theme.textSecondary : m.accent.mixed(over: .black, 0.75)
+        return Button { Haptics.tap(); openDaily(m) } label: {
+            HStack(spacing: 10) {
+                FinishLabel("Today", color: ink)
+                Text(text).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)
                     .lineLimit(1).minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(today == nil ? "Play →" : "Open →").font(Brand.font(11, .black)).foregroundStyle(m.accent)
+                HStack(spacing: 3) {
+                    Text(today == nil ? "Play" : "Open").font(Brand.font(11, .black))
+                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .black))
+                }
+                .foregroundStyle(ink)
             }
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 14).fill(m.accent.opacity(0.06)))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(m.accent.opacity(0.33), lineWidth: 1.5))
+            .padding(.horizontal, 14).padding(.top, 13).padding(.bottom, 10)
+            .tintedPill(m.accent, radius: 14)
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(.squish)
     }
 
     /// All-time's VS section scroll anchor (select(.vs) lands here).
@@ -523,23 +602,16 @@ struct ProfileTab: View {
                                            selected: active, side: 56) { chip in
                                 ModeIconView(icon: m.icon, accent: m.accent, box: chip)
                             }
-                        }.buttonStyle(PressableStyle())
+                        }.buttonStyle(.squish)
+                        .accessibilityAddTraits(active ? .isSelected : [])
                     }
                 }
                 .padding(.horizontal, 4).padding(.vertical, 6)
             }
-            HStack(spacing: 4) {
-                ForEach(["vs", "vs_cpu"], id: \.self) { t in
-                    let active = tab == t
-                    Button { setVsSectionTab(t) } label: {
-                        Text(t == "vs" ? "People" : "Bots").font(Brand.font(10, .heavy))
-                            .foregroundStyle(active ? Theme.primary : Theme.textMuted)
-                            .padding(.horizontal, 10).padding(.vertical, 5)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary.opacity(0.08) : Theme.surface))
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-                    }.buttonStyle(PressableStyle())
-                }
-            }
+            // People | Bots — the soft segmented toggle (§A9 squish per option).
+            SoftSegmented(options: [(key: "vs", label: "People"), (key: "vs_cpu", label: "Bots")],
+                          selection: Binding(get: { vsSectionTab }, set: { setVsSectionTab($0) }),
+                          accent: Color(hex: 0xEC4899), accessibilityLabel: "People or bots")
         }
         // Keyed on the game so a board-chip tap builds fresh cards that paint the new game's memo
         // in their first frame (founder, 2026-09-29: the page id doesn't carry vsMode, so the charts
@@ -557,7 +629,7 @@ struct ProfileTab: View {
         // have no data to draw from, so say so instead of blanks.
         if tab == "vs_cpu" {
             Text("Bot games record totals only — per-game charts track Solo and People matches.")
-                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                 .frame(maxWidth: .infinity).multilineTextAlignment(.center)
                 .padding(.vertical, 8)
         }
@@ -632,8 +704,7 @@ struct ProfileTab: View {
                 }
             }
             .tint(Theme.primary).padding(14)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .statsCard()
 
             Button { Task { await auth.signOut() } } label: {
                 HStack(spacing: 12) {
@@ -642,8 +713,7 @@ struct ProfileTab: View {
                     Spacer()
                 }
                 .padding(16)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                .statsCard()
             }.buttonStyle(.squish)
 
             Button(role: .destructive) { showDeleteConfirm = true } label: {
@@ -723,11 +793,39 @@ struct ProfileTab: View {
         return Array(out.prefix(2))
     }
 
-    /// The page title as the whole-cast art (ART_SPEC §2: `art-title-stats`, which
-    /// carries its own cast, so D's host spot is gone), centered at the content width.
+    /// FINISH_SPEC §A6: the STATS title is a headline — the whole-cast art
+    /// (`art-title-stats`) full width, edge to edge (bleeds past the page's 12-pt
+    /// padding), right on the wallpaper: no box, no float.
     private var statsTitle: some View {
-        ArtTitle(.stats)
-            .frame(maxWidth: .infinity)
+        PageHeadline(.stats, bleed: 12)
+    }
+
+    // MARK: Game picker (§C3)
+
+    /// The page's picker accent (blue) and row-label ink.
+    private static let pickerAccent = Color(hex: 0x2563EB)
+    private static let pickerInk = Color(hex: 0x2456A8)
+
+    /// FINISH_SPEC §C3: the Stats game picker IS the Leaderboard picker — the shared
+    /// `GamePickerCard` (every game visible, WORDOCIOUS row + the Sweep tile, PUZZLES
+    /// row; today's W / L on each tile). Its header row carries the Today | All-time
+    /// toggle; while a game (or the Sweep tile) is picked neither segment is lit.
+    private var gamePicker: some View {
+        GamePickerCard(selection: selected, accent: Self.pickerAccent, ink: Self.pickerInk,
+                       results: todayResults,
+                       sweepResult: completions.allDone ? true : nil,
+                       onSelect: { select($0) }) {
+            HStack(spacing: 8) {
+                FinishLabel(pickerTitle, color: Self.pickerInk)
+                Spacer(minLength: 8)
+                SoftSegmented(options: [(key: StatsRailKey.today, label: "Today"), (key: StatsRailKey.all, label: "All-time")],
+                              selection: Binding(
+                                get: { selected == StatsRailKey.today || selected == StatsRailKey.all ? selected : "" },
+                                set: { select($0) }),
+                              accent: Self.pickerAccent,
+                              accessibilityLabel: "Today or all-time")
+            }
+        }
     }
 
     // MARK: Player card
@@ -744,61 +842,68 @@ struct ProfileTab: View {
         let toNext = 1000 - (p.xp % 1000)
         let hasSocial = socialLinks.values.contains { !$0.isEmpty }
         let showFooter = hasSocial || p.isPrivate == true || !auth.isProActive || auth.profile?.isAdmin == true
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                AvatarView(url: p.avatarUrl, username: p.username, size: 64, accentHex: p.accentColor, emoji: p.avatarEmoji)
-                VStack(alignment: .leading, spacing: 3) {
+        let dark = Theme.isDark
+        let levelInk = dark ? Theme.textSecondary : Color(hex: 0x5B3C96)
+        // FINISH_SPEC §C3: the player card is lavender with the purple → pink top bar,
+        // the letter-tile avatar (a photo when set), name + "Playing since", the level
+        // line and a gradient level bar.
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive)
+                VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        if ProfileAccent.isCustom(p.accentColor) {
-                            Text(p.username).font(Brand.title(22)).foregroundStyle(ProfileAccent.color(p.accentColor))
-                                .lineLimit(1).minimumScaleFactor(0.7)
-                        } else {
-                            Text(p.username).font(Brand.title(22))
-                                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
-                                .lineLimit(1).minimumScaleFactor(0.7)
-                        }
-                        if auth.isProActive {
-                            Text("PRO").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(.white)
-                                .padding(.horizontal, 8).padding(.vertical, 2)
-                                .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                        }
+                        Text(p.username).font(Brand.font(20, .black))
+                            .foregroundStyle(ProfileAccent.isCustom(p.accentColor) ? ProfileAccent.color(p.accentColor) : FinishInk.heading)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        // §V3 / §AA4: Pro members wear the level-pro mark (no PRO pill).
+                        if auth.isProActive { ProMark(size: 22) }
                     }
                     if let since = memberSince(p) {
-                        Text("Playing since \(since)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        Text("Playing since \(since)").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                            .lineLimit(1).minimumScaleFactor(0.8)
                     }
-                    ProfilePersonalizationRow(profile: p, leading: true).padding(.top, 3)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                // Quiet icon actions — the same 32 pt circles as the header's ? and ⚙.
-                HStack(spacing: 6) {
-                    iconCircle("pencil", label: "Edit profile") { showEditProfile = true }
-                    iconCircle("square.and.arrow.up", label: "Share profile card") { shareProfile(p) }
+                // §A3: bare icon controls (no bubbles) that squish.
+                HStack(spacing: 0) {
+                    Button { Haptics.tap(); showEditProfile = true } label: {
+                        Image(systemName: "pencil").font(.system(size: 18, weight: .black))
+                            .foregroundStyle(dark ? Theme.textSecondary : FinishInk.deepPurple)
+                            .frame(width: 40, height: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.squishIcon)
+                    .accessibilityLabel("Edit profile")
+                    Button { Haptics.tap(); shareProfile(p) } label: {
+                        Icon3D(.share, size: 23).frame(width: 40, height: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.squishIcon)
+                    .accessibilityLabel("Share profile card")
                 }
                 .sheet(isPresented: $showEditProfile) { EditProfileView() }
             }
-            // Level row spans the card: pill · bar · XP to next.
-            HStack(spacing: 10) {
-                HStack(spacing: 4) {
-                    Image(systemName: "star.fill").font(.system(size: 10))
-                    Text("Lvl \(p.level)").font(Brand.font(11, .heavy))
-                    Text("·").opacity(0.7)
-                    Text(tier.label).font(Brand.font(11, .heavy))
+            // Featured title, favorite game and bio (whatever the player set).
+            ProfilePersonalizationRow(profile: p, leading: true)
+            // The level line + the gradient level bar (#a855f7 → #ec4899 on a 14% purple track).
+            VStack(spacing: 6) {
+                HStack {
+                    // §V3: the tier badge + the level in soft numbers.
+                    LevelBadge(level: p.level, size: 30, showTier: true)
+                    Spacer()
+                    Text("\(p.xp % 1000) / 1,000 XP").font(Brand.font(12, .black)).foregroundStyle(levelInk)
+                        .monospacedDigit()
                 }
-                .foregroundStyle(tier.color)
-                .padding(.horizontal, 10).padding(.vertical, 3)
-                .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
-                .fixedSize()
+                .lineLimit(1).minimumScaleFactor(0.8)
                 GeometryReader { g in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.border)
-                        Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: g.size.width * progress)
+                        Capsule().fill(FinishInk.purple.opacity(dark ? 0.25 : 0.14))
+                        Capsule().fill(LinearGradient(colors: [Color(hex: 0xA855F7), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: max(10, g.size.width * progress))
                     }
                 }
-                .frame(height: 8)
-                Text("\(toNext) XP to next").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    .lineLimit(1).fixedSize()
+                .frame(height: 10)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Level \(p.level), \(tier.label). \(toNext) XP to next level.")
             // Footer row — only when something applies.
             if showFooter {
                 HStack(spacing: 8) {
@@ -807,24 +912,22 @@ struct ProfileTab: View {
                     // see only the teaser card. Tap opens the edit surface (where
                     // the toggle lives).
                     if p.isPrivate == true {
-                        Button { showEditProfile = true } label: {
-                            Label("Private", systemImage: "lock.fill").font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0x7C3AED))
-                                .padding(.horizontal, 10).padding(.vertical, 5)
-                                .background(Capsule().fill(Color(hex: 0xF3F0FF)))
-                                .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                        Button { Haptics.tap(); showEditProfile = true } label: {
+                            Label("Private", systemImage: "lock.fill").font(Brand.font(10, .heavy))
+                                .foregroundStyle(dark ? Theme.textSecondary : Color(hex: 0x6D28D9))
+                                .padding(.horizontal, 10).padding(.top, 7).padding(.bottom, 5)
+                                .tintedPill(FinishInk.purple)
                         }
-                        .buttonStyle(PressableStyle())
+                        .buttonStyle(.squish)
                         .accessibilityHint("Your profile is private — other players see a limited card. Tap to change.")
                     }
                     Spacer(minLength: 0)
                     if !auth.isProActive {
-                        Button { showPro = true } label: {
-                            Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
-                                .padding(.horizontal, 16).padding(.vertical, 6)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                    .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2))
+                        // §A8: the Pro upsell is an amber candy button.
+                        Button { Haptics.tap(); showPro = true } label: {
+                            CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 16) }
                         }
-                        .buttonStyle(PressableStyle())
+                        .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
                         .sheet(isPresented: $showPro) { ProView() }
                     }
                     // DEV-ONLY (profiles.is_admin): the Simulate Pro toggle as a
@@ -833,36 +936,26 @@ struct ProfileTab: View {
                     // ONLY for the developer's account (mirrors the web gate).
                     if auth.profile?.isAdmin == true {
                         let isPro = auth.isProActive
-                        Button { Task { await auth.setSimulatePro(!isPro) } } label: {
+                        Button { Haptics.tap(); Task { await auth.setSimulatePro(!isPro) } } label: {
                             HStack(spacing: 6) {
                                 Circle().fill(isPro ? Theme.win : Color(hex: 0x9CA3AF)).frame(width: 6, height: 6)
                                 Text("DEV · PRO \(isPro ? "ON" : "OFF")").font(Brand.font(10, .black)).tracking(0.6)
                             }
-                            .foregroundStyle(Theme.textMuted)
+                            .foregroundStyle(FinishInk.secondary)
                             .padding(.horizontal, 10).padding(.vertical, 5)
-                            .background(Capsule().fill(Theme.surfaceHover))
-                            .overlay(Capsule().stroke(Theme.border, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                            .background(Capsule().fill(dark ? Theme.surfaceHover : FinishInk.purple.wash(0.10)))
+                            .overlay(Capsule().stroke(FinishInk.purple.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
                         }
-                        .buttonStyle(PressableStyle())
+                        .buttonStyle(.squish)
                         .accessibilityLabel("Developer: toggle Pro on this account")
                     }
                 }
-                .padding(.top, 12)
-                .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
+                .padding(.top, 10)
+                .overlay(alignment: .top) { Rectangle().fill(FinishInk.purple.opacity(0.12)).frame(height: 1) }
             }
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    /// A 32 pt circle icon button — the shared header circle (HEADER_SPEC §4).
-    private func iconCircle(_ system: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HeaderCircleLabel(glyph: .symbol(system), size: 32)
-        }
-        .buttonStyle(PressableStyle())
-        .accessibilityLabel(label)
+        .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 14)
+        .tintedCard(accent: FinishInk.purple, bar: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)])
     }
 
     /// The existing profile share card (ShareService.shareProfile).
@@ -889,11 +982,14 @@ struct ProfileTab: View {
             if let handle = links[key], let url = socialURL(key, handle) {
                 Link(destination: url) {
                     Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
-                        .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                        .font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.isDark ? Theme.textSecondary : FinishInk.deepPurple)
                         .frame(width: 30, height: 30)
-                        .background(Circle().fill(Theme.surfaceHover))
-                        .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                        .background(Circle().fill(Theme.isDark ? Theme.surfaceHover : FinishInk.purple.wash(0.12)))
+                        .overlay(Circle().stroke(Theme.isDark ? Theme.border : FinishInk.purple.wash(0.32), lineWidth: 1.5))
                 }
+                // §AB / §AK: icon-only — a spoken name, and the shared squish.
+                .buttonStyle(.squishIcon)
+                .accessibilityLabel(key == "website" ? "Website" : key.capitalized)
             }
         }
     }
@@ -948,11 +1044,11 @@ struct ProfileTab: View {
         // carries its own small "Daily Medals" title instead of a section header.
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Daily Medals").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+                FinishLabel("Daily medals", color: Color(hex: 0xA2560C))
                 HStack(spacing: 12) {
-                    medalCount("crown.fill", p.goldMedals, "Gold", Color(hex: 0xD97706))
-                    medalCount("medal.fill", p.silverMedals, "Silver", Theme.textMuted)
-                    medalCount("medal.fill", p.bronzeMedals, "Bronze", Color(hex: 0xB45309))
+                    medalCount("gold", "crown.fill", p.goldMedals, "Gold", Color(hex: 0xD97706))
+                    medalCount("silver", "medal.fill", p.silverMedals, "Silver", Color(hex: 0x94A3B8))
+                    medalCount("bronze", "medal.fill", p.bronzeMedals, "Bronze", Color(hex: 0xB45309))
                 }
                 if !medals.isEmpty {
                     if showAllMedals {
@@ -961,32 +1057,35 @@ struct ProfileTab: View {
                         VStack(spacing: 6) { ForEach(Array(medals.prefix(5))) { m in medalRow(m) } }
                     }
                     if medals.count > 5 {
+                        // §A8: a small candy action, not a text link.
                         Button { showAllMedals.toggle() } label: {
-                            Text(showAllMedals ? "Show less" : "View all \(medals.count) medals ›")
-                                .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                        }.buttonStyle(.squish).padding(.top, 2)
+                            CandyLabel(title: showAllMedals ? "Show less" : "View all \(medals.count) medals",
+                                       symbol: showAllMedals ? "chevron.up" : "chevron.down")
+                        }
+                        .buttonStyle(CandyButtonStyle(variant: showAllMedals ? .peach : .purple, size: .small, fullWidth: false))
+                        .frame(maxWidth: .infinity).padding(.top, 4)
                     }
                 } else {
                     // Web parity: empty-state copy instead of a bare grid.
                     Text("Play daily challenges to earn medals!")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                 }
             }
             .padding(12).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .tintedCard(accent: Color(hex: 0xF5A524), bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)], radius: 18, barHeight: 8)
         }
     }
 
-    private func medalCount(_ icon: String, _ count: Int, _ label: String, _ color: Color) -> some View {
+    private func medalCount(_ kind: String, _ icon: String, _ count: Int, _ label: String, _ color: Color) -> some View {
         VStack(spacing: 2) {
-            SymbolGlyph(icon, size: 22, color: color)
-            Text("\(count)").font(Brand.font(18, .black)).foregroundStyle(color)
-            Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+            MedalArt(kind: kind, size: 30, fallbackSymbol: icon, fallbackColor: color)
+            Text("\(count)").softNumber(20)
+            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
+        .frame(maxWidth: .infinity).padding(.top, 12).padding(.bottom, 8)
+        .tintedPill(color, radius: 12)
+        .accessibilityElement(children: .combine)
     }
 
     private func medalRow(_ m: MedalRow) -> some View {
@@ -1008,13 +1107,21 @@ struct ProfileTab: View {
         case "perfect": label = "Perfect!"
         default: label = m.gameMode.flatMap { GameMode(rawValue: $0).map { ModeStyle.title($0) } } ?? (m.gameMode ?? "")
         }
+        // Gold / silver / bronze (and any other medal) draw the glossy medal art;
+        // streak and perfect medals keep their flame / star.
+        let art: String? = ["gold", "silver", "bronze"].contains(m.medalType) ? m.medalType
+            : (["streak_7", "streak_30", "streak_100", "perfect"].contains(m.medalType) ? nil : "trophy")
         return HStack(spacing: 10) {
-            SymbolGlyph(icon, size: 14, color: color)
-            Text(label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+            if let art {
+                MedalArt(kind: art, size: 20, fallbackSymbol: icon, fallbackColor: color)
+            } else {
+                SymbolGlyph(icon, size: 14, color: color)
+            }
+            Text(label).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)
             Spacer()
-            Text(shortMedalDate(m.day)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            Text(shortMedalDate(m.day)).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
         }
-        .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+        .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(StatsInk.rowFill(Color(hex: 0xF5A524))))
     }
 
     private func shortMedalDate(_ day: String) -> String {
@@ -1038,10 +1145,9 @@ struct ProfileTab: View {
             HStack {
                 // Under the shared "PROGRESSION" banner (web parity): a plain
                 // card-style title rather than an all-caps section header.
-                Text("Achievements").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+                FinishLabel("Achievements")
                 Spacer()
-                Text("\(unlockedAchievements.count)/\(achievementCatalog.all.count)").font(Brand.font(10, .black)).foregroundStyle(Theme.primary)
-                    .padding(.horizontal, 8).padding(.vertical, 2).background(Capsule().fill(Color(hex: 0xF3F0FF)))
+                Text("\(unlockedAchievements.count) / \(achievementCatalog.all.count)").softNumber(14)
             }
             ForEach(achCategories, id: \.key) { cat in
                 let items = achievementCatalog.all.filter { $0.category == cat.key }
@@ -1050,41 +1156,70 @@ struct ProfileTab: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
                             Text(cat.label.uppercased()).font(Brand.font(11, .black)).tracking(0.4).foregroundStyle(Color(hex: cat.color))
-                            Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                         }
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                            ForEach(items) { achievementCell($0) }
+                            ForEach(items) { achievementCell($0, color: Color(hex: cat.color)) }
                         }
                     }
                 }
             }
         }
-    }
-
-    @ViewBuilder private func achievementCell(_ a: AchievementDef) -> some View {
-        let on = unlockedAchievements.contains(a.key)
-        let prog = on ? nil : achievementProgress(a.key)
-        VStack(spacing: 2) {
-            Text(on ? "✓" : "?").font(Brand.font(18, .black)).foregroundStyle(on ? Theme.primary : Theme.textMuted)
-            Text(a.name).font(Brand.font(10, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-            .minimumScaleFactor(0.7)
-            Text(a.description).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center).lineLimit(2)
-            if let prog {
-                GeometryReader { g in ZStack(alignment: .leading) { Capsule().fill(Theme.border); Capsule().fill(Theme.primary).frame(width: g.size.width * min(1, Double(prog.c) / Double(prog.t))) } }.frame(height: 4).padding(.top, 1)
-                Text("\(prog.c)/\(prog.t)").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
-            }
+        // §V1: tap a badge = the detail sheet with the big badge.
+        .sheet(item: $achievementDetail) { a in
+            let on = unlockedAchievements.contains(a.key)
+            AchievementDetailSheet(def: a, unlocked: on, unlockedAt: achievementDates[a.key],
+                                   progress: on ? nil : achievementProgress(a.key),
+                                   accent: Color(hex: achCategories.first { $0.key == a.category }?.color ?? 0x7C3AED))
         }
-        .padding(10).frame(maxWidth: .infinity, minHeight: 84, alignment: .top)
-        .background(RoundedRectangle(cornerRadius: 12).fill(on ? Color(hex: 0xF3F0FF) : Color(hex: 0xFAFAFA)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(on ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
-        .opacity(on ? 1 : (prog != nil ? 0.8 : 0.4))
     }
 
+    /// §V1: the badge art instead of the ✓ / ? text tile — unlocked = full color +
+    /// glow + name + date; locked = grayscale, 45%, the 3D lock, name + progress.
+    private func achievementCell(_ a: AchievementDef, color: Color) -> some View {
+        let on = unlockedAchievements.contains(a.key)
+        return Button { Haptics.tap(); achievementDetail = a } label: {
+            AchievementBadgeCell(def: a, unlocked: on, unlockedAt: achievementDates[a.key],
+                                 progress: on ? nil : achievementProgress(a.key), accent: color)
+        }
+        .buttonStyle(.squish)
+    }
+
+    /// Progress toward a locked achievement from the data this page already holds
+    /// (the profile row + user_stats); nil = no known progress (no bar).
     private func achievementProgress(_ key: String) -> (c: Int, t: Int)? {
         guard let p = auth.profile else { return nil }
         let medalsTotal = p.goldMedals + p.silverMedals + p.bronzeMedals
-        let map: [String: (Int, Int)] = ["streak_7": (p.dailyLoginStreak, 7), "streak_30": (p.dailyLoginStreak, 30), "medal_10": (medalsTotal, 10), "medal_50": (medalsTotal, 50)]
-        if let m = map[key], m.0 < m.1 { return (m.0, m.1) }
+        let soloWins: (String) -> Int = { m in statRows.filter { $0.gameMode == m && $0.playType == "solo" }.reduce(0) { $0 + $1.wins } }
+        let played = statRows.reduce(0) { $0 + $1.totalGames }
+        let vsRows = statRows.filter { $0.playType == "vs" }
+        let vsPlayed = vsRows.reduce(0) { $0 + $1.totalGames }, vsWins = vsRows.reduce(0) { $0 + $1.wins }
+        var map: [String: (Int, Int)] = [
+            "streak_7": (p.dailyLoginStreak, 7), "streak_14": (p.dailyLoginStreak, 14),
+            "streak_30": (p.dailyLoginStreak, 30), "streak_master": (p.dailyLoginStreak, 50),
+            "year_one": (p.dailyLoginStreak, 365),
+            "medal_10": (medalsTotal, 10), "medal_50": (medalsTotal, 50), "medal_wall": (medalsTotal, 100),
+            "golden_touch": (p.goldMedals, 10), "gold_rush": (p.goldMedals, 50), "diamond_hands": (p.goldMedals, 100),
+            "century_club": (p.totalWins, 100), "wordsmith": (p.totalWins, 500), "thousand_words": (p.totalWins, 1000),
+            "rising_star": (p.level, 10), "elite": (p.level, 50),
+            "unstoppable": (p.currentStreak, 5), "unbreakable": (max(p.currentStreak, p.bestStreak), 25),
+        ]
+        if !statRows.isEmpty {
+            map["dedicated"] = (played, 500); map["endurance"] = (played, 1000); map["obsessed"] = (played, 2000)
+            map["rival"] = (vsPlayed, 50); map["vs_marathoner"] = (vsPlayed, 100)
+            map["dominant"] = (vsWins, 50); map["vs_centurion"] = (vsWins, 100)
+            // The per-game mastery ladder (AchievementService's thresholds).
+            let mastery: [(String, String, Int)] = [
+                ("quad_king", "QUORDLE", 50), ("octo_boss", "OCTORDLE", 50), ("sequence_ace", "SEQUENCE", 50),
+                ("rescue_hero", "RESCUE", 50), ("six_shooter", "DUEL_6", 50), ("lucky_seven", "DUEL_7", 50),
+                ("proper_scholar", "PROPERNOUNDLE", 50), ("classic_master", "DUEL", 100), ("sudoku_scholar", "SUDOKU", 50),
+                ("regions_regular", "REGIONS", 50), ("ladder_regular", "LADDER", 50), ("wordsearch_regular", "WORDSEARCH", 50),
+                ("hub_regular", "HUB", 50), ("cryptogram_regular", "CRYPTOGRAM", 50), ("groups_regular", "GROUPS", 50),
+                ("crossword_regular", "CROSSWORD", 50), ("scramble_regular", "SCRAMBLE", 50),
+            ]
+            for (k, mode, t) in mastery { map[k] = (soloWins(mode), t) }
+        }
+        if let m = map[key], m.0 < m.1 { return (max(0, m.0), m.1) }
         return nil
     }
 
@@ -1097,26 +1232,12 @@ struct ProfileTab: View {
     /// board (word engines + ProperNoundle). The old page-level Solo/VS/VS-CPU
     /// toggle is gone; All-time's VS section's People | Bots pair covers bot games.
     private func soloVsToggle(accent: Color) -> some View {
-        HStack(spacing: 8) {
-            ForEach(["solo", "vs"], id: \.self) { t in
-                let active = gamePageTab == t
-                // Instant, like the rail (founder, 2026-09-29) — the page re-keys on activeTab.
-                Button { Haptics.tap(); setActiveTab(t) } label: {
-                    HStack(spacing: 6) {
-                        if t == "solo" {
-                            Image(systemName: "person.fill").font(.system(size: 12, weight: .bold))
-                        } else {
-                            Image("swords").renderingMode(.template).resizable().scaledToFit()
-                                .frame(width: 14, height: 14)
-                        }
-                        Text(t == "solo" ? "Solo" : "VS").font(Brand.font(12, .heavy))
-                    }
-                    .foregroundStyle(active ? accent : Theme.textMuted)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? accent : Theme.border, lineWidth: 1.5))
-                }.buttonStyle(PressableStyle())
-            }
+        // Instant, like the picker (founder, 2026-09-29) — the page re-keys on activeTab.
+        // §A9: the soft segmented toggle (each option squishes).
+        HStack {
+            SoftSegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
+                          selection: Binding(get: { gamePageTab }, set: { setActiveTab($0) }),
+                          accent: accent, accessibilityLabel: "Solo or VS")
             Spacer()
         }
     }
@@ -1136,10 +1257,10 @@ struct ProfileTab: View {
                 BotArtCircle(art: BotPersonas.art("lexi"), size: 32, background: .clear)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text("VS BOTS").font(Brand.font(10, .heavy)).tracking(0.8).foregroundStyle(Color(hex: 0x64748B))
-                Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
+                FinishLabel("VS Bots", color: Color(hex: 0x475569))
+                Text("\(rec.wins)–\(rec.losses)").softNumber(22)
                 if rec.total == 0 {
-                    Text("Beat a bot to start your record").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)
+                    Text("Beat a bot to start your record").font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.secondary)
                 } else if bestStreak > 0 {
                     HStack(spacing: 3) {
                         Icon3D(.flame, size: 13)
@@ -1149,14 +1270,15 @@ struct ProfileTab: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text(rec.total == 0 ? "—" : "\(rec.winRate)%").font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0x64748B))
+                Text(rec.total == 0 ? "—" : "\(rec.winRate)%").softNumber(22)
                 Text(rec.total == 0 ? "NO GAMES YET" : "WIN RATE · \(rec.total) \(rec.total == 1 ? "MATCH" : "MATCHES")")
-                    .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(FinishInk.secondary)
             }
         }
         .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, style: StrokeStyle(lineWidth: 1.5, dash: [5])))
+        // §A1: a slate wash (clearly unranked: the dashed border stays).
+        .background(RoundedRectangle(cornerRadius: 18).fill(Theme.isDark ? Theme.surface : Color(hex: 0x64748B).wash(0.09)).pageCardShadow())
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.isDark ? Theme.border : Color(hex: 0x64748B).wash(0.40), style: StrokeStyle(lineWidth: 1.5, dash: [5])))
     }
 
     private var vsRecordCard: some View {
@@ -1169,27 +1291,22 @@ struct ProfileTab: View {
                     .frame(width: 20, height: 20).foregroundStyle(Theme.primary)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text("VS RECORD").font(Brand.font(10, .heavy)).tracking(0.8)
-                    .foregroundStyle(Color(hex: 0x6D28D9))
-                Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black))
-                    .foregroundStyle(Theme.textPrimary)
+                FinishLabel("VS record", color: Color(hex: 0x6D28D9))
+                Text("\(rec.wins)–\(rec.losses)").softNumber(22)
                 // D2: today's daily VS outcome (DailyResultsService.dailyVSResult).
                 Text("Today: \(vsDailyWon == nil ? "not played" : (vsDailyWon! ? "won" : "lost"))")
                     .font(Brand.font(10, .heavy))
-                    .foregroundStyle(vsDailyWon == nil ? Theme.textMuted : (vsDailyWon! ? Theme.win : Color(hex: 0xDC2626)))
+                    .foregroundStyle(vsDailyWon == nil ? FinishInk.secondary : (vsDailyWon! ? Theme.win : Color(hex: 0xDC2626)))
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text("\(rec.winRate)%").font(Brand.font(20, .black)).foregroundStyle(Theme.primary)
+                Text("\(rec.winRate)%").softNumber(22)
                 Text("WIN RATE · \(rec.total) \(rec.total == 1 ? "MATCH" : "MATCHES")")
-                    .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(FinishInk.secondary)
             }
         }
         .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(LinearGradient(
-            colors: [Color(hex: 0xF5F3FF), Color(hex: 0xFCE7F3)],
-            startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+        .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], radius: 18, barHeight: 8)
     }
 
     /// Mode-detail header — ports the mode-detail-panel.tsx header row: mode
@@ -1202,7 +1319,8 @@ struct ProfileTab: View {
         return HStack {
             HStack(spacing: 8) {
                 if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-                Text(m?.title ?? ModeStyle.title(mode)).font(Brand.font(14, .black)).foregroundStyle(accent)
+                Text(m?.title ?? ModeStyle.title(mode)).font(Brand.font(15, .black))
+                    .foregroundStyle(Theme.isDark ? Theme.textPrimary : accent.mixed(over: .black, 0.8))
             }
             Spacer()
             HStack(spacing: 4) {
@@ -1217,9 +1335,9 @@ struct ProfileTab: View {
                 Text(tab == "solo" ? "Solo" : tab == "vs" ? "VS" : "VS Bots")
                     .font(Brand.font(10, .heavy))
             }
-            .foregroundStyle(accent)
-            .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(RoundedRectangle(cornerRadius: 8).fill(accent.opacity(0.08)))
+            .foregroundStyle(Theme.isDark ? Theme.textSecondary : accent.mixed(over: .black, 0.8))
+            .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 5)
+            .tintedPill(accent, radius: 10)
         }
     }
 
@@ -1241,16 +1359,16 @@ struct ProfileTab: View {
         ).map { ($0.label, $0.value) }
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
             ForEach(cells, id: \.0) { c in
-                VStack(spacing: 1) {
-                    Text(c.1).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
-                    Text(c.0.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
+                VStack(spacing: 2) {
+                    // §A2: every big number is a soft number.
+                    Text(c.1).softNumber(18).lineLimit(1).minimumScaleFactor(0.6)
+                    Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
                         .multilineTextAlignment(.center)
                 }
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .statsCard(accent: ModeStyle.accent(mode))
         // Fetch the per-mode win streak AND the mode's matches aggregate from
         // match history whenever the selected mode OR the play-type toggle
         // changes (web mode-detail-panel parity — restat B1 scopes both to the
@@ -1273,1255 +1391,3 @@ struct ProfileTab: View {
         s <= 0 ? "-" : (s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m"))
     }
 }
-
-/// Daily leaderboard — matches app/daily/page.tsx (full mode picker,
-/// your-rank banner, rank icons, current-user highlight, win/loss pill,
-/// yesterday toggle, player count).
-struct LeaderboardTab: View {
-    @EnvironmentObject private var auth: AuthService
-    @ObservedObject private var chrome = ChromeVisibility.shared
-    /// Owned by RootTabView so tab gestures can pop it to root.
-    @Binding var path: [String]
-    @State private var mode: GameMode = .duel
-    // Sweep chip (the banner's SWEEP pill, LeaderboardBannerView) — the cross-mode
-    // "completed every sweep daily" board.
-    @State private var isSweep = false
-    @State private var sweepEntries: [SweepEntry] = []
-    @State private var sweepRank: (rank: Int, total: Int)?
-    @State private var sweepLoading = false
-    @State private var entries: [LeaderboardEntry] = []
-    // Yesterday's Winners, settled and so kept per "day:mode:scope" (founder, 2026-09-29): one
-    // shared list used to keep the PREVIOUS mode's podium under the new mode until the refetch
-    // landed, and flashed "No results from yesterday" before the first fetch. nil = not loaded.
-    @State private var yesterdayByKey: [String: [LeaderboardEntry]] = [:]
-    @State private var ySweepByDay: [String: [SweepEntry]] = [:]
-    private var yesterdayKey: String {
-        "\(LeaderboardService.yesterdayLocal()):\(mode.rawValue):\(friendsOnly ? "friends" : "all")"
-    }
-    private var yesterdayKnown: [LeaderboardEntry]? { yesterdayByKey[yesterdayKey] }
-    private var yesterday: [LeaderboardEntry] { yesterdayKnown ?? [] }
-    private var ySweepKnown: [SweepEntry]? { ySweepByDay[LeaderboardService.yesterdayLocal()] }
-    private var yesterdaySweep: [SweepEntry] { ySweepKnown ?? [] }
-    // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
-    @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
-    // §248: current flawless streaks for FLAWLESS rows — the ×N pills.
-    @State private var flawlessStreaks: [String: Int] = [:]
-    @State private var yFlawlessStreaks: [String: Int] = [:]
-    @State private var ySweepDetails: [String: LeaderboardService.SweepDetails] = [:]
-    @State private var reloadToken = 0
-    @State private var userRank: (rank: Int, total: Int)?
-    // "Your neighborhood" rows when the user placed past the top-50 list.
-    @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
-
-    // TIE-AWARE score display (web parity): rows sharing a whole number on the
-    // same board render the decimals that rank them; everything else stays
-    // integer. One map per board, keyed by the raw stored score.
-    private var lbScoreLabels: [Double: String] {
-        tieAwareScoreLabels(entries.map(\.compositeScore) + (rankWindow?.entries.map(\.compositeScore) ?? []))
-    }
-    private var sweepScoreLabels: [Double: String] { tieAwareScoreLabels(sweepEntries.map(\.totalScore)) }
-    private var yLbScoreLabels: [Double: String] { tieAwareScoreLabels(yesterday.map(\.compositeScore)) }
-    private var ySweepScoreLabels: [Double: String] { tieAwareScoreLabels(yesterdaySweep.map(\.totalScore)) }
-    @State private var playerCount = 0
-    @State private var loading = false
-    @State private var showYesterday = false
-    @State private var showAuth = false
-    // LEADERBOARD SHARE — single-tap, spoiler-free by construction (names/
-    // scores/stats only), so no variant chooser. The Sweep board shares too
-    // (§231) — same flags, sweep variants.
-    @State private var sharingLb = false
-    @State private var sharingPodium = false
-    // FRIENDS (§207): All|Friends toggle — dense friend ranks + ghost rows
-    // for friends who haven't played this mode today, with the canned-taunt
-    // sheet (fixed phrases only). friendsVersion re-keys the fetch tasks
-    // whenever the FriendsService cache changes.
-    @State private var friendsOnly = false
-    /// Tier 2 (Aug 11): "Add friends" CTA on the empty Friends board.
-    @State private var showFriendsSheet = false
-    @State private var friendsVersion = 0
-    @State private var tauntTarget: FriendsService.FriendProfile?
-    @State private var tauntStatus: String?
-    /// D2 step 3: the global Records screen (Hall of Fame, all-time boards)
-    /// is reached from here now that the Stats row is gone.
-    @State private var showRecords = false
-    /// Today's completed dailies (seeded instantly from the on-device cache) so
-    /// the Play CTA knows "View vs Play" with zero flash, before the per-mode
-    /// leaderboard rank loads.
-    @StateObject private var completions = DailyCompletionsStore()
-    // Play CTA → launch the selected mode's daily (GameScreen, or ProperNoundle).
-    @State private var lbGame: LbGame?
-    @State private var lbSolved: LbGame?   // already-finished daily → read-only solved board
-    @State private var showPNDaily = false
-    struct LbGame: Identifiable { let id = UUID(); let mode: GameMode; let title: String }
-
-    /// Every daily-recordable mode — sweep tiles AND More Games titles (incl.
-    /// ProperNoundle, which has a dbKey but no GameMode enum on its HomeMode —
-    /// its leaderboard keys off the dbKey). Lookup only (title/icon/accent of
-    /// the picked mode); VS is excluded (no daily leaderboard).
-    private let pickerModes: [HomeMode] = (homeModes + moreModes).filter { $0.dbKey != nil }
-
-    /// The default board paints from the cache in the FIRST frame (founder, 2026-09-29: opening the
-    /// tab showed "No daily results yet · 0 players" for a frame before load() ran). The player's
-    /// own row folds in on appear (paintCachedBoard), before the network.
-    init(path: Binding<[String]>) {
-        _path = path
-        let key = LeaderboardCache.key(mode: .duel, userId: AuthService.shared.profile?.id)
-        if let c = LeaderboardCache.shared[key] {
-            _entries = State(initialValue: c.entries)
-            _playerCount = State(initialValue: c.playerCount)
-            _userRank = State(initialValue: c.userRank)
-            _rankWindow = State(initialValue: c.rankWindow)
-        } else {
-            _loading = State(initialValue: true)
-        }
-    }
-
-    var body: some View {
-        NavigationStack(path: $path) {
-            ZStack {
-                PageBackground(tint: .leaderboard)
-                VStack(spacing: 0) {
-                    AppHeaderView()
-                    if !auth.isAuthenticated { signedOut } else { content }
-                }
-            }
-            .environment(\.pageTint, .leaderboard)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
-            .fullScreenCover(item: $lbGame) { g in
-                NavigationStack {
-                    // A More Games title opens ITS view (which starts or restores today's daily).
-                    if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
-                    else { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
-                }
-            }
-            .fullScreenCover(item: $lbSolved) { g in
-                // Read-only reconstruction (matches the home "View Solved Puzzle"),
-                // so a finished daily never reopens as a fresh playable board.
-                // Custom engines show their own finished screen instead (founder, 2026-09-27).
-                NavigationStack {
-                    if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
-                    else { SolvedPuzzleView(mode: g.mode, title: g.title) }
-                }
-            }
-            .fullScreenCover(isPresented: $showPNDaily) {
-                NavigationStack { ProperNoundleView() }
-            }
-            // §225: this sheet's OWN NavigationStack never registered a String
-            // destination, so friend rows animated on tap but navigated
-            // nowhere (the pushed path resolves via line above; sheets don't
-            // inherit the outer stack's destinations).
-            .sheet(isPresented: $showFriendsSheet) {
-                NavigationStack {
-                    FriendsScreenView()
-                        .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
-                }
-            }
-            // §214 (Lindsay): the post-game "View Leaderboard" capsule lands
-            // here with its mode preselected (root switches the tab).
-            .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
-                guard let key = note.object as? String, let gm = GameMode(rawValue: key) else { return }
-                NextDailyCTA.pendingLeaderboardMode = nil
-                selectMode(gm)
-            }
-            // §264: the tab may not have EXISTED when the note was posted (TabView
-            // builds tabs lazily) — pick the requested mode up on appear instead.
-            .onAppear {
-                if let key = NextDailyCTA.pendingLeaderboardMode, let gm = GameMode(rawValue: key) {
-                    NextDailyCTA.pendingLeaderboardMode = nil
-                    selectMode(gm)
-                }
-            }
-        }
-    }
-
-    /// Play card (spec §2.1): the selected game in the game-tile CARD style (tint,
-    /// border, top bar in its color), icon chip, name, players-today, and the
-    /// Play / View button as a solid accent pill with white caps text.
-    private var playCtaCard: some View {
-        // The whole catalog — the More Games titles are not in the home grid, and the
-        // fallback showed their raw keys ("SCRAMBLE", "HUB") with no icon (founder, 2026-09-27).
-        let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
-        let accent = ModeStyle.accent(mode)
-        // ART_SPEC §10 / §14: the game's title art (lettering + host, filling the room
-        // left of Play, ≤ 52 pt tall) stands in for the name text and the host beside Play.
-        let titleArt = GameTitleArt.forMode(mode)
-        return HStack(spacing: 12) {
-            if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-            VStack(alignment: .leading, spacing: 2) {
-                if let titleArt {
-                    GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 52, alignment: .leading)
-                } else {
-                    Text(m?.title ?? mode.rawValue).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                }
-                HStack(spacing: 4) {
-                    Image(systemName: "person.2.fill").font(.system(size: 10))
-                    // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
-                    if loading && playerCount == 0 {
-                        Text("000 players today").font(Brand.font(10, .bold)).redacted(reason: .placeholder)
-                    } else {
-                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
-                    }
-                }.foregroundStyle(Theme.textMuted)
-            }
-            // §14: the art fills the room left of Play (offered first, ahead of the spacer).
-            .layoutPriority(1)
-            Spacer(minLength: 6)
-            // The selected game's host stands inside the card, beside Play (MASCOT_SPEC §5).
-            if titleArt == nil, let host = Mascots.host(mode) { MascotView(host, size: 44) }
-            // Already finished today's daily for this mode → open the read-only
-            // solved board, matching the home cards. The cached completions
-            // answer instantly; userRank confirms once the leaderboard loads.
-            let played = completions.byMode[mode.rawValue] != nil || userRank != nil
-            Button {
-                let title = m?.title ?? mode.rawValue
-                if played { lbSolved = LbGame(mode: mode, title: title) }
-                else if mode == .propernoundle { showPNDaily = true }
-                else { lbGame = LbGame(mode: mode, title: title) }
-            } label: {
-                // FINISH_SPEC §A8 / §C2: a medium glossy candy pill (never the old
-                // tall blob) — purple PLAY, pink→purple VIEW BOARD.
-                CandyLabel(title: played ? "View board" : "Play", symbol: played ? "eye.fill" : "play.fill")
-            }
-            .buttonStyle(CandyButtonStyle(variant: played ? .pink : .purple, size: .medium, fullWidth: false))
-            .layoutPriority(2)
-        }
-        .padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 12)
-        .gameTile(accent: accent)
-    }
-
-    /// The Sweep board's card in the same tile style: its existing explanation instead of Play.
-    private var sweepCtaCard: some View {
-        let accent = Color(hex: 0xF59E0B)
-        return HStack(spacing: 12) {
-            ModeIconView(icon: .asset("broom"), accent: accent, box: 32)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Daily Sweep").font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                // §223 microcopy: the sweep board pre-answers "why is 9/9 below
-                // 8/9" — it ranks by points, not wins.
-                Text("Ranked by total points across all modes").font(Brand.font(10, .bold))
-                    .foregroundStyle(Theme.textMuted).lineLimit(2).minimumScaleFactor(0.8)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 12)
-        .gameTile(accent: accent)
-    }
-
-    /// Section label (spec §2) — the shared LbSectionLabel.
-    private func sectionLabel(_ text: String) -> some View { LbSectionLabel(text) }
-
-    /// The bare share icon used by every board header.
-    private func shareIcon(busy: Bool, label: String, action: @escaping () -> Void) -> some View {
-        LbShareButton(busy: busy, label: label, action: action)
-    }
-
-    /// "YESTERDAY’S WINNERS" + chevron (the collapsible toggle).
-    private var yesterdayToggle: some View {
-        Button { showYesterday.toggle() } label: {
-            HStack(spacing: 6) {
-                sectionLabel("YESTERDAY\u{2019}S WINNERS")
-                Image(systemName: showYesterday ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textMuted)
-            }
-            .padding(.vertical, 6).contentShape(Rectangle())
-        }
-        .buttonStyle(.squish)
-    }
-
-    private var signedOut: some View {
-        VStack(spacing: 16) {
-            placeholder(icon: "trophy.fill", title: "Sign in to see rankings",
-                        subtitle: "Daily leaderboards are available to signed-in players.")
-            Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
-        }
-        .sheet(isPresented: $showAuth) { AuthView() }
-    }
-
-    private var content: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                // Spec §1: one banner replaces the old gradient title, the
-                // date/countdown row and the mode picker grid.
-                LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
-                                      onAllTime: { showRecords = true })
-                if isSweep {
-                    sweepBoard
-                } else {
-                    perModeBoard
-                }
-            }
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            // Clear the banner+nav: every sibling tab hardcodes 72–80pt here,
-            // but this tab never got ANY — invisible until Yesterday's Winners
-            // made the page tall enough to cut off (founder screenshot). The
-            // measured inset also handles the taller free-tier banner+nav stack
-            // that the siblings' magic 72 quietly under-clears.
-            .padding(.bottom, max(72, chrome.bottomInset))
-        }
-        .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
-        // Before the first frame: the selected board from the cache with the player's own row
-        // (load() repeats this, but only after the render).
-        .onAppear { if isSweep { paintCachedSweep() } else { paintCachedBoard() } }
-        .task(id: "\(mode.rawValue)-\(reloadToken)-\(friendsOnly)-\(friendsVersion)") { await load() }
-        .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
-        // Warms the modes the user has NOT opened yet today (§253). Keyed on
-        // the tab's reload token, not the selected mode, so switching chips
-        // does not restart the sweep from the top.
-        .task(id: "prefetch-\(reloadToken)-\(friendsOnly)") { await prefetchOtherBoards() }
-        // Yesterday's Winners keys on the MODE too (web/Android parity) — it
-        // used to fetch only on toggle-open, so switching chips while the
-        // dropdown was expanded kept showing the previous mode's podium until
-        // you closed and reopened it.
-        .task(id: "yesterday-\(mode.rawValue)-\(isSweep)-\(showYesterday)-\(friendsOnly)-\(friendsVersion)") {
-            guard showYesterday else { return }
-            await loadYesterday()
-        }
-        .task { if auth.isAuthenticated { await FriendsService.load() } }
-        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
-            friendsVersion = FriendsService.version
-        }
-        .sheet(item: $tauntTarget) { target in tauntSheet(target) }
-        .task { await completions.load() }
-        .onDailyCompletion { Task { await completions.load() } }
-        .onDailyRecorded { reloadToken += 1 }
-        // The player's own result can land after the board was painted: fold it in right away.
-        .onChange(of: completions.byMode[mode.rawValue]?.score) { _ in
-            let (rows, n, mineRank) = withMine(entries, playerCount)
-            guard rows.count != entries.count else { return }
-            entries = rows; playerCount = n
-            if userRank == nil { userRank = mineRank }
-        }
-    }
-
-    /// The cross-mode Sweep board — players who completed every sweep daily today,
-    /// ranked by total composite score. Same card stack as the per-mode board.
-    @ViewBuilder private var sweepBoard: some View {
-        sweepCtaCard
-        if let r = sweepRank {
-            rankBanner(r, points: mySweepScore.map { sweepScoreLabels[$0] ?? formatScore($0) })
-        }
-
-        HStack(alignment: .center, spacing: 8) {
-            sectionLabel("TODAY\u{2019}S BOARD")
-            Spacer(minLength: 4)
-            // §231: the same share icon as the per-mode board — today's sweep
-            // board card with the sharer's sweep rank.
-            if !sweepLoading && !sweepEntries.isEmpty {
-                shareIcon(busy: sharingLb, label: "Share sweep leaderboard") {
-                    guard !sharingLb else { return }
-                    sharingLb = true
-                    LeaderboardShareFlow.shareSweep(
-                        podium: false, entries: sweepEntries,
-                        userId: auth.profile?.id, userRank: sweepRank)
-                    sharingLb = false
-                }
-            }
-        }
-        .padding(.top, 4)
-
-        if sweepLoading {
-            LeaderboardSkeleton()
-        } else if sweepEntries.isEmpty {
-            MascotMessage(scene: .asleep, line: "No sweeps yet today. Be the first!")
-                .frame(maxWidth: .infinity).padding(.vertical, 28)
-            .lbCard()
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, entry in
-                    sweepRow(rank: entry.rank, entry: entry)
-                    if idx < sweepEntries.count - 1 { LbDivider() }
-                }
-            }
-            .padding(.vertical, 4)
-            .lbCard()
-        }
-
-        // Yesterday's Winners — same toggle as the per-mode board, but the
-        // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
-        HStack(spacing: 8) {
-            yesterdayToggle
-            Spacer(minLength: 4)
-            // §231: settled sweep-podium share — only once the dropdown is
-            // open with rows (per-mode parity).
-            if showYesterday && !yesterdaySweep.isEmpty {
-                shareIcon(busy: sharingPodium, label: "Share yesterday's sweep podium") {
-                    guard !sharingPodium else { return }
-                    sharingPodium = true
-                    LeaderboardShareFlow.shareSweep(
-                        podium: true, entries: yesterdaySweep,
-                        userId: auth.profile?.id)
-                    sharingPodium = false
-                }
-            }
-        }
-        .padding(.top, 4)
-        if showYesterday {
-            if ySweepKnown == nil {
-                LeaderboardSkeleton()
-            } else if yesterdaySweep.isEmpty {
-                Text("No sweeps yesterday")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
-                    .lbCard()
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(yesterdaySweep.enumerated()), id: \.element.id) { idx, entry in
-                        yesterdaySweepRow(entry)
-                        if idx < yesterdaySweep.count - 1 { LbDivider() }
-                    }
-                }
-                .padding(.vertical, 4)
-                .lbCard()
-            }
-        }
-    }
-
-    /// Sweep-yesterday row — full detail (founder ask, Aug 17): the RPC
-    /// already returns time + modes for any day, so mirror today's sweepRow
-    /// shape (name over "time · X/9" + pill; muted score at right).
-    private func yesterdaySweepRow(_ entry: SweepEntry) -> some View {
-        HStack(spacing: 12) {
-            rankIcon(entry.rank).frame(width: 22)
-            AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
-            // §236: score rides the name line; the stats line owns the width.
-            NavigationLink(value: entry.userId) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        Spacer(minLength: 6)
-                        Text(ySweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore))
-                            .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
-                            .lineLimit(1).fixedSize()
-                    }
-                    Text(sweepStatsLine(entry, details: ySweepDetails[entry.userId], day: LeaderboardService.yesterdayLocal()))
-                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        // §246 (founder screenshot: "86 guesses ·…"): the hints
-                        // segment fell off the row's end — wrap, never truncate.
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 6) {
-                        SweepModeDots(details: ySweepDetails[entry.userId],
-                                      day: LeaderboardService.yesterdayLocal())
-                        // Yesterday's rows read yesterday's settled streaks (web/Android parity).
-                        sweepPill(isFlawless: entry.isFlawless,
-                                  streak: yFlawlessStreaks[entry.userId] ?? 0)
-                    }
-                }
-            }.buttonStyle(.squish)
-        }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-    }
-
-    @ViewBuilder private var perModeBoard: some View {
-        playCtaCard
-        // .id(mode) → a fresh card per mode so switching away from one mode
-        // can't render the previous mode's board data (which trapped when a
-        // board mode rendered stale ProperNoundle data mid-transition).
-        if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
-        if let r = userRank {
-            rankBanner(r, points: myModeScore.map { lbScoreLabels[$0] ?? formatScore($0) })
-        }
-
-        HStack(alignment: .center, spacing: 8) {
-            sectionLabel("TODAY\u{2019}S BOARD")
-            Spacer(minLength: 4)
-            // FRIENDS toggle (§207) — Everyone | Friends, the shared soft pill segmented control.
-            // Everyone|Friends repaints its cached board in the same transaction (founder,
-            // 2026-09-29: a frame of the global rows and "of N" under "Friends").
-            if auth.isAuthenticated {
-                LbPillSwitch(options: [.init(value: false, label: "Everyone"), .init(value: true, label: "Friends")],
-                             value: friendsOnly, accent: ModeStyle.accent(mode)) { f in
-                    instantly { friendsOnly = f; paintCachedBoard() }
-                }
-            }
-            if !loading && !entries.isEmpty {
-                shareIcon(busy: sharingLb, label: "Share leaderboard") {
-                    guard !sharingLb else { return }
-                    sharingLb = true
-                    Task {
-                        await LeaderboardShareFlow.shareDaily(
-                            mode: mode, playType: "solo",
-                            entries: entries, rankWindow: rankWindow,
-                            userId: auth.profile?.id, userRank: userRank,
-                            friends: friendsOnly)
-                        sharingLb = false
-                    }
-                }
-            }
-        }
-        .padding(.top, 4)
-
-        if loading {
-            LeaderboardSkeleton()   // web parity: animate-pulse rows, not a spinner
-        } else if entries.isEmpty {
-            if friendsOnly && !ghostFriends.isEmpty {
-                // Nobody's played yet — the friends list still renders
-                // as ghost rows so the board feels alive (and tauntable).
-                VStack(spacing: 0) {
-                    ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
-                        ghostRow(f)
-                        if idx < ghostFriends.count - 1 { LbDivider() }
-                    }
-                }
-                .padding(.vertical, 4)
-                .lbCard()
-            } else {
-                VStack(spacing: 8) {
-                    // The cast (MASCOT_SPEC §6, ART_SPEC §7): I's invite scene grows the
-                    // circle; R asleep says it's quiet in here.
-                    MascotMessage(scene: friendsOnly ? .invite : .asleep,
-                                  line: friendsOnly ? Mascots.addFriendLine : "No daily results yet. Be the first!")
-                    // Tier 2 (Aug 11): the empty Friends board is the
-                    // best recruiting surface in the app — use it.
-                    if friendsOnly {
-                        Button { showFriendsSheet = true } label: {
-                            Text("Add friends").font(Brand.font(12, .black)).foregroundStyle(.white)
-                                .padding(.horizontal, 16).padding(.vertical, 9)
-                                .background(RoundedRectangle(cornerRadius: 12)
-                                    .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                        }
-                        .buttonStyle(.squish)
-                        .padding(.top, 4)
-                    }
-                }
-                .frame(maxWidth: .infinity).padding(.vertical, 40)
-                .lbCard()
-            }
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                    // §217: exact (score, time) ties share the rank.
-                    row(rank: LeaderboardService.competitionRank(entries, idx), entry: entry)
-                    if idx < entries.count - 1 { LbDivider() }
-                }
-                // "Your neighborhood" — rows around the user's rank when
-                // they placed past the top 50 (web daily page parity).
-                if let win = rankWindow {
-                    LbDivider()
-                    Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
-                        .frame(maxWidth: .infinity).padding(.vertical, 4)
-                    LbDivider()
-                    ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
-                        row(rank: win.startRank + idx, entry: entry)
-                        if idx < win.entries.count - 1 { LbDivider() }
-                    }
-                }
-                // FRIENDS ghost rows — friends who haven't played this
-                // mode today, muted, with the taunt bell (§207).
-                if friendsOnly {
-                    ForEach(ghostFriends) { f in
-                        LbDivider()
-                        ghostRow(f)
-                    }
-                }
-            }
-            .padding(.vertical, 4)
-            .lbCard()
-        }
-        // Founder-approved clarity: this board ranks DAILY games
-        // only — Unlimited runs never appear here (the founder's
-        // sister played Unlimited and looked for her name).
-        Text("Daily games only").font(Brand.font(9, .bold))
-            .foregroundStyle(Theme.textMuted)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.top, -6)
-
-        HStack(spacing: 8) {
-            yesterdayToggle
-            Spacer(minLength: 4)
-            // Settled-podium share — only once the dropdown is open with rows.
-            if showYesterday && !yesterday.isEmpty {
-                shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
-                    guard !sharingPodium else { return }
-                    sharingPodium = true
-                    Task {
-                        await LeaderboardShareFlow.sharePodium(
-                            mode: mode, playType: "solo",
-                            top3: yesterday, userId: auth.profile?.id,
-                            friends: friendsOnly)
-                        sharingPodium = false
-                    }
-                }
-            }
-        }
-        if showYesterday {
-            if yesterdayKnown == nil {
-                LeaderboardSkeleton()
-            } else if yesterday.isEmpty {
-                Text("No results from yesterday")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
-                    .lbCard()
-            } else {
-                VStack(spacing: 0) {
-                    // Full daily rows (founder ask, Aug 11): profile
-                    // links, guesses + time detail, W/L pill.
-                    ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
-                        // §217: exact (score, time) ties share the rank.
-                        row(rank: LeaderboardService.competitionRank(yesterday, idx), entry: entry, scoreLabels: yLbScoreLabels)
-                        if idx < yesterday.count - 1 { LbDivider() }
-                    }
-                }
-                .padding(.vertical, 4)
-                .lbCard()
-            }
-        }
-    }
-
-    /// The player's own points on the selected board (their row, else today's cached result).
-    private var myModeScore: Double? {
-        guard let uid = auth.profile?.id.lowercased() else { return nil }
-        let rows = entries + (rankWindow?.entries ?? [])
-        return rows.first { $0.userId.lowercased() == uid }?.compositeScore
-            ?? completions.byMode[mode.rawValue]?.score
-    }
-
-    /// The player's own total on the Sweep board.
-    private var mySweepScore: Double? {
-        guard let uid = auth.profile?.id.lowercased() else { return nil }
-        return sweepEntries.first { $0.userId.lowercased() == uid }?.totalScore
-    }
-
-    /// Compact yesterday row — RankIcon, name, small W/L pill, composite score (muted).
-    private func yesterdayRow(rank: Int, entry: LeaderboardEntry) -> some View {
-        HStack(spacing: 12) {
-            rankIcon(rank).frame(width: 22)
-            Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-            .minimumScaleFactor(0.7)
-            Spacer()
-            // ART_SPEC §4: the 3D W / L badge.
-            ResultBadge(won: entry.completed, size: 20)
-            Text(yLbScoreLabels[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
-        }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-    }
-
-
-    /// Your rank (spec §2.3): the shared soft gold card — big numerals (medal tint
-    /// for the top 3), "OF N TODAY" (or friends), the movement badge and your points.
-    private func rankBanner(_ r: (rank: Int, total: Int), points: String? = nil) -> some View {
-        let friends = friendsOnly && !isSweep
-        return LbRankCard(rank: r.rank, ofLine: friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY", points: points) {
-            // Transient "+N/−N" movement pill since you last looked (web parity).
-            // Friends mode keeps its own memory — a friend-rank must never
-            // compare against a stored global rank.
-            RankDeltaBadge(mode: mode.rawValue, playType: "solo",
-                           pageKey: friends ? "daily-friends" : "daily",
-                           currentRank: r.rank)
-        }
-    }
-
-    /// Medal discs for 1–3, the plain number after.
-    private func rankIcon(_ rank: Int) -> some View { LbRankBadge(rank: rank) }
-
-    private func row(rank: Int, entry: LeaderboardEntry, scoreLabels: [Double: String]? = nil) -> some View {
-        let isMe = entry.userId == auth.profile?.id
-        return HStack(spacing: 12) {
-            rankIcon(rank).frame(width: 22)
-            // §212: photo → emoji → initial, left of every username — the
-            // boards wear faces, not just names (web lbAvatar parity).
-            AvatarView(url: entry.profiles.avatarUrl, username: entry.username,
-                       size: 24, emoji: entry.profiles.avatarEmoji)
-            // Only the username links to the public profile — matches the web,
-            // where the leaderboard wraps just the name in <Link href=/profile/[id]>.
-            // Doug's Aug-16 feedback: the stats line lived under the SCORE, so
-            // the trailing column's width was set by the widest stats string
-            // and names truncated at ~5 chars. Name on top, stats underneath,
-            // score alone on the right.
-            NavigationLink(value: entry.userId) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(entry.username)
-                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        if entry.userId == crownId { Icon3D(.crown, size: 14, label: "This week's leader") }
-                        if isMe {
-                            Text("(you)").font(Brand.font(13, .heavy)).foregroundStyle(Color(hex: 0xD97706))
-                                .lineLimit(1).fixedSize()
-                        }
-                    }
-                    HStack(spacing: 5) {
-                        Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            .lineLimit(1).minimumScaleFactor(0.8)
-                        // ART_SPEC §13: the Win / Loss chip as the 3D badge art.
-                        RowResultBadge(won: entry.completed)
-                    }
-                }
-            }.buttonStyle(.squish)
-            Spacer()
-            Text((scoreLabels ?? lbScoreLabels)[entry.compositeScore] ?? formatScore(entry.compositeScore))
-                .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-            // Friends board: one-tap canned taunt on any friend's row (§207).
-            if friendsOnly && !isMe {
-                Button {
-                    tauntTarget = .init(id: entry.userId, username: entry.username,
-                                        avatar_url: entry.profiles.avatarUrl, level: 0,
-                                        since: nil, requestedAt: nil)
-                } label: {
-                    Icon3D(.bell, size: 16) // ART_SPEC §5
-                }
-                .buttonStyle(.squish)
-                .accessibilityLabel("Taunt \(entry.username)")
-            }
-        }
-        .padding(.horizontal, 10).padding(.vertical, 10)
-        .youRow(isMe)
-    }
-
-    /// §216: on the FRIENDS board, the week's points leader wears the crown.
-    private var crownId: String? {
-        guard friendsOnly else { return nil }
-        _ = friendsVersion
-        var entries = FriendsService.friends.map { (id: $0.id, pts: $0.weekPoints ?? 0) }
-        if let uid = auth.profile?.id {
-            entries.append((id: uid, pts: FriendsService.meDigest?.weekPoints ?? 0))
-        }
-        entries.sort { $0.pts > $1.pts }
-        guard let top = entries.first, top.pts > 0 else { return nil }
-        return top.id
-    }
-
-    /// FRIENDS ghost row — a friend who hasn't played this mode today, in the
-    /// standard row shell at muted opacity. The taunt bell is the point.
-    private var ghostFriends: [FriendsService.FriendProfile] {
-        _ = friendsVersion // re-derive when the friends cache changes
-        return FriendsService.friends.filter { f in
-            !entries.contains { $0.userId == f.id } && !ModerationService.isBlocked(f.id)
-        }
-    }
-
-    private func ghostRow(_ f: FriendsService.FriendProfile) -> some View {
-        HStack(spacing: 12) {
-            Text("–").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 22)
-            NavigationLink(value: f.id) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(f.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    Text("Hasn't played yet").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                }
-            }.buttonStyle(.squish)
-            Spacer()
-            Button { tauntTarget = f } label: {
-                Icon3D(.bell, size: 16) // ART_SPEC §5
-            }
-            .buttonStyle(.squish)
-            .accessibilityLabel("Nudge \(f.username)")
-        }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .opacity(0.55)
-    }
-
-    /// Canned-taunt picker (§207): fixed phrases, one per friend per day.
-    private func tauntSheet(_ target: FriendsService.FriendProfile) -> some View {
-        VStack(spacing: 0) {
-            Text("TAUNT \(target.username.uppercased())")
-                .font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16).padding(.vertical, 14)
-            Divider().overlay(Theme.border)
-            if let status = tauntStatus {
-                Text(status).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 32)
-            } else {
-                ForEach(FriendTaunts.all) { taunt in
-                    Button {
-                        Task {
-                            let outcome = await FriendsService.taunt(
-                                friendId: target.id, tauntId: taunt.id,
-                                day: LeaderboardService.todayLocal())
-                            switch outcome {
-                            case .sent: tauntStatus = "Sent 😈"
-                            case .alreadySent: tauntStatus = "Already taunted them today"
-                            case .failed: tauntStatus = "Could not send"
-                            }
-                            try? await Task.sleep(nanoseconds: 1_400_000_000)
-                            tauntTarget = nil
-                            tauntStatus = nil
-                        }
-                    } label: {
-                        Text(taunt.text).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16).padding(.vertical, 13)
-                    }
-                    .buttonStyle(.squish)
-                    Divider().overlay(Theme.border)
-                }
-                Button { tauntTarget = nil } label: {
-                    Text("Cancel").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
-                }
-                .buttonStyle(.squish)
-            }
-            Spacer(minLength: 0)
-        }
-        .background(Theme.surface)
-        .presentationDetents([.medium])
-    }
-
-    private func detail(_ e: LeaderboardEntry) -> String {
-        // Web parity: time as "Ns" / "Nm Ns" (formatTime in app/daily/page.tsx), not M:SS.
-        let t = formatShortTime(Int(e.timeSeconds))
-        // Through the mode's guess semantics (ModeStats.guessRowLabel, web daily
-        // page parity): "4 Guesses", "0 Mistakes", "5 Checks", "Par", "Hubbub".
-        let meta = ModeGen.byDbKey(mode.rawValue)
-        var s = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
-        if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
-        if HINT_BEARING_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
-        return s
-    }
-
-    /// A sweep-board row — reuses the per-mode row shell: rankIcon, name,
-    /// total score, then "total time · X/9" + the FLAWLESS/SWEEP pill.
-    private func sweepRow(rank: Int, entry: SweepEntry) -> some View {
-        let isMe = entry.userId == auth.profile?.id
-        return HStack(spacing: 12) {
-            rankIcon(rank).frame(width: 22)
-            // §212: faces on the sweep board too (RPC has no emoji column —
-            // photo → initial here).
-            AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
-            // Same shape as row() (Doug's Aug-16 feedback): stats under the
-            // name so the name keeps the row's flexible width.
-            // §236 (founder: "still can't see the information clearly — it's
-            // cut off"): the score shared a line with the STATS, and "33m 10s ·
-            // 8/9 · 90 guesses · 2 hints" lost the width war. The score now
-            // rides the NAME line (the name truncates harmlessly); the stats
-            // line owns the full row width, with a scale floor as the last
-            // resort on the narrowest phones.
-            NavigationLink(value: entry.userId) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        Spacer(minLength: 6)
-                        Text(sweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore))
-                            .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1).fixedSize()
-                    }
-                    Text(sweepStatsLine(entry, details: sweepDetails[entry.userId], day: LeaderboardService.todayLocal()))
-                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        // §246 (founder screenshot: "86 guesses ·…"): the hints
-                        // segment fell off the row's end — wrap, never truncate.
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    // §227: the pill rides the dots row (the dots are ~70pt wide,
-                    // so the pill always fits).
-                    HStack(spacing: 6) {
-                        SweepModeDots(details: sweepDetails[entry.userId],
-                                      day: LeaderboardService.todayLocal())
-                        sweepPill(isFlawless: entry.isFlawless,
-                                  streak: flawlessStreaks[entry.userId] ?? 0)
-                    }
-                }
-            }.buttonStyle(.squish)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 10)
-        .youRow(isMe)
-    }
-
-    /// §253: warm the OTHER modes' boards in the background so a chip tap
-    /// paints instantly instead of starting a fresh round trip.
-    ///
-    /// Persisting the cache fixed cold starts, but only for boards already
-    /// visited that day — with nine modes, each one was still a skeleton the
-    /// first time it was opened. This fills those slots ahead of the tap.
-    ///
-    /// Deliberately a trickle, not a burst: it starts only after the visible
-    /// board has had a moment, runs one mode at a time with a gap between, and
-    /// SKIPS anything already cached (load()'s revalidate owns freshness). Rank
-    /// and window are left nil — load() fills those when the mode is opened for
-    /// real, and they are the part nobody sees on first paint anyway.
-    private func prefetchOtherBoards() async {
-        guard !friendsOnly else { return }
-        try? await Task.sleep(nanoseconds: 1_200_000_000)
-        guard !Task.isCancelled else { return }
-        let uid = auth.profile?.id
-        let others = homeModes.compactMap(\.dbKey).compactMap { GameMode(rawValue: $0) }
-        for m in others where m != mode {
-            guard !Task.isCancelled else { return }
-            let key = LeaderboardCache.key(mode: m, userId: uid)
-            if LeaderboardCache.shared[key] != nil { continue }
-            async let rowsOpt = try? LeaderboardService.fetch(gameMode: m)
-            async let countV = LeaderboardService.playerCount(gameMode: m)
-            let rows = await rowsOpt
-            let count = await countV
-            guard !Task.isCancelled else { return }
-            guard let rows else { continue }
-            LeaderboardCache.shared[key] = .init(
-                entries: rows, playerCount: count, userRank: nil, rankWindow: nil)
-            try? await Task.sleep(nanoseconds: 300_000_000)
-        }
-    }
-
-    /// The player's own daily result on the board at once (founder, 2026-09-29: "Completed today"
-    /// was instant but the leaderboard showed "No daily results yet" until a refetch). Built from
-    /// today's completion the phone already holds and placed by (score desc, time asc) — the
-    /// server's order — whenever the rows in hand don't include the player yet.
-    private func withMine(_ rows: [LeaderboardEntry], _ count: Int) -> ([LeaderboardEntry], Int, (rank: Int, total: Int)?) {
-        guard let p = auth.profile, let c = completions.byMode[mode.rawValue], c.score > 0,
-              completions.dataDay == LeaderboardService.todayLocal(),
-              !rows.contains(where: { $0.userId.lowercased() == p.id.lowercased() }) else { return (rows, count, nil) }
-        let mine = LeaderboardEntry(
-            userId: p.id, compositeScore: c.score, guessCount: c.guessCount, timeSeconds: c.timeSeconds,
-            boardsSolved: c.boardsSolved ?? (c.completed ? 1 : 0), totalBoards: c.totalBoards ?? 1, hintsUsed: c.hintsUsed,
-            vsWins: nil, vsLosses: nil, vsGames: nil, completed: c.completed,
-            profiles: .init(username: p.username, avatarUrl: p.avatarUrl, avatarEmoji: p.avatarEmoji))
-        var out = rows
-        let i = out.firstIndex { $0.compositeScore < c.score || ($0.compositeScore == c.score && $0.timeSeconds > c.timeSeconds) } ?? out.count
-        // Past a full top-50 list the player's row belongs in the rank window, not here.
-        if i >= 50 { return (rows, count, nil) }
-        out.insert(mine, at: i)
-        let total = max(count + 1, out.count)
-        return (out, total, (rank: i + 1, total: total))
-    }
-
-    /// A mode tap sets the mode AND paints that mode's cached board in the same update (founder,
-    /// 2026-09-29: switching showed one frame of the new header over the previous mode's rows and
-    /// count before load() — which only runs after the render — swapped them).
-    private var modeSelection: Binding<GameMode> {
-        Binding(get: { mode }, set: { new in instantly { mode = new; paintCachedBoard() } })
-    }
-
-    /// Post-game "View Leaderboard" hand-off — the same one-transaction paint as a tile tap.
-    private func selectMode(_ gm: GameMode) {
-        instantly { isSweep = false; mode = gm; paintCachedBoard() }
-    }
-
-    /// The Sweep tile paints the cached sweep board in the same transaction as the selection
-    /// (founder, 2026-09-29: one frame of "No sweeps yet today. Be the first!" before loadSweep ran).
-    private var sweepSelection: Binding<Bool> {
-        Binding(get: { isSweep }, set: { on in instantly { isSweep = on; if on { paintCachedSweep() } } })
-    }
-
-    /// Paints the selected board (mode + All/Friends) from the cache with the player's own row
-    /// folded in — no network. Nothing cached → the player's row alone, else the skeleton.
-    private func paintCachedBoard() {
-        let key = LeaderboardCache.key(mode: mode, userId: auth.profile?.id) + (friendsOnly ? ":friends" : "")
-        if let cached = LeaderboardCache.shared[key] {
-            let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
-            entries = rows; playerCount = n
-            userRank = cached.userRank ?? mineRank ?? rowsRank(rows, n)
-            rankWindow = cached.rankWindow; loading = false
-        } else {
-            let seeded = withMine([], 0)
-            entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
-            loading = seeded.0.isEmpty
-        }
-    }
-
-    /// The player's rank read off the rows in hand when they're on the list — the same
-    /// (competition rank, total) LeaderboardService.userRank returns for a top-list hit. The
-    /// prefetched boards cache no rank, so the banner used to pop in (pushing the board down)
-    /// only after the rank query (founder, 2026-09-29).
-    private func rowsRank(_ rows: [LeaderboardEntry], _ count: Int) -> (rank: Int, total: Int)? {
-        guard let uid = auth.profile?.id.lowercased(),
-              let i = rows.firstIndex(where: { $0.userId.lowercased() == uid }) else { return nil }
-        return (LeaderboardService.competitionRank(rows, i), rows.count < 50 ? rows.count : max(count, rows.count))
-    }
-
-    private func paintCachedSweep() {
-        if let cached = SweepCache.shared.daily(SweepCache.dailyKey()) {
-            sweepEntries = cached.entries
-            sweepRank = cached.userRank
-            sweepDetails = cached.details
-            sweepLoading = false
-        } else {
-            sweepLoading = true
-            sweepRank = nil
-            sweepEntries = []
-            sweepDetails = [:]
-        }
-    }
-
-    private func load() async {
-        // Stale-while-revalidate (web parity: lbCache in app/daily/page.tsx) —
-        // a cache hit paints the last-known rows instantly (no skeleton) while
-        // the fresh fetch below swaps in silently. Skeleton = true first load only.
-        let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id)
-            + (friendsOnly ? ":friends" : "")
-        // Cached board (or the player's own row, or the skeleton) — the same paint a tap does.
-        paintCachedBoard()
-
-        // FRIENDS board (§207): one fetch restricted to friends∪me holds the
-        // whole board — rank is the dense index, no rank query or window.
-        if friendsOnly, let uid = auth.profile?.id {
-            let ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
-            let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, userIds: ids)
-            guard !Task.isCancelled else { return }
-            guard let fetched = fetchedOpt else { loading = false; return }
-            let (shown, shownCount, _) = withMine(fetched, fetched.count)
-            entries = shown
-            playerCount = shownCount
-            loading = false
-            // §217: exact (score, time) ties share the rank on the friends board too.
-            let rank: (rank: Int, total: Int)? = fetched
-                .firstIndex { $0.userId == uid }
-                .map { (rank: LeaderboardService.competitionRank(fetched, $0), total: fetched.count) }
-            userRank = rank
-            rankWindow = nil
-            LeaderboardCache.shared[cacheKey] = .init(
-                entries: fetched, playerCount: fetched.count, userRank: rank, rankWindow: nil)
-            return
-        }
-
-        async let e = try? LeaderboardService.fetch(gameMode: mode)
-        async let pc = LeaderboardService.playerCount(gameMode: mode)
-        let fetchedOpt = await e
-        let count = await pc
-        // .task(id:) cancels this on mode switch, but the awaits above aren't
-        // cancellation-checked — bail before assigning so a slow prior-mode
-        // response can't overwrite the new mode's rows.
-        guard !Task.isCancelled else { return }
-        // Network error (nil, not an empty day): keep whatever is showing —
-        // cached rows beat clobbering them with a blank list, and never cache
-        // the failure.
-        guard let fetched = fetchedOpt else { loading = false; return }
-        // Paint the rows the moment they arrive — the rank banner fills in on
-        // its own instead of holding the whole list behind its extra queries.
-        // A result recorded a moment ago may not be in them yet: keep the player's own row.
-        let (shown, shownCount, mineRank) = withMine(fetched, count)
-        entries = shown
-        playerCount = shownCount
-        loading = false
-        // The banner lands WITH the rows when the player is on them (the rank query only refines it).
-        if userRank == nil { userRank = mineRank ?? rowsRank(shown, shownCount) }
-
-        var rank: (rank: Int, total: Int)? = nil
-        var win: (startRank: Int, entries: [LeaderboardEntry])? = nil
-        if let uid = auth.profile?.id {
-            rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, topEntries: fetched)
-            guard !Task.isCancelled else { return }
-            userRank = rank ?? mineRank
-            // Ranked past the visible list → also fetch the rows around them.
-            if let r = rank, r.rank > 50 {
-                win = await LeaderboardService.fetchRankWindow(gameMode: mode, userRank: r.rank)
-                guard !Task.isCancelled else { return }
-            }
-            rankWindow = win
-        }
-        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: count, userRank: rank, rankWindow: win)
-    }
-
-    private func loadYesterday() async {
-        if isSweep {
-            let day = LeaderboardService.yesterdayLocal()
-            let rows = (try? await SweepLeaderboardService.fetchDailySweep(day: day, limit: 5)) ?? []
-            guard !Task.isCancelled else { return }
-            ySweepByDay[day] = rows
-            // §223: dot-strip + guess/hint detail rides in behind the rows —
-            // the podium paints first, dots fill in when the fetch lands.
-            let details = await LeaderboardService.fetchSweepModeDetails(
-                day: day, userIds: rows.map(\.userId))
-            guard !Task.isCancelled else { return }
-            ySweepDetails = details
-            // §248: streaks as they stood at yesterday's settled board.
-            let streaks = await LeaderboardService.fetchFlawlessStreaks(
-                day: day, userIds: rows.filter(\.isFlawless).map(\.userId))
-            guard !Task.isCancelled else { return }
-            yFlawlessStreaks = streaks
-            return
-        }
-        // Friends toggle carries into Yesterday's Winners: podium among friends.
-        let key = yesterdayKey
-        var ids: [String]? = nil
-        if friendsOnly, let uid = auth.profile?.id {
-            ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
-        }
-        let rows = (try? await LeaderboardService.fetch(
-            gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 5, userIds: ids)) ?? []
-        // .task(id:) cancels this on a mode switch — don't let the previous
-        // mode's slow response overwrite the new mode's podium.
-        guard !Task.isCancelled else { return }
-        yesterdayByKey[key] = rows
-    }
-
-    /// Loads the daily-sweep board (stale-while-revalidate, same shape as load()).
-    private func loadSweep() async {
-        let cacheKey = SweepCache.dailyKey()
-        paintCachedSweep()
-
-        let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
-        guard !Task.isCancelled else { return }
-        guard let fetched = fetchedOpt else { sweepLoading = false; return }
-        sweepEntries = fetched
-        sweepLoading = false
-
-        // §223: dot-strip + guess/hint detail rides in behind the rows — the
-        // board paints first, dots fill in when the fetch lands (web parity).
-        let details = await LeaderboardService.fetchSweepModeDetails(
-            day: LeaderboardService.todayLocal(), userIds: fetched.map(\.userId))
-        guard !Task.isCancelled else { return }
-        sweepDetails = details
-        // §248: only rows already FLAWLESS can be on a live streak.
-        let streaks = await LeaderboardService.fetchFlawlessStreaks(
-            day: LeaderboardService.todayLocal(),
-            userIds: fetched.filter(\.isFlawless).map(\.userId))
-        guard !Task.isCancelled else { return }
-        flawlessStreaks = streaks
-
-        var rank: (rank: Int, total: Int)? = nil
-        if let uid = auth.profile?.id {
-            rank = await SweepLeaderboardService.dailySweepRank(userId: uid)
-            guard !Task.isCancelled else { return }
-            sweepRank = rank
-        }
-        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank, details: details))
-    }
-}
-
-let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
-/// Every mode with a hint button — rows show " · N hints" / " · No hints" for all of them (web
-/// HINT_BEARING_MODES; founder, 2026-09-30: a Codebreaker row hid 4 hints that explained the ranking).
-let HINT_BEARING_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUDOKU", "REGIONS", "LADDER", "WORDSEARCH", "HUB", "CRYPTOGRAM", "GROUPS", "CROSSWORD", "SCRAMBLE"]
-
-// §223: guesses (and hints) are the numbers that actually explain the
-// ranking — the formula is guess-first, so 9 slow wins can trail 8 sharp
-// ones (founder double-take, Aug 18). Details still loading → the plain
-// line, never a blocked row. §232: file-scope (was private to the daily
-// board) so Records' daily-sweep rows render the identical line — the web
-// twin lives in components/leaderboard/sweep-mode-dots.tsx for the same
-// reason (founder ask, Aug 24: Records must match).
-func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?, day: String) -> String {
-    // §227: full words — the founder read "2h" as hours-since-completion.
-    // Room comes from the pill living on the dots row, not this line.
-    // The denominator is that day's sweep-era size (Stage 4/9), never a literal.
-    var s = "\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/\(ModeGen.requiredSweepCount(for: day))"
-    if let d = details {
-        s += " · \(d.guesses) guess\(d.guesses == 1 ? "" : "es")"
-        if d.hints > 0 { s += " · \(d.hints) hint\(d.hints == 1 ? "" : "s")" }
-    }
-    return s
-}
-
-/// §223: the Sweep board's mode-dot strip. Order = that day's sweep set in
-/// catalog order (ModeGen.sweepModes(for:)), so a pre-Stage-9 day still shows
-/// its ProperNoundle dot and a post-launch day shows eight.
-/// One dot per mode, graded ABSOLUTELY — intensity is the score as a fraction
-/// of that mode's theoretical ceiling, never a comparison to the field, so the
-/// strip reads identically with three players or three thousand (founder call,
-/// Aug 18: relative "best on board" dies in a crowd). Red = loss, hollow =
-/// not played. The [0.35, 0.9] remap spreads real-world ratios (~0.4–0.9)
-/// across the full visual range. Mirrors SweepModeDots in app/daily/page.tsx.
-struct SweepModeDots: View {
-    let details: LeaderboardService.SweepDetails?
-    let day: String
-
-    private var dotModes: [String] { ModeGen.sweepModes(for: day) }
-
-    var body: some View {
-        if let details {
-            HStack(spacing: 3) {
-                ForEach(dotModes, id: \.self) { mode in
-                    dot(details.modes[mode], mode: mode)
-                }
-            }
-            .accessibilityLabel("Per-mode results")
-        }
-    }
-
-    @ViewBuilder private func dot(_ d: LeaderboardService.SweepModeDetail?, mode: String) -> some View {
-        if let d {
-            if d.completed {
-                let ratio = d.score / DailyScoring.modeScoreCeiling(gameMode: mode, dateKey: day)
-                let t = min(1, max(0, (ratio - 0.35) / 0.55))
-                Circle().fill(Color(hex: 0x7C3AED).opacity(0.18 + 0.82 * t))
-                    .frame(width: 7, height: 7)
-            } else {
-                Circle().fill(Color(hex: 0xEF4444)).frame(width: 7, height: 7)
-            }
-        } else {
-            Circle().stroke(Theme.border, lineWidth: 1).frame(width: 7, height: 7)
-        }
-    }
-}
-
-/// Sweep-board rank pill — GOLD "FLAWLESS" (won every sweep mode) vs VIOLET "SWEEP"
-/// (completed every sweep mode but dropped a board). Mirrors the per-mode Win/Loss pill
-/// shape; the sweep-celebration colors (amber #D97706 / violet #A78BFA).
-@ViewBuilder func sweepPill(isFlawless: Bool, streak: Int = 0) -> some View {
-    let color = isFlawless ? Color(hex: 0xD97706) : Color(hex: 0xA78BFA)
-    // §248: a live streak shows its length on the pill — "FLAWLESS ×4".
-    Text(isFlawless ? (streak >= 2 ? "FLAWLESS ×\(streak)" : "FLAWLESS") : "SWEEP").font(Brand.font(9, .heavy))
-        .foregroundStyle(color)
-        // The §223 g/h stats can squeeze this row — the pill never wraps or
-        // truncates (the "FLAWLES\nS" lesson from the Android port); the
-        // stats text is the flexible element.
-        .lineLimit(1).fixedSize()
-        .padding(.horizontal, 5).padding(.vertical, 1)
-        .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
-}
-
-/// Selector buttons (banner game tiles, pill switches): no pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
-/// newly selected tile read as unselected for ~0.15 s after every tap (founder, 2026-09-29).
-struct InstantButtonStyle: ButtonStyle {
-    /// FINISH_SPEC §A9: still no fade, but the shared squish.
-    func makeBody(configuration: Configuration) -> some View {
-        SquishButtonStyle().makeBody(configuration: configuration).contentShape(Rectangle())
-    }
-}
-
-/// One un-animated transaction: a selection and the cached content it paints land in the SAME
-/// frame, with nothing easing in (founder, 2026-09-29).
-@MainActor func instantly(_ body: () -> Void) {
-    var t = Transaction(); t.disablesAnimations = true
-    withTransaction(t, body)
-}
-
-@ViewBuilder
-func placeholder(icon: String, title: String, subtitle: String) -> some View {
-    VStack(spacing: 12) {
-        SymbolGlyph(icon, size: 56, color: Theme.primary.opacity(0.7))
-        Text(title).font(Brand.headline()).foregroundStyle(Theme.textPrimary)
-        Text(subtitle).font(Brand.body(14)).foregroundStyle(Theme.textSecondary)
-            .multilineTextAlignment(.center).padding(.horizontal, 40)
-    }
-}
-
-/// §244 (founder: "I just got my third flawless victory in a row and I have
-/// no way of easily identifying that or even show it off"): the flawless
-/// banner's footer — streak-aware copy ("3-DAY FLAWLESS STREAK") plus the
-/// share button for the brag card. Self-contained fetch so the banner view
-/// builder stays state-free.
-struct FlawlessBannerFooter: View {
-    let total: Int
-    /// The Stats tab's session memo in the first frame (founder, 2026-09-29: the streak line popped in
-    /// above the footer after .task, pushing the card taller).
-    @State private var sweep: MatchStatsService.DailySweepStats =
-        StatsMemo.shared.get("sweepStats:\(StatsMemo.uid)") ?? MatchStatsService.DailySweepStats()
-    @State private var sharing = false
-
-    var body: some View {
-        VStack(spacing: 2) {
-            if sweep.currentFlawlessStreak >= 2 {
-                HStack(spacing: 4) {
-                    Icon3D(.trophy, size: 16)
-                    Text("\(sweep.currentFlawlessStreak)-DAY FLAWLESS STREAK")
-                        .font(Brand.font(13, .black)).tracking(0.5).foregroundStyle(Color(hex: 0xB45309))
-                }
-            }
-            HStack(spacing: 6) {
-                Text("All \(total) dailies won today · +600 XP earned")
-                    .font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0xB45309))
-                if sweep.currentFlawlessStreak >= 1 {
-                    Button {
-                        guard !sharing else { return }
-                        sharing = true
-                        LeaderboardShareFlow.shareFlawlessStreak(
-                            streak: sweep.currentFlawlessStreak,
-                            bestStreak: sweep.bestFlawlessStreak,
-                            username: AuthService.shared.profile?.username)
-                        sharing = false
-                    } label: {
-                        Icon3D(.share, size: 14)
-                    }
-                    .buttonStyle(.squish)
-                    .opacity(sharing ? 0.4 : 1)
-                    .accessibilityLabel("Share flawless streak")
-                }
-            }
-        }
-        .task { sweep = await MatchStatsService.dailySweepStats() }
-    }
-}
-
-

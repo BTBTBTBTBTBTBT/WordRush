@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, Lightbulb, BarChart3, Shuffle, Swords, X } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
+import { PageBackground } from '@/components/ui/page-background';
+import { InfoCard } from '@/components/ui/info-page';
+import { CandyLink } from '@/components/ui/candy-button';
 import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
 import { wordInsights, ordinal, BANK_SIZE } from '@/lib/word-insights';
 
@@ -39,10 +42,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const SectionCard = ({ children }: { children: React.ReactNode }) => (
-  <section className="rounded-2xl p-5 mb-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+// C6 / A1: each section is a tinted card with the top bar, in its icon's color.
+const SectionCard = ({ accent, children }: { accent: string; children: React.ReactNode }) => (
+  <InfoCard as="section" accent={accent} className="p-5" style={{ marginBottom: 24 }}>
     {children}
-  </section>
+  </InfoCard>
 );
 
 const SectionTitle = ({ icon, tint, children }: { icon: React.ReactNode; tint: string; children: React.ReactNode }) => (
@@ -79,8 +83,8 @@ export default async function WordOfDayPage({ params }: Props) {
   const topFacts = insights.letterFacts.slice(0, 3);
 
   return (
-    <div className="min-h-screen pb-16" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 pt-6">
+    <PageBackground tint="home" className="min-h-screen pb-16">
+      <div className="info-page max-w-2xl mx-auto px-4 pt-6">
         {/* §255 (founder: "there is no way to go home on the word of the day
             screen... on the native versions there is an X to close the window"):
             the back link only went up to the archive index. An X on the right
@@ -122,7 +126,7 @@ export default async function WordOfDayPage({ params }: Props) {
 
         {/* Definition (dictionary) */}
         {entry.definition && (
-          <SectionCard>
+          <SectionCard accent="#7c3aed">
             <SectionTitle tint="rgba(124,58,237,0.14)" icon={<BookOpen className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}>
               Meaning
             </SectionTitle>
@@ -160,7 +164,7 @@ export default async function WordOfDayPage({ params }: Props) {
         )}
 
         {/* ORIGINAL: letter analysis — unique, factual, useful for word-puzzle players */}
-        <SectionCard>
+        <SectionCard accent="#f59e0b">
           <SectionTitle tint="rgba(245,158,11,0.16)" icon={<Lightbulb className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />}>
             {w} as a word-puzzle answer
           </SectionTitle>
@@ -169,7 +173,7 @@ export default async function WordOfDayPage({ params }: Props) {
         </SectionCard>
 
         {/* ORIGINAL: by the numbers — first-party stats from the curated answer bank */}
-        <SectionCard>
+        <SectionCard accent="#4f46e5">
           <SectionTitle tint="rgba(79,70,229,0.14)" icon={<BarChart3 className="w-3.5 h-3.5" style={{ color: '#4f46e5' }} />}>
             {w} by the numbers
           </SectionTitle>
@@ -192,7 +196,7 @@ export default async function WordOfDayPage({ params }: Props) {
 
         {/* ORIGINAL: near misses & anagrams from the answer bank */}
         {(insights.neighbors.length > 0 || insights.anagrams.length > 0) && (
-          <SectionCard>
+          <SectionCard accent="#ec4899">
             <SectionTitle tint="rgba(236,72,153,0.14)" icon={<Shuffle className="w-3.5 h-3.5" style={{ color: '#ec4899' }} />}>
               Near misses
             </SectionTitle>
@@ -213,7 +217,7 @@ export default async function WordOfDayPage({ params }: Props) {
         )}
 
         {/* Play CTA — internal links into the game modes */}
-        <SectionCard>
+        <SectionCard accent="#14b8a6">
           <SectionTitle tint="rgba(20,184,166,0.14)" icon={<Swords className="w-3.5 h-3.5" style={{ color: '#14b8a6' }} />}>
             Put it to use
           </SectionTitle>
@@ -229,21 +233,22 @@ export default async function WordOfDayPage({ params }: Props) {
 
         {/* Prev / next day */}
         <div className="flex items-center justify-between">
-          <Link href={`/word/${prev}`} className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <ChevronLeft className="w-4 h-4" /> {prev}
-          </Link>
+          {/* A8: candy buttons. */}
+          <CandyLink href={`/word/${prev}`} color="peach" size="sm" icon={<ChevronLeft className="w-4 h-4" aria-hidden="true" />}>
+            {prev}
+          </CandyLink>
           {hasNext && (
-            <Link href={`/word/${next}`} className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {next} <ChevronRight className="w-4 h-4" />
-            </Link>
+            <CandyLink href={`/word/${next}`} color="peach" size="sm" trailing={<ChevronRight className="w-4 h-4" aria-hidden="true" />}>
+              {next}
+            </CandyLink>
           )}
         </div>
 
-        <p className="text-[11px] mt-8" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[11px] mt-8 px-1" style={{ color: 'var(--color-text-secondary)' }}>
           Definitions adapted from Wiktionary via the Free Dictionary API (CC BY-SA). Letter statistics, difficulty ratings,
           and near-miss analysis are original Wordocious research computed from our curated answer list.
         </p>
       </div>
-    </div>
+    </PageBackground>
   );
 }

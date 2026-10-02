@@ -36,23 +36,22 @@ struct ShareVariantSheet: View {
         }
     }
 
-    /// 1:1 with MenuSheet.row — accent icon tile, uppercase title, muted
-    /// subtitle (no chevron, ART_SPEC §21.4), on the shared card background.
+    /// Like MenuSheet.row — accent icon tile, uppercase title, muted subtitle (no
+    /// chevron, ART_SPEC §21.4) — on a tinted card in the option's accent (§A1).
     private func row(icon: String, accent: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 12) {
+            // §A1 icon tile = a mini game card: accent wash, border, inset top bar.
             Image(systemName: icon).font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
                 .frame(width: 40, height: 40)
-                .background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.14)))
+                .tintedPill(accent, radius: 11)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(Theme.textPrimary)
-                Text(subtitle).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text(title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(FinishInk.heading)
+                Text(subtitle).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer()
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16).fill(Theme.surface)
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        )
+        // §A1: a tinted row in the option's accent (no plain white; dark keeps its surface).
+        .tintedCard(accent: accent, radius: 16, tint: 0.09, line: 0.28)
     }
 }

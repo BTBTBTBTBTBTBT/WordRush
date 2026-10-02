@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { generateDailySeed, type VsDayResult, type WinLoss } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
 import { loadCpuProgression, emptyCpuProgression, botOfDayToday, type CpuProgression } from '@/lib/bot/cpu-progression';
-import { BOT_ROSTER, BOT_OF_DAY_ID } from '@/lib/bot/bot-personas';
+import { botOfDayPersona } from '@/lib/bot/bot-personas';
 import { readBotDaily, sumRecord, todaysBattle, utcCountdown, utcDay, type SentChallenge } from '@/lib/vs-lobby';
 import {
   fetchDailyBattleOpponent, fetchDailyBattleRow, fetchVsChallenges, fetchVsStatRows, postRaceResult,
@@ -64,7 +64,7 @@ export function useVsLobbyData(userId: string | null) {
   useEffect(() => { void refresh(); }, [refresh]);
 
   const day = utcDay();
-  const botOfDay = { result: botOfDayToday(progression, day), bot: BOT_ROSTER[BOT_OF_DAY_ID].name };
+  const botOfDay = { result: botOfDayToday(progression, day), bot: botOfDayPersona(day).name, botId: botOfDayPersona(day).id };
   return { people, bots, battle, botOfDay, progression, incoming, sent, loaded, refresh };
 }
 

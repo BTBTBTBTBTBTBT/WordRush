@@ -1,50 +1,24 @@
 package com.wordocious.app.data
 
 import android.content.Context
-import android.content.Intent
-import com.wordocious.app.ModeGen
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Shader
-import android.graphics.Typeface
-import android.os.Build
-import androidx.core.content.FileProvider
-import androidx.core.content.res.ResourcesCompat
+import com.wordocious.app.ModeGen
 import com.wordocious.app.R
-import io.github.jan.supabase.storage.storage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
+import com.wordocious.app.data.ShareFinish.U
+import com.wordocious.core.ShareCaptions
 import java.util.Locale
-import kotlin.math.floor
 
 /**
- * All-dailies share card (Daily Sweep / Flawless Victory) — Android port of web
- * lib/share-image.ts drawDailySweepCard + iOS DailySweepCardView. A 1080×1350
- * PNG with the wordmark, the gold/violet title, summed header totals, and one
- * mode-accent row per daily game. Keep the mode order, glyphs, and layout
- * identical to web/iOS.
+ * All-dailies share card (Daily Sweep / Flawless Victory / today's progress /
+ * Puzzles) — a [ShareCard] in the FINISH_SPEC E1 look, S2-fitted to its rows: the
+ * home wallpaper, the section's title art, the info line, the headline and one
+ * tinted row per daily (the game's mini game-card tile, its stats, the 3D W / L
+ * badge), the won · time · points stat windows and the S3 cast wordmark. Mode order
+ * stays the catalog's. S1: every share sends the image(s) only.
  */
 object DailySweepShare {
-    private const val W = 1080
-    private const val H = 1350
-    private const val BG = 0xFFF8F7FF.toInt()
-    private const val TEXT_MUTED = 0xFF6B7280.toInt()
-    private const val TEXT_DARK = 0xFF1A1A2E.toInt()
-    private const val FOOT = 0xFF9CA3AF.toInt()
-    private const val WIN_FG = 0xFF7C3AED.toInt()
-    private const val WIN_BG = 0xFFF5F3FF.toInt()
-    private const val LOSS_FG = 0xFFDC2626.toInt()
-    private const val LOSS_BG = 0xFFFEE2E2.toInt()
 
     data class Row(
         val dbKey: String, val label: String, val accent: Int, val glyph: String,
@@ -75,16 +49,6 @@ object DailySweepShare {
             }
         }
 
-    private fun nunito(context: Context, black: Boolean): Typeface {
-        val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        // Nunito.ttf is a variable font whose default instance is ExtraLight; the
-        // weighted create (API 28+) drives the real `wght` axis so the share card
-        // renders true Bold/Black instead of faux-bolded thin glyphs.
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            Typeface.create(base, if (black) 900 else 700, false)
-        else Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
-    }
-
     private fun fmt(s: Int): String = "%d:%02d".format(s / 60, s % 60)
 
     fun render(
@@ -94,128 +58,69 @@ object DailySweepShare {
         /** ART_SPEC §17: the Puzzles card (the ten More Games dailies) heads with the PUZZLES art. */
         puzzles: Boolean = false,
     ): Bitmap {
-        val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        // ART_SPEC §17: the home tint (+ tiles) behind the card.
-        ShareArt.drawHomeTint(context, c)
-        val black = nunito(context, true)
-        val bold = nunito(context, false)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-        val cx = W / 2f
-
-        // §17 the section's whole-cast title art (WORDOCIOUS DAILIES / PUZZLES) in place
-        // of the wordmark; the wordmark stays as the fallback.
-        val headerArt = if (puzzles) R.drawable.art_title_puzzles else R.drawable.art_title_dailies
-        if (ShareArt.drawArt(context, c, headerArt, cx, 20f, W - 200f, 92f) == null) {
-            p.typeface = black; p.isFakeBoldText = false; p.textSize = 56f
-            p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
-            c.drawText("WORDOCIOUS", cx, 92f, p)
-            p.shader = null
-        }
-        p.typeface = black; p.isFakeBoldText = false
-
-        // Title
-        p.textSize = 52f
-        val titleColors = if (flawless) intArrayOf(0xFFFBBF24.toInt(), 0xFFB45309.toInt())
-                          else intArrayOf(0xFFA78BFA.toInt(), 0xFFEC4899.toInt())
-        p.shader = LinearGradient(cx - 260f, 0f, cx + 260f, 0f, titleColors, null, Shader.TileMode.CLAMP)
+        // FINISH_SPEC E1 + S2/S3: the home wallpaper, the section's title art, the info
+        // line (date · puzzle number), the body (the soft headline, then one tinted row
+        // per daily: the mini game-card tile with the game's icon, its stats and the 3D
+        // W / L badge), the three stat windows and the cast wordmark, fitted to the rows.
+        val fonts = ShareFinish.Fonts(context)
         val titleText = title ?: (if (flawless) "FLAWLESS VICTORY" else "DAILY SWEEP")
-        // A banner headline can run long ("WORDOCIOUS FLAWLESS! 10 PUZZLES LEFT"): shrink to fit.
-        val maxTitleW = W - 120f
-        if (p.measureText(titleText) > maxTitleW) p.textSize *= maxTitleW / p.measureText(titleText)
-        c.drawText(titleText, cx, 156f, p)
-        p.shader = null
-
-        // Stats line
-        val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
-        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 26f; p.color = TEXT_MUTED
-        c.drawText("${totals.won}/${totals.total} won · ${fmt(totals.totalTimeSeconds)} · ${totals.totalScore} pts · $date", cx, 206f, p)
-
-        // Rows
-        val padH = 90f; val gap = 16f
-        val areaTop = 250f; val areaBottom = H - 80f - ShareArt.STRIP_BAND
+        val today = com.wordocious.app.todayLocalDate()
+        val puzzleNo = LeaderboardShare.puzzleNumberForDay(today)?.let { "#$it" }
+        val w = 950f
+        val headH = 84f
         val n = rows.size
-        val rowH = floor((areaBottom - areaTop - gap * (n - 1)) / n)
-        for (i in 0 until n) {
-            val r = rows[i]
-            val top = areaTop + i * (rowH + gap)
-            val rect = RectF(padH, top, W - padH, top + rowH)
-            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = if (r.won) WIN_BG else LOSS_BG }
-            c.drawRoundRect(rect, 20f, 20f, fill)
-            val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE; strokeWidth = 3f; color = if (r.won) WIN_FG else LOSS_FG
+        val gap = 14f
+        val rowH = 104f
+        val rowsH = if (n > 0) rowH * n + gap * (n - 1) else 0f
+        val body = ShareCard.Body(w, headH + 12f + rowsH) { c ->
+            // Headline (soft type; the gold label ink for a flawless day).
+            val tp = ShareFinish.softPaint(fonts, 60f, color = if (flawless) 0xFFA2560C.toInt() else ShareFinish.INK_SOFT)
+            tp.letterSpacing = 0.02f
+            ShareFinish.fitText(tp, titleText, w)
+            c.drawText(titleText, w / 2f, headH / 2f - (tp.ascent() + tp.descent()) / 2f, tp)
+            var top = headH + 12f
+            val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.black; color = ShareFinish.INK_HEADING }
+            val sub = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.bold; color = ShareFinish.INK_LABEL }
+            for (r in rows) {
+                label.textSize = 34f; sub.textSize = 25f
+                val rect = RectF(0f, top, w, top + rowH)
+                ShareFinish.drawAccentCard(c, rect, r.accent, minOf(16f * U, rowH * 0.3f), barH = 2f * U)
+                // The mini game card (accent wash + border + 4-unit bar + the glossy game icon).
+                val tile = rowH * 0.76f
+                val tr = RectF(rect.left + 16f, rect.centerY() - tile / 2f + 2f, rect.left + 16f + tile, rect.centerY() + tile / 2f + 2f)
+                val modeId = ModeGen.byDbKey(r.dbKey)?.id
+                ShareFinish.drawMiniGameCard(context, c, tr, r.accent, com.wordocious.app.ui.gameArtRes(modeId), unit = tile / 40f)
+                val textX = tr.right + 22f
+                val guessDisp = if (r.won) "${r.guesses}g" else "X"
+                val line2 = "$guessDisp · ${fmt(r.timeSeconds)} · ${String.format(Locale.US, "%,d", r.score)} pts"
+                val badge = rowH * 0.62f
+                val maxText = rect.right - 22f - badge - 16f - textX
+                ShareFinish.fitText(label, r.label, maxText); ShareFinish.fitText(sub, line2, maxText)
+                c.drawText(r.label, textX, rect.centerY() - 2f, label)
+                c.drawText(line2, textX, rect.centerY() + sub.textSize + 4f, sub)
+                ShareFinish.drawArtInto(context, c, if (r.won) R.drawable.icon3d_badge_w else R.drawable.icon3d_badge_l,
+                    RectF(rect.right - 22f - badge, rect.centerY() - badge / 2f + 2f, rect.right - 22f, rect.centerY() + badge / 2f + 2f))
+                top += rowH + gap
             }
-            c.drawRoundRect(rect, 20f, 20f, stroke)
-
-            // Accent glyph badge
-            val badge = minOf(rowH - 24f, 72f)
-            val bx = rect.left + 24f
-            val by = rect.centerY() - badge / 2
-            val badgeRect = RectF(bx, by, bx + badge, by + badge)
-            c.drawRoundRect(badgeRect, 16f, 16f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = r.accent })
-            // Real game icon (lucide vector, drawn WHITE) for the icon modes
-            // (Classic/Succession/Deliverance/Gauntlet/Proper); Six/Seven draw
-            // the brand hand (WHITE) with the accent digit over the palm — iOS
-            // DailySweepShare shareGlyph parity; the numeral modes (IV/VIII)
-            // keep their glyph — same as the home cards. Look up by dbKey across
-            // ALL cards (founder, 2026-09-28): the home grid alone missed the
-            // ten More Games titles, which fell back to letter glyphs.
-            val shareCard = com.wordocious.app.ui.modeCardForKey(r.dbKey)
-            val handRes = com.wordocious.app.ui.modeIconRes(shareCard?.hand)
-            val iconRes = com.wordocious.app.ui.modeIconRes(shareCard?.lucide)
-            val handDrawable = handRes?.let { androidx.core.content.ContextCompat.getDrawable(context, it) }
-            val iconDrawable = iconRes?.let { androidx.core.content.ContextCompat.getDrawable(context, it) }
-            if (handDrawable != null) {
-                // iOS: hand 44x46 in the 72pt badge (~0.61), digit 22pt (~0.3)
-                // offset 9pt (~0.125) down, digit in the row accent.
-                val inset = badge * 0.20f
-                // Keep the 24x26 vector's aspect (a VectorDrawable stretches to
-                // its bounds; iOS scaledToFit does not).
-                val handH = badge - 2 * inset
-                val handW = handH * (24f / 26f)
-                val handLeft = badgeRect.centerX() - handW / 2f
-                handDrawable.setTint(Color.WHITE)
-                handDrawable.setBounds(
-                    handLeft.toInt(), (badgeRect.top + inset).toInt(),
-                    (handLeft + handW).toInt(), (badgeRect.bottom - inset).toInt(),
-                )
-                handDrawable.draw(c)
-                p.typeface = black; p.isFakeBoldText = false
-                p.textSize = badge * 0.30f; p.color = r.accent
-                c.drawText(r.glyph, badgeRect.centerX(), badgeRect.centerY() + badge * 0.125f + p.textSize * 0.35f, p)
-            } else if (iconDrawable != null) {
-                val inset = badge * 0.28f
-                iconDrawable.setTint(Color.WHITE)
-                iconDrawable.setBounds(
-                    (badgeRect.left + inset).toInt(), (badgeRect.top + inset).toInt(),
-                    (badgeRect.right - inset).toInt(), (badgeRect.bottom - inset).toInt(),
-                )
-                iconDrawable.draw(c)
-            } else {
-                p.typeface = black; p.isFakeBoldText = false
-                p.textSize = if (r.glyph.length >= 3) 24f else 30f; p.color = Color.WHITE
-                c.drawText(r.glyph, badgeRect.centerX(), badgeRect.centerY() + p.textSize * 0.35f, p)
-            }
-
-            val textX = bx + badge + 22f
-            p.textAlign = Paint.Align.LEFT
-            p.textSize = 30f; p.color = TEXT_DARK
-            c.drawText(r.label, textX, rect.centerY() - 6f, p)
-            p.typeface = bold; p.textSize = 21f; p.color = TEXT_MUTED
-            val guessDisp = if (r.won) "${r.guesses}g" else "X"
-            c.drawText("$guessDisp · ${fmt(r.timeSeconds)} · ${r.score} pts", textX, rect.centerY() + 24f, p)
-
-            p.typeface = black; p.textAlign = Paint.Align.RIGHT; p.textSize = 48f
-            p.color = if (r.won) WIN_FG else LOSS_FG
-            c.drawText(if (r.won) "✓" else "✗", rect.right - 32f, rect.centerY() + 18f, p)
-            p.textAlign = Paint.Align.CENTER
         }
+        return ShareCard.render(context, ShareCard.Spec(
+            wallpaper = R.drawable.art_wall_home,
+            title = if (puzzles) R.drawable.art_title_puzzles else R.drawable.art_title_dailies,
+            titleFallback = if (puzzles) "PUZZLES" else "DAILIES",
+            info = listOfNotNull(ShareFinish.dayCaps(today), puzzleNo).joinToString(" · "),
+            body = body,
+            stats = listOf(
+                ShareFinish.Stat("${totals.won}/${totals.total}", "WON", ShareFinish.Window.PURPLE),
+                ShareFinish.Stat(fmt(totals.totalTimeSeconds), "TIME", ShareFinish.Window.BLUE),
+                ShareFinish.Stat(String.format(Locale.US, "%,d", totals.totalScore), "POINTS", ShareFinish.Window.GOLD),
+            ),
+        ))
+    }
 
-        // Footer, with the §17 cast strip above it.
-        ShareArt.drawCastStripAboveFooter(context, c, cx, H - 40f)
-        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 22f; p.color = FOOT
-        c.drawText("wordocious.com", cx, H - 40f, p)
-        return bmp
+    /** S4 the sweep caption — only the text fallback when no image can be written. */
+    private fun sweepCaption(): String {
+        val day = com.wordocious.app.todayLocalDate()
+        return ShareCaptions.caption(ShareCaptions.Kind.SWEEP, ShareCaptions.Vars(date = day, game = "Daily Sweep")) + "\nwordocious.com"
     }
 
     /**
@@ -249,35 +154,12 @@ object DailySweepShare {
         val totals = moreTotalsAsTotals(byMode)
         val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
         val bitmap = render(context, rows, totals, flawless, title = moreCardTitle(byMode), puzzles = true)
-        val text = if (flawless) "Puzzles Flawless on Wordocious! All ${totals.total} puzzles won."
-                   else "Puzzles Sweep on Wordocious! All ${totals.total} puzzles done."
-        val uri = writePng(context, bitmap, "wordocious-moregames.png")
-        ShareEvents.log(if (uri != null) "image" else "text", "", "more_sweep")
-        if (uri == null) { ShareHelper.share(context, "$text\nhttps://wordocious.com/?more=1"); return }
-        // Same OG page as the Daily Sweep (m=MoreSweep) so a pasted link unfurls the card, not the home page.
-        CoroutineScope(Dispatchers.IO).launch {
-            val url = uploadUrl(bitmap, totals, shareMode = "MoreSweep", flawless = flawless) ?: "https://wordocious.com/?more=1"
-            val finalText = "$text\n$url"
-            withContext(Dispatchers.Main) {
-                runCatching {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/png"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_TEXT, finalText)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share your Puzzles").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-                }.onFailure { ShareHelper.share(context, finalText) }
-            }
-        }
+        val fallback = if (flawless) "Puzzles Flawless on Wordocious! All ${totals.total} puzzles won.\nwordocious.com"
+                       else "Puzzles Sweep on Wordocious! All ${totals.total} puzzles done.\nwordocious.com"
+        // S1: the image only (no hosted link, no caption).
+        val sent = ShareHelper.shareImage(context, bitmap, "Puzzles", fallbackText = fallback)
+        ShareEvents.log(if (sent) "image" else "text", "", "more_sweep")
     }
-
-    private fun writePng(context: Context, bitmap: Bitmap, name: String): android.net.Uri? = runCatching {
-        val dir = File(context.cacheDir, "share").apply { mkdirs() }
-        val file = File(dir, name)
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
-        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-    }.getOrNull()
 
     /**
      * The home banner's share button (home redesign, founder 2026-10-01): today's
@@ -292,218 +174,121 @@ object DailySweepShare {
         val moreRows = rows(byMode, more = true)
         if (wordRows.isEmpty() && moreRows.isEmpty()) return
         val totals = DailyCompletionsService.totals(byMode)
-        val uris = ArrayList<android.net.Uri>()
+        val images = ArrayList<Pair<Bitmap, String>>()
         if (wordRows.isNotEmpty()) {
-            writePng(context, render(context, wordRows, totals, totals.flawless, title = headline), "wordocious-today.png")?.let(uris::add)
+            images += render(context, wordRows, totals, totals.flawless, title = headline) to "Wordocious-Today.png"
         }
         if (moreRows.isNotEmpty()) {
             val moreTotals = moreTotalsAsTotals(byMode)
             val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
             val title = if (wordRows.isEmpty()) headline else moreCardTitle(byMode)
-            writePng(context, render(context, moreRows, moreTotals, flawless, title = title, puzzles = true), "wordocious-puzzles.png")?.let(uris::add)
+            images += render(context, moreRows, moreTotals, flawless, title = title, puzzles = true) to "Wordocious-Puzzles.png"
         }
-        val text = "$headline\nwordocious.com"
-        ShareEvents.log(if (uris.isNotEmpty()) "image" else "text", "", "home_banner")
-        if (uris.isEmpty()) { ShareHelper.share(context, text); return }
-        runCatching {
-            val intent = if (uris.size == 1) {
-                Intent(Intent.ACTION_SEND).apply { putExtra(Intent.EXTRA_STREAM, uris[0]) }
-            } else {
-                Intent(Intent.ACTION_SEND_MULTIPLE).apply { putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris) }
-            }.apply {
-                type = "image/png"
-                putExtra(Intent.EXTRA_TEXT, text)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, "Share today's progress").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
-        }.onFailure { ShareHelper.share(context, text) }
+        // S1: the images only (one ACTION_SEND, or SEND_MULTIPLE for both cards); no text.
+        val sent = ShareHelper.shareImages(context, images, "Share today's progress", fallbackText = "$headline\nwordocious.com")
+        ShareEvents.log(if (sent) "image" else "text", "", "home_banner")
     }
 
-    /** Build + share the all-dailies card. */
+    /** Build + share the all-dailies card — S1: the image only. */
     fun share(context: Context, byMode: Map<String, DailyCompletionsService.Completion>) {
         val rows = rows(byMode)
         if (rows.isEmpty()) return
         val totals = DailyCompletionsService.totals(byMode)
         val bitmap = render(context, rows, totals, totals.flawless)
-        val text = if (totals.flawless)
-            "Flawless Victory on Wordocious! All ${totals.total} daily puzzles won."
-        else "Daily Sweep on Wordocious! All ${totals.total} daily puzzles done."
-
-        val uri = runCatching {
-            val dir = File(context.cacheDir, "share").apply { mkdirs() }
-            val file = File(dir, "wordocious-dailysweep.png")
-            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        }.getOrNull()
-        ShareEvents.log(if (uri != null) "image" else "text", "", "daily_sweep")
-        if (uri == null) { ShareHelper.share(context, text); return }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val url = uploadUrl(bitmap, totals)
-            val finalText = if (url != null) "$text\n$url" else text
-            withContext(Dispatchers.Main) {
-                runCatching {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/png"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_TEXT, finalText)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share your dailies").apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
-                }.onFailure { ShareHelper.share(context, finalText) }
-            }
-        }
+        val sent = ShareHelper.shareImage(context, bitmap, if (totals.flawless) "Flawless Victory" else "Daily Sweep", fallbackText = sweepCaption())
+        ShareEvents.log(if (sent) "image" else "text", "", "daily_sweep")
     }
-
-    private suspend fun uploadUrl(
-        bitmap: Bitmap, totals: DailyCompletionsService.Totals,
-        shareMode: String = "DailySweep", flawless: Boolean = totals.flawless,
-    ): String? = runCatching {
-        val uid = AuthService.userId?.lowercase() ?: return null
-        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val key = "$uid/$shareMode-$dateStr"
-        val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
-        SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
-        val q = linkedMapOf(
-            "m" to shareMode,
-            "sweep" to if (flawless) "flawless" else "sweep",
-            "won" to "${totals.won}", "tot" to "${totals.total}",
-            "t" to "${totals.totalTimeSeconds}", "pts" to "${totals.totalScore}",
-            "w" to "1080", "h" to "1350",
-            "v" to "${if (flawless) "f" else "s"}${totals.won}-${totals.totalTimeSeconds}-${totals.totalScore}",
-        )
-        "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${android.net.Uri.encode(it.value)}" }
-    }.getOrNull()
 }
 
-/** Profile stats share card (Wave B P4) — 1080² PNG matching web drawProfileCard:
- *  wordmark, accent username, Level·Tier, a 2×3 grid of stat tiles. */
+/** Profile stats share card (Wave B P4) in the E1 look, S2-fitted: the STATS title
+ *  art, the info line (Level · Tier), the username over a 2 × 3 grid of tinted stat
+ *  windows (soft numbers), then the S3 cast wordmark. */
 object ProfileShare {
-    private const val S = 1080
-    private const val BG = 0xFFF8F7FF.toInt()
-    private const val TEXT_MUTED = 0xFF6B7280.toInt()
-    private const val FOOT = 0xFF9CA3AF.toInt()
-    private const val TILE_BORDER = 0xFFE5E7EB.toInt()
-
     data class ProfileInput(
         val username: String, val level: Int, val tier: String, val accent: Int,
         val totalWins: Int, val winRate: Int, val currentStreak: Int, val dailyStreak: Int,
         val gold: Int, val silver: Int, val bronze: Int,
         val achievementsUnlocked: Int, val achievementsTotal: Int,
+        /** FINISH_SPEC AH: the worn cast character; null = the player's recorded choice (CastAvatars). */
+        val castId: String? = null,
     )
 
-    private fun nunito(context: Context, black: Boolean): Typeface {
-        val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        // Nunito.ttf is a variable font whose default instance is ExtraLight; the
-        // weighted create (API 28+) drives the real `wght` axis so the share card
-        // renders true Bold/Black instead of faux-bolded thin glyphs.
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            Typeface.create(base, if (black) 900 else 700, false)
-        else Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
-    }
-
     fun render(context: Context, input: ProfileInput): Bitmap {
-        val bmp = Bitmap.createBitmap(S, S, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        // ART_SPEC §17: the home tint (+ tiles) behind the card.
-        ShareArt.drawHomeTint(context, c)
-        val black = nunito(context, true)
-        val bold = nunito(context, false)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-        val cx = S / 2f
-
-        // Wordmark
-        p.typeface = black; p.isFakeBoldText = false; p.textSize = 50f
-        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
-        c.drawText("WORDOCIOUS", cx, 110f, p)
-        p.shader = null
-
-        // Username (accent)
-        p.textSize = 76f; p.color = input.accent
-        c.drawText(input.username, cx, 210f, p)
-
-        // Level · Tier
-        p.typeface = bold; p.textSize = 30f; p.color = TEXT_MUTED
-        c.drawText("Level ${input.level} · ${input.tier}", cx, 262f, p)
-
-        // 2×3 stat tiles
+        val fonts = ShareFinish.Fonts(context)
         val tiles = listOf(
-            "${input.totalWins}" to "Total Wins",
-            "${input.winRate}%" to "Win Rate",
-            "${input.currentStreak}" to "Win Streak",
-            "${input.dailyStreak}" to "Daily Streak",
-            "${input.gold}·${input.silver}·${input.bronze}" to "Medals G·S·B",
-            "${input.achievementsUnlocked}/${input.achievementsTotal}" to "Achievements",
+            ShareFinish.Stat("${input.totalWins}", "TOTAL WINS", ShareFinish.Window.PURPLE),
+            ShareFinish.Stat("${input.winRate}%", "WIN RATE", ShareFinish.Window.BLUE),
+            ShareFinish.Stat("${input.currentStreak}", "WIN STREAK", ShareFinish.Window.GOLD),
+            ShareFinish.Stat("${input.dailyStreak}", "DAILY STREAK", ShareFinish.Window.PINK),
+            ShareFinish.Stat("${input.gold}·${input.silver}·${input.bronze}", "MEDALS G·S·B", ShareFinish.Window.TEAL),
+            ShareFinish.Stat("${input.achievementsUnlocked}/${input.achievementsTotal}", "ACHIEVEMENTS", ShareFinish.Window.PURPLE),
         )
-        val padH = 80f; val gap = 24f
-        val tileW = (S - padH * 2 - gap) / 2
-        val areaTop = 340f; val areaBottom = (S - 90).toFloat() - ShareArt.STRIP_BAND
-        val tileH = (areaBottom - areaTop - gap * 2) / 3
-        for (i in tiles.indices) {
-            val col = i % 2; val rowIdx = i / 2
-            val left = padH + col * (tileW + gap)
-            val top = areaTop + rowIdx * (tileH + gap)
-            val rect = RectF(left, top, left + tileW, top + tileH)
-            c.drawRoundRect(rect, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
-            c.drawRoundRect(rect, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE; strokeWidth = 3f; color = TILE_BORDER
-            })
-            p.typeface = black; p.isFakeBoldText = false; p.textSize = 60f; p.color = input.accent
-            c.drawText(tiles[i].first, rect.centerX(), rect.centerY() + 6f, p)
-            p.typeface = bold; p.textSize = 26f; p.color = TEXT_MUTED
-            c.drawText(tiles[i].second, rect.centerX(), rect.centerY() + 56f, p)
+        val w = 950f
+        val badgeH = 120f
+        val nameH = 96f
+        val gap = 6f * U
+        val tileH = 230f
+        val body = ShareCard.Body(w, badgeH + nameH + 14f + tileH * 2 + gap) { c ->
+            // FINISH_SPEC V3: the tier badge with "LVL N" in soft numbers + the tier name, centered.
+            val lvl = ShareFinish.softPaint(fonts, 64f, Paint.Align.LEFT)
+            val cap = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.black; textSize = 36f; color = ShareFinish.INK_LABEL; letterSpacing = 0.06f; ShareFinish.softShadow(this) }
+            val lvlText = "${input.level}"
+            val tierText = input.tier.uppercase(Locale.US)
+            val gapX = 18f
+            val rowW = badgeH + gapX + cap.measureText("LVL ") + lvl.measureText(lvlText) + gapX + cap.measureText(tierText)
+            var x = (w - rowW) / 2f
+            ShareFinish.drawArtInto(context, c, com.wordocious.app.ui.BadgeArt.level(com.wordocious.core.levelTier(input.level)), RectF(x, 0f, x + badgeH, badgeH))
+            x += badgeH + gapX
+            val cy = badgeH / 2f
+            c.drawText("LVL ", x, cy - (cap.ascent() + cap.descent()) / 2f, cap)
+            x += cap.measureText("LVL ")
+            c.drawText(lvlText, x, cy - (lvl.ascent() + lvl.descent()) / 2f, lvl)
+            x += lvl.measureText(lvlText) + gapX
+            c.drawText(tierText, x, cy - (cap.ascent() + cap.descent()) / 2f, cap)
+            c.translate(0f, badgeH)
+            val name = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = 72f; color = ShareFinish.INK_HEADING; ShareFinish.softShadow(this) }
+            // AN5: the player's mascot (saved config / worn AH character's preset / default)
+            // stands beside the name — the same composer as every on-screen avatar.
+            run {
+                val d = 92f
+                val gapA = 18f
+                ShareFinish.fitText(name, input.username, w - 40f - d - gapA)
+                val tw = name.measureText(input.username)
+                val left = (w - (d + gapA + tw)) / 2f
+                val cyN = nameH / 2f
+                drawMascot(context, c, input, left, cyN - d / 2f, d)
+                c.drawText(input.username, left + d + gapA + tw / 2f, cyN - (name.ascent() + name.descent()) / 2f, name)
+            }
+            val y0 = nameH + 14f
+            ShareFinish.drawStats(c, fonts, tiles.take(3), 0f, w, y0, tileH, gap, valueSize = 70f)
+            ShareFinish.drawStats(c, fonts, tiles.drop(3), 0f, w, y0 + tileH + gap, tileH, gap, valueSize = 70f)
         }
-
-        // Footer, with the §17 cast strip above it.
-        ShareArt.drawCastStripAboveFooter(context, c, cx, S - 44f, footerTextSize = 24f)
-        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 24f; p.color = FOOT
-        c.drawText("wordocious.com", cx, S - 44f, p)
-        return bmp
+        return ShareCard.render(context, ShareCard.Spec(
+            wallpaper = R.drawable.art_wall_home,
+            title = R.drawable.art_title_stats,
+            titleFallback = "STATS",
+            // V3: the level now rides on the tier badge row in the body; the info line dates the card.
+            info = ShareFinish.dayCaps(null),
+            body = body,
+        ))
     }
 
+    /** AN5: the player's mascot avatar, [d] px square at ([left], [top]) (offscreen MascotComposer). */
+    private fun drawMascot(context: Context, c: android.graphics.Canvas, input: ProfileInput, left: Float, top: Float, d: Float) {
+        val own = AuthService.profile.value?.takeIf { it.username.equals(input.username, ignoreCase = true) }
+        val look = CastAvatars.lookFor(input.username)
+        val cast = AvatarCast.normalize(input.castId ?: look?.castId)
+        val recorded = if (input.castId == null) MascotAvatars.configFor(input.username) else null
+        val cfg = MascotConfigRules.forDisplay(recorded, cast, look?.frame, input.username, own?.accentColor)
+        val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(input.username), 200f, d.toInt(), dark = false)
+        com.wordocious.app.ui.MascotComposer.draw(context, c, left, top, d, key)
+    }
+
+    /** S1: the stats card, image only (no hosted link, no caption). */
     fun share(context: Context, input: ProfileInput) {
         val bitmap = render(context, input)
-        val text = "My Wordocious stats — Level ${input.level} ${input.tier}, ${input.totalWins} wins."
-        val uri = runCatching {
-            val dir = File(context.cacheDir, "share").apply { mkdirs() }
-            val file = File(dir, "wordocious-profile.png")
-            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        }.getOrNull()
-        ShareEvents.log(if (uri != null) "image" else "text", "", "profile")
-        if (uri == null) { ShareHelper.share(context, text); return }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val url = uploadUrl(bitmap, input)
-            val finalText = if (url != null) "$text\n$url" else text
-            withContext(Dispatchers.Main) {
-                runCatching {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/png"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_TEXT, finalText)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share your stats").apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
-                }.onFailure { ShareHelper.share(context, finalText) }
-            }
-        }
+        val fallback = "My Wordocious stats: Level ${input.level} ${input.tier}, ${input.totalWins} wins.\nwordocious.com"
+        val sent = ShareHelper.shareImage(context, bitmap, "Stats", fallbackText = fallback, chooserTitle = "Share your stats")
+        ShareEvents.log(if (sent) "image" else "text", "", "profile")
     }
-
-    private suspend fun uploadUrl(bitmap: Bitmap, input: ProfileInput): String? = runCatching {
-        val uid = AuthService.userId?.lowercase() ?: return null
-        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val key = "$uid/Profile-$dateStr"
-        val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
-        SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
-        val q = linkedMapOf(
-            "m" to "Profile", "w" to "1080", "h" to "1080",
-            "v" to "p${input.totalWins}-${input.currentStreak}-${input.achievementsUnlocked}",
-        )
-        "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${android.net.Uri.encode(it.value)}" }
-    }.getOrNull()
 }

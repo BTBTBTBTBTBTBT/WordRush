@@ -41,7 +41,18 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.data.StatsDeepService
 import com.wordocious.app.ui.InviteSheet
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.CandyColor
+import com.wordocious.app.ui.CandyIcon
+import com.wordocious.app.ui.CandySize
+import com.wordocious.app.ui.FinishInk
+import com.wordocious.app.ui.miniGameCard
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.stripedRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.core.GameMode
 
 /**
@@ -77,16 +88,22 @@ fun VsFriendPage(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Segmented control on #ccfbf1.
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(VsTeal.soft).padding(3.dp)) {
+            // Segmented control (A1 tinted track; the picked option = the stronger tint + ring; A9 squish).
+            Row(
+                Modifier.fillMaxWidth().vsRow(VS_ACCENT, 14.dp).padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 listOf(false to ("RACE MY RUN" to "they play any time in 24 h"), true to ("LIVE NOW" to "both online")).forEach { (live, labels) ->
                     val on = liveTab == live
                     Column(
-                        Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (on) Color.White else Color.Transparent)
-                            .clickableNoRipple { liveTab = live }.padding(vertical = 8.dp),
+                        Modifier.weight(1f)
+                            .squishClickable("${labels.first}, ${labels.second}", role = Role.Tab) { liveTab = live }
+                            .semantics { selected = on }
+                            .then(if (on) Modifier.vsRow(VS_ACCENT, 11.dp, amount = 0.30f) else Modifier)
+                            .padding(vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(labels.first, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink)
+                        Text(labels.first, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (on) VsTeal.deep else VsTeal.ink)
                         Text(labels.second, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
                     }
                 }
@@ -98,7 +115,7 @@ fun VsFriendPage(
                         "Send a private match link or invite by @username — the match starts when you’re both in the lobby.",
                         fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub,
                     )
-                    VsTealButton("INVITE TO A LIVE MATCH", Modifier.fillMaxWidth()) { showInvite = true }
+                    VsTealButton("INVITE TO A LIVE MATCH", Modifier.fillMaxWidth(), fill = true, size = CandySize.LARGE) { showInvite = true }
                 }
             } else {
                 VsSectionLabel("FRIENDS")
@@ -112,28 +129,34 @@ fun VsFriendPage(
                         height = 120.dp, color = VsTeal.sub,
                     )
                 }
-                friends.forEach { f ->
-                    val id = f.id.lowercase()
-                    val on = id in picked
-                    val r = rivals[id]
-                    val h2h = when {
-                        r != null -> vsRivalLine(r.wins, r.losses, r.lastMode)
-                        (f.h2hW ?: 0) + (f.h2hL ?: 0) > 0 -> vsRivalLine(f.h2hW ?: 0, f.h2hL ?: 0, null)
-                        else -> "Never played · new friend"
-                    }
-                    PickRow(on, onClick = { picked = if (on) picked - id else picked + id }) {
-                        VsAvatar(f.username, f.avatarUrl, size = 36.dp, borderColor = Color.Transparent)
-                        Column(Modifier.weight(1f)) {
-                            Text("@${f.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1)
-                            Text(h2h, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1)
+                // One tinted card of striped rows (C4 / A1); a picked row takes the stronger tint.
+                if (friends.isNotEmpty()) VsTintedCard(
+                    Modifier.fillMaxWidth(), corner = 18.dp, barHeight = 6.dp,
+                    contentPadding = PaddingValues(6.dp), verticalArrangement = Arrangement.spacedBy(0.dp),
+                ) {
+                    friends.forEachIndexed { i, f ->
+                        val id = f.id.lowercase()
+                        val on = id in picked
+                        val r = rivals[id]
+                        val h2h = when {
+                            r != null -> vsRivalLine(r.wins, r.losses, r.lastMode)
+                            (f.h2hW ?: 0) + (f.h2hL ?: 0) > 0 -> vsRivalLine(f.h2hW ?: 0, f.h2hL ?: 0, null)
+                            else -> "Never played · new friend"
+                        }
+                        PickRow(on, index = i, label = "@${f.username}, $h2h", onClick = { picked = if (on) picked - id else picked + id }) {
+                            VsAvatar(f.username, f.avatarUrl, size = 38.dp, borderColor = Color.Transparent)
+                            Column(Modifier.weight(1f)) {
+                                Text("@${f.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 1)
+                                Text(h2h, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1)
+                            }
                         }
                     }
                 }
-                PickRow(link, onClick = { link = !link }) {
-                    Box(Modifier.size(36.dp).clip(CircleShape).background(VsTeal.soft), Alignment.Center) {
-                        Icon(Icons.Filled.Link, null, tint = VsTeal.ink, modifier = Modifier.size(18.dp))
+                PickRow(link, index = -1, label = "Send a link instead", onClick = { link = !link }) {
+                    Box(Modifier.size(38.dp).miniGameCard(VS_ACCENT, 10.dp), Alignment.Center) {
+                        Icon(Icons.Filled.Link, null, tint = VsTeal.ink, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                     }
-                    Text("Send a link instead", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, modifier = Modifier.weight(1f))
+                    Text("Send a link instead", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, modifier = Modifier.weight(1f))
                 }
                 val n = picked.size
                 val cta = when {
@@ -142,7 +165,7 @@ fun VsFriendPage(
                     link -> "PLAY, THEN SHARE A LINK"
                     else -> "PLAY, THEN SEND"
                 }
-                VsTealButton(cta, Modifier.fillMaxWidth(), enabled = n > 0 || link) {
+                VsTealButton(cta, Modifier.fillMaxWidth(), enabled = n > 0 || link, fill = true, size = CandySize.LARGE, color = CandyColor.PURPLE, icon = CandyIcon.PLAY) {
                     // Keep the server's ids (original case) for the picked rows.
                     val ids = friends.filter { it.id.lowercase() in picked }.map { it.id }
                     onSend(ids, link)
@@ -158,21 +181,31 @@ fun VsFriendPage(
     }
 }
 
-/** A selectable row: round check on the right, 2px teal ring when picked. */
+/**
+ * A selectable row (A1 / A9): a striped row inside the friends card ([index] ≥ 0; the
+ * stripe = every other row) or its own tinted row ([index] < 0); picked = the stronger
+ * tint + teal ring and a filled check. Squishes on tap; TalkBack reads a checkbox.
+ */
 @Composable
-private fun PickRow(on: Boolean, onClick: () -> Unit, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+private fun PickRow(on: Boolean, index: Int, label: String, onClick: () -> Unit, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    val look = when {
+        on -> Modifier.vsRow(VS_ACCENT, 12.dp, selected = true)
+        index >= 0 -> Modifier.clip(RoundedCornerShape(12.dp)).stripedRow(index, VS_ACCENT, first = index == 0)
+        else -> Modifier.vsRow(VS_ACCENT, 14.dp)
+    }
     Row(
-        Modifier.fillMaxWidth().vsCard()
-            .then(if (on) Modifier.border(2.dp, VsTeal.ink, RoundedCornerShape(14.dp)) else Modifier)
-            .clickableNoRipple(onClick).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth()
+            .squishClickable(label, role = Role.Checkbox, onClick = onClick)
+            .semantics { selected = on }
+            .then(look).padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         content()
         Box(
-            Modifier.size(24.dp).clip(CircleShape)
-                .background(if (on) VsTeal.ink else Color.White)
-                .border(1.5.dp, if (on) VsTeal.ink else Color(0xFFD1D5DB), CircleShape),
+            Modifier.size(26.dp).clip(CircleShape)
+                .background(if (on) Brush.verticalGradient(listOf(Color(0xFF5EEAD4), VS_ACCENT)) else androidx.compose.ui.graphics.SolidColor(vsWash(VS_ACCENT, 0.08f)))
+                .border(1.5.dp, if (on) Color(0xFFF5C542) else vsLine(VS_ACCENT), CircleShape),
             Alignment.Center,
-        ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp)) }
+        ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(15.dp)) }
     }
 }

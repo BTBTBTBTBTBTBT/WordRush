@@ -30,6 +30,11 @@ struct HomeBannerView: View {
     let onShare: () -> Void
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    /// FINISH_SPEC §R3 (founder 10-02): free players see the switch too; UNLIMITED
+    /// wears a PRO pill and opens the G1 Go Pro paywall, then switches once Pro.
+    @State private var showPro = false
+    @State private var unlimitedAfterPurchase = false
+    @ObservedObject private var auth = AuthService.shared
 
     private var unlimited: Bool { playMode == .unlimited }
     private var wTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(word.progress) }
@@ -38,6 +43,22 @@ struct HomeBannerView: View {
     private var headInk: Color { double ? Color(hex: 0x78350F) : Color(hex: 0x4C1D95) }
     private var subInk: Color { double ? Color(hex: 0x92400E) : Color(hex: 0x6D28D9) }
     private var anyPlayed: Bool { word.progress.played + puzzles.progress.played > 0 }
+
+    /// FINISH_SPEC §Z: which optional pieces take room comes from TODAY'S DAILY
+    /// state whatever the switch says (WordociousCore, unit tested), so flipping
+    /// Daily ⇄ Unlimited only crossfades content inside fixed slots — the tile
+    /// rows (and everything under the banner) never move.
+    private var slots: HomeBannerSlots {
+        HomeBannerSlots.compute(word: word.progress, puzzles: puzzles.progress,
+                                wordStreaks: word.streaks, puzzleStreaks: puzzles.streaks,
+                                mode: unlimited ? .unlimited : .daily)
+    }
+    /// Today's Double Flawless, whatever the switch says (sizes the Daily headline slot).
+    private var dailyDouble: Bool {
+        HomeBanner.groupTier(word.progress) == .flawless && HomeBanner.groupTier(puzzles.progress) == .flawless
+    }
+    /// The Daily ⇄ Unlimited switch's sliding thumb.
+    @Namespace private var switchThumb
 
     private static func tierColor(_ t: BannerTier, none: UInt) -> Color {
         switch t {
@@ -55,12 +76,59 @@ struct HomeBannerView: View {
         }
     }
 
+    /// FINISH_SPEC §G4: the banner's celebration state (the Wordocious row's tier).
+    /// §Z: from today's DAILY tier whatever the switch says — the bar + art slots
+    /// stay in Unlimited (the art crossfades to U's loop), so nothing moves.
+    private enum Moment { case sweep, flawless }
+    private var moment: Moment? {
+        switch HomeBanner.groupTier(word.progress) {
+        case .flawless: return .flawless
+        case .sweep: return .sweep
+        case .none: return nil
+        }
+    }
+    private var momentArt: String? {
+        // FINISH_SPEC §X: no celebration today → in the Halloween season the banner
+        // shows `art-scene-banner-halloween` in the same slot (nil when it doesn't ship).
+        guard let m = moment else { return CastSkin.bannerArt }
+        let name = m == .flawless ? "art-scene-banner-flawless" : "art-scene-banner-sweep"
+        return ArtAsset.exists(name) ? name : nil
+    }
+    /// §G4: the celebration card's top bar (gold sweep, pink flawless).
+    private var momentBar: [Color]? {
+        switch moment {
+        case .flawless: return [Color(hex: 0xEC4899), Color(hex: 0xF9A8D4)]
+        case .sweep: return [Color(hex: 0xF5A524), Color(hex: 0xFFD166)]
+        case nil: return nil
+        }
+    }
+
     var body: some View {
         // ART_SPEC §18.4: radius 22, the full content width.
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         let hasPuzzles = !puzzles.modes.isEmpty
-        VStack(spacing: 0) {
+        let card = VStack(spacing: 0) {
+            if let bar = momentBar {
+                LinearGradient(colors: bar, startPoint: .leading, endPoint: .trailing).frame(height: 8)
+                    .opacity(slots.showsMomentArt ? 1 : 0)
+            }
             strip
+            // §G4: the wide sweep / flawless art across the banner under the headline,
+            // the whole cast in it fully visible (never cropped).
+            if let art = momentArt {
+                Image(art).resizable().interpolation(.high).scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: 104)
+                    .opacity(slots.showsMomentArt ? 1 : 0)
+                    // §Z: Unlimited keeps the slot — U in her loop fills it instead.
+                    .overlay {
+                        if !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
+                            Image("art-scene-unlimited-loop").resizable().interpolation(.high).scaledToFit()
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.horizontal, 10).padding(.top, 6)
+                    .accessibilityHidden(true)
+            }
             rowView(word, tier: wTier, label: "WORDOCIOUS", tile: 32, radius: 9, gap: 7, icon: 16)
                 .padding(.top, 10).padding(.horizontal, 12).padding(.bottom, hasPuzzles ? 6 : 12)
             // Remote flags can switch the Puzzles off entirely; then the row goes too.
@@ -82,14 +150,23 @@ struct HomeBannerView: View {
             }
         }
         .clipShape(shape)
+        .overlay {
+            if let bar = momentBar, slots.showsMomentArt {
+                shape.stroke(bar[0].wash(0.45), lineWidth: 1.5)
+            }
+        }
         .shadow(color: double ? Color(hex: 0xF59E0B).opacity(0.8) : Color(hex: 0x4C1D95).opacity(0.08),
                 radius: double ? 13 : 7, x: 0, y: double ? 0 : 4)
-        // The cast (docs/MASCOT_SPEC.md §1–§2): W hosts home, left of the share button.
-        .bannerHost(Mascots.home, trailing: showsShare ? 50 : 10)
+        if momentArt != nil {
+            // §A7: the celebration art already carries W, so the host steps aside
+            // (same top inset, so the page doesn't shift).
+            card.padding(.top, 12)
+        } else {
+            // The cast (docs/MASCOT_SPEC.md §1–§2): W hosts home, left of the share button.
+            // §Z: the share button's slot (not its visibility) sets W's spot.
+            card.bannerHost(Mascots.home, trailing: slots.hasShare ? 50 : 10)
+        }
     }
-
-    /// Unlimited: no share. Nothing played yet: nothing to share, so no button.
-    private var showsShare: Bool { !unlimited && anyPlayed }
 
     // MARK: Background
 
@@ -117,25 +194,34 @@ struct HomeBannerView: View {
         // Ticks once a second for the clock line; the headline's greeting follows the hour.
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
             let hour = Calendar.current.component(.hour, from: ctx.date)
-            let headline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: unlimited)
+            // §Z: both modes' headlines are laid out in one slot (the taller sets its
+            // height) and crossfade, so the switch never changes the strip's height.
+            let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false)
+            let unlimitedHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: true)
             let clockLine = HomeBanner.bannerClockLine(word.progress, puzzles.progress, clock: Self.countdown(), unlimited: unlimited)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .top, spacing: 6) {
                     // ART_SPEC §18.4: a headline that fits on one line sits centered;
                     // one that wraps stays left, two lines, shrinking before a third.
-                    ViewThatFits(in: .horizontal) {
-                        headlineRow(headline, oneLine: true)
-                        headlineRow(headline, oneLine: false)
+                    ZStack(alignment: .topLeading) {
+                        headlineSlot(dailyHeadline, trophy: dailyDouble)
+                            .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
+                        headlineSlot(unlimitedHeadline, trophy: false)
+                            .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
                     }
                     // The headline keeps clear of the host standing at the strip's right end.
                     .padding(.trailing, Mascots.bannerClearance)
-                    if showsShare {
+                    // §Z: the share slot stays in Unlimited (empty there).
+                    if slots.hasShare {
                         Button(action: onShare) {
                             Icon3D(.share, size: 24)
                                 .frame(width: 36, height: 36).contentShape(Rectangle())
                         }
                         .buttonStyle(.squish)
                         .accessibilityLabel("Share today's progress")
+                        .opacity(slots.showsShare ? 1 : 0)
+                        .allowsHitTesting(slots.showsShare)
+                        .accessibilityHidden(!slots.showsShare)
                     }
                 }
                 HStack(spacing: 8) {
@@ -144,7 +230,7 @@ struct HomeBannerView: View {
                         .foregroundStyle(subInk)
                         .lineLimit(1).minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    if isPro { modeSwitch }
+                    modeSwitch
                 }
                 .padding(.trailing, 4)
             }
@@ -164,22 +250,27 @@ struct HomeBannerView: View {
         }
     }
 
-    /// The headline (+ the double-flawless trophy / Unlimited's infinity): one line
-    /// centered, or up to two lines left-aligned.
-    private func headlineRow(_ headline: String, oneLine: Bool) -> some View {
+    /// One mode's headline: one line centered, or up to two lines left-aligned.
+    private func headlineSlot(_ headline: String, trophy: Bool) -> some View {
+        ViewThatFits(in: .horizontal) {
+            headlineRow(headline, oneLine: true, trophy: trophy)
+            headlineRow(headline, oneLine: false, trophy: trophy)
+        }
+    }
+
+    /// The headline (+ the double-flawless trophy; FINISH_SPEC §Y: Unlimited has no
+    /// infinity glyph any more): one line centered, or up to two lines left-aligned.
+    private func headlineRow(_ headline: String, oneLine: Bool, trophy: Bool) -> some View {
         HStack(spacing: 6) {
-            if double {
+            if trophy {
                 Icon3D(.trophy, size: 20)
-            }
-            if unlimited {
-                Image(systemName: "infinity").font(.system(size: 17, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
             }
             // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
             // violet→pink) with a soft pink glow; the double-flawless gold day keeps its tier ink.
             Text(headline)
                 .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(0)
-                .foregroundStyle(double ? AnyShapeStyle(headInk) : AnyShapeStyle(Theme.wordmarkGradient))
-                .shadow(color: double ? .clear : Color(hex: 0xEC4899).opacity(0.25), radius: 3)
+                .foregroundStyle(trophy ? AnyShapeStyle(headInk) : AnyShapeStyle(Theme.wordmarkGradient))
+                .shadow(color: trophy ? .clear : Color(hex: 0xEC4899).opacity(0.25), radius: 3)
                 .multilineTextAlignment(oneLine ? .center : .leading)
                 .fixedSize(horizontal: oneLine, vertical: true)
                 .lineLimit(oneLine ? 1 : 2)
@@ -207,25 +298,53 @@ struct HomeBannerView: View {
 
     private func segment(_ m: PlayMode, _ label: String) -> some View {
         let on = playMode == m
-        return Button { onModeChange(m) } label: {
+        let locked = m == .unlimited && !isPro
+        return Button {
+            if locked { unlimitedAfterPurchase = true; showPro = true } else { onModeChange(m) }
+        } label: {
             Text(label)
                 .font(Brand.font(10.5, .black)).tracking(0.6)
                 .foregroundStyle(on ? (m == .daily ? Color(hex: 0x4C1D95) : Color(hex: 0x6D28D9)) : Color(hex: 0x7C3AED))
                 .padding(.horizontal, 10).frame(height: 26)
-                // §A1: the "on" segment is a soft lilac pill, not white.
-                .background(Capsule().fill(on ? Color(hex: 0xFBF8FF) : Color.clear)
-                    .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.14) : .clear, radius: 2, x: 0, y: 1))
+                // §A1: the "on" segment is a soft lilac pill, not white. §Z: ONE thumb
+                // slides between the segments (matched geometry); the segments keep
+                // their width and weight in both states, so nothing reflows.
+                .background {
+                    if on {
+                        Capsule().fill(Color(hex: 0xFBF8FF))
+                            .shadow(color: Color(hex: 0x4C1D95).opacity(0.14), radius: 2, x: 0, y: 1)
+                            .matchedGeometryEffect(id: "thumb", in: switchThumb)
+                    }
+                }
                 .lineLimit(1).fixedSize()
+                .overlay(alignment: .topTrailing) {
+                    if locked {
+                        Text("PRO").font(Brand.font(7.5, .black)).foregroundStyle(Color(hex: 0x7A3D00))
+                            .padding(.horizontal, 4).padding(.vertical, 1)
+                            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFE08A), Color(hex: 0xF5A524)],
+                                                                      startPoint: .top, endPoint: .bottom)))
+                            .offset(x: 6, y: -6)
+                            .accessibilityHidden(true)
+                    }
+                }
         }
         .buttonStyle(.squish)
+        .accessibilityLabel(locked ? "\(label), Pro" : label)
         .accessibilityAddTraits(on ? .isSelected : [])
+        .sheet(isPresented: m == .unlimited ? $showPro : .constant(false), onDismiss: {
+            if unlimitedAfterPurchase && auth.isProActive { onModeChange(.unlimited) }
+            unlimitedAfterPurchase = false
+        }) { ProView() }
+        .onChange(of: auth.isProActive) { pro in if pro && showPro { showPro = false } }
     }
 
     // MARK: Rows
 
     private func rowView(_ r: Row, tier: BannerTier, label: String, tile: CGFloat, radius: CGFloat, gap: CGFloat, icon: CGFloat) -> some View {
         let ink = Self.tierInk(tier)
-        let streak = unlimited ? 0 : HomeBanner.groupStreak(tier, r.streaks)
+        // §Z: the flame's slot comes from today's DAILY streak whatever the switch
+        // says; Unlimited only fades it out, so the row keeps its height.
+        let streak = HomeBanner.groupStreak(HomeBanner.groupTier(r.progress), r.streaks)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(label).font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
@@ -241,6 +360,8 @@ struct HomeBannerView: View {
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(streak)-day streak")
+                    .opacity(slots.showsFlames ? 1 : 0)
+                    .accessibilityHidden(!slots.showsFlames)
                 }
             }
             HStack(spacing: gap) {

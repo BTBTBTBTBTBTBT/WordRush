@@ -66,9 +66,16 @@ import com.wordocious.app.data.VSCountsService
 import com.wordocious.app.data.VSPlayLimit
 import com.wordocious.app.data.VsChallengeService
 import com.wordocious.app.data.VsLobbyStore
-import com.wordocious.app.ui.GameTileSquare
 import com.wordocious.app.ui.ModeGlyph
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.FinishInk
+import com.wordocious.app.ui.MascotId
+import com.wordocious.app.ui.miniGameCard
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.stripedRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.ui.modeAccent
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -191,14 +198,18 @@ private fun LobbyMain(
 
     Box(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         Column(Modifier.fillMaxSize()) {
-            // HEADER_SPEC §5: the VS banner's S is the page host; the title row doesn't repeat it.
-            // ART_SPEC §2: the whole-cast VS BATTLE art is the title.
-            VsNavBar("VS BATTLE", onBack = onClose, art = com.wordocious.app.ui.TitleArt.VS) {
+            // HEADER_SPEC §5: the VS banner's S is the page host; the top row doesn't repeat it.
+            // FINISH_SPEC A6: the whole-cast VS BATTLE art is the page's headline, edge to edge.
+            VsTopRow(onBack = onClose) {
                 val looking = counts.values.sumOf { it.waiting }
-                if (looking > 0 || online != null) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (looking > 0 || online != null) Row(
+                    Modifier.vsPill(VS_ACCENT, 50.dp).padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(if (looking > 0) Color(0xFF22C55E) else VsTeal.grey))
+                    VsNumber(if (looking > 0) "$looking" else "${online ?: 0}", 12.sp)
                     Text(
-                        if (looking > 0) "$looking looking" else "${online ?: 0} online",
+                        if (looking > 0) "looking" else "online",
                         fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub,
                     )
                 }
@@ -207,6 +218,7 @@ private fun LobbyMain(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                com.wordocious.app.ui.PageHeadline(com.wordocious.app.ui.TitleArt.VS, bleed = 16.dp)
                 if (profile == null) {
                     GuestPrompt { AuthService.exitGuest() }
                     Spacer(Modifier.height(24.dp))
@@ -216,6 +228,8 @@ private fun LobbyMain(
                 val incoming = listing?.incoming.orEmpty()
                 val newest = incoming.firstOrNull()
                 val botOfDay = prog.botOfDayToday(today)
+                // FINISH_SPEC D2: the Bot of the Day is the day host's bot (core BotCast).
+                val botOfDayBot = com.wordocious.core.BotCast.botOfTheDay(today)
                 val input = VsBannerInput(
                     name = profile?.username ?: "", battle = battle.result, botOfDay = botOfDay,
                     incomingFrom = newest?.challenger?.username, streak = prog.streak,
@@ -224,11 +238,12 @@ private fun LobbyMain(
                     input = input, free = free, clock = clock,
                     challengeLeft = newest?.let { "${VsChallengeService.hoursLeft(it.expiresAt)}H" },
                     battle = VsTodayTile(battle.result, battleLine(battle, free)),
-                    botOfDay = VsTodayTile(botOfDay, botLine(botOfDay, free)),
+                    botOfDay = VsTodayTile(botOfDay, botLine(botOfDay, free, botOfDayBot.name)),
                     recordLine = vsRecordLine(people, bots, if (free) null else prog.ladderCleared),
                     botStreak = prog.streak,
                     onBattle = { if (dailyUsed && free) showLimit = true else onPlay(VsRoute(GameMode.DUEL, isDaily = true)) },
                     onBotOfDay = { onPlay(VsRoute(if (free) GameMode.DUEL else mode, false, VsLaunch.Bot(CpuKind.DAILY))) },
+                    botOfDayId = botOfDayBot.id,
                 )
 
                 // Incoming challenges: up to 3, newest first.
@@ -238,23 +253,30 @@ private fun LobbyMain(
                 val shownMode = if (free) GameMode.DUEL else mode
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     VsSectionLabel("PLAY", Modifier.weight(1f))
-                    Text(vsModeName(shownMode).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = modeAccent(shownMode))
+                    Text(vsModeName(shownMode).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = vsInk(modeAccent(shownMode)))
                 }
-                // The square game tile (docs/GAME_TILE_STYLE.md) at strip size: wash, top bar,
-                // border and chip, no label (the picked mode's name sits on the PLAY line).
+                // FINISH_SPEC A1: the mode strip's tiles are mini game cards in each game's
+                // accent (the picked one = stronger tint + ring), squishing on tap (A9); no
+                // label (the picked mode's name sits on the PLAY line).
                 Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 6.dp, horizontal = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     VS_MODES.forEach { m ->
                         val locked = free && m != GameMode.DUEL
                         val accent = modeAccent(m)
-                        GameTileSquare(
-                            accent = accent, label = null, selected = m == shownMode,
-                            modifier = Modifier.size(44.dp).alpha(if (locked) 0.35f else 1f),
-                            surface = Color.White, chipSize = 30.dp, corner = 12.dp,
-                            onClick = { if (locked) onGoPro() else onMode(m) },
-                        ) { chip -> ModeGlyph(m, accent, chip) }
+                        val on = m == shownMode
+                        Box(
+                            Modifier.size(48.dp)
+                                .squishClickable(
+                                    vsModeName(m) + if (locked) ", Pro" else "",
+                                    role = androidx.compose.ui.semantics.Role.Tab,
+                                ) { if (locked) onGoPro() else onMode(m) }
+                                .semantics { selected = on }
+                                .alpha(if (locked) 0.4f else 1f)
+                                .miniGameCard(accent, 12.dp, selected = on),
+                            Alignment.Center,
+                        ) { Box(Modifier.padding(top = 3.dp)) { ModeGlyph(m, accent, 30.dp) } }
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -282,11 +304,17 @@ private fun LobbyMain(
                             icon = { Icon(Icons.Filled.Groups, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
                         ) { onPage(VsLobbyPage.Friend()) }
                         val cleared = prog.ladderCleared
+                        val allCleared = cleared >= VsLobby.LADDER_BOTS.size
                         PlayTile(
                             "BOTS",
-                            if (cleared >= VsLobby.LADDER_BOTS.size) "Ladder cleared!"
+                            // FINISH_SPEC D1: the next rung named by its cast name ("Ivy is next").
+                            if (allCleared) "Ladder cleared!"
                             else "Ladder $cleared of ${VsLobby.LADDER_BOTS.size}. ${com.wordocious.app.data.BotPersonas.name(CpuProgressionStore.nextLadderBot(prog))} is next.",
-                            Modifier.weight(1f), icon = { Icon(Icons.Filled.SmartToy, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp)) },
+                            Modifier.weight(1f),
+                            icon = {
+                                if (allCleared) LadderTrophy(20.dp)
+                                else Icon(Icons.Filled.SmartToy, null, tint = VsTeal.ink, modifier = Modifier.size(16.dp))
+                            },
                         ) { onPage(VsLobbyPage.Bots) }
                     }
                 }
@@ -297,11 +325,14 @@ private fun LobbyMain(
                 } else if (rivals.isNotEmpty()) {
                     Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         VsSectionLabel("RIVALS", Modifier.weight(1f))
-                        Text("See all", fontSize = 11.sp, fontWeight = FontWeight.Black, color = VsTeal.ink, modifier = Modifier.clickableNoRipple(onSeeRivals))
+                        VsSoftPill("SEE ALL", onClick = onSeeRivals)
                     }
                     VsCard {
-                        rivals.take(3).forEach { r ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        rivals.take(3).forEachIndexed { i, r ->
+                            Row(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).stripedRow(i, VS_ACCENT).padding(horizontal = 6.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
                                 VsAvatar(r.username, null, size = 32.dp, borderColor = Color.Transparent)
                                 Column(Modifier.weight(1f)) {
                                     Text("@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1)
@@ -321,10 +352,11 @@ private fun LobbyMain(
                 if (sent.isNotEmpty()) {
                     VsSectionLabel("YOUR CHALLENGES", Modifier.padding(top = 4.dp))
                     VsCard {
-                        sent.forEach { s ->
+                        sent.forEachIndexed { i, s ->
                             val m = runCatching { GameMode.valueOf(s.gameMode) }.getOrDefault(GameMode.DUEL)
                             Row(
-                                Modifier.fillMaxWidth().clickableNoRipple { onOpenChallenge(s.code) },
+                                Modifier.fillMaxWidth().squishClickable { onOpenChallenge(s.code) }
+                                    .clip(RoundedCornerShape(10.dp)).stripedRow(i, VS_ACCENT).padding(horizontal = 6.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
                                 VsModeTile(m, 26.dp)
@@ -366,11 +398,12 @@ private fun battleLine(b: VsLobbyStore.Battle, free: Boolean): String {
     }
 }
 
-private fun botLine(r: VsDayResult, free: Boolean): String = when (r) {
-    VsDayResult.OPEN -> if (free) "Lexi · free" else "Lexi · open"
-    VsDayResult.WON -> "Beat Lexi"
-    VsDayResult.LOST -> "Lost to Lexi"
-    VsDayResult.DRAW -> "Draw with Lexi"
+/** The Bot of the Day tile's line, naming the day's bot (FINISH_SPEC D2). */
+private fun botLine(r: VsDayResult, free: Boolean, bot: String): String = when (r) {
+    VsDayResult.OPEN -> if (free) "$bot · free" else "$bot · open"
+    VsDayResult.WON -> "Beat $bot"
+    VsDayResult.LOST -> "Lost to $bot"
+    VsDayResult.DRAW -> "Draw with $bot"
 }
 
 /** /presence `online`, or null (best-effort). */
@@ -384,35 +417,52 @@ private suspend fun fetchOnline(): Int? = kotlinx.coroutines.withContext(kotlinx
     }.getOrNull()
 }
 
+/**
+ * An incoming challenge as a K1 notice: a tinted card in the challenge teal with its
+ * top bar, the sender's letter tile, S "ready" for a challenge (A7), the headline in
+ * Nunito Black with the run's numbers soft, and a candy RACE button. Squishes on tap.
+ */
 @Composable
 private fun IncomingCard(c: VsChallengeService.ChallengeView, onRace: () -> Unit) {
     val m = runCatching { GameMode.valueOf(c.gameMode) }.getOrDefault(GameMode.DUEL)
     val left = "${VsChallengeService.hoursLeft(c.expiresAt)}h left"
-    val line = if (c.run.solved) "${vsModeName(m)} · solved in ${c.run.guesses} · ${vsClock(c.run.timeMs)} · $left"
-    else "${vsModeName(m)} · not solved · $left"
-    Row(
-        Modifier.fillMaxWidth().vsCard().clickableNoRipple(onRace).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    val summary = if (c.run.solved) "${vsModeName(m)}, solved in ${c.run.guesses}, ${vsClock(c.run.timeMs)}, $left"
+    else "${vsModeName(m)}, not solved, $left"
+    VsNoticeCard(
+        accent = VS_ACCENT,
+        label = "Challenge from @${c.challenger.username}. $summary",
+        onClick = onRace,
+        avatar = { VsAvatar(c.challenger.username, c.challenger.avatarUrl, size = 38.dp, borderColor = Color.Transparent) },
+        pose = MascotId.S to "ready",
+        action = { VsTealButton("RACE", icon = com.wordocious.app.ui.CandyIcon.PLAY, size = com.wordocious.app.ui.CandySize.SMALL, onClick = onRace) },
     ) {
-        VsAvatar(c.challenger.username, null, size = 36.dp, borderColor = Color.Transparent)
-        Column(Modifier.weight(1f)) {
-            Text("CHALLENGE FROM @${c.challenger.username.uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        Box(Modifier.clip(RoundedCornerShape(50)).background(VsTeal.ink).padding(horizontal = 14.dp, vertical = 7.dp)) {
-            Text("RACE", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White)
+        Text(
+            "CHALLENGE FROM @${c.challenger.username.uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
+            letterSpacing = 0.4.sp, color = FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(vsModeName(m), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub, maxLines = 1)
+            if (c.run.solved) {
+                Text("·", fontSize = 11.sp, color = VsTeal.sub)
+                VsNumber("${c.run.guesses}", 13.sp)
+                Text("·", fontSize = 11.sp, color = VsTeal.sub)
+                VsNumber(vsClock(c.run.timeMs), 13.sp)
+            } else Text("· not solved", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub, maxLines = 1)
+            Text("· $left", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun PlayTile(title: String, sub: String, modifier: Modifier, locked: Boolean = false, icon: @Composable () -> Unit, onClick: () -> Unit) {
-    Column(
-        modifier.heightIn(min = 104.dp).vsCard().clickableNoRipple(onClick).padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+    // A1: a tinted card with the game-card top bar; A9: the whole tile squishes.
+    VsTintedCard(
+        modifier.heightIn(min = 112.dp).squishClickable("$title. $sub" + if (locked) " Pro." else "", onClick = onClick),
+        corner = 16.dp, barHeight = 6.dp,
+        contentPadding = PaddingValues(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            VsIconSquare(icon)
+            VsIconSquare(content = icon)
             Spacer(Modifier.weight(1f))
             if (locked) VsLock()
         }
@@ -423,18 +473,23 @@ private fun PlayTile(title: String, sub: String, modifier: Modifier, locked: Boo
 
 @Composable
 private fun GoProCard(onGoPro: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().vsCard().background(Brush.linearGradient(listOf(Color(0xFFEDE9FE), Color(0xFFCCFBF1)))).padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text("GO PRO FOR ALL OF VS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep)
-        Text(
-            "All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub,
-        )
-        Box(
-            Modifier.clip(RoundedCornerShape(50)).background(VsPurple.ink).clickableNoRipple(onGoPro).padding(horizontal = 18.dp, vertical = 8.dp),
-        ) { Text("SEE PRO", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White) }
+    // G1 family: the gold-tinted card with its gold top bar, W crowned (A7: not the
+    // banner's S), and the amber candy CTA.
+    VsTintedCard(Modifier.fillMaxWidth(), accent = VS_GOLD_ACCENT, corner = 18.dp, contentPadding = PaddingValues(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("GO PRO FOR ALL OF VS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF78350F))
+                Text(
+                    "All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted,
+                )
+            }
+            androidx.compose.foundation.Image(
+                painterResource(R.drawable.art_scene_pro_crown), contentDescription = null,
+                modifier = Modifier.size(84.dp).clearAndSetSemantics { },
+            )
+        }
+        VsTealButton("SEE PRO", color = com.wordocious.app.ui.CandyColor.AMBER, onClick = onGoPro)
     }
 }
 
@@ -448,7 +503,7 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
     val canJoin = code.trim().length >= 4 && !busy
     VsSectionLabel("HAVE A CODE?", Modifier.padding(top = 4.dp))
     Row(
-        Modifier.fillMaxWidth().vsCard().padding(10.dp),
+        Modifier.fillMaxWidth().vsCard(16.dp).padding(10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         BasicTextField(
@@ -457,16 +512,17 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
             textStyle = TextStyle(fontFamily = Nunito, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = VsTeal.deep),
             cursorBrush = SolidColor(VsTeal.ink),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false),
-            modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(VsTeal.page)
-                .border(1.5.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp)).padding(10.dp),
+            // A1: the input takes the teal wash too (no plain white).
+            modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(vsWash(VS_ACCENT, 0.07f))
+                .border(1.5.dp, vsLine(VS_ACCENT), RoundedCornerShape(10.dp)).padding(10.dp),
             decorationBox = { inner ->
                 if (code.isEmpty()) Text("CODE", fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = VsTeal.grey)
                 inner()
             },
         )
-        VsSoftPill("JOIN", Modifier.alpha(if (canJoin) 1f else 0.5f)) {
+        VsTealButton("JOIN", enabled = canJoin) {
             val c = code.trim()
-            if (c.length < 4 || busy) return@VsSoftPill
+            if (c.length < 4 || busy) return@VsTealButton
             busy = true; error = null
             scope.launch {
                 when (VsChallengeService.lookup(c)) {
@@ -486,18 +542,16 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
 /** Guest sign-in prompt — VS is account-based (iOS VSLobbyView.guestPrompt). */
 @Composable
 private fun GuestPrompt(onSignIn: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().vsCard(16.dp).padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text("Sign in to play VS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text(
-            "VS Battle pits you against a live opponent and records your results — it needs an account.",
-            fontSize = 13.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, textAlign = TextAlign.Center,
-        )
-        Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary).clickableNoRipple(onSignIn).padding(vertical = 13.dp),
-            Alignment.Center,
-        ) { Text("Sign in", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White) }
+    VsTintedCard(Modifier.fillMaxWidth(), corner = 18.dp, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // A7: a waiting character that isn't the page host (S).
+            VsCastPose(MascotId.O1, "waiting", 110.dp)
+            Text("Sign in to play VS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinishInk.heading)
+            Text(
+                "VS Battle pits you against a live opponent and records your results — it needs an account.",
+                fontSize = 13.sp, fontWeight = FontWeight.Medium, color = FinishInk.muted, textAlign = TextAlign.Center,
+            )
+            CandyButtonFill("SIGN IN", onSignIn)
+        }
     }
 }

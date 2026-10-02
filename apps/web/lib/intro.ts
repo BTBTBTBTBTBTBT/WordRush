@@ -14,12 +14,40 @@ export const INTRO = {
   glideMs: 420,
   /** Everything has cleared by here (ms); the whole intro stays ≤ 1.6 s. */
   endAt: 1460,
-  /** The last fade (ms). */
+  /** The last fade (ms): only when there is no header row to land on. */
   outMs: 140,
+  /**
+   * F2 fix: the glide eases INTO the real row's frame with no overshoot (a
+   * plain ease-out curve whose control points never pass 1).
+   */
+  glideEase: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
+  /** After landing: every character hops once (the W hop), this long… */
+  flourishMs: 420,
+  /** …this far apart, left to right (ms). */
+  flourishStagger: 50,
   /** Reduce Motion: hold, then a 200 ms crossfade (ms). */
   reducedHoldMs: 120,
   reducedFadeMs: 200,
 } as const;
+
+/** How long the all-cast hop flourish runs for `n` characters (ms). */
+export function flourishTotalMs(n: number): number {
+  return Math.max(0, n - 1) * INTRO.flourishStagger + INTRO.flourishMs;
+}
+
+/** The <html> attribute set while the intro runs: the real header cast row stays laid out but hidden (globals.css). */
+export const INTRO_RUNNING_ATTR = 'data-intro-running';
+/** The <html> attribute set during the landing flourish: the cast row's one-at-a-time moves wait. */
+export const CAST_FLOURISH_ATTR = 'data-cast-flourish';
+
+/**
+ * The intro row's frame for the glide (F2 fix): EXACTLY the real row's
+ * on-screen box (getBoundingClientRect), with its top padding, so the two rows
+ * lay out identically (same width → same per-character spacing and lift).
+ */
+export function glideFrame(target: { left: number; top: number; width: number }, paddingTop: string): { left: number; top: number; width: number; paddingTop: string } {
+  return { left: target.left, top: target.top, width: target.width, paddingTop };
+}
 
 /** The longest the intro can take (ms). */
 export function introTotalMs(reduced: boolean): number {

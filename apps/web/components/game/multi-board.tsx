@@ -5,6 +5,9 @@ import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import { BoardState, TileState } from '@wordle-duel/core';
 import { LetterTile, tileLook } from '@/components/game/letter-tile';
 import { tileFontPx } from '@/lib/board-fit';
+import { gameTrayStyle } from '@/lib/game-tray';
+import { MINI_TRAY, trayStateFor } from '@/lib/tray-fit';
+import { BRAND_ACCENT } from '@/lib/soft-surface';
 
 interface MultiBoardProps {
   boards: BoardState[];
@@ -12,16 +15,23 @@ interface MultiBoardProps {
   colorBlind?: boolean;
   isInvalidWord?: boolean;
   isShaking?: boolean;
+  /** The game's accent for the mini boards' trays (FINISH_SPEC L); brand purple by default. */
+  accent?: string;
 }
 
 /**
- * A mini board's frame (FINISH_SPEC A1, no plain white): frosted lavender
- * while playing, a soft purple wash once solved, a soft red one when lost.
+ * A mini board's frame = the shared game tray (FINISH_SPEC L; lib/game-tray.ts)
+ * in a compact size: the game's accent wash while playing, purple once won,
+ * slate once lost; `active` (the zoomed board) = stronger tint + ring. Its
+ * chrome (padding + border, the lip drawn over the bottom padding) stays
+ * within the multi-board fit's 12 px boardPad. Sets padding, border and
+ * radius inline, so callers drop their own p-* / border-* / rounded-*.
  */
-export function miniBoardFrame(status: string): React.CSSProperties {
-  if (status === 'WON') return { background: 'rgba(237, 228, 255, 0.82)', borderColor: '#a78bfa' };
-  if (status === 'LOST') return { background: 'rgba(254, 232, 236, 0.82)', borderColor: '#f87171' };
-  return { background: 'rgba(245, 238, 255, 0.62)', borderColor: 'rgba(196, 181, 253, 0.6)' };
+export function miniBoardFrame(status: string, accent: string = BRAND_ACCENT, { active = false, padding = MINI_TRAY.padding }: { active?: boolean; padding?: number } = {}): React.CSSProperties {
+  return {
+    ...gameTrayStyle(accent, { state: trayStateFor(status), active, radius: MINI_TRAY.radius, padding }),
+    paddingBottom: padding,
+  };
 }
 
 const evaluateGuess = (guess: string, solution: string) => {
@@ -81,7 +91,7 @@ function describeBoard(board: { status: string; guesses: string[]; maxGuesses: n
 }
 
 // Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
-const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking, ariaLabel, tileSize }: {
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking, ariaLabel, tileSize, accent }: {
   board: BoardState;
   /** §255: explicit SQUARE tile size in px (from the measured container).
    *  Without it the board stretches to fill its grid cell, and on a wide
@@ -98,6 +108,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   isInvalidWord?: boolean;
   isShaking?: boolean;
   ariaLabel?: string;
+  accent: string;
 }) {
   const prefills = board.prefilledGuesses || [];
   const prefillCount = prefills.length;
@@ -136,12 +147,12 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); }
       } : undefined}
       aria-label={ariaLabel}
-      className={`relative p-1 rounded-lg border-2 ${fixed ? '' : 'h-full'} flex flex-col ${
+      className={`relative ${fixed ? 'items-center' : 'h-full'} flex flex-col ${
         onClick ? 'cursor-pointer' : ''
       } ${
         invisible ? 'invisible' : ''
       }`}
-      style={{ ...miniBoardFrame(board.status), ...fontVar }}
+      style={{ ...miniBoardFrame(board.status, accent, { active: !!isExpanded }), ...fontVar }}
     >
       {isWon && (
         <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center z-10">
@@ -230,7 +241,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   );
 });
 
-export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, isShaking }: MultiBoardProps) {
+export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, isShaking, accent = BRAND_ACCENT }: MultiBoardProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
   const boardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -344,6 +355,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
               invisible={expandedIndex === index}
               isInvalidWord={isInvalidWord}
               isShaking={isShaking}
+              accent={accent}
             />
           </div>
         ))}
@@ -379,6 +391,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
                 isExpanded
                 isInvalidWord={isInvalidWord}
                 isShaking={isShaking}
+                accent={accent}
               />
             </div>
           </div>

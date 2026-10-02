@@ -30,6 +30,7 @@ import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { GameBackground } from '@/components/ui/page-background';
+import { modeTrayAccent } from '@/lib/tray-fit';
 
 function generateSeed(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
@@ -273,7 +274,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         setMessage('Not enough letters');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -282,7 +283,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         setMessage('Not in word list');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -291,7 +292,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         setMessage('Already guessed');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -455,6 +456,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       return (
         <div ref={classicAreaRef} className="flex flex-col items-center gap-1 w-full h-full justify-center">
           <Board
+            trayAccent={modeTrayAccent('GAUNTLET')}
             sizePx={classicSize ?? undefined}
             gap={classicFit?.gap}
             guesses={board.guesses}
@@ -498,6 +500,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     } else {
       return (
         <MultiBoard
+          accent={modeTrayAccent('GAUNTLET')}
           boards={state.boards}
           currentGuess={currentGuess}
           isShaking={isShaking}
@@ -592,6 +595,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             ? gauntlet.stages[gauntlet.currentStage + 1]
             : null
           }
+          cleared={gauntlet.currentStage + 1}
+          totalStages={gauntlet.totalStages}
+          guessesSoFar={gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) + state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
           onComplete={handleTransitionComplete}
         />
       )}

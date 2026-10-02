@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -59,6 +60,7 @@ import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.formatGuessStat
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -89,7 +91,6 @@ import kotlinx.serialization.json.Json
 // path and counts as a move. guess_count = moves − par + 1.
 
 private val LADDER_ACCENT = Color(0xFF0284C7)
-private val LADDER_HINT = Color(0xFF8B5CF6)
 
 // ── Session ─────────────────────────────────────────────────────────────────
 
@@ -305,14 +306,8 @@ fun LadderScreen(
             .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                LadderHeader(session)
-                LadderBoard(session, revealPath = session.state.status == LadderStatus.LOST)
-                LadderResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            LadderFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 LadderHeader(session)
@@ -321,18 +316,14 @@ fun LadderScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Capsule("Undo", Icons.AutoMirrored.Filled.Undo, dim = session.state.words.size <= 1) { session.undo(onFinished) }
-                    Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+                    Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hint(onFinished) }
                 }
                 KeyboardView(onKey = { session.type(it) }, onDelete = { session.delete() }, onEnter = { session.submit(onFinished) })
                 Spacer(Modifier.height(6.dp))
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // G5 a toast is a tinted pill (no dark slab, no white).
+        session.toast?.let { PieceToast(it, LADDER_ACCENT, top = 100.dp) }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) LadderOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(LADDER_ACCENT, onBack) }
@@ -367,36 +358,45 @@ private fun LadderHeader(session: LadderSession) {
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** One tile of the ladder — the Classic tile geometry (14% corner) with the
- *  ladder's own fills: START purple, a changed letter in the accent (violet for
- *  a hint rung), plain rungs white, END a dashed-look target, revealed route muted. */
+/** A changed letter on a rung: the ladder's sky-blue glossy tile. */
+private val LADDER_RUNG = solidChipLook(LADDER_ACCENT)
+/** The target rung: frosted, the letters in the accent. */
+private val LADDER_END = TileLooks.EMPTY.copy(ring = Color(0x8C0284C7), glyph = Color(0xFF0369A1))
+private val LADDER_END_DARK = TileLooks.EMPTY_DARK.copy(ring = Color(0x8C38BDF8), glyph = Color(0xFF7DD3FC))
+
+/** One tile of the ladder — FINISH_SPEC J3: a B1 glossy tile (the game kit's recipe)
+ *  in the ladder's looks: START purple, a changed letter in the accent (violet for a
+ *  hint rung), plain letters the light "given" tile, the typing row the typed / empty /
+ *  not-a-word tiles, END a frosted target in the accent, the revealed route muted. A
+ *  typed letter pops in (B3). */
 @Composable
-private fun LadderTile(letter: String, fill: Color, border: Color, ink: Color, size: androidx.compose.ui.unit.Dp = 44.dp, ring: Color? = null) {
-    val density = LocalDensity.current
-    val fs = with(density) { (size * 0.5f).toSp() }
+private fun LadderTile(letter: String, look: TileLook, size: androidx.compose.ui.unit.Dp = 44.dp) {
     Box(
-        Modifier.size(size)
-            .then(if (ring != null) Modifier.border(2.dp, ring.copy(alpha = 0.35f), RoundedCornerShape(size * 0.14f + 3.dp)).padding(3.dp) else Modifier)
-            .clip(RoundedCornerShape(size * 0.14f)).background(fill).border(2.dp, border, RoundedCornerShape(size * 0.14f)),
+        Modifier.size(size).typePop(letter).drawBehind { drawGameTile(look) },
         contentAlignment = Alignment.Center,
-    ) { Text(letter, fontSize = fs, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito) }
+    ) { TileGlyph(letter, look.glyph, look.glyphShadow, size.value * 0.5f, size.value) }
 }
 
 @Composable
 private fun LadderRow(word: String, prev: String?, kind: String, invalid: Boolean = false, tile: androidx.compose.ui.unit.Dp = 44.dp) {
     val chars = word.padEnd(5, ' ')
+    val dark = WTheme.isDark
     Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         for (i in 0 until 5) {
             val ch = if (chars[i] == ' ') "" else chars[i].toString()
             val changed = prev != null && prev[i] != chars[i]
-            when (kind) {
-                "start" -> LadderTile(ch, Color(0xFF7C3AED), Color(0xFF7C3AED), Color.White, tile)
-                "rung", "hint" -> if (changed) { val c = if (kind == "hint") LADDER_HINT else LADDER_ACCENT; LadderTile(ch, c, c, Color.White, tile, ring = c) }
-                    else LadderTile(ch, WTheme.surface, WTheme.border, WTheme.text, tile)
-                "typing" -> LadderTile(ch, if (invalid) Color(0xFFFEF2F2) else WTheme.surface, if (invalid) Color(0xFFF87171) else WTheme.border, if (invalid) Color(0xFFEF4444) else WTheme.text, tile)
-                "end" -> LadderTile(ch, Color.Transparent, LADDER_ACCENT.copy(alpha = 0.55f), LADDER_ACCENT, tile)
-                else -> LadderTile(ch, Color(0xFFF9FAFB), Color(0xFFE5E7EB), Color(0xFF9CA3AF), tile)
+            val look = when (kind) {
+                "start" -> TileLooks.CORRECT
+                "rung", "hint" -> if (changed) (if (kind == "hint") VIOLET_LOOK else LADDER_RUNG) else TileLooks.GIVEN
+                "typing" -> when {
+                    invalid -> TileLooks.BAD
+                    ch.isEmpty() -> TileLooks.of(TileFace.EMPTY, dark = dark)
+                    else -> TileLooks.TYPED
+                }
+                "end" -> if (dark) LADDER_END_DARK else LADDER_END
+                else -> TileLooks.HINT
             }
+            LadderTile(ch, look, tile)
         }
     }
 }
@@ -409,11 +409,19 @@ fun LadderBoard(session: LadderSession, revealPath: Boolean) = LadderBoard(sessi
 @Composable
 fun LadderBoard(s: LadderState, typing: String, invalid: Boolean, revealPath: Boolean, tile: androidx.compose.ui.unit.Dp = 44.dp) {
     val gap = if (tile < 44.dp) 4.dp else 6.dp
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap), modifier = Modifier.widthIn(max = 420.dp)) {
+    // L the rungs sit in the shared game tray (purple when climbed, slate when out of moves).
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
+        modifier = Modifier.widthIn(max = 420.dp).gameTray(
+            LADDER_ACCENT, finishTray(s.status != LadderStatus.PLAYING, s.status == LadderStatus.WON),
+            corner = if (tile < 44.dp) 14.dp else GameTrayStyle.CORNER,
+            padding = androidx.compose.foundation.layout.PaddingValues(if (tile < 44.dp) 8.dp else 12.dp),
+        ),
+    ) {
         s.words.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.words[i - 1] else null, if (i == 0) "start" else if (s.hintMask.getOrNull(i) == '1') "hint" else "rung", tile = tile) }
         if (s.status == LadderStatus.PLAYING) LadderRow(typing, s.current, "typing", invalid, tile)
         if (s.current != s.end) {
-            Text("↓ ${if (s.status == LadderStatus.PLAYING) "REACH" else "TARGET"}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = LADDER_ACCENT.copy(alpha = 0.7f))
+            Text("↓ ${if (s.status == LadderStatus.PLAYING) "REACH" else "TARGET"}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = if (WTheme.isDark) Color(0xFF7DD3FC) else Color(0xFF0369A1))
             LadderRow(s.end, null, "end", tile = tile)
         }
         if (revealPath) {
@@ -423,26 +431,15 @@ fun LadderBoard(s: LadderState, typing: String, invalid: Boolean, revealPath: Bo
     }
 }
 
+/** A8 a game control: a small candy button with its icon; [dim] = nothing to undo (taps ignored, as before). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, onClick: () -> Unit) {
-    val fg = if (dim) WTheme.textMuted.copy(alpha = 0.5f) else LADDER_ACCENT
-    Row(
-        Modifier.clip(CircleShape)
-            .background(if (dim) Color.Transparent else LADDER_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (dim) WTheme.border else LADDER_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple { if (!dim) onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg)
-    }
-}
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun LadderResult(
+private fun LadderFinished(
     session: LadderSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
@@ -452,34 +449,57 @@ private fun LadderResult(
     val gc = s.guessCount
     val parLabel = formatGuessStat("overPar", 1, gc)
     val context = LocalContext.current
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Text(if (won) (if (gc == 1) "Ladder climbed on par" else "Ladder climbed") else "Out of moves", fontSize = 20.sp, fontWeight = FontWeight.Black,
-            color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
-        Text(
-            "${s.moves} move${if (s.moves == 1) "" else "s"} · Par ${s.par}${if (won) " · $parLabel" else ""} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""),
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", LADDER_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", LADDER_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val over = s.moves - s.par
-                val meta = "${num?.let { "#$it · " } ?: ""}Par ${s.par} · ${if (won) (if (over <= 0) "On par" else "+$over") else "Out of moves"} · ${timeText(secs)}"
-                val text = "Wordocious Letter Ladder${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · Par ${s.par} · ${if (won) (if (over <= 0) "On par" else "+$over over par") else "Out of moves"} · wordocious.com/letter-ladder"
-                val bmp = ShareImage.renderLadder(context, s.start, s.end, s.words, s.hintMask, won, meta)
-                ShareImage.shareBitmap(context, bmp, text)
+    val revealPath = s.status == LadderStatus.LOST
+    val title = if (won) (if (gc == 1) "Ladder climbed on par" else "Ladder climbed") else "Out of moves"
+    val note = listOfNotNull("Par ${s.par}", if (won) parLabel else null, hintsNote(s.hintsUsed)).joinToString(" · ")
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val over = s.moves - s.par
+        val meta = "${num?.let { "#$it · " } ?: ""}Par ${s.par} · ${if (won) (if (over <= 0) "On par" else "+$over") else "Out of moves"} · ${timeText(secs)}"
+        val text = "Wordocious Letter Ladder${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · Par ${s.par} · ${if (won) (if (over <= 0) "On par" else "+$over over par") else "Out of moves"} · wordocious.com/letter-ladder"
+        val bmp = ShareImage.renderLadder(context, s.start, s.end, s.words, s.hintMask, won, meta)
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { LadderHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOf(stripCount("${s.moves}", if (s.moves == 1) "move" else "moves"), stripTime(secs), stripPoints(session.points)),
+                srText = "$title. $note. ${s.moves} move${if (s.moves == 1) "" else "s"}, time ${timeText(secs)}, ${session.points} points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.LADDER, isDaily = session.isDaily, accent = LADDER_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) onPlayAgain else null,
+                onOtherGames = onBack,
+                more = {
+                    Text(note, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    if (session.isDaily) DailyRankBadge(GameMode.LADDER)
+                    ScoreBreakdownCard(GameMode.LADDER, won, gc, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
+                },
+            )
+        },
+    ) { _, maxH ->
+        // R2: the rungs shrink to fit the height left; a ladder too long even at the
+        // smallest rung collapses (it still scrolls in place) behind "See all".
+        val rows = s.words.size + (if (s.current != s.end) 1 else 0) + (if (revealPath) s.path.size else 0)
+        val labels = (if (s.current != s.end) 16f else 0f) + (if (revealPath) 24f else 0f)
+        val tile = FinishedSizing.rowTile(maxH.value, rows, gap = 4f, fixed = 20f + labels + GameTrayStyle.LIP.value, maxTile = 44f, minTile = 24f)
+        if (tile != null) {
+            LadderBoard(s, "", false, revealPath, tile = tile.dp)
+        } else {
+            FinishedListSlot(
+                maxHeight = maxH, accent = LADDER_ACCENT, seeAllTitle = "The whole ladder",
+                full = { LadderBoard(s, "", false, revealPath, tile = 34.dp) },
+            ) {
+                LadderBoard(s, "", false, revealPath, tile = 24.dp)
             }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain() }
         }
-        if (session.isDaily) DailyRankBadge(GameMode.LADDER)
-        ScoreBreakdownCard(GameMode.LADDER, won, gc, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.LADDER, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 
@@ -487,40 +507,17 @@ private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}"
 private fun LadderOverlay(session: LadderSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == LadderStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "LADDER") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.moves}", "MOVES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
+    PieceOverlay(won, "LADDER", LADDER_ACCENT, onScrimTap = onDismiss) {
+        // Moment lettering (ART_SPEC §6).
+        com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            StatBlock("${session.state.moves}", "MOVES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
         }
+        onPlayAgain?.let { PiecePlayAgain(won, it) }
+        PieceTapHint()
     }
 }
 
+/** A2 a soft-number stat. */
 @Composable
-private fun StatBlock(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
-    }
-}
+private fun StatBlock(value: String, label: String) = PieceStat(value, label)

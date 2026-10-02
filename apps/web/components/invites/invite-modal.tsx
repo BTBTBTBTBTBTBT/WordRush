@@ -1,7 +1,8 @@
 'use client';
 
+import { shareCaption } from '@wordle-duel/core';
 import { useEffect, useRef, useState } from 'react';
-import { X as XIcon, Copy, Check, Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
+import { Check, Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { useAuth } from '@/lib/auth-context';
 import { createInvite } from '@/lib/invite-service';
@@ -13,6 +14,23 @@ import { GameArt } from '@/components/ui/game-art';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
+import { CandyButton } from '@/components/ui/candy-button';
+import { BRAND_ACCENT, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
+import { InviteCodeTiles, InviteSentCard } from '@/components/friends/invite-screens';
+import { codeFromInviteUrl } from '@/lib/invite-screens';
+
+// The VS invite window (G5, docs/FINISH_SPEC.md): a lavender-washed sheet with
+// the brand top bar (A1; the washes follow the theme's card base), I with the
+// invite at the top (not the Home / VS host — A7), tinted tabs and fields, and
+// candy buttons for every action (A8).
+
+/** A tinted segmented option / field (A1): stronger wash + ring when selected. */
+function tint(accent: string, selected = false): React.CSSProperties {
+  return {
+    background: softBackground(accent, selected ? 0.24 : 0.1),
+    border: selected ? `2px solid ${accent}` : softBorder(accent, 0.1),
+  };
+}
 
 interface ModeOption {
   id: string;
@@ -143,10 +161,11 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
 
   const handleShare = async () => {
     if (!inviteUrl) return;
-    const text = `Come play me on Wordocious — ${mode.label}.`;
+    // FINISH_SPEC S4: the shared invite copy; the link stays (it is the point).
+    const text = shareCaption('vsInvite', { date: new Date().toISOString().slice(0, 10), game: mode.label, url: inviteUrl });
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
       try {
-        await (navigator as any).share({ title: 'Wordocious VS', text, url: inviteUrl });
+        await (navigator as any).share({ text });
         return;
       } catch {}
     }
@@ -164,11 +183,30 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(26,26,46,0.55)' }}>
       <div
-        className="w-full max-w-sm p-5 relative"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Invite a friend"
+        className="w-full max-w-sm relative"
+        style={{ background: softBackground(BRAND_ACCENT, 0.1), border: softBorder(BRAND_ACCENT, 0.1), borderRadius: '20px', boxShadow: '0 18px 40px rgba(60,30,110,0.28)' }}
       >
-        <HeaderBack kind="close" onClick={() => { reset(); onClose(); }} size={32} className="absolute top-3 right-3" />
+        {/* The top bar follows the corners itself (no overflow clip: the mode menu drops below the sheet). */}
+        <div aria-hidden="true" style={{ ...cardBarStyle(BRAND_ACCENT), borderRadius: '18.5px 18.5px 0 0' }} />
+        <div className="p-5 pt-4 relative">
+        <HeaderBack kind="close" onClick={() => { reset(); onClose(); }} size={32} className="absolute top-3 right-3 z-10" />
 
+        {sentToUser ? (
+          // T1 (docs/FINISH_SPEC.md): the invite-sent screen — I tossing the
+          // envelope springs in, INVITE SENT!, the friend on a glossy pill,
+          // candy Send another / Done.
+          <InviteSentCard
+            framed={false}
+            name={`@${sentToUser}`}
+            note="They'll see it the next time they open Wordocious."
+            onSendAnother={reset}
+            onDone={() => { reset(); onClose(); }}
+          />
+        ) : (
+        <>
         {/* I with the invite (docs/ART_SPEC.md §7), kept a little short so the sheet fits small screens. */}
         <ArtScene scene={PAGE_SCENES.addFriend} height={100} className="mb-2" />
 
@@ -188,24 +226,18 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => { setTab('link'); reset(); }}
-            className="flex-1 py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5"
-            style={{
-              background: tab === 'link' ? '#7c3aed' : 'var(--color-bg)',
-              color: tab === 'link' ? '#ffffff' : 'var(--color-text-muted)',
-              border: tab === 'link' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-            }}
+            aria-pressed={tab === 'link'}
+            className="flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5"
+            style={{ ...tint(BRAND_ACCENT, tab === 'link'), color: tab === 'link' ? 'var(--color-win-text)' : 'var(--color-text-secondary)' }}
           >
             <LinkIcon className="w-3 h-3" />
             Share link
           </button>
           <button
             onClick={() => { setTab('username'); reset(); }}
-            className="flex-1 py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5"
-            style={{
-              background: tab === 'username' ? '#7c3aed' : 'var(--color-bg)',
-              color: tab === 'username' ? '#ffffff' : 'var(--color-text-muted)',
-              border: tab === 'username' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-            }}
+            aria-pressed={tab === 'username'}
+            className="flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5"
+            style={{ ...tint(BRAND_ACCENT, tab === 'username'), color: tab === 'username' ? 'var(--color-win-text)' : 'var(--color-text-secondary)' }}
           >
             <UserIcon className="w-3 h-3" />
             Username
@@ -219,11 +251,13 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
           <div ref={modeRef} className="relative mb-3">
             <button
               onClick={() => setModeOpen((o) => !o)}
+              aria-expanded={modeOpen}
               className="w-full px-3 py-2 flex items-center justify-between outline-none"
               style={{
-                background: 'var(--color-surface)',
+                background: softBackground(mode.color, 0.12),
                 border: `1.5px solid ${mode.color}`,
-                borderRadius: '10px',
+                boxShadow: `inset 0 4px 0 ${mode.color}`,
+                borderRadius: '12px',
                 color: 'var(--color-text)',
               }}
             >
@@ -271,33 +305,19 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
           {tab === 'link' && (
             <>
               {!inviteUrl ? (
-                <button
-                  onClick={handleGenerateLink}
-                  disabled={busy}
-                  className="w-full py-2.5 rounded-xl text-sm font-black text-white disabled:opacity-50"
-                  style={{ background: '#7c3aed' }}
-                >
+                <CandyButton size="md" color="purple" block icon="arrow" onClick={handleGenerateLink} disabled={busy}>
                   {busy ? 'Creating…' : 'Generate invite link'}
-                </button>
+                </CandyButton>
               ) : (
                 <>
-                  <div
-                    className="p-3 mb-3 flex items-center gap-2"
-                    style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px' }}
-                  >
-                    <code className="flex-1 text-[11px] font-bold truncate" style={{ color: 'var(--color-text)' }}>{inviteUrl}</code>
-                    <button onClick={handleCopy} className="p-1.5 rounded" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}>
-                      {copied ? <Check className="w-3.5 h-3.5" style={{ color: '#16a34a' }} /> : <Copy className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}
-                    </button>
+                  {/* T1: the invite code on glossy letter tiles with a copy candy (copies the link). */}
+                  <div className="p-2.5 mb-3" style={{ ...tint(BRAND_ACCENT), borderRadius: '14px' }}>
+                    <InviteCodeTiles code={codeFromInviteUrl(inviteUrl) ?? ''} tile={28} copied={copied} onCopy={handleCopy} copyLabel="Copy invite link" />
+                    <code className="block mt-1.5 text-[10px] font-bold truncate text-center" style={{ color: 'var(--color-text-muted)' }}>{inviteUrl}</code>
                   </div>
-                  <button
-                    onClick={handleShare}
-                    className="w-full py-2.5 rounded-xl text-sm font-black text-white flex items-center justify-center gap-1.5"
-                    style={{ background: '#7c3aed' }}
-                  >
-                    <Icon3D name="share" size={20} />
+                  <CandyButton size="md" color="purple" block icon={<Icon3D name="share" size={20} />} onClick={handleShare}>
                     Share
-                  </button>
+                  </CandyButton>
                   <p className="text-[10px] font-bold mt-2 text-center" style={{ color: 'var(--color-text-muted)' }}>
                     Link expires in 24 hours.
                   </p>
@@ -308,7 +328,7 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
 
           {tab === 'username' && (
             <>
-              {!sentToUser ? (
+              {!sentToUser && (
                 <>
                   <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Username</label>
                   <input
@@ -316,32 +336,22 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. wordmaster"
+                    aria-label="Username"
                     className="w-full px-3 py-2 text-sm font-bold mb-3 outline-none"
-                    style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px', color: 'var(--color-text)' }}
+                    style={{ ...tint(BRAND_ACCENT), borderRadius: '12px', color: 'var(--color-text)' }}
                   />
-                  <button
-                    onClick={handleSendToUsername}
-                    disabled={busy}
-                    className="w-full py-2.5 rounded-xl text-sm font-black text-white disabled:opacity-50"
-                    style={{ background: '#7c3aed' }}
-                  >
+                  <CandyButton size="md" color="purple" block icon="arrow" onClick={handleSendToUsername} disabled={busy}>
                     {busy ? 'Sending…' : 'Send invite'}
-                  </button>
+                  </CandyButton>
                 </>
-              ) : (
-                <div
-                  className="p-4 text-center"
-                  style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px' }}
-                >
-                  <Check className="w-6 h-6 mx-auto mb-1.5" style={{ color: '#16a34a' }} />
-                  <p className="text-sm font-black" style={{ color: '#166534' }}>Invite sent to @{sentToUser}</p>
-                  <p className="text-[10px] font-bold mt-1" style={{ color: '#16a34a' }}>They'll see it the next time they open Wordocious.</p>
-                </div>
               )}
             </>
           )}
 
-          {error && <p className="text-xs font-bold text-red-500 text-center mt-3">{error}</p>}
+          {error && <p className="text-xs font-bold text-red-500 text-center mt-3" role="alert">{error}</p>}
+        </div>
+        </>
+        )}
         </div>
       </div>
     </div>

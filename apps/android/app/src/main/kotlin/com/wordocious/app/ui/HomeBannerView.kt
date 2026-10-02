@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,10 +19,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AllInclusive
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.LocalTextStyle
@@ -100,7 +102,7 @@ fun HomeBannerView(
     puzzles: BannerRow,
     completions: Map<String, DailyCompletionsService.Completion>,
     unlimited: Boolean,
-    /** Pro players get the DAILY | UNLIMITED switch in the strip. */
+    /** Everyone sees the DAILY | UNLIMITED switch (R3); non-Pro taps on UNLIMITED open Go Pro. */
     isPro: Boolean,
     onModeChange: (PlayMode) -> Unit,
     /** The player's username; empty for a guest. */
@@ -110,20 +112,52 @@ fun HomeBannerView(
     onOpen: (ModeCard) -> Unit,
     onShare: (headline: String) -> Unit,
 ) {
-    val wTier = if (unlimited) BannerTier.NONE else groupTier(word.progress)
-    val pTier = if (unlimited) BannerTier.NONE else groupTier(puzzles.progress)
+    // FINISH_SPEC Z: today's DAILY tiers decide the slots in both modes; the shown tiers
+    // (glow, colors, flames) are NONE in Unlimited.
+    val dailyWTier = groupTier(word.progress)
+    val dailyPTier = groupTier(puzzles.progress)
+    val wTier = if (unlimited) BannerTier.NONE else dailyWTier
+    val pTier = if (unlimited) BannerTier.NONE else dailyPTier
+    val slots = bannerSlots(word.progress, puzzles.progress, word.streaks, puzzles.streaks, unlimited)
     val double = wTier == BannerTier.FLAWLESS && pTier == BannerTier.FLAWLESS
+    val dailyDouble = dailyWTier == BannerTier.FLAWLESS && dailyPTier == BannerTier.FLAWLESS
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-    val headline = bannerHeadline(word.progress, puzzles.progress, hour, name, unlimited)
-    val clockLine = bannerClockLine(word.progress, puzzles.progress, clock, unlimited)
+    // Both modes' words are laid out (one invisible) so their slots never resize on the toggle.
+    val dailyHeadline = bannerHeadline(word.progress, puzzles.progress, hour, name, false)
+    val unlimitedHeadline = bannerHeadline(word.progress, puzzles.progress, hour, name, true)
+    val headline = if (unlimited) unlimitedHeadline else dailyHeadline
+    val dailyClock = bannerClockLine(word.progress, puzzles.progress, clock, false)
+    val unlimitedClock = bannerClockLine(word.progress, puzzles.progress, clock, true)
+    // Z: the swap is a quick crossfade inside the slots (instant with Reduce Motion).
+    val modeFade by androidx.compose.animation.core.animateFloatAsState(
+        if (unlimited) 1f else 0f,
+        if (WTheme.reducedMotion) androidx.compose.animation.core.snap() else tween(180),
+        label = "bannerModeFade",
+    )
+    // R3: a free player / guest tapping UNLIMITED gets the Go Pro paywall; turning Pro
+    // there switches straight to Unlimited.
+    var paywall by remember { mutableStateOf(false) }
+    if (paywall) {
+        com.wordocious.app.ui.game.ProPaywallDialog(
+            onDismiss = { paywall = false },
+            onPro = { paywall = false; onModeChange(PlayMode.UNLIMITED) },
+        )
+    }
     val topColor = when (wTier) { BannerTier.NONE -> Color(0xFFECE8FF); BannerTier.SWEEP -> TIER_SWEEP; BannerTier.FLAWLESS -> TIER_FLAWLESS }
     val bottomColor = when (pTier) { BannerTier.NONE -> Color(0xFFE2E6FF); BannerTier.SWEEP -> TIER_SWEEP; BannerTier.FLAWLESS -> TIER_FLAWLESS }
     val headInk = if (double) Color(0xFF78350F) else Color(0xFF4C1D95)
     val subInk = if (double) Color(0xFF92400E) else Color(0xFF6D28D9)
     // Exactly one shimmer, Daily only, and only once a row has something to celebrate.
-    val shimmer = !unlimited && (wTier != BannerTier.NONE || pTier != BannerTier.NONE) && !WTheme.reducedMotion
+    val shimmer = !unlimited && (wTier != BannerTier.NONE || pTier != BannerTier.NONE) && !WTheme.calmMotion // AD: a looping shine (off under Battery Saver too)
     // ART_SPEC §18.4: radius 22, the frosted headline strip across the full width.
     val shape = RoundedCornerShape(22.dp)
+    // FINISH_SPEC G4: once a row is swept (or flawless) the banner shows the wide scene
+    // art across its top in a tinted band with its own top bar — gold for the Sweep,
+    // pink for Flawless. Daily only.
+    val artTier = bannerArtTier(wTier, pTier, unlimited)
+    // Z: the band's slot exists in both modes (Unlimited shows U's loop art in it).
+    val bandTier = slots.sceneBand
+    val artAccent = if (bandTier == BannerTier.FLAWLESS) MomentInk.flawless else MomentInk.sweep
 
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
@@ -146,8 +180,10 @@ fun HomeBannerView(
                         ))
                     }
                 }
-                .then(if (shimmer) Modifier.bannerShimmer() else Modifier),
+                .then(if (shimmer) Modifier.bannerShimmer() else Modifier)
+                .then(if (artTier != BannerTier.NONE) Modifier.border(1.5.dp, accentLine(artAccent), shape) else Modifier),
         ) {
+            if (bandTier != BannerTier.NONE) BannerSceneSlot(bandTier, artAccent, modeFade)
             // Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious
             // row's glow. ART_SPEC §18.4: white at 72% (the fill under it is a smooth gradient, so
             // a backdrop blur would change nothing on Android; no platform backdrop blur here).
@@ -157,64 +193,140 @@ fun HomeBannerView(
                     .padding(start = 12.dp, top = 12.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(Modifier.padding(end = BANNER_HOST_CLEAR), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        Modifier.weight(1f).heightIn(min = 30.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        if (double) Icon3D(Icon3DName.TROPHY, 22.dp)
-                        if (unlimited) Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
-                        // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
-                        // violet→pink) with a soft pink glow; the double-flawless gold day keeps
-                        // its tier ink. Two lines, then it steps down (to 70%) rather than truncating.
-                        var headScale by remember(headline) { mutableFloatStateOf(1f) }
-                        var headFitted by remember(headline) { mutableStateOf(false) }
-                        // §18.4 centered in its cell when it fits on one line; two lines read from the start.
-                        var headOneLine by remember(headline) { mutableStateOf(true) }
-                        val glow = with(LocalDensity.current) { 3.dp.toPx() }
-                        Text(
-                            headline, fontSize = 22.sp * headScale, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                            lineHeight = 1.15.em, maxLines = 2, overflow = TextOverflow.Clip,
-                            textAlign = if (headOneLine) TextAlign.Center else TextAlign.Start,
-                            style = if (double) LocalTextStyle.current.merge(TextStyle(color = headInk))
-                            else LocalTextStyle.current.merge(
-                                TextStyle(brush = WTheme.wordmarkGradient, shadow = Shadow(Color(0xFFEC4899).copy(alpha = 0.25f), Offset.Zero, glow)),
-                            ),
-                            modifier = Modifier.weight(1f).drawWithContent { if (headFitted) drawContent() },
-                            onTextLayout = { r ->
-                                headOneLine = r.lineCount <= 1
-                                if (r.hasVisualOverflow && headScale > 0.7f) headScale -= 0.05f else headFitted = true
-                            },
-                        )
+                Row(Modifier.padding(end = slots.headlineEndClear.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Z: both modes' headlines share one slot (the taller of the two), crossfading.
+                    Box(Modifier.weight(1f)) {
+                        BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited)
+                        BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited)
                     }
-                    // Nothing to share before the first finished game (iOS/web parity).
-                    if (!unlimited && word.progress.played + puzzles.progress.played > 0) {
-                        Box(
-                            Modifier.size(36.dp).clickableNoRipple { onShare(headline) }
-                                .semantics { contentDescription = "Share today's progress" },
-                            contentAlignment = Alignment.Center,
-                        ) {
+                    // Nothing to share before the first finished game (iOS/web parity). Z: the
+                    // slot stays (empty) in Unlimited and before the first game.
+                    val canShare = !unlimited && word.progress.played + puzzles.progress.played > 0
+                    Box(
+                        Modifier.size(BannerSlotSpec.SHARE.dp)
+                            .graphicsLayer { alpha = 1f - modeFade }
+                            .then(if (canShare) Modifier.squishClickable("Share today's progress", icon = true) { onShare(headline) } else Modifier),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (word.progress.played + puzzles.progress.played > 0) {
                             Icon3D(Icon3DName.SHARE, 23.dp, contentDescription = null, modifier = Modifier)
                         }
                     }
                 }
                 Row(Modifier.padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
-                        color = subInk, modifier = Modifier.weight(1f),
+                    // Z: both clock lines laid out on top of each other (the slot is the taller).
+                    Box(Modifier.weight(1f)) {
+                        Text(
+                            dailyClock, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
+                            color = subInk,
+                            modifier = Modifier.graphicsLayer { alpha = 1f - modeFade }
+                                .then(if (unlimited) Modifier.clearAndSetSemantics { } else Modifier),
+                        )
+                        Text(
+                            unlimitedClock, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
+                            color = subInk,
+                            modifier = Modifier.graphicsLayer { alpha = modeFade }
+                                .then(if (!unlimited) Modifier.clearAndSetSemantics { } else Modifier),
+                        )
+                    }
+                    // R3 (founder 10-02): everyone sees the switch; UNLIMITED wears a small gold
+                    // PRO pill for free players and guests, and their tap opens Go Pro.
+                    DailyUnlimitedSwitch(
+                        if (unlimited) PlayMode.UNLIMITED else PlayMode.DAILY,
+                        locked = !isPro,
+                        onChange = { m -> if (m == PlayMode.UNLIMITED && !isPro) paywall = true else onModeChange(m) },
                     )
-                    if (isPro) DailyUnlimitedSwitch(if (unlimited) PlayMode.UNLIMITED else PlayMode.DAILY, onModeChange)
                 }
             }
             BannerGroupRow(word, wTier, "WORDOCIOUS", big = true, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp))
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+                flameSlot = slots.wordFlameSlot, dailyTier = dailyWTier)
             BannerGroupRow(puzzles, pTier, "PUZZLES", big = false, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp))
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
+                flameSlot = slots.puzzlesFlameSlot, dailyTier = dailyPTier)
         }
-        BannerHost(Mascots.home, Modifier.align(Alignment.TopEnd))
+        // The scene art carries the cast on a swept day (A7: no second W host beside it).
+        if (slots.hostShown) BannerHost(Mascots.home, Modifier.align(Alignment.TopEnd))
         }
     }
+}
+
+/**
+ * G4 the swept / flawless banner art: the card's own top bar (gold Sweep, pink
+ * Flawless), then the wide scene (`art_scene_banner_sweep` — O1 + S with the broom + W;
+ * `art_scene_banner_flawless` — D + the pink O with the gem + I) across the banner on a
+ * soft tinted band with a glow, the cast fully visible (fit, never cropped). Decorative.
+ *
+ * FINISH_SPEC Z: the band is a slot that exists in BOTH modes once today's dailies earn
+ * it — in Unlimited the same band (same height) shows U with her loop of tiles on a
+ * peach wash, crossfading by [unlimitedFade] (0 = Daily, 1 = Unlimited), so the tile
+ * rows below never move on the toggle.
+ */
+@Composable
+private fun BannerSceneSlot(tier: BannerTier, accent: Color, unlimitedFade: Float) {
+    val res = if (tier == BannerTier.FLAWLESS) com.wordocious.app.R.drawable.art_scene_banner_flawless
+              else com.wordocious.app.R.drawable.art_scene_banner_sweep
+    val peach = com.wordocious.app.ui.game.UNLIMITED_PEACH
+    BoxWithConstraints(Modifier.fillMaxWidth().clearAndSetSemantics { }) {
+        // The art is ~1.6:1; at most 140 dp tall so the tile rows stay in view (BannerSlotSpec).
+        val h = (maxWidth * BannerSlotSpec.SCENE_ART_FRACTION).coerceAtMost(BannerSlotSpec.SCENE_ART_MAX.dp)
+        val glow = Modifier.drawBehind {
+            drawCircle(
+                Brush.radialGradient(
+                    listOf(Color.White.copy(alpha = 0.7f), Color.White.copy(alpha = 0f)),
+                    center = center, radius = size.width * 0.42f,
+                ),
+                radius = size.width * 0.42f,
+            )
+        }
+        // Daily: the sweep / flawless scene.
+        if (unlimitedFade < 1f) {
+            Column(Modifier.fillMaxWidth().graphicsLayer { alpha = 1f - unlimitedFade }) {
+                Box(
+                    Modifier.fillMaxWidth().height(BannerSlotSpec.SCENE_BAR.dp).background(
+                        if (tier == BannerTier.FLAWLESS) Brush.horizontalGradient(listOf(Color(0xFFF472B6), accent, Color(0xFFDB2777)))
+                        else MomentInk.proBar,
+                    ),
+                )
+                Box(
+                    Modifier.fillMaxWidth().background(accentWash(accent, 0.16f)).then(glow).padding(top = 6.dp, bottom = 2.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(res), contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth().height(h),
+                    )
+                }
+            }
+        }
+        // Unlimited: U and her loop of tiles in the same slot (Y: the loop art, no ∞ glyph).
+        if (unlimitedFade > 0f) {
+            Column(Modifier.fillMaxWidth().graphicsLayer { alpha = unlimitedFade }) {
+                Box(Modifier.fillMaxWidth().height(BannerSlotSpec.SCENE_BAR.dp).background(peach))
+                Box(
+                    Modifier.fillMaxWidth().background(accentWash(peach, 0.16f)).then(glow).padding(top = 6.dp, bottom = 2.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(Modifier.fillMaxWidth().height(h), contentAlignment = Alignment.Center) {
+                        com.wordocious.app.ui.game.UnlimitedLoopArt(h * (900f / 759f) * 0.92f)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * G4 which scene the banner shows (pure, unit-tested): FLAWLESS when the Wordocious row
+ * is flawless (or only the Puzzles row has a tier and it is flawless), SWEEP when either
+ * row is swept, NONE otherwise and always in Unlimited.
+ */
+internal fun bannerArtTier(word: BannerTier, puzzles: BannerTier, unlimited: Boolean): BannerTier = when {
+    unlimited -> BannerTier.NONE
+    word == BannerTier.FLAWLESS || (word == BannerTier.NONE && puzzles == BannerTier.FLAWLESS) -> BannerTier.FLAWLESS
+    word == BannerTier.SWEEP || puzzles != BannerTier.NONE -> BannerTier.SWEEP
+    else -> BannerTier.NONE
 }
 
 /** How far a banner host peeks over the card's top edge (MASCOT_SPEC §2). */
@@ -230,7 +342,8 @@ internal val BANNER_HOST_CLEAR = 50.dp
  */
 @Composable
 internal fun BannerHost(id: MascotId, modifier: Modifier = Modifier) {
-    Mascot(id, 56.dp, modifier.offset(x = (-2).dp, y = -BANNER_HOST_PEEK), motion = MascotMotion.BOB)
+    // FINISH_SPEC AD: the idle bob stops under Battery Saver too.
+    Mascot(id, 56.dp, modifier.offset(x = (-2).dp, y = -BANNER_HOST_PEEK), motion = if (WTheme.calmMotion) MascotMotion.NONE else MascotMotion.BOB)
 }
 
 @Composable
@@ -243,6 +356,10 @@ private fun BannerGroupRow(
     completions: Map<String, DailyCompletionsService.Completion>,
     onOpen: (ModeCard) -> Unit,
     modifier: Modifier,
+    /** Z: today's run has a flame — its slot is kept (invisible) in Unlimited too. */
+    flameSlot: Boolean = false,
+    /** Z: the row's DAILY tier (what the flame's run reads in both modes). */
+    dailyTier: BannerTier = tier,
 ) {
     val ink = tierInk(tier)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -253,9 +370,14 @@ private fun BannerGroupRow(
                 fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = ink,
                 modifier = Modifier.weight(1f), maxLines = 1,
             )
-            // Unlimited hides the streaks; a row's flame hides when its run is 0.
-            val streak = if (unlimited) 0 else groupStreak(tier, row.streaks)
-            if (streak > 0) StreakFlame(streak, flame = 12.dp, fontSize = 12)
+            // Unlimited hides the streaks; a row's flame hides when its run is 0. Z: the flame's
+            // slot stays (invisible, silent) in Unlimited so the line keeps its height.
+            if (flameSlot) {
+                val streak = groupStreak(dailyTier, row.streaks)
+                Box(if (unlimited) Modifier.graphicsLayer { alpha = 0f }.clearAndSetSemantics { } else Modifier) {
+                    StreakFlame(streak, flame = 12.dp, fontSize = 12)
+                }
+            }
         }
         // Spec sizes (32/28 dp tiles, 7/4 dp gaps) are the ceiling; a narrow phone
         // shrinks the tiles so all of them fit on one line.
@@ -339,8 +461,7 @@ private fun BannerTile(
         else -> ", played"
     }
     Box(
-        Modifier.size(size).then(look).clickableNoRipple(onClick)
-            .semantics { contentDescription = card.title + state },
+        Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size).then(look),
         contentAlignment = Alignment.Center,
     ) {
         ModeGlyph(card, ink, box = size)
@@ -418,26 +539,104 @@ internal fun Modifier.bannerShimmer(): Modifier {
     }
 }
 
-/** Pro's DAILY | UNLIMITED switch, in the strip's second line. */
+/**
+ * The DAILY | UNLIMITED switch, in the strip's second line. FINISH_SPEC Z: the two
+ * segments are fixed-width (measured once from their labels in the same Black weight),
+ * the labels never change weight, and only the tinted thumb slides between them
+ * (instant with Reduce Motion) — so nothing reflows on the toggle. R3: with [locked]
+ * (free players and guests) UNLIMITED wears a small gold PRO pill (AA4: never for Pro).
+ */
 @Composable
-private fun DailyUnlimitedSwitch(value: PlayMode, onChange: (PlayMode) -> Unit) {
-    Row(
-        Modifier.clip(RoundedCornerShape(50)).background(Color(0xFF7C3AED).copy(alpha = 0.12f)).padding(2.dp),
-    ) {
-        listOf(PlayMode.DAILY to "DAILY", PlayMode.UNLIMITED to "UNLIMITED").forEach { (mode, label) ->
-            val on = value == mode
-            // Selected UNLIMITED stays violet, never pink/red (founder veto).
-            val ink = if (!on) Color(0xFF7C3AED) else if (mode == PlayMode.DAILY) Color(0xFF4C1D95) else Color(0xFF6D28D9)
+private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (PlayMode) -> Unit) {
+    val purple = Color(0xFF7C3AED)
+    val labelStyle = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp)
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = LocalDensity.current
+    val geo = remember(density, measurer) {
+        fun w(t: String) = with(density) { measurer.measure(t, labelStyle, maxLines = 1).size.width.toDp().value }
+        switchGeometry(kotlin.math.ceil(w("DAILY")), kotlin.math.ceil(w("UNLIMITED")))
+    }
+    val unlimited = value == PlayMode.UNLIMITED
+    val (thumbX, thumbW) = geo.thumb(unlimited)
+    val still = WTheme.reducedMotion
+    val spec: androidx.compose.animation.core.AnimationSpec<Dp> =
+        if (still) androidx.compose.animation.core.snap()
+        else androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 500f)
+    val x by androidx.compose.animation.core.animateDpAsState(thumbX.dp, spec, label = "switchThumbX")
+    val w by androidx.compose.animation.core.animateDpAsState(thumbW.dp, spec, label = "switchThumbW")
+    val segH = BannerSlotSpec.SWITCH_SEGMENT_H.dp
+    Box {
+        Box(
+            Modifier.width(geo.trackWidth.dp).height((BannerSlotSpec.SWITCH_SEGMENT_H + BannerSlotSpec.SWITCH_PAD * 2).dp)
+                .clip(RoundedCornerShape(50)).background(purple.copy(alpha = 0.12f))
+                .padding(BannerSlotSpec.SWITCH_PAD.dp),
+        ) {
+            // The sliding thumb: the only thing that moves.
             Box(
-                Modifier.height(26.dp).clip(RoundedCornerShape(50))
-                    .background(if (on) accentWash(Color(0xFF7C3AED), 0.06f) else Color.Transparent)
-                    .clickableNoRipple { onChange(mode) }
-                    .padding(horizontal = 10.dp)
-                    .semantics { contentDescription = label.lowercase() + if (on) ", selected" else "" },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(label, fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = ink, maxLines = 1)
+                Modifier.offset(x = x).width(w).height(segH)
+                    .clip(RoundedCornerShape(50)).background(accentWash(purple, 0.06f)),
+            )
+            Row {
+                listOf(PlayMode.DAILY to "DAILY", PlayMode.UNLIMITED to "UNLIMITED").forEach { (mode, label) ->
+                    val on = value == mode
+                    // Selected UNLIMITED stays violet, never pink/red (founder veto).
+                    val ink = if (!on) purple else if (mode == PlayMode.DAILY) Color(0xFF4C1D95) else Color(0xFF6D28D9)
+                    val segW = if (mode == PlayMode.DAILY) geo.dailyWidth else geo.unlimitedWidth
+                    Box(
+                        Modifier.squishClickable(
+                            if (mode == PlayMode.UNLIMITED && locked) "unlimited, a Pro feature" else label.lowercase(),
+                            role = androidx.compose.ui.semantics.Role.Tab,
+                        ) { onChange(mode) }
+                            .semantics { selected = on }
+                            .width(segW.dp).height(segH),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(label, style = labelStyle, color = ink, maxLines = 1, softWrap = false)
+                    }
+                }
             }
         }
+        if (locked) {
+            com.wordocious.app.ui.game.ProPill(Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-7).dp))
+        }
+    }
+}
+
+/**
+ * Z one mode's headline in the shared headline slot: the old WORDOCIOUS wordmark style
+ * (Nunito Black, violet→pink, soft pink glow; the double-flawless gold day keeps its
+ * tier ink and the trophy). Two lines, then it steps down (to 70%) rather than
+ * truncating. Both modes' layers are always laid out; [alpha] crossfades them and the
+ * hidden one ([active] = false) is silent to screen readers.
+ */
+@Composable
+private fun BannerHeadlineLayer(headline: String, double: Boolean, headInk: Color, alpha: Float, active: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 30.dp)
+            .graphicsLayer { this.alpha = alpha }
+            .then(if (active) Modifier else Modifier.clearAndSetSemantics { }),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (double) Icon3D(Icon3DName.TROPHY, 22.dp)
+        var headScale by remember(headline) { mutableFloatStateOf(1f) }
+        var headFitted by remember(headline) { mutableStateOf(false) }
+        // §18.4 centered in its cell when it fits on one line; two lines read from the start.
+        var headOneLine by remember(headline) { mutableStateOf(true) }
+        val glow = with(LocalDensity.current) { 3.dp.toPx() }
+        Text(
+            headline, fontSize = 22.sp * headScale, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+            lineHeight = 1.15.em, maxLines = 2, overflow = TextOverflow.Clip,
+            textAlign = if (headOneLine) TextAlign.Center else TextAlign.Start,
+            style = if (double) LocalTextStyle.current.merge(TextStyle(color = headInk))
+            else LocalTextStyle.current.merge(
+                TextStyle(brush = WTheme.wordmarkGradient, shadow = Shadow(Color(0xFFEC4899).copy(alpha = 0.25f), Offset.Zero, glow)),
+            ),
+            modifier = Modifier.weight(1f).drawWithContent { if (headFitted) drawContent() },
+            onTextLayout = { r ->
+                headOneLine = r.lineCount <= 1
+                if (r.hasVisualOverflow && headScale > 0.7f) headScale -= 0.05f else headFitted = true
+            },
+        )
     }
 }

@@ -36,6 +36,11 @@ export interface FriendProfile {
   lastSeenAt?: string | null;
   activity?: string | null;
   friendStreak?: number;
+  /** FINISH_SPEC AH/AN3 (additive): avatar choice + active Pro (null / false until the columns exist). */
+  avatar_cast_id?: string | null;
+  avatar_frame?: string | null;
+  avatar_config?: Record<string, unknown> | null;
+  is_pro?: boolean;
 }
 
 /** Local YYYY-MM-DD — the same day boundary every daily surface uses. */
@@ -269,6 +274,11 @@ export interface FeedEvent {
   username: string;
   avatar_url: string | null;
   avatar_emoji: string | null;
+  /** FINISH_SPEC AH/AN3 (additive): the owner's avatar choice + active Pro. */
+  avatar_cast_id?: string | null;
+  avatar_frame?: string | null;
+  avatar_config?: Record<string, unknown> | null;
+  is_pro?: boolean;
   me: boolean;
   day: string;
   at: string;

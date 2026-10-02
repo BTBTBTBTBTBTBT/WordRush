@@ -16,6 +16,7 @@ import { grantFreeShield } from './shield-service';
 import { DAILY_MODES, requiredDailyModeCount, sweepModesFor } from './daily-modes';
 import { MODE_BY_DBKEY, SWEEP_MODES, MORE_GAME_MODES } from './modes.generated';
 import { guessDistributionRange, distributionSpec, type MatchRow } from './mode-stats';
+import { avatarFieldsOf, selectWithAvatarColumns, type AvatarFields } from './avatar-fields-server';
 
 export interface XpResult {
   xpGain: number;
@@ -2258,7 +2259,7 @@ export async function fetchSkillRadar(userId: string): Promise<SkillRadarData | 
   return { speed, accuracy, consistency, endurance, versatility };
 }
 
-export interface Rivalry {
+export interface Rivalry extends Partial<AvatarFields> {
   opponentId: string;
   username: string;
   wins: number;
@@ -2293,16 +2294,19 @@ export async function fetchRivalries(userId: string, limit = 5): Promise<Rivalry
     .slice(0, limit);
   if (top.length === 0) return [];
 
-  const { data: profiles } = await (supabase as any)
-    .from('profiles').select('id, username, is_banned').in('id', top.map((t) => t.opponentId));
+  // + is_pro / avatar columns (FINISH_SPEC AH/AN3; retried without them while they don't exist).
+  const { data: profiles } = await selectWithAvatarColumns<any[]>((extra) => (supabase as any)
+    .from('profiles').select(`id, username, is_banned${extra}`).in('id', top.map((t) => t.opponentId)));
   const names: Record<string, string> = {};
+  const avatars: Record<string, AvatarFields> = {};
   const banned = new Set<string>();
   for (const p of (profiles as Array<{ id: string; username: string; is_banned?: boolean }> | null) || []) {
     names[p.id] = p.username;
+    avatars[p.id] = avatarFieldsOf(p);
     if (p.is_banned) banned.add(p.id);
   }
   // Banned opponents drop out of the rivalry list entirely (App Review 1.2).
   return top
     .filter((t) => !banned.has(t.opponentId))
-    .map((t) => ({ ...t, username: names[t.opponentId] ?? 'Unknown' }));
+    .map((t) => ({ ...t, username: names[t.opponentId] ?? 'Unknown', ...avatars[t.opponentId] }));
 }

@@ -2,6 +2,8 @@
 
 import { statLines, type ModeAggregates } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { SoftNum } from '@/components/ui/soft-number';
+import { cardBarStyle, softCard } from '@/lib/soft-surface';
 
 interface ModeStatsCardProps {
   /** daily_results / user_stats key ("DUEL", "SUDOKU", …). Picks the stats profile. */
@@ -25,7 +27,7 @@ interface ModeStatsCardProps {
  * Mistakes, Hubbub's Best Rank and Pangrams, …), the matches-derived ones
  * via `aggregates`. Same registry, same fixtures, on iOS and Android.
  */
-export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, fastestTime, winStreak, aggregates }: ModeStatsCardProps) {
+export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, fastestTime, accentColor, winStreak, aggregates }: ModeStatsCardProps) {
   const meta = MODE_BY_DBKEY[gameMode];
   const stats = statLines(
     gameMode,
@@ -36,14 +38,13 @@ export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, f
   );
 
   return (
-    <div
-      className="p-4"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-    >
-      <div className="grid grid-cols-4 gap-3">
+    // A1 + A2: the game's wash and 10 px top bar; every cell a soft number.
+    <div className="overflow-hidden" style={softCard(accentColor, { radius: 18 })}>
+      <div aria-hidden="true" style={cardBarStyle(accentColor)} />
+      <div className="grid grid-cols-4 gap-3 p-4">
         {stats.map((s) => (
           <div key={s.label} className="text-center">
-            <div className="text-lg font-black leading-tight" style={{ color: 'var(--color-text)' }}>{s.value}</div>
+            <SoftNum size={18} as="div" className="soft-num-auto leading-tight">{s.value}</SoftNum>
             <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
           </div>
         ))}

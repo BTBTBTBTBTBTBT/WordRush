@@ -2,14 +2,33 @@
 
 import { GameStatus, type BoardState } from '@wordle-duel/core';
 import { getTodayLocal } from './daily-service';
-import { TILE_HEX, WIN_FG, WIN_BG, BOARD_WIN_TINT } from './tile-theme';
+import { WIN_FG } from './tile-theme';
 import { MODES } from './modes.generated';
 import { boardToGrid, boardToLetters, MODE_SHARE_GLYPH } from './share-grid';
 import {
-  ART_SIZE, GAME_TILES_OPACITY, PAGE_TILES, PAGE_TINTS, artSrc, gameTint, gameTitleArt,
-  type GameTitleArtName, type TintStops,
+  ART_SIZE, PAGE_TINTS, artSrc, gameArtSrc, gameTint, pageWall,
+  type ArtName, type TintStops,
 } from './art';
-import { CAST, mascotSrc } from './mascots';
+import {
+  LEADERBOARD_SHARE_ART, TILE_GLOSS, fallbackSharePoints, gameShareArt, glossFrom,
+  shareDayKey, shareInfoLine, shareStatWindows, shareSweepInfo,
+  type GlossPalette,
+} from './share-look';
+import {
+  ANSWER_CAPTION_H, BOARD_W, GROUPS_DOTS_H, HUB_RANK_H, MULTI_CHROME, PROFILE_HEAD_H, SCRAMBLE_DIVIDER_H,
+  SHARE_SPACE, SHARE_W, TITLE_MAX_W,
+  boardBlockHeight, cipherWordWidth, crosswordGeometry, cryptoGeometry, gridGeometry, groupsGeometry,
+  hubGeometry, ladderGeometry, leaderboardPanelGeometry, multiDims, multiGeometry, planShareCard,
+  profileGeometry, scrambleGeometry, singleCaptionH, squareSize, stackGeometry, titleBoxHeight,
+  type GridGeometry, type SharePlan,
+} from './share-fit';
+import { shareHookLine } from './leaderboard-share';
+import {
+  canvasToPng, drawCastWordmark, drawDateLine, drawGlossTile, drawImageContain, drawInfoLine, drawSoftNumber,
+  drawStatWindow, drawStatWindows, drawTileGlyph, drawWallpaper, fitFontPx, loadCastImages, loadShareImage,
+  resolveCanvasFontStack, setLetterSpacing,
+} from './share-canvas';
+import { softMix } from './soft-surface';
 // The grid helpers live in share-grid.ts so a game screen can use them without
 // pulling this canvas renderer into its first-load JS (founder, 2026-09-29).
 export { boardToGrid, boardToLetters, MODE_SHARE_GLYPH };
@@ -18,15 +37,11 @@ export { boardToGrid, boardToLetters, MODE_SHARE_GLYPH };
 // next/font registers Nunito under a HASHED family applied to <body>; the
 // literal "Nunito" never exists in document.fonts, so canvas silently drew
 // every share card in the system fallback (founder caught the sharper
-// letterforms on the leaderboard card, Aug 7). Resolve the real stack from
-// the body's computed style at render time.
+// letterforms on the leaderboard card, Aug 7). Resolved from the body's
+// computed style at render time (lib/share-canvas.ts).
 let SHARE_FONT_STACK = '"Nunito", system-ui, -apple-system, sans-serif';
 function resolveShareFontStack(): void {
-  if (typeof document === 'undefined' || !document.body) return;
-  try {
-    const fam = getComputedStyle(document.body).fontFamily;
-    if (fam && fam.length > 0) SHARE_FONT_STACK = fam;
-  } catch { /* keep fallback */ }
+  SHARE_FONT_STACK = resolveCanvasFontStack();
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -310,7 +325,7 @@ export interface ShareDailySweepInput {
   date?: Date;
 }
 
-/** Shareable profile / stats card (1080×1080). */
+/** Shareable profile / stats card (1080 wide, sized to its content: lib/share-fit.ts). */
 export interface ShareProfileInput {
   layout: 'profile';
   /** 'Classic' — present only to satisfy callers that read `.mode`. */
@@ -349,7 +364,7 @@ export interface ShareLeaderboardRowInput {
   isYou?: boolean;
 }
 
-/** Daily-leaderboard share card (1080×1080): solo board, VS board, or
+/** Daily-leaderboard share card (1080 wide, sized to its rows): solo board, VS board, or
  *  yesterday's settled podium. Spoiler-free by construction — no words or
  *  boards, only names/scores/stats. */
 export interface ShareLeaderboardInput {
@@ -379,7 +394,7 @@ export interface ShareLeaderboardInput {
   youRankLine?: string;
   /** Rank-vs-yesterday pill on the sharer's row; absent = didn't play yesterday. */
   delta?: { text: string; improved: boolean };
-  /** Footer hook line ("Can you beat them? Play free at wordocious.com"). */
+  /** Footer hook ("Can you beat them? Play free at wordocious.com"); the card draws it under the rows without the site part (shareHookLine). */
   footer: string;
   /** Board day — drives the storage-key date. Defaults to today. */
   date?: Date;
@@ -410,33 +425,29 @@ export type ShareImageInput =
 // Palette (matches the in-app tile + chip colors)
 // ──────────────────────────────────────────────────────────────────────────
 
-const BG = '#f8f7ff';
-const TILE_COLORS: Record<TileStateString, string> = {
-  CORRECT: TILE_HEX.correct,
-  PRESENT: TILE_HEX.present,
-  ABSENT: '#9ca3af',
-  EMPTY: '#e5e7eb',
-};
-const TILE_BORDER_EMPTY = '#d1d5db';
+// The card's inks (FINISH_SPEC E1): dark purples on the wallpaper, never gray-on-white.
+const BG = '#f3eeff';
 
 // Per-mode accent, derived from the single-source mode catalog (keyed by title == ShareMode).
 const MODE_ACCENT: Record<ShareMode, string> = Object.fromEntries(
   MODES.filter((m) => m.dbKey).map((m) => [m.title, m.accentHex]),
 ) as Record<ShareMode, string>;
 
-const WORDMARK_GRADIENT: [string, string] = ['#a78bfa', '#ec4899'];
-const FOOT_COLOR = '#9ca3af';
-const TEXT_DARK = '#1a1a2e';
-const TEXT_MUTED = '#6b7280';
+const TEXT_DARK = '#2a1650';
+const TEXT_MUTED = '#6f5f8f';
 
-// Win/Loss pill (same as profile + leaderboard pills we shipped earlier).
-// WIN_BG / WIN_FG / BOARD_WIN_TINT come from tile-theme (Royal violet).
-const LOSS_BG = '#fee2e2';
-const LOSS_FG = '#dc2626';
+// Win / loss accents (WIN_FG comes from tile-theme, Royal violet).
+const LOSS_FG = '#e11d48';
 
-// Softer tint used behind a board's tile grid so the colored border has a
-// subtle fill to match the in-app finished screen.
-const BOARD_LOSS_TINT = '#fef2f2'; // red-50
+// The tinted panels behind a board (never white): lilac for a win, rose for a loss.
+const PANEL_WIN = 'rgba(245, 238, 255, 0.86)';
+const PANEL_LOSS = 'rgba(255, 236, 241, 0.86)';
+const PANEL_WIN_LINE = 'rgba(124, 58, 237, 0.55)';
+const PANEL_LOSS_LINE = 'rgba(225, 29, 72, 0.55)';
+
+// Accent palettes the More Games boards draw their glossy cells in.
+const GLOSS_DARK = glossFrom('#3b2a5c');
+const GLOSS_VIOLET = glossFrom('#8b5cf6');
 
 // ──────────────────────────────────────────────────────────────────────────
 // Drawing primitives
@@ -464,6 +475,23 @@ function drawRoundRect(
   ctx.closePath();
 }
 
+/** A tinted board panel (lilac win / rose loss) with its soft ring — the old white-bordered card. */
+function drawResultPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, won: boolean, radius = 28): void {
+  ctx.save();
+  ctx.shadowColor = 'rgba(60, 30, 110, 0.14)';
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 10;
+  drawRoundRect(ctx, x, y, w, h, radius);
+  ctx.fillStyle = won ? PANEL_WIN : PANEL_LOSS;
+  ctx.fill();
+  ctx.restore();
+  drawRoundRect(ctx, x, y, w, h, radius);
+  ctx.strokeStyle = won ? PANEL_WIN_LINE : PANEL_LOSS_LINE;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+/** A glossy result tile (game kit): purple correct, gold present, slate absent, frosted empty. */
 function drawTile(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -472,44 +500,33 @@ function drawTile(
   state: TileStateString,
   letter?: string,
 ): void {
-  drawRoundRect(ctx, x, y, size, size, Math.max(4, size * 0.12));
-  ctx.fillStyle = TILE_COLORS[state];
-  ctx.fill();
-  if (state === 'EMPTY') {
-    ctx.strokeStyle = TILE_BORDER_EMPTY;
-    ctx.lineWidth = Math.max(1, size * 0.025);
-    ctx.stroke();
-  }
-  // "Full results" variant: glyph centered in the tile. EMPTY tiles never
+  const pal = state === 'EMPTY' ? null : TILE_GLOSS[state];
+  const faceH = drawGlossTile(ctx, x, y, size, size, pal, { gloss: state === 'ABSENT' ? 0.3 : undefined });
+  // "Full results" variant: glyph centered on the face. EMPTY tiles never
   // carry a letter (boardToLetters pads with ''), so this only fires on
   // evaluated rows.
-  if (letter && state !== 'EMPTY') {
-    ctx.save();
-    ctx.font = `900 ${Math.max(10, Math.floor(size * 0.55))}px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(letter.toUpperCase(), x + size / 2, y + size / 2 + 1);
-    ctx.restore();
-  }
+  if (letter && state !== 'EMPTY') drawTileGlyph(ctx, letter, x, y, size, faceH);
+}
+
+/** A glossy cell in any palette (null = frosted) — the More Games boards. */
+function drawCell(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, pal: GlossPalette | null, radius?: number): number {
+  return drawGlossTile(ctx, x, y, size, size, pal, { radius: radius ?? Math.max(5, size * 0.2) });
 }
 
 /**
- * Paint a board: optional colored "card" (tinted background + thick border)
- * matching the in-app finished-screen treatment, then the tile grid inside.
- * When `won` is null the card is omitted — used for single-board layouts that
- * rely on the header Win/Loss pill instead.
+ * Paint one board at `top`, centered on `centerX`, at the geometry the card's
+ * layout measured (lib/share-fit.ts): an optional tinted panel (lilac win /
+ * rose loss, soft ring; `won` null = no panel, the tiles sit right on the
+ * wallpaper), the glossy tiles (no rim, no grid lines), and — revealing a
+ * loss — the answer spelled out underneath.
  */
-/** Height reserved under a board for the revealed-loss answer caption. */
-const ANSWER_CAPTION_H = 44;
-
 function drawBoardCard(
   ctx: CanvasRenderingContext2D,
   grid: TileStateString[][],
   centerX: number,
-  centerY: number,
-  maxWidth: number,
-  maxHeight: number,
+  top: number,
+  geo: GridGeometry,
+  chrome: number,
   won: boolean | null,
   wordGroups?: number[],
   reveal?: {
@@ -517,86 +534,33 @@ function drawBoardCard(
     letters?: string[][];
     /** Answer text drawn under the board (lost boards only). */
     answerCaption?: string;
-    /** Reserve the caption strip even without a caption — keeps every board
-     *  in a multi grid the same height whether it was won or lost. */
-    reserveCaption?: boolean;
   },
 ): void {
-  if (!grid.length) return;
   const rows = grid.length;
   const cols = grid[0]?.length ?? 0;
-  if (!cols) return;
+  if (!rows || !cols) return;
+  const { tile, gap, groupGap } = geo;
+  const inset = chrome / 2;
+  const boardW = geo.gridW + chrome;
+  const boardH = geo.gridH + chrome;
+  const x = centerX - boardW / 2;
+  if (won !== null) drawResultPanel(ctx, x, top, boardW, boardH, won, 18);
 
-  const cardPad = won === null ? 0 : 12;
-  const borderWidth = won === null ? 0 : 3;
-
-  const gap = 4;
+  // ProperNoundle multi-word answers keep a tile-wide break between names
+  // (founder: "Why are we having so much trouble with this?").
   const groups = wordGroups && wordGroups.length > 1 ? wordGroups : null;
-
-  // "Full results": shift the board up by half the caption strip and draw the
-  // answer underneath, so grid+caption stay centered where the grid alone was.
-  const captionH = reveal && (reveal.answerCaption || reveal.reserveCaption) ? ANSWER_CAPTION_H : 0;
-  const boardCenterY = centerY - captionH / 2;
-
-  const innerMaxW = maxWidth - cardPad * 2 - borderWidth * 2;
-  const innerMaxH = maxHeight - captionH - cardPad * 2 - borderWidth * 2;
-
-  // ProperNoundle multi-word answers need a *visible* break between
-  // first and last name. Prior iterations scaled the gap at 3×, then
-  // 0.55×-tile, and the user still saw the two names lumped together
-  // ("Why are we having so much trouble with this?"). Escalate to a
-  // full tile-width of empty space between words — this is roughly
-  // what you'd expect from visual parity with the in-game board at
-  // 1080px output, and leaves no ambiguity that the break is a word
-  // boundary rather than a tile-grid artifact. Two-pass: compute tile
-  // size assuming uniform spacing first, derive group gap from that,
-  // then recompute tile size with the group gaps baked in so the row
-  // fits horizontally.
-  const tile1FromW = (innerMaxW - gap * (cols - 1)) / cols;
-  const tile1FromH = (innerMaxH - gap * (rows - 1)) / rows;
-  const tile1 = Math.floor(Math.min(tile1FromW, tile1FromH));
-  const groupGap = groups ? Math.max(gap * 4, tile1) : gap;
-  const extraGroupWidth = groups ? (groups.length - 1) * (groupGap - gap) : 0;
-
-  const tileFromWidth = (innerMaxW - gap * (cols - 1) - extraGroupWidth) / cols;
-  const tileFromHeight = (innerMaxH - gap * (rows - 1)) / rows;
-  const tile = Math.floor(Math.min(tileFromWidth, tileFromHeight));
-  const totalW = cols * tile + gap * (cols - 1) + extraGroupWidth;
-  const totalH = rows * tile + gap * (rows - 1);
-
-  if (won !== null) {
-    // Colored card behind the tile grid — matches in-app finished board look.
-    const cardW = totalW + cardPad * 2;
-    const cardH = totalH + cardPad * 2;
-    const cardX = centerX - cardW / 2;
-    const cardY = boardCenterY - cardH / 2;
-    drawRoundRect(ctx, cardX, cardY, cardW, cardH, 18);
-    ctx.fillStyle = won ? BOARD_WIN_TINT : BOARD_LOSS_TINT;
-    ctx.fill();
-    ctx.strokeStyle = won ? WIN_FG : LOSS_FG;
-    ctx.lineWidth = borderWidth;
-    ctx.stroke();
-  }
-
-  // Precompute per-column x offsets once. For grouped layouts, crossing
-  // a group boundary bumps the offset by `groupGap` instead of `gap`.
   const xOffsets: number[] = new Array(cols);
   if (groups) {
     let colCursor = 0;
-    let x = 0;
+    let gx = 0;
     for (let g = 0; g < groups.length; g++) {
-      const size = groups[g];
-      for (let i = 0; i < size && colCursor < cols; i++) {
-        xOffsets[colCursor] = x;
-        x += tile + gap;
+      for (let i = 0; i < groups[g] && colCursor < cols; i++) {
+        xOffsets[colCursor] = gx;
+        gx += tile + gap;
         colCursor++;
       }
-      // Replace the last intra-group `gap` with the larger `groupGap`
-      // before starting the next group, unless this was the final group.
-      if (g < groups.length - 1) x += (groupGap - gap);
+      if (g < groups.length - 1) gx += groupGap - gap;
     }
-    // Safety: if group sizes don't add up to cols (shouldn't happen),
-    // fill any remaining columns with uniform spacing so we don't crash.
     for (; colCursor < cols; colCursor++) {
       xOffsets[colCursor] = colCursor === 0 ? 0 : xOffsets[colCursor - 1] + tile + gap;
     }
@@ -604,8 +568,8 @@ function drawBoardCard(
     for (let c = 0; c < cols; c++) xOffsets[c] = c * (tile + gap);
   }
 
-  const x0 = centerX - totalW / 2;
-  const y0 = boardCenterY - totalH / 2;
+  const x0 = x + inset;
+  const y0 = top + inset;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       drawTile(ctx, x0 + xOffsets[c], y0 + r * (tile + gap), tile, grid[r][c], reveal?.letters?.[r]?.[c]);
@@ -615,60 +579,16 @@ function drawBoardCard(
   // Revealed loss: the answer never appears in the tiles, so spell it out
   // under the board — same treatment as the completed-puzzle page.
   if (reveal?.answerCaption) {
-    const captionY = boardCenterY + totalH / 2 + cardPad + borderWidth + ANSWER_CAPTION_H / 2 + 2;
     ctx.save();
     ctx.font = `900 ${Math.min(30, Math.max(16, Math.floor(tile * 0.6)))}px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = LOSS_FG;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(reveal.answerCaption.toUpperCase(), centerX, captionY);
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+    ctx.shadowOffsetY = 2;
+    ctx.fillText(reveal.answerCaption.toUpperCase(), centerX, top + boardH + ANSWER_CAPTION_H / 2 + 2);
     ctx.restore();
   }
-}
-
-function drawWinLossPill(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  won: boolean,
-): { width: number; height: number } {
-  const label = won ? 'Win' : 'Loss';
-  const bg = won ? WIN_BG : LOSS_BG;
-  const fg = won ? WIN_FG : LOSS_FG;
-  ctx.font = `700 22px ${SHARE_FONT_STACK}`;
-  const labelW = ctx.measureText(label).width;
-  const padX = 16;
-  const padY = 8;
-  const width = labelW + padX * 2;
-  const height = 22 + padY * 2;
-  drawRoundRect(ctx, x, y, width, height, 10);
-  ctx.fillStyle = bg;
-  ctx.fill();
-  ctx.fillStyle = fg;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText(label, x + width / 2, y + height / 2 + 1);
-  return { width, height };
-}
-
-function drawCategoryPill(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  label: string,
-  color: string,
-): { width: number; height: number } {
-  ctx.font = `700 18px ${SHARE_FONT_STACK}`;
-  const w = ctx.measureText(label).width + 24;
-  const h = 30;
-  drawRoundRect(ctx, x, y, w, h, 14);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText(label, x + w / 2, y + h / 2 + 1);
-  return { width: w, height: h };
 }
 
 function formatTime(seconds: number): string {
@@ -677,360 +597,148 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function formatShortDate(d: Date): string {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+// ──────────────────────────────────────────────────────────────────────────
+// The finishing look (docs/FINISH_SPEC.md E1, S2, S3): the wallpaper behind
+// the card, the game's title art (~70% wide), ONE compact info line with a
+// W / L badge, the board block (~88% wide), three tinted stat windows, and the
+// cast wordmark over "wordocious.com". The canvas is exactly as tall as that
+// stack (lib/share-fit.ts planShareCard, clamped 4:5 … 9:16). Every image is
+// optional: when one fails to load (offline, slow) the card draws its plain
+// fallback in that spot.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Card side padding (stat windows, rows panels). */
+const CARD_PAD = 64;
+
+/** The board block's box on the card (content + any slack): draw centered in it. */
+interface Box {
+  top: number;
+  h: number;
 }
-
-// ──────────────────────────────────────────────────────────────────────────
-// The cast on the card (docs/ART_SPEC.md §17): the page tint behind it, the
-// game's title art as its header, and the ten mascots along the bottom
-// above the URL. Every image is optional: when one fails to load (offline,
-// slow) the card draws exactly what it drew before in that spot.
-// ──────────────────────────────────────────────────────────────────────────
-
-/** The game's title art height in the card header (canvas px). */
-const SHARE_TITLE_ART_H = 84;
-/** The cast strip: ten mascots this size (canvas px) with this gap. */
-const CAST_STRIP = { size: 44, gap: 6 } as const;
-/** Bottom room (canvas px) the footer takes: the URL alone, or the cast strip over it. */
-const FOOTER_ROOM = { plain: 80, cast: 128 } as const;
 
 interface ShareArt {
-  /** The seamless letter-tile pattern (art-bg-tiles). */
-  tiles: HTMLImageElement | null;
-  /** The game's title art (art-game-<id>) for result cards. */
+  wall: HTMLImageElement | null;
+  /** Title art (game title, page title or moment lettering). */
   title: HTMLImageElement | null;
-  titleName: GameTitleArtName | null;
-  /** The ten in WORDOCIOUS order (null where one failed). */
-  cast: Array<HTMLImageElement | null>;
+  titleName: ArtName | null;
+  /** Sweep rows: each game's glossy icon by mode title (null where one failed). */
+  icons: Map<string, HTMLImageElement | null>;
 }
 
-const shareImageCache = new Map<string, Promise<HTMLImageElement | null>>();
-
-/**
- * Loads an image for the canvas, trying each src in turn when one errors;
- * null on failure, or once `timeoutMs` passes (a slow network never holds the
- * share sheet up for long: a timeout doesn't go on to the next src).
- */
-function loadShareImage(srcs: string[], timeoutMs = 2000): Promise<HTMLImageElement | null> {
-  const key = srcs.join('|');
-  const hit = shareImageCache.get(key);
-  if (hit) return hit;
-  const tryOne = (src: string) => new Promise<{ img: HTMLImageElement | null; timedOut: boolean }>((resolve) => {
-    const img = new Image();
-    const timer = setTimeout(() => resolve({ img: null, timedOut: true }), timeoutMs);
-    img.onload = () => { clearTimeout(timer); resolve({ img, timedOut: false }); };
-    img.onerror = () => { clearTimeout(timer); resolve({ img: null, timedOut: false }); };
-    img.src = src;
-  });
-  const p = (async () => {
-    for (const src of srcs) {
-      const { img, timedOut } = await tryOne(src);
-      if (img) return img;
-      if (timedOut) break;
-    }
-    return null;
-  })();
-  // A failure is not cached, so the next share tries again.
-  p.then((img) => { if (!img) shareImageCache.delete(key); });
-  shareImageCache.set(key, p);
-  return p;
-}
-
-/** A mascot through the Next image optimizer at strip size (the 512 px PNGs are ~200 KB each), then the raw file. */
-function mascotShareSrcs(src: string): string[] {
-  return [`/_next/image?url=${encodeURIComponent(src)}&w=96&q=75`, src];
-}
-
-/** The catalog title art for a share mode ('QuadWord' → art-game-quordle), or null (sweep, boards, brags). */
-function shareTitleArtName(mode: ShareMode): GameTitleArtName | null {
-  return gameTitleArt(MODES.find((m) => m.dbKey && m.title === mode)?.id);
-}
-
-async function loadShareArt(titleName: GameTitleArtName | null): Promise<ShareArt> {
-  const [tiles, title, ...cast] = await Promise.all([
-    loadShareImage([artSrc(PAGE_TILES.name)]),
-    titleName ? loadShareImage([artSrc(titleName)]) : Promise.resolve(null),
-    ...CAST.map((id) => loadShareImage(mascotShareSrcs(mascotSrc(id)))),
+async function loadShareArt(opts: {
+  wall: string;
+  title: ArtName | null;
+  icons?: string[];
+}): Promise<ShareArt> {
+  const iconModes = opts.icons ?? [];
+  const iconSrc = (mode: string) => gameArtSrc(MODES.find((m) => m.title === mode)?.id);
+  const [wall, title, ...icons] = await Promise.all([
+    loadShareImage([artSrc(opts.wall)]),
+    opts.title ? loadShareImage([artSrc(opts.title)]) : Promise.resolve(null),
+    ...iconModes.map((m) => {
+      const src = iconSrc(m);
+      return src ? loadShareImage([src]) : Promise.resolve(null);
+    }),
   ]);
-  return { tiles, title, titleName, cast };
+  return {
+    wall,
+    title,
+    titleName: opts.title,
+    icons: new Map(iconModes.map((m, i) => [m, icons[i] ?? null])),
+  };
+}
+
+/** The loaded title art's own size (ART_SIZE only when the browser doesn't report one); null = no art. */
+function titleNatural(art: ShareArt): readonly [number, number] | null {
+  if (!art.title || !art.titleName) return null;
+  return art.title.naturalWidth && art.title.naturalHeight
+    ? [art.title.naturalWidth, art.title.naturalHeight]
+    : ART_SIZE[art.titleName];
 }
 
 /**
- * The page tint behind the whole card (§11 / §15): the soft diagonal
- * gradient (top-left → bottom-right, light stops) with the letter tiles
- * repeated on top at `tilesOpacity`. Falls back to the flat card color.
+ * The card's title in its `boxH` slot at `top`: the art fit inside ~70% of the
+ * width, or — when it didn't load — the name lettered in its accent (or a
+ * 2-stop gradient) with a white edge.
  */
-function drawTintBackground(
+function drawCardTitle(
   ctx: CanvasRenderingContext2D,
+  art: ShareArt,
   width: number,
-  height: number,
-  stops: readonly [string, string, string],
-  tiles: HTMLImageElement | null,
-  tilesOpacity: number,
-): void {
-  const g = ctx.createLinearGradient(0, 0, width, height);
-  g.addColorStop(0, stops[0]);
-  g.addColorStop(0.5, stops[1]);
-  g.addColorStop(1, stops[2]);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, width, height);
-  if (!tiles) return;
-  const pattern = ctx.createPattern(tiles, 'repeat');
-  if (!pattern) return;
-  ctx.save();
-  ctx.globalAlpha = tilesOpacity;
-  ctx.fillStyle = pattern;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-/** Draws an image fit inside the box (never stretched), centered. */
-function drawImageContain(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  cx: number,
   top: number,
-  maxW: number,
-  maxH: number,
-  natural?: readonly [number, number],
+  boxH: number,
+  fallbackText: string,
+  fallbackColor: string | readonly [string, string],
 ): void {
-  const [nw, nh] = natural ?? [img.naturalWidth || img.width, img.naturalHeight || img.height];
-  if (!nw || !nh) return;
-  const scale = Math.min(maxW / nw, maxH / nh);
-  const w = nw * scale;
-  const h = nh * scale;
-  ctx.drawImage(img, cx - w / 2, top + (maxH - h) / 2, w, h);
-}
-
-/** True when at least one mascot loaded, so the strip draws and the footer takes its room. */
-function hasCast(art: ShareArt | null): boolean {
-  return !!art && art.cast.some(Boolean);
-}
-
-/** The ten mascots in a centered row just above the URL line. */
-function drawCastStrip(ctx: CanvasRenderingContext2D, art: ShareArt, width: number, height: number): void {
-  const { size, gap } = CAST_STRIP;
-  const total = CAST.length * size + (CAST.length - 1) * gap;
-  const top = height - FOOTER_ROOM.cast + 12;
-  let x = (width - total) / 2;
-  for (const img of art.cast) {
-    if (img) drawImageContain(ctx, img, x + size / 2, top, size, size);
-    x += size + gap;
+  const nat = titleNatural(art);
+  if (art.title && nat) {
+    drawImageContain(ctx, art.title, width / 2, top, TITLE_MAX_W, boxH, nat);
+    return;
   }
-}
-
-// ──────────────────────────────────────────────────────────────────────────
-// Header / footer
-// ──────────────────────────────────────────────────────────────────────────
-
-function drawHeader(
-  ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput | ShareCrosswordInput | ShareScrambleInput,
-  width: number,
-  art: ShareArt | null = null,
-): { bottomY: number } {
-  // Wordmark
+  const px = fitFontPx(ctx, fallbackText, Math.min(76, Math.round(boxH * 0.8)), TITLE_MAX_W + 120);
   ctx.save();
-  const wordmarkY = 72;
-  ctx.font = `900 56px ${SHARE_FONT_STACK}`;
+  ctx.font = `900 ${px}px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  const gradient = ctx.createLinearGradient(width / 2 - 200, wordmarkY - 48, width / 2 + 200, wordmarkY + 8);
-  gradient.addColorStop(0, WORDMARK_GRADIENT[0]);
-  gradient.addColorStop(1, WORDMARK_GRADIENT[1]);
-  ctx.fillStyle = gradient;
-  ctx.fillText('WORDOCIOUS', width / 2, wordmarkY);
+  const baseY = top + boxH / 2 + px * 0.36;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(6, px * 0.14);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.strokeText(fallbackText, width / 2, baseY);
+  if (typeof fallbackColor === 'string') {
+    ctx.fillStyle = fallbackColor;
+  } else {
+    const w = ctx.measureText(fallbackText).width;
+    const g = ctx.createLinearGradient(width / 2 - w / 2, 0, width / 2 + w / 2, 0);
+    g.addColorStop(0, fallbackColor[0]);
+    g.addColorStop(1, fallbackColor[1]);
+    ctx.fillStyle = g;
+  }
+  ctx.fillText(fallbackText, width / 2, baseY);
   ctx.restore();
-
-  // Mode name: the game's title art (lettering + host, §17), or the name in
-  // its accent color when the art isn't there.
-  let metaY: number;
-  if (art?.title && art.titleName) {
-    const artTop = wordmarkY + 20;
-    drawImageContain(ctx, art.title, width / 2, artTop, width - 160, SHARE_TITLE_ART_H, ART_SIZE[art.titleName]);
-    metaY = artTop + SHARE_TITLE_ART_H + 34;
-  } else {
-    const modeY = wordmarkY + 60;
-    ctx.font = `900 38px ${SHARE_FONT_STACK}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = MODE_ACCENT[input.mode];
-    const MODE_DISPLAY: Partial<Record<ShareMode, string>> = {
-      Six: 'CLASSIC SIX',
-      Seven: 'CLASSIC SEVEN',
-    };
-    const modeLabel = MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase();
-    ctx.fillText(modeLabel, width / 2, modeY);
-    metaY = modeY + 48;
-  }
-
-  // Metadata line
-  const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');
-  const dateStr = formatShortDate(date);
-  const timeStr = formatTime(input.timeSeconds);
-
-  let statsText: string;
-  if (input.layout === 'gauntlet') {
-    statsText = `${input.stagesCompleted}/${input.totalStages} stages · ${input.guesses} guesses · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'multi') {
-    const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
-    statsText = `${input.boardsSolved}/${input.totalBoards} boards · ${guessDisplay} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'sudoku') {
-    // Semantics-aware (More Games §11): mistakes, never "guesses".
-    const m = `${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'}`;
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}${input.difficulty} · ${input.won ? m : 'Out of mistakes'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'regions') {
-    const m = `${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'}`;
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}${input.sizeLabel} · ${input.won ? m : 'Out of mistakes'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'ladder') {
-    const over = input.moves - input.par;
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}Par ${input.par} · ${input.won ? (over <= 0 ? 'On par' : `+${over}`) : 'Out of moves'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'wordsearch') {
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}${input.found.length}/${input.words.length} · ${input.misses} miss${input.misses === 1 ? '' : 'es'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'hub') {
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}${input.rankName} · ${input.pct}% · ${input.wordsFound} word${input.wordsFound === 1 ? '' : 's'} · ${input.pangramsFound} pangram${input.pangramsFound === 1 ? '' : 's'} · ${dateStr}`;
-  } else if (input.layout === 'cryptogram') {
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    const c = input.checks === 0 ? 'No checks' : `${input.checks} check${input.checks === 1 ? '' : 's'}`;
-    statsText = `${num}${input.won ? c : 'Revealed'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'groups') {
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}${input.solvedTiers.length}/4 groups · ${input.mistakes} mistake${input.mistakes === 1 ? '' : 's'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'crossword') {
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    const c = input.checks === 0 ? 'Clean' : `${input.checks} check${input.checks === 1 ? '' : 's'}`;
-    statsText = `${num}${input.won ? c : 'Revealed'} · ${timeStr} · ${dateStr}`;
-  } else if (input.layout === 'scramble') {
-    const num = input.puzzleNumber ? `#${input.puzzleNumber} · ` : '';
-    statsText = `${num}${input.solvedCount}/5 solved · ${input.checks} check${input.checks === 1 ? '' : 's'} · ${timeStr} · ${dateStr}`;
-  } else {
-    const guessDisplay = input.won ? `${input.guesses}/${input.maxGuesses}` : `X/${input.maxGuesses}`;
-    statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
-  }
-
-  ctx.font = `700 24px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = TEXT_MUTED;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  const statsWidth = ctx.measureText(statsText).width;
-
-  // ProperNoundle: category pill before stats
-  let categoryPillW = 0;
-  let pillGap = 0;
-  const pillBlockHeight = 38;
-  if (input.layout === 'single' && input.category) {
-    pillGap = 12;
-  }
-
-  const winPill = { width: 0, height: 38 };
-  // Measure win/loss pill without drawing
-  ctx.font = `700 22px ${SHARE_FONT_STACK}`;
-  const pillLabel = input.won ? 'Win' : 'Loss';
-  const pillLabelW = ctx.measureText(pillLabel).width;
-  winPill.width = pillLabelW + 32;
-
-  if (input.layout === 'single' && input.category) {
-    ctx.font = `700 18px ${SHARE_FONT_STACK}`;
-    categoryPillW = ctx.measureText(input.category).width + 24;
-  }
-
-  const pillSpacing = 12;
-  const blockWidth =
-    statsWidth +
-    (categoryPillW > 0 ? categoryPillW + pillSpacing : 0) +
-    pillSpacing +
-    winPill.width;
-  const blockStartX = width / 2 - blockWidth / 2;
-
-  // stats text
-  ctx.font = `700 24px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = TEXT_MUTED;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(statsText, blockStartX, metaY);
-
-  let cursorX = blockStartX + statsWidth + pillSpacing;
-
-  if (input.layout === 'single' && input.category) {
-    const pill = drawCategoryPill(ctx, cursorX, metaY - 15, input.category, MODE_ACCENT[input.mode]);
-    cursorX += pill.width + pillSpacing;
-  }
-
-  drawWinLossPill(ctx, cursorX, metaY - 19, input.won);
-
-  return { bottomY: metaY + pillBlockHeight };
 }
 
-function drawFooter(ctx: CanvasRenderingContext2D, width: number, height: number, art: ShareArt | null = null): void {
-  if (art && hasCast(art)) drawCastStrip(ctx, art, width, height);
-  ctx.font = `700 22px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = FOOT_COLOR;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('wordocious.com', width / 2, height - 40);
+const MODE_DISPLAY: Partial<Record<ShareMode, string>> = {
+  Six: 'CLASSIC SIX',
+  Seven: 'CLASSIC SEVEN',
+};
+
+/** The three tinted windows (purple guesses · blue time · gold points) in the foot slot. */
+function drawCardStats(ctx: CanvasRenderingContext2D, input: ShareImageInput, width: number, top: number, points: number | null): void {
+  drawStatWindows(ctx, shareStatWindows(input, points), CARD_PAD, top, width - CARD_PAD * 2, SHARE_SPACE.stats);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Board-area drawing per layout
+// Board-area drawing per layout (geometry from lib/share-fit.ts, the same
+// math that sized the card; each board centers in its box)
 // ──────────────────────────────────────────────────────────────────────────
 
-function drawSingle(
-  ctx: CanvasRenderingContext2D,
-  input: ShareSingleInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const areaHeight = footerTop - headerBottom;
-  const centerX = width / 2;
-  const centerY = headerBottom + areaHeight / 2;
-  const maxWidth = width - 160;
-  const maxHeight = areaHeight - 80;
-  // Single-board modes: card matches the header Win/Loss pill so the border
-  // echoes the result in the body too — same treatment as multi-board.
-  // wordGroups is only populated for multi-word ProperNoundle answers; every
-  // other caller leaves it undefined and the tiles render uniformly spaced.
+function drawSingle(ctx: CanvasRenderingContext2D, input: ShareSingleInput, width: number, box: Box): void {
+  const rows = input.grid.length;
+  const cols = input.grid[0]?.length ?? 0;
+  if (!rows || !cols) return;
+  // Single-board modes (FINISH_SPEC E1/S2): big glossy tiles right on the
+  // wallpaper, no panel — the guesses window says X/6 on a loss.
+  const geo = gridGeometry(rows, cols, BOARD_W, box.h, { gap: 10, groups: input.wordGroups, captionH: singleCaptionH(input) });
   const reveal = input.reveal
-    ? {
-        letters: input.letters,
-        answerCaption: !input.won ? input.solutionDisplay : undefined,
-      }
+    ? { letters: input.letters, answerCaption: !input.won ? input.solutionDisplay : undefined }
     : undefined;
-  drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won, input.wordGroups, reveal);
+  drawBoardCard(ctx, input.grid, width / 2, box.top + (box.h - geo.h) / 2, geo, 0, null, input.wordGroups, reveal);
 }
 
-// Sudoku (More Games §18d): the ruled 9 × 9 as squares — givens dark, the
-// player's correct digits purple, hint cells violet, everything else light —
-// inside the same win/loss-bordered card the word boards use. No digits, so
-// the card spoils nothing.
-function drawSudoku(
-  ctx: CanvasRenderingContext2D,
-  input: ShareSudokuInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const areaHeight = footerTop - headerBottom;
-  const size = Math.min(width - 200, areaHeight - 80);
-  const cardPad = 16, borderWidth = 3;
+// Sudoku (More Games §18d): the 9 × 9 as glossy squares — givens dark, the
+// player's correct digits purple, hint cells violet, everything else frosted —
+// inside the tinted win/loss panel. No digits, so the card spoils nothing.
+function drawSudoku(ctx: CanvasRenderingContext2D, input: ShareSudokuInput, width: number, box: Box): void {
+  const size = squareSize(BOARD_W, box.h);
+  const cardPad = Math.round(size * 0.022);
+  const gap = Math.max(3, Math.round(size * 0.006));
+  const boxGap = gap * 3;
   const inner = size - cardPad * 2;
-  const gap = 4, boxGap = 12;
   const cell = (inner - gap * 6 - boxGap * 2) / 9;
-  const x0 = (width - size) / 2, y0 = headerBottom + (areaHeight - size) / 2;
+  const x0 = (width - size) / 2, y0 = box.top + (box.h - size) / 2;
   ctx.save();
-  ctx.fillStyle = input.won ? WIN_BG : BOARD_LOSS_TINT;
-  drawRoundRect(ctx, x0, y0, size, size, 28);
-  ctx.fill();
-  ctx.lineWidth = borderWidth;
-  ctx.strokeStyle = input.won ? WIN_FG : LOSS_FG;
-  ctx.stroke();
-  const PLAYER = '#7c3aed', HINTC = '#8b5cf6', EMPTY = '#e9e5f5';
+  drawResultPanel(ctx, x0, y0, size, size, input.won);
   for (let i = 0; i < 81; i++) {
     const r = Math.floor(i / 9), c = i % 9;
     const x = x0 + cardPad + c * (cell + gap) + Math.floor(c / 3) * (boxGap - gap);
@@ -1038,52 +746,37 @@ function drawSudoku(
     const given = input.givens[i] !== '0';
     const filled = input.board[i] !== '0';
     const hinted = input.hintMask[i] === '1';
-    ctx.fillStyle = given ? TEXT_DARK : hinted ? HINTC : filled ? PLAYER : EMPTY;
-    drawRoundRect(ctx, x, y, cell, cell, Math.max(4, cell * 0.18));
-    ctx.fill();
+    drawCell(ctx, x, y, cell, given ? GLOSS_DARK : hinted ? GLOSS_VIOLET : filled ? TILE_GLOSS.CORRECT : null);
   }
   ctx.restore();
 }
 
-// Starsweep (More Games §18d): the regions as tinted squares (the same soft
-// tints the board uses), the placed stars as dark dots (hint stars violet),
-// nothing else — no crosses and never the missing stars, so the card spoils
-// nothing and invites a try.
+// Starsweep (More Games §18d): the regions as tinted glossy squares, the placed
+// stars as dark dots (hint stars violet), nothing else — no crosses and never
+// the missing stars, so the card spoils nothing and invites a try.
 const REGIONS_SHARE_TINTS = ['#ede9fe', '#d1fae5', '#e0f2fe', '#fce7f3', '#fef9c3', '#ccfbf1', '#ffedd5', '#ecfccb', '#e2e8f0'];
-function drawRegions(
-  ctx: CanvasRenderingContext2D,
-  input: ShareRegionsInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
+const REGIONS_GLOSS = REGIONS_SHARE_TINTS.map((t) => glossFrom(t));
+function drawRegions(ctx: CanvasRenderingContext2D, input: ShareRegionsInput, width: number, box: Box): void {
   const n = Math.max(1, input.n);
-  const areaHeight = footerTop - headerBottom;
-  const size = Math.min(width - 200, areaHeight - 80);
-  const cardPad = 16, borderWidth = 3, gap = 4;
+  const size = squareSize(BOARD_W, box.h);
+  const cardPad = Math.round(size * 0.022);
+  const gap = Math.max(3, Math.round(size * 0.006));
   const inner = size - cardPad * 2;
   const cell = (inner - gap * (n - 1)) / n;
-  const x0 = (width - size) / 2, y0 = headerBottom + (areaHeight - size) / 2;
+  const x0 = (width - size) / 2, y0 = box.top + (box.h - size) / 2;
   ctx.save();
-  ctx.fillStyle = input.won ? WIN_BG : BOARD_LOSS_TINT;
-  drawRoundRect(ctx, x0, y0, size, size, 28);
-  ctx.fill();
-  ctx.lineWidth = borderWidth;
-  ctx.strokeStyle = input.won ? WIN_FG : LOSS_FG;
-  ctx.stroke();
+  drawResultPanel(ctx, x0, y0, size, size, input.won);
   const HINTC = '#8b5cf6';
   for (let i = 0; i < n * n; i++) {
     const r = Math.floor(i / n), c = i % n;
     const x = x0 + cardPad + c * (cell + gap);
     const y = y0 + cardPad + r * (cell + gap);
     const g = (input.regions.charCodeAt(i) || 48) - 48;
-    ctx.fillStyle = REGIONS_SHARE_TINTS[g % REGIONS_SHARE_TINTS.length];
-    drawRoundRect(ctx, x, y, cell, cell, Math.max(4, cell * 0.18));
-    ctx.fill();
+    const faceH = drawCell(ctx, x, y, cell, REGIONS_GLOSS[g % REGIONS_GLOSS.length]);
     if (input.board[i] === '*') {
-      ctx.fillStyle = input.hintMask[i] === '1' ? HINTC : TEXT_DARK;
+      ctx.fillStyle = input.hintMask[i] === '1' ? HINTC : '#3b1a78';
       ctx.beginPath();
-      ctx.arc(x + cell / 2, y + cell / 2, cell * 0.24, 0, Math.PI * 2);
+      ctx.arc(x + cell / 2, y + faceH / 2, cell * 0.24, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -1092,45 +785,36 @@ function drawRegions(
 
 // Letter Ladder (More Games §18d): START and END spelled out as filled tiles,
 // every rung between them blank except the changed position (accent; violet
-// for a hint rung). Spoils no rung word.
-function drawLadder(
-  ctx: CanvasRenderingContext2D,
-  input: ShareLadderInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
+// for a hint rung). Spoils no rung word. Tall ladders scale by height.
+const LADDER_GLOSS = glossFrom('#0284c7');
+function drawLadder(ctx: CanvasRenderingContext2D, input: ShareLadderInput, width: number, box: Box): void {
   const words = input.words.length ? input.words : [input.start];
   const rows: Array<{ word: string; prev?: string; kind: 'start' | 'rung' | 'hint' | 'end' }> = [];
   words.forEach((w, i) => rows.push({ word: w, prev: i > 0 ? words[i - 1] : undefined, kind: i === 0 ? 'start' : input.hintMask[i] === '1' ? 'hint' : 'rung' }));
   if (words[words.length - 1] !== input.end) rows.push({ word: input.end, kind: 'end' });
-  const areaHeight = footerTop - headerBottom;
-  const gap = 10, pad = 28;
-  const maxTile = 96;
-  const tile = Math.min(maxTile, Math.floor((areaHeight - pad * 2 - gap * (rows.length - 1)) / rows.length), Math.floor((width - 200 - gap * 4) / 5));
-  const boardW = tile * 5 + gap * 4, boardH = tile * rows.length + gap * (rows.length - 1);
-  const x0 = (width - boardW) / 2, y0 = headerBottom + (areaHeight - boardH) / 2;
-  const ACCENT = '#0284c7', HINTC = '#8b5cf6', START_FILL = '#7c3aed', EMPTY = '#ffffff', EMPTY_BORDER = '#d1d5db', END_BORDER = '#0284c788';
+  const cols = Math.max(input.start.length, input.end.length, 3);
+  const geo = ladderGeometry(rows.length, cols, BOARD_W, box.h);
+  const { tile, gap } = geo;
+  const x0 = (width - geo.gridW) / 2, y0 = box.top + (box.h - geo.h) / 2;
+  const ACCENT = '#0284c7', END_BORDER = '#0284c7aa';
   ctx.save();
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = `900 ${Math.floor(tile * 0.5)}px ${SHARE_FONT_STACK}`;
   rows.forEach((row, r) => {
-    for (let c = 0; c < 5; c++) {
+    for (let c = 0; c < cols; c++) {
       const x = x0 + c * (tile + gap), y = y0 + r * (tile + gap);
       const changed = !!row.prev && row.prev[c] !== row.word[c];
       const radius = Math.max(6, tile * 0.14);
-      ctx.lineWidth = 3;
       if (row.kind === 'start') {
-        ctx.fillStyle = START_FILL; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
-        ctx.fillStyle = '#ffffff'; ctx.fillText(row.word[c] ?? '', x + tile / 2, y + tile / 2 + 2);
+        const faceH = drawCell(ctx, x, y, tile, TILE_GLOSS.CORRECT, radius);
+        drawTileGlyph(ctx, row.word[c] ?? '', x, y, tile, faceH);
       } else if (row.kind === 'end') {
-        ctx.setLineDash([8, 6]); ctx.strokeStyle = END_BORDER; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = ACCENT; ctx.fillText(row.word[c] ?? '', x + tile / 2, y + tile / 2 + 2);
+        const faceH = drawCell(ctx, x, y, tile, null, radius);
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]); ctx.strokeStyle = END_BORDER; drawRoundRect(ctx, x + 1.5, y + 1.5, tile - 3, faceH - 3, radius); ctx.stroke(); ctx.setLineDash([]);
+        drawTileGlyph(ctx, row.word[c] ?? '', x, y, tile, faceH, ACCENT);
       } else if (changed) {
-        ctx.fillStyle = row.kind === 'hint' ? HINTC : ACCENT; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
+        drawCell(ctx, x, y, tile, row.kind === 'hint' ? GLOSS_VIOLET : LADDER_GLOSS, radius);
       } else {
-        ctx.fillStyle = EMPTY; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
-        ctx.strokeStyle = EMPTY_BORDER; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke();
+        drawCell(ctx, x, y, tile, null, radius);
       }
     }
   });
@@ -1140,27 +824,15 @@ function drawLadder(
 // Spyglass (More Games §18d): a dot grid with the found words as accent
 // capsules laid along their lines. No letters, so the card spoils nothing.
 const WORDSEARCH_DIR_DELTAS: Record<string, [number, number]> = { E: [0, 1], S: [1, 0], SE: [1, 1], NE: [-1, 1], W: [0, -1], N: [-1, 0], NW: [-1, -1], SW: [1, -1] };
-function drawWordsearch(
-  ctx: CanvasRenderingContext2D,
-  input: ShareWordsearchInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
+function drawWordsearch(ctx: CanvasRenderingContext2D, input: ShareWordsearchInput, width: number, box: Box): void {
   const n = Math.max(1, input.n);
-  const areaHeight = footerTop - headerBottom;
-  const size = Math.min(width - 200, areaHeight - 80);
-  const cardPad = 24;
+  const size = squareSize(BOARD_W, box.h);
+  const cardPad = Math.round(size * 0.03);
   const inner = size - cardPad * 2;
   const cell = inner / n;
-  const x0 = (width - size) / 2, y0 = headerBottom + (areaHeight - size) / 2;
+  const x0 = (width - size) / 2, y0 = box.top + (box.h - size) / 2;
   ctx.save();
-  ctx.fillStyle = input.won ? WIN_BG : BOARD_LOSS_TINT;
-  drawRoundRect(ctx, x0, y0, size, size, 28);
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = input.won ? WIN_FG : LOSS_FG;
-  ctx.stroke();
+  drawResultPanel(ctx, x0, y0, size, size, input.won);
   const ACCENT = '#4d7c0f';
   // Capsules first, dots on top.
   for (const p of input.words) {
@@ -1182,122 +854,94 @@ function drawWordsearch(
   ctx.restore();
 }
 
-// Hubbub (More Games §18d): the 2-3-2 cluster as blank tiles with the center
-// filled in the accent, the rank name large beneath, then % of max. No letters.
-// Muddle (More Games §18d): four rows of blank tiles (circled positions ringed)
-// on one six-column grid, a divider, then the punchline row grouped by word in
-// the lilac tint. No letters, no cartoon.
-function drawScramble(
-  ctx: CanvasRenderingContext2D,
-  input: ShareScrambleInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const EMPTY = '#ffffff', EMPTY_BORDER = '#d1d5db', RING = '#7c3aed', LILAC = '#f5f3ff', LILAC_BORDER = '#c4b5fd';
-  const areaHeight = footerTop - headerBottom;
-  const gap = 10, rowGap = 26, cols = 6;
-  const tile = Math.min(84, Math.floor((width - 200 - gap * (cols - 1)) / cols), Math.floor((areaHeight - 120 - rowGap * 5) / 5));
+// Muddle (More Games §18d): four rows of frosted tiles (circled positions
+// ringed), a divider, then the punchline row grouped by word in the lilac
+// tint. No letters, no cartoon.
+const SCRAMBLE_LILAC = glossFrom('#e9ddff');
+function drawScramble(ctx: CanvasRenderingContext2D, input: ShareScrambleInput, width: number, box: Box): void {
+  const DIVIDER = 'rgba(124, 58, 237, 0.28)', RING = '#7c3aed';
+  const geo = scrambleGeometry(input.words, input.pattern, BOARD_W, box.h);
+  const { tile, gap, rowGap, small, smallGap, wordGap, cols } = geo;
   const boardW = cols * tile + (cols - 1) * gap;
   const x0 = (width - boardW) / 2;
-  const totalH = 4 * tile + 3 * rowGap + 40 + tile;
-  let y = headerBottom + (areaHeight - totalH) / 2;
+  let y = box.top + (box.h - geo.h) / 2;
   ctx.save();
-  ctx.lineWidth = 3;
   for (const w of input.words) {
     for (let i = 0; i < w.length; i++) {
-      const x = x0 + i * (tile + gap), radius = Math.max(6, tile * 0.14);
-      ctx.fillStyle = EMPTY; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
-      ctx.strokeStyle = EMPTY_BORDER; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke();
-      if (w.circled.includes(i)) { ctx.strokeStyle = RING; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x + tile / 2, y + tile / 2, tile * 0.34, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 3; }
+      const x = x0 + i * (tile + gap);
+      const faceH = drawCell(ctx, x, y, tile, null);
+      if (w.circled.includes(i)) {
+        ctx.strokeStyle = RING; ctx.lineWidth = Math.max(3, tile * 0.05);
+        ctx.beginPath(); ctx.arc(x + tile / 2, y + faceH / 2, tile * 0.34, 0, Math.PI * 2); ctx.stroke();
+      }
     }
     y += tile + rowGap;
   }
   // divider
   y += 6;
-  ctx.strokeStyle = EMPTY_BORDER; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + boardW, y); ctx.stroke();
-  y += 34;
-  const small = Math.floor(tile * 0.78), wordGap = 26;
+  ctx.strokeStyle = DIVIDER; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + boardW, y); ctx.stroke();
+  y += SCRAMBLE_DIVIDER_H - 6;
   const totalLetters = input.pattern.reduce((a, b) => a + b, 0);
-  const rowW = totalLetters * small + (totalLetters - input.pattern.length) * 6 + (input.pattern.length - 1) * wordGap;
+  const rowW = totalLetters * small + (totalLetters - input.pattern.length) * smallGap + Math.max(0, input.pattern.length - 1) * wordGap;
   let x = (width - rowW) / 2;
   for (const len of input.pattern) {
     for (let i = 0; i < len; i++) {
-      const radius = Math.max(5, small * 0.14);
-      ctx.fillStyle = LILAC; drawRoundRect(ctx, x, y, small, small, radius); ctx.fill();
-      ctx.strokeStyle = LILAC_BORDER; ctx.lineWidth = 3; drawRoundRect(ctx, x, y, small, small, radius); ctx.stroke();
-      ctx.strokeStyle = RING; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x + small / 2, y + small / 2, small * 0.32, 0, Math.PI * 2); ctx.stroke();
-      x += small + 6;
+      const faceH = drawCell(ctx, x, y, small, SCRAMBLE_LILAC);
+      ctx.strokeStyle = RING; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x + small / 2, y + faceH / 2, small * 0.32, 0, Math.PI * 2); ctx.stroke();
+      x += small + smallGap;
     }
-    x += wordGap - 6;
+    x += wordGap - smallGap;
   }
   ctx.restore();
 }
 
-// Crosswordocious (More Games §18d): the grid silhouette — purple tiles where
-// the letters are, nothing where the blocks are, no letters, no numbers.
-function drawCrossword(
-  ctx: CanvasRenderingContext2D,
-  input: ShareCrosswordInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const FILL = '#ede9fe', BORDER = '#c4b5fd';
-  const areaHeight = footerTop - headerBottom;
-  const gap = 6;
-  const cell = Math.floor(Math.min((width - 160 - gap * (input.w - 1)) / input.w, (areaHeight - 60 - gap * (input.h - 1)) / input.h));
-  const boardW = input.w * cell + (input.w - 1) * gap, boardH = input.h * cell + (input.h - 1) * gap;
-  const x0 = (width - boardW) / 2, y0 = headerBottom + (areaHeight - boardH) / 2;
+// Crosswordocious (More Games §18d): the grid silhouette — glossy lilac tiles
+// where the letters are, nothing where the blocks are, no letters, no numbers.
+function drawCrossword(ctx: CanvasRenderingContext2D, input: ShareCrosswordInput, width: number, box: Box): void {
+  const FILL = glossFrom('#c4b5fd');
+  const geo = crosswordGeometry(input.w, input.h, BOARD_W, box.h);
+  const { tile, gap } = geo;
+  const x0 = (width - geo.gridW) / 2, y0 = box.top + (box.h - geo.h) / 2;
   ctx.save();
-  ctx.lineWidth = 3;
   for (let r = 0; r < input.h; r++) for (let c = 0; c < input.w; c++) {
     if (input.solution[r * input.w + c] === '.') continue;
-    const x = x0 + c * (cell + gap), y = y0 + r * (cell + gap), radius = Math.max(5, cell * 0.16);
-    ctx.fillStyle = FILL; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.fill();
-    ctx.strokeStyle = BORDER; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.stroke();
+    drawCell(ctx, x0 + c * (tile + gap), y0 + r * (tile + gap), tile, FILL);
   }
   ctx.restore();
 }
 
-// Kindred (More Games §18d): four tier bars in solve order with pips, unsolved
-// tiers dashed beneath on a loss, then the mistake dots. No words.
+// Kindred (More Games §18d): four glossy tier bars in solve order with pips,
+// unsolved tiers dashed beneath on a loss, then the mistake dots. No words.
 const GROUPS_TIER_FILL: Record<number, [string, string]> = { 1: ['#ddd6fe', '#3b0764'], 2: ['#a78bfa', '#1a1a2e'], 3: ['#7c3aed', '#ffffff'], 4: ['#1a1a2e', '#ffffff'] };
-function drawGroups(
-  ctx: CanvasRenderingContext2D,
-  input: ShareGroupsInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const ACCENT = '#9f1239', DOT_OFF = '#e5e7eb';
+function drawGroups(ctx: CanvasRenderingContext2D, input: ShareGroupsInput, width: number, box: Box): void {
+  const ACCENT = '#9f1239', DOT_OFF = 'rgba(159, 18, 57, 0.18)';
   const tiers = [...input.solvedTiers, ...[1, 2, 3, 4].filter((t) => !input.solvedTiers.includes(t))];
-  const areaHeight = footerTop - headerBottom;
-  const barW = Math.min(760, width - 160), barH = 96, gap = 22;
-  const dotsH = 60;
-  const totalH = tiers.length * barH + (tiers.length - 1) * gap + dotsH + 30;
+  const geo = groupsGeometry(tiers.length, box.h);
+  const { barH, gap } = geo;
+  const barW = BOARD_W;
   const x0 = (width - barW) / 2;
-  let y = headerBottom + (areaHeight - totalH) / 2;
+  let y = box.top + (box.h - geo.h) / 2;
   ctx.save();
   ctx.textBaseline = 'middle';
   tiers.forEach((t) => {
     const solved = input.solvedTiers.includes(t);
     const [bg, fg] = GROUPS_TIER_FILL[t];
-    const radius = 22;
+    const radius = Math.min(26, barH * 0.24);
     if (solved) {
-      ctx.fillStyle = bg; drawRoundRect(ctx, x0, y, barW, barH, radius); ctx.fill();
+      drawGlossTile(ctx, x0, y, barW, barH, glossFrom(bg), { radius });
     } else {
       ctx.setLineDash([12, 10]); ctx.lineWidth = 4; ctx.strokeStyle = bg; drawRoundRect(ctx, x0, y, barW, barH, radius); ctx.stroke(); ctx.setLineDash([]);
     }
     // pips, centered
-    const pipR = 9, pipGap = 14, pipsW = t * pipR * 2 + (t - 1) * pipGap;
+    const pipR = Math.max(7, Math.round(barH * 0.1)), pipGap = pipR * 1.5, pipsW = t * pipR * 2 + (t - 1) * pipGap;
     let px = width / 2 - pipsW / 2 + pipR;
     ctx.fillStyle = solved ? fg : bg;
     for (let i = 0; i < t; i++) { ctx.beginPath(); ctx.arc(px, y + barH / 2, pipR, 0, Math.PI * 2); ctx.fill(); px += pipR * 2 + pipGap; }
     y += barH + gap;
   });
   // mistake dots
-  y += 30 - gap;
+  y += 24 - gap;
+  const dotsH = GROUPS_DOTS_H - 24;
   const dotR = 14, dotGap = 26, n = input.maxMistakes, dotsW = n * dotR * 2 + (n - 1) * dotGap;
   let dx = width / 2 - dotsW / 2 + dotR;
   for (let i = 0; i < n; i++) {
@@ -1308,51 +952,24 @@ function drawGroups(
   ctx.restore();
 }
 
-// Codebreaker (More Games §18d): the ciphertext as rows of blank cells with the
-// code letter beneath each, words wrapped whole. No plain letters.
-function drawCryptogram(
-  ctx: CanvasRenderingContext2D,
-  input: ShareCryptogramInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const ACCENT = '#92400e', EMPTY = '#ffffff', EMPTY_BORDER = '#d1d5db', CODE = '#9ca3af';
-  const words = input.cipher.split(' ');
-  const areaHeight = footerTop - headerBottom;
-  const margin = 70;
-  const maxW = width - margin * 2;
-  // Pick the largest cell size whose wrapped rows fit the area.
-  let cell = 58, gap = 6, wordGap = 22, rowH = 0, rows: string[][] = [];
-  for (; cell >= 26; cell -= 4) {
-    rowH = cell + 22 + 18;
-    rows = [];
-    let cur: string[] = [], curW = 0;
-    for (const w of words) {
-      const letters = [...w].filter((ch) => /[A-Z]/.test(ch)).length, puncts = w.length - letters;
-      const ww = letters * (cell + gap) + puncts * (cell * 0.45) - gap;
-      if (cur.length && curW + wordGap + ww > maxW) { rows.push(cur); cur = []; curW = 0; }
-      curW += (cur.length ? wordGap : 0) + ww; cur.push(w);
-    }
-    if (cur.length) rows.push(cur);
-    if (rows.length * rowH + (rows.length - 1) * 10 <= areaHeight - 40) break;
-  }
-  const totalH = rows.length * rowH + (rows.length - 1) * 10;
-  let y = headerBottom + (areaHeight - totalH) / 2;
+// Codebreaker (More Games §18d): the ciphertext as rows of frosted cells with
+// the code letter beneath each, words wrapped whole. No plain letters.
+function drawCryptogram(ctx: CanvasRenderingContext2D, input: ShareCryptogramInput, width: number, box: Box): void {
+  const ACCENT = '#92400e', CODE = '#6f5f8f';
+  const geo = cryptoGeometry(input.cipher, BOARD_W, box.h);
+  const { cell, gap, wordGap, rowH, codeH, rowGap, rows } = geo;
+  let y = box.top + (box.h - geo.h) / 2;
   ctx.save();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const row of rows) {
-    const widths = row.map((w) => { const letters = [...w].filter((ch) => /[A-Z]/.test(ch)).length; return letters * (cell + gap) + (w.length - letters) * (cell * 0.45) - gap; });
-    const rowW = widths.reduce((a, b) => a + b, 0) + wordGap * (row.length - 1);
+    const rowW = row.reduce((a, w) => a + cipherWordWidth(w, cell, gap), 0) + wordGap * (row.length - 1);
     let x = (width - rowW) / 2;
-    row.forEach((w, i) => {
+    for (const w of row) {
       for (const ch of w) {
         if (/[A-Z]/.test(ch)) {
-          const radius = Math.max(5, cell * 0.16);
-          ctx.fillStyle = EMPTY; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.fill();
-          ctx.lineWidth = 3; ctx.strokeStyle = EMPTY_BORDER; drawRoundRect(ctx, x, y, cell, cell, radius); ctx.stroke();
-          ctx.fillStyle = CODE; ctx.font = `800 ${Math.floor(cell * 0.34)}px ui-monospace, Menlo, monospace`;
-          ctx.fillText(ch, x + cell / 2, y + cell + 14);
+          drawCell(ctx, x, y, cell, null);
+          ctx.fillStyle = CODE; ctx.font = `800 ${Math.floor(cell * 0.36)}px ui-monospace, Menlo, monospace`;
+          ctx.fillText(ch, x + cell / 2, y + cell + codeH / 2);
           x += cell + gap;
         } else {
           ctx.fillStyle = ACCENT; ctx.font = `900 ${Math.floor(cell * 0.6)}px ${SHARE_FONT_STACK}`;
@@ -1361,187 +978,97 @@ function drawCryptogram(
         }
       }
       x += wordGap - gap;
-    });
-    y += rowH + 10;
+    }
+    y += rowH + rowGap;
   }
   ctx.restore();
 }
 
-function drawHub(
-  ctx: CanvasRenderingContext2D,
-  input: ShareHubInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
-  const areaHeight = footerTop - headerBottom;
+// Hubbub (More Games §18d): the 2-3-2 cluster as frosted tiles with the center
+// filled in the accent, the rank name large beneath. No letters.
+function drawHub(ctx: CanvasRenderingContext2D, input: ShareHubInput, width: number, box: Box): void {
   const ACCENT = '#c026d3';
-  const tile = Math.min(150, Math.floor((areaHeight - 260) / 3.4)), gap = 18;
+  const geo = hubGeometry(BOARD_W, box.h);
+  const { tile, gap, clusterH } = geo;
   const cx = width / 2;
-  const clusterH = tile * 3 + gap * 2;
-  const y0 = headerBottom + (areaHeight - clusterH - 200) / 2;
+  const y0 = box.top + (box.h - geo.h) / 2;
   const rows: Array<Array<'o' | 'c'>> = [['o', 'o'], ['o', 'c', 'o'], ['o', 'o']];
   ctx.save();
   rows.forEach((row, r) => {
     const rowW = row.length * tile + (row.length - 1) * gap;
     row.forEach((kind, i) => {
       const x = cx - rowW / 2 + i * (tile + gap), y = y0 + r * (tile + gap);
-      const radius = Math.max(8, tile * 0.14);
-      if (kind === 'c') { ctx.fillStyle = ACCENT; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill(); }
-      else {
-        ctx.fillStyle = '#ffffff'; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.fill();
-        ctx.lineWidth = 4; ctx.strokeStyle = '#d1d5db'; drawRoundRect(ctx, x, y, tile, tile, radius); ctx.stroke();
-      }
+      drawCell(ctx, x, y, tile, kind === 'c' ? glossFrom(ACCENT) : null);
     });
   });
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.font = `900 64px ${SHARE_FONT_STACK}`; ctx.fillStyle = ACCENT;
-  ctx.fillText(input.rankName.toUpperCase(), cx, y0 + clusterH + 96);
-  ctx.font = `700 30px ${SHARE_FONT_STACK}`; ctx.fillStyle = TEXT_MUTED;
-  ctx.fillText(`${input.pct}% of the maximum`, cx, y0 + clusterH + 146);
+  ctx.font = `900 ${fitFontPx(ctx, input.rankName.toUpperCase(), 64, BOARD_W, 28)}px ${SHARE_FONT_STACK}`; ctx.fillStyle = ACCENT;
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.85)'; ctx.shadowOffsetY = 2;
+  ctx.fillText(input.rankName.toUpperCase(), cx, y0 + clusterH + HUB_RANK_H - 22);
   ctx.restore();
 }
 
-function drawMulti(
-  ctx: CanvasRenderingContext2D,
-  input: ShareMultiInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
+// QuadWord / OctoWord (S2): a tight grid of equal boards — 4 boards always a
+// 2 × 2, 8 boards 4 × 2 or 2 × 4 (whichever draws bigger tiles), boards ~4% of
+// the width apart, the whole block scaled by height when it is tall.
+function drawMulti(ctx: CanvasRenderingContext2D, input: ShareMultiInput, width: number, box: Box): void {
   const n = input.boards.length;
   if (!n || !input.boards[0].grid.length) return;
-
-  // Match the in-app finished-screen arrangement:
-  //   4 boards → 2 cols × 2 rows (Quordle / Succession / Deliverance)
-  //   8 boards → 4 cols × 2 rows (Octordle)
-  const cols = n <= 4 ? 2 : 4;
-  const rows = 2;
-
-  // Use the *max* row/col count across all boards to compute a single tile
-  // size that every board renders at. drawBoardCard later re-derives its own
-  // tile size from each board's grid — feeding it a uniform row count
-  // (via boardToGrid's pad-to-prefill+maxGuesses) keeps the sizes matched.
-  // Guarding here against a stray board being taller/wider defends against
-  // future modes that pack boards with mismatched dimensions.
-  const boardCols = Math.max(5, ...input.boards.map(b => b.grid[0]?.length ?? 0));
-  const boardRows = Math.max(1, ...input.boards.map(b => b.grid.length));
-
-  // Layout constants — must match drawBoardCard so the pre-compute here
-  // produces the same `tile` value the card's internal math will pick.
-  const cardPad = 12;
-  const borderWidth = 3;
-  const tileGap = 4;
-
-  // Inter-board gaps. The previous version divided the canvas into equal
-  // cells and centered each board inside its cell — at tile sizes the
-  // boards ended up small and the intra-cell slack compounded into a huge
-  // "sea" between them. Now we size boards to their natural height
-  // constraint and place them directly with a known gap, so the 2×2 grid
-  // packs tightly with modest outer margin instead of two lonely columns.
-  const rowGap = 20;
-  const colGap = 16;
-  const verticalPad = 32;
-  const minHorizontalPad = 40;
-
-  const areaHeight = footerTop - headerBottom - verticalPad * 2;
-
-  // "Full results": every cell reserves a uniform caption strip under its
-  // board (the answer is only drawn under lost boards) so won and lost
-  // boards keep identical tile sizes and vertical rhythm.
-  const captionH = input.reveal ? ANSWER_CAPTION_H : 0;
-
-  // Tile size derives from whichever axis is tighter. Boards are typically
-  // tall-and-narrow (5×9, 5×10, 5×13), so the row budget binds — the width
-  // clamp is only there for defensive over-wide inputs.
-  const perRowHeight = (areaHeight - rowGap * (rows - 1)) / rows;
-  const tileFromHeight =
-    (perRowHeight - captionH - cardPad * 2 - borderWidth * 2 - tileGap * (boardRows - 1)) / boardRows;
-  const availW = width - minHorizontalPad * 2 - colGap * (cols - 1);
-  const perColWidth = availW / cols;
-  const tileFromWidth =
-    (perColWidth - cardPad * 2 - borderWidth * 2 - tileGap * (boardCols - 1)) / boardCols;
-  const tile = Math.max(8, Math.floor(Math.min(tileFromHeight, tileFromWidth)));
-
-  const boardW = boardCols * tile + (boardCols - 1) * tileGap + cardPad * 2 + borderWidth * 2;
-  const boardH = boardRows * tile + (boardRows - 1) * tileGap + cardPad * 2 + borderWidth * 2;
-  const cellH = boardH + captionH;
-
-  const totalW = cols * boardW + (cols - 1) * colGap;
-  const totalH = rows * cellH + (rows - 1) * rowGap;
-  const startX = (width - totalW) / 2;
-  const startY = headerBottom + verticalPad + (areaHeight - totalH) / 2;
-
+  const dims = multiDims(input.boards);
+  const geo = multiGeometry(n, dims.rows, dims.cols, BOARD_W, box.h, input.reveal ? ANSWER_CAPTION_H : 0);
+  const startX = (width - geo.w) / 2;
+  const startY = box.top + (box.h - geo.h) / 2;
   for (let i = 0; i < n; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const cellCenterX = startX + col * (boardW + colGap) + boardW / 2;
-    const cellCenterY = startY + row * (cellH + rowGap) + cellH / 2;
+    const col = i % geo.cols;
+    const row = Math.floor(i / geo.cols);
     const board = input.boards[i];
+    const cx = startX + col * (geo.board.w + geo.boardGap) + geo.board.w / 2;
+    const top = startY + row * (geo.board.h + geo.boardGap);
     const reveal = input.reveal
-      ? {
-          letters: board.letters,
-          answerCaption: !board.won ? board.solution : undefined,
-          reserveCaption: true,
-        }
+      ? { letters: board.letters, answerCaption: !board.won ? board.solution : undefined }
       : undefined;
-    drawBoardCard(ctx, board.grid, cellCenterX, cellCenterY, boardW, cellH, board.won, undefined, reveal);
+    drawBoardCard(ctx, board.grid, cx, top, geo.board, MULTI_CHROME, board.won, undefined, reveal);
   }
 }
 
-function drawGauntlet(
-  ctx: CanvasRenderingContext2D,
-  input: ShareGauntletInput,
-  width: number,
-  headerBottom: number,
-  footerTop: number,
-): void {
+// Gauntlet: the stage stack — one tinted window per stage (lilac cleared /
+// rose failed) with its number, name, boards + guesses, and a glossy check or
+// cross. Scales by height so all five fit the 9:16 clamp.
+function drawGauntlet(ctx: CanvasRenderingContext2D, input: ShareGauntletInput, width: number, box: Box): void {
   const n = input.stages.length;
-  const horizontalPad = 100;
-  const areaWidth = width - horizontalPad * 2;
-  const areaHeight = footerTop - headerBottom - 40;
-  const gap = 20;
-  const chipH = Math.floor((areaHeight - gap * (n - 1)) / n);
-
+  if (!n) return;
+  const geo = stackGeometry(n, box.h, 118, 18, 56);
+  const chipH = geo.rowH;
+  const areaW = BOARD_W;
+  const x0 = (width - areaW) / 2;
+  const y0 = box.top + (box.h - geo.h) / 2;
+  const k = chipH / 118;
   for (let i = 0; i < n; i++) {
     const stage = input.stages[i];
-    const chipY = headerBottom + 40 + i * (chipH + gap);
+    const chipY = y0 + i * (chipH + geo.gap);
     const won = stage.status === GameStatus.WON;
-    const borderColor = won ? WIN_FG : LOSS_FG;
-    const bgColor = won ? WIN_BG : LOSS_BG;
+    drawResultPanel(ctx, x0, chipY, areaW, chipH, won, Math.min(28, chipH * 0.26));
+    const midY = chipY + chipH / 2;
 
-    // Chip background
-    drawRoundRect(ctx, horizontalPad, chipY, areaWidth, chipH, 24);
-    ctx.fillStyle = bgColor;
-    ctx.fill();
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    // Stage number as a soft number.
+    drawSoftNumber(ctx, `${i + 1}`, x0 + 56 * Math.max(0.8, k), midY, Math.round(46 * k));
 
-    // Stage index
-    ctx.font = `900 32px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = won ? WIN_FG : LOSS_FG;
+    // Stage name + stats.
+    const textX = x0 + 110 * Math.max(0.8, k);
+    ctx.save();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${i + 1}`, horizontalPad + 32, chipY + chipH / 2);
-
-    // Stage name
-    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
+    ctx.font = `900 ${Math.round(34 * k)}px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_DARK;
-    ctx.fillText(stage.name, horizontalPad + 80, chipY + chipH / 2 - 12);
-
-    // Stage stats
-    ctx.font = `700 20px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = TEXT_MUTED;
-    const statsLine = `${stage.boardsSolved}/${stage.totalBoards} boards · ${stage.guesses} guesses`;
-    ctx.fillText(statsLine, horizontalPad + 80, chipY + chipH / 2 + 16);
-
-    // Pass/fail mark at right
-    ctx.font = `900 56px ${SHARE_FONT_STACK}`;
+    ctx.fillText(stage.name, textX, midY - 16 * k);
+    ctx.font = `800 ${Math.round(24 * k)}px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = won ? WIN_FG : LOSS_FG;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(won ? '✓' : '✗', horizontalPad + areaWidth - 40, chipY + chipH / 2);
+    ctx.fillText(`${stage.boardsSolved}/${stage.totalBoards} boards · ${stage.guesses} guesses`, textX, midY + 20 * k);
+    ctx.restore();
+
+    // Glossy check / cross at right.
+    const mark = Math.round(Math.min(64, chipH * 0.56));
+    drawResultMark(ctx, won, x0 + areaW - 34 - mark / 2, midY, mark);
   }
 }
 
@@ -1731,182 +1258,150 @@ function drawSweepBadgeIcon(
   return drew;
 }
 
-function drawProfileCard(
-  ctx: CanvasRenderingContext2D,
-  input: ShareProfileInput,
-  width: number,
-): void {
+/** The profile card body: username, level line, 2 × 3 tinted stat tiles in the player's accent. */
+function drawProfileCard(ctx: CanvasRenderingContext2D, input: ShareProfileInput, width: number, box: Box): void {
   const cx = width / 2;
   const accent = input.accentHex;
+  const geo = profileGeometry(box.h);
+  const top = box.top + (box.h - geo.h) / 2;
 
-  // Wordmark
+  // Username in the player's accent with a white edge so any accent reads on the wallpaper.
+  const nameY = top + 70;
+  const namePx = fitFontPx(ctx, input.username, 72, width - CARD_PAD * 2, 36);
   ctx.save();
-  ctx.font = `900 52px ${SHARE_FONT_STACK}`;
+  ctx.font = `900 ${namePx}px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  const wm = ctx.createLinearGradient(cx - 200, 50, cx + 200, 100);
-  wm.addColorStop(0, WORDMARK_GRADIENT[0]);
-  wm.addColorStop(1, WORDMARK_GRADIENT[1]);
-  ctx.fillStyle = wm;
-  ctx.fillText('WORDOCIOUS', cx, 96);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.strokeText(input.username, cx, nameY);
+  ctx.fillStyle = accent;
+  ctx.fillText(input.username, cx, nameY);
   ctx.restore();
 
-  // Username (accent)
-  ctx.font = `900 76px ${SHARE_FONT_STACK}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = accent;
-  ctx.fillText(input.username, cx, 220);
-
   // Level · tier
-  ctx.font = `700 30px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = TEXT_MUTED;
-  ctx.fillText(`Level ${input.level} · ${input.tier}`, cx, 270);
+  drawDateLine(ctx, `LEVEL ${input.level} · ${input.tier}`.toUpperCase(), cx, nameY + 46, 26);
 
-  // Stat tiles (2 × 3)
+  // Stat tiles (2 × 3): tinted soft cards in the accent with its top bar, soft numbers.
   const tiles: Array<{ v: string; l: string }> = [
-    { v: `${input.totalWins}`, l: 'Total Wins' },
-    { v: `${Math.round(input.winRate)}%`, l: 'Win Rate' },
-    { v: `${input.currentStreak}`, l: 'Win Streak' },
-    { v: `${input.dailyStreak}`, l: 'Daily Streak' },
-    { v: `${input.gold} · ${input.silver} · ${input.bronze}`, l: 'Medals (G·S·B)' },
-    { v: `${input.achievementsUnlocked}/${input.achievementsTotal}`, l: 'Achievements' },
+    { v: `${input.totalWins}`, l: 'TOTAL WINS' },
+    { v: `${Math.round(input.winRate)}%`, l: 'WIN RATE' },
+    { v: `${input.currentStreak}`, l: 'WIN STREAK' },
+    { v: `${input.dailyStreak}`, l: 'DAILY STREAK' },
+    { v: `${input.gold} · ${input.silver} · ${input.bronze}`, l: 'MEDALS (G·S·B)' },
+    { v: `${input.achievementsUnlocked}/${input.achievementsTotal}`, l: 'ACHIEVEMENTS' },
   ];
-  const padH = 80;
-  const gap = 24;
-  const tileW = (width - padH * 2 - gap) / 2;
-  const tileH = 150;
-  const top = 330;
+  const tilesTop = top + PROFILE_HEAD_H;
+  const tileW = (width - CARD_PAD * 2 - geo.gap) / 2;
+  const tone = {
+    tint: softMix(accent, 0.13),
+    line: softMix(accent, 0.32),
+    bar: [accent, softMix('#ffffff', 0.3, accent)] as const,
+    label: TEXT_MUTED,
+  };
   tiles.forEach((t, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = padH + col * (tileW + gap);
-    const y = top + row * (tileH + gap);
-    drawRoundRect(ctx, x, y, tileW, tileH, 24);
-    // White under the accent wash so the numbers sit on a solid card over the tint (§17).
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.fillStyle = accent + '14';
-    ctx.fill();
-    ctx.strokeStyle = accent + '40';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.font = `900 56px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = '#1A1A2E';
-    ctx.fillText(t.v, x + 28, y + 82);
-    ctx.font = `700 24px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = TEXT_MUTED;
-    ctx.fillText(t.l, x + 28, y + 118);
+    const x = CARD_PAD + (i % 2) * (tileW + geo.gap);
+    const y = tilesTop + Math.floor(i / 2) * (geo.tileH + geo.gap);
+    drawStatWindow(ctx, { value: t.v, label: t.l, tone: 'purple' }, x, y, tileW, geo.tileH, { tone, numberPx: Math.round(geo.tileH * 0.4) });
   });
 }
 
-function drawDailySweepCard(
-  ctx: CanvasRenderingContext2D,
-  input: ShareDailySweepInput,
-  width: number,
-  height: number,
-  footerRoom: number = FOOTER_ROOM.plain,
-): void {
-  const titleGrad = input.flawless ? SWEEP_GOLD : SWEEP_VIOLET;
-
-  // Wordmark
-  const wordmarkY = 72;
+/** Sweep row / Gauntlet stage mark: a glossy purple check (won) or a rose cross. */
+function drawResultMark(ctx: CanvasRenderingContext2D, won: boolean, cx: number, cy: number, size: number): void {
+  const pal = won ? TILE_GLOSS.CORRECT : SWEEP_LOSS_GLOSS;
+  const faceH = drawGlossTile(ctx, cx - size / 2, cy - size / 2, size, size, pal, { radius: size / 2 });
   ctx.save();
-  ctx.font = `900 56px ${SHARE_FONT_STACK}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  const wm = ctx.createLinearGradient(width / 2 - 200, wordmarkY - 48, width / 2 + 200, wordmarkY + 8);
-  wm.addColorStop(0, WORDMARK_GRADIENT[0]);
-  wm.addColorStop(1, WORDMARK_GRADIENT[1]);
-  ctx.fillStyle = wm;
-  ctx.fillText('WORDOCIOUS', width / 2, wordmarkY);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = Math.max(4, size * 0.12);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const fy = cy - size / 2 + faceH / 2;
+  const k = size * 0.2;
+  ctx.beginPath();
+  if (won) {
+    ctx.moveTo(cx - k, fy);
+    ctx.lineTo(cx - k * 0.25, fy + k * 0.75);
+    ctx.lineTo(cx + k * 1.05, fy - k * 0.7);
+  } else {
+    ctx.moveTo(cx - k * 0.8, fy - k * 0.8); ctx.lineTo(cx + k * 0.8, fy + k * 0.8);
+    ctx.moveTo(cx + k * 0.8, fy - k * 0.8); ctx.lineTo(cx - k * 0.8, fy + k * 0.8);
+  }
+  ctx.stroke();
   ctx.restore();
+}
+const SWEEP_LOSS_GLOSS = glossFrom('#f43f5e');
 
-  // Title
-  const titleY = wordmarkY + 70;
-  ctx.font = `900 52px ${SHARE_FONT_STACK}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  const tg = ctx.createLinearGradient(width / 2 - 260, titleY - 44, width / 2 + 260, titleY + 8);
-  tg.addColorStop(0, titleGrad[0]);
-  tg.addColorStop(1, titleGrad[1]);
-  ctx.fillStyle = tg;
-  ctx.fillText(input.title ?? (input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP'), width / 2, titleY);
-
-  // Stats line
-  const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');
-  const statsText = `${input.won}/${input.total} won · ${formatTime(input.totalTimeSeconds)} · ${input.totalScore.toLocaleString()} pts · ${formatShortDate(date)}`;
-  const metaY = titleY + 50;
-  ctx.font = `700 26px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = TEXT_MUTED;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(statsText, width / 2, metaY);
-
-  const headerBottom = metaY + 30;
-  const footerTop = height - footerRoom;
-
-  // Rows — one per daily game.
+/** The all-dailies card's rows — one tinted soft card per daily game, in the game's accent. */
+function drawDailySweepRows(ctx: CanvasRenderingContext2D, input: ShareDailySweepInput, width: number, box: Box, art: ShareArt): void {
   const n = input.games.length;
-  const horizontalPad = 90;
-  const areaWidth = width - horizontalPad * 2;
-  const areaTop = headerBottom + 28;
-  const areaHeight = footerTop - areaTop - 20;
-  const gap = 16;
-  const rowH = Math.floor((areaHeight - gap * (n - 1)) / n);
+  if (!n) return;
+  const areaWidth = BOARD_W;
+  const horizontalPad = (width - areaWidth) / 2;
+  const geo = stackGeometry(n, box.h, 112, n > 8 ? 12 : 16, 48);
+  const rowH = geo.rowH;
+  const y0 = box.top + (box.h - geo.h) / 2;
 
   for (let i = 0; i < n; i++) {
     const g = input.games[i];
-    const rowY = areaTop + i * (rowH + gap);
-    const accent = MODE_ACCENT[g.mode];
+    const rowY = y0 + i * (rowH + geo.gap);
+    const accent = MODE_ACCENT[g.mode] ?? '#7c3aed';
 
-    // Row card
-    drawRoundRect(ctx, horizontalPad, rowY, areaWidth, rowH, 20);
-    ctx.fillStyle = g.won ? WIN_BG : LOSS_BG;
+    ctx.save();
+    ctx.shadowColor = 'rgba(60, 30, 110, 0.12)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 6;
+    drawRoundRect(ctx, horizontalPad, rowY, areaWidth, rowH, 22);
+    ctx.fillStyle = softMix(accent, 0.13);
     ctx.fill();
-    ctx.strokeStyle = g.won ? WIN_FG : LOSS_FG;
+    ctx.restore();
+    // The game-card bar down the left edge.
+    ctx.save();
+    drawRoundRect(ctx, horizontalPad, rowY, areaWidth, rowH, 22);
+    ctx.clip();
+    ctx.fillStyle = accent;
+    ctx.fillRect(horizontalPad, rowY, 10, rowH);
+    ctx.restore();
+    drawRoundRect(ctx, horizontalPad + 1.5, rowY + 1.5, areaWidth - 3, rowH - 3, 21);
+    ctx.strokeStyle = softMix(accent, 0.32);
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Accent glyph badge
-    const badge = Math.min(rowH - 24, 72);
-    const badgeX = horizontalPad + 20;
+    // The game's glossy icon, or the accent badge with its lucide glyph.
+    const badge = Math.min(rowH - 18, 80);
+    const badgeX = horizontalPad + 26;
     const badgeY = rowY + (rowH - badge) / 2;
-    drawRoundRect(ctx, badgeX, badgeY, badge, badge, 16);
-    ctx.fillStyle = accent;
-    ctx.fill();
-    // Real game icon (white) where the mode has one; numeral modes fall back to
-    // the glyph — same treatment as the home cards + the native share cards.
-    if (!drawSweepBadgeIcon(ctx, g.mode, badgeX + badge / 2, badgeY + badge / 2, badge * 0.56)) {
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px ${SHARE_FONT_STACK}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(MODE_SHARE_GLYPH[g.mode], badgeX + badge / 2, badgeY + badge / 2 + 1);
+    const icon = art.icons.get(g.mode) ?? null;
+    if (icon) {
+      drawImageContain(ctx, icon, badgeX + badge / 2, badgeY, badge, badge);
+    } else {
+      const faceH = drawGlossTile(ctx, badgeX, badgeY, badge, badge, glossFrom(accent), { radius: badge * 0.26 });
+      if (!drawSweepBadgeIcon(ctx, g.mode, badgeX + badge / 2, badgeY + faceH / 2, badge * 0.56)) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px ${SHARE_FONT_STACK}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(MODE_SHARE_GLYPH[g.mode], badgeX + badge / 2, badgeY + faceH / 2 + 1);
+      }
     }
 
     const textX = badgeX + badge + 22;
-    // Mode name
-    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
+    const twoLine = rowH >= 64;
+    const nameW = areaWidth - (textX - horizontalPad) - rowH;
+    ctx.font = `900 ${Math.min(34, Math.round(rowH * 0.34))}px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_DARK;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(g.modeLabel, textX, rowY + rowH / 2 - 13);
+    ctx.fillText(clampText(ctx, g.modeLabel, nameW), textX, twoLine ? rowY + rowH / 2 - rowH * 0.15 : rowY + rowH / 2);
+    if (twoLine) {
+      ctx.font = `800 ${Math.min(24, Math.round(rowH * 0.24))}px ${SHARE_FONT_STACK}`;
+      ctx.fillStyle = TEXT_MUTED;
+      const guessDisp = g.won ? `${g.guesses}g` : 'X';
+      ctx.fillText(`${guessDisp} · ${formatTime(g.timeSeconds)} · ${g.score.toLocaleString('en-US')} pts`, textX, rowY + rowH / 2 + rowH * 0.2);
+    }
 
-    // Per-game stats
-    ctx.font = `700 21px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = TEXT_MUTED;
-    const guessDisp = g.won ? `${g.guesses}g` : 'X';
-    ctx.fillText(`${guessDisp} · ${formatTime(g.timeSeconds)} · ${g.score.toLocaleString()} pts`, textX, rowY + rowH / 2 + 15);
-
-    // Pass/fail mark at right
-    ctx.font = `900 48px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = g.won ? WIN_FG : LOSS_FG;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(g.won ? '✓' : '✗', horizontalPad + areaWidth - 32, rowY + rowH / 2);
+    const mark = Math.min(rowH - 26, 56);
+    drawResultMark(ctx, g.won, horizontalPad + areaWidth - 24 - mark / 2, rowY + rowH / 2, mark);
   }
 }
 
@@ -2113,9 +1608,8 @@ function drawLbRow(
   const rightX = x + w - 30;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
+  drawSoftNumber(ctx, row.scoreDisplay, rightX, row.subline ? midY - 13 : midY, 34, 'right');
   ctx.font = `900 34px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = TEXT_DARK;
-  ctx.fillText(row.scoreDisplay, rightX, row.subline ? midY - 13 : midY);
   let rightBlockW = ctx.measureText(row.scoreDisplay).width;
   if (row.subline) {
     ctx.font = `700 21px ${SHARE_FONT_STACK}`;
@@ -2161,7 +1655,7 @@ function drawLbRow(
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       if (d === null) {
-        ctx.strokeStyle = '#e5e7eb';
+        ctx.strokeStyle = 'rgba(124, 58, 237, 0.25)';
         ctx.lineWidth = 2;
         ctx.stroke();
       } else if (d < 0) {
@@ -2206,7 +1700,7 @@ function drawLbRow(
   }
 
   if (opts.separator && !row.isYou) {
-    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeStyle = 'rgba(124, 58, 237, 0.14)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x + 26, y + h);
@@ -2215,48 +1709,39 @@ function drawLbRow(
   }
 }
 
+
+/** The leaderboard card's head: the letterspaced variant label over the mode + date chips. */
+const LB_LABEL_H = 48;
+const LB_CHIP_H = 54;
+const LB_HEAD_H = LB_LABEL_H + 16 + LB_CHIP_H;
+/** The hook line under the rows panel ("Can you beat them?"). */
+const LB_HOOK_H = 44;
+
 function drawLeaderboardCard(
   ctx: CanvasRenderingContext2D,
   input: ShareLeaderboardInput,
   width: number,
-  height: number,
+  plan: SharePlan,
+  hook: string,
 ): void {
   const theme = LB_THEME[input.variant];
 
-  // Variant-tinted card background (lavender / mint) over the default fill.
-  ctx.fillStyle = theme.bg;
-  ctx.fillRect(0, 0, width, height);
-
-  // Wordmark — the established two-tone (violet→pink) treatment.
-  const wordmarkY = 96;
+  // Letterspaced variant label (white highlight so it reads on the wallpaper).
+  const labelY = plan.headTop + 36;
   ctx.save();
-  ctx.font = `900 60px ${SHARE_FONT_STACK}`;
+  setLetterSpacing(ctx, 8);
+  ctx.font = `900 34px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  const wm = ctx.createLinearGradient(width / 2 - 220, wordmarkY - 52, width / 2 + 220, wordmarkY + 8);
-  wm.addColorStop(0, WORDMARK_GRADIENT[0]);
-  wm.addColorStop(1, WORDMARK_GRADIENT[1]);
-  ctx.fillStyle = wm;
-  ctx.fillText('WORDOCIOUS', width / 2, wordmarkY);
-  ctx.restore();
-
-  // Letterspaced variant label. `letterSpacing` is a newer canvas property —
-  // set through a cast and degrade gracefully where unsupported.
-  const labelY = wordmarkY + 74;
-  ctx.save();
-  const anyCtx = ctx as unknown as { letterSpacing?: string };
-  try { anyCtx.letterSpacing = '10px'; } catch { /* older engines */ }
-  ctx.font = `900 36px ${SHARE_FONT_STACK}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+  ctx.shadowOffsetY = 2;
   ctx.fillStyle = theme.label;
   ctx.fillText(LB_LABEL[input.variant], width / 2, labelY);
-  try { anyCtx.letterSpacing = '0px'; } catch { /* older engines */ }
   ctx.restore();
 
   // Chips: mode (accent bg; swords glyph on the VS variant) + date/puzzle.
-  const chipH = 56;
-  const chipY = labelY + 36;
+  const chipH = LB_CHIP_H;
+  const chipY = plan.headTop + LB_LABEL_H + 16;
   const chipFont = `800 27px ${SHARE_FONT_STACK}`;
   ctx.font = chipFont;
   const swordsSize = input.variant === 'vs' ? 30 : 0;
@@ -2287,80 +1772,90 @@ function drawLeaderboardCard(
 
   chipX += modeChipW + chipGap;
   drawRoundRect(ctx, chipX, chipY, dateChipW, chipH, chipH / 2);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = theme.bg;
   ctx.fill();
-  ctx.strokeStyle = '#e5e7eb';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = theme.panelBorder;
+  ctx.lineWidth = 2.5;
   ctx.stroke();
   ctx.font = chipFont;
   ctx.fillStyle = TEXT_MUTED;
   ctx.fillText(input.dateChip, chipX + 22, chipY + chipH / 2 + 1);
 
-  // Rows panel — sized to its content, then centered in the space between
-  // the chips and the footer, so short boards (3-4 rows) don't strand dead
-  // padding above the first and below the last row (founder note, Aug 7).
-  const panelX = 64;
+  // Rows panel — sized to its content (lib/share-fit.ts), centered in its box.
+  const panelX = CARD_PAD;
   const panelW = width - panelX * 2;
-  const areaTop = chipY + chipH + 40;
-  const footerY = height - 52;
-  const areaBottom = footerY - 46;
-  const pad = 16;
-  const dividerH = input.you ? 46 : 0;
-  const nRows = input.rows.length + (input.you ? 1 : 0);
-  if (!nRows) return;
-  const rowH = Math.min(band(input), (areaBottom - areaTop - pad * 2 - dividerH) / nRows);
-  const contentH = rowH * nRows + dividerH + pad * 2;
-  const panelTop = areaTop + (areaBottom - areaTop - contentH) / 2;
-  drawRoundRect(ctx, panelX, panelTop, panelW, contentH, 28);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.strokeStyle = theme.panelBorder;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  let y = panelTop + pad;
+  const geo = leaderboardPanelGeometry(input, plan.boardH);
+  if (geo.nRows) {
+    const { rowH, dividerH, pad } = geo;
+    const contentH = geo.h;
+    const panelTop = plan.boardTop + (plan.boardH - contentH) / 2;
+    // The rows panel: the variant's soft tint (never white) with its top bar.
+    ctx.save();
+    ctx.shadowColor = 'rgba(60, 30, 110, 0.16)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 12;
+    drawRoundRect(ctx, panelX, panelTop, panelW, contentH, 28);
+    ctx.fillStyle = theme.bg;
+    ctx.fill();
+    ctx.restore();
+    let y = panelTop + pad;
 
-  input.rows.forEach((row, i) => {
-    drawLbRow(ctx, row, panelX, y, panelW, rowH, {
-      numericRank: input.variant === 'flawlessStreak',
-      delta: row.isYou ? input.delta : undefined,
-      separator: i < input.rows.length - 1 || !!input.you,
-      edgeTop: i === 0,
-      edgeBottom: i === input.rows.length - 1 && !input.you,
-      bleed: pad,
+    input.rows.forEach((row, i) => {
+      drawLbRow(ctx, row, panelX, y, panelW, rowH, {
+        numericRank: input.variant === 'flawlessStreak',
+        delta: row.isYou ? input.delta : undefined,
+        separator: i < input.rows.length - 1 || !!input.you,
+        edgeTop: i === 0,
+        edgeBottom: i === input.rows.length - 1 && !input.you,
+        bleed: pad,
+      });
+      y += rowH;
     });
-    y += rowH;
-  });
 
-  if (input.you) {
-    // "• • •" divider between the compressed top rows and the sharer's row.
-    ctx.font = `900 26px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = TEXT_MUTED;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('• • •', width / 2, y + dividerH / 2 + 1);
-    y += dividerH;
-    drawLbRow(ctx, input.you, panelX, y, panelW, rowH, {
-      numericRank: input.variant === 'flawlessStreak',
-      rankLine: input.youRankLine,
-      delta: input.delta,
-      edgeBottom: true,
-      bleed: pad,
-    });
+    if (input.you) {
+      // "• • •" divider between the compressed top rows and the sharer's row.
+      ctx.font = `900 26px ${SHARE_FONT_STACK}`;
+      ctx.fillStyle = TEXT_MUTED;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('• • •', width / 2, y + dividerH / 2 + 1);
+      y += dividerH;
+      drawLbRow(ctx, input.you, panelX, y, panelW, rowH, {
+        numericRank: input.variant === 'flawlessStreak',
+        rankLine: input.youRankLine,
+        delta: input.delta,
+        edgeBottom: true,
+        bleed: pad,
+      });
+    }
+
+    // Border + top bar go on after the rows, over a you-row highlight that bleeds to the edge.
+    ctx.save();
+    drawRoundRect(ctx, panelX, panelTop, panelW, contentH, 28);
+    ctx.clip();
+    ctx.fillStyle = theme.label;
+    ctx.fillRect(panelX, panelTop, panelW, 10);
+    ctx.restore();
+    drawRoundRect(ctx, panelX, panelTop, panelW, contentH, 28);
+    ctx.strokeStyle = theme.panelBorder;
+    ctx.lineWidth = 3;
+    ctx.stroke();
   }
 
-  // Footer hook.
-  ctx.font = `800 29px ${SHARE_FONT_STACK}`;
-  ctx.fillStyle = theme.footer;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(input.footer, width / 2, footerY + 30);
-}
-
-/** Max row height. The podium used a roomier 170 when it held 3 rows; it now
- *  carries the same top 5 (+ you-row) as the daily card, so every board shares
- *  the 130 band. */
-function band(_input: ShareLeaderboardInput): number {
-  return 130;
+  // The board's own hook ("Can you beat them?"), its site part dropped: the
+  // cast wordmark + "wordocious.com" below carry that (S3).
+  if (hook) {
+    const px = fitFontPx(ctx, hook, 34, width - CARD_PAD * 2, 20);
+    ctx.save();
+    ctx.font = `900 ${px}px ${SHARE_FONT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = TEXT_DARK;
+    ctx.fillText(hook, width / 2, plan.footTop + LB_HOOK_H / 2);
+    ctx.restore();
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -2371,11 +1866,69 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   resolveShareFontStack();
   try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* draw anyway */ }
   if (typeof document === 'undefined') return null;
-  const isVertical =
-    input.layout === 'daily-sweep' ||
-    (input.layout !== 'leaderboard' && (input.mode === 'OctoWord' || input.mode === 'Gauntlet'));
-  const width = 1080;
-  const height = isVertical ? 1350 : 1080;
+  const width = SHARE_W;
+
+  // FINISH_SPEC E1: every card wears a wallpaper and its title art.
+  const date = ('date' in input && input.date) || new Date(getTodayLocal() + 'T00:00:00');
+  const day = shareDayKey(date);
+  let wall: string;
+  let title: ArtName | null;
+  let tint: readonly [string, string, string];
+  let fallbackTitle: string;
+  let fallbackColor: string | readonly [string, string];
+  if (input.layout === 'leaderboard') {
+    const lb = LEADERBOARD_SHARE_ART[input.variant];
+    wall = pageWall(lb.wall);
+    title = lb.title;
+    tint = PAGE_TINTS[lb.wall].light;
+    fallbackTitle = lb.label;
+    fallbackColor = LB_THEME[input.variant].label;
+  } else if (input.layout === 'daily-sweep') {
+    wall = pageWall('home');
+    title = input.flawless ? 'art-moment-flawless' : 'art-moment-sweep';
+    tint = PAGE_TINTS.home.light;
+    fallbackTitle = input.title ?? (input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP');
+    fallbackColor = input.flawless ? SWEEP_GOLD : SWEEP_VIOLET;
+  } else if (input.layout === 'profile') {
+    wall = pageWall('stats');
+    title = 'art-title-stats';
+    tint = PAGE_TINTS.stats.light;
+    fallbackTitle = 'STATS';
+    fallbackColor = input.accentHex;
+  } else {
+    const g = gameShareArt(input.mode);
+    wall = g.wall;
+    title = g.title;
+    const accent = MODE_ACCENT[input.mode];
+    const t: TintStops = accent ? gameTint(accent) : PAGE_TINTS.home;
+    tint = t.light;
+    fallbackTitle = MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase();
+    fallbackColor = accent ?? '#7c3aed';
+  }
+  const [art, castImgs] = await Promise.all([
+    loadShareArt({
+      wall,
+      title,
+      icons: input.layout === 'daily-sweep' ? input.games.map((g) => g.mode) : undefined,
+    }),
+    loadCastImages(),
+  ]);
+
+  // S2: size the canvas to its content — title, head (info line / chips),
+  // the board block, the foot (stat windows / hook), the cast wordmark.
+  const titleH = titleBoxHeight(titleNatural(art));
+  const hook = input.layout === 'leaderboard' ? shareHookLine(input.footer) : '';
+  let headH: number = SHARE_SPACE.info;
+  let footH: number = SHARE_SPACE.stats;
+  if (input.layout === 'leaderboard') {
+    headH = LB_HEAD_H;
+    footH = hook ? LB_HOOK_H : 0;
+  } else if (input.layout === 'profile') {
+    headH = 0;
+    footH = 0;
+  }
+  const plan = planShareCard({ titleH, headH, footH }, (maxH) => boardBlockHeight(input, BOARD_W, maxH));
+  const height = plan.height;
 
   const canvas = document.createElement('canvas');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -2385,87 +1938,46 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   if (!ctx) return null;
   ctx.scale(dpr, dpr);
 
-  // Background
+  // Background fill under everything (the wallpaper covers it once loaded).
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, width, height);
+  drawWallpaper(ctx, width, height, art.wall, tint);
+  drawCardTitle(ctx, art, width, plan.titleTop, titleH, fallbackTitle, fallbackColor);
+  const box: Box = { top: plan.boardTop, h: plan.boardH };
+  const infoY = plan.headTop + SHARE_SPACE.info / 2;
 
-  // §17: result, sweep and profile cards wear the page tint (home, or the
-  // game's own tint), the game's title art and the cast strip. The
-  // leaderboard card keeps its own variant theme.
-  let art: ShareArt | null = null;
-  if (input.layout !== 'leaderboard') {
-    const isGame = input.layout !== 'daily-sweep' && input.layout !== 'profile';
-    art = await loadShareArt(isGame ? shareTitleArtName(input.mode) : null);
-    const accent = isGame ? MODE_ACCENT[input.mode] : undefined;
-    const tint: TintStops = accent ? gameTint(accent) : PAGE_TINTS.home;
-    drawTintBackground(ctx, width, height, tint.light, art.tiles, accent ? GAME_TILES_OPACITY.light : PAGE_TILES.opacity.light);
-  }
-  const footerRoom = hasCast(art) ? FOOTER_ROOM.cast : FOOTER_ROOM.plain;
-
-  // The all-dailies card renders its own multi-mode header + rows + footer.
-  if (input.layout === 'daily-sweep') {
-    drawDailySweepCard(ctx, input, width, height, footerRoom);
-    drawFooter(ctx, width, height, art);
-    return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
-    });
-  }
-
-  // The daily-leaderboard card renders its own header + rows + footer hook
-  // (1080², all three variants).
   if (input.layout === 'leaderboard') {
-    drawLeaderboardCard(ctx, input, width, height);
-    return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
-    });
+    drawLeaderboardCard(ctx, input, width, plan, hook);
+  } else if (input.layout === 'profile') {
+    drawProfileCard(ctx, input, width, box);
+  } else if (input.layout === 'daily-sweep') {
+    // The More Games card names itself on the info line (founder, 2026-09-26)
+    // — unless its title art didn't load and the name is already lettered.
+    drawInfoLine(ctx, shareSweepInfo(art.title ? input : { ...input, title: undefined }, date), width / 2, infoY);
+    drawDailySweepRows(ctx, input, width, box, art);
+    drawCardStats(ctx, input, width, plan.footTop, null);
+  } else {
+    drawInfoLine(ctx, shareInfoLine(input, date), width / 2, infoY);
+    if (input.layout === 'single') drawSingle(ctx, input, width, box);
+    else if (input.layout === 'multi') drawMulti(ctx, input, width, box);
+    else if (input.layout === 'gauntlet') drawGauntlet(ctx, input, width, box);
+    else if (input.layout === 'sudoku') drawSudoku(ctx, input, width, box);
+    else if (input.layout === 'regions') drawRegions(ctx, input, width, box);
+    else if (input.layout === 'ladder') drawLadder(ctx, input, width, box);
+    else if (input.layout === 'wordsearch') drawWordsearch(ctx, input, width, box);
+    else if (input.layout === 'hub') drawHub(ctx, input, width, box);
+    else if (input.layout === 'cryptogram') drawCryptogram(ctx, input, width, box);
+    else if (input.layout === 'groups') drawGroups(ctx, input, width, box);
+    else if (input.layout === 'crossword') drawCrossword(ctx, input, width, box);
+    else if (input.layout === 'scramble') drawScramble(ctx, input, width, box);
+
+    // Purple guesses · blue time · gold points (recomputed when the caller didn't pass them).
+    const points = typeof input.points === 'number' ? input.points : fallbackSharePoints(input, day);
+    drawCardStats(ctx, input, width, plan.footTop, points);
   }
 
-  // The profile/stats card renders its own header + tiles + footer (1080²).
-  if (input.layout === 'profile') {
-    drawProfileCard(ctx, input, width);
-    drawFooter(ctx, width, height, art);
-    return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
-    });
-  }
+  // S3: the cast IS the wordmark — the ten heroes standing together over "wordocious.com".
+  drawCastWordmark(ctx, plan.cast, castImgs, width / 2, plan.castBase, plan.urlY);
 
-  // Header
-  const { bottomY: headerBottom } = drawHeader(ctx, input, width, art);
-
-  // Footer Y (top edge of footer region; higher when the cast strip is drawn)
-  const footerTop = height - footerRoom;
-
-  // Body
-  if (input.layout === 'single') {
-    drawSingle(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'multi') {
-    drawMulti(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'gauntlet') {
-    drawGauntlet(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'sudoku') {
-    drawSudoku(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'regions') {
-    drawRegions(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'ladder') {
-    drawLadder(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'wordsearch') {
-    drawWordsearch(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'hub') {
-    drawHub(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'cryptogram') {
-    drawCryptogram(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'groups') {
-    drawGroups(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'crossword') {
-    drawCrossword(ctx, input, width, headerBottom, footerTop);
-  } else if (input.layout === 'scramble') {
-    drawScramble(ctx, input, width, headerBottom, footerTop);
-  }
-
-  // Footer
-  drawFooter(ctx, width, height, art);
-
-  return new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
-  });
+  return canvasToPng(canvas);
 }

@@ -1,11 +1,16 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
-import { softIconTile } from '@/lib/soft-surface';
+import { openGoProPopup } from '@/lib/payment/go-pro-popup';
+import { ProPill, UNLIMITED_PEACH } from '@/components/game/finished-kit';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
+import { SeasonArt } from '@/components/ui/season-art';
+import Image from 'next/image';
+import { softBorder, softIconTile } from '@/lib/soft-surface';
 import { SoftNum } from '@/components/ui/soft-number';
-import { Check, Infinity as InfinityIcon } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { isGameArtIcon, onPageShadow } from '@/lib/art';
+import { ART_SIZE, artSrc, isGameArtIcon, onPageShadow } from '@/lib/art';
 import {
   bannerClockLine, bannerHeadline, groupStatus, groupStreak, groupTier, unlimitedGroupStatus,
   type BannerTier, type GroupProgress,
@@ -14,6 +19,7 @@ import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
 import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
 import { PAGE_HOSTS } from '@/lib/mascots';
+import { MODE_SWITCH, homeBannerContent, homeBannerSlots, modeSwitchLayout } from '@/lib/stationary-layout';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
 // docs/HOME_REDESIGN_SPEC.md). One window: a frosted headline strip over a
@@ -24,6 +30,23 @@ import { PAGE_HOSTS } from '@/lib/mascots';
 
 const TIER_COLOR: Record<Exclude<BannerTier, 'none'>, string> = { sweep: '#ebd6fd', flawless: '#fde68a' };
 const TIER_INK: Record<BannerTier, string> = { none: '#6d28d9', sweep: '#7e22ce', flawless: '#92400e' };
+
+/**
+ * FINISH_SPEC G4: once the Wordocious row is swept (or flawless), the banner
+ * wears the wide celebration art beside the headline (O1 + S with the broom +
+ * W for a Sweep; D + the pink O with her gem + I for a Flawless — the whole
+ * group visible, never cropped) and its own top bar color: gold for a Sweep,
+ * pink for a Flawless. The art carries the cast then, so the W host steps out.
+ */
+const TIER_ART: Record<Exclude<BannerTier, 'none'>, { art: 'art-scene-banner-sweep' | 'art-scene-banner-flawless'; accent: string; bar: string }> = {
+  sweep: { art: 'art-scene-banner-sweep', accent: '#f5a524', bar: 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)' },
+  flawless: { art: 'art-scene-banner-flawless', accent: '#ec4899', bar: 'linear-gradient(90deg, #f9a8d4, #ec4899 55%, #c026d3)' },
+};
+/** The banner art's height beside the headline (px) — the stationary art slot (lib/stationary-layout.ts). */
+const TIER_ART_H = 100;
+/** Unlimited on a swept / flawless day keeps the art frame (Z), in Unlimited's colors with U's loop. */
+const UNLIMITED_BAR = `linear-gradient(90deg, #fdba74, ${UNLIMITED_PEACH} 55%, #ec4899)`;
+const LOOP_ART = 'art-scene-unlimited-loop' as const;
 
 export interface BannerRow {
   cards: HomeCard[];
@@ -75,6 +98,7 @@ function Tile({ card, result, unlimited, size, onOpen }: {
   return (
     <button
       type="button"
+      data-squish="card"
       onClick={onOpen}
       aria-label={`${card.title}${unlimited ? '' : result ? (result.won ? ', won' : ', played') : ', not played yet'}`}
       className="flex items-center justify-center shrink-0"
@@ -93,11 +117,12 @@ function Tile({ card, result, unlimited, size, onOpen }: {
   );
 }
 
-function RowHeader({ label, status, ink, streak }: { label: string; status: string; ink: string; streak: number | null }) {
+function RowHeader({ label, status, ink, streak, height }: { label: string; status: string; ink: string; streak: number | null; height: number }) {
+  // Z: a fixed-height, one-line slot in both modes; the status crossfades.
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: ink }}>{label}</span>
-      <span className="flex-1 text-[10px] font-black" style={{ letterSpacing: 0.5, color: ink }}>{status}</span>
+    <div className="flex items-center gap-1.5" style={{ height }}>
+      <span className="text-[10px] font-black shrink-0" style={{ letterSpacing: 1, color: ink }}>{label}</span>
+      <span key={status} className="mode-xfade flex-1 min-w-0 truncate text-[10px] font-black" style={{ letterSpacing: 0.5, color: ink }}>{status}</span>
       {streak != null && streak > 0 && (
         <span className="flex items-center gap-0.5" aria-label={`${streak}-day streak`}>
           <Icon3D name="flame" size={14} />
@@ -113,8 +138,15 @@ const HEAD_LINE = 1.15;
 
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, clock, onOpen, onShare }: Props) {
   const unlimited = playMode === 'unlimited';
-  const wTier = unlimited ? 'none' : groupTier(word.progress);
-  const pTier = unlimited ? 'none' : groupTier(puzzles.progress);
+  // FINISH_SPEC Z: the slots (frame, headline box, share box, art box, rows)
+  // come from today's DAILY state only, so the switch never moves the tiles or
+  // the grids below; the content filling them follows the mode.
+  const dailyTier = groupTier(word.progress);
+  const layoutInput = { dailyTier, puzzleTier: groupTier(puzzles.progress), playedAny: word.progress.played + puzzles.progress.played > 0 };
+  const slots = homeBannerSlots(playMode, layoutInput);
+  const content = homeBannerContent(playMode, layoutInput);
+  const wTier = content.wordTier;
+  const pTier = content.puzzleTier;
   const double = wTier === 'flawless' && pTier === 'flawless';
   const headline = bannerHeadline(word.progress, puzzles.progress, { hour: new Date().getHours(), name, unlimited });
   const clockLine = bannerClockLine(word.progress, puzzles.progress, clock, unlimited);
@@ -126,6 +158,18 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const headInk = double ? '#78350f' : '#4c1d95';
   const subInk = double ? '#92400e' : '#6d28d9';
   const shimmer = !unlimited && (wTier !== 'none' || pTier !== 'none');
+  // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
+  const tierArt = slots.frame === 'art' && dailyTier !== 'none' ? TIER_ART[dailyTier] : null;
+  const frameAccent = tierArt ? (unlimited ? UNLIMITED_PEACH : tierArt.accent) : null;
+  const switchBox = modeSwitchLayout(playMode, { locked: !isPro });
+  // FINISH_SPEC X: during Halloween the banner wears its Halloween art beside
+  // the headline (art-scene-banner-halloween; not shipped yet — the slot
+  // renders nothing until the file exists). Same in both modes, so the
+  // Daily/Unlimited switch never moves anything; a tier's art wins.
+  const season = useSeason();
+  const [seasonArtOk, setSeasonArtOk] = useState(false);
+  const seasonSlot = season === 'halloween' && !tierArt;
+  const seasonArt = seasonSlot && seasonArtOk;
 
   // The headline runs two lines at most at 22px, then steps down (to 70%) rather than
   // truncating: the web side of iOS minimumScaleFactor / Android's onTextLayout fit.
@@ -150,24 +194,28 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
     const ro = new ResizeObserver(fit);
     ro.observe(el.parentElement);
     return () => ro.disconnect();
-  }, [headline]);
+  }, [headline, playMode]);
 
-  const segment = (mode: 'daily' | 'unlimited', label: string) => {
+  // Z: fixed-width segments, one font weight in both states; only the thumb slides.
+  const segment = (mode: 'daily' | 'unlimited', label: string, width: number) => {
     const on = playMode === mode;
+    // R3 (founder 10-02): free players and guests see UNLIMITED too, with the
+    // gold PRO pill; tapping it opens the Go Pro popup instead of switching.
+    const locked = mode === 'unlimited' && !isPro;
     return (
       <button
         type="button"
-        onClick={() => onModeChange(mode)}
+        onClick={() => (locked ? openGoProPopup({ reason: 'Unlimited play' }) : onModeChange(mode))}
         aria-pressed={on}
-        className="font-black transition-colors"
+        aria-label={locked ? 'Unlimited, a Pro perk' : undefined}
+        className="relative font-black flex items-center justify-center shrink-0 whitespace-nowrap"
         style={{
-          height: 26, padding: '0 10px', borderRadius: 999, fontSize: 10.5, letterSpacing: 0.6,
-          background: on ? '#f5eeff' : 'transparent',
-          boxShadow: on ? '0 1px 3px rgba(76, 29, 149, 0.18)' : undefined,
+          width, height: MODE_SWITCH.height, padding: 0, borderRadius: 999, fontSize: 10.5, letterSpacing: 0.6,
+          background: 'transparent',
           color: on ? (mode === 'daily' ? '#4c1d95' : '#6d28d9') : '#7c3aed',
         }}
       >
-        {label}
+        <span className="inline-flex items-center gap-1">{label}{locked && <ProPill />}</span>
       </button>
     );
   };
@@ -178,7 +226,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         label={label}
         status={unlimited ? unlimitedGroupStatus(r.unlimitedPlayed) : groupStatus(r.progress)}
         ink={TIER_INK[tier]}
-        streak={unlimited ? null : groupStreak(tier, r.streaks)}
+        streak={content.showStreaks ? groupStreak(tier, r.streaks) : null}
+        height={slots.rowHeader}
       />
       <div className="flex" style={{ gap: size === 'lg' ? 7 : 4 }}>
         {r.cards.map((c) => (
@@ -195,17 +244,18 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
     </>
   );
 
-  return (
-    // The home host (W) stands at the strip's right end; Flawless crowns him.
-    <BannerHost id={PAGE_HOSTS.home} pose="art-pose-w-wave" crown={wTier === 'flawless'}>
+  const card = (
     <div
       className="relative shrink-0 overflow-hidden w-full"
       style={{
         // §18.4: radius 22, the full content width.
         borderRadius: 22, background,
+        ...(frameAccent ? { border: softBorder(frameAccent, 0.2) } : null),
         boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
       }}
     >
+      {/* G4: the swept / flawless banner's own top bar (gold / pink). */}
+      {tierArt && <div aria-hidden="true" className="relative" style={{ height: slots.topBar, background: unlimited ? UNLIMITED_BAR : tierArt.bar, transition: 'background 160ms ease-out' }} />}
       {shimmer && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <div
@@ -217,16 +267,19 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
 
       {/* Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious row's glow.
           §18.4: white at 72% with a background blur (globals.css .banner-frost). */}
-      <div className="banner-frost relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px' }}>
-        <div className="flex items-start gap-1.5" style={{ paddingRight: BANNER_HOST_CLEARANCE - 8 }}>
-          <div className="flex-1 flex items-center gap-1.5" style={{ minHeight: 30 }}>
-            {double && <Icon3D name="trophy" size={18} className="shrink-0" />}
-            {unlimited && <InfinityIcon className="w-5 h-5 shrink-0" style={{ color: '#7c3aed' }} />}
+      <div className="banner-frost relative flex flex-col gap-1" style={{ padding: `${slots.stripTop}px 8px 10px 12px` }}>
+      <div className="flex items-center gap-1">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start gap-1.5" style={{ paddingRight: tierArt || seasonArt ? 0 : BANNER_HOST_CLEARANCE - 8 }}>
+          {/* Z: the headline box is always two lines tall (one-line headlines center in it). */}
+          <div className="flex-1 min-w-0 flex items-center gap-1.5" style={{ height: slots.headline }}>
+            {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
             {/* The old WORDOCIOUS wordmark style (Nunito Black, violet→pink) with a soft pink glow;
                 the double-flawless gold day keeps its tier ink. */}
             <span
+              key={playMode}
               ref={headRef}
-              className="font-black"
+              className="font-black mode-xfade"
               style={{
                 fontSize: HEAD_SIZE, letterSpacing: 0.4, lineHeight: HEAD_LINE,
                 ...(double
@@ -241,27 +294,89 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
               {headline}
             </span>
           </div>
-          {/* Nothing to share before the first finished game (iOS/Android parity). */}
-          {!unlimited && word.progress.played + puzzles.progress.played > 0 && (
+          {/* Nothing to share before the first finished game (iOS/Android parity).
+              Z: the share box stays reserved (empty) when there is nothing to share. */}
+          {content.showShare ? (
             <button
               type="button"
               onClick={onShare}
               aria-label="Share today's progress"
-              className="shrink-0 flex items-center justify-center active:opacity-60"
-              style={{ width: 36, height: 36 }}
+              className="mode-xfade shrink-0 flex items-center justify-center active:opacity-60"
+              style={{ width: slots.shareWidth, height: slots.shareWidth }}
             >
               <Icon3D name="share" size={24} />
             </button>
+          ) : (
+            <span aria-hidden="true" className="shrink-0" style={{ width: slots.shareWidth, height: slots.shareWidth }} />
           )}
         </div>
-        <div className="flex items-center gap-2" style={{ paddingRight: 4 }}>
-          <div className="flex-1 font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: subInk }}>{clockLine}</div>
-          {isPro && (
-            <div role="group" aria-label="Daily or Unlimited" className="flex" style={{ padding: 2, borderRadius: 999, background: 'rgba(124,58,237,0.12)' }}>
-              {segment('daily', 'DAILY')}
-              {segment('unlimited', 'UNLIMITED')}
-            </div>
-          )}
+      </div>
+      {seasonSlot && (
+        <SeasonArt
+          src={HALLOWEEN_BANNER_SRC}
+          onReady={setSeasonArtOk}
+          className="relative shrink-0 art-pop"
+          style={{ height: TIER_ART_H, width: 'auto', maxWidth: '46%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))' }}
+        />
+      )}
+      {tierArt && (
+        // Z: one art box in both modes — today's celebration art sizes it; in
+        // Unlimited U's loop crossfades in over the same box.
+        <div className="relative shrink-0" style={{ width: Math.round((TIER_ART_H * ART_SIZE[tierArt.art][0]) / ART_SIZE[tierArt.art][1]), maxWidth: '46%', height: slots.artHeight }}>
+          <Image
+            src={artSrc(tierArt.art)}
+            alt=""
+            aria-hidden="true"
+            width={ART_SIZE[tierArt.art][0]}
+            height={ART_SIZE[tierArt.art][1]}
+            priority
+            draggable={false}
+            sizes={`${Math.round((TIER_ART_H * ART_SIZE[tierArt.art][0]) / ART_SIZE[tierArt.art][1])}px`}
+            className="relative select-none pointer-events-none art-pop"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))', opacity: content.art === 'tier' ? 1 : 0, transition: 'opacity 160ms ease-out' }}
+          />
+          <Image
+            src={artSrc(LOOP_ART)}
+            alt=""
+            aria-hidden="true"
+            width={ART_SIZE[LOOP_ART][0]}
+            height={ART_SIZE[LOOP_ART][1]}
+            draggable={false}
+            sizes={`${Math.round((TIER_ART_H * ART_SIZE[LOOP_ART][0]) / ART_SIZE[LOOP_ART][1])}px`}
+            className="absolute inset-0 select-none pointer-events-none"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(194, 65, 12, 0.22))', opacity: content.art === 'loop' ? 1 : 0, transition: 'opacity 160ms ease-out' }}
+          />
+        </div>
+      )}
+      </div>
+        {/* Z: a fixed-height controls row; the clock line is clamped to its three lines and crossfades. */}
+        <div className="flex items-center gap-2" style={{ paddingRight: 4, height: slots.controls }}>
+          <div
+            key={playMode}
+            className="mode-xfade flex-1 min-w-0 font-extrabold"
+            style={{ fontSize: 10.5, letterSpacing: 0.4, lineHeight: '12px', maxHeight: slots.controls, color: subInk,
+                     overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
+          >
+            {clockLine}
+          </div>
+          <div
+            role="group"
+            aria-label="Daily or Unlimited"
+            className="relative flex shrink-0"
+            style={{ padding: MODE_SWITCH.pad, borderRadius: 999, background: 'rgba(124,58,237,0.12)', width: switchBox.width, height: switchBox.height }}
+          >
+            <span
+              aria-hidden="true"
+              className="mode-switch-thumb absolute"
+              style={{
+                top: MODE_SWITCH.pad, left: MODE_SWITCH.pad, height: MODE_SWITCH.height, width: switchBox.thumb.width,
+                transform: `translateX(${switchBox.thumb.x}px)`, borderRadius: 999,
+                background: '#f5eeff', boxShadow: '0 1px 3px rgba(76, 29, 149, 0.18)',
+              }}
+            />
+            {segment('daily', 'DAILY', switchBox.daily.width)}
+            {segment('unlimited', 'UNLIMITED', switchBox.unlimited.width)}
+          </div>
         </div>
       </div>
 
@@ -272,6 +387,14 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         {row(puzzles, pTier, 'PUZZLES', 'sm')}
       </div>
     </div>
+  );
+
+  // The home host (W) stands at the strip's right end; Flawless crowns him.
+  // G4: a swept / flawless banner carries the cast in its art instead.
+  if (tierArt || seasonArt) return <div className="relative shrink-0" style={{ paddingTop: 16 }}>{card}</div>;
+  return (
+    <BannerHost id={PAGE_HOSTS.home} pose="art-pose-w-wave" crown={wTier === 'flawless'}>
+      {card}
     </BannerHost>
   );
 }

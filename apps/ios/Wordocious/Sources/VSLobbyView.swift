@@ -95,6 +95,8 @@ struct VSLobbyView: View {
             nav
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    // FINISH_SPEC §A6: the VS title art as the page headline, edge to edge.
+                    PageHeadline(.vs, label: "VS Battle", bleed: 16, maxHeight: 120)
                     if !auth.isAuthenticated {
                         guestPrompt
                     } else {
@@ -150,18 +152,28 @@ struct VSLobbyView: View {
 
     // MARK: - Nav (back, VS BATTLE, the honest count)
 
+    /// The controls row: the bare 3D back icon and the honest count (the title is
+    /// the §A6 headline below it).
     private var nav: some View {
-        VSNavBar(title: "VS BATTLE", host: nil, art: .vs, onBack: { dismiss() }) {
+        HStack(spacing: 8) {
+            HeaderCircleButton(.symbol("chevron.left"), label: "Back", action: { dismiss() })
+            Spacer(minLength: 0)
             let looking = model.counts?.totalWaiting ?? 0
             if looking > 0 || model.online != nil {
                 HStack(spacing: 5) {
                     Circle().fill(looking > 0 ? Color(hex: 0x22C55E) : Color(hex: 0x9CA3AF)).frame(width: 7, height: 7)
-                    Text(looking > 0 ? "\(looking) looking" : "\(model.online ?? 0) online")
-                        .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.sub).monospacedDigit()
+                    Text("\(looking > 0 ? looking : (model.online ?? 0))").vsNumber(13)
+                    Text(looking > 0 ? "looking" : "online")
+                        .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                 }
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(VsLobbyKit.ink.wash(0.12)))
+                .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.3), lineWidth: 1))
+                .accessibilityElement(children: .combine)
                 .padding(.trailing, 8)
             }
         }
+        .padding(.horizontal, 10).padding(.top, 4).frame(height: 48)
     }
 
     // MARK: - Banner (§1)
@@ -194,7 +206,7 @@ struct VSLobbyView: View {
         VStack(spacing: 8) {
             ForEach(model.incoming.prefix(3)) { c in
                 NavigationLink { VSChallengeRaceView(code: c.code) } label: { incomingCard(c) }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(.squish)
             }
         }
     }
@@ -207,15 +219,14 @@ struct VSLobbyView: View {
             VSInitialAvatar(name: c.challenger.username, size: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text("CHALLENGE FROM @\(c.challenger.username.uppercased())")
-                    .font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.ink).lineLimit(1)
-                Text(line).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub).lineLimit(1).minimumScaleFactor(0.8)
+                    .font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
+                Text(line).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1).minimumScaleFactor(0.8)
             }
             Spacer(minLength: 4)
-            Text("RACE").font(Brand.font(11, .black)).tracking(0.6).foregroundStyle(.white)
-                .padding(.horizontal, 14).frame(height: 30)
-                .background(Capsule().fill(VsLobbyKit.ink))
+            VSCandyTag(title: "Race", symbol: "play.fill", variant: .pink)
         }
-        .padding(12).vsCard()
+        .padding(12)
+        .vsTinted(Color(hex: 0xEC4899), bar: [Color(hex: 0xF472B6), Color(hex: 0xA21CAF)], radius: 18, barHeight: 6, tint: 0.09)
     }
 
     // MARK: - PLAY
@@ -260,23 +271,31 @@ struct VSLobbyView: View {
         .padding(.vertical, 4)
     }
 
-    private func playTile(icon: some View, title: String, sub: String, locked: Bool = false) -> some View {
+    /// A PLAY tile as a §A1 mini game card in its own color (top bar, soft wash);
+    /// `art` tiles (the BOTS character) draw their icon without the chip behind.
+    private func playTile(icon: some View, title: String, sub: String, accent: Color,
+                          locked: Bool = false, art: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top) {
-                icon
-                    .frame(width: 30, height: 30)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(VsLobbyKit.soft))
+                if art {
+                    icon.frame(height: 40)
+                } else {
+                    icon
+                        .frame(width: 30, height: 30)
+                        .background(RoundedRectangle(cornerRadius: 9).fill(accent.wash(0.2)))
+                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(accent.wash(0.4), lineWidth: 1))
+                }
                 Spacer(minLength: 0)
                 if locked { VSLockBadge() }
             }
-            Text(title).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
-            Text(sub).font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.sub)
+            Text(title).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+            Text(sub).font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
-        .vsCard()
+        .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+        .vsTinted(accent, bar: [accent.wash(0.7), accent], radius: 16, barHeight: 6, tint: 0.10, line: 0.32)
     }
 
     private var liveTile: some View {
@@ -286,9 +305,9 @@ struct VSLobbyView: View {
             : "0 waiting now. A bot steps in at 0:15."
         return NavigationLink { VSGameView(mode: mode, intent: .live) } label: {
             playTile(icon: Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 13, weight: .bold)).foregroundStyle(VsLobbyKit.ink),
-                     title: "LIVE", sub: sub)
+                     title: "LIVE", sub: sub, accent: VsLobbyKit.ink)
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(.squish)
     }
 
     /// Free: today's Daily Battle (a bot steps in if nobody is on).
@@ -299,21 +318,22 @@ struct VSLobbyView: View {
             playTile(icon: Image("swords").renderingMode(.template).resizable().scaledToFit()
                         .frame(width: 14, height: 14).foregroundStyle(VsLobbyKit.ink),
                      title: "DAILY",
-                     sub: model.dailyUsed ? "Played today. Pro plays live any time." : "Today’s battle. A bot steps in if nobody is on.")
+                     sub: model.dailyUsed ? "Played today. Pro plays live any time." : "Today’s battle. A bot steps in if nobody is on.",
+                     accent: VsLobbyKit.ink)
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(.squish)
     }
 
     private var friendTile: some View {
         NavigationLink {
             if isPro { VSFriendPage(mode: mode) } else { ProView() }
         } label: {
-            playTile(icon: Image(systemName: "person.2.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(VsLobbyKit.ink),
+            playTile(icon: Image(systemName: "person.2.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0xEC4899)),
                      title: "FRIEND",
                      sub: isPro ? "You play first. They race your run." : "Send with Pro. Answering is free.",
-                     locked: free)
+                     accent: Color(hex: 0xEC4899), locked: free)
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(.squish)
     }
 
     private var botsTile: some View {
@@ -323,11 +343,22 @@ struct VSLobbyView: View {
             : (cleared >= VsLobby.ladderBots.count
                ? "Ladder cleared!"
                : "Ladder \(cleared) of \(VsLobby.ladderBots.count). \(VsLobby.botName(model.progression.nextLadderBot)) is next.")
+        // §D3: the ladder tile shows the NEXT cast bot in character (its "ready"
+        // pose — the Bot of the Day tile above uses the hero image, §A7); a cleared
+        // ladder shows the trophy.
+        let next = BotPersonas.persona(model.progression.nextLadderBot)
+        let allClear = !free && cleared >= VsLobby.ladderBots.count
         return NavigationLink { VSBotsView(mode: free ? .duel : mode) } label: {
-            playTile(icon: BotArtCircle(art: BotPersonas.art(model.progression.nextLadderBot), size: 26, background: .clear),
-                     title: "BOTS", sub: sub)
+            playTile(icon: Group {
+                        if allClear && ArtAsset.exists("art-medal-trophy") {
+                            VSArt("art-medal-trophy", height: 40)
+                        } else {
+                            PoseImage(next.mascot, "ready", height: 40)
+                        }
+                     },
+                     title: "BOTS", sub: sub, accent: allClear ? VsLobbyKit.gold : Color(hex: UInt(next.color)), art: true)
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(.squish)
     }
 
     // MARK: - RIVALS (Pro) / Go Pro (free)
@@ -341,17 +372,16 @@ struct VSLobbyView: View {
                     Button {
                         StatsJump.requestVS()
                     } label: {
-                        Text("See all").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.ink)
+                        CandyLabel(title: "See all")
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(CandyButtonStyle(variant: .teal, size: .small, fullWidth: false))
                 }
                 VStack(spacing: 0) {
                     ForEach(Array(model.rivals.prefix(3).enumerated()), id: \.element.id) { i, r in
-                        if i > 0 { Divider().padding(.leading, 56) }
-                        rivalRow(r)
+                        rivalRow(r).vsStripedRow(i)
                     }
                 }
-                .vsCard()
+                .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar, radius: 18, barHeight: 6)
             }
         }
     }
@@ -360,37 +390,43 @@ struct VSLobbyView: View {
         HStack(spacing: 12) {
             VSInitialAvatar(name: r.username, size: 34)
             VStack(alignment: .leading, spacing: 2) {
-                Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep).lineLimit(1)
+                Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
                 Text(VsLobbyKit.rivalLine(wins: r.wins, losses: r.losses, lastMode: r.lastMode))
-                    .font(Brand.font(11, .bold))
-                    .foregroundStyle(r.wins == r.losses ? VsLobbyKit.label : VsLobbyKit.ink)
+                    .font(Brand.font(11, .heavy))
+                    .foregroundStyle(r.wins == r.losses ? VsLobbyKit.mutedInk : VsLobbyKit.ink)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
             Spacer(minLength: 4)
             NavigationLink { VSFriendPage(mode: mode, preselected: [r.opponentId]) } label: {
-                VSSoftPill(title: "Challenge")
+                CandyLabel(title: "Challenge")
             }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
     }
 
+    /// Go Pro (free): the gold card family (§G1) with the trophy and an amber candy CTA.
     private var proCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("GO PRO FOR ALL OF VS").font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
-            Text("All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.")
-                .font(Brand.font(11.5, .bold)).foregroundStyle(VsLobbyKit.sub)
-                .fixedSize(horizontal: false, vertical: true)
-            NavigationLink { ProView() } label: {
-                Text("SEE PRO").font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(.white)
-                    .padding(.horizontal, 18).frame(height: 34)
-                    .background(Capsule().fill(VsLobbyKit.purple))
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Icon3D(.crown, size: 20)
+                    Text("GO PRO FOR ALL OF VS").font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+                }
+                Text("All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.")
+                    .font(Brand.font(11.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                NavigationLink { ProView() } label: {
+                    CandyLabel(title: "See Pro", symbol: "crown.fill")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium, fullWidth: false))
             }
-            .buttonStyle(PressableStyle())
+            if ArtAsset.exists("art-medal-trophy") {
+                VSArt("art-medal-trophy", height: 76).frame(width: 70)
+            }
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(LinearGradient(colors: [Color(hex: 0xEDE9FE), Color(hex: 0xCCFBF1)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+        .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, radius: 18, barHeight: 8, tint: 0.12, line: 0.34)
     }
 
     // MARK: - YOUR CHALLENGES (sent in the last 24 h)
@@ -402,12 +438,11 @@ struct VSLobbyView: View {
                 VSSectionLabel(text: "YOUR CHALLENGES")
                 VStack(spacing: 0) {
                     ForEach(Array(recent.prefix(3).enumerated()), id: \.element.id) { i, c in
-                        if i > 0 { Divider().padding(.leading, 48) }
-                        NavigationLink { VSChallengeRaceView(code: c.code) } label: { sentRow(c) }
+                        NavigationLink { VSChallengeRaceView(code: c.code) } label: { sentRow(c).vsStripedRow(i, accent: VsLobbyKit.purple) }
                             .buttonStyle(.squish)
                     }
                 }
-                .vsCard()
+                .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar, radius: 18, barHeight: 6)
             }
         }
     }
@@ -424,10 +459,10 @@ struct VSLobbyView: View {
         let sentTo = c.invitees > 0 ? "sent to \(c.invitees)" : "link"
         return HStack(spacing: 10) {
             VSModeGlyphTile(mode: c.mode, selected: false, size: 26)
-            Text("\(VsLobbyKit.modeName(c.mode)) · \(sentTo)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.deep)
+            Text("\(VsLobbyKit.modeName(c.mode)) · \(sentTo)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.titleInk)
             Spacer(minLength: 4)
             Text(status).font(Brand.font(11, .heavy))
-                .foregroundStyle(status == "waiting" ? VsLobbyKit.label : VsLobbyKit.ink).lineLimit(1)
+                .foregroundStyle(status == "waiting" ? VsLobbyKit.mutedInk : VsLobbyKit.purpleSub).lineLimit(1)
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .contentShape(Rectangle())
@@ -446,21 +481,20 @@ struct VSLobbyView: View {
                         let clean = String(v.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(8))
                         if clean != v { joinCode = clean }
                     }
-                    .padding(.horizontal, 12).frame(height: 40)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(VsLobbyKit.page))
+                    .foregroundStyle(VsLobbyKit.numberInk)
+                    .padding(.horizontal, 12).frame(height: 42)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(VsLobbyKit.ink.wash(0.10)))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(VsLobbyKit.ink.wash(0.34), lineWidth: 1.5))
                 Button { joinWithCode() } label: {
-                    HStack(spacing: 4) {
-                        if joining { ProgressView().controlSize(.small).tint(VsLobbyKit.ink) }
-                        Text("JOIN")
+                    CandyLabel(title: "Join") {
+                        if joining { ProgressView().controlSize(.small).tint(.white) }
                     }
-                    .font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.ink)
-                    .padding(.horizontal, 18).frame(height: 40)
-                    .background(Capsule().fill(VsLobbyKit.soft))
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(CandyButtonStyle(variant: .teal, size: .medium, fullWidth: false))
                 .disabled(joinCode.count < 4 || joining)
             }
-            .padding(10).vsCard()
+            .padding(10)
+            .vsTinted(VsLobbyKit.ink, radius: 18)
             if let e = lookupError { Text(e).font(Brand.body(12)).foregroundStyle(Color(hex: 0xDC2626)) }
         }
     }
@@ -486,20 +520,18 @@ struct VSLobbyView: View {
     // VS is account-based (live opponents, recorded results) — guests sign in first.
     private var guestPrompt: some View {
         VStack(spacing: 14) {
+            // §A7: S hosts VS — the guest card shows him ready in his own pose.
+            PoseImage(.s, "ready", height: 96)
             Text("Sign in to play VS")
-                .font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+                .font(Brand.font(16, .black)).foregroundStyle(VsLobbyKit.titleInk)
             Text("VS Battle pits you against a live opponent and records your results — it needs an account.")
-                .font(Brand.font(13, .medium)).foregroundStyle(Theme.textSecondary)
+                .font(Brand.font(13, .medium)).foregroundStyle(VsLobbyKit.mutedInk)
                 .multilineTextAlignment(.center)
-            Button { showAuth = true } label: {
-                Text("Sign in").font(Brand.font(15, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
-            }.buttonStyle(.squish)
+            Button { showAuth = true } label: { CandyLabel(title: "Sign in") }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
         }
         .padding(20)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
         .padding(.top, 12)
     }
 
@@ -527,25 +559,29 @@ struct VSLobbyView: View {
                         Image("swords").renderingMode(.template).resizable().scaledToFit()
                             .frame(width: 44, height: 44).foregroundStyle(Theme.textMuted)
                     }
-                    Text("Daily VS Used").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("Daily VS Used").font(Brand.font(18, .black)).foregroundStyle(VsLobbyKit.titleInk)
                     Text("You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                         .multilineTextAlignment(.center)
-                    Text("Resets in \(countdown)").font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(Capsule().fill(Theme.surfaceHover)).overlay(Capsule().stroke(Theme.border, lineWidth: 1))
-                        .monospacedDigit()
+                    HStack(spacing: 6) {
+                        Text("Resets in").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                        Text(countdown).vsNumber(16)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 7)
+                    .background(Capsule().fill(VsLobbyKit.purple.wash(0.12)))
+                    .overlay(Capsule().stroke(VsLobbyKit.purple.wash(0.3), lineWidth: 1.5))
+                    .accessibilityElement(children: .combine)
                     NavigationLink { ProView() } label: {
-                        Label { Text("Go Pro") } icon: { Icon3D(.crown, size: 18) }.font(Brand.font(14, .black)).foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    }.buttonStyle(.squish).simultaneousGesture(TapGesture().onEnded { onClose() })
-                    Button("Maybe later") { onClose() }
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                    .simultaneousGesture(TapGesture().onEnded { onClose() })
+                    Button { onClose() } label: { CandyLabel(title: "Maybe later") }
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
                 }
                 .padding(24).frame(maxWidth: 340)
-                .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-                .shadow(color: .black.opacity(0.15), radius: 30, x: 0, y: 20)
+                .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, tint: 0.10, line: 0.32)
+                .shadow(color: .black.opacity(0.12), radius: 30, x: 0, y: 20)
                 .padding(.horizontal, 24)
             }
             .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }

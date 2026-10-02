@@ -20,6 +20,9 @@ enum BotEngine {
         /// Never solve (a replayed run that failed — challenge ghosts).
         var forceFail: Bool = false
         var adaptive: AdaptiveHint? = nil
+        /// The cast bot's own guess range (FINISH_SPEC §D1, core BotCast): replaces
+        /// the speed tier's min/max guesses; the tier keeps its pace and slip chance.
+        var guessRange: ClosedRange<Int>? = nil
     }
 
     /// One scheduled event: a typing ping OR a progress payload.
@@ -206,7 +209,11 @@ enum BotEngine {
     static func buildPlan(seed: String, mode: GameMode, difficulty: BotDifficulty, opts: BuildOpts = BuildOpts()) -> Plan {
         let state = createInitialState(seed: seed, mode: mode)
         let totalBoards = VSModeInfo.totalBoards(mode)
-        let p = resolveParams(difficulty, opts.adaptive)
+        var p = resolveParams(difficulty, opts.adaptive)
+        if difficulty != .adaptive, let r = opts.guessRange {
+            p.minGuesses = r.lowerBound
+            p.maxGuesses = r.upperBound
+        }
         let solutions = matchSolutions(seed: seed, mode: mode, state: state)
         let willSolveAll = opts.forceSolve ? true : opts.forceFail ? false : Double.random(in: 0..<1) > p.failChance
 

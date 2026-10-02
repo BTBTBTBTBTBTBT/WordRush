@@ -78,7 +78,7 @@ fun SignatureCard(userId: String) {
     AsyncEntrance(visible = true) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionHeader("Signature", accent = Color(0xFFF97316))
-            KitCard {
+            KitCard(accent = Color(0xFFF97316)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatCell(
                         Icons.Filled.CalendarToday, "Best day",
@@ -130,6 +130,7 @@ fun StandingTrendCard(userId: String, isPro: Boolean, onGoPro: () -> Unit) {
             SectionHeader("Standing Trend", accent = WTheme.primary)
             val card: @Composable () -> Unit = {
                 ChartCard(
+                    accent = Color(0xFF7C3AED),
                     title = "Standing trend",
                     hint = latest?.let { "Last 30 days · now Top ${it.topPercent}%${if (improving) " · climbing" else ""}" },
                     empty = if (data.isEmpty()) "Play a few dailies to see your standing over time." else null,
@@ -158,7 +159,7 @@ private fun dayLabelOrBlank(day: String): String =
 @Composable
 private fun StandingSparkline(data: List<SignatureStats.StandingPoint>) {
     val lineColor = WTheme.primary
-    val guideColor = WTheme.border
+    val guideColor = if (WTheme.isDark) WTheme.border else Color(0xFFC9B6F2)
     val amber = Color(0xFFD97706)
     Canvas(Modifier.fillMaxWidth().height(80.dp)) {
         val pad = 6.dp.toPx()

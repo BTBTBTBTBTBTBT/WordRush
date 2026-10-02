@@ -8,8 +8,13 @@ import { formatGuessStat } from '@/lib/format';
 import type { Database } from '@/lib/database.types';
 import { SceneEmptyState } from '@/components/ui/art-scene';
 import type { SceneName } from '@/lib/art';
-import { isGameArtIcon, onPageShadow } from '@/lib/art';
+import { isGameArtIcon } from '@/lib/art';
 import { WinLossBadge } from '@/components/ui/icon3d';
+import { CandyButton } from '@/components/ui/candy-button';
+import { BRAND_ACCENT, alphaHex, softCard, softPill } from '@/lib/soft-surface';
+
+// A1: each row takes its game's wash (lavender for an unknown mode), never plain white.
+const rowStyle = (accent: string | undefined): React.CSSProperties => softCard(accent ?? BRAND_ACCENT, { radius: 14 });
 
 type Match = Database['public']['Tables']['matches']['Row'];
 
@@ -71,15 +76,15 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
     return (
       <div className="space-y-2">
         {[0, 1, 2, 3, 4].slice(0, limit).map((i) => (
-          <div key={i} className="flex items-center gap-3 p-3 animate-pulse" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: onPageShadow() }}>
-            <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: 'var(--color-border)' }} />
+          <div key={i} className="flex items-center gap-3 p-3 animate-pulse" style={rowStyle(undefined)}>
+            <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: alphaHex(BRAND_ACCENT, 0.16) }} />
             <div className="flex-1 min-w-0 space-y-1.5">
-              <div className="h-3 w-20 rounded" style={{ background: 'var(--color-border)' }} />
-              <div className="h-2.5 w-28 rounded" style={{ background: 'var(--color-surface-hover)' }} />
+              <div className="h-3 w-20 rounded" style={{ background: alphaHex(BRAND_ACCENT, 0.16) }} />
+              <div className="h-2.5 w-28 rounded" style={{ background: alphaHex(BRAND_ACCENT, 0.1) }} />
             </div>
             <div className="flex-shrink-0 space-y-1.5 text-right">
-              <div className="h-3 w-10 rounded ml-auto" style={{ background: 'var(--color-border)' }} />
-              <div className="h-2.5 w-16 rounded ml-auto" style={{ background: 'var(--color-surface-hover)' }} />
+              <div className="h-3 w-10 rounded ml-auto" style={{ background: alphaHex(BRAND_ACCENT, 0.16) }} />
+              <div className="h-2.5 w-16 rounded ml-auto" style={{ background: alphaHex(BRAND_ACCENT, 0.1) }} />
             </div>
           </div>
         ))}
@@ -99,15 +104,17 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
           : <UnlimitedGroup key={`u-${it.mode}`} mode={it.mode} matches={it.matches} opponentNames={opponentNames} profileId={profileId} />)
         : shown.map((match) => <MatchRow key={match.id} match={match} opponentNames={opponentNames} profileId={profileId} />)}
       {matches.length > limit && (
-        onSeeAll ? (
-          <button onClick={onSeeAll} className="w-full mt-1 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
-            See all {matches.length} in All-time →
-          </button>
-        ) : (
-          <button onClick={() => setShowAll((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
-            {showAll ? 'Show less' : `View all ${matches.length} →`}
-          </button>
-        )
+        <div className="flex justify-center pt-1">
+          {onSeeAll ? (
+            <CandyButton onClick={onSeeAll} color="peach" size="sm" icon="arrow">
+              See all {matches.length} in All-time
+            </CandyButton>
+          ) : (
+            <CandyButton onClick={() => setShowAll((v) => !v)} color="peach" size="sm" aria-expanded={showAll}>
+              {showAll ? 'Show less' : `View all ${matches.length}`}
+            </CandyButton>
+          )}
+        </div>
       )}
     </div>
   );
@@ -123,8 +130,8 @@ function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentN
   const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
   const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
   return (
-    <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: onPageShadow() }}>
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
+    <div key={match.id} className="flex items-center gap-3 p-3" style={rowStyle(cfg?.color)}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alphaHex(cfg?.color ?? BRAND_ACCENT, 0.16) }}>
         {(() => {
           if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
           if (cfg.romanNumeral && !isGameArtIcon(cfg.icon)) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
@@ -135,11 +142,11 @@ function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentN
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{gameModeTitles[match.game_mode] || match.game_mode}</span>
-          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#eff6ff', color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
+          <span className="text-[9px] font-extrabold px-1.5 py-0.5" style={{ ...softPill(match.player2_id ? '#7c3aed' : '#2563eb', { radius: 6, bar: false }), color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
             {match.player2_id ? 'VS' : 'Solo'}
           </span>
           {(match as any).forfeit && (
-            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: '#fef3c7', color: '#b45309' }}>FORFEIT</span>
+            <span className="text-[9px] font-extrabold px-1.5 py-0.5" style={{ ...softPill('#f59e0b', { radius: 6, bar: false }), color: '#b45309' }}>FORFEIT</span>
           )}
         </div>
         <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
@@ -186,8 +193,8 @@ function UnlimitedGroup({ mode, matches, opponentNames, profileId }: { mode: str
   const best = wins.map((m) => m.player1_time).filter((t) => t > 0).reduce((a, b) => Math.min(a, b), Infinity);
   return (
     <div className="space-y-2">
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-3 p-3 text-left" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: onPageShadow() }} aria-expanded={open}>
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
+      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-3 p-3 text-left" style={rowStyle(cfg?.color)} aria-expanded={open}>
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alphaHex(cfg?.color ?? BRAND_ACCENT, 0.16) }}>
           {cfg?.romanNumeral && !isGameArtIcon(cfg.icon) ? <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
             : cfg?.icon ? (() => { const Icon = cfg.icon!; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; })()
             : <Zap className="w-4 h-4" style={{ color: cfg?.color ?? '#d97706' }} />}

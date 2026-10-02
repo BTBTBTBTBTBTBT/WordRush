@@ -3,6 +3,12 @@
 import { TileState } from '@wordle-duel/core';
 import { LetterTile, tileLook, type TileLook } from '@/components/game/letter-tile';
 import { tileFontPx } from '@/lib/board-fit';
+import { miniBoardFrame } from '@/components/game/multi-board';
+import { modeTrayAccent } from '@/lib/tray-fit';
+import { accentInk } from '@/lib/soft-surface';
+
+/** The failed board's answer: red, legible on the light and the dark tray. */
+const FAILED_INK = accentInk('#dc2626', '#dc2626');
 import { Lock } from 'lucide-react';
 
 // The Succession board (solo + VS share it — VS polish §1: VS renders the
@@ -17,7 +23,7 @@ export function SequenceMiniBoard({
   isLocked,
   currentGuess,
   isShaking,
-  isInvalidWord, tileSize }: {
+  isInvalidWord, tileSize, accent = modeTrayAccent('SEQUENCE') }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
   boardIndex: number;
   isActive: boolean;
@@ -27,6 +33,8 @@ export function SequenceMiniBoard({
   currentGuess: string;
   isShaking?: boolean;
   isInvalidWord?: boolean;
+  /** The game's accent for the tray (FINISH_SPEC L). */
+  accent?: string;
   /** §255: explicit square tile edge from the measured container (see useSquareBoardFit). */
   tileSize?: number;
 }) {
@@ -69,8 +77,8 @@ export function SequenceMiniBoard({
 
   return (
     <div
-      className={`relative p-1 rounded-lg border-2 transition-colors duration-300 ${tileSize ? '' : 'h-full'} flex flex-col overflow-hidden ${!isActive && !isCompleted && !isFailed ? 'opacity-60' : ''}`}
-      style={{ ...sequenceFrame({ isActive, isCompleted, isFailed }), ['--gt-font' as string]: tileSize ? `${tileFontPx(tileSize)}px` : '11px' }}
+      className={`relative transition-colors duration-300 ${tileSize ? '' : 'h-full'} flex flex-col overflow-hidden ${!isActive && !isCompleted && !isFailed ? 'opacity-60' : ''}`}
+      style={{ ...miniBoardFrame(isCompleted ? 'WON' : isFailed ? 'LOST' : 'PLAYING', accent, { active: isActive && !isCompleted && !isFailed }), ['--gt-font' as string]: tileSize ? `${tileFontPx(tileSize)}px` : '11px' }}
     >
       {/* Lock icon for locked boards */}
       {isLocked && (
@@ -124,18 +132,10 @@ export function SequenceMiniBoard({
 
       {/* Show solution on failed boards */}
       {isFailed && (
-        <div className="text-center text-xs text-red-300 mt-1 font-bold">
+        <div className={`text-center text-xs mt-1 font-bold ${FAILED_INK.className}`} style={FAILED_INK.style}>
           {board.solution.toUpperCase()}
         </div>
       )}
     </div>
   );
-}
-
-/** The board's frame (FINISH_SPEC A1, no plain white): solved purple wash, failed red wash, the active board a warm frosted wash with its gold ring, the rest frosted lavender. */
-function sequenceFrame({ isActive, isCompleted, isFailed }: { isActive: boolean; isCompleted: boolean; isFailed: boolean }): React.CSSProperties {
-  if (isCompleted) return { background: 'rgba(237, 228, 255, 0.82)', borderColor: '#a78bfa', boxShadow: '0 10px 15px -3px rgba(139, 92, 246, 0.2)' };
-  if (isFailed) return { background: 'rgba(254, 232, 236, 0.82)', borderColor: '#f87171' };
-  if (isActive) return { background: 'rgba(255, 249, 235, 0.78)', borderColor: '#facc15', boxShadow: '0 10px 15px -3px rgba(234, 179, 8, 0.2)' };
-  return { background: 'rgba(245, 238, 255, 0.55)', borderColor: 'rgba(196, 181, 253, 0.5)' };
 }

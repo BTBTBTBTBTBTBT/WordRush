@@ -533,6 +533,9 @@ object GameResultsService {
                 // daily_results rather than trusting the value just written.
             }) { filter { eq("id", userId) } }
             if (grantShield) ShieldService.grantMilestoneShield()
+            // FINISH_SPEC AI: feed the store-review gate (first play, last result, 7-day milestone).
+            StoreReview.notePlayed(won)
+            StoreReview.noteStreak(newDailyStreak, won && newDailyStreak != p.dailyLoginStreak)
 
             XpResult(
                 xpGain = xpGain, streakBonus = streakBonus, dailyBonus = dailyBonus,

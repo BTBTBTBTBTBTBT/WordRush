@@ -68,14 +68,16 @@ enum class VSScreen { QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, MATCH_GONE, 
  */
 sealed class VsLaunch {
     object Live : VsLaunch()
-    data class Bot(val kind: CpuKind, val ghostGuesses: Int? = null, val ghostTimeMs: Double? = null) : VsLaunch()
+    /** A bot game: [kind] sets the engine tier (or ghost / Bot of the Day); [castId]
+     *  names the cast bot (FINISH_SPEC D1; null = the kind's stand-in / the day's bot). */
+    data class Bot(val kind: CpuKind, val ghostGuesses: Int? = null, val ghostTimeMs: Double? = null, val castId: String? = null) : VsLaunch()
     data class Race(val challenge: VsChallengeService.ChallengeView) : VsLaunch()
     data class Send(val friendIds: List<String>, val link: Boolean) : VsLaunch()
 
     /** A stable key for the screen-local ViewModel. */
     val key: String get() = when (this) {
         Live -> "live"
-        is Bot -> "bot-${kind.key}"
+        is Bot -> "bot-${kind.key}" + (castId?.let { "-$it" } ?: "")
         is Race -> "race-${challenge.code}"
         is Send -> "send-${friendIds.joinToString(",")}-$link"
     }
@@ -172,6 +174,28 @@ class VSMatchViewModel(
 
     val opponentName: String get() = opponentInfo?.displayName ?: "Opponent"
 
+    // ── Bot banter (FINISH_SPEC D3, presentation only) ───────────────────────────
+    /** The cast bot's current in-match line (BotPersonas.line, kind, per character):
+     *  the HUD shows it in a speech bubble for a few seconds; null = none. */
+    var banter by mutableStateOf<String?>(null)
+        private set
+    /** The cast bot's last word on the finished match (its win / loss line), for the result screen. */
+    var endBanter by mutableStateOf<String?>(null)
+        private set
+    private var banterJob: Job? = null
+
+    /** Show the bot's line for [event] (cast bots only — never a person, a race or Your Ghost).
+     *  [ifQuiet] = only when no other line is showing (the near miss never talks over a solve). */
+    private fun sayBanter(event: BotPersonas.BotEvent, ifQuiet: Boolean = false) {
+        val cast = cpuCastId ?: return
+        if (!isCpu || race != null) return
+        if (ifQuiet && banter != null) return
+        val line = BotPersonas.line(cast, event) ?: return
+        banter = line
+        banterJob?.cancel()
+        banterJob = viewModelScope.launch { delay(3800); banter = null }
+    }
+
     private var calloutJob: Job? = null
     private var disconnectJob: Job? = null
     /** True once the server told us it no longer has our match ("Not in a match"
@@ -217,6 +241,8 @@ class VSMatchViewModel(
     var isCpu by mutableStateOf(false)
     var cpuPersona by mutableStateOf<CpuIdentity?>(null)
     private var cpuKind: CpuKind? = null
+    /** The cast bot playing (FINISH_SPEC D1; null for Your Ghost). */
+    val cpuCastId: String? get() = cpuPersona?.castId
     /** A bot stepped in for today's Daily Battle (§6): the game records as a bot
      *  game and writes the local `wordocious-vs-daily-<UTC day>` result. */
     private var cpuDailyBattle = false
@@ -246,6 +272,8 @@ class VSMatchViewModel(
     var cpuStreak by mutableStateOf(0)
     var cpuSessionWins by mutableStateOf(0)
     var cpuSessionLosses by mutableStateOf(0)
+    /** This win cleared the whole ladder (all ten rungs) — the result screen celebrates (presentation only). */
+    var ladderJustCleared by mutableStateOf(false)
 
     // Exposed read-only: the VS result FinalBoards replays multi-board/Gauntlet
     // recaps from the match seed (iOS build-87 parity).
@@ -297,7 +325,7 @@ class VSMatchViewModel(
         // solo run to send, or the live search (a private invite joins its queue).
         when (val l = launch) {
             is VsLaunch.Bot -> startCpu(
-                l.kind, ghostGuesses = l.ghostGuesses, ghostTimeMs = l.ghostTimeMs,
+                l.kind, ghostGuesses = l.ghostGuesses, ghostTimeMs = l.ghostTimeMs, castId = l.castId,
                 fixedSeed = if (l.kind == CpuKind.DAILY) generateDailySeed(CpuProgressionStore.todayUtc(), "${mode.name}_CPU") else null,
             )
             is VsLaunch.Race -> startRace(l.challenge)
@@ -306,12 +334,17 @@ class VSMatchViewModel(
         }
     }
 
-    /** The bot that steps in at 0:15 (§6): the Daily Battle gets Lexi; a Pro's
-     *  live search gets the ladder's next bot (Adapt once cleared). */
-    val stepInKind: CpuKind get() = when {
-        dailyVsActive || !isPro -> CpuKind.MEDIUM
-        else -> CpuKind.forLadder(CpuProgressionStore.nextLadderBot())
+    /** The bot that steps in at 0:15 (§6): the Daily Battle gets today's Bot of the
+     *  Day character (FINISH_SPEC D2); a Pro's live search gets the ladder's next bot
+     *  (Webster, the boss, once cleared). */
+    val stepInCastId: String get() = when {
+        // Web/iOS parity: the Daily Battle (and a free player's) step-in is today's Bot of
+        // the Day character (UTC weekday). It plays as that cast bot (its own kind), never as
+        // CpuKind.DAILY, so it doesn't count as the Bot of the Day game itself.
+        dailyVsActive || !isPro -> com.wordocious.core.BotCast.botOfTheDay(CpuProgressionStore.todayUtc()).id
+        else -> CpuProgressionStore.nextLadderBot()
     }
+    val stepInKind: CpuKind get() = CpuKind.forLadder(stepInCastId)
 
     /** The live random queue (§13): not a private invite, not the Daily Battle. */
     val isLiveRandomQueue: Boolean get() = launch == VsLaunch.Live && inviteCode == null && !dailyVsActive
@@ -324,6 +357,7 @@ class VSMatchViewModel(
         val daily = dailyVsActive
         startCpu(
             stepInKind,
+            castId = stepInCastId,
             fixedSeed = if (daily) generateDailySeed(todayUTCDate(), "DUEL_VS") else null,
             dailyBattle = daily,
         )
@@ -364,6 +398,7 @@ class VSMatchViewModel(
         val newSeed = com.wordocious.core.generateMatchSeed()
         val start = System.currentTimeMillis().toDouble() + 3000
         countdown = 3
+        SoundManager.fire(com.wordocious.app.data.FeedbackEvent.VS)   // spec U: match start (no intro here) = vs · medium
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
             var c = 3
@@ -446,8 +481,11 @@ class VSMatchViewModel(
     /** Swap the socket transport for a client-side CPU bot and start a match.
      *  Pro-gated in the UI. `ghost` supplies Beat-Your-Best pace; `fixedSeed` is
      *  the Bot-of-the-Day daily seed. */
-    fun startCpu(kind: CpuKind, ghostGuesses: Int? = null, ghostTimeMs: Double? = null, fixedSeed: String? = null, dailyBattle: Boolean = false) {
-        val oppId = CpuOpponent.opponentId(kind)
+    fun startCpu(kind: CpuKind, ghostGuesses: Int? = null, ghostTimeMs: Double? = null, fixedSeed: String? = null, dailyBattle: Boolean = false, castId: String? = null) {
+        // A cast bot (FINISH_SPEC D1): the named one, the day's host for the Bot of
+        // the Day, else the kind's stand-in. Its tier drives the engine, its own
+        // solve range narrows the tier's.
+        val oppId = CpuOpponent.opponentId(kind, castId ?: if (kind == CpuKind.GHOST || kind == CpuKind.DAILY) null else kind.botId)
         val id = CpuOpponent.identity(oppId)
         cpuKind = kind
         cpuPersona = id
@@ -456,11 +494,15 @@ class VSMatchViewModel(
         countdownJob?.cancel()
         service.leaveQueue()
         service.disconnect()
-        var config = BotConfig(opponentId = oppId, ghostGuesses = ghostGuesses, ghostTimeMs = ghostTimeMs, fixedSeed = fixedSeed)
-        if (kind == CpuKind.ADAPTIVE) {
+        var config = BotConfig(
+            opponentId = oppId, ghostGuesses = ghostGuesses, ghostTimeMs = ghostTimeMs, fixedSeed = fixedSeed,
+            guessRange = if (kind == CpuKind.GHOST) null else id.guesses,
+        )
+        val adaptive = kind == CpuKind.ADAPTIVE || (kind != CpuKind.GHOST && id.adaptive)
+        if (adaptive) {
             config = config.copy(adaptive = BotEngine.AdaptiveHint(winRate = minOf(0.9, 0.4 + CpuProgressionStore.load().streak * 0.05)))
         }
-        val engineDifficulty = if (kind == CpuKind.ADAPTIVE) BotDifficulty.ADAPTIVE
+        val engineDifficulty = if (adaptive) BotDifficulty.ADAPTIVE
         else runCatching { BotDifficulty.valueOf(id.tier.name) }.getOrDefault(BotDifficulty.MEDIUM)
         service = LocalBotMatchService(engineDifficulty, config)
         screen = VSScreen.QUEUE
@@ -754,6 +796,7 @@ class VSMatchViewModel(
         countdownIsRematch = true
         val start = System.currentTimeMillis().toDouble() + 3000
         countdown = 3
+        SoundManager.fire(com.wordocious.app.data.FeedbackEvent.VS)   // spec U: match start (no intro here) = vs · medium
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
             var c = 3
@@ -797,6 +840,7 @@ class VSMatchViewModel(
         myStatus = null
         myFinalGuesses = null
         callout = null; lastCallout = ""; calloutJob?.cancel(); calloutJob = null
+        banter = null; endBanter = null; banterJob?.cancel(); banterJob = null; ladderJustCleared = false
         opponentTyping = false; typingHideJob?.cancel()
         prevOppBoardsSolved = 0
         opponentGuessTick = 0
@@ -813,10 +857,18 @@ class VSMatchViewModel(
             myGuessCount += 1
             myGuessLog.add(guess)
             service.submitGuess(guess, boardIndex)
+            // D3 banter: one letter off on an open board → the bot cheers you on.
+            if (isCpu) {
+                val sol = vm.state.value.boards.getOrNull(boardIndex)?.solution
+                val greens = sol?.let { runCatching { com.wordocious.core.evaluateGuess(it.uppercase(), guess.uppercase()).tiles.count { t -> t.state == TileState.CORRECT } }.getOrNull() }
+                if (sol != null && greens != null && greens == sol.length - 1 && sol.length >= 2) sayBanter(BotPersonas.BotEvent.PLAYER_NEAR_MISS, ifQuiet = true)
+            }
         }
         vm.onBoardSolved = { idx ->
             service.boardSolved(idx)
             myBoardsSolved += 1   // cumulative across stages — see the property
+            // D3 banter: you just pulled ahead of the bot.
+            if (myBoardsSolved > opponent.boardsSolved && myBoardsSolved - 1 <= opponent.boardsSolved) sayBanter(BotPersonas.BotEvent.PLAYER_OVERTAKES)
         }
         // Gauntlet VS: relay each cleared stage so the opponent's "Stage N" badge
         // advances (mirrors iOS VSMatchViewModel onStageCompleted).
@@ -843,6 +895,7 @@ class VSMatchViewModel(
         }
         game = vm
         screen = VSScreen.MATCH
+        sayBanter(BotPersonas.BotEvent.MATCH_START)
     }
 
     private fun applyOpponentProgress(p: VSOpponentProgress) {
@@ -861,6 +914,8 @@ class VSMatchViewModel(
         if (p.boardsSolved > prevOppBoardsSolved && p.totalBoards > 1) {
             calloutText = "$name solved board ${p.boardsSolved}!"
         }
+        // D3 banter: the bot just solved a board.
+        if (p.boardsSolved > prevOppBoardsSolved) sayBanter(BotPersonas.BotEvent.BOT_SOLVED_BOARD)
         prevOppBoardsSolved = p.boardsSolved
 
         // applyToAll modes (quordle/octordle/rescue) send latestGuesses — the
@@ -882,7 +937,7 @@ class VSMatchViewModel(
             val greens = primary.tiles.count { it == "CORRECT" }
             val len = primary.tiles.size
             if (calloutText == null && len >= 2 && greens == len - 1) {
-                calloutText = "$name got $greens greens! 😱"
+                calloutText = "$name got $greens greens!"
             }
         }
         if (calloutText == null && !p.solved && p.attempts == modeMaxGuesses - 1) {
@@ -921,6 +976,17 @@ class VSMatchViewModel(
         myFinalBoards = game?.state?.value?.boards
         result = data
         clearDisconnectBanner()
+        // D3 banter: the bot's word on the result (a win line / a good-game line; none on a draw).
+        if (isCpu && race == null) {
+            banterJob?.cancel(); banter = null
+            endBanter = cpuCastId?.let { c ->
+                when (data.winner) {
+                    "player" -> BotPersonas.line(c, BotPersonas.BotEvent.BOT_LOSS)
+                    "draw" -> null
+                    else -> BotPersonas.line(c, BotPersonas.BotEvent.BOT_WIN)
+                }
+            }
+        }
         // Forfeit win: the opponent is gone — a rematch offer could only hang
         // on "Waiting…", so surface "No Rematch" instead.
         if (data.forfeit == true) rematch = RematchState.DECLINED
@@ -960,9 +1026,17 @@ class VSMatchViewModel(
             // a bot that stepped in for the Daily Battle writes the local daily
             // result (§6) — never a daily_results 'vs' row.
             val dayResult = when { draw -> com.wordocious.core.VsDayResult.DRAW; won -> com.wordocious.core.VsDayResult.WON; else -> com.wordocious.core.VsDayResult.LOST }
-            cpuKind?.let { CpuProgressionStore.recordLadder(it.botId, won) }
+            // The ladder folds the cast bot played; the Bot of the Day and Your Ghost never move it.
+            cpuKind?.let { k ->
+                val before = CpuProgressionStore.load().ladderCleared
+                val after = CpuProgressionStore.recordLadder(if (k == CpuKind.DAILY || k == CpuKind.GHOST) k.botId else (cpuCastId ?: k.botId), won).ladderCleared
+                val rungs = com.wordocious.core.VsLobby.LADDER_BOTS.size
+                ladderJustCleared = before < rungs && after >= rungs
+                // Spec U: ladder cleared = celebrate · success + heavy.
+                if (ladderJustCleared) SoundManager.fire(com.wordocious.app.data.FeedbackEvent.CELEBRATE)
+            }
             if (cpuKind == CpuKind.DAILY) CpuProgressionStore.recordBotOfDayResult(dayResult.raw, CpuProgressionStore.todayUtc())
-            if (cpuDailyBattle) com.wordocious.app.data.VsLobbyStore.recordDailyBotResult(dayResult, cpuPersona?.name ?: "Lexi")
+            if (cpuDailyBattle) com.wordocious.app.data.VsLobbyStore.recordDailyBotResult(dayResult, cpuPersona?.name ?: com.wordocious.core.BotCast.botOfTheDay(CpuProgressionStore.todayUtc()).name)
             // Bot games record ONLY the separate vs_cpu bucket — no XP, no
             // matches row, no head-to-head, no achievements, no daily lock.
             // A drawn bot match records no stats (vs_cpu has no draw column;
@@ -971,7 +1045,7 @@ class VSMatchViewModel(
             val secs = (data.playerTime / 1000).roundToInt()
             viewModelScope.launch { GameResultsService.recordCpuResult(mode, won, data.playerGuesses, secs) }
             val tier = cpuPersona?.tier ?: BotTier.MEDIUM
-            val outcome = CpuProgressionStore.recordGame(won, tier, BotPersonas.persona(tier).id)
+            val outcome = CpuProgressionStore.recordGame(won, tier, cpuCastId ?: BotPersonas.persona(tier).id)
             if (cpuKind == CpuKind.DAILY) CpuProgressionStore.recordBotOfDay(won, CpuProgressionStore.todayUtc())
             cpuStreak = outcome.progression.streak
             cpuMilestone = outcome.milestone

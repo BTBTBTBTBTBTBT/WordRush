@@ -29,6 +29,10 @@ struct FriendlyGameScreen: View {
         _game = State(initialValue: initial)
     }
 
+    /// The bed under the pinned keyboards: the Friends wallpaper's top color (§A1 —
+    /// no plain white).
+    static var keyboardBed: Color { PageTint.friends.barColor }
+
     /// The load error for a game that no longer exists (its scene is O3 not found).
     private static let goneLine = "This game isn't here anymore."
 
@@ -68,18 +72,20 @@ struct FriendlyGameScreen: View {
                     // O3 when the game is gone, R unplugged for any other error
                     // (MASCOT_SPEC §6, ART_SPEC §7).
                     SceneArt(loadError == Self.goneLine ? .notFound : .unplugged)
-                    Text(loadError).font(Brand.font(15, .black)).foregroundStyle(FriendsKit.ink).multilineTextAlignment(.center)
-                    Button { dismiss() } label: { FriendsPill(title: "FRIENDS", solid: false) }.buttonStyle(.squish)
+                    Text(loadError).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading).multilineTextAlignment(.center)
+                    Button { dismiss() } label: { CandyLabel(title: "Friends", symbol: "chevron.left") }
+                        .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
                 }
                 .padding(24)
                 Spacer()
             } else {
                 Spacer()
-                CastLoader(label: "LOADING GAME", labelColor: FriendsKit.mid, tipColor: FriendsKit.mid)
+                CastLoader(label: "LOADING GAME", labelColor: FriendsInk.bannerLabel, tipColor: FriendsInk.bannerLabel)
                 Spacer()
             }
         }
-        .background(FriendsKit.page.ignoresSafeArea())
+        // §A1: the Friends wallpaper (light, like the Friends tab), never plain white.
+        .background(PageBackground(tint: .friends, lightOnly: true).ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .task(id: gameId) { await poll() }
         .confirmationDialog("Leave this game?", isPresented: $confirmClose, titleVisibility: .visible) {
@@ -207,17 +213,21 @@ struct FriendlyGameScreen: View {
         let won = g.result == "win"
         let profile = AuthService.shared.profile
         let score = g.state.score
+        let accent = FriendsKit.tileAccent(g.kind)
         return VStack(spacing: 0) {
+            // §A1: the game's own top bar.
+            LinearGradient(colors: [accent, accent.mixed(over: .white, 0.6)], startPoint: .leading, endPoint: .trailing)
+                .frame(height: 6)
             VStack(alignment: .leading, spacing: 4) {
                 Text(headline(g))
-                    .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(FriendsKit.ink)
+                    .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(FriendsInk.bannerHead)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                Text(subLine(g)).font(Brand.font(10.5, .heavy)).tracking(0.4).foregroundStyle(FriendsKit.mid)
+                Text(subLine(g)).font(Brand.font(10.5, .heavy)).tracking(0.4).foregroundStyle(FriendsInk.bannerLabel)
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(Color.white.opacity(0.5))
+            .background(FriendsInk.pink.wash(0.08))
             HStack(spacing: 0) {
                 half(label: "YOU", url: profile?.avatarUrl, name: profile?.username ?? "You", emoji: profile?.avatarEmoji,
                      score: score?[g.me], online: false, leading: true, toPlay: toPlay(g, g.me))
@@ -238,6 +248,7 @@ struct FriendlyGameScreen: View {
             }
         }
         .clipShape(shape)
+        .overlay(shape.stroke(accent.wash(0.30), lineWidth: 1.5).allowsHitTesting(false))
         .shadow(color: won ? FriendsKit.purple.opacity(0.35) : FriendsKit.ink.opacity(0.08), radius: won ? 10 : 7, x: 0, y: 4)
     }
 
@@ -280,8 +291,8 @@ struct FriendlyGameScreen: View {
                         .padding(.top, 2)
                 }
                 if let score {
-                    Text("\(score)").font(Brand.font(34, .black)).monospacedDigit()
-                        .foregroundStyle(leading ? Color(hex: 0x4C1D95) : Color(hex: 0x78350F))
+                    // §A2: the score as a soft number.
+                    Text("\(score)").softNumber(34, color: leading ? FinishInk.softNumber : Color(hex: 0x78350F))
                         .contentTransition(.numericText())
                 }
             }
@@ -351,6 +362,16 @@ struct FriendlyGameScreen: View {
         return g.kind == .ghost || g.kind == .chain
     }
 
+    /// §L: the board's tray state — won (purple) / lost (slate) once the match is over.
+    private func trayState(_ g: FriendlyGameView) -> GameTrayState {
+        guard !g.isActive else { return .normal }
+        switch g.result {
+        case "win"?: return .won
+        case "loss"?: return .lost
+        default: return .normal
+        }
+    }
+
     private func errorText(_ m: String) -> some View {
         Text(m).font(Brand.font(12, .heavy)).foregroundStyle(Color(hex: 0xDC2626))
             .multilineTextAlignment(.center)
@@ -360,11 +381,6 @@ struct FriendlyGameScreen: View {
     private func chainCount(_ g: FriendlyGameView) -> Int {
         if case .chain(let c) = g.state { return c.words.count }
         return 0
-    }
-
-    /// Whose color a letter wears in Ghost and Word Chain: yours purple, theirs amber.
-    private func sideColor(_ side: FriendlySide, me: FriendlySide) -> Color {
-        side == me ? FriendsKit.purple : FriendsKit.amber
     }
 
     // Rock Paper Scissors
@@ -380,6 +396,8 @@ struct FriendlyGameScreen: View {
                 RpsReveal(round: r.rounds.count, mine: last[me], theirs: last[me.other],
                           winner: last.winner.map { $0 == me ? 1 : 2 } ?? 0, them: themName)
                     .id(r.rounds.count)
+                    .frame(maxWidth: .infinity)
+                    .gameTray(accent: FriendsKit.tileAccent(.rps), state: g.isActive ? .normal : trayState(g))
             }
             if g.isActive {
                 VStack(spacing: 6) {
@@ -396,35 +414,42 @@ struct FriendlyGameScreen: View {
                     if theirs != nil {
                         Text("✓ \(themName.uppercased()) PICKED").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsKit.green)
                     } else {
-                        Text("\(themName.uppercased()) IS PICKING…").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsKit.label)
+                        Text("\(themName.uppercased()) IS PICKING…").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsInk.muted)
                     }
                 }
                 VStack(spacing: 8) {
-                    VSSectionLabel(text: "YOUR PICK")
+                    FriendsLabel("Your pick", color: FriendsInk.section)
                     HStack(spacing: 10) {
                         ForEach(RpsPick.allCases, id: \.self) { p in
                             let selected = mine == p
+                            let rps = FriendsKit.tileAccent(.rps)
                             Button { send(.rps(p)) } label: {
                                 VStack(spacing: 4) {
-                                    Image(art(p)).resizable().interpolation(.high).scaledToFit().frame(width: 74, height: 74)
+                                    Image(art(p)).resizable().interpolation(.high).scaledToFit().frame(width: 70, height: 70)
+                                        .accessibilityHidden(true)   // §AB: the word below names it
                                     Text(p.rawValue.uppercased()).font(Brand.font(11, .black)).tracking(0.6)
-                                        .foregroundStyle(selected ? .white : FriendsKit.ink)
+                                        .foregroundStyle(selected ? .white : FriendsInk.heading)
                                 }
-                                .frame(width: 104, height: 118)
+                                .frame(maxWidth: .infinity).frame(height: 114)
+                                // §A1: tinted pick cards (selected = filled purple).
                                 .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(selected ? FriendsKit.purple : Color.white)
-                                    .shadow(color: selected ? FriendsKit.purple.opacity(0.55) : Color(hex: 0x4C1D95).opacity(0.08),
-                                            radius: selected ? 9 : 5, y: 2))
+                                    .fill(selected ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA66BFF), FriendsKit.purple], startPoint: .top, endPoint: .bottom))
+                                                   : AnyShapeStyle(rps.wash(0.13)))
+                                    .shadow(color: selected ? FriendsKit.purple.opacity(0.55) : rps.opacity(0.18),
+                                            radius: selected ? 9 : 5, y: 3))
+                                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(selected ? Color(hex: 0x6D28D9) : rps.wash(0.34), lineWidth: 1.5))
                                 .opacity(mine != nil && !selected ? 0.45 : 1)
                             }
-                            .buttonStyle(PressableStyle())
+                            .buttonStyle(.squish)
                             .disabled(mine != nil || sending)
                             .accessibilityLabel(p.rawValue.capitalized)
                             .accessibilityAddTraits(selected ? .isSelected : [])
                         }
                     }
+                    .gameTray(accent: FriendsKit.tileAccent(.rps), state: trayState(g))
                     Text(mine != nil ? "Locked in. Both picks flip at once." : "Both picks flip at once.")
-                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                 }
             }
         }
@@ -435,8 +460,11 @@ struct FriendlyGameScreen: View {
     @ViewBuilder private func tttBoard(_ g: FriendlyGameView, _ t: TttState) -> some View {
         let me = g.me
         let myMove = g.isActive && g.yourTurn
+        // §J2: the winning three glow.
+        let line = Set(FriendlyGames.tttLine(t.board)?.cells ?? [])
+        let accent = FriendsKit.tileAccent(.ttt)
         VStack(spacing: 12) {
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(98), spacing: 10), count: 3), spacing: 10) {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(92), spacing: 10), count: 3), spacing: 10) {
                 ForEach(0..<9, id: \.self) { i in
                     let mark = t.board[i]
                     let wins: Bool = {
@@ -445,42 +473,76 @@ struct FriendlyGameScreen: View {
                         return FriendlyGames.tttLine(b) != nil
                     }()
                     Button { send(.ttt(i)) } label: {
-                        ZStack {
-                            if let mark {
-                                let mine = mark == me
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(mine ? FriendsKit.purple : FriendsKit.amber)
-                                    .shadow(color: (mine ? FriendsKit.purple : FriendsKit.amber).opacity(0.4), radius: 5, y: 2)
-                                Image(systemName: mine ? "xmark" : "circle")
-                                    .font(.system(size: 40, weight: .heavy)).foregroundStyle(.white)
-                                    .transition(.scale.combined(with: .opacity))
-                            } else {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white)
-                                    .shadow(color: wins ? FriendsKit.purple.opacity(0.45) : Color(hex: 0x4C1D95).opacity(0.08), radius: wins ? 8 : 5, y: 2)
-                                if wins {
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .strokeBorder(FriendsKit.purple, style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
-                                }
-                            }
-                        }
-                        .frame(width: 98, height: 98)
+                        tttCell(mark: mark, mine: mark == me, wins: wins, glow: line.contains(i))
                     }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(.squish)
                     .disabled(!myMove || mark != nil || sending)
                     .accessibilityLabel(mark == nil ? "Empty tile \(i + 1)" : mark == me ? "Your tile" : "\(themName)'s tile")
                 }
             }
+            // §L: the board sits on the shared tray (no grid lines).
+            .gameTray(accent: accent, state: trayState(g))
             HStack(spacing: 16) {
-                legend("YOU · X", FriendsKit.purple)
-                legend("\(themName.uppercased()) · O", FriendsKit.amber)
+                pieceLegend("YOU · X", piece: "art-piece-ttt-x", fallback: FriendsKit.purple)
+                pieceLegend("\(themName.uppercased()) · O", piece: "art-piece-ttt-o", fallback: FriendsInk.pink)
             }
+        }
+    }
+
+    /// One Tic-Tac-Tile cell: an empty frosted tile (dashed purple when it would
+    /// win), or the glossy X (yours, purple) / O (theirs, pink) piece art that drops
+    /// in with the type pop (§J2); the winning three glow.
+    private func tttCell(mark: FriendlySide?, mine: Bool, wins: Bool, glow: Bool) -> some View {
+        let side: CGFloat = 92
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let tint = mine ? FriendsKit.purple : FriendsInk.pink
+        return ZStack {
+            if mark != nil {
+                shape.fill(tint.wash(0.16))
+                shape.stroke(tint.wash(glow ? 0.9 : 0.4), lineWidth: glow ? 2.5 : 1.5)
+                tttPiece(mine: mine)
+                    .padding(10)
+                    .shadow(color: glow ? tint.opacity(0.75) : .clear, radius: glow ? 12 : 0)
+            } else {
+                GlossyTile(face: .empty, width: side)
+                if wins {
+                    shape.strokeBorder(FriendsKit.purple, style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
+                }
+            }
+        }
+        .frame(width: side, height: side)
+        .shadow(color: glow ? tint.opacity(0.45) : .clear, radius: glow ? 10 : 0)
+        .modifier(TypePop(letter: mark == nil ? "" : "x", size: CGSize(width: side, height: side)))
+    }
+
+    /// The X / O piece art (falls back to the old drawn glyph when missing).
+    @ViewBuilder private func tttPiece(mine: Bool) -> some View {
+        let name = mine ? "art-piece-ttt-x" : "art-piece-ttt-o"
+        if ArtAsset.exists(name) {
+            Image(name).resizable().interpolation(.high).scaledToFit().accessibilityHidden(true)
+        } else {
+            Image(systemName: mine ? "xmark" : "circle")
+                .font(.system(size: 40, weight: .heavy))
+                .foregroundStyle(mine ? FriendsKit.purple : FriendsInk.pink)
+        }
+    }
+
+    private func pieceLegend(_ text: String, piece: String, fallback: Color) -> some View {
+        HStack(spacing: 5) {
+            if ArtAsset.exists(piece) {
+                Image(piece).resizable().interpolation(.high).scaledToFit().frame(width: 16, height: 16)
+                    .accessibilityHidden(true)
+            } else {
+                RoundedRectangle(cornerRadius: 4).fill(fallback).frame(width: 12, height: 12)
+            }
+            Text(text).font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsInk.muted).lineLimit(1)
         }
     }
 
     private func legend(_ text: String, _ c: Color) -> some View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 4).fill(c).frame(width: 12, height: 12)
-            Text(text).font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsKit.label).lineLimit(1)
+            Text(text).font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsInk.muted).lineLimit(1)
         }
     }
 
@@ -489,43 +551,43 @@ struct FriendlyGameScreen: View {
     @ViewBuilder private func coinBoard(_ g: FriendlyGameView, _ c: CoinState) -> some View {
         let myCall = g.isActive && g.yourTurn
         VStack(spacing: 14) {
-            SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count)
-            if let last = c.rounds.last {
-                let who = last.caller == g.me ? "You" : themName
-                Text("\(who) called \(last.call.rawValue) · it landed \(last.flip.rawValue)")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+            // §L: the coin sits on the shared tray.
+            VStack(spacing: 8) {
+                SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count)
+                if let last = c.rounds.last {
+                    let who = last.caller == g.me ? "You" : themName
+                    Text("\(who) called \(last.call.rawValue) · it landed \(last.flip.rawValue)")
+                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
             if g.isActive {
                 if myCall {
-                    VSSectionLabel(text: "YOUR CALL")
+                    FriendsLabel("Your call", color: FriendsInk.section)
                     HStack(spacing: 10) {
                         callButton("HEADS", solid: true) { send(.coin(.heads)) }
                         callButton("TAILS", solid: false) { send(.coin(.tails)) }
                     }
                 } else {
-                    Text("\(themName.uppercased()) CALLS").font(Brand.font(13, .black)).tracking(0.6).foregroundStyle(FriendsKit.mid)
+                    Text("\(themName.uppercased()) CALLS").font(Brand.font(13, .black)).tracking(0.6).foregroundStyle(FriendsInk.bannerLabel)
                 }
             }
             VStack(spacing: 6) {
-                VSSectionLabel(text: "WHAT'S ON THE LINE")
-                Text(c.stake).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.ink)
-                    .padding(.horizontal, 14).frame(height: 30)
-                    .background(Capsule().fill(Color.white))
-                    .overlay(Capsule().stroke(FriendsKit.solid, lineWidth: 2))
+                FriendsLabel("What's on the line", color: FriendsInk.section)
+                Text(c.stake).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.chip)
+                    .padding(.horizontal, 14).frame(minHeight: 30)
+                    .friendsChip(FriendsKit.solid, strong: true)
             }
         }
     }
 
+    /// §A8: HEADS (purple) / TAILS (pink) candy buttons.
     private func callButton(_ title: String, solid: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title).font(Brand.font(15, .black)).tracking(0.8)
-                .foregroundStyle(solid ? .white : FriendsKit.purple)
-                .frame(maxWidth: .infinity).frame(height: 50)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(solid ? FriendsKit.purple : Color(hex: 0xEDE9FE))
-                    .shadow(color: solid ? FriendsKit.purple.opacity(0.4) : .clear, radius: 6, y: 3))
-        }
-        .buttonStyle(PressableStyle())
-        .disabled(sending)
+        Button(action: action) { CandyLabel(title: title) }
+            .buttonStyle(CandyButtonStyle(variant: solid ? .purple : .pink, size: .large))
+            .disabled(sending)
+            .accessibilityLabel(title.capitalized)
     }
 
     // Pass the Puzzle
@@ -555,8 +617,8 @@ struct FriendlyGameScreen: View {
                                     .overlay(AvatarOutline(tile: AvatarView.showsTile(g.opponent.avatarUrl)).stroke(FriendsKit.amber, lineWidth: 2))
                             }
                         } else {
-                            Circle().fill(Color.white).frame(width: 26, height: 26)
-                                .overlay(Circle().stroke(Color(hex: 0xE5E7EB), lineWidth: 1))
+                            Circle().fill(FriendsKit.tileAccent(.pass).wash(0.14)).frame(width: 26, height: 26)
+                                .overlay(Circle().stroke(FriendsKit.tileAccent(.pass).wash(0.4), lineWidth: 1))
                         }
                     }
                     .frame(width: 28)
@@ -565,39 +627,36 @@ struct FriendlyGameScreen: View {
                     }
                 }
             }
-            if !g.isActive, let answer = g.answer {
-                Text("THE WORD WAS \(answer.uppercased())").font(Brand.font(13, .black)).tracking(0.8)
-                    .foregroundStyle(FriendsKit.ink).padding(.top, 8)
-            } else if g.isActive && !g.yourTurn {
-                Text("\(themName)'s guess — you'll see it land here.").font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
-                    .padding(.top, 6)
-            }
+        }
+        // §L: the board sits on the shared tray.
+        .gameTray(accent: FriendsKit.tileAccent(.pass), state: trayState(g))
+        if !g.isActive, let answer = g.answer {
+            Text("THE WORD WAS \(answer.uppercased())").font(Brand.font(13, .black)).tracking(0.8)
+                .foregroundStyle(FriendsInk.heading).padding(.top, 4)
+        } else if g.isActive && !g.yourTurn {
+            Text("\(themName)'s guess — you'll see it land here.").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                .padding(.top, 2)
         }
     }
 
+    /// §B1: the Pass the Puzzle tiles are the game kit's glossy tiles (purple right
+    /// spot, gold wrong spot, slate not in the word; frosted empty, typed white).
     private func passTile(row: Int, col: Int, p: PassState, typing: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
         var letter = ""
-        var fill: Color? = nil
+        var face: GlossyFace = .empty
         if row < p.guesses.count {
             let gs = p.guesses[row]
             let chars = Array(gs.word)
             letter = col < chars.count ? String(chars[col]) : ""
-            fill = col < gs.tiles.count ? tileColor(gs.tiles[col]) : FriendsKit.slate
+            let raw = col < gs.tiles.count ? gs.tiles[col] : TileState.absent.rawValue
+            face = raw == TileState.correct.rawValue ? .correct : raw == TileState.present.rawValue ? .present : .absent
         } else if typing && row == p.guesses.count {
             let chars = Array(passInput)
             letter = col < chars.count ? String(chars[col]) : ""
+            face = letter.isEmpty ? .empty : .typed
         }
-        return ZStack {
-            if let fill {
-                shape.fill(fill)
-            } else {
-                shape.fill(Color.white)
-                shape.strokeBorder(letter.isEmpty ? Color(hex: 0xE5E7EB) : FriendsKit.purple.opacity(0.6), lineWidth: 2)
-            }
-            Text(letter).font(Brand.font(21, .black)).foregroundStyle(fill == nil ? Color(hex: 0x111827) : .white)
-        }
-        .frame(width: 44, height: 44)
+        return GlossyTile(face: face, letter: letter, width: 44)
+            .modifier(TypePop(letter: face == .typed ? letter : "", size: CGSize(width: 44, height: 44)))
     }
 
     private func passKeyboard(_ g: FriendlyGameView, _ p: PassState) -> some View {
@@ -625,11 +684,12 @@ struct FriendlyGameScreen: View {
                 guard mine, !passInput.isEmpty else { return }
                 passInput.removeLast()
             },
-            keyFill: { l in
+            // §B2: the keys take the game kit's state colors.
+            keyState: { l in
                 switch best[Character(l)] {
-                case 3: return FriendsKit.purple
-                case 2: return FriendsKit.amber
-                case 1: return FriendsKit.slate
+                case 3: return .correct
+                case 2: return .present
+                case 1: return .absent
                 default: return nil
                 }
             },
@@ -637,7 +697,7 @@ struct FriendlyGameScreen: View {
         )
         .opacity(mine ? 1 : 0.5)
         .padding(.bottom, 6)
-        .background(FriendsKit.page)
+        .background(Self.keyboardBed)
     }
 
     // Ghost (§9)
@@ -654,53 +714,54 @@ struct FriendlyGameScreen: View {
                     .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
             if g.isActive {
-                VSSectionLabel(text: s.fragment.isEmpty ? (myLetter ? "START THE WORD" : "\(themName.uppercased()) STARTS") : "THE LETTERS SO FAR")
+                FriendsLabel(s.fragment.isEmpty ? (myLetter ? "Start the word" : "\(themName) starts") : "The letters so far",
+                             color: FriendsInk.section)
                 HStack(spacing: 6) {
                     ForEach(letters.indices, id: \.self) { i in
                         let by = i < s.letters.count ? s.letters[i] : me.other
-                        ghostTile(letters[i], fill: sideColor(by, me: me))
+                        ghostTile(letters[i], mine: by == me)
                             .transition(.scale.combined(with: .opacity))
                     }
                     if myLetter {
-                        ghostTile(ghostPending ?? "", fill: nil)
+                        ghostTile(ghostPending ?? "", mine: nil)
                     } else if letters.isEmpty {
-                        ghostTile("", fill: nil).opacity(0.5)
+                        ghostTile("", mine: nil).opacity(0.5)
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .animation(.spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
+                // §L: the fragment sits on the shared tray.
+                .gameTray(accent: FriendsKit.tileAccent(.ghost))
+                .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
                 if !myLetter {
-                    Text("\(themName) is adding a letter…").font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    Text("\(themName) is adding a letter…").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                 }
                 Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 16) {
-                    legend("YOU", FriendsKit.purple)
-                    legend(themName.uppercased(), FriendsKit.amber)
+                    legend("YOU", TilePalette.correct.base)
+                    legend(themName.uppercased(), TilePalette.present.base)
                 }
             }
         }
     }
 
-    /// One fragment tile (52 px, radius 10): colored by who played it, or the
-    /// dashed tile for your next letter.
-    private func ghostTile(_ letter: String, fill: Color?) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
-        return ZStack {
-            if let fill {
-                shape.fill(fill).shadow(color: fill.opacity(0.4), radius: 5, y: 2)
-            } else {
-                shape.fill(Color.white)
-                shape.strokeBorder(letter.isEmpty ? FriendsKit.purple.opacity(0.45) : FriendsKit.purple,
-                                   style: StrokeStyle(lineWidth: 2, dash: letter.isEmpty ? [5, 4] : []))
+    /// One fragment tile: a §B1 glossy tile — yours purple (right-spot face),
+    /// theirs gold (wrong-spot face) — or the frosted tile for your next letter
+    /// (dashed while empty, typed once picked).
+    private func ghostTile(_ letter: String, mine: Bool?) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 11, style: .continuous)
+        let face: GlossyFace = mine.map { $0 ? .correct : .present } ?? (letter.isEmpty ? .empty : .typed)
+        return GlossyTile(face: face, letter: letter, width: 46)
+            .overlay {
+                if mine == nil && letter.isEmpty {
+                    shape.strokeBorder(FriendsKit.purple.opacity(0.45), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
+                        .padding(.bottom, 3)
+                }
             }
-            Text(letter).font(Brand.font(26, .black)).foregroundStyle(fill == nil ? FriendsKit.purple : .white)
-                .minimumScaleFactor(0.6)
-        }
-        .frame(maxWidth: 52, maxHeight: 52)
-        .aspectRatio(1, contentMode: .fit)
-        .accessibilityLabel(letter.isEmpty ? "Your next letter" : letter)
+            .modifier(TypePop(letter: mine == nil ? letter : "", size: CGSize(width: 46, height: 46)))
+            .frame(maxWidth: 46, maxHeight: 46)
+            .accessibilityLabel(letter.isEmpty ? "Your next letter" : letter)
     }
 
     /// `<WORD> — <name> spelled a word` / `<LETTERS> — no word starts with that`.
@@ -710,19 +771,19 @@ struct FriendlyGameScreen: View {
         let text = r.reason == .word ? "\(r.fragment) — \(loser) spelled a word" : "\(r.fragment) — no word starts with that"
         return VStack(spacing: 4) {
             Text("ROUND \(round) · \(winner) TAKE\(r.loser == me ? "S" : "") IT")
-                .font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsKit.mid)
-            Text(text).font(Brand.font(14, .black)).foregroundStyle(FriendsKit.ink)
+                .font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsInk.bannerLabel)
+            Text(text).font(Brand.font(14, .black)).foregroundStyle(FriendsInk.heading)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(FriendsKit.soft))
+        .friendsCard(accent: FriendsKit.tileAccent(.ghost), bar: [FriendsKit.tileAccent(.ghost)], radius: 16, barHeight: 5,
+                     tint: 0.10, line: 0.28)
     }
 
     /// Letters only: a tap fills the dashed tile; `ADD <L>` plays it (web parity).
     private func ghostKeyboard(_ g: FriendlyGameView, _ s: GhostState) -> some View {
         let mine = g.yourTurn && !sending
-        let ghostColor = FriendsKit.color(.ghost)
         let play = {
             guard mine, let l = ghostPending else { return }
             send(.ghost(l))
@@ -730,17 +791,12 @@ struct FriendlyGameScreen: View {
         return VStack(spacing: 8) {
             if let moveError { errorText(moveError).padding(.horizontal, 16) }
             if g.yourTurn {
+                // §A8: the purple candy ADD (dimmed until a letter is picked).
                 Button(action: play) {
-                    Group {
-                        if sending { ProgressView().tint(.white) }
-                        else { Text(ghostPending.map { "ADD \($0)" } ?? "TAP A LETTER").font(Brand.font(15, .black)).tracking(0.8) }
-                    }
-                    .foregroundStyle(.white).frame(maxWidth: .infinity).frame(height: 46)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(ghostColor)
-                        .shadow(color: ghostColor.opacity(ghostPending == nil ? 0 : 0.4), radius: 6, y: 3))
-                    .opacity(ghostPending == nil ? 0.45 : 1)
+                    if sending { ProgressView().tint(.white) }
+                    else { CandyLabel(title: ghostPending.map { "Add \($0)" } ?? "Tap a letter", symbol: ghostPending == nil ? nil : "plus") }
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium))
                 .disabled(ghostPending == nil || sending)
                 .padding(.horizontal, 16)
             }
@@ -767,7 +823,7 @@ struct FriendlyGameScreen: View {
             .opacity(mine ? 1 : 0.5)
         }
         .padding(.top, 6).padding(.bottom, 6)
-        .background(FriendsKit.page)
+        .background(Self.keyboardBed)
     }
 
     // Word Chain (§9)
@@ -777,7 +833,8 @@ struct FriendlyGameScreen: View {
         VStack(spacing: 8) {
             if c.words.isEmpty {
                 Text(g.isActive && g.yourTurn ? "Open the chain with any 5- to 7-letter word." : "\(themName) opens the chain.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                    .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
             ForEach(Array(c.words.enumerated()), id: \.offset) { i, w in
@@ -785,39 +842,44 @@ struct FriendlyGameScreen: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             Color.clear.frame(height: 1).id("chain-end")
-            HStack(spacing: 16) {
-                legend("YOU", FriendsKit.purple)
-                legend(themName.uppercased(), FriendsKit.amber)
-            }
-            .padding(.top, 2)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
+        // §L: the chain sits on the shared tray.
+        .gameTray(accent: FriendsKit.tileAccent(.chain), state: trayState(g))
+        .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
+        HStack(spacing: 16) {
+            legend("YOU", TilePalette.correct.base)
+            legend(themName.uppercased(), TilePalette.present.base)
+        }
     }
 
     /// One word pill: tiles (30 px) in the player's color and a `+5` chip; the
     /// newest word's last letter glows (the next word starts with it).
     private func chainRow(_ w: ChainWord, me: FriendlySide, newest: Bool) -> some View {
         let letters = Array(w.word).map(String.init)
-        let fill = sideColor(w.by, me: me)
+        let mine = w.by == me
+        let side = mine ? FriendsKit.purple : FriendsKit.amber
+        let green = FriendsKit.tileAccent(.chain)
         return HStack(spacing: 4) {
             ForEach(letters.indices, id: \.self) { i in
                 let glow = newest && i == letters.count - 1
-                Text(letters[i]).font(Brand.font(15, .black)).foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
-                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(fill))
+                // §B1 glossy tiles in the player's color (purple yours, gold theirs);
+                // the newest word's last letter glows green (the next word starts with it).
+                GlossyTile(face: mine ? .correct : .present, letter: letters[i], width: 30,
+                           glow: green, glowAmount: glow ? 1 : 0)
                     .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .stroke(glow ? FriendsKit.color(.chain) : .clear, lineWidth: 2.5))
-                    .shadow(color: glow ? FriendsKit.color(.chain).opacity(0.7) : .clear, radius: glow ? 7 : 0)
+                        .stroke(glow ? green : .clear, lineWidth: 2.5).padding(.bottom, 2))
                     .scaleEffect(glow ? 1.08 : 1)
             }
             Spacer(minLength: 6)
-            Text("+\(w.points)").font(Brand.font(12, .black)).monospacedDigit()
-                .foregroundStyle(w.by == me ? FriendsKit.purple : Color(hex: 0xB45309))
-                .padding(.horizontal, 9).frame(height: 24)
-                .background(Capsule().fill(w.by == me ? Color(hex: 0xEDE9FE) : Color(hex: 0xFEF3C7)))
+            HStack(spacing: 0) {
+                Text("+").font(Brand.font(12, .black)).foregroundStyle(FinishInk.softNumber)
+                Text("\(w.points)").softNumber(14, color: FinishInk.softNumber)
+            }
+            .padding(.horizontal, 9).frame(minHeight: 26)
+            .friendsChip(side)
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
-        .vsCard(radius: 14)
+        .friendsCard(accent: side, radius: 14, tint: 0.07, line: 0.24)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(w.by == me ? "You" : themName) played \(w.word), plus \(w.points)")
     }
@@ -840,7 +902,7 @@ struct FriendlyGameScreen: View {
                 .padding(.horizontal, 16)
             } else {
                 Text("\(themName)'s word — it lands in the chain here.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
             }
             if let moveError { errorText(moveError).padding(.horizontal, 16) }
             LetterKeyboard(
@@ -868,28 +930,42 @@ struct FriendlyGameScreen: View {
             .opacity(mine ? 1 : 0.5)
         }
         .padding(.top, 8).padding(.bottom, 6)
-        .background(FriendsKit.page)
+        .background(Self.keyboardBed)
     }
 
+    /// Your word's tiles: the locked first letter a glossy green tile with a lock;
+    /// the rest §B1 glossy tiles (frosted empty — dashed when optional — typed white).
     private func chainInputTile(_ letter: String, locked: Bool, optional: Bool) -> some View {
         let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
-        let green = FriendsKit.color(.chain)
-        return ZStack {
-            if locked {
-                shape.fill(green).shadow(color: green.opacity(0.45), radius: 6, y: 2)
-            } else {
-                shape.fill(Color.white)
-                shape.strokeBorder(letter.isEmpty ? Color(hex: 0xE5E7EB) : FriendsKit.purple.opacity(0.7),
-                                   style: StrokeStyle(lineWidth: 2, dash: optional && letter.isEmpty ? [4, 3] : []))
+        let green = FriendsKit.tileAccent(.chain)
+        return GeometryReader { geo in
+            let w = min(geo.size.width, geo.size.height)
+            ZStack {
+                if locked {
+                    ZStack(alignment: .top) {
+                        shape.fill(Color.black.mixed(over: green, 0.35))
+                        shape.fill(LinearGradient(colors: [green.mixed(over: .white, 0.7), green], startPoint: .top, endPoint: .bottom))
+                            .padding(.bottom, 3)
+                    }
+                    .shadow(color: green.opacity(0.45), radius: 6, y: 2)
+                    Text(letter).font(Brand.font(21, .black)).foregroundStyle(.white).padding(.bottom, 3)
+                    Image(systemName: "lock.fill").font(.system(size: 7, weight: .black)).foregroundStyle(.white.opacity(0.85))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(4)
+                } else {
+                    GlossyTile(face: letter.isEmpty ? .empty : .typed, letter: letter, width: w)
+                        .modifier(TypePop(letter: letter, size: CGSize(width: w, height: w)))
+                    if optional && letter.isEmpty {
+                        shape.strokeBorder(FriendsKit.purple.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                            .padding(.bottom, 2)
+                    }
+                }
             }
-            Text(letter).font(Brand.font(21, .black)).foregroundStyle(locked ? .white : Color(hex: 0x111827))
-            if locked {
-                Image(systemName: "lock.fill").font(.system(size: 7, weight: .black)).foregroundStyle(.white.opacity(0.85))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(4)
-            }
+            .frame(width: w, height: w)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: 44, maxHeight: 44)
         .aspectRatio(1, contentMode: .fit)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(locked ? "\(letter), locked" : letter.isEmpty ? "Empty" : letter)
     }
 
@@ -897,23 +973,17 @@ struct FriendlyGameScreen: View {
 
     private func overButtons(_ g: FriendlyGameView) -> some View {
         VStack(spacing: 10) {
+            // §A8: purple candy Rematch, pink candy back to Friends.
             Button { rematch(g) } label: {
-                Group {
-                    if rematching { ProgressView().tint(.white) }
-                    else { Text("REMATCH").font(Brand.font(14, .black)).tracking(0.6) }
-                }
-                .foregroundStyle(.white).frame(maxWidth: .infinity).frame(height: 50)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(FriendsKit.solid)
-                    .shadow(color: FriendsKit.solid.opacity(0.35), radius: 6, y: 3))
+                if rematching { ProgressView().tint(.white) }
+                else { CandyLabel(title: "Rematch", symbol: "arrow.counterclockwise") }
             }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
             .disabled(rematching)
             Button { dismiss() } label: {
-                Text("FRIENDS").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(FriendsKit.solid)
-                    .frame(maxWidth: .infinity).frame(height: 50)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(FriendsKit.soft))
+                CandyLabel(title: "Friends", symbol: "chevron.left")
             }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
         }
         .padding(.top, 4)
     }
@@ -931,15 +1001,16 @@ private struct RpsReveal: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Text("ROUND \(round)").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsKit.label)
+            Text("ROUND \(round)").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsInk.muted)
             HStack(spacing: 18) {
                 card(mine, label: "YOU", win: winner == 1, tint: FriendsKit.purple)
-                Text(winner == 0 ? "TIE" : "VS").font(Brand.font(12, .black)).foregroundStyle(FriendsKit.label)
+                Text(winner == 0 ? "TIE" : "VS").font(Brand.font(12, .black)).foregroundStyle(FriendsInk.muted)
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber)
             }
         }
         .onAppear {
             guard !flipped else { return }
+            if Theme.reduceMotion { flipped = true; return }
             withAnimation(.spring(response: 0.55, dampingFraction: 0.7).delay(0.05)) { flipped = true }
         }
     }
@@ -947,12 +1018,14 @@ private struct RpsReveal: View {
     private func card(_ p: RpsPick, label: String, win: Bool, tint: Color) -> some View {
         VStack(spacing: 3) {
             Image("friends-\(p.rawValue)").resizable().interpolation(.high).scaledToFit().frame(width: 58, height: 58)
-            Text(label).font(Brand.font(9.5, .black)).tracking(0.5).foregroundStyle(win ? tint : FriendsKit.label).lineLimit(1)
+                .accessibilityLabel(p.rawValue.capitalized)   // §AB: the pick, not the asset name
+            Text(label).font(Brand.font(9.5, .black)).tracking(0.5).foregroundStyle(win ? tint : FriendsInk.muted).lineLimit(1)
         }
         .frame(width: 84, height: 92)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white)
+        // §A1: tinted in the player's color, never plain white.
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint.wash(win ? 0.18 : 0.10))
             .shadow(color: win ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win ? 10 : 4, y: 2))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(win ? tint : .clear, lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(win ? tint : tint.wash(0.32), lineWidth: win ? 2 : 1.5))
         .rotation3DEffect(.degrees(flipped ? 0 : 90), axis: (x: 0, y: 1, z: 0))
         .opacity(flipped ? 1 : 0)
     }
@@ -967,6 +1040,7 @@ private struct SpinningCoin: View {
     var body: some View {
         Image(face == .heads ? "friends-heads" : "friends-tails")
             .resizable().interpolation(.high).scaledToFit()
+            .accessibilityLabel(face == .heads ? "Coin: heads" : "Coin: tails")   // §AB
             .frame(width: 150, height: 150)
             .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0))
             .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)

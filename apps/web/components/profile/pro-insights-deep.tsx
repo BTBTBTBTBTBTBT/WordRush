@@ -9,6 +9,10 @@ import {
   fetchWordAlmanac, fetchGauntletStageStats, fetchHintHonesty,
   type SkillRadarData, type StatsPlayType,
 } from '@/lib/stats-service';
+import { alphaHex } from '@/lib/soft-surface';
+import { SoftNum } from '@/components/ui/soft-number';
+import { Icon3D } from '@/components/ui/icon3d';
+import { UiIcon } from '@/components/ui/ui-icon';
 
 // Pro Insights deep layer (restat R4): the stat-nerd centerpiece. Every card
 // self-fetches (SWR) so pages just drop them in; all data derives from stored
@@ -72,7 +76,7 @@ function StatsEmptyCard({ title, accent = '#7c3aed', hint }: { title: string; ac
       <SectionHeader label={title} accent={accent} />
       <KitCard>
         <div className="flex items-center justify-center gap-2 py-3 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          <span>📊</span>
+          <Icon3D name="tab-stats" size={18} />
           <span>{hint}</span>
         </div>
       </KitCard>
@@ -113,7 +117,7 @@ export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolea
     return <StatsEmptyCard title="Rivalries" accent="#ec4899" hint="Face the same opponent a few times to start a rivalry." />;
   }
   const card = (
-    <KitCard>
+    <KitCard tint="#ec4899">
       <div className="space-y-1.5">
         {(isPro ? rows : [
           { opponentId: '1', username: 'WordSmith', wins: 4, losses: 2, draws: 0, total: 6 },
@@ -121,7 +125,7 @@ export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolea
         ]).map((r) => {
           const pct = r.total > 0 ? (r.wins / r.total) * 100 : 0;
           return (
-            <div key={r.opponentId} className="p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
+            <div key={r.opponentId} className="p-2" style={{ background: alphaHex('#ec4899', 0.08), borderRadius: '10px' }}>
               <div className="flex items-center gap-2">
                 <Swords className="w-3.5 h-3.5 shrink-0" style={{ color: '#7c3aed' }} />
                 <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{r.username}</span>
@@ -191,17 +195,17 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
     <div className="space-y-3">
       {/* Opener yield */}
       {(d.openers?.length ?? 0) > 0 && (
-        <KitCard>
+        <KitCard tint={accentColor}>
           <div className="flex items-center gap-1.5 mb-2">
             <Lightbulb className="w-3.5 h-3.5" style={{ color: accentColor }} />
             <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Opener Yield</span>
           </div>
           <div className="space-y-1.5">
             {d.openers!.map((o) => (
-              <div key={o.word} className="flex items-center gap-2 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
+              <div key={o.word} className="flex items-center gap-2 p-2" style={{ background: alphaHex(accentColor, 0.08), borderRadius: '10px' }}>
                 <span className="text-sm font-black tracking-wider flex-1" style={{ color: 'var(--color-text)' }}>{o.word}</span>
-                <span className="text-[10px] font-bold" style={{ color: WIN_FG }}>{o.avgGreens} 🟩</span>
-                <span className="text-[10px] font-bold" style={{ color: '#f59e0b' }}>{o.avgYellows} 🟨</span>
+                <span className="text-[10px] font-bold" style={{ color: WIN_FG }}>{o.avgGreens} <span aria-hidden="true" className="inline-block align-[-1px] ml-0.5" style={{ width: 9, height: 9, borderRadius: 2.5, background: WIN_FG }} /><span className="sr-only"> greens</span></span>
+                <span className="text-[10px] font-bold" style={{ color: '#f59e0b' }}>{o.avgYellows} <span aria-hidden="true" className="inline-block align-[-1px] ml-0.5" style={{ width: 9, height: 9, borderRadius: 2.5, background: '#f59e0b' }} /><span className="sr-only"> yellows</span></span>
                 <span className="text-[10px] font-bold w-14 text-right" style={{ color: 'var(--color-text-muted)' }}>{o.count}× · {o.winRate}%</span>
               </div>
             ))}
@@ -212,7 +216,7 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
 
       {/* Position accuracy */}
       {d.positions && (
-        <KitCard>
+        <KitCard tint={accentColor}>
           <div className="flex items-center gap-1.5 mb-2">
             <Grid3X3 className="w-3.5 h-3.5" style={{ color: accentColor }} />
             <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Position Accuracy</span>
@@ -235,7 +239,7 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
 
       {/* Gauntlet stage breakdown */}
       {(d.gauntlet?.length ?? 0) > 0 && (
-        <KitCard>
+        <KitCard tint="#d97706">
           <div className="flex items-center gap-1.5 mb-2">
             <Skull className="w-3.5 h-3.5" style={{ color: '#d97706' }} />
             <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Stage Breakdown</span>
@@ -244,7 +248,7 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
             {d.gauntlet!.map((s) => {
               const clearPct = s.runs > 0 ? Math.round((s.clears / s.runs) * 100) : 0;
               return (
-                <div key={s.stage} className="flex items-center gap-2 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
+                <div key={s.stage} className="flex items-center gap-2 p-2" style={{ background: alphaHex('#d97706', 0.08), borderRadius: '10px' }}>
                   <span className="text-[10px] font-black w-4 text-center" style={{ color: 'var(--color-text-muted)' }}>{s.stage + 1}</span>
                   <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{s.name ?? `Stage ${s.stage + 1}`}</span>
                   <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{s.avgTimeSecs > 0 ? `~${s.avgTimeSecs}s` : ''}</span>
@@ -261,16 +265,16 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
       {d.hints && (
         <KitCard>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>💡 Hints</span>
+            <span className="inline-flex items-center gap-1 text-xs font-black" style={{ color: 'var(--color-text)' }}><UiIcon name="sparkles" size={14} /> Hints</span>
             <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{d.hints.gamesCounted} games</span>
           </div>
           <div className="flex items-center justify-around mt-2">
             <div className="text-center">
-              <div className="text-lg font-black" style={{ color: WIN_FG }}>{d.hints.hintlessWinRate}%</div>
+              <SoftNum size={18} as="div" className="soft-num-auto">{d.hints.hintlessWinRate}%</SoftNum>
               <div className="text-[9px] font-bold uppercase" style={{ color: 'var(--color-text-muted)' }}>Hintless wins</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-black" style={{ color: 'var(--color-text)' }}>{d.hints.avgHintsPerGame}</div>
+              <SoftNum size={18} as="div" className="soft-num-auto">{d.hints.avgHintsPerGame}</SoftNum>
               <div className="text-[9px] font-bold uppercase" style={{ color: 'var(--color-text-muted)' }}>Hints / game</div>
             </div>
           </div>

@@ -159,4 +159,17 @@ final class StreakWeekTests: XCTestCase {
         XCTAssertEqual(StreakWeek.mondayIndex(weekday: 1), 6)   // Sunday
         XCTAssertEqual(StreakWeek.mondayIndex(weekday: 7), 5)   // Saturday
     }
+
+    // MARK: F2 fix — landing flourish
+
+    func testFlourishHopsLeftToRightThenRests() {
+        XCTAssertEqual(CastMoves.flourishDuration(count: 10), 0.42 + 9 * 0.05, accuracy: 1e-9)
+        // Before its turn and after its hop, a character stands still.
+        XCTAssertEqual(CastMoves.flourishPose(index: 3, elapsed: 0.1), .identity)
+        XCTAssertEqual(CastMoves.flourishPose(index: 0, elapsed: 0.5), .identity)
+        // Mid-hop, a character is off the ground (negative ty) — W's hop keyframes.
+        XCTAssertLessThan(CastMoves.flourishPose(index: 0, elapsed: 0.42 * 0.45).ty, 0)
+        XCTAssertLessThan(CastMoves.flourishPose(index: 9, elapsed: 9 * 0.05 + 0.42 * 0.45).ty, 0)
+        XCTAssertEqual(CastMoves.flourishPose(index: 9, elapsed: CastMoves.flourishDuration(count: 10) + 0.01), .identity)
+    }
 }

@@ -73,26 +73,35 @@ func socialDayLabel(_ day: String) -> String {
     return outF.string(from: d)
 }
 
-/// Uppercase tracked caption used by every social card title.
+/// Uppercase tracked caption used by every social card title (§C4 card label).
 private func socialCaption(_ text: String) -> some View {
-    Text(text)
-        .font(Brand.font(10, .black)).tracking(0.8)
-        .foregroundStyle(Theme.textMuted)
-        .lineLimit(1).minimumScaleFactor(0.7)
+    FinishLabel(text)
 }
 
+/// FINISH_SPEC §A1: every social card is a tinted card in its own accent with the
+/// game-card top bar (no plain white).
 private struct SocialCard: ViewModifier {
+    var accent: Color = Color(hex: 0x7C3AED)
+
     func body(content: Content) -> some View {
         content
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .tintedCard(accent: accent, bar: [accent, accent.mixed(over: .white, 0.65)], barHeight: 6)
     }
 }
 
 private extension View {
-    func socialCard() -> some View { modifier(SocialCard()) }
+    func socialCard(_ accent: Color = Color(hex: 0x7C3AED)) -> some View { modifier(SocialCard(accent: accent)) }
+
+    /// A small tinted inner tile / row (§A1) — dark keeps the dark surface.
+    func socialTile(_ accent: Color, radius: CGFloat = 12, strong: Bool = false) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let dark = Theme.isDark
+        return background(shape.fill(dark ? accent.opacity(strong ? 0.22 : 0.10) : accent.wash(strong ? 0.20 : 0.10)))
+            .overlay(shape.stroke(dark ? accent.opacity(strong ? 0.6 : 0.3) : (strong ? accent.wash(0.6) : accent.wash(0.30)),
+                                  lineWidth: 1.5))
+    }
 }
 
 // MARK: - Identity: today ring + presence + chips
@@ -109,9 +118,9 @@ struct TodayRingAvatar: View {
 
     var body: some View {
         // §20: the progress ring is a rounded square around a letter tile.
-        let tile = AvatarView.showsTile(profile.avatarUrl)
+        let tile = AvatarView.showsTile(profile.avatarUrl, username: profile.username)
         ZStack {
-            AvatarOutline(tile: tile).stroke(Theme.border, lineWidth: 5)
+            AvatarOutline(tile: tile).stroke(Color(hex: 0x7C3AED).opacity(Theme.isDark ? 0.25 : 0.14), lineWidth: 5)
                 .frame(width: 114, height: 114)
             AvatarOutline(tile: tile).trim(from: 0, to: fraction)
                 .stroke(
@@ -121,7 +130,7 @@ struct TodayRingAvatar: View {
                 .rotationEffect(.degrees(-90))
                 .frame(width: 114, height: 114)
             AvatarView(url: profile.avatarUrl, username: profile.username, size: 96,
-                       accentHex: profile.accentColor, emoji: profile.avatarEmoji)
+                       accentHex: profile.accentColor, emoji: profile.avatarEmoji, pro: Wordocious.isProActive(profile))
         }
         .overlay(alignment: .bottom) {
             if completedToday > 0 {
@@ -189,14 +198,10 @@ struct ProfileIdentityChips: View {
         // Wrapping HStack via two rows would over-engineer; chips are short and
         // scale down like the app's other chip rows.
         HStack(spacing: 6) {
-            // Existing level badge, restyled into the row (same colors as before).
-            HStack(spacing: 4) {
-                Image(systemName: "star.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xD97706))
-                Text("LEVEL \(profile.level)").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x92400E))
-            }
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(Capsule().fill(Color(hex: 0xFEF9EC)))
-            .overlay(Capsule().stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+            // §V3: the tier badge + the level in soft numbers, on a tier-tinted pill.
+            LevelBadge(level: profile.level, size: 22, showTier: true)
+                .padding(.horizontal, 9).padding(.top, 5).padding(.bottom, 3)
+                .tintedPill(BadgeArt.tierAccent(LevelTier.forLevel(profile.level)))
 
             if let arch = persona?.archetype, let info = ProfileArchetype.info(arch) {
                 Button { showArchetype = true } label: {
@@ -266,10 +271,7 @@ struct ArchetypeSheet: View {
                 HStack {
                     socialCaption("PLAYER ARCHETYPES")
                     Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 20)).foregroundStyle(Theme.textMuted)
-                    }.buttonStyle(.squish)
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
                 }
                 Text("Every player gets one of five archetypes from how they actually play. The first rule you qualify for — top to bottom — is yours.")
                     .font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
@@ -283,7 +285,7 @@ struct ArchetypeSheet: View {
                         + Text(info.name).font(Brand.font(13, .black)).foregroundColor(Theme.primary)
                     }
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary.opacity(0.08)))
+                    .socialTile(Color(hex: 0x7C3AED), strong: true)
                 }
             }
             .padding(16)
@@ -319,9 +321,7 @@ struct ArchetypeSheet: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12)
-            .stroke(highlighted ? Theme.primary : Theme.border, lineWidth: 1.5))
+        .socialTile(Color(hex: 0x7C3AED), strong: highlighted)
     }
 }
 
@@ -356,10 +356,14 @@ struct YouVsThemCard: View {
                 Spacer()
             }
             HStack(alignment: .center) {
-                (Text("\(h2h.myWins)").foregroundColor(Theme.primary)
-                 + Text(" – ").foregroundColor(Theme.textMuted)
-                 + Text("\(h2h.theirWins)").foregroundColor(Theme.textPrimary))
-                    .font(Brand.font(24, .black))
+                // §A2: the record as soft numbers.
+                HStack(spacing: 4) {
+                    Text("\(h2h.myWins)").softNumber(26)
+                    Text("–").font(Brand.font(20, .black)).foregroundStyle(FinishInk.secondary)
+                    Text("\(h2h.theirWins)").softNumber(26, color: Theme.isDark ? Color(hex: 0xF9A8D4) : Color(hex: 0x9D174D))
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("You \(h2h.myWins), \(target.username) \(h2h.theirWins)")
                 Spacer()
                 VStack(alignment: .trailing, spacing: 1) {
                     Text(leadNote)
@@ -377,15 +381,15 @@ struct YouVsThemCard: View {
                 } label: {
                     HStack(spacing: 6) {
                         Text(socialModeTitle(today.mode).uppercased())
-                            .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                            .font(Brand.font(11, .black)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
                         Text("today — \(target.username) \(scoreLabel(today.theirs)), you \(scoreLabel(today.mine))")
                             .font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary)
                             .lineLimit(1).minimumScaleFactor(0.7)
                         Spacer()
                     }
                     .padding(.horizontal, 10).padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                    .socialTile(Color(hex: 0x7C3AED))
+                    .contentShape(Rectangle())
                 }.buttonStyle(.squish)
             }
             HStack(spacing: 4) {
@@ -403,8 +407,8 @@ struct YouVsThemCard: View {
                 statColumn("SWEEPS", them: "\(h2h.theirSweeps)", you: "\(h2h.mySweeps)")
             }
         }
-        .socialCard()
-        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .socialCard(Color(hex: 0xEC4899))
+        .contentShape(RoundedRectangle(cornerRadius: 20))
         .onTapGesture { showDetail = true }
         .fullScreenCover(isPresented: $showDetail) {
             H2HDetailScreen(target: target, h2h: h2h)
@@ -446,10 +450,13 @@ struct H2HDetailScreen: View {
                 PageBackground(tint: .home)
                 ScrollView {
                     VStack(spacing: 8) {
-                        (Text("\(h2h.myWins)").foregroundColor(Theme.primary)
-                         + Text(" – ").foregroundColor(Theme.textMuted)
-                         + Text("\(h2h.theirWins)").foregroundColor(Theme.textPrimary))
-                            .font(Brand.font(30, .black))
+                        HStack(spacing: 6) {
+                            Text("\(h2h.myWins)").softNumber(32)
+                            Text("–").font(Brand.font(24, .black)).foregroundStyle(FinishInk.secondary)
+                            Text("\(h2h.theirWins)").softNumber(32, color: Theme.isDark ? Color(hex: 0xF9A8D4) : Color(hex: 0x9D174D))
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("You \(h2h.myWins), \(target.username) \(h2h.theirWins)")
                         Text("\(h2h.shared.count) shared \(h2h.shared.count == 1 ? "daily" : "dailies") · ties \(h2h.ties)")
                             .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                             .padding(.bottom, 6)
@@ -488,8 +495,7 @@ struct H2HDetailScreen: View {
             .font(Brand.font(11, .heavy))
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        .socialTile(s.winner == 1 ? Color(hex: 0x7C3AED) : (s.winner == -1 ? Color(hex: 0xEC4899) : Color(hex: 0x8D99B0)))
     }
 }
 
@@ -614,6 +620,8 @@ struct TrophyCaseCard: View {
     @State private var showHistory = false
 
     var body: some View {
+        // FINISH_SPEC §AK: the tappable card squishes (a Button, not a tap gesture).
+        Button { showHistory = true } label: {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 socialCaption("TROPHY CASE")
@@ -639,12 +647,13 @@ struct TrophyCaseCard: View {
                     }
                 }
                 .padding(.horizontal, 11).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary.opacity(0.06)))
+                .socialTile(Color(hex: 0x7C3AED))
             }
         }
-        .socialCard()
-        .contentShape(RoundedRectangle(cornerRadius: 16))
-        .onTapGesture { showHistory = true }
+        .socialCard(Color(hex: 0xF5A524))
+        .contentShape(RoundedRectangle(cornerRadius: 20))
+        }
+        .buttonStyle(.squishCard)
         .sheet(isPresented: $showHistory) {
             MedalHistorySheet(username: profile.username, medals: medals)
         }
@@ -653,14 +662,12 @@ struct TrophyCaseCard: View {
     private func shelf(_ icon: String, _ count: Int, _ label: String, _ color: Color, highlight: Bool = false) -> some View {
         VStack(spacing: 2) {
             SymbolGlyph(icon, size: 16, color: color)
-            Text("\(count)").font(Brand.font(21, .black)).foregroundStyle(Theme.textPrimary)
-            Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Theme.textSecondary)
+            Text("\(count)").softNumber(22)
+            Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 9)
-        .background(RoundedRectangle(cornerRadius: 13)
-            .fill(highlight && count > 0 ? Theme.gold.opacity(0.12) : Theme.background))
-        .overlay(RoundedRectangle(cornerRadius: 13)
-            .stroke(highlight && count > 0 ? Color(hex: 0xFCD34D) : Theme.border, lineWidth: 1.5))
+        // §A1: each shelf a tinted tile in its medal color (gold stronger when won).
+        .socialTile(color, radius: 13, strong: highlight && count > 0)
     }
 }
 
@@ -721,14 +728,14 @@ struct MedalHistorySheet: View {
         HStack(spacing: 10) {
             SymbolGlyph(medalIcon(m.medalType).0, size: 14, color: medalIcon(m.medalType).1)
             VStack(alignment: .leading, spacing: 1) {
-                Text(medalLabel(m)).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                Text(socialDayLabel(m.day)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text(medalLabel(m)).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
+                Text(socialDayLabel(m.day)).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer()
         }
         .padding(11)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        .socialTile(medalIcon(m.medalType).1)
+        .contentShape(Rectangle())
     }
 
     private func medalLabel(_ m: MedalRow) -> String {
@@ -782,12 +789,12 @@ struct PodiumScreen: View {
                             NavigationLink(value: e.userId) {
                                 HStack(spacing: 10) {
                                     SymbolGlyph(medalIcon(e.medalType).0, size: 15, color: medalIcon(e.medalType).1)
-                                    Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
+                                    Text(e.username).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
                                     Spacer()
                                 }
                                 .padding(12)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                                .socialTile(medalIcon(e.medalType).1)
+                                .contentShape(Rectangle())
                             }.buttonStyle(.squish)
                         }
                     }
@@ -866,7 +873,7 @@ struct HighlightsReel: View {
                     .padding(.horizontal, 1)
                 }
             }
-            .socialCard()
+            .socialCard(Color(hex: 0x7C3AED))
             .sheet(isPresented: $showCalendar) {
                 StreakCalendarSheet(username: profile.username, calendar: calendar)
             }
@@ -876,15 +883,14 @@ struct HighlightsReel: View {
     private func card(_ item: Item) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             SymbolGlyph(item.symbol, size: 15, color: item.color)
-            Text(item.big).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+            Text(item.big).softNumber(16)
                 .lineLimit(1).minimumScaleFactor(0.7)
-            Text(item.caption).font(Brand.font(9, .bold)).foregroundStyle(Theme.textSecondary)
+            Text(item.caption).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
                 .lineLimit(2).multilineTextAlignment(.leading)
         }
         .frame(minWidth: 108, alignment: .leading)
         .padding(11)
-        .background(RoundedRectangle(cornerRadius: 13).fill(Theme.background))
-        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Theme.border, lineWidth: 1.5))
+        .socialTile(item.color, radius: 13)
     }
 }
 
@@ -912,10 +918,7 @@ struct StreakCalendarSheet: View {
             HStack {
                 socialCaption("\(username.uppercased()) · LAST 60 DAYS")
                 Spacer()
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 20)).foregroundStyle(Theme.textMuted)
-                }.buttonStyle(.squish)
+                HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 10), spacing: 10) {
                 ForEach(days, id: \.key) { day in
@@ -1005,14 +1008,14 @@ struct LatelyCard: View {
                             Spacer()
                         }
                         .padding(.horizontal, 11).padding(.vertical, 9)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xEC4899).opacity(0.06)))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xEC4899).opacity(0.35), lineWidth: 1.5))
+                        .socialTile(Color(hex: 0xEC4899))
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)
                     .padding(.top, 9)
                 }
             }
-            .socialCard()
+            .socialCard(Color(hex: 0xF97316))
         }
     }
 
@@ -1022,14 +1025,14 @@ struct LatelyCard: View {
 
     @ViewBuilder
     private func feedRow(icon: String, color: Color, text: String, when: String, divider: Bool) -> some View {
-        if divider { Rectangle().fill(Theme.border).frame(height: 1) }
+        if divider { Rectangle().fill(Color(hex: 0xF97316).opacity(0.14)).frame(height: 1) }
         HStack(alignment: .top, spacing: 10) {
             SymbolGlyph(icon, size: 14, color: color)
                 .frame(width: 28, height: 28)
                 .background(RoundedRectangle(cornerRadius: 9).fill(color.opacity(0.08)))
             VStack(alignment: .leading, spacing: 1) {
-                Text(text).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                Text(when).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text(text).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
+                Text(when).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer(minLength: 0)
         }

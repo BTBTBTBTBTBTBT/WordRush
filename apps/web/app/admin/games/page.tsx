@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, Trophy, Swords, Flame } from 'lucide-react';
 
 import { MODE_LABELS, modeLabel } from '@/lib/mode-labels';
+import { Icon3D } from '@/components/ui/icon3d';
 
 const MODES = Object.keys(MODE_LABELS).filter((m) => m !== 'VS');
 
@@ -97,7 +98,7 @@ export default function AdminGamesPage() {
                       <td className="px-3 py-2">
                         <a href={`/admin/users/${r.userId}`} className="font-bold text-purple-600 hover:underline">{r.player}</a>
                       </td>
-                      <td className="px-3 py-2 font-black text-gray-900">{r.streak > 0 ? `${r.streak}d 🔥` : '—'}</td>
+                      <td className="px-3 py-2 font-black text-gray-900">{r.streak > 0 ? <span className="inline-flex items-center gap-1">{r.streak}d <Icon3D name="flame" size={14} /></span> : '—'}</td>
                       <td className="px-3 py-2 font-bold text-gray-700">{r.best}d</td>
                       <td className="px-3 py-2 font-bold text-gray-700">{r.shields}</td>
                       <td className="px-3 py-2 font-bold text-gray-500">{r.pro}</td>

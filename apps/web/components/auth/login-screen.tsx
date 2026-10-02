@@ -6,6 +6,11 @@ import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { ArtTitle } from '@/components/ui/art-title';
 import { validateUsername } from '@wordle-duel/core';
+import { CandyButton } from '@/components/ui/candy-button';
+import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-popup';
+import { ART_SIZE } from '@/lib/art';
+import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
+import { softBackground } from '@/lib/soft-surface';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -99,13 +104,21 @@ export function LoginScreen() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center overflow-y-auto px-6 py-6"
-      style={{ backgroundColor: 'var(--color-bg)' }}
+      style={{ background: softBackground('#7c3aed', 0.07) }}
     >
       {/* my-auto centers the column and lets it scroll when the WELCOME! art makes it taller than a short screen. */}
       <div className="w-full max-w-sm space-y-6 my-auto">
-        {/* Branding: the whole cast around WELCOME! (docs/ART_SPEC.md §8) over the wordmark. */}
+        {/* Branding: W waving hello over the WELCOME! lettering (docs/ART_SPEC.md §8; FINISH_SPEC N1:
+            the title is lettering only, a small centered headline) over the wordmark. */}
         <div className="text-center space-y-2">
-          <ArtTitle name="art-title-welcome" label="Welcome" as="div" maxWidth={320} />
+          <PoseArt pose="art-pose-w-wave" size={96} priority className="mx-auto art-pop" />
+          <ArtTitle
+            name="art-title-welcome"
+            label="Welcome"
+            as="div"
+            widthPct={HEADLINE.widthPct}
+            maxWidth={headlineMaxWidth(...ART_SIZE['art-title-welcome'])}
+          />
           <h1
             className="text-3xl font-black tracking-tight"
             style={{
@@ -123,13 +136,8 @@ export function LoginScreen() {
 
         {/* Card */}
         <div
-          className="p-6 space-y-4"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid #c4b5fd',
-            borderRadius: '20px',
-            boxShadow: '0 4px 24px rgba(124, 58, 237, 0.08)',
-          }}
+          className="p-6 pt-7 space-y-4"
+          style={barCard()}
         >
           <h2 className="text-lg font-black text-center" style={{ color: 'var(--color-text)' }}>
             {mode === 'signin' ? 'Welcome Back!' : mode === 'signup' ? 'Join the Fun!' : 'Reset Password'}
@@ -145,22 +153,23 @@ export function LoginScreen() {
           {mode !== 'reset' && (
             <>
               {/* Google Sign-In */}
-              <button
-                type="button"
+              <CandyButton
+                color="peach"
+                size="lg"
+                block
                 onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-                style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+                icon={<span className="grid place-items-center rounded-full shrink-0" style={{ width: 28, height: 28, background: '#ffffff', boxShadow: '0 1px 2px rgba(59, 26, 120, 0.25)' }}><GoogleIcon className="w-5 h-5" /></span>}
+                style={{ textTransform: 'none' }}
               >
-                <GoogleIcon className="w-5 h-5" />
                 Continue with Google
-              </button>
+              </CandyButton>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <div className="flex-1 h-px" style={{ background: 'rgba(124, 58, 237, 0.25)' }} />
                 <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>or</span>
-                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <div className="flex-1 h-px" style={{ background: 'rgba(124, 58, 237, 0.25)' }} />
               </div>
             </>
           )}
@@ -182,11 +191,7 @@ export function LoginScreen() {
                   minLength={3}
                   maxLength={20}
                   className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={{
-                    color: 'var(--color-text)',
-                    background: 'var(--color-bg)',
-                    border: '1.5px solid var(--color-border)',
-                  }}
+                  style={softInput()}
                 />
               </div>
             )}
@@ -203,11 +208,7 @@ export function LoginScreen() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                style={{
-                  color: 'var(--color-text)',
-                  background: 'var(--color-bg)',
-                  border: '1.5px solid var(--color-border)',
-                }}
+                style={softInput()}
               />
             </div>
 
@@ -219,14 +220,9 @@ export function LoginScreen() {
                     Password
                   </label>
                   {mode === 'signin' && (
-                    <button
-                      type="button"
-                      onClick={() => switchMode('reset')}
-                      className="text-xs font-bold transition-colors"
-                      style={{ color: '#7c3aed' }}
-                    >
+                    <CandyButton color="peach" size="sm" onClick={() => switchMode('reset')} style={{ textTransform: 'none' }}>
                       Forgot password?
-                    </button>
+                    </CandyButton>
                   )}
                 </div>
                 <div className="relative">
@@ -238,11 +234,7 @@ export function LoginScreen() {
                     required
                     minLength={6}
                     className="w-full px-3 py-2.5 pr-10 rounded-xl text-sm font-bold outline-none"
-                    style={{
-                      color: 'var(--color-text)',
-                      background: 'var(--color-bg)',
-                      border: '1.5px solid var(--color-border)',
-                    }}
+                    style={softInput()}
                   />
                   <button
                     type="button"
@@ -268,15 +260,7 @@ export function LoginScreen() {
                       required
                       minLength={6}
                       className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                      style={{
-                        color: 'var(--color-text)',
-                        background: 'var(--color-bg)',
-                        border: `1.5px solid ${
-                          confirmPassword && password !== confirmPassword
-                            ? '#fca5a5'
-                            : 'var(--color-border)'
-                        }`,
-                      }}
+                      style={softInput(undefined, { invalid: !!confirmPassword && password !== confirmPassword })}
                     />
                   </div>
                 )}
@@ -285,8 +269,8 @@ export function LoginScreen() {
 
             {sent && (
               <div
-                className="p-3 rounded-xl text-xs font-bold"
-                style={{ background: 'var(--color-win-bg, #ecfdf5)', border: '1px solid #a7f3d0', color: '#047857' }}
+                className="p-3 text-xs font-bold"
+                style={softNotice('success')}
               >
                 {mode === 'signup'
                   ? 'Account created. Check your email for a confirmation link, then sign in.'
@@ -296,8 +280,8 @@ export function LoginScreen() {
 
             {error && (
               <div
-                className="p-3 rounded-xl text-xs font-bold"
-                style={{ background: 'var(--color-loss-bg)', border: '1px solid #fecaca', color: 'var(--color-loss-text)' }}
+                className="p-3 text-xs font-bold"
+                style={softNotice('error')}
               >
                 {error}
               </div>
@@ -309,29 +293,21 @@ export function LoginScreen() {
               pressing again is a mistake. Sign-up without this returns
               "User already registered" for the account you just made.
             */}
-            <button
-              type="submit"
-              disabled={loading || sent}
-              className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                boxShadow: '0 4px 0 #4c1d95',
-              }}
-            >
+            <CandyButton type="submit" color="purple" size="lg" block disabled={loading || sent}>
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
-            </button>
+            </CandyButton>
 
             <div className="text-center">
-              <button
-                type="button"
+              <CandyButton
+                color="peach"
+                size="sm"
                 onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
-                className="text-xs font-bold transition-colors"
-                style={{ color: 'var(--color-text-muted)' }}
+                style={{ textTransform: 'none' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up"
                   : mode === 'signup' ? 'Already have an account? Sign in'
                   : 'Back to sign in'}
-              </button>
+              </CandyButton>
             </div>
           </form>
         </div>

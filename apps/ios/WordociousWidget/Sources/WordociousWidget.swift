@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import UIKit
 
 // Home-screen widget: today's dailies — the eight Wordocious games and the ten
 // Puzzles — plus the play streak. Renders purely from the JSON snapshot the app
@@ -17,11 +18,18 @@ import SwiftUI
 // old fresh / at-risk / sweep / flawless themes are gone; after 8 pm the headline
 // simply stays the evening greeting. No animation: widgets can't run the shimmer.
 //
-// The cast (ART_SPEC §17): the background is the home page tint (no tiles at widget
-// sizes) with the Sweep / Flawless tier colors blended over it, the day's host
-// (the Leaderboard day title's character) stands in a corner, the 3D flame sits by
-// the streak, and a played chip shows the W / L badge art. The images come from the
-// app's asset catalog, compiled into this target (project.yml).
+// FINISH_SPEC §E2 (finishing-touches `.wsmall` / `.wmed`): a lilac wallpaper (the
+// Home wallpaper's colors + the letter-tile art; the art-wall-* images live in the
+// app-only Wallpapers catalog) with the Sweep / Flawless tier colors blended over
+// it; today's games as mini game-card tiles (the 3D game-<id> icon on a 13% accent
+// wash, 34% border, 4-pt accent top bar, radius 9) with a small purple ✓ badge on a
+// solved one (slate ✕ on a missed one); the streak (and rank, once the app writes
+// it; shields until then) as soft numbers beside 3D icons. Small: flame + streak on
+// top, the eight tiles, "5 of 8 today". Medium: the ten cast heroes across the top
+// (WORDOCIOUS), the eight tiles + the Puzzles row, the streak / rank column, and
+// "Next: Gauntlet · resets in 13:41". The extension has no Nunito, so the soft
+// numbers are SF Rounded Black in #3b1a78. Dark appearance: a deep plum wallpaper,
+// dark tiles and light lilac numbers. Every image falls back (glyph / gradient).
 
 private let appGroup = "group.com.wordocious.app"
 private let snapshotKey = "widget-snapshot"
@@ -54,6 +62,8 @@ struct WSnapshot: Codable {
     var username: String? = nil
     var wordStreaks: GroupStreaks? = nil
     var puzzleStreaks: GroupStreaks? = nil
+    /// §E2: today's leaderboard rank, when the app writes one (optional; absent → shields).
+    var rank: Int? = nil
 }
 
 extension WSnapshot {
@@ -89,15 +99,15 @@ extension WSnapshot {
 /// written a snapshot (fresh install / not signed in). The extension can't import
 /// the catalog, so these literals mirror ModeGen.sweep and the More Games dailies
 /// (catalog order); icon specs match ModeCatalog.swift.
-private let placeholderModes: [(title: String, glyph: String, hex: String, kind: String, asset: String?, text: String?)] = [
-    ("Classic", "C", "#7c3aed", "original", "wordle-grid", nil),
-    ("Quad", "IV", "#ec4899", "roman", nil, "IV"),
-    ("Octo", "VIII", "#7e22ce", "roman", nil, "VIII"),
-    ("Succ.", "S", "#2563eb", "asset", "trending-up", nil),
-    ("Deliv.", "D", "#059669", "asset", "shield", nil),
-    ("Six", "6", "#06b6d4", "hand", "six-hand", "6"),
-    ("Seven", "7", "#84cc16", "hand", "seven-hand", "7"),
-    ("Gauntlet", "G", "#d97706", "asset", "skull", nil),
+private let placeholderModes: [(key: String, title: String, glyph: String, hex: String, kind: String, asset: String?, text: String?)] = [
+    ("DUEL", "Classic", "C", "#7c3aed", "original", "wordle-grid", nil),
+    ("QUORDLE", "Quad", "IV", "#ec4899", "roman", nil, "IV"),
+    ("OCTORDLE", "Octo", "VIII", "#7e22ce", "roman", nil, "VIII"),
+    ("SEQUENCE", "Succ.", "S", "#2563eb", "asset", "trending-up", nil),
+    ("RESCUE", "Deliv.", "D", "#059669", "asset", "shield", nil),
+    ("DUEL_6", "Six", "6", "#06b6d4", "hand", "six-hand", "6"),
+    ("DUEL_7", "Seven", "7", "#84cc16", "hand", "seven-hand", "7"),
+    ("GAUNTLET", "Gauntlet", "G", "#d97706", "asset", "skull", nil),
 ]
 private let placeholderPuzzles: [(key: String, title: String, glyph: String, hex: String, kind: String, asset: String)] = [
     ("PROPERNOUNDLE", "Proper", "P", "#dc2626", "asset", "crown"),
@@ -114,7 +124,7 @@ private let placeholderPuzzles: [(key: String, title: String, glyph: String, hex
 
 private func emptySnapshot() -> WSnapshot {
     WSnapshot(day: localDay(), streak: 0,
-              modes: placeholderModes.map { .init(key: $0.glyph, title: $0.title, glyph: $0.glyph, colorHex: $0.hex,
+              modes: placeholderModes.map { .init(key: $0.key, title: $0.title, glyph: $0.glyph, colorHex: $0.hex,
                                                   played: false, won: false,
                                                   iconKind: $0.kind, iconAsset: $0.asset, iconText: $0.text) },
               points: nil, seconds: nil, shields: nil,
@@ -194,9 +204,185 @@ extension Color {
     }
 }
 
-/// ART_SPEC §11's home tint (light stops), top-left → bottom-right.
-private let homeTint = LinearGradient(colors: [Color(widgetHex: "#f3eeff"), Color(widgetHex: "#fbefff"), Color(widgetHex: "#fff1f7")],
-                                      startPoint: .topLeading, endPoint: .bottomTrailing)
+/// A hex color (`#rrggbb`) at `amount` over `base` — CSS color-mix, opaque.
+private func mixHex(_ hex: String, _ amount: Double, over base: (Double, Double, Double) = (1, 1, 1)) -> Color {
+    var s = hex.trimmingCharacters(in: .whitespaces)
+    if s.hasPrefix("#") { s.removeFirst() }
+    var v: UInt64 = 0
+    Scanner(string: s).scanHexInt64(&v)
+    let r = Double((v >> 16) & 0xFF) / 255, g = Double((v >> 8) & 0xFF) / 255, b = Double(v & 0xFF) / 255
+    let k = min(1, max(0, amount))
+    return Color(red: base.0 + (r - base.0) * k, green: base.1 + (g - base.1) * k, blue: base.2 + (b - base.2) * k)
+}
+
+/// The soft-number ink (§A2) and the label inks, per appearance.
+private enum WInk {
+    static func number(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#e9ddff") : Color(widgetHex: "#3b1a78") }
+    static func label(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#cdb8ff") : Color(widgetHex: "#5b3c96") }
+    static let check = Color(widgetHex: "#7c3aed")
+    static let missed = Color(widgetHex: "#6b7891")
+}
+
+/// §E2 wallpaper: the Home wallpaper's lilac → pink with the letter-tile art
+/// (art-bg-tiles, transparent) floating over it; dark: a deep plum.
+private struct WidgetWallpaper: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let dark = scheme == .dark
+        ZStack {
+            LinearGradient(colors: dark
+                           ? [Color(widgetHex: "#1c1231"), Color(widgetHex: "#211433"), Color(widgetHex: "#26122c")]
+                           : [Color(widgetHex: "#c9b8f6"), Color(widgetHex: "#e6d6f8"), Color(widgetHex: "#fbe2f1")],
+                           startPoint: .top, endPoint: .bottom)
+            if UIImage(named: "art-bg-tiles") != nil {
+                Image("art-bg-tiles").resizable().interpolation(.high).scaledToFill()
+                    .opacity(dark ? 0.18 : 0.75)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Soft number (§A2): SF Rounded Black (the extension has no Nunito), dark purple,
+/// tabular digits, a soft white under-shadow (dark: light lilac, no glow).
+private struct SoftNumber: View {
+    let text: String
+    let size: CGFloat
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let dark = scheme == .dark
+        Text(text)
+            .font(.system(size: size, weight: .black, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(WInk.number(dark))
+            .shadow(color: dark ? .black.opacity(0.35) : .white.opacity(0.85), radius: 0, x: 0, y: 1)
+            .lineLimit(1).minimumScaleFactor(0.6)
+    }
+}
+
+/// A 3D icon (`icon3d-*`) beside its soft number.
+private struct IconNumber: View {
+    let icon: String
+    let text: String
+    var iconSize: CGFloat = 22
+    var size: CGFloat = 20
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if UIImage(named: icon) != nil {
+                Image(icon).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: iconSize, height: iconSize)
+                    .accessibilityHidden(true)
+            }
+            SoftNumber(text: text, size: size)
+        }
+    }
+}
+
+/// FINISH_SPEC §AL addendum 2: a code-drawn soft gold clock face (until
+/// art-badge-icon-clock-sprite ships; used automatically when it does).
+private struct ClockGlyph: View {
+    var size: CGFloat = 16
+    var body: some View {
+        if UIImage(named: "art-badge-icon-clock-sprite") != nil {
+            Image("art-badge-icon-clock-sprite").resizable().interpolation(.high).scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            ZStack {
+                Circle().fill(LinearGradient(colors: [Color(widgetHex: "#ffe08a"), Color(widgetHex: "#f5a524")],
+                                             startPoint: .top, endPoint: .bottom))
+                Circle().strokeBorder(Color(widgetHex: "#b0650b"), lineWidth: max(1, size * 0.08))
+                Circle().fill(Color.white.opacity(0.9)).padding(size * 0.2)
+                Path { p in
+                    let c = CGPoint(x: size / 2, y: size / 2)
+                    p.move(to: c); p.addLine(to: CGPoint(x: c.x, y: size * 0.3))
+                    p.move(to: c); p.addLine(to: CGPoint(x: size * 0.66, y: c.y))
+                }
+                .stroke(Color(widgetHex: "#3b1a78"), style: StrokeStyle(lineWidth: max(1, size * 0.09), lineCap: .round))
+            }
+            .frame(width: size, height: size)
+        }
+    }
+}
+
+/// The stat's icon: our 3D art only (no system emoji — §AL addendum 2).
+private enum StatIcon { case flame, check, star, clock }
+
+private struct StatIconView: View {
+    let icon: StatIcon
+    var size: CGFloat = 16
+    var body: some View {
+        Group {
+            switch icon {
+            case .flame: art("icon3d-flame")
+            case .check: art("icon3d-badge-check")
+            case .star: art("art-badge-icon-star-sprite")
+            case .clock: ClockGlyph(size: size)
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder private func art(_ name: String) -> some View {
+        if UIImage(named: name) != nil {
+            Image(name).resizable().interpolation(.high).scaledToFit()
+        } else {
+            Circle().fill(Color(widgetHex: "#f5a524"))
+        }
+    }
+}
+
+/// FINISH_SPEC §AL: a labeled stat chip — the 3D icon, the soft number and a small
+/// caps word (beside it, or under it when `stacked`), on a tinted pill. VoiceOver
+/// reads `phrase`.
+private struct StatChip<Value: View>: View {
+    let icon: StatIcon
+    let label: String
+    let tint: String
+    let phrase: String
+    var stacked = false
+    @ViewBuilder var value: () -> Value
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let dark = scheme == .dark
+        let c = Color(widgetHex: tint)
+        Group {
+            if stacked {
+                VStack(spacing: 0) {
+                    HStack(spacing: 3) { StatIconView(icon: icon, size: 13); value() }
+                    labelText(dark)
+                }
+            } else {
+                HStack(spacing: 4) { StatIconView(icon: icon, size: 15); value(); labelText(dark) }
+            }
+        }
+        .lineLimit(1).minimumScaleFactor(0.6)
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+            .fill(dark ? c.opacity(0.22) : c.opacity(0.14)))
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+            .strokeBorder(c.opacity(dark ? 0.45 : 0.32), lineWidth: 1))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(phrase)
+    }
+
+    private func labelText(_ dark: Bool) -> some View {
+        Text(label).font(.system(size: 8.5, weight: .black, design: .rounded)).tracking(0.6)
+            .foregroundStyle(WInk.label(dark))
+    }
+}
+
+extension WSnapshot {
+    /// §AL: the stats to draw at `date` (a snapshot from another day reads 0/N, 0 points).
+    func dayStats(at date: Date) -> WidgetDayStats {
+        WidgetStats.forDay(snapshotDay: day, today: localDay(date), played: done, total: total, points: points)
+    }
+}
 
 /// The day's host: the character on that weekday's Leaderboard title art
 /// (art-day-*: Mon D, Tue I, Wed U, Thu S, Fri O2, Sat O1, Sun O3).
@@ -205,21 +391,6 @@ private func dayHostAsset(_ date: Date) -> String {
     let i = Calendar.current.component(.weekday, from: date) - 1
     return "mascot-\(hosts[max(0, min(hosts.count - 1, i))])"
 }
-
-/// The day's host mascot, decorative.
-private struct DayHost: View {
-    let date: Date
-    let size: CGFloat
-    var body: some View {
-        Image(dayHostAsset(date)).resizable().interpolation(.high).scaledToFit()
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
-    }
-}
-
-private let brandGradient = LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")],
-                                           startPoint: .leading, endPoint: .trailing)
-private let lostGray = Color(widgetHex: "#9ca3af")
 
 /// The banner's tier palette (spec §2), with the widget's lighter "none" tints
 /// from the approved widget mock (board V).
@@ -231,63 +402,21 @@ private func tierColor(_ t: BannerTier, none: String) -> Color {
     }
 }
 
-private func tierInk(_ t: BannerTier) -> Color {
-    switch t {
-    case .none: return Color(widgetHex: "#6d28d9")
-    case .sweep: return Color(widgetHex: "#7e22ce")
-    case .flawless: return Color(widgetHex: "#92400e")
-    }
-}
-
-/// A row's tag at the end of its chips: "3/8" mid-day, then SWEEP or FLAWLESS.
-private func rowTag(_ g: GroupProgress) -> String {
-    switch HomeBanner.groupTier(g) {
-    case .none: return "\(g.played)/\(g.total)"
-    case .sweep: return "SWEEP"
-    case .flawless: return "FLAWLESS"
-    }
-}
-
 private func isDoubleFlawless(_ snap: WSnapshot) -> Bool {
     HomeBanner.groupTier(snap.word) == .flawless && HomeBanner.groupTier(snap.puzzleProgress) == .flawless
 }
 
-private func groupedPoints(_ n: Int) -> String {
-    let f = NumberFormatter()
-    f.numberStyle = .decimal
-    return f.string(from: NSNumber(value: n)) ?? "\(n)"
-}
-
-private struct StreakBadge: View {
-    let streak: Int
-    var body: some View {
-        HStack(spacing: 3) {
-            // The 3D streak buddy from the app's icon set (HEADER_SPEC §2).
-            Image("icon3d-flame").resizable().interpolation(.high).scaledToFit()
-                .frame(width: 16, height: 16)
-            Text("\(streak)").font(.system(size: 14, weight: .black, design: .rounded))
-                .foregroundStyle(.primary)
-        }
-        .accessibilityLabel("\(streak) day streak")
-    }
-}
-
-/// The frosted strip across the top (white 50% over the blend), edge to edge.
-private struct FrostedStrip<Content: View>: View {
-    var top: CGFloat = 10
-    @ViewBuilder let content: () -> Content
-    var body: some View {
-        HStack(spacing: 6, content: content)
-            .padding(.horizontal, 12).padding(.top, top).padding(.bottom, 7)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // FINISH_SPEC §A1: a lavender frost instead of plain white.
-            .background(Color(widgetHex: "#F5EEFF").opacity(0.6))
-    }
+/// The 3D game icon for a daily (`game-<catalog id>`; the catalog ids are the DB
+/// keys lowercased except Classic / Six / Seven).
+private func gameIconAsset(_ key: String) -> String? {
+    let ids = ["DUEL": "practice", "DUEL_6": "six", "DUEL_7": "seven"]
+    let name = "game-\(ids[key] ?? key.lowercased())"
+    return UIImage(named: name) != nil ? name : nil
 }
 
 /// The home-menu icon, rendered from the snapshot's flattened ModeIconKind —
 /// a self-contained copy of ModeIconView's glyph logic (the widget links no
-/// app code). Falls back to the text glyph when icon fields are absent.
+/// app code). The fallback when a game's 3D icon is missing.
 private struct ModeGlyph: View {
     let mode: WSnapshot.Mode
     let accent: Color
@@ -336,82 +465,105 @@ private struct ModeGlyph: View {
     }
 }
 
-/// One mode chip. Won: solid accent + white check; lost: gray + white X.
-/// Unplayed: a "door" — white tile, dashed accent border, the mode's own
-/// home-menu icon — signalling it's a tap target that opens that puzzle.
-private struct ModeCell: View {
+/// §E2 one game as a mini game card: the 3D icon on a 13% accent wash, a 34%
+/// border, a 4-pt accent top bar (inset), radius 9, a soft accent shadow; a solved
+/// game wears a small purple ✓ badge (a missed one a slate ✕).
+private struct GameTile: View {
     let mode: WSnapshot.Mode
-    var size: CGFloat = 28
+    var size: CGFloat = 30
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        let dark = scheme == .dark
         let accent = Color(widgetHex: mode.colorHex)
-        let shape = RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+        let radius = max(6, size * 0.28)
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let bar = max(2.5, size * 0.12)
         ZStack {
-            if mode.played {
-                // Today's result as the W / L badge art (ART_SPEC §17) on the chip's color.
-                shape.fill(mode.won ? accent : lostGray)
-                Image(mode.won ? "icon3d-badge-w" : "icon3d-badge-l")
-                    .resizable().interpolation(.high).scaledToFit()
-                    .frame(width: size * 0.78, height: size * 0.78)
-            } else {
-                // FINISH_SPEC §A1: a soft wash of the game's accent, not plain white.
-                shape.fill(Color.white.opacity(0.72))
-                shape.fill(accent.opacity(0.14))
-                shape.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
-                ModeGlyph(mode: mode, accent: accent, box: size)
+            ZStack(alignment: .top) {
+                if dark {
+                    shape.fill(Color(widgetHex: "#241a3a"))
+                    shape.fill(accent.opacity(0.24))
+                } else {
+                    shape.fill(mixHex(mode.colorHex, 0.13))
+                }
+                accent.frame(height: bar)
             }
+            .clipShape(shape)
+            shape.strokeBorder(dark ? accent.opacity(0.5) : mixHex(mode.colorHex, 0.34), lineWidth: 1.5)
+            Group {
+                if let icon = gameIconAsset(mode.key) {
+                    Image(icon).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: size * 0.74, height: size * 0.74)
+                } else {
+                    ModeGlyph(mode: mode, accent: accent, box: size)
+                }
+            }
+            .padding(.top, bar * 0.6)
         }
         .frame(width: size, height: size)
-        .accessibilityLabel("\(mode.title), \(mode.played ? (mode.won ? "solved" : "played") : "not played, tap to play")")
-    }
-}
-
-/// The footer strip: wordmark · "N/18 · points" · live countdown. The countdown
-/// is WidgetKit timer text — it ticks every second natively, costing none of the
-/// widget's refresh budget.
-private struct FooterStrip: View {
-    let snap: WSnapshot
-    let date: Date
-
-    private var statText: String { "\(snap.done)/\(snap.total) · \(groupedPoints(snap.points ?? 0)) pts" }
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text("WORDOCIOUS").font(.system(size: 9, weight: .black, design: .rounded))
-                .tracking(1.1).foregroundStyle(brandGradient)
-                .lineLimit(1).layoutPriority(1)
-            Spacer(minLength: 4)
-            Text(statText)
-                .font(.system(size: 10.5, weight: .black, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(Color(widgetHex: "#374151"))
-                .lineLimit(1).minimumScaleFactor(0.7)
-            Spacer(minLength: 4)
-            // WidgetKit's live timer text GREEDILY claims all flexible width (found
-            // on device: it shoved the stat text out entirely). Cap it to exactly
-            // what "12:41:40" needs; trailing-aligned as it shrinks overnight.
-            Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
-                .font(.system(size: 10.5, weight: .black, design: .rounded))
-                .monospacedDigit()
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: 58, alignment: .trailing)
-                .foregroundStyle(Color(widgetHex: "#7c3aed"))
-                .layoutPriority(1)
+        .shadow(color: accent.opacity(dark ? 0 : 0.2), radius: 3, x: 0, y: 2)
+        .overlay(alignment: .topTrailing) {
+            if mode.played {
+                let badge = max(11, min(14, size * 0.44))
+                Text(mode.won ? "✓" : "✕")
+                    .font(.system(size: badge * 0.66, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: badge, height: badge)
+                    .background(RoundedRectangle(cornerRadius: badge * 0.36, style: .continuous)
+                        .fill(mode.won ? WInk.check : WInk.missed))
+                    .offset(x: 3, y: -3)
+            }
         }
-        .padding(.horizontal, 8).padding(.vertical, 3)
-        .background(RoundedRectangle(cornerRadius: 9).fill(Color(widgetHex: "#F5EEFF").opacity(0.7)))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Wordocious. \(statText). New puzzles at midnight.")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(mode.title), \(mode.played ? (mode.won ? "solved" : "played") : "not played, tap to play")")
     }
 }
 
 private func dailyURL(_ m: WSnapshot.Mode) -> URL? { URL(string: "wordocious://daily/\(m.key)") }
 
-// MARK: - Small: frosted header, big N/18, headline, two dot rows, countdown
+/// A tile that deep-links into its daily (DeepLink.swift handles wordocious://daily/<key>).
+private struct LinkedTile: View {
+    let mode: WSnapshot.Mode
+    let size: CGFloat
+    var body: some View {
+        if let url = dailyURL(mode) {
+            Link(destination: url) { GameTile(mode: mode, size: size) }
+        } else {
+            GameTile(mode: mode, size: size)
+        }
+    }
+}
+
+/// A row of tiles that shrink to fit the offered width (the mock's size is the ceiling).
+private struct TileRow: View {
+    let list: [WSnapshot.Mode]
+    var maxSize: CGFloat
+    var gap: CGFloat = 4
+    var linked = true
+
+    var body: some View {
+        GeometryReader { geo in
+            let n = CGFloat(max(list.count, 1))
+            let tile = max(14, min(maxSize, (geo.size.width - gap * (n - 1) - 3) / n))
+            HStack(spacing: gap) {
+                ForEach(list, id: \.key) { m in
+                    if linked { LinkedTile(mode: m, size: tile) } else { GameTile(mode: m, size: tile) }
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(height: geo.size.height, alignment: .bottom)
+        }
+        .frame(height: maxSize + 3)
+    }
+}
+
+// MARK: - Small: flame + streak, the eight tiles, "5 of 8 today"
 
 struct SmallView: View {
     let snap: WSnapshot
     let date: Date
+    @Environment(\.colorScheme) private var scheme
 
     /// The one tap a small widget is allowed, spent well: straight into the
     /// first unplayed daily (Wordocious first, then Puzzles); all done → plain app open.
@@ -420,116 +572,116 @@ struct SmallView: View {
     }
 
     var body: some View {
-        let headInk = isDoubleFlawless(snap) ? Color(widgetHex: "#78350f") : Color(widgetHex: "#4c1d95")
-        VStack(alignment: .leading, spacing: 0) {
-            FrostedStrip {
-                Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
-                    .tracking(1).foregroundStyle(brandGradient)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                Spacer(minLength: 2)
-                StreakBadge(streak: snap.streak)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .center, spacing: 0) {
-                    HStack(alignment: .lastTextBaseline, spacing: 2) {
-                        Text("\(snap.done)").font(.system(size: 30, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(widgetHex: "#1a1a2e"))
-                        Text("/\(snap.total)").font(.system(size: 15, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(widgetHex: "#6b7280"))
-                    }
-                    Spacer(minLength: 2)
-                    // The day's host in the corner (ART_SPEC §17).
-                    DayHost(date: date, size: 34)
+        let stats = snap.dayStats(at: date)
+        let midnight = nextLocalMidnight(after: date)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                StatChip(icon: .flame, label: "DAY STREAK", tint: "#f97316",
+                         phrase: "\(snap.streak) day streak", stacked: true) {
+                    SoftNumber(text: "\(snap.streak)", size: 16)
                 }
-                Text(snap.headline(at: date))
-                    .font(.system(size: 10, weight: .black, design: .rounded)).tracking(0.3)
-                    .foregroundStyle(headInk)
-                    .lineLimit(2).minimumScaleFactor(0.7)
-                Spacer(minLength: 0)
-                dots(snap.modes)
-                if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
-                Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
-                    .font(.system(size: 10.5, weight: .black, design: .rounded))
-                    .monospacedDigit()
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: 58, alignment: .leading)
-                    .foregroundStyle(Color(widgetHex: "#7c3aed"))
+                .frame(maxWidth: 74)
+                Spacer(minLength: 2)
+                // The day's host in the corner (ART_SPEC §17).
+                Image(dayHostAsset(date)).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 28, height: 28)
+                    .accessibilityHidden(true)
             }
-            .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 10)
+            Spacer(minLength: 0)
+            // §AL: the tile mini-grid shrinks to one row so the three stats always fit.
+            TileRow(list: snap.modes, maxSize: 17, gap: 2, linked: false)
+            if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
+            Spacer(minLength: 0)
+            // §AL addendum: two stat chips, then the full-width countdown chip.
+            HStack(spacing: 4) {
+                StatChip(icon: .check, label: "SOLVED", tint: "#7c3aed", phrase: WidgetStats.solvedPhrase(stats), stacked: true) {
+                    SoftNumber(text: WidgetStats.solvedText(stats), size: 14)
+                }
+                StatChip(icon: .star, label: "PTS", tint: "#f5a524", phrase: WidgetStats.pointsPhrase(stats), stacked: true) {
+                    SoftNumber(text: WidgetStats.pointsText(stats.points), size: 14)
+                }
+            }
+            StatChip(icon: .clock, label: "NEW IN", tint: "#2563eb",
+                     phrase: WidgetStats.countdownPhrase(seconds: Int(midnight.timeIntervalSince(date)))) {
+                Text(timerInterval: date...midnight, countsDown: true)
+                    .font(.system(size: 13, weight: .black, design: .rounded)).monospacedDigit()
+                    .foregroundStyle(WInk.number(scheme == .dark))
+                    .frame(maxWidth: 58)
+            }
         }
+        .padding(10)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(snap.headline(at: date)). \(WidgetStats.solvedPhrase(stats)). \(WidgetStats.pointsPhrase(stats)).")
         .widgetURL(nextPlayableURL)
     }
 
+    /// The Puzzles row as a thin strip of accent dots (played = solid).
     private func dots(_ list: [WSnapshot.Mode]) -> some View {
         HStack(spacing: 3) {
             ForEach(list, id: \.key) { m in
                 Capsule()
-                    .fill(m.played ? (m.won ? Color(widgetHex: m.colorHex) : lostGray)
-                                   : Color(widgetHex: m.colorHex).opacity(0.18))
-                    .frame(height: 8)
+                    .fill(m.played ? (m.won ? Color(widgetHex: m.colorHex) : WInk.missed)
+                                   : Color(widgetHex: m.colorHex).opacity(0.22))
+                    .frame(height: 6)
             }
         }
+        .accessibilityLabel("Puzzles \(snap.puzzleProgress.played) of \(snap.puzzleProgress.total)")
     }
 }
 
-// MARK: - Medium: frosted headline strip, two chip rows, footer strip
+// MARK: - Medium: the cast across the top, tiles + streak / rank, the next game
 
 struct MediumView: View {
     let snap: WSnapshot
     let date: Date
+    @Environment(\.colorScheme) private var scheme
+
+    /// The first unplayed daily (Wordocious first, then Puzzles).
+    private var next: WSnapshot.Mode? { (snap.modes + snap.puzzleModes).first(where: { !$0.played }) }
 
     var body: some View {
-        let headInk = isDoubleFlawless(snap) ? Color(widgetHex: "#78350f") : Color(widgetHex: "#4c1d95")
-        VStack(alignment: .leading, spacing: 0) {
-            FrostedStrip(top: 9) {
-                // The day's host at the corner (ART_SPEC §17).
-                DayHost(date: date, size: 22)
-                Text(snap.headline(at: date))
-                    .font(.system(size: 13, weight: .black, design: .rounded)).tracking(0.3)
-                    .foregroundStyle(headInk)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                Spacer(minLength: 4)
-                StreakBadge(streak: snap.streak)
+        let dark = scheme == .dark
+        VStack(alignment: .leading, spacing: 6) {
+            // The ten cast heroes spelling WORDOCIOUS (`.wcast`).
+            HStack(spacing: 2) {
+                ForEach(["w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s"], id: \.self) { id in
+                    Image("mascot-\(id)").resizable().interpolation(.high).scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: 26)
+                }
             }
-            chipRow(snap.modes, progress: snap.word, size: 28, gap: 5)
-                .padding(.horizontal, 12).padding(.top, 8)
-            if !snap.puzzleModes.isEmpty {
-                chipRow(snap.puzzleModes, progress: snap.puzzleProgress, size: 25, gap: 3)
-                    .padding(.horizontal, 12).padding(.top, 7)
+            .frame(height: 26)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                TileRow(list: snap.modes, maxSize: 26)
+                if !snap.puzzleModes.isEmpty {
+                    TileRow(list: snap.puzzleModes, maxSize: 20, gap: 3)
+                }
             }
             Spacer(minLength: 0)
-            FooterStrip(snap: snap, date: date)
-                .padding(.horizontal, 10).padding(.bottom, 8)
-        }
-    }
-
-    /// A row of chips + its tag. Narrow widgets shrink the chips a little rather
-    /// than squeeze the tag out (the mock's sizes are the ceiling).
-    private func chipRow(_ list: [WSnapshot.Mode], progress: GroupProgress, size: CGFloat, gap: CGFloat) -> some View {
-        let tier = HomeBanner.groupTier(progress)
-        return GeometryReader { geo in
-            let n = CGFloat(max(list.count, 1))
-            let fit = (geo.size.width - 44 - gap * (n - 1)) / n
-            let chip = max(18, min(size, fit))
-            HStack(spacing: gap) {
-                ForEach(list, id: \.key) { m in
-                    // Deep link: tap a chip, land in that daily as today
-                    // (DeepLink.swift handles wordocious://daily/<key>).
-                    if let url = dailyURL(m) {
-                        Link(destination: url) { ModeCell(mode: m, size: chip) }
-                    } else {
-                        ModeCell(mode: m, size: chip)
-                    }
+            // §AL addendum: a row of four labeled chips — streak, solved, points, countdown.
+            let stats = snap.dayStats(at: date)
+            let midnight = nextLocalMidnight(after: date)
+            HStack(spacing: 4) {
+                StatChip(icon: .flame, label: "DAY STREAK", tint: "#f97316", phrase: "\(snap.streak) day streak", stacked: true) {
+                    SoftNumber(text: "\(snap.streak)", size: 15)
                 }
-                Spacer(minLength: 4)
-                Text(rowTag(progress))
-                    .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(tierInk(tier))
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                StatChip(icon: .check, label: "SOLVED", tint: "#7c3aed", phrase: WidgetStats.solvedPhrase(stats), stacked: true) {
+                    SoftNumber(text: WidgetStats.solvedText(stats), size: 15)
+                }
+                StatChip(icon: .star, label: "POINTS", tint: "#f5a524", phrase: WidgetStats.pointsPhrase(stats), stacked: true) {
+                    SoftNumber(text: WidgetStats.pointsText(stats.points), size: 15)
+                }
+                StatChip(icon: .clock, label: "NEW PUZZLES IN", tint: "#2563eb",
+                         phrase: WidgetStats.countdownPhrase(seconds: Int(midnight.timeIntervalSince(date))), stacked: true) {
+                    Text(timerInterval: date...midnight, countsDown: true)
+                        .font(.system(size: 13, weight: .black, design: .rounded)).monospacedDigit()
+                        .foregroundStyle(WInk.number(scheme == .dark))
+                        .frame(maxWidth: 56)
+                }
             }
-            .frame(height: geo.size.height)
         }
-        .frame(height: size)
+        .padding(.horizontal, 12).padding(.vertical, 10)
     }
 }
 
@@ -599,7 +751,7 @@ extension View {
     }
 
     /// iOS 17 requires containerBackground; iOS 16 draws the same background.
-    /// The home page tint (ART_SPEC §17, no tiles at widget sizes); over it, one
+    /// The §E2 wallpaper (WidgetWallpaper); over it, one
     /// window, two colors: a SWEEP / FLAWLESS Wordocious row's tier color (top)
     /// blends into the Puzzles row's (bottom) — a row with no tier yet shows the
     /// tint — under a white sheen, inside the brand gradient frame; gold frame +
@@ -620,7 +772,7 @@ extension View {
         let to: CGFloat = medium ? 0.58 : 0.75
         let double = isDoubleFlawless(snap)
         let bg = ZStack {
-            homeTint
+            WidgetWallpaper()
             LinearGradient(stops: [.init(color: top, location: 0), .init(color: top, location: from),
                                    .init(color: bottom, location: to), .init(color: bottom, location: 1)],
                            startPoint: .top, endPoint: .bottom)

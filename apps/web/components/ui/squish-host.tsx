@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { prefersReducedMotion } from '@/lib/motion';
-import { squishKind, SQUISH_FRAMES, type SquishKind } from '@/lib/squish';
+import { squishKind, squishTargetIsChild, SQUISH_FRAMES, type SquishKind } from '@/lib/squish';
+import { feedback, physicalDeleteFeedback } from '@/lib/sound-events';
 
 // Everything tappable squishes (docs/FINISH_SPEC.md A9; A3 header icons, A4 tab
 // icons, A8 candy buttons, B2 keys): ONE document-level listener gives every
@@ -30,6 +31,8 @@ interface Press {
 }
 
 let press: Press | null = null;
+/** FINISH_SPEC U: a press made the `press` sound, so its release makes `release` (keys have their own `tap`). */
+let pressSounded = false;
 
 function isDisabled(el: Element): boolean {
   return (el as HTMLButtonElement).disabled === true || el.getAttribute('aria-disabled') === 'true';
@@ -45,7 +48,13 @@ function resolve(target: EventTarget | null): { el: HTMLElement; kind: SquishKin
   const icon = hit.querySelector<HTMLElement>(':scope .tab-squish');
   if (icon) return { el: icon, kind: 'icon' };
   if (hit.matches('input, select, textarea')) return null;
-  return { el: hit, kind: squishKind(hit.className && typeof hit.className === 'string' ? hit.className : '', hit.tagName) };
+  // AK: an inline wrapper (a <Link> around a block card) can't be transformed: squish its first child.
+  let el: HTMLElement = hit;
+  const child = hit.firstElementChild as HTMLElement | null;
+  if (squishTargetIsChild(getComputedStyle(hit).display, !!child) && child) el = child;
+  const attr = hit.getAttribute('data-squish') ?? el.getAttribute('data-squish');
+  const cls = `${typeof hit.className === 'string' ? hit.className : ''} ${typeof el.className === 'string' ? el.className : ''}`;
+  return { el, kind: squishKind(cls, hit.tagName, attr) };
 }
 
 function baseTransform(el: HTMLElement): string {
@@ -54,9 +63,10 @@ function baseTransform(el: HTMLElement): string {
 }
 
 function down(target: EventTarget | null) {
-  release();
-  if (prefersReducedMotion()) return;
+  release(true);
   const hit = resolve(target);
+  if (hit && hit.kind !== 'key') { feedback('press'); pressSounded = true; }
+  if (prefersReducedMotion()) return;
   if (!hit || typeof hit.el.animate !== 'function') return;
   const { el, kind } = hit;
   const base = baseTransform(el);
@@ -69,7 +79,9 @@ function down(target: EventTarget | null) {
   press = { el, kind, base, anim };
 }
 
-function release() {
+/** Spring back; `silent` (a scroll's pointercancel, a stale press) skips the `release` sound. */
+function release(silent = false) {
+  if (pressSounded) { pressSounded = false; if (!silent) feedback('release'); }
   const p = press;
   press = null;
   if (!p) return;
@@ -95,7 +107,10 @@ export function SquishHost() {
       down(e.target);
     };
     const onUp = () => release();
+    // AK: a scroll starting cancels the press silently (never blocks the scroll).
+    const onCancel = () => release(true);
     const onKeyDown = (e: KeyboardEvent) => {
+      physicalDeleteFeedback(e);
       if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) down(document.activeElement);
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -103,17 +118,17 @@ export function SquishHost() {
     };
     document.addEventListener('pointerdown', onDown, { passive: true });
     document.addEventListener('pointerup', onUp, { passive: true });
-    document.addEventListener('pointercancel', onUp, { passive: true });
+    document.addEventListener('pointercancel', onCancel, { passive: true });
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', onUp);
+    window.addEventListener('blur', onCancel);
     return () => {
       document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
+      document.removeEventListener('pointercancel', onCancel);
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('blur', onUp);
+      window.removeEventListener('blur', onCancel);
     };
   }, []);
   return null;

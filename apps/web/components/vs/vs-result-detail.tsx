@@ -19,6 +19,8 @@ import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 import { MomentArt } from '@/components/ui/art-title';
 import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
+import { PlayerAvatar } from '@/components/avatar/player-avatar';
+import { SoftNum } from '@/components/ui/soft-number';
 import { resultMoment } from '@/lib/art';
 import { alphaHex, overAlpha } from '@/lib/soft-surface';
 
@@ -103,6 +105,12 @@ export interface ResultSide {
   isBot?: boolean;
   /** The player's profile accent for their letter tile (ART_SPEC §20), when known. */
   accent?: string | null;
+  /** Your Ghost (D1): drawn as a faded version of this player's own mascot. */
+  ghost?: { name: string; emoji?: string | null; accent?: string | null };
+  /** FINISH_SPEC AN3: the player's user id (matches the signed-in player), avatar_config and Pro flag when known. */
+  userId?: string | null;
+  avatarConfig?: unknown;
+  pro?: boolean | null;
   score: number;
   guesses: number;
   timeMs: number;
@@ -138,21 +146,27 @@ export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
     return (
       <div className="flex-1 min-w-0 flex flex-col items-center gap-1" style={{ padding: '12px 8px 14px' }}>
         <div className="flex items-center gap-1.5 max-w-full">
-          {p.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.avatarUrl} alt="" className={`rounded-full shrink-0 ${p.isBot ? 'object-contain bg-white' : 'object-cover'}`} style={{ width: 22, height: 22 }} />
-          ) : !p.isBot ? (
-            <LetterTileAvatar name={p.name} accent={p.accent} size={22} />
-          ) : null}
+          {p.ghost ? (
+            <LetterTileAvatar name={p.ghost.name} accent={p.ghost.accent} size={22} style={{ opacity: 0.45 }} />
+          ) : p.isBot ? (
+            p.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.avatarUrl} alt="" aria-hidden="true" width={26} height={26} className="rounded-full shrink-0 object-contain" style={{ width: 26, height: 26, background: '#e6f7f4' }} />
+            ) : null
+          ) : (
+            // AN5 / AN6: the player's photo (rounded square) or their mascot.
+            <PlayerAvatar name={p.name} userId={p.userId} url={p.avatarUrl} accent={p.accent} config={p.avatarConfig} pro={p.pro} size={22} />
+          )}
           <span className="text-[11px] font-black uppercase truncate" style={{ color: '#4c1d95', letterSpacing: 0.6 }}>{p.name}</span>
         </div>
-        <span className="font-black tabular-nums" style={{ fontSize: 34, lineHeight: 1.05, color: winner || outcome === 'draw' ? '#4c1d95' : '#6b7280' }}>
+        {/* A2: the score as a soft number (the losing side a touch quieter). */}
+        <SoftNum size={34} style={{ lineHeight: 1.05, opacity: winner || outcome === 'draw' ? 1 : 0.6 }}>
           {p.score.toFixed(2)}
-        </span>
+        </SoftNum>
         <span className="text-[10px] font-bold tabular-nums" style={{ color: '#6d28d9' }}>
           {p.guesses} {p.guesses === 1 ? 'guess' : 'guesses'} + {timePenalty.toFixed(2)} time
         </span>
-        <span className="text-[11px] font-black tabular-nums" style={{ color: '#4c1d95' }}>{clock(p.timeMs)}</span>
+        <SoftNum size={14}>{clock(p.timeMs)}</SoftNum>
         <SolveBadge solved={p.solved} size={9.5} />
       </div>
     );
@@ -168,7 +182,7 @@ export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
         </div>
       )}
       <div className="relative flex flex-col gap-1 text-center" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
-        <MomentArt moment={resultMoment(outcome)} as="div" />
+        <MomentArt moment={resultMoment(outcome)} as="div" level={2} />
         <span className="flex items-center justify-center gap-1.5">
           <span className="flex items-center justify-center shrink-0" style={{ width: 16, height: 16 }}>{modeIcon}</span>
           <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>{sub}</span>

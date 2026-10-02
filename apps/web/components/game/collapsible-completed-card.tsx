@@ -2,6 +2,12 @@
 
 import { createContext, useContext, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { accentInk, cardBarStyle, softCard } from '@/lib/soft-surface';
+import { Icon3D } from '@/components/ui/icon3d';
+import { SoftNum } from '@/components/ui/soft-number';
+
+/** The "Completed Today" ink (purple on light, a light lilac on the dark card). */
+const WON_INK = accentInk('#7c3aed', '#7c3aed');
 
 /**
  * The Leaderboard redesign (docs/LEADERBOARD_REDESIGN_SPEC.md §2.2) shows the
@@ -27,54 +33,38 @@ export function CollapsibleCompletedCard({
   const [expanded, setExpanded] = useState(false);
   const soft = useContext(SoftCardContext);
 
+  // FINISH_SPEC A1 + B6: a tinted card in purple (won) / slate (lost) with
+  // the game-card top bar, the 3D W / L badge, the summary as a soft number.
+  const accent = won ? '#7c3aed' : '#6b7891';
   return (
     <div
       className="mb-4"
       style={{
-        background: 'var(--color-surface)',
-        ...(soft
-          ? { borderRadius: 14, boxShadow: '0 2px 10px rgba(26,26,46,0.06)' }
-          : { border: '1.5px solid var(--color-border)', borderRadius: '16px' }),
+        ...softCard(accent, { radius: soft ? 14 : 16 }),
         overflow: 'hidden',
       }}
     >
-      {/* Top accent */}
-      <div
-        className="h-1"
-        style={{
-          background: won
-            ? 'linear-gradient(90deg, #7c3aed, #a78bfa)'
-            : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
-        }}
-      />
+      {/* The game-card top bar. */}
+      <div aria-hidden="true" style={cardBarStyle(accent)} />
 
       {/* Collapsible header */}
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="w-full flex items-center justify-between px-4 py-2.5"
       >
         <div className="flex items-center gap-2">
+          <Icon3D name={won ? 'badge-w' : 'badge-l'} size={22} label={won ? 'Won' : 'Lost'} />
           <span
-            className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0"
-            style={{
-              background: won ? '#f5f3ff' : '#fee2e2',
-              color: won ? '#7c3aed' : '#dc2626',
-            }}
-          >
-            {won ? '✓' : '✗'}
-          </span>
-          <span
-            className="text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ color: won ? '#7c3aed' : 'var(--color-text-muted)' }}
+            className={`text-[10px] font-extrabold uppercase tracking-wider ${won ? WON_INK.className : ''}`}
+            style={won ? WON_INK.style : { color: 'var(--color-text-secondary)' }}
           >
             {won ? 'Completed' : 'Attempted'} Today
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            {summaryLabel}
-          </span>
+          <SoftNum size={13}>{summaryLabel}</SoftNum>
           <ChevronDown
             className="w-3.5 h-3.5 transition-transform duration-200"
             style={{

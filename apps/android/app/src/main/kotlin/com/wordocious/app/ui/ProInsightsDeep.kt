@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material3.Icon
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -166,7 +168,7 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Skill Radar", accent = WTheme.primary)
         val card: @Composable () -> Unit = {
-            KitCard {
+            KitCard(accent = Color(0xFF7C3AED)) {
                 RadarChart(d)
                 Text(
                     "Speed · win rate · steadiness · Gauntlet clears · mode spread — all 0–100",
@@ -216,9 +218,9 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Rivalries", accent = Color(0xFFEC4899))
         val card: @Composable () -> Unit = {
-            KitCard {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    display.forEach { RivalryRow(it) }
+            KitCard(accent = Color(0xFFEC4899)) {
+                Column(Modifier.clip(RoundedCornerShape(10.dp))) {
+                    display.forEachIndexed { i, r -> RivalryRow(r, i) }
                 }
             }
         }
@@ -228,10 +230,10 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
 }
 
 @Composable
-private fun RivalryRow(r: StatsDeepService.Rivalry) {
+private fun RivalryRow(r: StatsDeepService.Rivalry, index: Int) {
     val pct = if (r.total > 0) r.wins.toFloat() / r.total else 0f
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(8.dp),
+        Modifier.fillMaxWidth().stripedRow(index, Color(0xFFEC4899)).padding(horizontal = 8.dp, vertical = 9.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -239,11 +241,10 @@ private fun RivalryRow(r: StatsDeepService.Rivalry) {
                 androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
                 tint = WTheme.primary, modifier = Modifier.size(14.dp),
             )
-            Text(r.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, modifier = Modifier.weight(1f))
-            Text(
-                "${r.wins}–${r.losses}" + if (r.draws > 0) "–${r.draws}" else "",
-                fontSize = 12.sp, fontWeight = FontWeight.Black,
-                color = if (r.wins >= r.losses) WIN_PURPLE else LOSS_RED,
+            Text(r.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1, modifier = Modifier.weight(1f))
+            SoftNumber(
+                "${r.wins}–${r.losses}" + if (r.draws > 0) "–${r.draws}" else "", 14.sp,
+                color = if (r.wins >= r.losses) null else LOSS_RED,
             )
         }
         Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(LOSS_RED.copy(alpha = 0.2f))) {
@@ -376,18 +377,19 @@ private fun fmt1(v: Double): String = if (v == v.toInt().toDouble()) "${v.toInt(
 
 @Composable
 private fun OpenerYieldCard(openers: List<StatsDeepService.OpenerDeepStat>, accent: Color) {
-    KitCard {
+    KitCard(accent = accent) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DeepCardTitle(Icons.Filled.Lightbulb, "Opener Yield", accent)
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                openers.forEach { o ->
+            Column(Modifier.clip(RoundedCornerShape(10.dp))) {
+                openers.forEachIndexed { i, o ->
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(8.dp),
+                        Modifier.fillMaxWidth().stripedRow(i, accent).padding(horizontal = 8.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(o.word, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = WTheme.text, modifier = Modifier.weight(1f))
-                        Text("${fmt1(o.avgGreens)} 🟩", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WIN_PURPLE)
-                        Text("${fmt1(o.avgYellows)} 🟨", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
+                        // AL addendum 2: code-drawn tile swatches in our colors, not 🟩 / 🟨 emoji.
+                        OpenerYield(fmt1(o.avgGreens), WIN_PURPLE, "right spot")
+                        OpenerYield(fmt1(o.avgYellows), Color(0xFFF59E0B), "wrong spot")
                         Text(
                             "${o.count}× · ${o.winRate}%", fontSize = 10.sp, fontWeight = FontWeight.Bold,
                             color = WTheme.textMuted, modifier = Modifier.width(60.dp), textAlign = TextAlign.End,
@@ -402,7 +404,7 @@ private fun OpenerYieldCard(openers: List<StatsDeepService.OpenerDeepStat>, acce
 
 @Composable
 private fun PositionAccuracyCard(p: StatsDeepService.PositionAccuracy, accent: Color) {
-    KitCard {
+    KitCard(accent = accent) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DeepCardTitle(Icons.Filled.Grid3x3, "Position Accuracy", accent)
             Row(
@@ -429,18 +431,18 @@ private fun PositionAccuracyCard(p: StatsDeepService.PositionAccuracy, accent: C
 
 @Composable
 private fun StageBreakdownCard(stages: List<StatsDeepService.GauntletStageStat>) {
-    KitCard {
+    KitCard(accent = Color(0xFFD97706)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 // Theater masks, not the skull (which is the Gauntlet/Nemesis glyph) — iOS.
                 Icon(Icons.Filled.TheaterComedy, null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
                 Text("Stage Breakdown", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                stages.forEach { s ->
+            Column(Modifier.clip(RoundedCornerShape(10.dp))) {
+                stages.forEachIndexed { i, s ->
                     val clearPct = if (s.runs > 0) (s.clears.toDouble() / s.runs * 100).toInt() else 0
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(8.dp),
+                        Modifier.fillMaxWidth().stripedRow(i, Color(0xFFD97706)).padding(horizontal = 8.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text("${s.stage + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.width(16.dp))
@@ -463,20 +465,22 @@ private fun StageBreakdownCard(stages: List<StatsDeepService.GauntletStageStat>)
 
 @Composable
 private fun HintsCard(h: StatsDeepService.HintHonesty) {
-    KitCard {
+    KitCard(accent = Color(0xFFF5A524)) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("💡 Hints", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Icon(Icons.Filled.Lightbulb, null, tint = Color(0xFFF5A524), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Hints", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 Spacer(Modifier.weight(1f))
                 Text("${h.gamesCounted} games", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("${h.hintlessWinRate}%", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WIN_PURPLE)
+                    SoftNumber("${h.hintlessWinRate}%", 22.sp)
                     Text("HINTLESS WINS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(fmt1(h.avgHintsPerGame), fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    SoftNumber(fmt1(h.avgHintsPerGame), 22.sp)
                     Text("HINTS / GAME", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
             }
@@ -486,7 +490,7 @@ private fun HintsCard(h: StatsDeepService.HintHonesty) {
 
 @Composable
 private fun AlmanacCard(entries: List<StatsDeepService.AlmanacEntry>, accent: Color) {
-    KitCard {
+    KitCard(accent = accent) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DeepCardTitle(Icons.Filled.MenuBook, "Word Almanac", accent)
             // 3-col purple/red grid, capped at ~224dp with inner scroll (web max-h-56).
@@ -509,10 +513,10 @@ private fun AlmanacCard(entries: List<StatsDeepService.AlmanacEntry>, accent: Co
                                     a.word, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
                                     color = if (a.won) Color(0xFF6D28D9) else LOSS_RED, maxLines = 1,
                                 )
-                                Text(
-                                    if (a.won) "${a.guesses}g" else "✗",
+                                if (a.won) Text(
+                                    "${a.guesses}g",
                                     fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                                )
+                                ) else Icon3D(Icon3DName.BADGE_L, 11.dp, contentDescription = "missed")
                             }
                         }
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -532,15 +536,36 @@ private fun AlmanacCard(entries: List<StatsDeepService.AlmanacEntry>, accent: Co
 fun StatsEmptyCard(title: String, accent: Color = WTheme.primary, hint: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title, accent = accent)
-        KitCard {
-            Text(
-                hint,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = WTheme.textMuted,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            )
+        // A1 / A7: a tinted card in the section's accent with a small cast pose (never D,
+        // the Stats host; one character per title so two cards never repeat an image).
+        val pose = StatsPoses.forTitle(title)
+        KitCard(accent = accent) {
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                CastPose(pose.id, pose.pose, 64.dp)
+                Text(
+                    hint,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
+    }
+}
+
+/** Opener Yield's average + a code-drawn tile swatch in our color (AL addendum 2: no 🟩 / 🟨). */
+@Composable
+private fun OpenerYield(value: String, color: Color, spoken: String) {
+    Row(
+        Modifier.clearAndSetSemantics { contentDescription = "$value $spoken" },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text(value, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = color)
+        GlyphSwatch(color, 9.dp)
     }
 }

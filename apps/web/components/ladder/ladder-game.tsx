@@ -1,5 +1,6 @@
 'use client';
 
+import { REVEAL } from '@/lib/tile-motion';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
@@ -18,7 +19,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { LadderBoard, LADDER_ACCENT } from './ladder-board';
+import { LadderBoard, LadderSummary, LADDER_ACCENT } from './ladder-board';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -31,19 +32,17 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { ladderElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
-import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 
 // Letter Ladder (More Games §15): change one letter at a time from START to
@@ -178,7 +177,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
       if (a.type === 'SUBMIT') {
         if (next.reject) {
           flash(REJECT_COPY[next.reject]); haptic('medium'); playInvalid();
-          setInvalid(true); setShaking(true); setTimeout(() => { setInvalid(false); setShaking(false); setTyping(''); }, 500);
+          setInvalid(true); setShaking(true); setTimeout(() => { setInvalid(false); setShaking(false); setTyping(''); }, REVEAL.rejectMs(s.words[0]?.length ?? 5));
         } else { setTyping(''); playKeyTap(); }
       } else if (a.type === 'HINT' && next.words.length > s.words.length) { setTyping(''); }
       return next;
@@ -256,14 +255,13 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const finished = state.status !== 'playing';
   const won = state.status === 'won';
   const gc = ladderGuessCount(state);
-  const parLabel = formatGuessStat('overPar', 1, gc);
   const movesLeft = Math.max(0, ladderMaxMoves(state) - state.moves);
   // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
   const capsule = (dim: boolean) => candyClass({ dim });
   const capsuleStyle = (_dim: boolean) => undefined;
 
   return (
-    <GameBackground mode="LADDER" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="LADDER" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="LADDER" onComplete={() => setShowVictory(false)} guesses={state.moves} guessLabel="Moves" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.moves} guessLabel="Moves" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -291,10 +289,11 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // day's rungs from the matches row (a loss shows the shortest path muted), then the card.
-        <CompletedCustomDaily dbKey="LADDER" completion={completion}
-          boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
-          {elsewhere?.state && <LadderBoard state={elsewhere.state} typing="" invalid={false} shaking={false} revealPath={!completion.won} />}
-        </CompletedCustomDaily>
+        <PuzzleElsewhere dbKey="LADDER" completion={completion}
+          boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}
+          moreExtra={elsewhere?.state ? <LadderBoard state={elsewhere.state} typing="" invalid={false} shaking={false} revealPath={!completion.won} /> : undefined}>
+          {elsewhere?.state && <LadderSummary state={elsewhere.state} />}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
@@ -316,38 +315,34 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the ladder collapsed
+        // to a summary (START · +N steps · last rung; a loss names one shortest
+        // route) scaled to the room left, then the dock. "See all steps" (More)
+        // holds the full ladder and the score breakdown.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex items-center justify-center px-3 py-2">
-              <LadderBoard state={state} typing="" invalid={false} shaking={false} revealPath={!won} />
-            </div>
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={LADDER_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
-                  style={{ backgroundColor: `${LADDER_ACCENT}15`, border: `2px solid ${LADDER_ACCENT}44`, color: LADDER_ACCENT }}>
-                  {won ? parLabel : '✗'}
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.moves} guessLabel={`move${state.moves === 1 ? '' : 's'} · par ${state.par}`} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? (gc === 1 ? 'Ladder climbed on par' : 'Ladder climbed') : 'Out of moves'}. ${won
+                  ? `${state.moves} move${state.moves === 1 ? '' : 's'} · Par ${state.par} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
+                  : `${state.moves} moves · Par ${state.par} · ${formatTime(elapsedSeconds)}`}`} />
+            }
+            board={<div className="flex justify-center px-1 pb-1"><LadderSummary state={state} /></div>}
+            dock={
+              <FinishedDock currentMode="LADDER" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="LADDER" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure label="See all steps" accent={LADDER_ACCENT}>
+                <div className="flex flex-col items-center gap-3">
+                  <LadderBoard state={state} typing="" invalid={false} shaking={false} revealPath={!won} />
+                  <ScoreBreakdownCard gameMode="LADDER" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
+                    boardsSolved={won ? 1 : 0} totalBoards={1} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
                 </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? (gc === 1 ? 'Ladder climbed on par' : 'Ladder climbed') : 'Out of moves'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {won
-                      ? `${state.moves} move${state.moves === 1 ? '' : 's'} · Par ${state.par} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
-                      : `${state.moves} moves · Par ${state.par} · ${formatTime(elapsedSeconds)}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="LADDER" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard gameMode="LADDER" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
-                boardsSolved={won ? 1 : 0} totalBoards={1} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-              {mode === 'daily' && <NextDailyCta currentMode="LADDER" />}
-            </div>
-          </div>
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

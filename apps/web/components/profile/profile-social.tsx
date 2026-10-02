@@ -15,7 +15,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Lock, X } from 'lucide-react';
-import { Icon3D, icon3dForEmoji } from '@/components/ui/icon3d';
+import { Icon3D } from '@/components/ui/icon3d';
+import { UiIcon, medalIconName, type UiIconName } from '@/components/ui/ui-icon';
 import { HeaderBack } from '@/components/ui/page-header';
 import { evaluateGuess } from '@wordle-duel/core';
 import { modeLabel } from '@/lib/mode-labels';
@@ -23,6 +24,9 @@ import { getTodayLocal } from '@/lib/daily-service';
 import { requiredSweepCount } from '@/lib/daily-modes';
 import { getTileHex } from '@/lib/tile-theme';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { SoftNum } from '@/components/ui/soft-number';
+import { MedalArt } from '@/components/stats/medal-art';
+import { BRAND_ACCENT, alphaHex, softBackground, softBorder, softCard, softPill } from '@/lib/soft-surface';
 import {
   fetchH2H,
   fetchTodayCompare,
@@ -46,18 +50,27 @@ import {
 
 // ── Shared bits ─────────────────────────────────────────────────────────────
 
-const MEDAL_EMOJI: Record<string, string> = { gold: '\u{1F947}', silver: '\u{1F948}', bronze: '\u{1F949}' };
+/** The glossy 3D medal art for gold / silver / bronze (lib/art.ts medalSrc); the generic medal badge for anything else. */
+function MedalGlyph({ medal, size = 20 }: { medal: string; size?: number }) {
+  if (medal === 'gold' || medal === 'silver' || medal === 'bronze') return <MedalArt medal={medal} size={size} />;
+  return <UiIcon name={medalIconName(medal)} size={size} />;
+}
+const MEDAL_TINT: Record<string, string> = { gold: '#f5a524', silver: '#94a3b8', bronze: '#d97706' };
 
 export const archetypeName = (a: string): string => a.replace(/_/g, ' ');
 
-/** Chip emoji per archetype (matches the explainer modal). */
-export const ARCHETYPE_EMOJI: Record<Archetype, string> = {
-  GRINDER: '\u{1F9F1}',
-  SPEEDRUNNER: '⚡',
-  SNIPER: '\u{1F3AF}',
-  NIGHT_OWL: '\u{1F989}',
-  CHALLENGER: '\u{1F6E1}️',
+/** Chip icon per archetype (matches the explainer modal): our 3D art, never an emoji (FINISH_SPEC AM3). */
+export const ARCHETYPE_ICON: Record<Archetype, UiIconName> = {
+  GRINDER: 'grid',
+  SPEEDRUNNER: 'zap',
+  SNIPER: 'target',
+  NIGHT_OWL: 'sparkles',
+  CHALLENGER: 'shield',
 };
+
+export function ArchetypeIcon({ archetype, size = 14 }: { archetype: Archetype; size?: number }) {
+  return <UiIcon name={ARCHETYPE_ICON[archetype]} size={size} />;
+}
 
 function formatClock(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -73,19 +86,21 @@ function CardTitle({ children }: { children: ReactNode }) {
   );
 }
 
-/** The mock's white card with tap affordance: hover shadow, press scale (no chevron, ART_SPEC §21.4). */
+/** A tinted card (A1: its accent's wash, never plain white) with tap affordance: hover shadow, press squish (no chevron, ART_SPEC §21.4). */
 function TappableCard({
   title,
   onClick,
   ariaLabel,
   children,
   gradient = false,
+  accent = BRAND_ACCENT,
 }: {
   title: ReactNode;
   onClick?: () => void;
   ariaLabel?: string;
   children: ReactNode;
   gradient?: boolean;
+  accent?: string;
 }) {
   const tappable = Boolean(onClick);
   return (
@@ -96,12 +111,7 @@ function TappableCard({
       onClick={onClick}
       onKeyDown={tappable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } } : undefined}
       className={`relative rounded-2xl p-4 animate-fade-in-up ${tappable ? 'cursor-pointer transition-all active:scale-[0.98] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
-      style={{
-        background: gradient
-          ? 'linear-gradient(135deg, var(--color-surface-hover), var(--color-surface))'
-          : 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-      }}
+      style={{ ...softCard(accent, { radius: 18 }), ...(gradient ? { background: softBackground(accent, 0.18) } : null) }}
     >
       <div className="flex items-center justify-between mb-2.5">
         <CardTitle>{title}</CardTitle>
@@ -145,7 +155,7 @@ function Modal({
       <div
         ref={focusRef}
         className={`w-full ${wide ? 'max-w-md' : 'max-w-sm'} max-h-[85vh] overflow-y-auto p-5 animate-modal-content`}
-        style={{ background: 'var(--color-surface)', borderRadius: '20px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+        style={{ background: softBackground(BRAND_ACCENT, 0.08), border: softBorder(BRAND_ACCENT, 0.08), borderRadius: '20px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -301,12 +311,12 @@ export function GuardedBoardModal({
 // ── Archetype explainer modal ───────────────────────────────────────────────
 
 /** Rules mirror the persona route exactly — that route is the single source. */
-const ARCHETYPE_RULES: Array<{ key: Archetype; emoji: string; rule: string }> = [
-  { key: 'GRINDER', emoji: '\u{1F9F1}', rule: 'Swept every daily on 3 or more days. Checked first — sweeping every mode daily is the rarest habit.' },
-  { key: 'SPEEDRUNNER', emoji: '⚡', rule: 'Average solve time 90 seconds or under (at least 10 timed games).' },
-  { key: 'SNIPER', emoji: '\u{1F3AF}', rule: 'Average 3.6 guesses or fewer on single-board modes (at least 10 games).' },
-  { key: 'NIGHT_OWL', emoji: '\u{1F989}', rule: '40%+ of plays late at night (measured in UTC, so it’s approximate by design).' },
-  { key: 'CHALLENGER', emoji: '\u{1F6E1}️', rule: 'Everyone else — still building a signature style.' },
+const ARCHETYPE_RULES: Array<{ key: Archetype; rule: string }> = [
+  { key: 'GRINDER', rule: 'Swept every daily on 3 or more days. Checked first — sweeping every mode daily is the rarest habit.' },
+  { key: 'SPEEDRUNNER', rule: 'Average solve time 90 seconds or under (at least 10 timed games).' },
+  { key: 'SNIPER', rule: 'Average 3.6 guesses or fewer on single-board modes (at least 10 games).' },
+  { key: 'NIGHT_OWL', rule: '40%+ of plays late at night (measured in UTC, so it’s approximate by design).' },
+  { key: 'CHALLENGER', rule: 'Everyone else — still building a signature style.' },
 ];
 
 export function ArchetypeModal({
@@ -345,12 +355,12 @@ export function ArchetypeModal({
               key={a.key}
               className="rounded-xl p-2.5"
               style={{
-                background: isTheirs ? 'var(--color-surface-hover)' : 'transparent',
-                border: isTheirs ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)',
+                background: isTheirs ? alphaHex('#7c3aed', 0.14) : alphaHex('#7c3aed', 0.04),
+                border: isTheirs ? '2px solid #7c3aed' : softBorder('#7c3aed', 0.04),
               }}
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm">{a.emoji}</span>
+                <ArchetypeIcon archetype={a.key} size={18} />
                 <span className="text-xs font-black tracking-wide" style={{ color: isTheirs ? '#7c3aed' : 'var(--color-text)' }}>
                   {archetypeName(a.key)}
                 </span>
@@ -419,9 +429,9 @@ export function YouVsThemCard({
         gradient
       >
         <div className="flex items-center justify-between mb-2.5">
-          <div className="text-2xl font-black tabular-nums" style={{ color: 'var(--color-text)' }}>
-            <span style={{ color: '#7c3aed' }}>{h2h.youWin}</span> – {h2h.theyWin}
-          </div>
+          <SoftNum size={24} as="div" className="soft-num-auto">
+            {h2h.youWin} – {h2h.theyWin}
+          </SoftNum>
           <div className="text-[10.5px] font-bold text-right leading-snug" style={{ color: 'var(--color-text-muted)' }}>
             {leadNote}<br />{h2h.shared.length} shared dail{h2h.shared.length === 1 ? 'y' : 'ies'} all-time
           </div>
@@ -435,7 +445,7 @@ export function YouVsThemCard({
             onClick={(e) => { e.stopPropagation(); setShowBoard(true); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setShowBoard(true); } }}
             className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-[11.5px] font-bold cursor-pointer transition-transform active:scale-[0.98]"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+            style={{ ...softPill('#7c3aed', { radius: 12, bar: false }), color: 'var(--color-text)' }}
           >
             <span className="font-black uppercase" style={{ color: '#7c3aed' }}>{modeLabel(today.mode)}</span>
             <span>today — {targetName} {today.theirGuesses}, you {today.yourGuesses}</span>
@@ -563,7 +573,7 @@ export function TrophyCaseCard({
 
   return (
     <>
-      <TappableCard title="TROPHY CASE" ariaLabel="Medal history" onClick={() => setShowHistory(true)}>
+      <TappableCard title="TROPHY CASE" ariaLabel="Medal history" onClick={() => setShowHistory(true)} accent="#f5a524">
         <div className="flex gap-2.5">
           {[
             { medal: 'gold', count: gold, cap: 'GOLD', highlight: true },
@@ -573,13 +583,10 @@ export function TrophyCaseCard({
             <div
               key={t.medal}
               className="flex-1 text-center rounded-xl py-2.5"
-              style={{
-                background: t.highlight && t.count > 0 ? 'var(--color-highlight-gold)' : 'var(--color-surface)',
-                border: t.highlight && t.count > 0 ? '1.5px solid var(--color-gold-border)' : '1.5px solid var(--color-border)',
-              }}
+              style={softPill(MEDAL_TINT[t.medal], { radius: 12 })}
             >
-              <div className="text-base leading-none">{MEDAL_EMOJI[t.medal]}</div>
-              <div className="text-xl font-black tabular-nums" style={{ color: 'var(--color-text)' }}>{t.count}</div>
+              <div className="flex justify-center"><MedalGlyph medal={t.medal} size={28} /></div>
+              <SoftNum size={20} as="div" className="soft-num-auto">{t.count}</SoftNum>
               <div className="text-[9px] font-black tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{t.cap}</div>
             </div>
           ))}
@@ -587,9 +594,9 @@ export function TrophyCaseCard({
         {flawless && flawless.count > 0 && (
           <div
             className="flex items-center gap-2 mt-2.5 rounded-xl px-3 py-2 text-[11.5px] font-bold"
-            style={{ background: 'var(--color-surface-hover)', color: 'var(--color-text)' }}
+            style={{ ...softPill('#7c3aed', { radius: 12, bar: false }), color: 'var(--color-text)' }}
           >
-            <span>{'\u{1F48E}'}</span>
+            <Icon3D name="trophy" size={18} />
             <span>Rarest: <b style={{ color: '#7c3aed' }}>Flawless Victory</b> ×{flawless.count}</span>
             <span className="ml-auto text-[10px] font-black whitespace-nowrap" style={{ color: '#ec4899' }}>
               held by {flawless.pctOfPlayers}% of players
@@ -615,7 +622,7 @@ export function TrophyCaseCard({
                 className="flex items-center gap-2.5 py-2 px-1 -mx-1 rounded-lg cursor-pointer transition-colors active:scale-[0.99]"
                 style={{ borderTop: i > 0 ? '1px solid var(--color-border)' : undefined }}
               >
-                <span className="text-base">{MEDAL_EMOJI[m.medal_type] ?? '\u{1F3C5}'}</span>
+                <MedalGlyph medal={m.medal_type} size={20} />
                 <div className="min-w-0">
                   <div className="text-xs font-black" style={{ color: 'var(--color-text)' }}>{modeLabel(m.game_mode)}</div>
                   <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{m.day}</div>
@@ -642,9 +649,9 @@ export function TrophyCaseCard({
                     key={p.userId}
                     href={`/profile/${p.userId}`}
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-transform active:scale-[0.98]"
-                    style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+                    style={softPill(MEDAL_TINT[p.medal] ?? BRAND_ACCENT, { radius: 12, bar: false })}
                   >
-                    <span className="text-lg">{MEDAL_EMOJI[p.medal] ?? '\u{1F3C5}'}</span>
+                    <MedalGlyph medal={p.medal} size={24} />
                     <span className="text-sm font-black truncate" style={{ color: 'var(--color-text)' }}>{p.username}</span>
                     <span className="ml-auto text-xs font-black tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{p.score}</span>
                   </Link>
@@ -662,7 +669,7 @@ export function TrophyCaseCard({
 
 interface HighlightItem {
   key: string;
-  emoji: string;
+  icon: UiIconName;
   big: string;
   cap: string;
   onClick?: () => void;
@@ -699,7 +706,7 @@ export function HighlightsReel({
   if (persona && persona.longestWinStreak >= 2) {
     items.push({
       key: 'streak',
-      emoji: '\u{1F3C6}',
+      icon: 'flame',
       big: `${persona.longestWinStreak}-win streak`,
       cap: 'Career best',
       onClick: () => setShowCalendar(true),
@@ -708,18 +715,18 @@ export function HighlightsReel({
   if (fastest) {
     items.push({
       key: 'fastest',
-      emoji: '⚡',
+      icon: 'zap',
       big: formatClock(fastest.seconds),
       cap: `Fastest ${modeLabel(fastest.mode)} solve`,
     });
   }
   if (perfectOcto) {
-    items.push({ key: 'octo', emoji: '\u{1F4A5}', big: '8/8 boards', cap: `Perfect ${modeLabel('OCTORDLE')}` });
+    items.push({ key: 'octo', icon: 'grid', big: '8/8 boards', cap: `Perfect ${modeLabel('OCTORDLE')}` });
   }
   if (persona && persona.flawless.count >= 1) {
     items.push({
       key: 'flawless',
-      emoji: '\u{1F48E}',
+      icon: 'trophy',
       big: `${persona.flawless.count} Flawless`,
       cap: persona.flawless.count === 1 ? 'Day with every daily won' : 'Days with every daily won',
     });
@@ -731,7 +738,7 @@ export function HighlightsReel({
     <>
       <div
         className="rounded-2xl p-4 animate-fade-in-up"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        style={softCard('#ec4899', { radius: 18 })}
       >
         <div className="mb-2.5"><CardTitle>HIGHLIGHTS</CardTitle></div>
         <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -745,9 +752,9 @@ export function HighlightsReel({
                 onClick={h.onClick}
                 onKeyDown={tappable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onClick?.(); } } : undefined}
                 className={`relative min-w-[122px] rounded-xl px-3 py-2.5 shrink-0 ${tappable ? 'cursor-pointer transition-transform active:scale-[0.97] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
-                style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+                style={softPill('#ec4899', { radius: 12 })}
               >
-                <div className="text-base leading-none">{icon3dForEmoji(h.emoji) ? <Icon3D name={icon3dForEmoji(h.emoji)!} size={18} /> : h.emoji}</div>
+                <div className="leading-none"><UiIcon name={h.icon} size={18} /></div>
                 <div className="text-[15px] font-black mt-1 flex items-center gap-1" style={{ color: 'var(--color-text)' }}>
                   {h.big}
                 </div>
@@ -820,7 +827,7 @@ export function LatelyCard({
     <>
       <div
         className="rounded-2xl p-4 animate-fade-in-up"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        style={softCard('#0d9488', { radius: 18 })}
       >
         <div className="mb-1.5"><CardTitle>LATELY</CardTitle></div>
         {(events ?? []).map((e, i) => {
@@ -837,9 +844,9 @@ export function LatelyCard({
             >
               <div
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0"
-                style={{ background: 'var(--color-surface-hover)' }}
+                style={{ background: alphaHex('#0d9488', 0.14) }}
               >
-                {icon3dForEmoji(e.emoji) ? <Icon3D name={icon3dForEmoji(e.emoji)!} size={18} /> : e.emoji}
+                <UiIcon name={e.icon} size={18} />
               </div>
               <div className="text-xs font-bold leading-snug" style={{ color: 'var(--color-text)' }}>
                 {e.text}
@@ -857,7 +864,7 @@ export function LatelyCard({
             className="flex items-center gap-2 mt-2 rounded-xl px-3 py-2 text-[11.5px] font-bold transition-transform active:scale-[0.98]"
             style={{ background: 'rgba(236,72,153,0.06)', border: '1.5px solid #f9a8d4', color: 'var(--color-text)' }}
           >
-            <span>{'⚔️'}</span>
+            <UiIcon name="swords" size={16} />
             <span>Most frequent rival: <b style={{ color: '#ec4899' }}>{nemesis.username}</b> — {nemesis.sharedBoards} shared boards</span>
           </Link>
         )}
@@ -876,9 +883,9 @@ export function LatelyCard({
                     key={p.userId}
                     href={`/profile/${p.userId}`}
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-transform active:scale-[0.98]"
-                    style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+                    style={softPill(MEDAL_TINT[p.medal] ?? BRAND_ACCENT, { radius: 12, bar: false })}
                   >
-                    <span className="text-lg">{MEDAL_EMOJI[p.medal] ?? '\u{1F3C5}'}</span>
+                    <MedalGlyph medal={p.medal} size={24} />
                     <span className="text-sm font-black truncate" style={{ color: 'var(--color-text)' }}>{p.username}</span>
                     <span className="ml-auto text-xs font-black tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{p.score}</span>
                   </Link>

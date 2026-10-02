@@ -1,92 +1,131 @@
+'use client';
+
 import * as React from 'react';
 
-import { TILE_RADIUS, hexAlpha, tileColors, tileInitials } from '@/lib/avatar-tile';
+import { hexAlpha } from '@/lib/avatar-tile';
+import { badgeSrc } from '@/lib/art';
+import { avatarRadiusPx } from '@/lib/avatar-render';
+import { PRO_AVATAR, proAvatarDecor } from '@/lib/pro-identity';
+import { PlayerAvatar } from '@/components/avatar/player-avatar';
 
 /**
- * The no-photo player avatar (docs/ART_SPEC.md §20): a glossy rounded-square
- * letter tile in the style of the cast's letters, drawn entirely in CSS so it
- * scales from 20 to 120 px. Body in `edge` (base −22%) showing as a thick
- * bottom lip, a face 7% shorter with a light → base → base −6% gradient, a
- * white gloss over the top of the face, and white Nunito 900 initials (or the
- * chosen emoji) centered on the face. Uploaded photos stay circles and bots
- * keep their own art — callers only render this when there is no photo.
- * Identical in dark mode (the tile is its own light source); no animation.
+ * The no-photo player avatar. FINISH_SPEC AN3 / AN5: the plain letter tile
+ * (ART_SPEC §20) is retired — every player without a photo now wears their
+ * build-your-own MASCOT with their initial as its body letter (the saved
+ * avatar_config when the caller passes it, else the deterministic default in
+ * their accent color). This keeps the old props so every caller switches over
+ * at once; new code uses components/avatar/player-avatar.tsx directly.
+ * AM2: `emoji` is accepted but never drawn (emoji avatars are retired).
  */
 export interface LetterTileAvatarProps {
-  /** Username — the initials and (without an accent) the color come from it. */
+  /** Username — the initial, and (without a user id) the default mascot's seed. */
   name: string | null | undefined;
-  /** The player's chosen emoji fallback; drawn instead of the initials. */
+  /** Retired (AM2): an old emoji avatar is never drawn; the mascot shows instead. */
   emoji?: string | null;
-  /** The player's chosen profile accent (`accent_color`); wins over the letter color. */
+  /** The player's chosen profile accent (`accent_color`) → the default mascot's color. */
   accent?: string | null;
   size: number;
-  /** Outer box-shadow (e.g. a presence or white ring) — follows the tile's corners. */
+  /** Outer box-shadow (e.g. a presence or white ring) — follows the rounded-square corners. */
   shadow?: string;
-  /** A ring drawn as a rounded-square stroke inside the tile edge (replaces a circle border). */
+  /** A ring drawn as a rounded-square stroke inside the tile edge. */
   stroke?: { width: number; color: string };
   className?: string;
   style?: React.CSSProperties;
+  /** FINISH_SPEC AA2: a Pro player's avatar — the gold Pro frame + the tiny crown on the top-right. */
+  pro?: boolean;
+  /** AN3: the row's user id (matches the signed-in player) and saved avatar_config, when known. */
+  userId?: string | null;
+  avatarConfig?: unknown;
 }
 
-/** Corner radius in px for a tile of `size` (for rings / overlays that hug it). */
-export function letterTileRadius(size: number): number {
-  return size * TILE_RADIUS;
-}
-
-export function LetterTileAvatar({ name, emoji, accent, size, shadow, stroke, className = '', style }: LetterTileAvatarProps) {
-  const { edge, light, base, bottom } = tileColors(name, accent);
-  const e = emoji?.trim();
-  const text = e || tileInitials(name);
-  const radius = size * TILE_RADIUS;
-  const lip = size * 0.07;
-  const faceH = size - lip;
-  const inset = size * 0.08;
-  const twoLetters = !e && Array.from(text).length > 1;
-  const fontSize = e ? size * 0.5 : size * (twoLetters ? 0.42 : 0.56);
-
+/**
+ * FINISH_SPEC AA2 → AN6: the Pro decoration for any avatar node — a thin gold
+ * rounded-square frame just outside the avatar (never covering the face) and
+ * the tiny gold crown sprite (≈35%) on its top-right corner. Absolutely
+ * positioned — render it inside the avatar's relative, unclipped box.
+ * Decorative. (Avatars drawn by MascotAvatar get this built in.)
+ */
+export function ProAvatarDecor({ size, radius }: { size: number; radius?: number | 'circle' }) {
+  // AN6: avatars are rounded squares, never circles.
+  const d = proAvatarDecor(size, typeof radius === 'number' ? radius : avatarRadiusPx(size));
   return (
-    <span
-      className={`relative inline-block shrink-0 select-none ${className}`}
-      style={{ width: size, height: size, borderRadius: radius, background: edge, boxShadow: shadow, ...style }}
-    >
-      {/* Face: full width, flush with the top, 7% short of the bottom so the edge shows as a lip. */}
+    <>
       <span
-        className="absolute left-0 right-0 top-0"
-        style={{ height: faceH, borderRadius: radius, background: `linear-gradient(180deg, ${light} 0%, ${base} 70%, ${bottom} 100%)` }}
         aria-hidden="true"
-      />
-      {/* Gloss over the top 42% of the face. */}
-      <span
-        className="absolute"
+        className="absolute pointer-events-none"
         style={{
-          left: inset, right: inset, top: inset, height: faceH * 0.42,
-          borderRadius: size * 0.18,
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%)',
+          inset: -d.ring.inset, borderRadius: d.ring.radius,
+          border: `${d.ring.stroke}px solid ${PRO_AVATAR.gold}`,
+          boxShadow: `0 0 4px ${hexAlpha(PRO_AVATAR.gold, 0.45)}`,
         }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={badgeSrc('pro-crown-sprite')}
+        alt=""
         aria-hidden="true"
-      />
-      {/* Initials / emoji, centered on the face (not the whole box). */}
-      <span
-        className="absolute left-0 right-0 top-0 flex items-center justify-center whitespace-nowrap"
+        width={d.crown.size}
+        height={d.crown.size}
+        draggable={false}
+        className="absolute pointer-events-none select-none"
         style={{
-          height: faceH,
-          fontSize,
-          lineHeight: 1,
-          fontWeight: 900,
-          color: '#ffffff',
-          letterSpacing: e ? undefined : '-0.02em',
-          textShadow: e ? undefined : `0 ${size * 0.03}px ${size * 0.02}px ${hexAlpha(edge, 0.45)}`,
+          width: d.crown.size, height: d.crown.size, top: d.crown.top, right: d.crown.right, zIndex: 1,
+          transform: `rotate(${PRO_AVATAR.tilt}deg)`, filter: 'drop-shadow(0 1px 1.5px rgba(146, 64, 14, 0.35))',
         }}
-      >
-        {text}
-      </span>
-      {stroke && (
-        <span
-          className="absolute inset-0 pointer-events-none"
-          style={{ borderRadius: radius, border: `${stroke.width}px solid ${stroke.color}` }}
-          aria-hidden="true"
-        />
-      )}
+      />
+    </>
+  );
+}
+
+/**
+ * AA2 for any other avatar node: wraps `children` (a `size` box) and adds the
+ * Pro frame + crown when `pro`.
+ */
+export function ProAvatarFrame({ pro, size, radius, className = '', children }: {
+  pro: boolean;
+  size: number;
+  radius?: number | 'circle';
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!pro) return <>{children}</>;
+  return (
+    <span className={`relative inline-flex shrink-0 ${className}`} style={{ width: size, height: size }}>
+      {children}
+      <ProAvatarDecor size={size} radius={radius} />
+    </span>
+  );
+}
+
+/** Corner radius in px for an avatar of `size` (for rings / halos / overlays that hug it; AN6 ≈ 22%). */
+export function letterTileRadius(size: number): number {
+  return avatarRadiusPx(size);
+}
+
+export function LetterTileAvatar({ name, accent, size, shadow, stroke, className = '', style, pro, userId, avatarConfig }: LetterTileAvatarProps) {
+  const avatar = (
+    <PlayerAvatar
+      name={name}
+      userId={userId}
+      accent={accent}
+      config={avatarConfig}
+      pro={pro ? true : null}
+      size={size}
+      noPhoto
+      shadow={shadow}
+      className={stroke ? '' : className}
+      style={stroke ? undefined : style}
+    />
+  );
+  if (!stroke) return avatar;
+  return (
+    <span className={`relative inline-block shrink-0 ${className}`} style={{ width: size, height: size, ...style }}>
+      {avatar}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{ borderRadius: avatarRadiusPx(size), border: `${stroke.width}px solid ${stroke.color}` }}
+      />
     </span>
   );
 }

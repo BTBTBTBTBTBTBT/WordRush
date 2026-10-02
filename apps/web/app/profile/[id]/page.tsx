@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabase-client';
 import {
   Target,
   Clock,
-  Star,
-  Zap,
   Swords,
   User,
   Check,
@@ -21,8 +19,10 @@ import {
 import { GameArt } from '@/components/ui/game-art';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { PageHeader } from '@/components/ui/page-header';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { TintSegment } from '@/components/stats/tint-segment';
+import { alphaHex, cardBarStyle, softBorder, softCard, softIconTile, softPill } from '@/lib/soft-surface';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -63,12 +63,16 @@ import {
   LatelyCard,
   ArchetypeModal,
   archetypeName,
-  ARCHETYPE_EMOJI,
+  ArchetypeIcon,
 } from '@/components/profile/profile-social';
 import type { Database } from '@/lib/database.types';
-import { isGameArtIcon, PAGE_SCENES, onPageShadow } from '@/lib/art';
+import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PageBackground } from '@/components/ui/page-background';
+import { MedalArt } from '@/components/stats/medal-art';
+import { BadgeArt, LevelBadge } from '@/components/badges/badge-art';
+import { achievementBadge, levelBadge, TIER_ACCENT } from '@/lib/badges';
+import { levelTier } from '@wordle-duel/core';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -87,14 +91,6 @@ function formatDuration(seconds: number): string {
   return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
-/** Same tier ladder the own-profile page renders next to the level badge. */
-function levelTier(level: number) {
-  if (level >= 100) return { label: 'Diamond', bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8' };
-  if (level >= 51) return { label: 'Platinum', bg: '#f5f3ff', border: '#c4b5fd', color: '#6d28d9' };
-  if (level >= 26) return { label: 'Gold', bg: '#fef9ec', border: '#fde68a', color: '#92400e' };
-  if (level >= 11) return { label: 'Silver', bg: '#f3f4f6', border: '#d1d5db', color: '#374151' };
-  return { label: 'Bronze', bg: '#fef2e8', border: '#fed7aa', color: '#9a3412' };
-}
 
 const REPORT_REASONS = [
   'Inappropriate username',
@@ -131,59 +127,39 @@ function AddFriendButton({ profileId }: { profileId: string }) {
     try { await fn(); } finally { setBusy(false); }
   };
 
-  const base = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold active:scale-95 transition-transform';
-
+  // A8: every state is a small candy pill (teal Friends, pink to confirm a removal,
+  // purple to add / accept, peach while a request is pending).
   if (friend) {
     return (
-      <button
+      <CandyButton
         onClick={() => (confirmRemove ? act(async () => { await removeFriend(profileId); setConfirmRemove(false); }) : setConfirmRemove(true))}
-        className={base}
-        style={{
-          background: confirmRemove ? 'var(--color-loss-bg)' : 'var(--color-surface-hover)',
-          border: '1.5px solid var(--color-border)',
-          color: confirmRemove ? 'var(--color-loss-text)' : '#16a34a',
-          opacity: busy ? 0.5 : 1,
-        }}
+        color={confirmRemove ? 'pink' : 'teal'}
+        size="sm"
+        disabled={busy}
+        icon={<UserCheck className="w-3.5 h-3.5" color="#fff" strokeWidth={3} aria-hidden="true" />}
       >
-        <UserCheck className="w-3.5 h-3.5" /> {confirmRemove ? 'Remove friend?' : 'Friends'}
-      </button>
+        {confirmRemove ? 'Remove friend?' : 'Friends'}
+      </CandyButton>
     );
   }
   if (incoming) {
     return (
-      <button
-        onClick={() => act(() => acceptFriend(profileId))}
-        className={base}
-        style={{ background: '#7c3aed', color: '#ffffff', border: '1.5px solid #7c3aed', opacity: busy ? 0.5 : 1 }}
-      >
-        <Icon3D name="add-friend" size={17} /> Accept request
-      </button>
+      <CandyButton onClick={() => act(() => acceptFriend(profileId))} color="purple" size="sm" disabled={busy} icon={<Icon3D name="add-friend" size={17} />}>
+        Accept request
+      </CandyButton>
     );
   }
   if (requested) {
     return (
-      <button
-        onClick={() => act(() => declineFriend(profileId))}
-        className={base}
-        style={{
-          background: 'var(--color-surface-hover)',
-          border: '1.5px solid var(--color-border)',
-          color: 'var(--color-text-muted)',
-          opacity: busy ? 0.5 : 1,
-        }}
-      >
+      <CandyButton onClick={() => act(() => declineFriend(profileId))} color="peach" size="sm" disabled={busy}>
         Requested
-      </button>
+      </CandyButton>
     );
   }
   return (
-    <button
-      onClick={() => act(() => requestFriend({ addresseeId: profileId }))}
-      className={base}
-      style={{ background: '#7c3aed', color: '#ffffff', border: '1.5px solid #7c3aed', opacity: busy ? 0.5 : 1 }}
-    >
-      <Icon3D name="add-friend" size={17} /> Add Friend
-    </button>
+    <CandyButton onClick={() => act(() => requestFriend({ addresseeId: profileId }))} color="purple" size="sm" disabled={busy} icon={<Icon3D name="add-friend" size={17} />}>
+      Add Friend
+    </CandyButton>
   );
 }
 
@@ -225,18 +201,19 @@ function ModerationMenu({ viewerId, profileId }: { viewerId: string; profileId: 
 
   return (
     <div className="relative flex flex-col items-center">
-      <button
+      <CandyButton
         onClick={() => { setOpen((o) => !o); setShowReasons(false); }}
         aria-label="Profile actions"
-        className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-        style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
+        aria-expanded={open}
+        color="peach"
+        size="round"
+        icon={<MoreHorizontal className="w-4 h-4" aria-hidden="true" />}
+        style={{ ['--candy-h' as string]: '32px' } as React.CSSProperties}
+      />
       {open && (
         <div
           className="absolute top-9 z-20 w-56 overflow-hidden text-left"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+          style={{ ...softCard('#7c3aed', { radius: 14 }), boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
         >
           {!showReasons ? (
             <>
@@ -416,12 +393,8 @@ export default function PublicProfilePage() {
         <div className="text-center space-y-4 animate-fade-in-scale">
           <ArtScene scene={PAGE_SCENES.notFound} priority />
           <h1 className="text-4xl font-black" style={{ color: 'var(--color-text)' }}>Player not found</h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>This profile doesn't exist or may have been removed.</p>
-          <Link href="/">
-            <Button className="bg-gradient-to-r from-yellow-400 to-pink-500 text-white">
-              Go Home
-            </Button>
-          </Link>
+          <p style={{ color: 'var(--color-text-muted)' }}>This profile doesn&apos;t exist or may have been removed.</p>
+          <CandyLink href="/" color="purple" size="md">Go Home</CandyLink>
         </div>
       </PageBackground>
     );
@@ -433,7 +406,7 @@ export default function PublicProfilePage() {
   // nothing that reveals words or strategy. The deep endpoints 403 anyway;
   // this is the face on that rule.
   if (gated) {
-    const tier = levelTier(profile.level ?? 1);
+    const tierAccent = TIER_ACCENT[levelTier(profile.level ?? 1)];
     const memberSince = (profile as any).created_at
       ? new Date((profile as any).created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
       : null;
@@ -443,9 +416,9 @@ export default function PublicProfilePage() {
       { label: 'Daily Streak', value: (profile as any).daily_login_streak ?? 0 },
     ];
     const medals = [
-      { emoji: '\u{1F947}', count: profile.gold_medals ?? 0 },
-      { emoji: '\u{1F948}', count: profile.silver_medals ?? 0 },
-      { emoji: '\u{1F949}', count: profile.bronze_medals ?? 0 },
+      { medal: 'gold' as const, count: profile.gold_medals ?? 0 },
+      { medal: 'silver' as const, count: profile.silver_medals ?? 0 },
+      { medal: 'bronze' as const, count: profile.bronze_medals ?? 0 },
     ];
     return (
       <PageBackground tint="home" className="min-h-screen p-4 pb-24">
@@ -453,9 +426,11 @@ export default function PublicProfilePage() {
         <PageHeader className="max-w-sm mx-auto" title="Profile" titleTag="div" back={{ href: '/' }} />
         <div className="max-w-sm mx-auto pt-4 space-y-4 animate-fade-in-up">
           <div
-            className="rounded-2xl p-6 flex flex-col items-center text-center"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', boxShadow: onPageShadow() }}
+            className="overflow-hidden flex flex-col items-center text-center"
+            style={softCard('#7c3aed', { radius: 20 })}
           >
+            <div aria-hidden="true" className="self-stretch" style={{ height: 10, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
+            <div className="p-6 pt-5 w-full flex flex-col items-center">
             <AvatarUpload
               size={96}
               editable={false}
@@ -463,6 +438,11 @@ export default function PublicProfilePage() {
               username={profile.username}
               emoji={(profile as any).avatar_emoji ?? null}
               accent={(profile as any).accent_color ?? null}
+              config={(profile as any).avatar_config ?? null}
+              pro={!!(profile as any).is_pro}
+              castId={(profile as any).avatar_cast_id ?? null}
+              frame={(profile as any).avatar_frame ?? null}
+              level={profile.level ?? null}
             />
 
             {(profile as any).accent_color ? (
@@ -476,7 +456,7 @@ export default function PublicProfilePage() {
             {/* Lock badge — the notation the founder asked for */}
             <div
               className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
-              style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+              style={{ ...softPill('#64748b', { bar: false }), color: 'var(--color-text-muted)' }}
             >
               <Lock className="w-3 h-3" /> This profile is private
             </div>
@@ -486,14 +466,8 @@ export default function PublicProfilePage() {
 
             {/* Level + tier, member since — same chips as the profile header */}
             <div className="mt-4 flex flex-col items-center gap-1.5">
-              <div
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold"
-                style={{ background: tier.bg, border: `1.5px solid ${tier.border}`, color: tier.color }}
-              >
-                <Star className="w-3.5 h-3.5" fill="currentColor" />
-                Level {profile.level}
-                <span className="opacity-70">·</span>
-                <span>{tier.label}</span>
+              <div className="inline-flex items-center px-3 py-1" style={softPill(tierAccent, { bar: false })}>
+                <LevelBadge level={profile.level ?? 1} size={30} numberSize={16} prefix="Level" tier />
               </div>
               {memberSince && (
                 <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Member since {memberSince}</p>
@@ -503,21 +477,22 @@ export default function PublicProfilePage() {
             {/* Medal counts */}
             <div className="mt-4 flex items-center justify-center gap-4">
               {medals.map((m) => (
-                <div key={m.emoji} className="flex items-center gap-1">
-                  <span className="text-lg" aria-hidden="true">{m.emoji}</span>
-                  <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{m.count}</span>
+                <div key={m.medal} className="flex items-center gap-1">
+                  <MedalArt medal={m.medal} size={24} />
+                  <SoftNum size={15} className="soft-num-auto">{m.count}</SoftNum>
                 </div>
               ))}
             </div>
 
             {/* Headline numbers */}
-            <div className="mt-3 pt-3 w-full grid grid-cols-3 gap-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="mt-3 pt-3 w-full grid grid-cols-3 gap-3" style={{ borderTop: `1.5px dashed ${alphaHex('#7c3aed', 0.25)}` }}>
               {teaserStats.map((s) => (
                 <div key={s.label} className="text-center">
-                  <div className="text-lg font-black leading-tight" style={{ color: 'var(--color-text)' }}>{s.value}</div>
+                  <SoftNum size={20} as="div" className="soft-num-auto leading-tight">{s.value}</SoftNum>
                   <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
 
@@ -531,12 +506,7 @@ export default function PublicProfilePage() {
           )}
 
           <div className="flex justify-center">
-            <Link href="/">
-              <Button variant="outline" style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </Link>
+            <CandyLink href="/" color="peach" size="md" icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />}>Back</CandyLink>
           </div>
         </div>
         <BottomNav />
@@ -606,12 +576,17 @@ export default function PublicProfilePage() {
                 username={profile.username}
                 emoji={(profile as any).avatar_emoji ?? null}
                 accent={(profile as any).accent_color ?? null}
+              config={(profile as any).avatar_config ?? null}
+              pro={!!(profile as any).is_pro}
+                castId={(profile as any).avatar_cast_id ?? null}
+                frame={(profile as any).avatar_frame ?? null}
+                level={profile.level ?? null}
               />
             </div>
             {todayRing && (
               <div
                 className="absolute left-1/2 -translate-x-1/2 -bottom-1 px-2 py-0.5 rounded-full text-[9.5px] font-black text-white whitespace-nowrap"
-                style={{ background: '#8B5CF6' }}
+                style={{ background: 'linear-gradient(90deg, #a855f7, #ec4899)', boxShadow: '0 2px 6px rgba(124, 58, 237, 0.3)' }}
               >
                 {todayRing.done}/{todayRing.total} today
               </div>
@@ -633,7 +608,7 @@ export default function PublicProfilePage() {
               <div className="mt-1.5 flex justify-center">
                 <span
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide"
-                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                  style={{ ...softPill('#64748b', { bar: false }), color: 'var(--color-text-muted)' }}
                 >
                   <Lock className="w-3 h-3" /> {isOwnProfile ? 'Your profile is private' : 'Private profile'}
                 </span>
@@ -661,15 +636,15 @@ export default function PublicProfilePage() {
               <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
                 <button
                   onClick={() => setShowArchetype(true)}
-                  className="text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full transition-transform active:scale-95"
-                  style={{ color: '#7c3aed', border: '1.5px solid #c4b5fd', background: 'var(--color-surface-hover)' }}
+                  className="inline-flex items-center gap-1 text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full transition-transform active:scale-95"
+                  style={{ ...softPill('#7c3aed', { bar: false }), color: '#7c3aed' }}
                 >
-                  {ARCHETYPE_EMOJI[persona.archetype]} {archetypeName(persona.archetype)}
+                  <ArchetypeIcon archetype={persona.archetype} size={14} /> {archetypeName(persona.archetype)}
                 </button>
                 {persona.bestPercentile && (
                   <span
                     className="text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full uppercase"
-                    style={{ color: '#0d9488', border: '1.5px solid #5eead4', background: 'rgba(13,148,136,0.08)' }}
+                    style={{ ...softPill('#0d9488', { bar: false }), color: '#0d9488' }}
                   >
                     Top {persona.bestPercentile.topPct}% · {modeLabel(persona.bestPercentile.mode)}
                   </span>
@@ -677,7 +652,7 @@ export default function PublicProfilePage() {
                 {persona.opener && (
                   <span
                     className="text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full uppercase"
-                    style={{ color: '#ec4899', border: '1.5px solid #f9a8d4', background: 'rgba(236,72,153,0.07)' }}
+                    style={{ ...softPill('#ec4899', { bar: false }), color: '#ec4899' }}
                   >
                     Opens with &ldquo;{persona.opener.word}&rdquo;
                   </span>
@@ -688,21 +663,22 @@ export default function PublicProfilePage() {
             {/* Personalization: featured title, bio, favorite-mode chip */}
             {(() => {
               const accentHex = resolveAccent((profile as any).accent_color);
-              const featuredName = (profile as any).featured_achievement
-                ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement)?.name : null;
+              const featuredDef = (profile as any).featured_achievement
+                ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement) : null;
+              const featuredName = featuredDef?.name ?? null;
               const bioText = ((profile as any).bio as string | null)?.trim();
               const favMode = (profile as any).favorite_mode
                 ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
               return (
                 <div className="mt-2 flex flex-col items-center gap-1.5">
                   {featuredName && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wide px-3 py-0.5 rounded-full" style={{ background: `${accentHex}1a`, color: accentHex }}>
-                      <Star className="w-3 h-3" fill="currentColor" /> {featuredName}
+                    <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wide px-3 py-0.5 rounded-full" style={{ ...softPill(accentHex, { bar: false }), color: accentHex }}>
+                      <BadgeArt name={achievementBadge(featuredDef!.icon)} size={18} className="-my-1" /> {featuredName}
                     </span>
                   )}
                   {bioText && <p className="text-sm font-bold max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
                   {favMode && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-0.5 rounded-full" style={{ ...softPill(favMode.accentColor, { bar: false }), color: favMode.accentColor }}>
                       <GameArt id={favMode.id} size={16} className="-my-1" fallback={favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} /> {favMode.shortTitle}
                     </span>
                   )}
@@ -712,16 +688,15 @@ export default function PublicProfilePage() {
 
             {/* Level Badge & XP Bar */}
             <div className="mt-3 flex flex-col items-center gap-2">
-              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1"
-                style={{ background: 'var(--color-highlight-gold)', border: '1.5px solid var(--color-gold-border)' }}>
-                <Star className="w-4 h-4" style={{ color: '#d97706' }} fill="currentColor" />
-                <span className="font-bold text-sm" style={{ color: '#92400e' }}>Level {profile.level}</span>
+              <div className="inline-flex items-center rounded-full px-4 py-1"
+                style={softPill(TIER_ACCENT[levelTier(profile.level ?? 1)], { bar: false })}>
+                <LevelBadge level={profile.level ?? 1} size={40} numberSize={20} prefix="Lvl" tier />
               </div>
               <div className="w-48">
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                <div className="h-2.5 rounded-full overflow-hidden" style={{ background: alphaHex('#7c3aed', 0.14) }}>
                   <div
-                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-1000"
-                    style={{ width: `${levelProgress}%` }}
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #a855f7, #ec4899)' }}
                   />
                 </div>
                 <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{xpToNextLevel} XP to next level</p>
@@ -739,12 +714,7 @@ export default function PublicProfilePage() {
 
           <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
 
-          <Link href="/">
-            <Button variant="outline" style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          </Link>
+          <CandyLink href="/" color="peach" size="md" icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />}>Back</CandyLink>
         </div>
 
         {/* Profile-social cards — You-vs-Them, Trophy Case, Highlights, Lately */}
@@ -764,83 +734,39 @@ export default function PublicProfilePage() {
           <LatelyCard targetId={profileId} persona={persona} />
         </div>
 
-        {/* Overall Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Overall Stats Row (C3 cont look): each headline on its own color with a 3D icon and a soft number. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-xl lg:max-w-none mx-auto w-full">
+          {([
+            { accent: '#7c3aed', ink: '#6d28d9', icon: <BadgeArt name={levelBadge(profile.level ?? 1)} size={24} />, label: 'Level', value: profile.level, sub: `${xpToNextLevel} XP to next level`, delay: '0.1s' },
+            { accent: '#16a34a', ink: '#137a3d', icon: <MedalArt medal="trophy" size={22} />, label: 'Total Wins', value: profile.total_wins, sub: `${winRate}% win rate`, delay: '0.2s' },
+            { accent: '#f5a524', ink: '#a2560c', icon: <Icon3D name="badge-w" size={22} />, label: 'Win Streak', value: profile.current_streak, sub: `Best: ${profile.best_streak}`, delay: '0.3s' },
+            { accent: '#ec4899', ink: '#a0336b', icon: <Icon3D name="flame" size={22} />, label: 'Daily Streak', value: (profile as any).daily_login_streak ?? 0, sub: `Best: ${(profile as any).best_daily_login_streak ?? 0}`, delay: '0.35s' },
+          ]).map((t) => (
+            <div
+              key={t.label}
+              className="p-4 animate-fade-in-scale grid gap-1"
+              style={{ ...softCard(t.accent, { radius: 18 }), animationDelay: t.delay, animationFillMode: 'both' }}
+            >
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tint-ink" style={{ letterSpacing: '0.1em', color: t.ink }}>{t.icon}{t.label}</span>
+              <SoftNum size={30} as="div" className="soft-num-auto">{t.value}</SoftNum>
+              <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{t.sub}</span>
+            </div>
+          ))}
           <div
-            className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border)', animationDelay: '0.1s', animationFillMode: 'both', boxShadow: onPageShadow() }}
+            className="col-span-2 lg:col-span-4 px-4 py-3 flex items-center justify-between gap-3 animate-fade-in-scale"
+            style={{ ...softCard('#2563eb', { radius: 18 }), animationDelay: '0.4s', animationFillMode: 'both' }}
           >
-            <div className="flex items-center gap-3 mb-3">
-              <Star className="w-8 h-8" style={{ color: '#d97706' }} fill="currentColor" />
-              <div>
-                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Level</div>
-                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.level}</div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                <span>Progress</span>
-                <span>{xpToNextLevel} XP to next level</span>
-              </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                <div
-                  className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-1000"
-                  style={{ width: `${levelProgress}%` }}
-                />
-              </div>
-            </div>
+            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tint-ink" style={{ letterSpacing: '0.1em', color: '#1d4ed8' }}>
+              <Target className="w-5 h-5" style={{ color: '#2563eb' }} /> Total Games
+            </span>
+            <span className="flex items-baseline gap-2">
+              <SoftNum size={24} className="soft-num-auto">{profile.total_wins + profile.total_losses}</SoftNum>
+              <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{profile.total_losses} losses</span>
+            </span>
           </div>
-
-          <div
-            className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)', animationDelay: '0.2s', animationFillMode: 'both', boxShadow: onPageShadow() }}
-          >
-            <div className="flex items-center gap-3">
-              <Icon3D name="trophy" size={32} />
-              <div>
-                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Total Wins</div>
-                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.total_wins}</div>
-                <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{winRate}% win rate</div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)', animationDelay: '0.3s', animationFillMode: 'both', boxShadow: onPageShadow() }}
-          >
-            <div className="flex items-center gap-3">
-              <Icon3D name="flame" size={32} />
-              <div>
-                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Win Streak</div>
-                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.current_streak}</div>
-                <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Best: {profile.best_streak}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-gold-border-light)' }}>
-              <Zap className="w-6 h-6" style={{ color: '#7c3aed' }} />
-              <div>
-                <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Daily Login Streak</div>
-                <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{(profile as any).daily_login_streak ?? 0}</div>
-                <div className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.4s', animationFillMode: 'both', boxShadow: onPageShadow() }}
-          >
-            <div className="flex items-center gap-3">
-              <Target className="w-8 h-8" style={{ color: '#2563eb' }} />
-              <div>
-                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Total Games</div>
-                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>
-                  {profile.total_wins + profile.total_losses}
-                </div>
-                <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{profile.total_losses} losses</div>
-              </div>
-            </div>
+          {/* Level progress in the purple→pink gradient. */}
+          <div className="col-span-2 lg:col-span-4 h-2.5 rounded-full overflow-hidden" style={{ background: alphaHex('#7c3aed', 0.14) }} aria-hidden="true">
+            <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #a855f7, #ec4899)' }} />
           </div>
         </div>
 
@@ -854,23 +780,17 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Solo / VS toggle */}
-          <div className="flex gap-2">
-            {(['solo', 'vs'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setActiveTab(t)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition-all"
-                style={{
-                  background: activeTab === t ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-                  border: activeTab === t ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                  color: activeTab === t ? '#7c3aed' : 'var(--color-text-muted)',
-                }}
-              >
-                {t === 'solo' ? <User className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
-                {t === 'solo' ? 'Solo' : 'VS'}
-              </button>
-            ))}
-          </div>
+          <TintSegment<'solo' | 'vs'>
+            options={[
+              { key: 'solo', label: 'Solo', icon: <User className="w-3.5 h-3.5" aria-hidden="true" /> },
+              { key: 'vs', label: 'VS', icon: <Swords className="w-3.5 h-3.5" aria-hidden="true" /> },
+            ]}
+            value={activeTab}
+            onChange={setActiveTab}
+            accent="#7c3aed"
+            ink="#6d28d9"
+            label="Solo or VS"
+          />
 
           {/* Mode Picker */}
           <ModePicker
@@ -888,19 +808,12 @@ export default function PublicProfilePage() {
             const Icon = mode?.icon;
 
             return (
-              <div
-                className="overflow-hidden"
-                style={{
-                  background: 'var(--color-surface)',
-                  border: '1.5px solid var(--color-border)',
-                  borderRadius: '16px',
-                }}
-              >
-                <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
-                <div className="px-4 pt-3 pb-2 flex items-center gap-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <div className="overflow-hidden" style={softCard(color, { radius: 18 })}>
+                <div aria-hidden="true" style={cardBarStyle(color)} />
+                <div className="px-4 pt-3 pb-2 flex items-center gap-2.5" style={{ borderBottom: `1.5px dashed ${alphaHex(color, 0.25)}` }}>
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${color}15` }}
+                    className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+                    style={softIconTile(color, { radius: 10 })}
                   >
                     {!(Icon && isGameArtIcon(Icon)) && mode?.romanNumeral ? (
                       <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
@@ -929,7 +842,7 @@ export default function PublicProfilePage() {
                         { label: 'Fastest', value: stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-', color: '#2563eb' },
                       ].map((s) => (
                         <div key={s.label} className="text-center">
-                          <div className="text-lg font-black leading-tight" style={{ color: 'var(--color-text)' }}>{s.value}</div>
+                          <SoftNum size={18} as="div" className="soft-num-auto leading-tight">{s.value}</SoftNum>
                           <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                         </div>
                       ))}
@@ -958,7 +871,7 @@ export default function PublicProfilePage() {
         {/* Recent Matches Section */}
         <div
           className="rounded-2xl p-6 animate-fade-in-up"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.6s', animationFillMode: 'both', boxShadow: onPageShadow() }}
+          style={{ ...softCard('#2563eb', { radius: 20 }), animationDelay: '0.6s', animationFillMode: 'both' }}
         >
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <Clock className="w-6 h-6" style={{ color: '#2563eb' }} />
@@ -982,7 +895,7 @@ export default function PublicProfilePage() {
                   <div
                     key={match.id}
                     className="rounded-xl p-4 flex items-center justify-between gap-4 animate-fade-in-up"
-                    style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', animationDelay: `${0.7 + index * 0.05}s`, animationFillMode: 'both' }}
+                    style={{ background: alphaHex(getMode(match.game_mode)?.accentColor ?? '#2563eb', index % 2 === 0 ? 0.1 : 0.05), border: softBorder(getMode(match.game_mode)?.accentColor ?? '#2563eb', 0.08, 1), animationDelay: `${0.7 + index * 0.05}s`, animationFillMode: 'both' }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
@@ -1026,9 +939,11 @@ export default function PublicProfilePage() {
                 );
               })}
               {matches.length > 5 && (
-                <button onClick={() => setShowAllRecent((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
-                  {showAllRecent ? 'Show less' : `View all ${matches.length} →`}
-                </button>
+                <div className="flex justify-center pt-1">
+                  <CandyButton onClick={() => setShowAllRecent((v) => !v)} color="peach" size="sm" aria-expanded={showAllRecent}>
+                    {showAllRecent ? 'Show less' : `View all ${matches.length}`}
+                  </CandyButton>
+                </div>
               )}
             </div>
           )}

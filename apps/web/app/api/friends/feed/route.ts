@@ -3,6 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { MODE_BY_DBKEY, MORE_GAME_MODES } from '@/lib/modes.generated';
 import { FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
+import { fetchAvatarFields, withAvatarFields } from '@/lib/avatar-fields-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,11 @@ export interface FeedEvent {
   username: string;
   avatar_url: string | null;
   avatar_emoji: string | null;
+  /** FINISH_SPEC AH/AN3 (additive): the event owner's avatar choice + active Pro. */
+  avatar_cast_id?: string | null;
+  avatar_frame?: string | null;
+  avatar_config?: Record<string, unknown> | null;
+  is_pro?: boolean;
   me: boolean;
   day: string;            // the player's local day the event belongs to
   at: string;             // ISO timestamp for ordering
@@ -67,7 +73,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const ids = [me, ...new Set((rows ?? []).map((r: any) => (r.requester_id === me ? r.addressee_id : r.requester_id)))];
 
-  const [{ data: profs }, { data: bonuses }, { data: medals }, { data: records }, { data: moreRows }, { data: gifts }] = await Promise.all([
+  const [{ data: profs }, { data: bonuses }, { data: medals }, { data: records }, { data: moreRows }, { data: gifts }, avatars] = await Promise.all([
     admin.from('profiles').select('id, username, avatar_url, avatar_emoji').in('id', ids),
     admin.from('daily_bonuses').select('user_id, day, sweep_awarded, flawless_awarded, updated_at')
       .in('user_id', ids).gte('day', cutoff).lte('day', day).or('sweep_awarded.eq.true,flawless_awarded.eq.true'),
@@ -81,6 +87,7 @@ export async function GET(req: NextRequest) {
     admin.from('shield_gifts').select('sender_id, recipient_id, week_start, created_at')
       .or(`sender_id.in.(${ids.join(',')}),recipient_id.in.(${ids.join(',')})`)
       .gte('created_at', `${cutoff}T00:00:00Z`),
+    fetchAvatarFields(admin, ids),
   ]);
   const { data: games } = await admin.from('friendly_games').select('id, kind, player_a, player_b, state, status, winner, updated_at')
     .in('status', ['done', 'resigned']).in('player_a', ids).in('player_b', ids)
@@ -90,7 +97,7 @@ export async function GET(req: NextRequest) {
   for (const p of (profs ?? []) as any[]) who.set(p.id, { username: p.username, avatar_url: p.avatar_url ?? null, avatar_emoji: p.avatar_emoji ?? null });
   const person = (uid: string) => {
     const p = who.get(uid);
-    return { userId: uid, username: p?.username ?? 'Player', avatar_url: p?.avatar_url ?? null, avatar_emoji: p?.avatar_emoji ?? null, me: uid === me };
+    return withAvatarFields({ userId: uid, username: p?.username ?? 'Player', avatar_url: p?.avatar_url ?? null, avatar_emoji: p?.avatar_emoji ?? null, me: uid === me }, avatars.get(uid));
   };
   const title = (gm?: string | null) => (gm ? MODE_BY_DBKEY[gm]?.title ?? gm : null);
 

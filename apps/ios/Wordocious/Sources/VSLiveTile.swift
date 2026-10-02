@@ -2,10 +2,14 @@ import SwiftUI
 import WordociousCore
 
 /// VS Battle as a full-width tile at the very bottom of the game area (founder +
-/// JP, 2026-09-26): the VS card and the old LIVE bar merged — VS icon and accent,
-/// "VS Battle", the live pulse + player count, Invite for Pro. The grid above is
-/// exactly the eight sweep games. Mirrors web vs-live-tile.tsx. Wears the game
-/// cards' chrome (ART_SPEC §21.5) with its W / L badge on the title line (§21.1).
+/// JP, 2026-09-26): the VS card and the old LIVE bar merged. Mirrors web
+/// vs-live-tile.tsx. FINISH_SPEC §O2 (founder 10-02, "no drastic change"): the
+/// same place and data as a teal-tinted game card with its top bar — the W-vs-S
+/// faceoff as a small hero on the left (~40% of the card), and on the right the
+/// LIVE line with the pulsing dot + player count, today's status line (with the
+/// §21.1 W / L badge), a small Bot of the Day line with that day's bot pose, and
+/// two candy buttons: PLAY (teal, primary) and INVITE (peach, Pro). The VS BATTLE
+/// section title sits above the card in HomeView (§O1), never inside it.
 struct VSLiveTile<Destination: View>: View {
     let mode: HomeMode
     /// The live count is observed HERE, not by Home, so a new count redraws
@@ -24,66 +28,111 @@ struct VSLiveTile<Destination: View>: View {
         self.isPro = isPro; self.onInvite = onInvite; self.destination = destination
     }
 
+    private static var heroAsset: String { "art-scene-vs-faceoff" }
+
     var body: some View {
         let accent = mode.accent
         let done = playMode == .daily && vsDailyWon != nil
+        let won = vsDailyWon ?? false
         let countText: String = {
             guard let n = live.count else { return "Players online" }
             return "\(n) \(n == 1 ? "player" : "players") online"
         }()
         let subtitle: String = done
-            ? ((vsDailyWon ?? false) ? "Today's battle won" : "Today's battle lost")
+            ? (won ? "Battle won!" : "Today's battle lost")
             : (playMode == .daily ? "Today's shared battle" : mode.desc)
+        let bot = BotPersonas.botOfDay
 
-        HStack(spacing: 12) {
-            NavigationLink(destination: destination) {
-                HStack(spacing: 12) {
-                    ModeIconView(icon: mode.icon, accent: accent, box: 36)
-                    VStack(alignment: .leading, spacing: 3) {
-                        // §21.1 / §21.5: today's W / L badge at the end of the title line
-                        // (an overlay, so it never changes the line's height).
-                        Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.trailing, done ? 30 : 0)
-                            .overlay(alignment: .trailing) {
-                                if done { ResultBadge(won: vsDailyWon ?? false, size: 26) }
-                            }
-                        HStack(spacing: 6) {
-                            LivePulseDot()
-                            Text("LIVE").font(Brand.font(10, .black)).foregroundStyle(Theme.textPrimary)
-                            Text("· \(countText)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
-                        }
-                        Text(subtitle).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.squish)
-            .accessibilityLabel("VS Battle, \(countText)")
-
-            if isPro {
-                // A soft pill in the tile's own teal, not the old hot-pink 3D button
-                // (founder, 2026-10-01: home redesign).
-                Button(action: onInvite) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .bold))
-                        Text("Invite").font(Brand.font(11, .black))
-                    }
-                    .foregroundStyle(Color(hex: 0x0F766E))
-                    .padding(.horizontal, 12).frame(height: 32)
-                    .background(Capsule().fill(Color(hex: 0x0D9488).opacity(0.08)))
-                    .overlay(Capsule().stroke(Color(hex: 0x0D9488).opacity(0.33), lineWidth: 1.5))
-                    .contentShape(Capsule())
+        GeometryReader { geo in
+            let heroW = geo.size.width * 0.40
+            HStack(spacing: 10) {
+                // The faceoff hero (W vs S), cropped to the two characters + the bolt.
+                // Tapping it (or the text) opens VS, like the whole card did before.
+                NavigationLink(destination: destination) {
+                    hero(width: heroW, accent: accent)
                 }
                 .buttonStyle(.squish)
+                .accessibilityLabel("VS Battle, \(countText)")
+
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        LivePulseDot()
+                        Text("LIVE").font(Brand.font(10, .black)).foregroundStyle(Theme.textPrimary)
+                        // §A2: the live count as a soft number.
+                        if let n = live.count {
+                            Text("·").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            Text("\(n)").softNumber(13)
+                            Text(n == 1 ? "player online" : "players online")
+                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        } else {
+                            Text("· \(countText)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                        }
+                    }
+                    // Today's status, with the §21.1 W / L badge at the end of the line
+                    // (an overlay, so it never changes the line's height).
+                    Text(subtitle).font(Brand.font(12, .black))
+                        .foregroundStyle(done ? (won ? Color(hex: 0x6D28D9) : Theme.textSecondary) : Theme.textPrimary)
+                        .lineLimit(1).minimumScaleFactor(0.75)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.trailing, done ? 28 : 0)
+                        .overlay(alignment: .trailing) {
+                            if done { ResultBadge(won: won, size: 24) }
+                        }
+                    // Bot of the Day: that day's cast bot, in a small pose.
+                    HStack(spacing: 4) {
+                        PoseImage(bot.mascot, "ready", height: 20)
+                        Text("Bot of the day: \(bot.name)")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    .accessibilityElement(children: .combine)
+                    HStack(spacing: 8) {
+                        NavigationLink(destination: destination) {
+                            CandyLabel(title: "Play", symbol: "play.fill")
+                        }
+                        .buttonStyle(CandyButtonStyle(variant: .teal, size: .small, fullWidth: false))
+                        .accessibilityLabel("Play VS Battle")
+                        if isPro {
+                            Button(action: onInvite) {
+                                CandyLabel(title: "Invite") { Icon3D(.addFriend, size: 15) }
+                            }
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                            .accessibilityLabel("Invite")
+                        }
+                    }
+                    .padding(.top, 1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
+        .frame(height: 126)
         .padding(GameCardChrome.inner)
-        // ART_SPEC §21.5: the exact Home game-card chrome (surface, radius, border,
-        // lift, the colored top band in the VS accent). A completed daily wears the
-        // game cards' done wash + accent border so today's battle never looks unplayed.
+        // ART_SPEC §21.5 / §O2: the Home game-card chrome (tinted surface, radius,
+        // border, lift, the colored top band in the VS teal). A completed daily wears
+        // the game cards' done wash + accent border so today's battle never looks unplayed.
         .gameCardChrome(bar: accent, done: done)
+    }
+
+    /// The W-vs-S faceoff at ~40% of the card width, cropped to the characters and
+    /// the bolt; the VS icon on a soft wash when the art is missing.
+    @ViewBuilder private func hero(width: CGFloat, accent: Color) -> some View {
+        let h: CGFloat = min(118, width * 0.66)
+        if ArtAsset.exists(Self.heroAsset) {
+            Image(Self.heroAsset)
+                .resizable().interpolation(.high)
+                .scaledToFill()
+                .frame(width: width, height: h)
+                .clipped()
+                .frame(width: width, height: 126)
+                .contentShape(Rectangle())
+                .accessibilityHidden(true)
+        } else {
+            ModeIconView(icon: mode.icon, accent: accent, box: 44)
+                .frame(width: width, height: 126)
+                .background(RoundedRectangle(cornerRadius: 14).fill(accent.opacity(0.10)))
+                .contentShape(Rectangle())
+        }
     }
 }

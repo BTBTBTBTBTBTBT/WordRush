@@ -45,6 +45,30 @@ import kotlin.math.sin
 /** Whether this process already played the intro (a warm start never replays it). */
 object ColdStart {
     var played = false
+
+    /**
+     * F2 fix (founder 10-02: "there are two of them"): true while the intro's own row is
+     * on screen — the REAL header cast row stays laid out (so it can be measured) but
+     * invisible until the intro lands on it.
+     */
+    var hidingHeader by mutableStateOf(false)
+
+    /** F2 fix step 4: bumped on landing — the real row plays the all-cast hop flourish once. */
+    var flourish by mutableStateOf(0)
+}
+
+/** F2 fix step 4 the flourish timing: each character hops (the W hop) this long, this far apart. */
+object IntroFlourish {
+    const val HOP_MS = 420
+    const val STAGGER_MS = 50
+    /** The whole wave across the ten characters. */
+    const val TOTAL_MS = HOP_MS + STAGGER_MS * 9
+
+    /** Character [index]'s own hop progress (0..1) at [ms] into the wave; null = not hopping. */
+    fun local(index: Int, ms: Float): Float? {
+        val u = (ms - index * STAGGER_MS) / HOP_MS
+        return if (u <= 0f || u >= 1f) null else u
+    }
 }
 
 /** F2 the timeline (ms). */
@@ -56,7 +80,6 @@ private object IntroT {
     const val POP_MS = 300f
     const val TO_HEADER_START = 1000f
     const val TO_HEADER_END = 1450f
-    const val END = 1600f
     const val REDUCED_MS = 200
 }
 
@@ -82,16 +105,31 @@ fun ColdStartIntro(onDone: () -> Unit) {
     val skip = remember { Animatable(1f) }
     var skipping by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // F2 fix step 1: the real header row hides while our row is up (Reduce Motion keeps it:
+    // that path is a plain 200 ms crossfade over the real Home).
+    remember { if (!reduced) ColdStart.hidingHeader = true; 0 }
+    /** F2 fix step 3: land — in ONE frame the real row shows, this row goes, and the flourish starts. */
+    fun land() {
+        if (!ColdStart.hidingHeader && reduced) { onDone(); return }
+        ColdStart.hidingHeader = false
+        if (!reduced) ColdStart.flourish++
+        onDone()
+    }
     LaunchedEffect(Unit) {
         if (reduced) {
             skip.animateTo(0f, tween(IntroT.REDUCED_MS))
         } else {
-            clock.animateTo(IntroT.END, tween(IntroT.END.toInt(), easing = LinearEasing))
+            // Glide to exactly the measured header frame (no overshoot), then land.
+            clock.animateTo(IntroT.TO_HEADER_END, tween(IntroT.TO_HEADER_END.toInt(), easing = LinearEasing))
         }
-        // A tap-to-skip finishes on its own (below).
-        if (!skipping) onDone()
+        // A tap-to-skip lands on its own (below).
+        if (!skipping) land()
     }
-    val images = MascotId.entries.map { ImageBitmap.imageResource(it.res) }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { ColdStart.hidingHeader = false } }
+    // X: in season (or the admin preview) the intro builds the row from the costumes.
+    val season = rememberSeason()
+    val frames = MascotId.entries.map { SeasonSkins.frame(it, season) }
+    val images = frames.map { ImageBitmap.imageResource(it.res) }
     var origin by remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
 
@@ -100,13 +138,10 @@ fun ColdStartIntro(onDone: () -> Unit) {
             .onGloballyPositioned { origin = it.boundsInWindow().topLeft }
             .clearAndSetSemantics { }
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-                // Tap to skip: a quick fade.
+                // F2 fix step 5: tap to skip jumps straight to the landing.
                 if (!skipping && !reduced) {
                     skipping = true
-                    scope.launch {
-                        skip.animateTo(0f, tween(180))
-                        onDone()
-                    }
+                    scope.launch { land() }
                 }
             },
     ) {
@@ -121,7 +156,7 @@ fun ColdStartIntro(onDone: () -> Unit) {
 
             // The row's geometry at intro size: ten trimmed figures at one height.
             val rowW = minOf(wPx * 0.92f, with(density) { 520.dp.toPx() })
-            val figH = CastCrops.figureHeight(rowW)
+            val figH = SeasonSkins.figureHeight(rowW, season)
             val lift = CastCrops.STAGGER * figH
             val rowH = figH + lift
             val rowLeft = (wPx - rowW) / 2f
@@ -129,8 +164,8 @@ fun ColdStartIntro(onDone: () -> Unit) {
             val overlap = CastCrops.OVERLAP * rowW
             val slots = ArrayList<Rect>(10)
             var x = rowLeft
-            MascotId.entries.forEachIndexed { i, id ->
-                val fw = CastCrops.crops.getValue(id).aspect * figH
+            MascotId.entries.forEachIndexed { i, _ ->
+                val fw = frames[i].crop.aspect * figH
                 val bottom = rowTop + rowH - (if (i % 2 == 1) lift else 0f)
                 slots.add(Rect(x, bottom - figH, x + fw, bottom))
                 x += fw - overlap
@@ -149,7 +184,9 @@ fun ColdStartIntro(onDone: () -> Unit) {
                 k = 1f; dx = 0f; dy = 0f
             }
             val toHeader = if (reduced) 0f else easeInOut((t - IntroT.TO_HEADER_START) / (IntroT.TO_HEADER_END - IntroT.TO_HEADER_START))
-            val rowAlpha = (if (reduced) overall else (1f - ((t - IntroT.TO_HEADER_END) / (IntroT.END - IntroT.TO_HEADER_END)).coerceIn(0f, 1f)) * overall)
+            // F2 fix: the row stays fully opaque all the way onto the header frame (no fade-out
+            // overlapping the real row); without a measured header it fades as it rises.
+            val rowAlpha = overall
                 .let { if (anchor == null && !reduced) it * (1f - toHeader) else it }
                 .coerceIn(0f, 1f)
 
@@ -159,19 +196,20 @@ fun ColdStartIntro(onDone: () -> Unit) {
 
             MascotId.entries.forEachIndexed { i, id ->
                 val img = images[i]
-                val crop = CastCrops.crops.getValue(id)
-                val sc = img.width / 512f
+                val crop = frames[i].crop
+                val source = frames[i].source.toFloat()
+                val sc = img.width / source
                 val srcOff = IntOffset((crop.left * sc).roundToInt(), (crop.top * sc).roundToInt())
                 val srcSize = IntSize((crop.width * sc).roundToInt().coerceAtMost(img.width - srcOff.x), (crop.height * sc).roundToInt().coerceAtMost(img.height - srcOff.y))
                 var rect: Rect
                 var scale = 1f
                 var alpha = rowAlpha
                 if (id == MascotId.W) {
-                    // Starts as the launch W (the whole 512 image in a 192 dp box, centered).
+                    // Starts as the launch W (the whole image in a 192 dp box, centered).
                     val box = with(density) { LAUNCH_W_DP.dp.toPx() }
                     val bx = (wPx - box) / 2f
                     val by = (hPx - box) / 2f
-                    val start = Rect(bx + crop.left / 512f * box, by + crop.top / 512f * box, bx + crop.right / 512f * box, by + crop.bottom / 512f * box)
+                    val start = Rect(bx + crop.left / source * box, by + crop.top / source * box, bx + crop.right / source * box, by + crop.bottom / source * box)
                     rect = if (reduced) start else lerpRect(start, slots[i], easeInOut((t - IntroT.BOUNCE_END) / (IntroT.GLIDE_W_END - IntroT.BOUNCE_END)))
                     if (!reduced && t < IntroT.BOUNCE_END) {
                         // One bounce: up ~8% of its height and back, a little squash on landing.

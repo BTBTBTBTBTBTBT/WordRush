@@ -7,6 +7,9 @@ import dynamic from 'next/dynamic';
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
 import { getGuide, PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
+import { CandyButton } from '@/components/ui/candy-button';
+import { softRow } from '@/components/ui/soft-popup';
+import { softBackground } from '@/lib/soft-surface';
 
 /**
  * Public per-mode landing shown to signed-out visitors (and crawlers) on a
@@ -29,18 +32,17 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
     WebkitBackgroundClip: 'text' as const,
     WebkitTextFillColor: 'transparent' as const,
   };
-  const ctaStyle = { background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' };
   const accent = guide.accent;
   const others = MODE_GUIDES.filter((g) => g.slug !== guide.slug);
 
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="min-h-screen overflow-y-auto" style={{ background: softBackground('#7c3aed', 0.06) }}>
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-4 max-w-3xl mx-auto">
         <Link href="/" className="text-2xl font-black tracking-tight" style={wordmarkStyle}>WORDOCIOUS</Link>
-        <button onClick={() => setShowLogin(true)} className="btn-3d px-5 py-2 rounded-xl text-white font-extrabold text-sm" style={ctaStyle}>
+        <CandyButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
           Sign In
-        </button>
+        </CandyButton>
       </header>
 
       {/* Hero */}
@@ -54,13 +56,13 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
         <p className="text-base font-bold mb-6 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           {guide.tagline}
         </p>
-        <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm" style={ctaStyle}>
+        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
           Sign in to play
-        </button>
+        </CandyButton>
         <div className="mt-3">
-          <button onClick={enterGuest} className="text-sm font-extrabold underline underline-offset-2" style={{ color: 'var(--color-text-secondary)' }}>
+          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </button>
+          </CandyButton>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Play today&apos;s daily {guide.title} free. Sign in to save stats, streaks, and compete on the leaderboard.
           </p>
@@ -71,7 +73,7 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
       <section className="px-5 pb-8 max-w-3xl mx-auto">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {guide.facts.map((f) => (
-            <div key={f.label} className="p-3 text-center" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
+            <div key={f.label} className="p-3 text-center" style={softRow(accent, { radius: 12 })}>
               <div className="text-[10px] font-black uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{f.label}</div>
               <div className="text-sm font-black mt-0.5" style={{ color: accent }}>{f.value}</div>
             </div>
@@ -84,7 +86,7 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
         <h2 className="text-xs font-black uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-muted)' }}>
           How {guide.title} works
         </h2>
-        <div className="p-5 space-y-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+        <div className="p-5 space-y-3" style={softRow(accent, { radius: 16 })}>
           {guide.rules.map((p, i) => (
             <p key={i} className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
           ))}
@@ -96,7 +98,7 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
         <h2 className="text-xs font-black uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-muted)' }}>
           Scoring &amp; the daily leaderboard
         </h2>
-        <div className="p-5 space-y-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+        <div className="p-5 space-y-3" style={softRow(accent, { radius: 16 })}>
           {guide.scoring.map((p, i) => (
             <p key={i} className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
           ))}
@@ -110,7 +112,7 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
         </h2>
         <div className="space-y-3">
           {guide.tips.map((t) => (
-            <div key={t.heading} className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
+            <div key={t.heading} className="p-4" style={softRow(accent, { radius: 14 })}>
               <h3 className="text-sm font-black mb-1" style={{ color: 'var(--color-text)' }}>{t.heading}</h3>
               <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{t.body}</p>
             </div>
@@ -129,7 +131,7 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
         </h2>
         <div className="flex flex-wrap gap-2">
           {others.map((g) => (
-            <Link key={g.slug} href={`/guides/${g.slug}`} className="px-3 py-1.5 text-xs font-extrabold" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '10px', color: g.accent }}>
+            <Link key={g.slug} href={`/guides/${g.slug}`} className="px-3 py-1.5 text-xs font-extrabold" style={{ ...softRow(g.accent, { radius: 10 }), color: 'var(--color-text)' }}>
               {g.title}
             </Link>
           ))}
@@ -138,13 +140,13 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
 
       {/* Footer */}
       <footer className="px-5 py-8 text-center border-t" style={{ borderColor: 'var(--color-border)' }}>
-        <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm mb-2" style={ctaStyle}>
+        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)} className="mb-2">
           Sign in to play
-        </button>
+        </CandyButton>
         <div className="mb-4">
-          <button onClick={enterGuest} className="text-sm font-extrabold underline underline-offset-2" style={{ color: 'var(--color-text-secondary)' }}>
+          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </button>
+          </CandyButton>
         </div>
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
           <Link href="/how-to-play">How to Play</Link><span>·</span>

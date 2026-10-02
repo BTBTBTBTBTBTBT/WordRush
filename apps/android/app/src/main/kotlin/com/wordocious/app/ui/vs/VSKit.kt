@@ -1,6 +1,13 @@
 package com.wordocious.app.ui.vs
 
 import com.wordocious.app.ui.miniGameCard
+import com.wordocious.app.ui.CandyButton
+import com.wordocious.app.ui.CandyColor
+import com.wordocious.app.ui.CandyIcon
+import com.wordocious.app.ui.CandySize
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.pageCardShadow
@@ -40,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.BotArt
 import com.wordocious.app.ui.ModeGlyph
-import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.modeAccent
 import com.wordocious.app.ui.modeTitleForKey
 import com.wordocious.app.ui.theme.Nunito
@@ -84,28 +90,27 @@ fun VsSectionLabel(text: String, modifier: Modifier = Modifier, color: Color = V
     Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = color, modifier = modifier, maxLines = 1)
 }
 
-/** White, radius 14, soft shadow (the page accent on a tinted page, ART_SPEC §11), no border. */
-fun Modifier.vsCard(radius: Dp = 14.dp): Modifier =
+/**
+ * FINISH_SPEC A1: a tinted VS card — the wash of [accent] (VS teal by default), the
+ * 1.5 dp line and the soft violet lift. Always light (the VS pages never turn dark).
+ */
+fun Modifier.vsCard(radius: Dp = 14.dp, accent: Color = VS_ACCENT): Modifier =
     this.pageCardShadow(radius) { shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95)) }
         .clip(RoundedCornerShape(radius))
-        // FINISH_SPEC A1: the VS page's teal wash + a faint teal line instead of white
-        // (dark mode keeps the card it had).
-        .background(if (com.wordocious.app.ui.theme.WTheme.isDark) Color.White else com.wordocious.app.ui.Wash.mix(VS_CARD_ACCENT, com.wordocious.app.ui.Wash.CARD))
-        .then(
-            if (com.wordocious.app.ui.theme.WTheme.isDark) Modifier
-            else Modifier.border(1.5.dp, com.wordocious.app.ui.Wash.mix(VS_CARD_ACCENT, com.wordocious.app.ui.Wash.LINE), RoundedCornerShape(radius))
-        )
+        .background(vsWash(accent))
+        .border(1.5.dp, vsLine(accent), RoundedCornerShape(radius))
 
-/** A1 the VS page accent the cards wash with (#0d9488). */
-private val VS_CARD_ACCENT = Color(0xFF0D9488)
-
+/** A1 a tinted VS card with the game-card top bar. */
 @Composable
-fun VsCard(modifier: Modifier = Modifier, padding: Dp = 12.dp, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.fillMaxWidth().vsCard().padding(padding), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+fun VsCard(modifier: Modifier = Modifier, padding: Dp = 12.dp, accent: Color = VS_ACCENT, content: @Composable ColumnScope.() -> Unit) {
+    VsTintedCard(
+        modifier.fillMaxWidth(), accent = accent, corner = 16.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(padding), content = content,
+    )
 }
 
 /**
- * The VS nav row (HEADER_SPEC §4): the shared white back circle, the teal-gradient
+ * The VS nav row (HEADER_SPEC §4): the shared back control, the teal-gradient
  * caps title, the page host beside it where the page has no banner, and a right slot.
  */
 @Composable
@@ -131,32 +136,61 @@ fun VsNavBar(
     )
 }
 
-/** Solid teal caps button (primary VS action). */
+/**
+ * The primary VS action (A8): a TEAL candy button. [fill] stretches it to the width
+ * its modifier gives (pass true with fillMaxWidth / weight).
+ */
 @Composable
-fun VsTealButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(
-        modifier.clip(RoundedCornerShape(12.dp)).background(VsTeal.ink).alpha(if (enabled) 1f else 0.45f)
-            .clickableNoRipple { if (enabled) onClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
-        Alignment.Center,
-    ) { Text(text, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White, maxLines = 1) }
+fun VsTealButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    fill: Boolean = false,
+    size: CandySize = CandySize.MEDIUM,
+    color: CandyColor = CandyColor.TEAL,
+    icon: CandyIcon? = null,
+    onClick: () -> Unit,
+) {
+    CandyButton(text, onClick = { if (enabled) onClick() }, modifier = modifier, color = color, size = size, icon = icon, fill = fill, enabled = enabled)
 }
 
-/** Soft teal pill (#ccfbf1 bg, teal text). */
+/**
+ * The small VS action (A8): a SMALL candy pill — TEAL by default, PEACH for the quiet
+ * ones (leave, cancel). [bg] / [ink] are the retired flat-pill colors, kept so old
+ * call sites compile; a grey [bg] maps to PEACH.
+ */
 @Composable
-fun VsSoftPill(text: String, modifier: Modifier = Modifier, bg: Color = VsTeal.soft, ink: Color = VsTeal.ink, onClick: () -> Unit) {
-    Box(
-        modifier.clip(RoundedCornerShape(50)).background(bg).clickableNoRipple(onClick).padding(horizontal = 14.dp, vertical = 7.dp),
-        Alignment.Center,
-    ) { Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = ink, maxLines = 1) }
+fun VsSoftPill(
+    text: String,
+    modifier: Modifier = Modifier,
+    bg: Color = VsTeal.soft,
+    @Suppress("UNUSED_PARAMETER") ink: Color = VsTeal.ink,
+    color: CandyColor = if (bg == VsTeal.soft) CandyColor.TEAL else CandyColor.PEACH,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    CandyButton(text, onClick = { if (enabled) onClick() }, modifier = modifier, color = color, size = CandySize.SMALL, enabled = enabled)
 }
 
-/** A bot's art in a circle (§9). */
+/**
+ * A bot's avatar (FINISH_SPEC D3): the bot's own character (its hero image) on a soft
+ * tint of its color; "Your Ghost" is the player's own letter tile, faded.
+ */
 @Composable
-fun BotAvatar(id: String, size: Dp, bg: Color = VsTeal.soft, modifier: Modifier = Modifier) {
-    Box(modifier.size(size).clip(CircleShape).background(bg), Alignment.Center) {
+fun BotAvatar(id: String, size: Dp, bg: Color? = null, modifier: Modifier = Modifier) {
+    if (id == com.wordocious.core.BotCast.GHOST_ID) {
+        Box(modifier.size(size), Alignment.Center) { VsGhostTile(size) }
+        return
+    }
+    val tint = bg ?: vsWash(vsBotColor(id), 0.18f)
+    Box(
+        modifier.size(size).clip(CircleShape).background(tint)
+            .semantics { contentDescription = com.wordocious.app.data.BotPersonas.name(id) },
+        Alignment.Center,
+    ) {
         Image(
-            painterResource(BotArt.res(id)), contentDescription = com.wordocious.app.data.BotPersonas.name(id),
-            contentScale = ContentScale.Fit, modifier = Modifier.size(size),
+            painterResource(BotArt.res(id)), contentDescription = null,
+            contentScale = ContentScale.Fit, modifier = Modifier.size(size * 0.9f).padding(top = size * 0.06f),
         )
     }
 }
@@ -169,19 +203,19 @@ fun VsModeTile(mode: GameMode, size: Dp, selected: Boolean = false, modifier: Mo
     Box(
         modifier.size(size)
             .then(
-                if (selected) Modifier.shadow(6.dp, shape, ambientColor = accent.copy(alpha = 0.6f), spotColor = accent.copy(alpha = 0.6f)).clip(shape).background(accent)
-                // FINISH_SPEC A1: an unselected tile is a mini game card (tint, line, 4 dp top bar).
-                else Modifier.miniGameCard(accent, size * 0.26f),
+                // FINISH_SPEC A1: a mode tile is a mini game card (tint, line, 4 dp top bar);
+                // the picked one takes the stronger tint + ring.
+                Modifier.miniGameCard(accent, size * 0.26f, selected = selected),
             ),
         Alignment.Center,
-    ) { ModeGlyph(mode, if (selected) Color.White else accent, size) }
+    ) { ModeGlyph(mode, accent, size * 0.82f) }
 }
 
 /** The nav mode chip: icon tile + the mode name in its color. */
 @Composable
 fun VsModeChip(mode: GameMode) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        VsModeTile(mode, 26.dp, selected = true)
+        VsModeTile(mode, 26.dp)
         Text(vsModeName(mode).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, color = modeAccent(mode), maxLines = 1)
     }
 }
@@ -192,17 +226,17 @@ fun VsLock(size: Dp = 12.dp, @Suppress("UNUSED_PARAMETER") tint: Color = VsTeal.
     Icon3D(Icon3DName.LOCK, size * 1.2f, contentDescription = "Pro")
 }
 
-/** The icon square on a lobby tile: 30×30 soft-teal, radius 8. */
+/** The icon square on a lobby tile: a 32 dp mini game card in [accent] (A1). */
 @Composable
-fun VsIconSquare(content: @Composable () -> Unit) {
-    Box(Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(VsTeal.soft), Alignment.Center) { content() }
+fun VsIconSquare(accent: Color = VS_ACCENT, content: @Composable () -> Unit) {
+    Box(Modifier.size(32.dp).miniGameCard(accent, 9.dp), Alignment.Center) { Box(Modifier.padding(top = 3.dp)) { content() } }
 }
 
-/** A thin teal progress bar (0–1). */
+/** A thin teal progress bar (0–1) on a soft teal track. */
 @Composable
 fun VsProgressBar(fraction: Float, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(VsTeal.soft)) {
-        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp)).background(VsTeal.ink))
+    Box(modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(vsWash(VS_ACCENT, 0.22f))) {
+        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF5EEAD4), VS_ACCENT))))
     }
 }
 

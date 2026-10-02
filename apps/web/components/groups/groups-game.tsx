@@ -32,18 +32,18 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { groupsElsewhere } from '@/lib/elsewhere-progress';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass, candyVars } from '@/components/ui/candy-button';
+import { GameTray } from '@/components/ui/game-tray';
 
 // Kindred (More Games §14): sixteen words, four groups of four, four mistakes.
 // Submit four → a group locks (bar with pips), three-of-a-kind reads "One
@@ -253,13 +253,17 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
         if (child.dataset.groupsGrid !== undefined) grid = child; else others += child.offsetHeight;
       }
       if (!grid || band.clientHeight <= 0) return;
-      const gcs = getComputedStyle(grid);
+      // The words sit in the game tray (FINISH_SPEC L): its padding, border and lip come off first.
+      const tcs = getComputedStyle(grid);
+      const chromeY = parseFloat(tcs.paddingTop) + parseFloat(tcs.paddingBottom) + parseFloat(tcs.borderTopWidth) + parseFloat(tcs.borderBottomWidth);
+      const inner = (grid.firstElementChild as HTMLElement | null) ?? grid;
+      const gcs = getComputedStyle(inner);
       const rowGap = parseFloat(gcs.rowGap) || 0;
       const colGap = parseFloat(gcs.columnGap) || 0;
       const rows = Math.max(1, Math.ceil(tileCount / 4));
-      const free = band.clientHeight - padY - others - gap * Math.max(0, count - 1) - rowGap * (rows - 1);
+      const free = band.clientHeight - padY - others - gap * Math.max(0, count - 1) - chromeY - rowGap * (rows - 1);
       const h = Math.round(Math.min(92, Math.max(56, free / rows)));
-      const w = (grid.clientWidth - colGap * 3) / 4;
+      const w = (inner.clientWidth - colGap * 3) / 4;
       setTileFit((prev) => (prev && prev.h === h && Math.abs(prev.w - w) < 0.5 ? prev : { h, w }));
     };
     const ro = new ResizeObserver(measure);
@@ -283,7 +287,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   const mistakesLabel = `${state.mistakes} mistake${state.mistakes === 1 ? '' : 's'}`;
 
   return (
-    <GameBackground mode="GROUPS" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="GROUPS" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="GROUPS" onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -312,15 +316,15 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // groups found (solid) and the rest revealed (dashed) from the matches row, then the card.
-        <CompletedCustomDaily dbKey="GROUPS" completion={completion}
+        <PuzzleElsewhere dbKey="GROUPS" completion={completion}
           boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
           {elsewhere && (elsewhere.solved.length > 0 || elsewhere.unsolved.length > 0) && (
-            <div className="flex flex-col items-center gap-1.5 w-full max-w-md">
+            <GameTray accent={GROUPS_ACCENT} state={completion.won ? 'won' : 'lost'} padding={8} className="w-full max-w-md flex flex-col items-center gap-1.5">
               {elsewhere.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
               {elsewhere.unsolved.map((g) => <GroupBar key={g.tier} group={g} revealed />)}
-            </div>
+            </GameTray>
           )}
-        </CompletedCustomDaily>
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
@@ -371,37 +375,35 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the four groups on the
+        // tray (purple wash when won, slate when lost; the missed ones revealed)
+        // scaled to the room left, then the dock; the breakdown under More.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex flex-col items-center gap-1.5 px-3 py-3 max-w-md mx-auto">
-              {state.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
-              {unsolved.map((g) => <GroupBar key={g.tier} group={g} revealed />)}
-            </div>
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={GROUPS_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
-                  style={{ backgroundColor: `${GROUPS_ACCENT}15`, border: `2px solid ${GROUPS_ACCENT}44`, color: GROUPS_ACCENT }}>
-                  {won ? (state.mistakes === 0 ? '✓' : state.mistakes) : '✗'}
-                </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? (state.mistakes === 0 ? 'Flawless — all four groups' : 'All four groups found') : 'Out of mistakes'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {`${state.solved.length}/${GROUPS_TOTAL_BOARDS} groups · ${mistakesLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="GROUPS" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard gameMode="GROUPS" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
-                boardsSolved={groupsBoardsSolved(state)} totalBoards={GROUPS_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-              {mode === 'daily' && <NextDailyCta currentMode="GROUPS" />}
-            </div>
-          </div>
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.mistakes} guessLabel={state.mistakes === 1 ? 'mistake' : 'mistakes'} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? (state.mistakes === 0 ? 'Flawless — all four groups' : 'All four groups found') : 'Out of mistakes'}. ${state.solved.length}/${GROUPS_TOTAL_BOARDS} groups · ${mistakesLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
+            }
+            board={
+              <div className="max-w-md mx-auto px-1 pb-1">
+                <GameTray accent={GROUPS_ACCENT} state={won ? 'won' : 'lost'} padding={8} className="flex flex-col items-center gap-1.5">
+                  {state.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
+                  {unsolved.map((g) => <GroupBar key={g.tier} group={g} revealed />)}
+                </GameTray>
+              </div>
+            }
+            dock={
+              <FinishedDock currentMode="GROUPS" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="GROUPS" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure accent={GROUPS_ACCENT}>
+                <ScoreBreakdownCard gameMode="GROUPS" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
+                  boardsSolved={groupsBoardsSolved(state)} totalBoards={GROUPS_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

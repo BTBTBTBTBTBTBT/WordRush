@@ -32,6 +32,7 @@ import { CIPHER_CELL_MIN } from '@/components/cryptogram/cipher-layout';
 import { GroupBar } from '@/components/groups/groups-board';
 import { CrosswordBoard, ClueColumns } from '@/components/crossword/crossword-board';
 import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT, COLUMN_CLASS } from '@/components/scramble/muddle-board';
+import { accentInk } from '@/lib/soft-surface';
 
 // Founder, 2026-09-29: the Leaderboard / Records "Completed today" card showed
 // "Loading board…" forever for the More Games titles — CompletedDailyBoard only
@@ -48,6 +49,8 @@ export const isMoreBoardMode = (dbKey: string) => MORE_BOARD_KEYS.has(dbKey);
 
 /** How long the card may say "Loading board…" before it settles on the summary alone. */
 const LOAD_BOUND_MS = 8000;
+/** The Muddle punchline answer's ink (deep purple light, a light lilac on dark). */
+const ANSWER_INK = accentInk('#7c3aed', '#5b21b6');
 
 type MoreBoard =
   | { kind: 'SUDOKU'; state: SudokuState }
@@ -221,7 +224,7 @@ function FinishedMoreBoard({ board, won }: { board: MoreBoard; won: boolean }) {
           </div>
           <p className="text-center font-extrabold px-1" style={{ fontSize: 13, lineHeight: 1.25, color: 'var(--color-text)' }}>
             {caption[0]}
-            <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{es.final.answer.toLowerCase()}</span>
+            <span className={`inline-block min-w-[3em] border-b-2 mx-1 align-baseline ${ANSWER_INK.className}`} style={{ borderColor: MUDDLE_ACCENT, ...ANSWER_INK.style }}>{es.final.answer.toLowerCase()}</span>
             {caption[1] ?? ''}
           </p>
           <div className="self-stretch" style={{ zoom: 0.8 }}>

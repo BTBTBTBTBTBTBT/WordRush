@@ -100,19 +100,40 @@ struct SquishButtonStyle: ButtonStyle {
         SquishBody(configuration: configuration, squash: squash)
     }
 
+    /// FINISH_SPEC §A9 / §AK: the press is STATE-driven so it always shows — a quick
+    /// tap inside a ScrollView flips `isPressed` on and off almost at once (the scroll
+    /// view delays touches), which used to swallow the squash entirely. Touch-down
+    /// squashes (and slightly darkens, the lip compressing); release waits until the
+    /// squash has been visible for ~90 ms, then springs back past 1 (≈1.02) and settles.
+    /// Reading `configuration.isPressed` (no DragGesture) keeps scrolling intact; a
+    /// scroll cancels the press silently.
     private struct SquishBody: View {
         let configuration: Configuration
         let squash: CGSize
         @Environment(\.accessibilityReduceMotion) private var envReduce
+        @State private var down = false
+        @State private var pressedAt: TimeInterval = 0
 
         var body: some View {
             let still = envReduce || Theme.reduceMotion
-            let pressed = configuration.isPressed && !still
             configuration.label
-                .scaleEffect(x: pressed ? squash.width : 1, y: pressed ? squash.height : 1)
-                .animation(still ? nil : (pressed ? .easeOut(duration: 0.08)
-                                          : .spring(response: 0.26, dampingFraction: 0.42)),
-                           value: pressed)
+                .scaleEffect(x: down ? squash.width : 1, y: down ? squash.height : 1)
+                .brightness(down ? -0.035 : 0)
+                // §U: press · soft on touch-down, release on let-go.
+                .onChange(of: configuration.isPressed) { pressed in
+                    Feedback.press(pressed)
+                    guard !still else { return }
+                    let now = ProcessInfo.processInfo.systemUptime
+                    if pressed {
+                        pressedAt = now
+                        withAnimation(.easeOut(duration: 0.08)) { down = true }
+                    } else {
+                        let wait = max(0, 0.09 - (now - pressedAt))
+                        DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.45)) { down = false }
+                        }
+                    }
+                }
         }
     }
 }
@@ -122,6 +143,8 @@ extension ButtonStyle where Self == SquishButtonStyle {
     static var squish: SquishButtonStyle { SquishButtonStyle() }
     /// §A3: header icons squash harder (.86 × .80).
     static var squishIcon: SquishButtonStyle { SquishButtonStyle(squash: CGSize(width: 0.86, height: 0.80)) }
+    /// §AK: big game cards / tiles press to 0.95.
+    static var squishCard: SquishButtonStyle { SquishButtonStyle(squash: CGSize(width: 0.95, height: 0.95)) }
 }
 
 // MARK: - §A8 Glossy candy buttons
@@ -249,6 +272,8 @@ struct CandyButtonStyle: ButtonStyle {
                 .animation(still ? nil : (pressed ? .easeOut(duration: 0.08)
                                           : .spring(response: 0.26, dampingFraction: 0.45)),
                            value: pressed)
+                // §U: press · soft on touch-down, release on let-go.
+                .onChange(of: configuration.isPressed) { Feedback.press($0) }
         }
     }
 }
@@ -813,6 +838,8 @@ struct KeyCap<Label: View>: View {
             shape.fill(colors.face).padding(.bottom, 3)
             label()
                 .foregroundStyle(colors.ink)
+                // §AB: at 200% Larger Text the letter shrinks to fit its key.
+                .lineLimit(1).minimumScaleFactor(0.5)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.bottom, 3)
         }

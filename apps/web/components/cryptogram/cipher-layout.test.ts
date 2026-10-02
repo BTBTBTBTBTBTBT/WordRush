@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  CIPHER_CELL_MAX, CIPHER_CELL_MIN, CIPHER_CELL_STEP,
+  CIPHER_CELL_MAX, CIPHER_CELL_MIN, CIPHER_CELL_STEP, CIPHER_CODE_CHIP_PAD,
   cipherMetrics, cipherWordWidth, wrapCipherWords, cipherBlockHeight, cipherStripHeight, fitCipherCell,
 } from './cipher-layout';
 
@@ -16,6 +16,13 @@ describe('cipherMetrics', () => {
     expect(cipherMetrics(CIPHER_CELL_MIN).chipFont).toBe(11);
     expect(cipherMetrics(CIPHER_CELL_MAX).codeFont).toBe(14);
     expect(cipherMetrics(CIPHER_CELL_MIN).codeFont).toBe(10);
+  });
+  it('counts the code-letter chip (letter + padding + rim) in each line', () => {
+    for (const c of [CIPHER_CELL_MIN, 40, CIPHER_CELL_MAX]) {
+      const m = cipherMetrics(c);
+      expect(m.codeChip).toBe(m.codeFont + CIPHER_CODE_CHIP_PAD);
+      expect(m.rowHeight).toBe(c + m.codeGap + m.codeChip);
+    }
   });
   it('keeps every derived size monotonic in the cell', () => {
     for (let c = CIPHER_CELL_MIN; c < CIPHER_CELL_MAX; c += CIPHER_CELL_STEP) {

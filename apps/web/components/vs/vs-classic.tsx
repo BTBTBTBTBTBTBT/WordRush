@@ -1,6 +1,10 @@
 'use client';
 
+import { REVEAL } from '@/lib/tile-motion';
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import { modeColor } from '@/lib/vs-lobby';
+import { CandyButton } from '@/components/ui/candy-button';
+import { UiIcon } from '@/components/ui/ui-icon';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
@@ -121,7 +125,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
       setMessage(msg);
       playInvalid();
       setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
       setTimeout(() => setMessage(''), 1500);
     };
 
@@ -227,6 +231,8 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
         <div className="absolute inset-0 flex items-center justify-center px-4">
         {boardSize && <Board
           sizePx={boardSize}
+          // FINISH_SPEC L: the board sits on the shared game tray in the mode's accent.
+          trayAccent={modeColor(mode)}
           guesses={currentBoard.guesses}
           currentGuess={currentGuess}
           maxGuesses={currentBoard.maxGuesses}
@@ -249,30 +255,13 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
           finishing and the 'waiting' screen swap — a visible board jump. */}
       {hasHints && (
         <div className={`shrink-0 flex justify-center gap-3 px-4 pb-4 ${currentBoard.status === GameStatus.PLAYING ? '' : 'invisible pointer-events-none'}`}>
-          <button
-            onClick={handleVowelHint}
-            disabled={hints.vowelUsed}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
-            style={{
-              background: hints.vowelUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
-              border: `1.5px solid ${hints.vowelUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
-              color: hints.vowelUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
-            }}
-          >
-            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : '💡 Vowel'}
-          </button>
-          <button
-            onClick={handleConsonantHint}
-            disabled={hints.consonantUsed}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
-            style={{
-              background: hints.consonantUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
-              border: `1.5px solid ${hints.consonantUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
-              color: hints.consonantUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
-            }}
-          >
-            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : '💡 Consonant'}
-          </button>
+          {/* A8: the solo screen's teal candy hint buttons. */}
+          <CandyButton size="sm" color="teal" onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
+          </CandyButton>
+          <CandyButton size="sm" color="teal" onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
+          </CandyButton>
         </div>
       )}
 

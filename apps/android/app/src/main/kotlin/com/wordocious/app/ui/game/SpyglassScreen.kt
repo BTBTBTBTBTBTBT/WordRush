@@ -72,6 +72,7 @@ import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.formatGuessStat
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -107,7 +108,6 @@ import kotlinx.serialization.json.Json
 // found. guess_count = min(10 + misses, 15).
 
 private val SPY_ACCENT = Color(0xFF4D7C0F)
-private val SPY_INK = Color(0xFF365314)
 private const val REVEAL_AFTER_SECONDS = 300
 
 class SpyglassSession(val seed: String, val isDaily: Boolean) {
@@ -228,7 +228,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         // Close call: a theme word / plural in the grid that isn't a list word (never a miss; gentle note, no error sound).
         val near = wordsearchNearWord(before, from, to)
         dispatch(WordsearchAction.Select(from, to), onFinished)
-        if (state.found.size > before.found.size) SoundManager.playSuccess()
+        if (state.found.size > before.found.size) SoundManager.playPartial()
         else if (state.misses > before.misses) { SoundManager.playInvalid(); toast = "Not one of the words" }
         else if (near != null) { SoundManager.playKeyTap(); toast = "$near fits the theme, but it's not one of today's 10" }
     }
@@ -302,15 +302,8 @@ fun SpyglassScreen(
 
     Box(Modifier.fillMaxSize().gameBackground { background(WTheme.bg) }.statusBarsPadding()) {
         if (session.isFinished) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SpyglassHeader(session)
-                SpyglassGrid(session, revealMissing = session.state.status == WordsearchStatus.LOST) { _, _ -> }
-                WordChips(session)
-                SpyglassResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            SpyglassFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SpyglassHeader(session)
@@ -323,12 +316,8 @@ fun SpyglassScreen(
                 Spacer(Modifier.height(4.dp))
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 110.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // G5 a toast is a tinted pill (no dark slab, no white).
+        session.toast?.let { PieceToast(it, SPY_ACCENT, top = 110.dp) }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) SpyglassOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(SPY_ACCENT, onBack) }
@@ -343,7 +332,7 @@ private fun SpyglassCapsules(session: SpyglassSession, onFinished: () -> Unit) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     @Suppress("UNUSED_EXPRESSION") tick
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hint(onFinished) }
         Capsule(if (session.state.wordsShown) "Words shown" else "Show words", Icons.AutoMirrored.Filled.List, dim = session.state.wordsShown) { session.showWords(onFinished) }
         Capsule(if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}", Icons.Filled.Visibility, dim = !session.canReveal) { session.reveal(onFinished) }
     }
@@ -387,15 +376,15 @@ private fun WordChips(session: SpyglassSession) {
             val found = w in s.found; val hinted = w in s.hinted && !found
             // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
             val visible = found || s.wordsShown || s.status != WordsearchStatus.PLAYING
+            // J3 a found word = a glossy capsule in the accent with a soft glow; the rest soft tinted chips.
             Text(
-                if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = if (found) FontWeight.Black else FontWeight.Bold,
                 letterSpacing = if (visible) 0.sp else 2.sp,
-                color = if (found) SPY_INK else if (visible) WTheme.text else WTheme.textMuted,
-                textDecoration = if (found) TextDecoration.LineThrough else null,
+                color = if (found) Color.White else if (visible) (if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading) else WTheme.textMuted,
                 maxLines = 1, softWrap = false,
-                modifier = Modifier.clip(CircleShape).background(if (found) SPY_ACCENT.copy(alpha = 0.14f) else WTheme.surface)
-                    .border(1.dp, if (found) SPY_ACCENT.copy(alpha = 0.35f) else if (hinted) SPY_ACCENT else WTheme.border, CircleShape)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier
+                    .then(if (found) Modifier.glossyCapsule(SPY_ACCENT, glow = 0.8f) else Modifier.softChip(SPY_ACCENT, selected = hinted))
+                    .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = if (found) 8.5.dp else 6.dp),
             )
         }
     }
@@ -412,7 +401,7 @@ fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, onSelect: (In
 @Composable
 fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, letterSize: Dp = 18.dp, onSelect: (Int, Int) -> Unit) {
     val n = s.n
-    val heavy = Color(0xFF4C1D95); val rule = Color(0xFF4C1D95).copy(alpha = 0.16f)
+    val dark = WTheme.isDark
     var anchor by remember { mutableStateOf<Int?>(null) }
     var hover by remember { mutableStateOf<Int?>(null) }
     var pendingTap by remember { mutableStateOf<Int?>(null) }
@@ -428,65 +417,77 @@ fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, 
         return if (c in 0 until n && r in 0 until n) r * n + c else null
     }
 
+    // FINISH_SPEC J3 + L: crisp letters on the tinted game tray (no grid lines); found
+    // words lie on the grid as glossy capsules in the accent with a soft glow.
+    val small = letterSize < 18.dp
     Box(
-        Modifier.fillMaxWidth().widthIn(max = 440.dp).aspectRatio(1f)
-            .clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
-            .border(2.5.dp, heavy, RoundedCornerShape(14.dp))
-            .then(
-                if (finished) Modifier else Modifier
-                    .pointerInput(n) {
-                        detectTapGestures { p ->
-                            val cell = cellAt(p) ?: return@detectTapGestures
-                            val pend = pendingTap
-                            if (pend != null && pend != cell) { pendingTap = null; onSelect(pend, cell) } else pendingTap = cell
-                        }
-                    }
-                    .pointerInput(n) {
-                        detectDragGestures(
-                            onDragStart = { p -> anchor = cellAt(p); hover = anchor },
-                            onDrag = { change, _ -> cellAt(change.position)?.let { hover = it } },
-                            onDragEnd = {
-                                val a = anchor; val h = hover
-                                if (a != null && h != null && h != a) { pendingTap = null; onSelect(a, h) }
-                                anchor = null; hover = null
-                            },
-                            onDragCancel = { anchor = null; hover = null },
-                        )
-                    },
+        Modifier.fillMaxWidth().widthIn(max = 440.dp)
+            .gameTray(
+                SPY_ACCENT, finishTray(finished, s.status == WordsearchStatus.WON), corner = if (small) 14.dp else GameTrayStyle.CORNER,
+                padding = androidx.compose.foundation.layout.PaddingValues(if (small) 6.dp else 8.dp),
             ),
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            sidePx = size.width
-            val cell = size.width / n
-            fun center(i: Int) = Offset((i % n + 0.5f) * cell, (i / n + 0.5f) * cell)
-            for (w in s.words) if (w.w in s.found) {
-                val c = wordsearchCells(n, w)
-                drawLine(SPY_ACCENT.copy(alpha = 0.28f), center(c.first()), center(c.last()), strokeWidth = cell * 0.72f, cap = StrokeCap.Round)
+        Box(
+            Modifier.fillMaxWidth().aspectRatio(1f)
+                .then(
+                    if (finished) Modifier else Modifier
+                        .pointerInput(n) {
+                            detectTapGestures { p ->
+                                val cell = cellAt(p) ?: return@detectTapGestures
+                                val pend = pendingTap
+                                if (pend != null && pend != cell) { pendingTap = null; onSelect(pend, cell) } else pendingTap = cell
+                            }
+                        }
+                        .pointerInput(n) {
+                            detectDragGestures(
+                                onDragStart = { p -> anchor = cellAt(p); hover = anchor },
+                                onDrag = { change, _ -> cellAt(change.position)?.let { hover = it } },
+                                onDragEnd = {
+                                    val a = anchor; val h = hover
+                                    if (a != null && h != null && h != a) { pendingTap = null; onSelect(a, h) }
+                                    anchor = null; hover = null
+                                },
+                                onDragCancel = { anchor = null; hover = null },
+                            )
+                        },
+                ),
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                sidePx = size.width
+                val cell = size.width / n
+                fun center(i: Int) = Offset((i % n + 0.5f) * cell, (i / n + 0.5f) * cell)
+                for (w in s.words) if (w.w in s.found) {
+                    val c = wordsearchCells(n, w)
+                    drawGlossyLine(center(c.first()), center(c.last()), cell * 0.74f, SPY_ACCENT, glow = 0.8f)
+                }
+                if (revealMissing) for (w in s.words) if (w.w !in s.found) {
+                    val c = wordsearchCells(n, w)
+                    drawLine(Color(0xFFDC2626).copy(alpha = 0.45f), center(c.first()), center(c.last()), strokeWidth = cell * 0.72f, cap = StrokeCap.Round,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f)))
+                }
+                if (preview != null) drawLine(SPY_ACCENT.copy(alpha = 0.22f), center(anchor!!), center(hover!!), strokeWidth = cell * 0.74f, cap = StrokeCap.Round)
             }
-            if (revealMissing) for (w in s.words) if (w.w !in s.found) {
-                val c = wordsearchCells(n, w)
-                drawLine(Color(0xFFDC2626).copy(alpha = 0.45f), center(c.first()), center(c.last()), strokeWidth = cell * 0.72f, cap = StrokeCap.Round,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f)))
-            }
-            if (preview != null) drawLine(SPY_ACCENT.copy(alpha = 0.18f), center(anchor!!), center(hover!!), strokeWidth = cell * 0.72f, cap = StrokeCap.Round)
-            for (k in 1 until n) {
-                val p = k * cell
-                drawRect(rule, topLeft = Offset(p - 0.5f, 0f), size = Size(1f, size.height))
-                drawRect(rule, topLeft = Offset(0f, p - 0.5f), size = Size(size.width, 1f))
-            }
-        }
-        Column(Modifier.fillMaxSize()) {
-            for (r in 0 until n) Row(Modifier.weight(1f).fillMaxWidth()) {
-                for (c in 0 until n) {
-                    val i = r * n + c
-                    val bg = when { i == anchor || i == pendingTap -> SPY_ACCENT.copy(alpha = 0.2f); i in previewSet -> SPY_ACCENT.copy(alpha = 0.08f); else -> Color.Transparent }
-                    Box(
-                        Modifier.weight(1f).fillMaxSize().background(bg)
-                            .then(if (i in hintCells) Modifier.padding(1.dp).border(2.dp, SPY_ACCENT) else Modifier),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        val fs = with(density) { letterSize.toSp() }
-                        Text(s.grid[i].toString(), fontSize = fs, fontWeight = FontWeight.Black, color = if (i in foundCells) SPY_INK else WTheme.text, fontFamily = Nunito)
+            Column(Modifier.fillMaxSize()) {
+                for (r in 0 until n) Row(Modifier.weight(1f).fillMaxWidth()) {
+                    for (c in 0 until n) {
+                        val i = r * n + c
+                        val bg = when { i == anchor || i == pendingTap -> SPY_ACCENT.copy(alpha = 0.24f); i in previewSet -> SPY_ACCENT.copy(alpha = 0.1f); else -> Color.Transparent }
+                        val cellShape = RoundedCornerShape(30)
+                        Box(
+                            Modifier.weight(1f).fillMaxSize().padding(1.dp).clip(cellShape).background(bg)
+                                .then(if (i in hintCells) Modifier.border(2.dp, SPY_ACCENT, cellShape) else Modifier),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            val fs = with(density) { letterSize.toSp() }
+                            val onCapsule = i in foundCells
+                            Text(
+                                s.grid[i].toString(), fontSize = fs, fontWeight = FontWeight.Black, fontFamily = Nunito,
+                                color = if (onCapsule) Color.White else if (dark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+                                style = androidx.compose.ui.text.TextStyle(
+                                    shadow = if (onCapsule) androidx.compose.ui.graphics.Shadow(Color(0x66223A06), Offset(0f, 1.5f), 1.5f) else null,
+                                ),
+                            )
+                        }
                     }
                 }
             }
@@ -494,26 +495,16 @@ fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, 
     }
 }
 
+/** A8 a game control: a small candy button with its icon. [dim] only looks quiet — the tap
+ *  still reaches the game (Reveal answers "unlocks at 5:00"), as before. */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, onClick: () -> Unit) {
-    val fg = if (dim) WTheme.textMuted.copy(alpha = 0.5f) else SPY_ACCENT
-    Row(
-        Modifier.clip(CircleShape)
-            .background(if (dim) Color.Transparent else SPY_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (dim) WTheme.border else SPY_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple { onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg)
-    }
-}
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
+    PieceAction(label, icon, onClick = onClick, color = color, faded = dim)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun SpyglassResult(
+private fun SpyglassFinished(
     session: SpyglassSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
@@ -521,33 +512,48 @@ private fun SpyglassResult(
     val won = s.status == WordsearchStatus.WON
     val secs = session.elapsed
     val context = LocalContext.current
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Text(if (won) (if (s.guessCount == 10) "Clean clear" else if (s.wordsShown) "Cleared with the list" else "Grid cleared") else "Revealed", fontSize = 20.sp, fontWeight = FontWeight.Black,
-            color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
-        Text(
-            "${s.found.size}/${s.words.size} found · ${formatGuessStat("misses", 10, s.guessCount)} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""),
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", SPY_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", SPY_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}${s.found.size}/${s.words.size} · ${s.misses} miss${if (s.misses == 1) "" else "es"} · ${timeText(secs)}"
-                val text = "Wordocious Spyglass${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · ${s.found.size}/${s.words.size} found · ${s.misses} miss${if (s.misses == 1) "" else "es"} · wordocious.com/spyglass"
-                val bmp = ShareImage.renderWordsearch(context, s.n, s.words, s.found, won, meta)
-                ShareImage.shareBitmap(context, bmp, text)
-            }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain() }
+    val title = if (won) (if (s.guessCount == 10) "Clean clear" else if (s.wordsShown) "Cleared with the list" else "Grid cleared") else "Revealed"
+    val note = listOfNotNull(formatGuessStat("misses", 10, s.guessCount), hintsNote(s.hintsUsed)).joinToString(" · ")
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}${s.found.size}/${s.words.size} · ${s.misses} miss${if (s.misses == 1) "" else "es"} · ${timeText(secs)}"
+        val text = "Wordocious Spyglass${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · ${s.found.size}/${s.words.size} found · ${s.misses} miss${if (s.misses == 1) "" else "es"} · wordocious.com/spyglass"
+        val bmp = ShareImage.renderWordsearch(context, s.n, s.words, s.found, won, meta)
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { SpyglassHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOf(stripCount("${s.found.size}/${s.words.size}", "found"), stripTime(secs), stripPoints(session.points)),
+                srText = "$title. $note. ${s.found.size} of ${s.words.size} found, time ${timeText(secs)}, ${session.points} points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.WORDSEARCH, isDaily = session.isDaily, accent = SPY_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) onPlayAgain else null,
+                onOtherGames = onBack,
+                more = {
+                    Text("$title · $note", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    WordChips(session)
+                    if (session.isDaily) DailyRankBadge(GameMode.WORDSEARCH)
+                    ScoreBreakdownCard(GameMode.WORDSEARCH, won, s.guessCount, secs, s.found.size, s.words.size, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
+                },
+            )
+        },
+    ) { maxW, maxH ->
+        // R2: the grid scales to the height left; the word list moved into "More".
+        FinishedSquare(maxW, maxH, maxSide = 440.dp) { side ->
+            SpyglassGrid(
+                s, finished = true, revealMissing = s.status == WordsearchStatus.LOST,
+                letterSize = (side.value / s.n.coerceAtLeast(1) * 0.5f).coerceIn(10f, 18f).dp,
+            ) { _, _ -> }
         }
-        if (session.isDaily) DailyRankBadge(GameMode.WORDSEARCH)
-        ScoreBreakdownCard(GameMode.WORDSEARCH, won, s.guessCount, secs, s.found.size, s.words.size, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.WORDSEARCH, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 
@@ -555,41 +561,18 @@ private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}"
 private fun SpyglassOverlay(session: SpyglassSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == WordsearchStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "WORDSEARCH") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.found.size}/${session.state.words.size}", "FOUND"); StatBlock("${session.state.misses}", "MISSES")
-                        StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
+    PieceOverlay(won, "WORDSEARCH", SPY_ACCENT, onScrimTap = onDismiss) {
+        // Moment lettering (ART_SPEC §6).
+        com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            StatBlock("${session.state.found.size}/${session.state.words.size}", "FOUND"); StatBlock("${session.state.misses}", "MISSES")
+            StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
         }
+        onPlayAgain?.let { PiecePlayAgain(won, it) }
+        PieceTapHint()
     }
 }
 
+/** A2 a soft-number stat. */
 @Composable
-private fun StatBlock(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
-    }
-}
+private fun StatBlock(value: String, label: String) = PieceStat(value, label)

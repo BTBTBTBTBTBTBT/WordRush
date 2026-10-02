@@ -19,7 +19,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { CipherBoard, FrequencyStrip, CRYPTOGRAM_ACCENT } from './cipher-board';
+import { CipherBoard, FrequencyStrip, CRYPTOGRAM_ACCENT, CIPHER_TRAY_CHROME } from './cipher-board';
 import { fitCipherCell, CIPHER_CELL_MIN } from './cipher-layout';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
@@ -33,18 +33,17 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { cryptogramElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 
 // Codebreaker (More Games §16): decode a saying written in a substitution
@@ -196,7 +195,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
-    if (!restoredRef.current) { if (state.status === 'won') { setShowVictory(true); playSuccess(); } else setShowGameOver(true); }
+    if (!restoredRef.current) { if (state.status === 'won') { setShowVictory(true); } else setShowGameOver(true); }
     recordModePlayed('codebreaker');
     recordResult();
     restoredRef.current = false;
@@ -288,8 +287,9 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       const cs = getComputedStyle(band);
       const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
       const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-      const width = Math.min(band.clientWidth - padX, 768);
-      const height = band.clientHeight - padY;
+      // The board sits in the game tray (FINISH_SPEC L): its padding, border and lip come off first.
+      const width = Math.min(band.clientWidth - padX, 768) - CIPHER_TRAY_CHROME.x;
+      const height = band.clientHeight - padY - CIPHER_TRAY_CHROME.y;
       if (width <= 0 || height <= 0) return;
       // The strip is pinned below the band (founder, 2026-09-26): the board alone must fit here.
       setFit({ cell: fitCipherCell(cipher, width, height, chipCount, false), width });
@@ -326,9 +326,17 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
   const capsule = (dim: boolean) => candyClass({ dim });
   const capsuleStyle = (_dim: boolean) => undefined;
+  // FINISH_SPEC R2: the decoded board + the saying, drawn at the finished cell
+  // (32) and scaled down by the finished screen's FitBox when the room is short.
+  const cipherFinishedBoard = (s: CryptogramState) => (
+    <div className="flex flex-col items-center gap-2 px-1 pb-1">
+      <CipherBoard state={s} selected={null} onSelect={() => {}} finished cell={32} />
+      <p className="text-center text-base font-extrabold max-w-md" style={{ color: 'var(--color-text)' }}>“{s.text}”</p>
+    </div>
+  );
 
   return (
-    <GameBackground mode="CRYPTOGRAM" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="CRYPTOGRAM" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="CRYPTOGRAM" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -357,22 +365,17 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // decoded cipher and the saying from the matches row, then the card.
-        <CompletedCustomDaily dbKey="CRYPTOGRAM" completion={completion}
+        <PuzzleElsewhere dbKey="CRYPTOGRAM" completion={completion}
           boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
-          {elsewhere?.state && (
-            <>
-              <CipherBoard state={elsewhere.state} selected={null} onSelect={() => {}} finished cell={32} />
-              <p className="text-center text-base font-extrabold max-w-md" style={{ color: 'var(--color-text)' }}>“{elsewhere.state.text}”</p>
-            </>
-          )}
-        </CompletedCustomDaily>
+          {elsewhere?.state && cipherFinishedBoard(elsewhere.state)}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
         <>
           <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
-            {/* The board alone, centred in the band; the cell shrinks (floor 26px) so it never has to scroll. */}
+            {/* The board alone, centered in the band; the cell shrinks (floor 26px) so it never has to scroll. */}
             <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
               <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} />
               {conflicts.length > 0 && <div className="text-[11px] font-bold" style={{ color: '#dc2626' }}>{conflicts.join(', ')} used for two code letters</div>}
@@ -403,37 +406,27 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the decoded board and
+        // the saying scaled to the room left, then the dock; the breakdown under More.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 px-3 py-3">
-              <CipherBoard state={state} selected={null} onSelect={() => {}} finished cell={32} />
-              <p className="text-center text-base font-extrabold max-w-md" style={{ color: 'var(--color-text)' }}>“{state.text}”</p>
-            </div>
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={CRYPTOGRAM_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
-                  style={{ backgroundColor: `${CRYPTOGRAM_ACCENT}15`, border: `2px solid ${CRYPTOGRAM_ACCENT}44`, color: CRYPTOGRAM_ACCENT }}>
-                  {won ? (state.checks === 0 ? '✓' : state.checks) : '✗'}
-                </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? (state.checks === 0 ? 'Code cracked clean' : 'Code cracked') : 'Answer revealed'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {`${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="CRYPTOGRAM" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard gameMode="CRYPTOGRAM" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
-                boardsSolved={won ? 1 : 0} totalBoards={CRYPTOGRAM_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-              {mode === 'daily' && <NextDailyCta currentMode="CRYPTOGRAM" />}
-            </div>
-          </div>
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.checks} guessLabel={state.checks === 1 ? 'check' : 'checks'} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? (state.checks === 0 ? 'Code cracked clean' : 'Code cracked') : 'Answer revealed'}. ${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
+            }
+            board={cipherFinishedBoard(state)}
+            dock={
+              <FinishedDock currentMode="CRYPTOGRAM" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="CRYPTOGRAM" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure accent={CRYPTOGRAM_ACCENT}>
+                <ScoreBreakdownCard gameMode="CRYPTOGRAM" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
+                  boardsSolved={won ? 1 : 0} totalBoards={CRYPTOGRAM_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

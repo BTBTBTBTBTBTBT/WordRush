@@ -1,25 +1,31 @@
 'use client';
 
-import { Bot, Swords } from 'lucide-react';
+import { Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { SoftNum } from '@/components/ui/soft-number';
 import {
-  vsBannerClockLine, vsBannerHeadline, vsRecordLine, vsSweep, vsTodayStatus,
+  LADDER_BOTS, vsBannerClockLine, vsBannerHeadline, vsRecordLine, vsSweep, vsTodayStatus,
   type VsDayResult, type WinLoss,
 } from '@wordle-duel/core';
 import { VS, todayTileLine } from '@/lib/vs-lobby';
-import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { botArt, botPersona } from '@/lib/bot/bot-personas';
+import { alphaHex } from '@/lib/soft-surface';
+import Image from 'next/image';
+import { ART_SIZE, artSrc } from '@/lib/art';
+import { BotAvatar, VS_ACCENT } from './vs-ui';
 
 // The VS banner (VS overhaul §1): the home banner's one-window shape in teal.
 // A frosted headline strip over TODAY (the Daily Battle and the Bot of the
 // Day) and RECORD (people, bots, the ladder). The words come from the shared
 // core, so iOS and Android print the same thing; the RECORD sums are the Stats
-// page's VS sums. A VS sweep turns the card gold.
+// page's VS sums, drawn as soft numbers (FINISH_SPEC A2). A VS sweep turns the
+// card gold. The Bot of the Day tile shows today's bot character (D2); the
+// whole cast faces off across the top (art-scene-vs-faceoff).
 
 interface Props {
   name: string;
   battle: { result: VsDayResult; opponent: string | null };
-  botOfDay: { result: VsDayResult; bot: string };
+  botOfDay: { result: VsDayResult; bot: string; botId?: string };
   /** The newest open incoming challenge, if any. */
   incoming: { from: string; hoursLeft: number } | null;
   streak: number;
@@ -34,33 +40,42 @@ interface Props {
   onBotOfDay: () => void;
 }
 
-function TodayTile({ label, icon: Icon, result, line, onOpen }: {
-  label: string; icon: typeof Swords; result: VsDayResult; line: string; onOpen: () => void;
+function TodayTile({ label, icon, result, line, onOpen }: {
+  label: string; icon: React.ReactNode; result: VsDayResult; line: string; onOpen: () => void;
 }) {
   const open = result === 'open';
   const won = result === 'won';
+  // A1: the open tile takes the VS teal wash (never plain white); won = solid teal, else slate.
   const style: React.CSSProperties = open
-    ? { background: 'rgba(255,255,255,0.85)', border: '1.5px dashed rgba(15,118,110,0.45)' }
+    ? { background: `linear-gradient(${alphaHex(VS_ACCENT, 0.12)}, ${alphaHex(VS_ACCENT, 0.12)}), #ffffff`, border: `1.5px dashed ${alphaHex(VS_ACCENT, 0.5)}`, boxShadow: `inset 0 4px 0 ${VS_ACCENT}` }
     : won
     ? { background: VS.ink, boxShadow: '0 0 10px rgba(15,118,110,0.55)' }
-    : { background: '#9ca3af' };
+    : { background: '#94a3b8' };
   const ink = open ? VS.deep : '#ffffff';
   return (
     <button
       type="button"
       onClick={open ? onOpen : undefined}
       aria-disabled={!open}
-      className={`flex-1 min-w-0 flex items-center gap-2 text-left transition-transform ${open ? 'active:scale-[0.97]' : 'cursor-default'}`}
-      style={{ borderRadius: 11, padding: '8px 9px', ...style }}
+      className={`flex-1 min-w-0 flex items-center gap-2 text-left ${open ? '' : 'cursor-default'}`}
+      style={{ borderRadius: 12, padding: '8px 9px', ...style }}
     >
-      <span className="flex items-center justify-center shrink-0" style={{ width: 28, height: 28, borderRadius: 8, background: open ? VS.soft : 'rgba(255,255,255,0.22)' }}>
-        <Icon style={{ width: 15, height: 15, color: open ? VS.ink : '#ffffff' }} />
-      </span>
+      {icon}
       <span className="min-w-0">
         <span className="block text-[10px] font-black" style={{ letterSpacing: 0.8, color: ink }}>{label}</span>
         <span className="block text-[11px] font-extrabold truncate" style={{ color: open ? VS.ink : '#ffffff' }}>{line}</span>
       </span>
     </button>
+  );
+}
+
+/** One RECORD figure: a caps label over a soft number (A2). */
+function RecordFigure({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <span className="flex flex-col items-center min-w-0">
+      <SoftNum size={18}>{value}</SoftNum>
+      <span className="text-[9.5px] font-black" style={{ letterSpacing: 0.9, color: VS.ink }}>{label}</span>
+    </span>
   );
 }
 
@@ -74,9 +89,8 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
   const headInk = gold ? '#78350f' : VS.deep;
   const subInk = gold ? '#92400e' : VS.ink;
 
+  const [heroW, heroH] = ART_SIZE['art-scene-vs-faceoff'];
   return (
-    // The VS host (S) stands at the strip's right end.
-    <BannerHost id={PAGE_HOSTS.vs}>
     <div
       className="relative shrink-0 overflow-hidden"
       style={{
@@ -98,7 +112,21 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         </div>
       )}
 
-      <div className="relative flex flex-col gap-1" style={{ padding: `12px ${BANNER_HOST_CLEARANCE}px 10px 12px`, background: 'rgba(255,255,255,0.5)' }}>
+      {/* The VS hero: the cast face off across the top of the card (decorative; it
+          replaces the S host that used to stand at the strip's end). */}
+      <Image
+        src={artSrc('art-scene-vs-faceoff')}
+        alt=""
+        aria-hidden="true"
+        width={heroW}
+        height={heroH}
+        priority
+        draggable={false}
+        sizes="(max-width: 448px) 100vw, 448px"
+        className="relative block w-full h-auto select-none"
+        style={{ aspectRatio: `${heroW} / ${heroH}` }}
+      />
+      <div className="relative flex flex-col gap-1" style={{ padding: '10px 12px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
           {gold && <Icon3D name="trophy" size={18} className="shrink-0" />}
           <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
@@ -114,14 +142,21 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         <div className="flex gap-2">
           <TodayTile
             label="DAILY BATTLE"
-            icon={Swords}
+            icon={(
+              <span className="flex items-center justify-center shrink-0" style={{ width: 30, height: 30, borderRadius: 9, background: battle.result === 'open' ? VS.soft : 'rgba(255,255,255,0.22)' }}>
+                <Swords style={{ width: 15, height: 15, color: battle.result === 'open' ? VS.ink : '#ffffff' }} />
+              </span>
+            )}
             result={battle.result}
             line={todayTileLine(battle.result, battle.opponent, 'Classic', free)}
             onOpen={onBattle}
           />
           <TodayTile
             label="BOT OF THE DAY"
-            icon={Bot}
+            // Today's bot in character (its own color around it).
+            icon={botOfDay.botId ? (
+              <BotAvatar src={botArt(botOfDay.botId, 'ready')} accent={botPersona(botOfDay.botId).color} size={32} />
+            ) : null}
             result={botOfDay.result}
             line={todayTileLine(botOfDay.result, botOfDay.bot, botOfDay.bot, free)}
             onOpen={onBotOfDay}
@@ -129,19 +164,23 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         </div>
       </div>
 
-      <div className="relative flex items-center gap-1.5" style={{ padding: '6px 12px 12px' }}>
-        <span className="text-[10px] font-black shrink-0" style={{ letterSpacing: 1, color: subInk }}>RECORD</span>
-        <span className="flex-1 min-w-0 text-[10px] font-black truncate" style={{ letterSpacing: 0.5, color: subInk }}>
-          {vsRecordLine(people, bots, ladder)}
+      {/* RECORD — the core words (vsRecordLine, read aloud) as soft numbers. */}
+      <div className="relative flex items-center gap-2" style={{ padding: '6px 12px 12px' }} role="group" aria-label={`Record: ${vsRecordLine(people, bots, ladder)}${streak > 0 ? `, ${streak} bot wins in a row` : ''}`}>
+        <span className="text-[10px] font-black shrink-0" style={{ letterSpacing: 1, color: subInk }} aria-hidden="true">RECORD</span>
+        <span className="flex-1 min-w-0 flex items-center justify-around" aria-hidden="true">
+          <RecordFigure label="PEOPLE" value={`${people.wins}–${people.losses}`} />
+          <RecordFigure label="BOTS" value={`${bots.wins}–${bots.losses}`} />
+          {ladder !== null && (
+            <RecordFigure label="LADDER" value={ladder >= LADDER_BOTS.length ? '✓' : `${ladder}/${LADDER_BOTS.length}`} />
+          )}
         </span>
         {streak > 0 && (
-          <span className="flex items-center gap-0.5 text-[12px] font-black shrink-0" style={{ color: '#c2410c' }} aria-label={`${streak} bot wins in a row`}>
-            <Icon3D name="flame" size={14} />
-            {streak}
+          <span className="flex items-center gap-0.5 shrink-0" aria-hidden="true">
+            <Icon3D name="flame" size={18} />
+            <SoftNum size={18}>{streak}</SoftNum>
           </span>
         )}
       </div>
     </div>
-    </BannerHost>
   );
 }

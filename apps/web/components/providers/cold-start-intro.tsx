@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { CAST, mascotSrc } from '@/lib/mascots';
-import { castAspect, castTrimLayout } from '@/lib/cast-moves';
+import { flushSync } from 'react-dom';
+import { CAST } from '@/lib/mascots';
+import { activeSeason, castArt, type Season } from '@/lib/season';
 import { prefersReducedMotion } from '@/lib/motion';
-import { INTRO, SPLASH, introShouldPlay } from '@/lib/intro';
+import { CAST_FLOURISH_ATTR, INTRO, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs, glideFrame, introShouldPlay } from '@/lib/intro';
 
 // The cold-start launch (docs/FINISH_SPEC.md F2). The static launch screen is
 // the inline #app-loader in app/layout.tsx (the Home wallpaper color with the
@@ -16,21 +17,63 @@ import { INTRO, SPLASH, introShouldPlay } from '@/lib/intro';
 // ≤ 1.6 s, tap anywhere to skip. Reduce Motion: a 200 ms crossfade. Once per
 // browser session (never on a warm start / resume), never on other routes.
 // Decorative: hidden from screen readers.
+//
+// F2 fix (founder 10-02: "there are two of them"): ONE row on screen at a
+// time. While the intro runs the real header row is hidden (opacity 0, still
+// laid out: <html data-intro-running>, globals.css). At the glide the intro
+// measures the real row (getBoundingClientRect) and moves its own row to
+// EXACTLY that frame — left / top / width + the same top padding, so the
+// per-character spacing and lift match — easing in with no overshoot. On
+// landing, in the same frame, the real row turns visible and the intro row is
+// removed (flushSync), then every character hops once (W hop, 420 ms, 50 ms
+// apart) before the one-at-a-time moves resume. Tap to skip lands at once.
+// FINISH_SPEC X: during the season the row assembles from the Halloween
+// skins (the same art + framing the header draws, lib/season.ts castArt), so
+// it lands on an identical row.
 
 type Phase = 'off' | 'w' | 'row' | 'glide' | 'out';
+
+const html = () => document.documentElement;
+
+/** Every character on the real row hops once, left to right (F2 fix step 4). */
+function flourish(target: HTMLElement | null) {
+  if (!target || prefersReducedMotion()) return;
+  const cells = Array.from(target.querySelectorAll<HTMLElement>('.cm'));
+  if (cells.length === 0) return;
+  html().setAttribute(CAST_FLOURISH_ATTR, '');
+  cells.forEach((el, i) => {
+    el.style.setProperty('--fl-d', `${i * INTRO.flourishStagger}ms`);
+    el.classList.add('cast-flourish');
+    el.addEventListener('animationend', () => el.classList.remove('cast-flourish'), { once: true });
+  });
+  setTimeout(() => {
+    cells.forEach((el) => el.classList.remove('cast-flourish'));
+    html().removeAttribute(CAST_FLOURISH_ATTR);
+  }, flourishTotalMs(cells.length) + 60);
+}
 
 export function ColdStartIntro() {
   const [phase, setPhase] = useState<Phase>('off');
   const [reduced, setReduced] = useState(false);
-  const [glide, setGlide] = useState<React.CSSProperties | null>(null);
+  const [frame, setFrame] = useState<React.CSSProperties | null>(null);
+  const [season, setSeason] = useState<Season | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const landed = useRef(false);
 
-  const finish = useCallback(() => {
+  /**
+   * Step 3: in ONE frame the real row turns visible and the intro (row and
+   * all) is removed — flushSync commits the removal before the attribute
+   * comes off, so the browser never paints both rows. Then the flourish.
+   */
+  const land = useCallback(() => {
+    if (landed.current) return;
+    landed.current = true;
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    setPhase('out');
-    timers.current.push(setTimeout(() => setPhase('off'), INTRO.outMs));
+    flushSync(() => setPhase('off'));
+    html().removeAttribute(INTRO_RUNNING_ATTR);
+    flourish(document.querySelector<HTMLElement>('[data-cast-row]'));
   }, []);
 
   // Layout effect: decide before the first paint so the hand-off from the
@@ -43,35 +86,56 @@ export function ColdStartIntro() {
     try { sessionStorage.setItem(INTRO.sessionKey, '1'); } catch {}
     const rm = prefersReducedMotion();
     setReduced(rm);
+    setSeason(activeSeason());
     setPhase('w');
+    // Step 1: the real header row stays laid out but hidden while the intro runs.
+    html().setAttribute(INTRO_RUNNING_ATTR, '');
     const at = (ms: number, fn: () => void) => { timers.current.push(setTimeout(fn, ms)); };
+    const cleanup = () => {
+      timers.current.forEach(clearTimeout);
+      html().removeAttribute(INTRO_RUNNING_ATTR);
+    };
     if (rm) {
-      // Reduce Motion: hold the launch look, then a 200 ms crossfade into Home.
-      at(INTRO.reducedHoldMs, () => setPhase('out'));
-      at(INTRO.reducedHoldMs + INTRO.reducedFadeMs, () => setPhase('off'));
-      return () => timers.current.forEach(clearTimeout);
+      // Reduce Motion: hold the launch look, then a 200 ms crossfade into Home
+      // (the real row is revealed under the fading backdrop), no flourish.
+      at(INTRO.reducedHoldMs, () => { html().removeAttribute(INTRO_RUNNING_ATTR); setPhase('out'); });
+      at(INTRO.reducedHoldMs + INTRO.reducedFadeMs, () => { landed.current = true; setPhase('off'); });
+      return cleanup;
     }
     at(INTRO.rowAt, () => setPhase('row'));
     at(INTRO.glideAt, () => {
-      // Glide into the Home header's cast row (when Home is on screen).
+      // Step 2: measure the real row and glide to EXACTLY its frame.
       const row = rowRef.current;
       const target = document.querySelector<HTMLElement>('[data-cast-row]');
-      if (row && target) {
-        const a = row.getBoundingClientRect();
-        const b = target.getBoundingClientRect();
-        if (a.width > 0 && b.width > 0) {
-          const scale = b.width / a.width;
-          const dx = b.left + b.width / 2 - (a.left + a.width / 2);
-          const dy = b.top + b.height / 2 - (a.top + a.height / 2);
-          setGlide({ transform: `translate(${dx}px, ${dy}px) scale(${scale})` });
-        }
+      const a = row?.getBoundingClientRect();
+      const b = target?.getBoundingClientRect();
+      if (!row || !target || !a || !b || a.width <= 0 || b.width <= 0) {
+        // No header row on screen: fade the intro out instead (nothing to land on).
+        html().removeAttribute(INTRO_RUNNING_ATTR);
+        setPhase('out');
+        at(INTRO.outMs, () => { landed.current = true; setPhase('off'); });
+        return;
       }
-      setPhase('glide');
+      // Pin the row where it is now (no transition), then on the next frame
+      // animate left / top / width to the real row's frame.
+      flushSync(() => {
+        setFrame({ position: 'fixed', left: a.left, top: a.top, width: a.width, transition: 'none' });
+        setPhase('glide');
+      });
+      const to = glideFrame(b, getComputedStyle(target).paddingTop);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const ease = INTRO.glideEase;
+          setFrame({
+            position: 'fixed', left: to.left, top: to.top, width: to.width, paddingTop: to.paddingTop,
+            transition: `left ${INTRO.glideMs}ms ${ease}, top ${INTRO.glideMs}ms ${ease}, width ${INTRO.glideMs}ms ${ease}, padding-top ${INTRO.glideMs}ms ${ease}`,
+          });
+        });
+      });
+      at(INTRO.glideMs + 30, land);
     });
-    at(INTRO.endAt, () => setPhase('out'));
-    at(INTRO.endAt + INTRO.outMs, () => setPhase('off'));
-    return () => timers.current.forEach(clearTimeout);
-  }, []);
+    return cleanup;
+  }, [land]);
 
   if (phase === 'off') return null;
 
@@ -83,11 +147,11 @@ export function ColdStartIntro() {
     <div
       aria-hidden="true"
       data-no-squish=""
-      onClick={finish}
+      onClick={() => (reduced ? undefined : land())}
       className="fixed inset-0 flex items-center justify-center"
       style={{ zIndex: 10000, cursor: 'pointer' }}
     >
-      {/* The launch backdrop: Home fades in underneath as it clears. */}
+      {/* The launch backdrop: Home fades in underneath as the row glides. */}
       <div
         className="absolute inset-0"
         style={{
@@ -114,30 +178,30 @@ export function ColdStartIntro() {
           transition: `opacity ${reduced ? INTRO.reducedFadeMs : 220}ms ease-out, transform 260ms cubic-bezier(0.3, 1.4, 0.5, 1)`,
         }}
       />
-      {/* The cast row assembling, then gliding into the header. */}
+      {/* The cast row assembling, then gliding into the header's exact frame. */}
       {showRow && (
         <div
           ref={rowRef}
-          className="castrow absolute"
+          className="castrow"
           style={{
-            width: 'min(92vw, 440px)',
-            transform: 'scale(1.08)',
-            transformOrigin: 'center',
-            transition: `transform ${INTRO.glideMs}ms cubic-bezier(0.45, 0, 0.2, 1), opacity ${INTRO.outMs}ms ease-out`,
-            opacity: phase === 'out' && !glide ? 0 : 1,
-            ...(phase !== 'row' ? glide : null),
+            position: 'absolute',
+            width: 'min(96vw, 476px)',
+            paddingTop: 4,
+            opacity: phase === 'out' ? 0 : 1,
+            transition: `opacity ${INTRO.outMs}ms ease-out`,
+            ...(phase === 'glide' ? frame : null),
           }}
         >
           {CAST.map((id, i) => {
-            const trim = castTrimLayout(id);
+            const art = castArt(id, season);
             return (
               <span
                 key={id}
                 className="cm intro-pop"
-                style={{ flex: `${castAspect(id).toFixed(3)} 1 0`, aspectRatio: castAspect(id).toFixed(4), animationDelay: `${i * INTRO.popStagger}ms` }}
+                style={{ flex: `${art.aspect.toFixed(3)} 1 0`, aspectRatio: art.aspect.toFixed(4), animationDelay: `${i * INTRO.popStagger}ms` }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={mascotSrc(id)} alt="" style={{ width: trim.width, height: 'auto', left: trim.left, top: trim.top }} />
+                <img src={art.src} alt="" width={art.artSize} height={art.artSize} style={{ width: art.layout.width, height: 'auto', left: art.layout.left, top: art.layout.top }} />
               </span>
             );
           })}

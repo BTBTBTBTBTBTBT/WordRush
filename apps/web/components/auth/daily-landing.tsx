@@ -6,6 +6,9 @@ import dynamic from 'next/dynamic';
 // Loaded on the "Sign in" tap only (founder, 2026-09-29).
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
+import { CandyButton } from '@/components/ui/candy-button';
+import { softRow } from '@/components/ui/soft-popup';
+import { softBackground } from '@/lib/soft-surface';
 
 /**
  * §229: public landing for /daily — the Daily Challenge leaderboard page.
@@ -27,7 +30,6 @@ export function DailyLanding() {
     WebkitBackgroundClip: 'text' as const,
     WebkitTextFillColor: 'transparent' as const,
   };
-  const ctaStyle = { background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' };
   const h = { color: 'var(--color-text)' };
   const p = { color: 'var(--color-text-secondary)' };
 
@@ -43,12 +45,12 @@ export function DailyLanding() {
   ];
 
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="min-h-screen overflow-y-auto" style={{ background: softBackground('#7c3aed', 0.06) }}>
       <header className="flex items-center justify-between px-5 py-4 max-w-3xl mx-auto">
         <Link href="/" className="text-2xl font-black tracking-tight" style={wordmarkStyle}>WORDOCIOUS</Link>
-        <button onClick={() => setShowLogin(true)} className="btn-3d px-5 py-2 rounded-xl text-white font-extrabold text-sm" style={ctaStyle}>
+        <CandyButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
           Sign In
-        </button>
+        </CandyButton>
       </header>
 
       <section className="text-center px-6 pt-8 pb-8 max-w-2xl mx-auto">
@@ -59,13 +61,13 @@ export function DailyLanding() {
         <p className="text-base font-bold mb-6 leading-relaxed" style={p}>
           The same eight words for every player in the world, every day. Solve them, then see exactly where you stand.
         </p>
-        <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm" style={ctaStyle}>
+        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
           Sign in to see the leaderboards
-        </button>
+        </CandyButton>
         <div className="mt-3">
-          <button onClick={enterGuest} className="text-sm font-extrabold underline underline-offset-2" style={p}>
+          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </button>
+          </CandyButton>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Today&apos;s dailies are free to play. Sign in to save stats, build streaks, and rank on the boards.
           </p>
@@ -86,7 +88,7 @@ export function DailyLanding() {
         <h3 className="font-black mt-5 mb-2" style={h}>The eight modes</h3>
         <ul className="grid sm:grid-cols-3 gap-2 mb-4">
           {modes.map(([name, blurb]) => (
-            <li key={name} className="p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
+            <li key={name} className="p-3" style={softRow('#7c3aed', { radius: 12 })}>
               <div className="font-black" style={h}>{name}</div>
               <div className="text-xs mt-0.5">{blurb}</div>
             </li>

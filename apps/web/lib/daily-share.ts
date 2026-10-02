@@ -103,9 +103,10 @@ export async function shareTodayProgress(completions: Map<string, DailyCompletio
     const { generateShareImage } = await import('./share-image');
     const [a, b] = await Promise.all([generateShareImage(word), generateShareImage(more)]);
     if (a && b && typeof navigator !== 'undefined' && navigator.share) {
-      const files = [new File([a], 'wordocious.png', { type: 'image/png' }), new File([b], 'wordocious-puzzles.png', { type: 'image/png' })];
+      // FINISH_SPEC S1: the images only (no text, no link).
+      const files = [new File([a], 'Wordocious-Sweep.png', { type: 'image/png' }), new File([b], 'Wordocious-Puzzles.png', { type: 'image/png' })];
       if (!navigator.canShare || navigator.canShare({ files })) {
-        await navigator.share({ files, text: 'wordocious.com' });
+        await navigator.share({ files });
         return { via: 'share' as const };
       }
     }

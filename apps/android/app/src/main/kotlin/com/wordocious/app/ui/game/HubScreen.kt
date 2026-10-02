@@ -48,6 +48,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -72,6 +75,7 @@ import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.FitText
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.pressScale
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -257,7 +261,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         else {
             typing = ""
             // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
-            SoundManager.playSuccess(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}"
+            SoundManager.playPartial(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}"
         }
     }
     fun hintStart() = dispatch(HubAction.HintStart)
@@ -355,17 +359,17 @@ fun HubScreen(
             }
             .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            HubHeader(session)
-            if (session.showResults) HubResults(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            else HubBoard(session)
-        }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
+        if (session.showResults) {
+            // FINISH_SPEC R2: the one-screen results screen (header · strip · words · dock).
+            HubFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
+        } else {
+            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                HubHeader(session)
+                HubBoard(session)
             }
         }
+        // G5 a toast is a tinted pill (no dark slab, no white).
+        session.toast?.let { PieceToast(it, HUB_ACCENT) }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) HubOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(HUB_ACCENT, onBack) }
@@ -409,7 +413,7 @@ private fun RankBar(session: HubSession) {
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             for (i in HUB_RANKS.indices) Box(
-                Modifier.weight(1f).height(8.dp).clip(CircleShape).background(if (i <= rank) HUB_ACCENT else WTheme.borderLight)
+                Modifier.weight(1f).height(8.dp).clip(CircleShape).background(if (i <= rank) HUB_ACCENT else com.wordocious.app.ui.accentLine(HUB_ACCENT, 0.24f))
                     .then(if (i == HUB_SOLVED_RANK) Modifier.border(2.dp, HUB_ACCENT.copy(alpha = 0.5f), CircleShape) else Modifier),
             )
         }
@@ -417,26 +421,37 @@ private fun RankBar(session: HubSession) {
 }
 
 @Composable
-private fun LetterTile(ch: Char, centre: Boolean, enabled: Boolean, side: androidx.compose.ui.unit.Dp, onTap: () -> Unit) {
-    Box(
-        Modifier.size(side).clip(RoundedCornerShape(8.dp)).background(if (centre) HUB_ACCENT else WTheme.surface)
-            .border(2.dp, if (centre) HUB_ACCENT else WTheme.border, RoundedCornerShape(8.dp))
-            .then(if (enabled) Modifier.pressScale { onTap() } else Modifier),
-        contentAlignment = Alignment.Center,
-    ) { Text(ch.toString(), fontSize = (side.value * 0.45f).sp, fontWeight = FontWeight.Black, color = if (centre) Color.White else WTheme.text, fontFamily = Nunito) }
-}
-
-@Composable
 private fun Chip(session: HubSession, w: String, dim: Boolean = false) =
     HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim)
 
+/** A found word: a soft tinted chip (A1); a pangram a glossy capsule in the accent (J3); a revealed word violet. */
 @Composable
 private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false) {
+    val tone = if (revealed && !pangram) Color(0xFF8B5CF6) else HUB_ACCENT
+    androidx.compose.foundation.layout.Row(
+        Modifier.alpha(if (dim) 0.6f else 1f)
+            .then(if (pangram) Modifier.glossyCapsule(HUB_ACCENT, glow = 0.6f) else Modifier.softChip(tone))
+            .padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = if (pangram) 5.5.dp else 3.dp)
+            .then(if (pangram) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, pangram" } else Modifier),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp),
+    ) {
+        Text(
+            w, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+            color = if (pangram) Color.White else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+            modifier = if (pangram) Modifier.clearAndSetSemantics { } else Modifier,
+        )
+        // AL addendum 2: a pangram wears the gold star art, not a ★ glyph.
+        if (pangram) com.wordocious.app.ui.GlyphArtImage(com.wordocious.app.ui.GlyphArt.STAR, 12.dp)
+    }
+}
+
+/** An unfound word on the results screen: a quiet slate chip. */
+@Composable
+private fun MissedChip(w: String) {
     Text(
-        if (pangram) "$w ★" else w, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-        color = if (pangram) HUB_ACCENT else if (revealed) Color(0xFF8B5CF6) else WTheme.text,
-        modifier = Modifier.alpha(if (dim) 0.6f else 1f).clip(CircleShape).background(if (pangram) HUB_ACCENT.copy(alpha = 0.14f) else WTheme.surface)
-            .border(1.dp, if (pangram) HUB_ACCENT else if (revealed) Color(0xFF8B5CF6) else WTheme.border, CircleShape).padding(horizontal = 8.dp, vertical = 3.dp),
+        w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (WTheme.isDark) WTheme.textMuted else Color(0xFF6B7891),
+        modifier = Modifier.softChip(PIECE_LOST).padding(horizontal = 9.dp, vertical = 3.dp),
     )
 }
 
@@ -447,29 +462,25 @@ private fun ChipRows(session: HubSession, words: List<String>, dim: Boolean = fa
     }
 }
 
+/** A8 a hive control: a small candy button with its icon (Enter the purple primary). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, filled: Boolean = false, onClick: () -> Unit) {
-    val fg = if (filled) Color.White else HUB_ACCENT
-    Row(
-        Modifier.clip(CircleShape).background(if (filled) HUB_ACCENT else HUB_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (filled) HUB_ACCENT else HUB_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple(onClick).padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) { Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp)); Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg) }
-}
+private fun Capsule(label: String, icon: ImageVector, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color)
 
-// Founder layout rule (plan §12, 2026-09-24): the 2-3-2 cluster is the hero and
-// scales to the screen. Tile side = clamp((height left after header, rank bar,
-// entry line, the two control rows and the pinned End link) / 3.3, 72, 100 dp)
-// — 3.3 because three tiles plus two proportional gaps (0.15 × tile) stack to
-// 3.3 tiles. On a ~411 × 914 dp phone that lands near 90 dp. The header sits
-// outside HubBoard, so BoxWithConstraints.maxHeight is already "after header".
+// Founder layout rule (plan §12, 2026-09-24): the hive is the hero and scales to
+// the screen. FINISH_SPEC J1: it is a honeycomb of glossy hexes (the gold center +
+// six lilac around it) in the game tray. Hex side = clamp(the largest that fits the
+// width and the height left after header, rank bar, entry line, the two control rows
+// and the pinned End button — less the tray — 70, 112 dp); Honeycomb holds the
+// geometry. The header sits outside HubBoard, so BoxWithConstraints.maxHeight is
+// already "after header".
 private val HUB_RANK_BAR_H = 32.dp     // rank name row + 4 dp gap + 8 dp bar
 private val HUB_ENTRY_H = 44.dp        // entry line min height (28 sp bold)
-private val HUB_CONTROL_ROW_H = 32.dp  // capsule row (7 dp padding × 2 + 11 sp label)
-private val HUB_END_LINK_H = 18.dp     // "End puzzle and see answers"
+private val HUB_CONTROL_ROW_H = 38.dp  // a small candy row (34 dp + its 4 dp lip)
+private val HUB_END_LINK_H = 38.dp     // "End puzzle and see answers" (a small candy too)
 private val HUB_ROW_GAP = 8.dp         // Column spacedBy between the stacked rows
-private const val HUB_TILE_GAP_RATIO = 0.15f
+/** J1 + L the hive tray's inner padding; the tray adds its 4 dp lip under that. */
+private val HUB_TRAY_PAD = 10.dp
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -479,11 +490,10 @@ private fun HubBoard(session: HubSession) {
         // Six gaps: rank→entry→cluster→controls→hints→header→(chips)→end. The
         // found-words header and chips are what the leftover height feeds.
         val fixed = HUB_RANK_BAR_H + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 + HUB_END_LINK_H + HUB_ROW_GAP * 6 + 6.dp
-        val byHeight = (maxHeight - fixed) / 3.3f
-        val byWidth = maxWidth / (3 + 2 * HUB_TILE_GAP_RATIO) // never wider than three tiles + two gaps
-        val tile = minOf(byHeight, byWidth).coerceIn(72.dp, 100.dp)
-        val gap = tile * HUB_TILE_GAP_RATIO
-        val band = tile * 3.3f
+        val trayW = HUB_TRAY_PAD * 2
+        val trayH = HUB_TRAY_PAD * 2 + GameTrayStyle.LIP
+        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(70.dp, 112.dp)
+        val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
             RankBar(session)
             HubEntryLine(session)
@@ -491,25 +501,22 @@ private fun HubBoard(session: HubSession) {
             val enabled = !s.ended
             // The cluster sits vertically centered in its band between the entry line and the controls.
             Box(Modifier.fillMaxWidth().height(band), contentAlignment = Alignment.Center) {
-                Column(verticalArrangement = Arrangement.spacedBy(gap), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[0], false, enabled, tile) { session.type(o[0]) }; LetterTile(o[1], false, enabled, tile) { session.type(o[1]) } }
-                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[2], false, enabled, tile) { session.type(o[2]) }; LetterTile(session.centre, true, enabled, tile) { session.type(session.centre) }; LetterTile(o[3], false, enabled, tile) { session.type(o[3]) } }
-                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[4], false, enabled, tile) { session.type(o[4]) }; LetterTile(o[5], false, enabled, tile) { session.type(o[5]) } }
-                }
+                HubHoneycomb(session.centre, o, side, HUB_ACCENT, enabled, trayPadding = HUB_TRAY_PAD, state = hubTrayState(s)) { session.type(it) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
                 Capsule("Shuffle", Icons.Filled.Shuffle) { session.shuffle() }
-                Capsule("Enter", Icons.AutoMirrored.Filled.KeyboardReturn, filled = true) { session.submit() }
+                Capsule("Enter", Icons.AutoMirrored.Filled.KeyboardReturn, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.submit() }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Capsule("Starts with…", Icons.Filled.Lightbulb) { session.hintStart() }
-                Capsule("Reveal a word", Icons.Filled.Visibility) { session.hintReveal() }
+                Capsule("Starts with…", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintStart() }
+                Capsule("Reveal a word", Icons.Filled.Visibility, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintReveal() }
             }
             val pending = s.hinted.filter { it !in s.found }
             if (pending.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (w in pending) Text("${w.take(2)}… · ${w.length} letters", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    modifier = Modifier.border(1.dp, HUB_ACCENT, CircleShape).padding(horizontal = 8.dp, vertical = 3.dp))
+                for (w in pending) Text("${w.take(2)}… · ${w.length} letters", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+                    modifier = Modifier.softChip(Color(0xFFF59E0B)).padding(horizontal = 9.dp, vertical = 3.dp))
             }
             // "N OF M WORDS" heads the found-words area directly under the hint capsules;
             // the chips wrap newest-first and fill the rest, scrolling once they overflow.
@@ -523,12 +530,9 @@ private fun HubBoard(session: HubSession) {
             }
             // Pinned at the very bottom; the navigation-bar inset is respected by the BoxWithConstraints above.
             // Won: "Finish" is the same as the card's "I'm done" — ends the game at the recorded time.
-            if (s.status == HubStatus.WON) Row(Modifier.clickableNoRipple { session.end() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Filled.Flag, null, tint = HUB_ACCENT, modifier = Modifier.size(12.dp)); Text("Finish", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HUB_ACCENT)
-            }
-            else Row(Modifier.clickableNoRipple { session.end() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Filled.Flag, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp)); Text("End puzzle and see answers", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            }
+            // A8: candy buttons, never a text link.
+            if (s.status == HubStatus.WON) Capsule("Finish", Icons.Filled.Flag, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.end() }
+            else Capsule("End puzzle and see answers", Icons.Filled.Flag) { session.end() }
             Spacer(Modifier.height(6.dp))
         }
     }
@@ -541,52 +545,77 @@ private fun HubEntryLine(session: HubSession) {
         if (session.typing.isEmpty()) Text("Tap letters or type", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         else Text(
             buildAnnotatedString {
-                for (ch in session.typing) withStyle(SpanStyle(color = if (ch == session.centre) HUB_ACCENT else WTheme.text)) { append(ch) }
+                for (ch in session.typing) withStyle(SpanStyle(color = if (ch == session.centre) Color(0xFFD97706) else WTheme.text)) { append(ch) }
             },
-            fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, letterSpacing = 1.sp, maxLines = 1, softWrap = false,
+            fontSize = 28.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, letterSpacing = 1.sp, maxLines = 1, softWrap = false,
         )
     }
 }
 
 @Composable
-private fun HubResults(
+private fun HubFinished(
     session: HubSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
     val s = session.state; val won = s.status == HubStatus.WON; val secs = session.displaySeconds
     val context = LocalContext.current
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        RankBar(session)
-        Text(if (won) (if (s.rank == 9) "Pandemonium — every word" else s.rankName) else "${s.rankName} — below Hubbub", fontSize = 20.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
-        Text("${s.points}/${s.max} pts · ${s.found.size}/${s.words.size} words · ${session.pangramsFound}/${s.pangrams.size} pangram${if (s.pangrams.size == 1) "" else "s"} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""),
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center)
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", HUB_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", HUB_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}${s.rankName} · ${session.pct}% · ${s.found.size} word${if (s.found.size == 1) "" else "s"} · ${session.pangramsFound} pangram${if (session.pangramsFound == 1) "" else "s"}"
-                val text = "Wordocious Hubbub${num?.let { " #$it" } ?: ""} — Rank ${s.rankName} · ${session.pct}% of the maximum · ${s.found.size}/${s.words.size} words · Score ${session.points} pts · wordocious.com/hubbub"
-                ShareImage.shareBitmap(context, ShareImage.renderHub(context, s.rankName, session.pct, won, meta), text)
-            }
-            if (!s.ended) ResultAction(Icons.AutoMirrored.Filled.Undo, "Keep going", HUB_ACCENT) { session.showResults = false }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain() }
-        }
+    val title = if (won) (if (s.rank == 9) "Pandemonium, every word" else s.rankName) else "${s.rankName}, below Hubbub"
+    val note = listOfNotNull("${session.pangramsFound}/${s.pangrams.size} pangram${if (s.pangrams.size == 1) "" else "s"}", hintsNote(s.hintsUsed)).joinToString(" · ")
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}${s.rankName} · ${session.pct}% · ${s.found.size} word${if (s.found.size == 1) "" else "s"} · ${session.pangramsFound} pangram${if (session.pangramsFound == 1) "" else "s"}"
+        val text = "Wordocious Hubbub${num?.let { " #$it" } ?: ""} — Rank ${s.rankName} · ${session.pct}% of the maximum · ${s.found.size}/${s.words.size} words · Score ${session.points} pts · wordocious.com/hubbub"
+        ShareImage.shareBitmap(context, ShareImage.renderHub(context, s.rankName, session.pct, won, meta), text)
+    }
+    val words = @Composable {
         Text(if (s.ended) "ALL WORDS" else "FOUND SO FAR · ${s.words.size - s.found.size} MORE TO FIND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
         if (s.ended) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
             for (row in (s.words + s.bonusFound).sorted().chunked(4)) Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                for (w in row) if (w in s.found || w in s.bonusFound) Chip(session, w) else Text(w, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF),
-                    modifier = Modifier.clip(CircleShape).background(Color(0xFFF9FAFB)).border(1.dp, Color(0xFFE5E7EB), CircleShape).padding(horizontal = 8.dp, vertical = 3.dp))
+                for (w in row) if (w in s.found || w in s.bonusFound) Chip(session, w) else MissedChip(w)
             }
         } else ChipRows(session, (s.found + s.bonusFound).sorted())
-        if (session.isDaily) DailyRankBadge(GameMode.HUB)
-        ScoreBreakdownCard(GameMode.HUB, won, s.guessCount, secs, s.boardsSolved, HUB_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.HUB, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
+    }
+    FinishedScreen(
+        header = { HubHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOf(stripCount("${s.found.size}/${s.words.size}", "words", accent = HUB_ACCENT), stripTime(secs), stripPoints(session.points)),
+                srText = "$title. $note. ${s.points} of ${s.max} game points, ${s.found.size} of ${s.words.size} words, time ${timeText(secs)}, ${session.points} points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.HUB, isDaily = session.isDaily, accent = HUB_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) onPlayAgain else null,
+                onOtherGames = onBack,
+                more = {
+                    Text("$title · $note", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, textAlign = TextAlign.Center)
+                    if (session.isDaily) DailyRankBadge(GameMode.HUB)
+                    ScoreBreakdownCard(GameMode.HUB, won, s.guessCount, secs, s.boardsSolved, HUB_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
+                },
+            )
+        },
+    ) { _, maxH ->
+        // R2: the rank bar, then the word list in the height left — a long list
+        // keeps scrolling in place, and "See all" opens the whole thing.
+        FinishedListSlot(
+            maxHeight = maxH, accent = HUB_ACCENT, seeAllTitle = if (s.ended) "All words" else "Found so far",
+            full = { words() },
+        ) {
+            RankBar(session)
+            // Won but not ended: back to the board, the clock resumes.
+            if (!s.ended) {
+                com.wordocious.app.ui.CandyButton(
+                    "Keep going", onClick = { session.showResults = false },
+                    color = com.wordocious.app.ui.CandyColor.PEACH, size = com.wordocious.app.ui.CandySize.SMALL,
+                )
+            }
+            words()
+        }
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 
@@ -594,44 +623,33 @@ private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}"
 private fun HubOverlay(session: HubSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == HubStatus.WON; val secs = session.displaySeconds
     // Won: the card is a decision (Keep playing / I'm done), so a stray tap must not dismiss it; a loss still taps away.
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(if (won) ({}) else onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "HUB") { hostInset ->
-            Column(Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    Text(session.state.rankName, fontSize = 16.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito)
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.found.size}", "WORDS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape).background(if (won) androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171)))).clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp))
-                    }
-                    if (won) Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        // Keep playing → back to the board, clock resumes. I'm done → End at the recorded time, results.
-                        // Keep playing is the filled (primary) choice on all three platforms.
-                        Text("Keep playing", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape).background(HUB_ACCENT).clickableNoRipple(onDismiss).padding(horizontal = 18.dp, vertical = 9.dp))
-                        Text("I'm done", fontSize = 13.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT,
-                            modifier = Modifier.clip(CircleShape).border(1.5.dp, HUB_ACCENT, CircleShape).clickableNoRipple { session.end(); onDismiss() }.padding(horizontal = 18.dp, vertical = 9.dp))
-                    }
-                    else Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
+    PieceOverlay(won, "HUB", HUB_ACCENT, onScrimTap = if (won) ({}) else onDismiss) {
+        // Moment lettering (ART_SPEC §6).
+        com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
+        Text(session.state.rankName, fontSize = 16.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito)
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            StatBlock("${session.state.found.size}", "WORDS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
         }
+        onPlayAgain?.let { PiecePlayAgain(won, it) }
+        if (won) Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Keep playing → back to the board, clock resumes. I'm done → End at the recorded time, results.
+            // Keep playing is the filled (primary) choice on all three platforms.
+            com.wordocious.app.ui.CandyButton("Keep playing", onClick = onDismiss, color = com.wordocious.app.ui.CandyColor.PURPLE, size = com.wordocious.app.ui.CandySize.MEDIUM)
+            com.wordocious.app.ui.CandyButton("I'm done", onClick = { session.end(); onDismiss() }, color = com.wordocious.app.ui.CandyColor.PEACH, size = com.wordocious.app.ui.CandySize.MEDIUM)
+        }
+        else PieceTapHint()
     }
 }
 
+/** A2 a soft-number stat. One line always — "35:17" must never break inside its cell (founder, 2026-09-28). */
 @Composable
-private fun StatBlock(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        // One line always — "35:17" must never break inside its cell (founder, 2026-09-28).
-        FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
-    }
+private fun StatBlock(value: String, label: String) = PieceStat(value, label)
+
+/** L the hive tray: purple once won and ended, slate once ended below Hubbub. */
+private fun hubTrayState(s: HubState): TrayState = when {
+    !s.ended -> TrayState.PLAYING
+    s.status == HubStatus.WON -> TrayState.WON
+    else -> TrayState.LOST
 }
 
 /** The finished hive for the Completed-Today card (founder, 2026-09-29), rebuilt
@@ -640,14 +658,11 @@ private fun StatBlock(value: String, label: String) {
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun HubFinishedBoard(r: com.wordocious.core.HubReconstruction) {
-    val o = r.letters.drop(1).toList(); val tile = 40.dp; val gap = 6.dp
+    val o = r.letters.drop(1).toList()
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("${r.rankName} · ${r.points}/${r.max} pts", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (r.solved) Color(0xFF7C3AED) else WTheme.textMuted, fontFamily = Nunito)
-        Column(verticalArrangement = Arrangement.spacedBy(gap), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[0], false, false, tile) {}; LetterTile(o[1], false, false, tile) {} }
-            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[2], false, false, tile) {}; LetterTile(r.letters[0], true, false, tile) {}; LetterTile(o[3], false, false, tile) {} }
-            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { LetterTile(o[4], false, false, tile) {}; LetterTile(o[5], false, false, tile) {} }
-        }
+        // J1 + L the read-only hive: the honeycomb in its tray, purple when solved, slate when not.
+        HubHoneycomb(r.letters[0], o, 46.dp, HUB_ACCENT, enabled = false, state = if (r.solved) TrayState.WON else TrayState.LOST, trayPadding = 8.dp) {}
         val words = (r.found + r.bonusFound).distinct().sorted()
         Text("${words.size} ${if (words.size == 1) "WORD" else "WORDS"} FOUND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {

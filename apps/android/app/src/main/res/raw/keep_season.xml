@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC X: the Halloween props + Home banner are looked up by name
+     (SeasonSkins.propRes / bannerRes, getIdentifier) so the art can ship later
+     without code changes; keep them through resource shrinking. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_halloween_prop_*,@drawable/art_scene_banner_halloween" />

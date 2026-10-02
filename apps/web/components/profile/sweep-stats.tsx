@@ -3,6 +3,8 @@
 import { Sparkles } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import type { DailySweepStats, DailyPointsPoint } from '@/lib/stats-service';
+import { softCard } from '@/lib/soft-surface';
+import { SoftNum } from '@/components/ui/soft-number';
 
 // Profile "All"-view card: Daily Sweep / Flawless Victory stats + a
 // daily-points-over-time area chart. Sweep days are marked violet, flawless
@@ -17,7 +19,7 @@ function fmtTime(s: number): string {
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="text-center">
-      <div className="text-lg font-black" style={{ color: color ?? 'var(--color-text)' }}>{value}</div>
+      <SoftNum size={18} as="div" className="soft-num-auto">{value}</SoftNum>
       <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{label}</div>
     </div>
   );
@@ -76,7 +78,7 @@ export function PointsChart({ points }: { points: DailyPointsPoint[] }) {
 
 export function SweepStatsCard({ stats, points }: { stats: DailySweepStats; points: DailyPointsPoint[] }) {
   return (
-    <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+    <div className="p-4" style={softCard('#7c3aed', { radius: 18 })}>
       <div className="grid grid-cols-3 gap-y-3">
         <div className="flex flex-col items-center gap-1">
           <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />

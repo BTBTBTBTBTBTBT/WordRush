@@ -10,6 +10,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Link as LinkIcon, Loader2, User as UserIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { CandyButton } from '@/components/ui/candy-button';
+import { CastLoader } from '@/components/ui/cast-loader';
+import { alphaHex } from '@/lib/soft-surface';
 import { VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { vsHrefForMode } from '@/lib/invite-service';
@@ -17,7 +20,7 @@ import { getFriends, loadFriends, onFriendsChange, type FriendProfile } from '@/
 import { VS, friendCta, friendLine, loadVsMode } from '@/lib/vs-lobby';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { InitialAvatar, ModeChip, SectionLabel, VsNav, vsCardStyle } from './vs-ui';
+import { InitialAvatar, ModeChip, SectionLabel, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsNav, vsCard } from './vs-ui';
 import { PAGE_HOSTS } from '@/lib/mascots';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
@@ -81,7 +84,7 @@ export function VsFriend() {
         onClick={() => setTab(key)}
         aria-pressed={on}
         className="flex-1 flex flex-col items-center py-2 transition-colors"
-        style={{ borderRadius: 10, background: on ? '#ffffff' : 'transparent', boxShadow: on ? VS.cardShadow : undefined }}
+        style={on ? vsCard(VS_ACCENT, { selected: true, radius: 10 }) : { borderRadius: 10, background: 'transparent', border: '2px solid transparent' }}
       >
         <span className="text-[12px] font-black" style={{ color: on ? VS.deep : VS.ink, letterSpacing: 0.6 }}>{title}</span>
         <span className="text-[10px] font-bold" style={{ color: on ? '#4b5563' : VS.ink }}>{sub}</span>
@@ -90,27 +93,29 @@ export function VsFriend() {
   };
 
   const checkCircle = (on: boolean) => (
-    <span className="flex items-center justify-center shrink-0 rounded-full" style={{ width: 22, height: 22, background: on ? VS.ink : '#ffffff', boxShadow: on ? undefined : 'inset 0 0 0 2px #d1d5db' }}>
+    <span className="flex items-center justify-center shrink-0 rounded-full" style={{ width: 22, height: 22, background: on ? VS.ink : alphaHex(VS_ACCENT, 0.1), boxShadow: on ? undefined : `inset 0 0 0 2px ${alphaHex(VS_ACCENT, 0.4)}` }}>
       {on && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
     </span>
   );
 
   return (
-    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24">
+    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
       <InviteModal open={invite !== null} onClose={() => setInvite(null)} initialMode={mode} initialTab={invite ?? 'link'} />
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav title="CHALLENGE" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={mode} />} />
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin" style={{ color: VS.ink }} /></div>
+          <div className="flex justify-center py-16"><CastLoader /></div>
         ) : !isProActive ? (
           // Sending is Pro; answering a challenge stays free (from the lobby or a link).
-          <div className="p-4 space-y-3 text-center" style={vsCardStyle}>
-            <Icon3D name="crown" size={28} className="mx-auto" />
-            <div className="text-[15px] font-black" style={{ color: VS.deep }}>Challenging friends is Pro</div>
-            <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Answering a challenge is free. Go Pro to send your own runs and invite friends live.</p>
-            <button type="button" onClick={() => router.push('/pro')} className="w-full py-3 text-[14px] font-black text-white" style={{ background: '#7c3aed', borderRadius: 12 }}>SEE PRO</button>
-          </div>
+          <VsCard accent="#7c3aed">
+            <div className="p-4 space-y-3 text-center">
+              <Icon3D name="crown" size={28} className="mx-auto" />
+              <div className="text-[15px] font-black" style={{ color: VS.deep }}>Challenging friends is Pro</div>
+              <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Answering a challenge is free. Go Pro to send your own runs and invite friends live.</p>
+              <CandyButton color="purple" size="lg" block onClick={() => router.push('/pro')}>SEE PRO</CandyButton>
+            </div>
+          </VsCard>
         ) : (
           <>
             <div className="flex p-1" style={{ background: VS.soft, borderRadius: 12 }} role="group" aria-label="Race my run or live now">
@@ -125,7 +130,7 @@ export function VsFriend() {
                   {!friendsLoaded ? (
                     <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: VS.ink }} /></div>
                   ) : ordered.length === 0 ? (
-                    <div className="p-3 flex flex-col items-center gap-2 text-center text-[12.5px] font-bold" style={{ ...vsCardStyle, color: '#4b5563' }}>
+                    <div className="p-3 flex flex-col items-center gap-2 text-center text-[12.5px] font-bold" style={{ ...vsCard(VS_ACCENT, { radius: 14 }), color: '#4b5563' }}>
                       <ArtScene scene={PAGE_SCENES.addFriend} />
                       No friends yet. Send a link, or add friends from the Friends tab.
                     </div>
@@ -138,7 +143,7 @@ export function VsFriend() {
                         onClick={() => toggle(f.id)}
                         aria-pressed={on}
                         className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
-                        style={{ ...vsCardStyle, boxShadow: on ? `0 0 0 2px ${VS.ink}, ${VS.cardShadow}` : VS.cardShadow }}
+                        style={vsCard(VS_ACCENT, { selected: on, radius: 14 })}
                       >
                         <InitialAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={34} />
                         <span className="flex-1 min-w-0">
@@ -156,7 +161,7 @@ export function VsFriend() {
                     onClick={() => setLink((v) => !v)}
                     aria-pressed={link}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
-                    style={{ ...vsCardStyle, boxShadow: link ? `0 0 0 2px ${VS.ink}, ${VS.cardShadow}` : VS.cardShadow }}
+                    style={vsCard(VS_ACCENT, { selected: link, radius: 14 })}
                   >
                     <span className="flex items-center justify-center shrink-0 rounded-full" style={{ width: 34, height: 34, background: VS.soft }}>
                       <LinkIcon className="w-4 h-4" style={{ color: VS.ink }} />
@@ -165,31 +170,23 @@ export function VsFriend() {
                     {checkCircle(link)}
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={start}
-                  disabled={!canSend}
-                  className="w-full py-3.5 text-[14px] font-black text-white transition-transform active:scale-[0.98] disabled:opacity-40"
-                  style={{ background: VS.ink, borderRadius: 14, letterSpacing: 0.6 }}
-                >
+                <CandyButton color="teal" size="lg" block icon="play" onClick={start} disabled={!canSend}>
                   {friendCta(pickedFriends.length, link)}
-                </button>
+                </CandyButton>
                 <p className="text-center text-[11.5px] font-bold" style={{ color: VS.label }}>They get a notification with your time to beat.</p>
               </>
             ) : (
-              <div className="p-4 space-y-3" style={vsCardStyle}>
-                <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>
-                  Play at the same time: send a private match link or invite by @username. The match starts when your friend joins.
-                </p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setInvite('link')} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-black text-white" style={{ background: VS.ink, borderRadius: 11 }}>
-                    <LinkIcon className="w-3.5 h-3.5" /> SHARE A LINK
-                  </button>
-                  <button type="button" onClick={() => setInvite('username')} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-black" style={{ background: VS.soft, color: VS.ink, borderRadius: 11 }}>
-                    <UserIcon className="w-3.5 h-3.5" /> @USERNAME
-                  </button>
+              <VsCard>
+                <div className="p-4 space-y-3">
+                  <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>
+                    Play at the same time: send a private match link or invite by @username. The match starts when your friend joins.
+                  </p>
+                  <div className="flex gap-2">
+                    <CandyButton color="teal" size="md" className="flex-1" onClick={() => setInvite('link')} icon={<LinkIcon className="w-3.5 h-3.5 text-white" aria-hidden="true" strokeWidth={3} />}>SHARE A LINK</CandyButton>
+                    <CandyButton color="peach" size="md" className="flex-1" onClick={() => setInvite('username')} icon={<UserIcon className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={3} />}>@USERNAME</CandyButton>
+                  </div>
                 </div>
-              </div>
+              </VsCard>
             )}
           </>
         )}

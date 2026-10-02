@@ -68,15 +68,15 @@ private struct LegacyChartCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(title).font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                FinishLabel(title)
                 Spacer()
-                if let hint { Text(hint).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted) }
+                if let hint { Text(hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary) }
             }
             content
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        // FINISH_SPEC §C3: charts sit on the lavender tinted card.
+        .statsCard()
     }
 }
 
@@ -180,7 +180,7 @@ private struct GuessDistributionChart: View {
                 // Footer: tapped-bar detail (wins share) or the plain total.
                 if let sel = selected, let b = data.first(where: { barLabel($0) == sel }), b.count > 0 {
                     Text(tappedLine(sel, b.count))
-                        .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                        .font(Brand.font(11, .black)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
                 } else {
                     Text("\(totalWins) \(totalWins == 1 ? unit.one : unit.many) total").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                 }
@@ -347,7 +347,7 @@ private struct ActivityCalendarView: View {
         HStack {
             if let s = selected {
                 Text("\(Self.dayFmt.string(from: s.day)) · \(s.played) game\(s.played == 1 ? "" : "s") · \(s.won) win\(s.won == 1 ? "" : "s")")
-                    .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                    .font(Brand.font(11, .black)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
             } else {
                 let totalDays = data.filter { $0.played > 0 }.count
                 let totalGames = data.reduce(0) { $0 + $1.played }
@@ -451,29 +451,30 @@ struct SevenDayActivityCard: View {
                 let maxCount = max(1, week.map(\.played).max() ?? 1)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("LAST 7 DAYS").font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                        FinishLabel("Last 7 days")
                         Spacer()
-                        Text("\(total) \(total == 1 ? "game" : "games")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                        FinishLabel("\(total) \(total == 1 ? "game" : "games")")
                     }
                     HStack(alignment: .bottom, spacing: 6) {
                         ForEach(Array(week.enumerated()), id: \.offset) { _, d in
                             VStack(spacing: 4) {
                                 ZStack(alignment: .bottom) {
-                                    Color.clear.frame(height: 48)
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(d.played == 0 ? AnyShapeStyle(Theme.border)
+                                    Color.clear.frame(height: 72)
+                                    // Mockup `.bars i`: rounded-top purple gradient bars.
+                                    UnevenRoundedRect(top: 8)
+                                        .fill(d.played == 0 ? AnyShapeStyle(FinishInk.purple.opacity(0.16))
                                               : AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED)], startPoint: .top, endPoint: .bottom)))
-                                        .frame(height: d.played == 0 ? 3 : 6 + CGFloat(d.played) / CGFloat(maxCount) * 42)
+                                        .frame(height: d.played == 0 ? 4 : 8 + CGFloat(d.played) / CGFloat(maxCount) * 64)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
                                         .frame(maxWidth: .infinity)
                                 }
-                                Text(dow(d.day)).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+                                Text(dow(d.day)).font(Brand.font(11, .black)).foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD))
                             }
                         }
                     }
                 }
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                .statsCard()
             } else {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
@@ -503,19 +504,18 @@ struct ProfileInsightsCard: View {
     var body: some View {
         if !insights.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("INSIGHTS").font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                FinishLabel("Insights").padding(.horizontal, 4)
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(insights.enumerated()), id: \.offset) { _, text in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Color(hex: 0x7C3AED))
-                            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                            Text(text).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.heading)
                             Spacer(minLength: 0)
                         }
                     }
                 }
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 16).fill(LinearGradient(colors: [Color(hex: 0xF5F3FF), Color(hex: 0xEEF2FF)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xDDD6FE), lineWidth: 1.5))
+                .statsCard(accent: Color(hex: 0x7C3AED))
             }
         }
     }
@@ -685,7 +685,7 @@ private struct TimeOfDayHeatmap: View {
                     // Tapped-hour detail when selected; the peak line otherwise.
                     if let sel = selected, let h = data.first(where: { $0.hour == sel }), h.played > 0 {
                         Text("\(hourLabel(h.hour)) · \(h.played) game\(h.played == 1 ? "" : "s") · \(h.won) win\(h.won == 1 ? "" : "s")")
-                            .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                            .font(Brand.font(11, .black)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
                     } else if let peak = data.max(by: { $0.played < $1.played }), peak.played > 0 {
                         Text("Peak: \(hourLabel(peak.hour)) · \(peak.played) games")
                             .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
@@ -883,14 +883,13 @@ private struct ProInsightsCard: View {
         HStack(spacing: 8) {
             SymbolGlyph(icon, size: 14, color: color).frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
-                Text(value).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+                Text(value).softNumber(15).lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(Brand.font(9, .heavy)).foregroundStyle(FinishInk.secondary)
             }
             Spacer(minLength: 0)
         }
         .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
+        .tintedPill(color, radius: 12)
     }
 
     private func fmt(_ s: Int) -> String { s < 60 ? "\(s)s" : "\(s/60):\(String(format: "%02d", s%60))" }
@@ -993,7 +992,7 @@ struct ProStatsCard: View {
                         Spacer()
                         if let sel = selectedTime, let b = bars.first(where: { $0.label == sel }) {
                             Text("\(fullName(sel)) · \(fmt(b.avgTime))")
-                                .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                                .font(Brand.font(11, .black)).foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
                         }
                     }
                     Chart(bars) { b in
@@ -1018,22 +1017,15 @@ struct ProStatsCard: View {
 
     private var locked: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover).frame(height: 160)
+            RoundedRectangle(cornerRadius: 12).fill(StatsInk.rowFill(Color(hex: 0xF5A524))).frame(height: 160)
             VStack(spacing: 8) {
                 Icon3D(.lock, size: 34) // ART_SPEC §5
-                Text("Pro Feature").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                Text("Pro Feature").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                // §A8: the Pro upsell is an amber candy button.
                 Button { showPro = true } label: {
-                    HStack(spacing: 6) {
-                        Icon3D(.crown, size: 15)
-                        Text("Upgrade to Pro").font(Brand.font(12, .black))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(
-                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2)
+                    CandyLabel(title: "Upgrade to Pro") { Icon3D(.crown, size: 16) }
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
             }
         }
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { toView } from '@/lib/vs-challenges-server';
+import { selectWithAvatarColumns } from '@/lib/avatar-fields-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,8 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
   if (!allowed) return NextResponse.json({ error: 'This challenge was sent to someone else' }, { status: 403 });
 
   const [{ data: prof }, { data: entry }] = await Promise.all([
-    admin.from('profiles').select('username, avatar_url').eq('id', row.challenger_id).maybeSingle(),
+    // + is_pro / avatar columns for FINISH_SPEC AH/AN3 (tolerant while the avatar columns are missing).
+    selectWithAvatarColumns((extra) => admin.from('profiles').select(`username, avatar_url${extra}`).eq('id', row.challenger_id).maybeSingle()),
     admin.from('vs_challenge_entries').select('*').eq('challenge_id', row.id).eq('user_id', me).maybeSingle(),
   ]);
 

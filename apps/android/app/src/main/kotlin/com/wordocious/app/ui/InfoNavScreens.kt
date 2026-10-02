@@ -55,6 +55,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.ui.game.GuideSheet
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
@@ -87,29 +89,26 @@ val INFO_NAV = listOf(
     // itself still renders (HelpInfoScreens "about") — it is only unlinked.
     InfoNavItem("faq", "FAQ", "Common questions", Icons.Filled.QuestionAnswer, Color(0xFF8B5CF6)),
     InfoNavItem("privacy", "Privacy", "How we handle your data", Icons.Filled.Lock, Color(0xFF10B981)),
-    InfoNavItem("terms", "Terms", "Terms of service", Icons.Filled.Description, Color(0xFF6B7280)),
+    InfoNavItem("terms", "Terms", "Terms of service", Icons.Filled.Description, Color(0xFF6366F1)),
 )
 
-/** Styled "?" menu — a welcoming, on-brand list (color-accented icon tiles +
- *  title + subtitle) instead of the flat gray system dropdown. */
+/** Styled "?" menu — a welcoming, on-brand list (FINISH_SPEC A1: each row a tinted
+ *  card in its page's color with a mini-game-card icon tile, squishing on press). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss, sheetState = sheetState,
+        containerColor = accentWash(Color(0xFF7C3AED), 0.08f), dragHandle = null,
+    ) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         PageHeader("MENU", onClose = onDismiss, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             INFO_NAV.forEach { item ->
-                Row(infoCardMod().clickableNoRipple { onNav(item.route) }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(item.accent.copy(alpha = 0.14f)), Alignment.Center) {
-                        if (item.icon3d != null) Icon3D(item.icon3d, 24.dp)
-                        else Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(16.dp))
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(item.label.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        Text(item.subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    }
+                SheetRow(item.accent, item.label, item.subtitle, { onNav(item.route) }) {
+                    if (item.icon3d != null) Icon3D(item.icon3d, 26.dp)
+                    else Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -120,8 +119,8 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
  * The Share chooser — "No spoilers" vs "Full results".
  *
  * Same chrome and row anatomy as [InfoMenuSheet] (accent bar, wordmark-gradient
- * uppercase title, close X, accent-tinted icon tiles) rather than a plain
- * AlertDialog, which looked nothing like the app. iOS/web parity:
+ * uppercase title, close X, tinted rows with mini-game-card icon tiles) rather than a
+ * plain AlertDialog, which looked nothing like the app. iOS/web parity:
  * ShareVariantSheet.swift / share-variant-modal.tsx.
  *
  * onPick(true) = "Full results" (letters revealed); false = the spoiler-free card.
@@ -130,7 +129,10 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
 @Composable
 fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss, sheetState = sheetState,
+        containerColor = accentWash(Color(0xFF7C3AED), 0.08f), dragHandle = null,
+    ) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         PageHeader("SHARE", onClose = onDismiss, titleSize = 20.sp, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -145,13 +147,22 @@ fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
 private fun ShareVariantRow(
     icon: ImageVector, accent: Color, title: String, subtitle: String, onClick: () -> Unit,
 ) {
-    Row(infoCardMod().clickableNoRipple(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.14f)), Alignment.Center) {
-            Icon(icon, null, tint = accent, modifier = Modifier.size(20.dp))
-        }
+    SheetRow(accent, title, subtitle, onClick) { Icon(icon, null, tint = accent, modifier = Modifier.size(20.dp)) }
+}
+
+/** A sheet row: a tinted card in [accent] (wash, line, top band) that squishes, an icon tile, caps title + subtitle. */
+@Composable
+private fun SheetRow(accent: Color, title: String, subtitle: String, onClick: () -> Unit, icon: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().squishClickable("$title, $subtitle", onClick = onClick)
+            .tintedPill(accent, corner = 16.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        InfoIconTile(accent, 40.dp, icon)
         Column(Modifier.weight(1f)) {
-            Text(title.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(title.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = InfoInk.heading)
+            Text(subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = InfoInk.muted)
         }
     }
 }
@@ -245,32 +256,29 @@ private fun prettyDate(key: String): String = runCatching {
     out.format(inFmt.parse(key)!!)
 }.getOrDefault(key)
 
-// ── Shared chrome ─────────────────────────────────────────────────────────────
+// ── Shared chrome (C6: every info page is an InfoPage) ────────────────────────
 
 @Composable
 private fun OverlayScaffold(
     title: String,
     onDone: () -> Unit,
-    /** A nested page's back (an article, a word) — the white back circle on the left. */
+    /** A nested page's back (an article, a word) — the back control goes there instead of closing. */
     onBack: (() -> Unit)? = null,
-    /** The page host beside the title (Help / Guides: C, MASCOT_SPEC §6). */
-    host: MascotId? = null,
-    /** The whole-cast title art (ART_SPEC §2), replacing the title text and host. */
+    /** The page's own title art (C6), at the shared footer height. */
     art: TitleArt? = null,
-    content: @Composable () -> Unit,
+    /** Word of the Day keeps its full-width page headline. */
+    pageHeadline: Boolean = false,
+    intro: Pair<String, String?>? = null,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
-        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        // The shared page header (HEADER_SPEC §4).
-        PageHeader(title, host = host, onBack = onBack, onClose = onDone, titleMaxLines = 4, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), art = art)
-        content()
-    }
+    InfoPage(
+        title = title, onBack = onBack ?: onDone, art = art, pageHeadline = pageHeadline,
+        backLabel = if (onBack != null) "Back" else "Close", intro = intro, content = content,
+    )
 }
 
-@Composable
-private fun infoCardMod() = Modifier
-    .fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+private val STRATEGY_ACCENT = Color(0xFFF59E0B)
+private val WORDS_ACCENT = Color(0xFFEC4899)
 
 // ── Strategy ──────────────────────────────────────────────────────────────────
 
@@ -281,44 +289,37 @@ fun StrategyScreen(onDone: () -> Unit) {
 
     selected?.let { a ->
         androidx.activity.compose.BackHandler { selected = null }
-        OverlayScaffold(a.title, onDone = onDone, onBack = { selected = null }) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("STRATEGY · ${a.minutes} MIN READ", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color(0xFFF59E0B))
-                Text(a.dek, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                a.sections.forEach { s ->
-                    Column(infoCardMod().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            // Amber rule before each heading (iOS: 4×16 rounded bar).
-                            Box(Modifier.width(4.dp).height(16.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFF59E0B)))
-                            Text(s.heading, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        }
-                        s.body.forEach { Text(it, fontSize = 13.sp, color = WTheme.textSecondary, lineHeight = 19.sp) }
-                    }
+        OverlayScaffold(
+            a.title, onDone = onDone, onBack = { selected = null }, art = TitleArt.STRATEGY,
+            intro = a.title to a.dek,
+        ) {
+            Text(
+                "STRATEGY · ${a.minutes} MIN READ", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp,
+                color = darkenInk(STRATEGY_ACCENT), modifier = Modifier.padding(horizontal = 4.dp),
+            )
+            a.sections.forEach { s ->
+                InfoSectionCard(STRATEGY_ACCENT, title = s.heading) {
+                    s.body.forEach { InfoBody(it) }
                 }
-                Spacer(Modifier.height(24.dp))
             }
         }
         return
     }
 
-    OverlayScaffold("Strategy", onDone) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Practical, original strategy for solving daily word puzzles faster and in fewer guesses.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            if (articles.isEmpty()) {
-                CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
-            } else articles.forEach { a ->
-                Row(infoCardMod().clickableNoRipple { selected = a }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFFF59E0B).copy(alpha = 0.14f)), Alignment.Center) {
-                        Icon(Icons.Filled.Lightbulb, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text("${a.minutes} MIN READ", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color(0xFFF59E0B))
-                        Text(a.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        Text(a.dek, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    }
+    OverlayScaffold(
+        "Strategy", onDone, art = TitleArt.STRATEGY,
+        intro = "Solve faster, in fewer guesses" to "Practical, original strategy for solving daily word puzzles faster and in fewer guesses.",
+    ) {
+        if (articles.isEmpty()) {
+            CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+        } else articles.forEach { a ->
+            InfoGuideCard(
+                STRATEGY_ACCENT, a.title, a.dek, onClick = { selected = a }, kicker = "${a.minutes} MIN READ",
+            ) {
+                InfoIconTile(STRATEGY_ACCENT) {
+                    Icon(Icons.Filled.Lightbulb, null, tint = STRATEGY_ACCENT, modifier = Modifier.size(22.dp))
                 }
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -329,91 +330,109 @@ fun StrategyScreen(onDone: () -> Unit) {
 fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
     val words by produceState(initialValue = WordsService.cached() ?: emptyList()) { value = WordsService.words() }
     var selected by remember { mutableStateOf<WordsService.Entry?>(null) }
+    // ART_SPEC §2 / C6: opened as the Word of the Day page, the page keeps the WOTD headline;
+    // the Words footer page shows its own WORDS title.
+    val wotd = navTitle == "Word of the Day"
 
     selected?.let { w ->
         androidx.activity.compose.BackHandler { selected = null }
-        WordDetail(w, onDone = onDone, onBack = { selected = null })
+        WordDetail(w, wotd, onDone = onDone, onBack = { selected = null })
         return
     }
 
-    // ART_SPEC §2: opened as the Word of the Day page, the header wears the WOTD art.
-    OverlayScaffold(navTitle, onDone, art = if (navTitle == "Word of the Day") TitleArt.WOTD else null) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            if (words.isEmpty()) {
-                CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
-            } else words.forEach { w ->
-                Row(infoCardMod().clickableNoRipple { selected = w }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))), Alignment.Center) {
-                        Text(w.word.take(1).uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(w.word.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        Text(prettyDate(w.date), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    }
-                }
+    OverlayScaffold(
+        navTitle, onDone, art = if (wotd) TitleArt.WOTD else TitleArt.WORDS, pageHeadline = wotd,
+        intro = "Every Word of the Day" to "Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.",
+    ) {
+        if (words.isEmpty()) {
+            CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+        } else words.forEach { w ->
+            InfoGuideCard(WORDS_ACCENT, w.word.uppercase(), prettyDate(w.date), onClick = { selected = w }) {
+                LetterCandyTile(w.word.take(1).uppercase(), 40.dp, 18.sp)
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
+/** A purple candy letter tile (the mockup's spelled-word tiles): gradient face, darker lip, white letter. */
 @Composable
-private fun WordDetail(w: WordsService.Entry, onDone: () -> Unit, onBack: () -> Unit) {
+private fun LetterCandyTile(letter: String, size: androidx.compose.ui.unit.Dp, fontSize: androidx.compose.ui.unit.TextUnit) {
+    val shape = RoundedCornerShape(size * 0.22f)
+    Box(
+        Modifier.size(size).clip(shape).background(Color(0xFF4C1D95))
+            .padding(bottom = 3.dp).clip(shape)
+            .background(Brush.verticalGradient(listOf(Color(0xFFA66BFF), Color(0xFF7C3AED), Color(0xFF6A2BD6)))),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(letter, fontSize = fontSize, fontWeight = FontWeight.Black, color = Color.White)
+    }
+}
+
+@Composable
+private fun WordDetail(w: WordsService.Entry, wotd: Boolean, onDone: () -> Unit, onBack: () -> Unit) {
     val word = w.word.uppercase()
-    OverlayScaffold(word, onDone = onDone, onBack = onBack) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            // Gradient hero band — white tiles on a purple→pink panel.
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899)))).padding(vertical = 18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text("WORD OF THE DAY · ${prettyDate(w.date)}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color.White.copy(alpha = 0.9f))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    word.forEach { c ->
-                        Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), Alignment.Center) {
-                            Text(c.toString(), fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9))
-                        }
-                    }
+    OverlayScaffold(word, onDone = onDone, onBack = onBack, art = if (wotd) TitleArt.WOTD else TitleArt.WORDS, pageHeadline = wotd) {
+        // The word spelled in purple candy tiles on a soft green card (finishing-touches "Today's word").
+        TintedCard(
+            WOTD_CARD_ACCENT, Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = 16.dp, horizontal = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                "WORD OF THE DAY · ${prettyDate(w.date).uppercase()}", fontSize = 10.sp, fontWeight = FontWeight.Black,
+                letterSpacing = 0.8.sp, color = if (WTheme.isDark) WTheme.textSecondary else darkenInk(WOTD_CARD_ACCENT),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                val n = word.length.coerceAtLeast(1)
+                val tile = minOf(40.dp, (maxWidth - 6.dp * (n - 1)) / n)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.semantics(mergeDescendants = true) { }) {
+                    word.forEach { c -> LetterCandyTile(c.toString(), tile, (tile.value * 0.5f).sp) }
                 }
-                if (w.phonetic.isNotEmpty() || w.partOfSpeech.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (w.phonetic.isNotEmpty()) Text(w.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.95f))
-                        if (w.partOfSpeech.isNotEmpty()) Text(w.partOfSpeech, fontSize = 11.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic, color = Color.White)
+            }
+            if (w.phonetic.isNotEmpty() || w.partOfSpeech.isNotEmpty()) {
+                Row(
+                    Modifier.align(Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (w.phonetic.isNotEmpty()) Text(w.phonetic, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = InfoInk.body)
+                    if (w.partOfSpeech.isNotEmpty()) {
+                        Text(
+                            w.partOfSpeech.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.1.em,
+                            color = Color.White,
+                            modifier = Modifier.clip(RoundedCornerShape(50))
+                                .background(Brush.verticalGradient(listOf(Color(0xFF5ED59A), Color(0xFF22A866))))
+                                .padding(horizontal = 10.dp, vertical = 3.dp),
+                        )
                     }
                 }
             }
-            if (w.definition.isNotEmpty()) {
-                WordSectionCard("Meaning", Icons.Filled.MenuBook, Color(0xFF7C3AED)) {
-                    Text(w.definition, fontSize = 13.sp, color = WTheme.text, lineHeight = 18.sp)
-                    if (w.example.isNotEmpty()) Text("“${w.example}”", fontSize = 12.sp, fontStyle = FontStyle.Italic, color = WTheme.textMuted)
-                    w.extraSenses.forEach {
-                        Text(buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = WTheme.primary)) { append(it.partOfSpeech + " ") }
-                            append(it.definition)
-                        }, fontSize = 12.sp, color = WTheme.textMuted)
-                    }
+        }
+        if (w.definition.isNotEmpty()) {
+            WordSectionCard("Meaning", Icons.Filled.MenuBook, Color(0xFF7C3AED)) {
+                InfoBody(w.definition)
+                if (w.example.isNotEmpty()) Text("“${w.example}”", fontSize = 12.5.sp, fontStyle = FontStyle.Italic, color = InfoInk.muted)
+                w.extraSenses.forEach {
+                    Text(buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Black, color = purpleTextInk)) { append(it.partOfSpeech + " ") }
+                        append(it.definition)
+                    }, fontSize = 12.5.sp, color = InfoInk.body)
                 }
             }
-            WordSectionCard("$word as a puzzle answer", Icons.Filled.Lightbulb, Color(0xFFF59E0B)) {
-                Text(w.analysisSummary, fontSize = 13.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
-                Text(w.analysisStrategy, fontSize = 13.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
-            }
-            Spacer(Modifier.height(24.dp))
+        }
+        WordSectionCard("$word as a puzzle answer", Icons.Filled.Lightbulb, STRATEGY_ACCENT) {
+            InfoBody(w.analysisSummary)
+            InfoBody(w.analysisStrategy)
         }
     }
 }
 
 @Composable
 private fun WordSectionCard(title: String, icon: ImageVector, tint: Color, content: @Composable () -> Unit) {
-    Column(infoCardMod().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(tint.copy(alpha = 0.14f)), Alignment.Center) {
-                Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
-            }
-            Text(title.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = WTheme.text)
-        }
+    InfoSectionCard(
+        tint, title = title.uppercase(),
+        leading = { InfoIconTile(tint, 28.dp) { Icon(icon, null, tint = tint, modifier = Modifier.size(15.dp)) } },
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { content() }
     }
 }
@@ -437,28 +456,21 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
         return
     }
 
-    OverlayScaffold("Guides", onDone, art = TitleArt.HOWTO) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            (guides.ifEmpty { modes.map { it to null } }).forEach { (mode, g) ->
-                val accent = modeAccent(mode)
-                // The game tile's chrome (docs/GAME_TILE_STYLE.md) on the guide row.
-                Row(
-                    Modifier.fillMaxWidth().gameTilePress { selected = mode }.gameTileChrome(accent, WTheme.surface).padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    GameTileChip(accent, 40.dp) {
-                        // ART_SPEC §3: the game's 3D icon; the book stays for a mode without a card.
-                        if (modeCardFor(mode) != null) ModeGlyph(mode, accent, 40.dp)
-                        else Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp))
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        // Before /api/guides resolves, iOS falls back to the capitalized slug ("Six"), not the enum name.
-                        Text(g?.title ?: com.wordocious.app.data.GuideService.slugFor(mode).replaceFirstChar { it.uppercase() }, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        if (g?.tagline != null) Text(g.tagline, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    }
-                }
+    // C6: Guides shows its OWN title (no longer the How to Play art).
+    OverlayScaffold(
+        "Guides", onDone, art = TitleArt.GUIDES,
+        intro = "How every game works" to "Pick a game for its rules, tips and a worked example.",
+    ) {
+        (guides.ifEmpty { modes.map { it to null } }).forEach { (mode, g) ->
+            val accent = modeAccent(mode)
+            // Before /api/guides resolves, iOS falls back to the capitalized slug ("Six"), not the enum name.
+            val title = g?.title ?: com.wordocious.app.data.GuideService.slugFor(mode).replaceFirstChar { it.uppercase() }
+            // The mockup's `.guidecard`: the game's own color, top bar and 3D icon.
+            InfoGuideCard(accent, title, g?.tagline, onClick = { selected = mode }) {
+                // ART_SPEC §3: the game's 3D icon; the book stays for a mode without a card.
+                if (modeCardFor(mode) != null) ModeGlyph(mode, accent, 42.dp)
+                else InfoIconTile(accent) { Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(18.dp)) }
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -468,8 +480,9 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun InfoFooter(onNav: (String) -> Unit) {
-    // iOS splits the 8 links into two fixed rows of four rather than letting them
-    // wrap by measured width, so the grid stays balanced on every device.
+    // iOS splits the links into two fixed rows rather than letting them wrap by
+    // measured width, so the grid stays balanced on every device. A1 / A9: each link
+    // is a tinted chip in its page's color that squishes (navigation, not an action).
     val half = (INFO_NAV.size + 1) / 2
     Column(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -480,14 +493,10 @@ fun InfoFooter(onNav: (String) -> Unit) {
             // large font clipped "WORDS" — Doug, 2026-09-27).
             androidx.compose.foundation.layout.FlowRow(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                line.forEach { item ->
-                    Text(item.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                        maxLines = 1, softWrap = false,
-                        modifier = Modifier.clickableNoRipple { onNav(item.route) })
-                }
+                line.forEach { item -> InfoLinkChip(item.label, item.accent) { onNav(item.route) } }
             }
         }
     }
@@ -542,36 +551,39 @@ private fun htpColor(hex: String): Color =
 @Composable
 fun HowToPlayScreen(onDone: () -> Unit) {
     val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList()) { value = HowToPlayService.sections() }
-    OverlayScaffold("How to Play", onDone, art = TitleArt.HOWTO) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Everything you need to know to get started", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            if (sections.isEmpty()) {
-                CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
-            } else sections.forEach { HtpSectionCard(it) }
-            Spacer(Modifier.height(24.dp))
+    OverlayScaffold(
+        "How to Play", onDone, art = TitleArt.HOWTO,
+        intro = "New to Wordocious?" to "Everything you need to know to get started.",
+    ) {
+        // FINISH_SPEC W: replay the first-run tour (closes this page under it).
+        InfoLinkChip("Take the tour", Color(0xFF7C3AED), Modifier.align(Alignment.CenterHorizontally)) {
+            Onboarding.replay()
+            onDone()
         }
+        if (sections.isEmpty()) {
+            CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+        } else sections.forEach { HtpSectionCard(it) }
     }
 }
 
 @Composable
 private fun HtpSectionCard(s: HowToPlayService.Section) {
-    Column(infoCardMod().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(s.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        s.intro?.let { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
+    val accent = Color(0xFF7C3AED)
+    InfoSectionCard(accent, title = s.title) {
+        s.intro?.let { InfoBody(it) }
         s.bullets?.let { bullets ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 bullets.forEach { b ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("•", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
+                    InfoBullet(accent) {
                         Text(buildAnnotatedString {
-                            b.strong?.let { withStyle(SpanStyle(fontWeight = FontWeight.Black, color = WTheme.text)) { append(it) } }
+                            b.strong?.let { withStyle(SpanStyle(fontWeight = FontWeight.Black, color = InfoInk.heading)) { append(it) } }
                             append(b.text)
-                        }, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                        }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body, lineHeight = 1.45.em)
                     }
                 }
             }
         }
-        s.tilesHeading?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text) }
+        s.tilesHeading?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Black, color = InfoInk.heading) }
         s.tiles?.let { tiles ->
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 tiles.forEach { row ->
@@ -582,22 +594,26 @@ private fun HtpSectionCard(s: HowToPlayService.Section) {
                         Text(buildAnnotatedString {
                             withStyle(SpanStyle(fontWeight = FontWeight.Black, color = htpColor(row.strongColor))) { append(row.strong) }
                             append(row.rest)
-                        }, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                        }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body, lineHeight = 1.4.em)
                     }
                 }
             }
         }
         s.modes?.let { modes ->
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 modes.forEach { m ->
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(m.name, fontSize = 12.sp, fontWeight = FontWeight.Black, color = htpColor(m.accent))
-                        Text(m.body, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                    val c = htpColor(m.accent)
+                    Column(
+                        Modifier.fillMaxWidth().tintedPill(c).padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(m.name, fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) c else darkenInk(c))
+                        Text(m.body, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body, lineHeight = 1.4.em)
                     }
                 }
             }
         }
-        s.outro?.let { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
+        s.outro?.let { InfoBody(it) }
     }
 }
 
@@ -605,10 +621,10 @@ private fun HtpSectionCard(s: HowToPlayService.Section) {
 private fun HtpTile(l: HowToPlayService.Letter) {
     val filled = l.color != "empty"
     val fill = when (l.color) {
-        "green" -> Color(0xFF7C3AED); "yellow" -> Color(0xFFF59E0B); "gray" -> Color(0xFF64748B); else -> WTheme.surface
+        "green" -> Color(0xFF7C3AED); "yellow" -> Color(0xFFF59E0B); "gray" -> Color(0xFF64748B); else -> accentWash(Color(0xFF7C3AED), 0.10f)
     }
-    val border = if (filled) fill else WTheme.border
-    Box(Modifier.size(34.dp).clip(RoundedCornerShape(5.dp)).background(fill).border(2.dp, border, RoundedCornerShape(5.dp)), Alignment.Center) {
-        Text(l.ch, fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (filled) Color.White else WTheme.text)
+    val border = if (filled) fill else accentLine(Color(0xFF7C3AED))
+    Box(Modifier.size(34.dp).clip(RoundedCornerShape(6.dp)).background(fill).border(2.dp, border, RoundedCornerShape(6.dp)), Alignment.Center) {
+        Text(l.ch, fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (filled) Color.White else InfoInk.heading)
     }
 }

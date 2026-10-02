@@ -47,18 +47,19 @@ export function PhotoFinish({ kind, onDone }: { kind: PhotoFinishKind; onDone?: 
         />
       ))}
 
-      {/* Stamp */}
+      {/* Stamp (G5): a big glossy amber candy plate — gold ring, darker lip,
+          white gloss, the white label with the dark-purple outline. */}
       <div
-        className="animate-pf-stamp px-6 py-3 rounded-2xl"
+        className="animate-pf-stamp relative overflow-hidden px-7 py-3 rounded-[28px]"
         style={{
-          background: 'rgba(17,17,17,0.9)',
-          border: '3px solid #fff',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+          background: 'linear-gradient(#ffc56b, #f97316)',
+          boxShadow: 'inset 0 0 0 3px #f5c542, 0 7px 0 #a24b0e, 0 14px 36px rgba(59, 26, 120, 0.35)',
         }}
       >
+        <span aria-hidden="true" className="absolute rounded-full" style={{ left: '6%', right: '6%', top: '7%', height: '44%', background: 'linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0))' }} />
         <span
-          className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text"
-          style={{ backgroundImage: 'linear-gradient(135deg,#facc15,#f97316,#ec4899)' }}
+          className="relative text-4xl md:text-5xl font-black tracking-tight text-white"
+          style={{ textShadow: '2px 0 0 #3b1a78, -2px 0 0 #3b1a78, 0 2px 0 #3b1a78, 0 -2px 0 #3b1a78, 1.5px 1.5px 0 #3b1a78, -1.5px 1.5px 0 #3b1a78, 1.5px -1.5px 0 #3b1a78, -1.5px -1.5px 0 #3b1a78, 0 4px 6px rgba(40, 10, 80, 0.4)' }}
         >
           {label}
         </span>

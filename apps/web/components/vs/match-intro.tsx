@@ -4,8 +4,11 @@ import { useEffect, useRef } from 'react';
 import { playVsStinger } from '@/lib/sounds';
 import type { HeadToHeadRecord } from '@/lib/head-to-head';
 import { VS } from '@/lib/vs-lobby';
-import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
-import { ModeChip, VsPill } from './vs-ui';
+import { PlayerAvatar } from '@/components/avatar/player-avatar';
+import { SoftNum } from '@/components/ui/soft-number';
+import { botPersona } from '@/lib/bot/bot-personas';
+import { alphaHex } from '@/lib/soft-surface';
+import { BotFigure, GhostAvatar, ModeChip, VS_ACCENT, VsPill, vsCard } from './vs-ui';
 
 export interface IntroPlayer {
   username: string;
@@ -13,9 +16,22 @@ export interface IntroPlayer {
   level: number | null;
   /** Bot art (contained in a soft circle) instead of a photo. */
   art?: boolean;
+  /** A cast bot (D1): drawn as its own character in the 'ready' pose. */
+  botId?: string;
+  /** Your Ghost: a faded version of the player's own letter tile (`ghostName`, `emoji`, `accent`). */
+  ghost?: boolean;
+  ghostName?: string;
+  /** A small line under the name ("Medium · Solves in 4–5"). */
+  tag?: string;
   /** Letter-tile extras (ART_SPEC §20), when known: chosen emoji + profile accent. */
   emoji?: string | null;
   accent?: string | null;
+  /** FINISH_SPEC AH (legacy): the player's avatar_cast_id when the data carries it (the signed-in player's own is always used). */
+  castId?: string | null;
+  /** FINISH_SPEC AN3: the player's user id (matches the signed-in player), avatar_config and Pro flag when known. */
+  userId?: string | null;
+  avatarConfig?: unknown;
+  pro?: boolean | null;
 }
 
 interface MatchIntroProps {
@@ -42,21 +58,34 @@ export function headToHeadLine(opponentName: string, h2h: HeadToHeadRecord): str
 
 function IntroAvatar({ player, size = 76 }: { player: IntroPlayer; size?: number }) {
   const ring = '0 0 0 3px #ffffff, 0 6px 16px rgba(76,29,149,0.14)';
-  if (player.avatarUrl) {
+  // The bot's own character, full figure, a little bigger than a tile (D3).
+  if (player.botId) return <BotFigure id={player.botId} pose="ready" size={size * 1.3} style={{ margin: -size * 0.12 }} />;
+  if (player.ghost) return <GhostAvatar name={player.ghostName ?? 'You'} accent={player.accent} size={size} />;
+  if (player.art && player.avatarUrl) {
+    // Bot art (not a player photo) stays in its soft circle.
     return (
-      <span className="rounded-full flex items-center justify-center overflow-hidden shrink-0" style={{ width: size, height: size, background: player.art ? VS.soft : '#ffffff', boxShadow: ring }}>
+      <span className="rounded-full flex items-center justify-center overflow-hidden shrink-0" style={{ width: size, height: size, background: VS.soft, boxShadow: ring }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={player.avatarUrl}
-          alt={player.username}
-          className={player.art ? 'object-contain' : 'object-cover rounded-full'}
-          style={player.art ? { width: size * 0.9, height: size * 0.9 } : { width: size, height: size }}
-        />
+        <img src={player.avatarUrl} alt={player.username} width={Math.round(size * 0.9)} height={Math.round(size * 0.9)} className="object-contain" style={{ width: size * 0.9, height: size * 0.9 }} />
       </span>
     );
   }
-  // No photo: the letter tile (ART_SPEC §20); the white ring follows its rounded corners.
-  return <LetterTileAvatar name={player.username} emoji={player.emoji} accent={player.accent} size={size} shadow={ring} />;
+  // FINISH_SPEC AN5 / AN6: the player's photo (rounded square) or their mascot, in their frame.
+  return (
+    <PlayerAvatar
+      name={player.username}
+      userId={player.userId}
+      url={player.avatarUrl}
+      accent={player.accent}
+      config={player.avatarConfig}
+      castId={player.castId}
+      level={player.level}
+      pro={player.pro}
+      size={size}
+      shadow={ring}
+      label={player.username}
+    />
+  );
 }
 
 function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'right' }) {
@@ -72,9 +101,12 @@ function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'rig
       <div className="font-black text-[14px] uppercase text-center truncate w-full" style={{ color: side === 'left' ? VS.deep : '#4c1d95', letterSpacing: 0.4 }}>
         {player.username}
       </div>
+      {player.tag && (
+        <div className="text-[10.5px] font-extrabold text-center" style={{ color: '#4b5563' }}>{player.tag}</div>
+      )}
       {player.level != null && (
-        <div className="px-2 py-0.5 rounded-full text-[10px] font-black" style={{ background: 'rgba(255,255,255,0.7)', color: '#6d28d9' }}>
-          LV {player.level}
+        <div className="inline-flex items-baseline gap-1 px-2 py-0.5 text-[10px] font-black" style={{ ...vsCard('#7c3aed', { radius: 999, shadow: false }), color: '#6d28d9' }}>
+          LV <SoftNum size={13}>{player.level}</SoftNum>
         </div>
       )}
     </div>
@@ -105,11 +137,13 @@ export function MatchIntro({ me, opponent, headToHead, mode, onDone }: MatchIntr
   }, []);
 
   const opp: IntroPlayer = opponent ?? { username: 'Anonymous', avatarUrl: null, level: null };
+  // The versus card: your half in the VS teal, theirs in the bot's own color (or purple).
+  const theirs = opp.botId ? botPersona(opp.botId).color : '#7c3aed';
 
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center px-4 animate-fade-in cursor-pointer"
-      style={{ background: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{ background: `radial-gradient(circle at 50% 40%, #ffffff 0%, ${VS.page} 45%, #e6f7f4 100%)`, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       onClick={finish}
     >
       <style>{`
@@ -137,8 +171,13 @@ export function MatchIntro({ me, opponent, headToHead, mode, onDone }: MatchIntr
       <div className="w-full max-w-sm space-y-4 text-center">
         <div
           className="relative overflow-hidden"
-          style={{ borderRadius: 18, background: 'linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 55%), linear-gradient(90deg, #ccfbf1 0%, #ccfbf1 50%, #ede9fe 50%, #ede9fe 100%)', boxShadow: '0 6px 20px rgba(76,29,149,0.10)' }}
+          style={{
+            ...vsCard(VS_ACCENT, { radius: 20 }),
+            background: `linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${alphaHex(VS_ACCENT, 0.16)} 0%, ${alphaHex(VS_ACCENT, 0.16)} 50%, ${alphaHex(theirs, 0.16)} 50%, ${alphaHex(theirs, 0.16)} 100%), #ffffff`,
+          }}
         >
+          {/* The top bar: your color, then theirs. */}
+          <div aria-hidden="true" style={{ height: 10, background: `linear-gradient(90deg, ${VS_ACCENT} 0%, ${VS_ACCENT} 50%, ${theirs} 50%, ${theirs} 100%)` }} />
           <div className="flex items-center justify-center gap-2" style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.5)' }}>
             <span className="text-[12px] font-black uppercase" style={{ color: VS.ink, letterSpacing: 1.4 }}>Match found</span>
             {mode && <ModeChip mode={mode} />}

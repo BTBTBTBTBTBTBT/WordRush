@@ -178,7 +178,11 @@ private fun rememberHighContrast(): Boolean {
  * dimming there too.
  */
 fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modifier =
-    wallpaperBackground(tint.wallpaperRes(), tint.light, tint.dark, DIM_DARK_PAGE, alwaysLight)
+    wallpaperBackground(tint.wallpaperRes(), tint.light, tint.dark, DIM_DARK_PAGE, alwaysLight, topFade = true)
+
+/** FINISH_SPEC N2: the calm header fade — the page tint at 55% at the window top, gone by this depth. */
+val HEADER_FADE_DEPTH = 170.dp
+const val HEADER_FADE_ALPHA = 0.55f
 
 /**
  * The shared painter behind §19.1 pages and game screens: wallpaper [res] scaled
@@ -193,6 +197,7 @@ private fun Modifier.wallpaperBackground(
     dark: List<Color>,
     darkDim: Float,
     alwaysLight: Boolean = false,
+    topFade: Boolean = false,
 ): Modifier = composed {
     val isDark = WTheme.isDark && !alwaysLight
     val context = LocalContext.current
@@ -225,6 +230,18 @@ private fun Modifier.wallpaperBackground(
                         dstOffset = IntOffset(left.roundToInt(), top.roundToInt()),
                         dstSize = IntSize(dw.roundToInt(), dh.roundToInt()),
                         filterQuality = FilterQuality.Medium,
+                    )
+                }
+            }
+            // N2: a very soft fade under the header so the cast sits on calm color.
+            if (topFade) {
+                val top = -origin.y
+                val depth = HEADER_FADE_DEPTH.toPx()
+                if (top + depth > 0f) {
+                    val c = stops.first()
+                    drawRect(
+                        Brush.verticalGradient(listOf(c.copy(alpha = HEADER_FADE_ALPHA), c.copy(alpha = 0f)), startY = top, endY = top + depth),
+                        topLeft = Offset(0f, top), size = Size(size.width, depth),
                     )
                 }
             }

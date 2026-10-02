@@ -79,10 +79,29 @@ func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
     }
 }
 
-// MARK: - Shared chrome (matches HelpView / GuideSheet)
+// MARK: - Shared chrome (FINISH_SPEC §C6: one layout for every footer / info page)
 
-/// The app's standard menu chrome: a 6pt purple→pink→amber accent bar, a
-/// wordmark-gradient title, an optional back chevron, and a Close button.
+/// The footer / info pages' shared look (FINISH_SPEC §C6, mockup finishing-touches
+/// "Guides page"): back + help 3D icons, the page's OWN title art as a full-width
+/// headline (every footer title the same height), an intro card, then tinted cards
+/// with top bars.
+enum InfoPageStyle {
+    /// §C6: the seven footer titles share one height (each fits the width up to it).
+    static let titleHeight: CGFloat = 64
+    static let purple = Color(hex: 0x7C3AED)
+    static let pink = Color(hex: 0xEC4899)
+    static let gold = Color(hex: 0xF59E0B)
+    static let green = Color(hex: 0x10B981)
+}
+
+/// What the scaffold's help icon opens (the How to Play page offers the FAQ, and
+/// the FAQ offers How to Play).
+enum MenuHelp { case none, howToPlay, faq }
+
+/// The app's standard menu chrome (FINISH_SPEC §A3 / §A6 / §C6): the bare 3D back
+/// icon on the left (back when `onBack` is set, otherwise close), the 3D help icon on
+/// the right, then the page's title art as a full-width headline (no box, no float,
+/// the shared footer height) — or the caps title + host when the page has no art.
 struct MenuScaffold<Content: View>: View {
     let title: String
     /// The page's host beside the title (MASCOT_SPEC §6), 40 pt with an idle bob.
@@ -93,48 +112,81 @@ struct MenuScaffold<Content: View>: View {
     /// Close action when the scaffold is NOT hosted in a presentation (the More Games
     /// morph panel); nil → the environment dismiss.
     var onClose: (() -> Void)? = nil
+    var help: MenuHelp = .none
     @Environment(\.dismiss) private var dismiss
+    @State private var helpOpen = false
     let content: () -> Content
 
     init(_ title: String, host: MascotID? = nil, art: ArtTitleName? = nil, onBack: (() -> Void)? = nil,
-         onClose: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
+         onClose: (() -> Void)? = nil, help: MenuHelp = .none, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.host = host
         self.art = art
         self.onBack = onBack
         self.onClose = onClose
+        self.help = help
         self.content = content
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
-                           startPoint: .leading, endPoint: .trailing)
-                .frame(height: 6)
-            HStack(spacing: 10) {
-                if let onBack {
-                    HeaderCircleButton(.symbol("chevron.left"), size: 32, label: "Back", action: onBack)
+            HStack(spacing: 0) {
+                HeaderCircleButton(.icon(.back), size: HeaderControl.tap, label: onBack != nil ? "Back" : "Close") {
+                    if let onBack { onBack() } else if let onClose { onClose() } else { dismiss() }
                 }
-                if let art {
-                    ArtTitle(art).frame(maxWidth: .infinity)
-                } else {
-                    PageHostTitle(text: title, host: host, size: 22, hostSize: 40)
-                    Spacer()
-                }
-                HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") {
-                    if let onClose { onClose() } else { dismiss() }
+                Spacer(minLength: 0)
+                if help != .none {
+                    HeaderCircleButton(.icon(.help), size: HeaderControl.tap,
+                                       label: help == .faq ? "Questions and answers" : "How to play") { helpOpen = true }
                 }
             }
-            .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 10)
+            .padding(.horizontal, 6).padding(.top, 6)
+            if let art {
+                PageHeadline(art, bleed: 0, maxHeight: InfoPageStyle.titleHeight)
+                    .padding(.bottom, 8)
+            } else {
+                PageHostTitle(text: title, host: host, size: 22, hostSize: 40)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 16).padding(.bottom, 10)
+            }
             content()
         }
         .pageBackground(.home)
+        .sheet(isPresented: $helpOpen) {
+            Group {
+                if help == .faq { HelpView(initialTab: .faq, showTabs: false) } else { HowToPlayView() }
+            }
+            .presentationDetents([.large])
+        }
     }
 }
 
-private var infoCard: some View {
-    RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow()
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+/// §C6 the intro card at the top of every footer page: a lavender card with the
+/// purple → pink top bar, a 15/900 heading and a 13/700 muted line.
+struct InfoIntroCard: View {
+    let heading: String
+    var line: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(heading).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                .fixedSize(horizontal: false, vertical: true)
+            if let line {
+                Text(line).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .tintedCard(accent: InfoPageStyle.purple, bar: [InfoPageStyle.purple, InfoPageStyle.pink])
+    }
+}
+
+extension View {
+    /// §C6 a footer-page card: the accent's soft wash, its border and a solid top bar.
+    func infoCard(_ accent: Color = InfoPageStyle.purple) -> some View {
+        tintedCard(accent: accent, bar: [accent])
+    }
 }
 
 // MARK: - Styled menu (replaces the plain system dropdown)
@@ -164,12 +216,12 @@ struct MenuSheet: View {
                 .frame(width: 40, height: 40)
                 .background(RoundedRectangle(cornerRadius: 11).fill(d.accent.opacity(0.14)))
             VStack(alignment: .leading, spacing: 1) {
-                Text(d.title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(Theme.textPrimary)
-                Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text(d.title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(FinishInk.heading)
+                Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer()
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
+        .padding(12).frame(maxWidth: .infinity, alignment: .leading).infoCard(d.accent)
     }
 }
 
@@ -191,9 +243,12 @@ struct GuidesIndexView: View {
     }
 
     var body: some View {
-        MenuScaffold("Guides", host: Mascots.help, art: .howto) {
+        // FINISH_SPEC §C6: Guides wears its OWN title (no longer the How to Play art).
+        MenuScaffold("Guides", host: Mascots.help, art: .guides, help: .howToPlay) {
             ScrollView {
                 VStack(spacing: 10) {
+                    InfoIntroCard(heading: "How every game works",
+                                  line: "Pick a game for its rules, tips and a worked example.")
                     ForEach(modes, id: \.self) { mode in
                         Button { selected = ModeBox(mode: mode) } label: { row(mode) }.buttonStyle(.squish)
                     }
@@ -202,7 +257,7 @@ struct GuidesIndexView: View {
             }
         }
         .task { await service.load() }
-        .sheet(item: $selected) { box in GuideSheet(mode: box.mode).presentationDetents([.large]) }
+        .sheet(item: $selected) { box in GuideSheet(mode: box.mode, startExpanded: true).presentationDetents([.large]) }
     }
 
     private func row(_ mode: GameMode) -> some View {
@@ -214,19 +269,19 @@ struct GuidesIndexView: View {
                 ModeIconView(icon: h.icon, accent: accent, box: 40)
             } else {
                 Image(systemName: "book.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
-                    .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.08)))
+                    .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.12)))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(g?.title ?? GuideService.slug(for: mode).capitalized).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+                Text(g?.title ?? GuideService.slug(for: mode).capitalized).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
                 if let tagline = g?.tagline {
-                    Text(tagline).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).lineLimit(2).multilineTextAlignment(.leading)
+                    Text(tagline).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2).multilineTextAlignment(.leading)
                 }
             }
             Spacer()
         }
-        .padding(12).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
-        // The shared game-tile chrome (docs/GAME_TILE_STYLE.md) on the row layout.
-        .gameTile(accent: accent)
+        .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+        // §C6: each game guide is a tinted card in that game's own color with its top bar.
+        .infoCard(accent)
     }
 
     struct ModeBox: Identifiable { let mode: GameMode; var id: Int { mode.hashValue } }
@@ -287,9 +342,9 @@ struct StrategyView: View {
     var body: some View {
         Group {
             if let a = selected {
-                MenuScaffold(a.title, onBack: { selected = nil }) { articleBody(a) }
+                MenuScaffold(a.title, onBack: { selected = nil }, help: .howToPlay) { articleBody(a) }
             } else {
-                MenuScaffold("Strategy", host: Mascots.help) { list }
+                MenuScaffold("Strategy", host: Mascots.help, art: .strategy, help: .howToPlay) { list }
             }
         }
         .task { await service.load() }
@@ -298,8 +353,8 @@ struct StrategyView: View {
     private var list: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Practical, original strategy for solving daily word puzzles faster and in fewer guesses.")
-                    .font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                InfoIntroCard(heading: "Solve smarter",
+                              line: "Practical, original strategy for solving daily word puzzles faster and in fewer guesses.")
                 if service.articles.isEmpty {
                     ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
                 } else {
@@ -314,34 +369,30 @@ struct StrategyView: View {
 
     private func card(_ a: StrategyArticleModel) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "lightbulb.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(Color(hex: 0xF59E0B))
-                .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(Color(hex: 0xF59E0B).opacity(0.14)))
+            Image(systemName: "lightbulb.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(InfoPageStyle.gold)
+                .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(InfoPageStyle.gold.opacity(0.16)))
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(a.minutes) MIN READ").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0xF59E0B))
-                Text(a.title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary).multilineTextAlignment(.leading)
-                Text(a.dek).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.leading)
+                Text("\(a.minutes) MIN READ").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0xA2560C))
+                Text(a.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading).multilineTextAlignment(.leading)
+                Text(a.dek).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.leading)
             }
             Spacer(minLength: 0)
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
+        .padding(12).frame(maxWidth: .infinity, alignment: .leading).infoCard(InfoPageStyle.gold)
     }
 
     private func articleBody(_ a: StrategyArticleModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("STRATEGY · \(a.minutes) MIN READ").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Color(hex: 0xF59E0B))
-                Text(a.dek).font(Brand.font(15, .heavy)).foregroundStyle(Theme.textPrimary).lineSpacing(2)
+                InfoIntroCard(heading: "STRATEGY · \(a.minutes) MIN READ", line: a.dek)
                 ForEach(a.sections.indices, id: \.self) { i in
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0xF59E0B)).frame(width: 4, height: 16)
-                            Text(a.sections[i].heading).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
-                        }
+                        Text(a.sections[i].heading).font(Brand.font(16, .black)).foregroundStyle(FinishInk.heading)
                         ForEach(a.sections[i].body.indices, id: \.self) { j in
-                            Text(a.sections[i].body[j]).font(Brand.font(13, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(3)
+                            Text(a.sections[i].body[j]).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(3)
                         }
                     }
-                    .padding(14).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
+                    .padding(14).frame(maxWidth: .infinity, alignment: .leading).infoCard(InfoPageStyle.gold)
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
@@ -404,10 +455,10 @@ struct WordsView: View {
     var body: some View {
         Group {
             if let w = selected {
-                MenuScaffold(w.word.uppercased(), onBack: { selected = nil }) { WordDetailBody(entry: w) }
+                MenuScaffold(w.word.uppercased(), onBack: { selected = nil }, help: .howToPlay) { WordDetailBody(entry: w) }
             } else {
-                // ART_SPEC §2: the Word of the Day archive wears the WORD OF THE DAY art.
-                MenuScaffold(navTitle, art: .wotd) { list }
+                // FINISH_SPEC §C6: the Words page wears its own WORDS title art.
+                MenuScaffold(navTitle, art: .words, help: .howToPlay) { list }
             }
         }
         .task { await service.load() }
@@ -416,8 +467,8 @@ struct WordsView: View {
     private var list: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.")
-                    .font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                InfoIntroCard(heading: "Every Word of the Day",
+                              line: "Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.")
                 if service.words.isEmpty {
                     ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
                 } else {
@@ -432,16 +483,15 @@ struct WordsView: View {
 
     private func row(_ w: WordArchiveEntry) -> some View {
         HStack(spacing: 12) {
-            Text(String(w.word.prefix(1)).uppercased()).font(Brand.font(16, .black)).foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(RoundedRectangle(cornerRadius: 10).fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            GlossyTile(face: .correct, letter: String(w.word.prefix(1)).uppercased(), width: 40)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(w.word.uppercased()).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                Text(prettyDate(w.date)).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text(w.word.uppercased()).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                Text(prettyDate(w.date)).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer()
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
+        .padding(12).frame(maxWidth: .infinity, alignment: .leading).infoCard(InfoPageStyle.pink)
     }
 }
 
@@ -454,31 +504,37 @@ struct WordDetailBody: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 // Hero band — gradient tiles on a soft tinted panel.
+                // §C6 / §B6: the word spelled in glossy purple tiles on a tinted card.
                 VStack(spacing: 10) {
-                    Text("WORD OF THE DAY · \(prettyDate(entry.date))").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(.white.opacity(0.9))
+                    FinishLabel("Word of the Day · \(prettyDate(entry.date))", color: Color(hex: 0x6D28D9))
                     HStack(spacing: 6) {
                         ForEach(Array(w).indices, id: \.self) { i in
-                            Text(String(Array(w)[i])).font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0x6D28D9))
-                                .frame(width: 40, height: 40)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(.white))
+                            GlossyTile(face: .correct, letter: String(Array(w)[i]), width: 40)
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(w)
                     if !entry.phonetic.isEmpty || !entry.partOfSpeech.isEmpty {
                         HStack(spacing: 8) {
-                            if !entry.phonetic.isEmpty { Text(entry.phonetic).font(Brand.font(12, .bold)).foregroundStyle(.white.opacity(0.95)) }
-                            if !entry.partOfSpeech.isEmpty { Text(entry.partOfSpeech).font(Brand.font(11, .heavy)).italic().foregroundStyle(.white) }
+                            if !entry.phonetic.isEmpty { Text(entry.phonetic).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary) }
+                            if !entry.partOfSpeech.isEmpty {
+                                Text(entry.partOfSpeech.uppercased()).font(Brand.font(10, .black)).tracking(0.8)
+                                    .foregroundStyle(A11yInk.on(Color(hex: 0x6D28D9)))
+                                    .padding(.horizontal, 9).padding(.vertical, 3)
+                                    .tintedPill(InfoPageStyle.purple)
+                            }
                         }
                     }
                 }
-                .padding(.vertical, 18).frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 18).fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                .padding(.vertical, 16).frame(maxWidth: .infinity)
+                .tintedCard(accent: InfoPageStyle.purple, bar: [InfoPageStyle.purple, InfoPageStyle.pink])
 
                 if !entry.definition.isEmpty {
                     sectionCard("Meaning", icon: "book.fill", tint: Color(hex: 0x7C3AED)) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(entry.definition).font(Brand.font(13, .regular)).foregroundStyle(Theme.textPrimary).lineSpacing(2)
+                            Text(entry.definition).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.heading).lineSpacing(2)
                             if !entry.example.isEmpty {
-                                Text("“\(entry.example)”").font(Brand.font(12, .regular)).italic().foregroundStyle(Theme.textMuted)
+                                Text("“\(entry.example)”").font(Brand.font(12, .regular)).italic().foregroundStyle(FinishInk.secondary)
                             }
                             ForEach(entry.extraSenses.indices, id: \.self) { i in
                                 (Text(entry.extraSenses[i].partOfSpeech + " ").font(Brand.font(12, .bold)).foregroundColor(Theme.primary)
@@ -489,8 +545,8 @@ struct WordDetailBody: View {
                 }
                 sectionCard("\(w) as a puzzle answer", icon: "lightbulb.fill", tint: Color(hex: 0xF59E0B)) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(entry.analysisSummary).font(Brand.font(13, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(2)
-                        Text(entry.analysisStrategy).font(Brand.font(13, .regular)).foregroundStyle(Theme.textSecondary).lineSpacing(2)
+                        Text(entry.analysisSummary).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
+                        Text(entry.analysisStrategy).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
                     }
                 }
             }
@@ -503,11 +559,11 @@ struct WordDetailBody: View {
             HStack(spacing: 7) {
                 Image(systemName: icon).font(.system(size: 12, weight: .bold)).foregroundStyle(tint)
                     .frame(width: 26, height: 26).background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.14)))
-                Text(title.uppercased()).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(Theme.textPrimary)
+                Text(title.uppercased()).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(FinishInk.heading)
             }
             inner()
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(16).background(infoCard)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(16).infoCard(tint)
     }
 }
 

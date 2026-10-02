@@ -4,7 +4,7 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { useReducer, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GameMode, gameReducer, getDailySeedDate, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
-import { CompletedBoardsRecap, toRecapBoards } from '../game/completed-mini-board';
+import { toRecapBoards } from '../game/completed-mini-board';
 import { Keyboard } from '../game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('../effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -28,12 +28,14 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { ResultLine, PlayAgainButton } from '@/components/game/result-line';
 import { REVEAL } from '@/lib/tile-motion';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
+import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
+import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
+import { FittedBoardsRecap } from '@/components/game/fitted-recap';
 import { GameBackground } from '@/components/ui/page-background';
+import { modeTrayAccent } from '@/lib/tray-fit';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 interface OctordleGameProps {
@@ -114,9 +116,9 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
     setError('');
 
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
-      if (!isWordValid(currentGuess)) { setError('Not in word list'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
-      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
+      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length)); setTimeout(() => setError(''), 1500); return; }
+      if (!isWordValid(currentGuess)) { setError('Not in word list'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length)); setTimeout(() => setError(''), 1500); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length)); setTimeout(() => setError(''), 1500); return; }
 
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       setCurrentGuess('');
@@ -145,6 +147,9 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const completedBoards = state.boards.filter(b => b.status !== 'PLAYING').length;
   const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
+  // R2: the strip's points — the same total the score card shows.
+  const finishedPoints = state.status === 'PLAYING' ? null
+    : computeScoreBreakdown('OCTORDLE', state.status === 'WON', totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8, 0, undefined, undefined, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total;
 
   const handleShare = useCallback(async () => {
     const variant = await chooseShareVariant();
@@ -184,7 +189,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   return (
     <GameBackground
       mode="OCTORDLE"
-      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && <VictoryAnimation mode="OCTORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', false, totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
@@ -206,46 +211,52 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>}
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
-        {state.status !== 'PLAYING' && (
-          // FINISH_SPEC B6: two tinted result pills + the 3D share icon (no Home text link).
-          <ResultLine
-            className="mt-1.5"
-            won={state.status === 'WON'}
-            guesses={totalGuesses}
-            time={formatTime(elapsedTime)}
-            srText={state.status === 'WON' ? `All 8 solved in ${totalGuesses} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${completedBoards}/8`}
-            onShare={handleShare}
-            copied={copied}
-          >
-            {isDaily && <DailyRankBadge gameMode="OCTORDLE" />}
-            {!isDaily && isPro && <PlayAgainButton onClick={handleRestart} won={state.status === 'WON'} />}
-          </ResultLine>
-        )}
       </div>
 
-      {/* Boards (scrolls post-game so the ScoreBreakdownCard fits). */}
-      <div className={`flex-1 min-h-0 px-1 pt-2 pb-1 ${state.status === 'PLAYING' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        {state.status === 'PLAYING' ? (
-          <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
-        ) : (
-          /* Finished: compact uniform recap (completed-daily-board sizing) —
-             the in-play layout rendered 2-column modes zoomed huge post-game
-             while OctoWord's 4 columns looked right (iOS build-87 parity). */
-          <CompletedBoardsRecap boards={toRecapBoards(state.boards)} />
-        )}
-        {state.status !== 'PLAYING' && (
-          <ScoreBreakdownCard
-            gameMode="OCTORDLE"
-            completed={state.status === 'WON'}
-            guessCount={totalGuesses}
-            timeSeconds={elapsedTime}
-            boardsSolved={state.boards.filter(b => b.status === 'WON').length}
-            totalBoards={8}
-            day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
-          />
-        )}
-        {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="OCTORDLE" />}
-      </div>
+      {state.status === 'PLAYING' ? (
+        <div className="flex-1 min-h-0 px-1 pt-2 pb-1 overflow-hidden">
+          <MultiBoard accent={modeTrayAccent('OCTORDLE')} boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        </div>
+      ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the 8 boards in the
+        // mini grid with the biggest tiles that fit (2 × 2 vs 1 × 4 / 4 × 2 vs 2 × 4), the dock (share · Next daily /
+        // Leaderboard · the Unlimited card); the score breakdown under "More".
+        <FinishedScreen
+          fit="self"
+          strip={
+            <ResultStrip
+              won={state.status === 'WON'}
+              guesses={totalGuesses}
+              time={formatTime(elapsedTime)}
+              points={finishedPoints}
+              srText={state.status === 'WON' ? `All 8 solved in ${totalGuesses} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${completedBoards}/8`}
+            />
+          }
+          sub={isDaily ? <DailyRankBadge gameMode="OCTORDLE" /> : undefined}
+          board={<FittedBoardsRecap boards={toRecapBoards(state.boards)} />}
+          dock={
+            <FinishedDock
+              currentMode="OCTORDLE"
+              isDaily={!!isDaily}
+              onShare={handleShare}
+              copied={copied}
+              onNewPuzzle={!isDaily && isPro ? handleRestart : undefined}
+            />
+          }
+          moreLabel="Score breakdown"
+          more={
+            <ScoreBreakdownCard
+              gameMode="OCTORDLE"
+              completed={state.status === 'WON'}
+              guessCount={totalGuesses}
+              timeSeconds={elapsedTime}
+              boardsSolved={state.boards.filter(b => b.status === 'WON').length}
+              totalBoards={8}
+              day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
+            />
+          }
+        />
+      )}
 
       {/* Keyboard — hidden when game is complete */}
       {state.status === 'PLAYING' && (

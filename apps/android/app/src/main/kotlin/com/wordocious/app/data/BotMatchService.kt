@@ -53,50 +53,86 @@ interface VSTransport {
 
 // ── CPU opponent identity ──
 
+/**
+ * How a bot game is set up: one of the engine tiers (a cast bot borrows its tier,
+ * FINISH_SPEC D1), Beat your best ("ghost") or the Bot of the Day ("daily", the
+ * day host's bot, D2). Which cast bot plays rides alongside as its id
+ * (VsLaunch.Bot.castId / CpuOpponent.opponentId).
+ */
 enum class CpuKind { EASY, MEDIUM, HARD, ADAPTIVE, GHOST, DAILY;
     val key: String get() = name.lowercase()
 
-    /** The ladder id a finished game folds into (VS overhaul §7): easy→rook,
-     *  medium→lexi, hard→nova, adaptive→adapt; the Bot of the Day ("daily") and
-     *  Beat your best ("ghost") never move the ladder (core ladderAfterGame). */
+    /** The cast bot a bare tier falls back to (old callers): easy → Ivy, medium →
+     *  Opal, hard → Dewey, adaptive → Umi — the old Rook / Lexi / Nova / Adapt by
+     *  difficulty. The Bot of the Day ("daily") and Beat your best ("ghost") never
+     *  move the ladder (core ladderAfterGame). */
     val botId: String get() = when (this) {
-        EASY -> "rook"; MEDIUM -> "lexi"; HARD -> "nova"; ADAPTIVE -> "adapt"
-        GHOST -> "ghost"; DAILY -> "daily"
+        EASY -> "ivy"; MEDIUM -> "opal"; HARD -> "dewey"; ADAPTIVE -> "umi"
+        GHOST -> com.wordocious.core.BotCast.GHOST_ID; DAILY -> "daily"
     }
 
     companion object {
-        /** The kind that plays a ladder rung ("rook" → EASY … "adapt" → ADAPTIVE). */
-        fun forLadder(id: String): CpuKind = when (id) {
-            "rook" -> EASY; "nova" -> HARD; "adapt" -> ADAPTIVE; else -> MEDIUM
+        /** The kind (engine tier) that plays a cast bot ("rip" → EASY … "umi" → ADAPTIVE; old ids map). */
+        fun forLadder(id: String): CpuKind = when (com.wordocious.core.BotCast.member(id)?.tier) {
+            com.wordocious.core.BotCastTier.EASY -> EASY
+            com.wordocious.core.BotCastTier.HARD -> HARD
+            com.wordocious.core.BotCastTier.ADAPTIVE -> ADAPTIVE
+            else -> MEDIUM
         }
     }
 }
 
-/** A bot opponent's identity. `artId` names its picture (BotArt); the Bot of
- *  the Day is Lexi on everyone's screen (VS overhaul §8). */
-data class CpuIdentity(val name: String, val artId: String, val color: Long, val tier: BotTier)
+/** A bot opponent's identity. `artId` is the bot's id (BotArt draws its character;
+ *  the ghost keeps its own art); [castId] the cast bot (null for the ghost);
+ *  [guesses] its own solve range (null = the tier's / adaptive). */
+data class CpuIdentity(
+    val name: String,
+    val artId: String,
+    val color: Long,
+    val tier: BotTier,
+    val castId: String? = null,
+    val guesses: IntRange? = null,
+    val adaptive: Boolean = false,
+)
 
 object CpuOpponent {
     const val PREFIX = "cpu:"
-    fun opponentId(kind: CpuKind): String = "$PREFIX${kind.key}"
+
+    /** "cpu:<castId>" for a cast bot, "cpu:ghost" for Beat your best, "cpu:daily:<castId>"
+     *  for the Bot of the Day; a bare kind ("cpu:medium") when no bot is named. */
+    fun opponentId(kind: CpuKind, castId: String? = null): String = when {
+        kind == CpuKind.GHOST -> "${PREFIX}ghost"
+        kind == CpuKind.DAILY -> "${PREFIX}daily:${castId ?: com.wordocious.core.BotCast.botOfTheDay(CpuProgressionStore.todayUtc()).id}"
+        castId != null -> "$PREFIX$castId"
+        else -> "$PREFIX${kind.key}"
+    }
+
     fun isCpu(id: String?): Boolean = id?.startsWith(PREFIX) == true
 
+    private fun forMember(m: com.wordocious.core.BotCastMember): CpuIdentity =
+        CpuIdentity(m.name, m.id, m.color, m.botTier, m.id, m.guesses, m.tier == com.wordocious.core.BotCastTier.ADAPTIVE)
+
     fun identity(oppId: String): CpuIdentity {
-        return when (val raw = oppId.removePrefix(PREFIX)) {
-            "ghost" -> CpuIdentity("Your Ghost", "ghost", 0xFF64748B, BotTier.HARD)
-            "daily" -> CpuIdentity("Lexi", "lexi", 0xFFF59E0B, BotTier.MEDIUM)
-            "adaptive" -> CpuIdentity("Adapt", "adapt", 0xFF7C3AED, BotTier.MEDIUM)
-            else -> {
-                val tier = runCatching { BotTier.valueOf(raw.uppercase()) }.getOrDefault(BotTier.MEDIUM)
-                val p = BotPersonas.persona(tier)
-                CpuIdentity(p.name, p.id, p.color, p.tier)
-            }
+        val raw = oppId.removePrefix(PREFIX)
+        if (raw == "ghost") return CpuIdentity("Your Ghost", "ghost", 0xFF64748B, BotTier.HARD)
+        // The Bot of the Day (D2): the day host's bot ("daily:<id>"; a bare "daily" = today's).
+        if (raw == "daily" || raw.startsWith("daily:")) {
+            val id = raw.removePrefix("daily").removePrefix(":")
+            val m = com.wordocious.core.BotCast.member(id)
+                ?: com.wordocious.core.BotCast.botOfTheDay(CpuProgressionStore.todayUtc())
+            return forMember(m)
         }
+        com.wordocious.core.BotCast.member(raw)?.let { return forMember(it) }
+        // A bare tier (old opponent ids): its cast stand-in by difficulty.
+        val kind = runCatching { CpuKind.valueOf(raw.uppercase()) }.getOrDefault(CpuKind.MEDIUM)
+        return forMember(com.wordocious.core.BotCast.member(kind.botId)!!)
     }
 }
 
 data class BotConfig(
     val adaptive: BotEngine.AdaptiveHint? = null,
+    /** The cast bot's own solve range (FINISH_SPEC D1), narrowing its tier's. */
+    val guessRange: IntRange? = null,
     val ghostGuesses: Int? = null,
     val ghostTimeMs: Double? = null,
     val fixedSeed: String? = null,
@@ -169,6 +205,7 @@ class LocalBotMatchService(
         forceSolve = config.solve ?: (config.ghostGuesses != null),
         forceFail = config.solve == false,
         adaptive = config.adaptive,
+        guessRange = config.guessRange,
     )
 
     override fun connect(presenceId: String?, token: String?) { handler.post { onConnect?.invoke() } }

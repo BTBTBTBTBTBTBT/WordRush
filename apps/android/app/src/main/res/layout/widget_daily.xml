@@ -1,1126 +1,361 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "Daily Puzzles" medium widget, home redesign (founder, 2026-10-01): the home
-     banner as a widget. Frosted header strip (headline + day-streak flame), the
-     Wordocious row (8 chips, 28dp) and the Puzzles row (10 chips, 25dp), each
-     under its label · status · row-streak line, then the footer strip (wordmark ·
-     N/18 · points · live countdown). Today's frame, chip and footer look are kept.
-     Only RemoteViews-whitelisted views; empty LinearLayouts stand in for Space.
-     Colors and drawables are applied at render time by DailyWidgetProvider. -->
+<!-- FINISH_SPEC E2 + AL medium widget (finishing-touches `.wmed`): the Home wallpaper, the
+     cast spelling WORDOCIOUS across the top, today's eight dailies as mini game-card tiles
+     (accent wash + border + 4dp accent bar + the game icon; a purple check on finished
+     ones — drawn as bitmaps, RemoteViews can't layer them), today's rank (3D trophy) when
+     the app has it, and a row of four labeled stat chips that ALWAYS shows: [flame] 12 DAY
+     STREAK · [check] 5/18 SOLVED · [star] 3,420 POINTS · [clock] 7:42:10 NEW PUZZLES IN
+     (a live Chronometer to local midnight). The cast strip is what shrinks first. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_frame_brand">
+    android:background="@drawable/widget_card_bg">
 
-    <!-- One-window fill (the home banner's vertical tier blend + white sheen), drawn
-         as a small bitmap at render time and clipped to the inner corners on API 31+.
-         Older launchers hide it and fall back to a per-tier drawable on widget_root. -->
+    <!-- The wallpaper, a small center-cropped bitmap clipped to the corners on API 31+. -->
     <ImageView
         android:id="@+id/w_fill"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="2dp"
-        android:scaleType="fitXY"
-        android:background="@drawable/widget_fill_mask"
-        android:contentDescription="@null" />
-
-    <!-- Inner halo: 10% violet normally, gold glow on a Double Flawless. -->
-    <ImageView
-        android:id="@+id/w_halo"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="2dp"
-        android:scaleType="fitXY"
-        android:src="@drawable/widget_halo_violet"
+        android:scaleType="centerCrop"
+        android:background="@drawable/widget_wall_mask"
         android:contentDescription="@null" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingStart="11dp"
-        android:paddingEnd="11dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp">
+        android:padding="10dp">
 
-        <!-- Frosted header strip: the day's host (ART_SPEC §17) · headline (bannerHeadline) .... 3D flame day streak -->
+        <ImageView
+            android:id="@+id/w_cast"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:maxHeight="34dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/widget_strip_bg"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp">
+            android:gravity="center_vertical">
 
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
             <ImageView
-                android:id="@+id/w_host"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:layout_marginEnd="4dp"
+                android:id="@+id/w_t0"
+                android:src="@drawable/game_practice"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
                 android:scaleType="fitCenter"
-                android:src="@drawable/mascot_w"
                 android:contentDescription="@null" />
-
             <ImageView
-                android:id="@+id/w_trophy"
-                android:layout_width="13dp"
-                android:layout_height="13dp"
-                android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_w_trophy"
-                android:visibility="gone"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:id="@+id/w_title"
+                android:id="@+id/w_t1"
+                android:src="@drawable/game_gauntlet"
+                android:padding="5dp"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="36dp"
                 android:layout_weight="1"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="12.5sp"
-                android:letterSpacing="0.03"
-                android:textColor="#4C1D95"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:text="GOOD MORNING!" />
-
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
             <ImageView
-                android:id="@+id/w_flame"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:id="@+id/w_t2"
+                android:src="@drawable/game_quordle"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t3"
+                android:src="@drawable/game_octordle"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t4"
+                android:src="@drawable/game_sequence"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t5"
+                android:src="@drawable/game_rescue"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t6"
+                android:src="@drawable/game_six"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t7"
+                android:src="@drawable/game_seven"
+                android:padding="5dp"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            </LinearLayout>
+
+            <!-- Today's Daily Sweep rank as a labeled chip ([trophy] #3 / RANK); GONE when unknown. -->
+            <LinearLayout
+                android:id="@+id/w_side"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:src="@drawable/icon3d_flame"
-                android:contentDescription="@null" />
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/widget_chip_points"
+                android:paddingStart="5dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp">
 
-            <TextView
-                android:id="@+id/w_streak"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="13sp"
-                android:textColor="#C2410C"
-                android:text="0" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:minHeight="2dp"
-            android:orientation="vertical" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="3dp"
-            android:paddingEnd="3dp">
-
-            <TextView
-                android:id="@+id/w_wrow_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="8.5sp"
-                android:letterSpacing="0.1"
-                android:textColor="#6D28D9"
-                android:maxLines="1" />
-
-            <TextView
-                android:id="@+id/w_wrow_status"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="5dp"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="8.5sp"
-                android:letterSpacing="0.05"
-                android:textColor="#6D28D9"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <ImageView
-                android:id="@+id/w_wrow_flame"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/icon3d_flame"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:id="@+id/w_wrow_streak"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:textColor="#C2410C"
-                android:maxLines="1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <LinearLayout
-                android:id="@+id/w_word0"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
+                <LinearLayout
+                    android:id="@+id/w_rank_row"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
                     <ImageView
-                        android:id="@+id/w_word0_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
+                        android:id="@+id/w_rank_icon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/icon3d_trophy"
                         android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word0_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word0_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
                     <TextView
-                        android:id="@+id/w_word0_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word1_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word1_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word1_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word1_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word2_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word2_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word2_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word2_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word3_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word3_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word3_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word3_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word4"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word4_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word4_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word4_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word4_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word5"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word5_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word5_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word5_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word5_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word6"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word6_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word6_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word6_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word6_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_word7"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="28dp"
-                    android:layout_height="28dp">
-
-                    <ImageView
-                        android:id="@+id/w_word7_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word7_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_word7_icon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_word7_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
+                        android:id="@+id/w_rank"
+                        style="@style/WidgetNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:textSize="15sp"
+                        android:importantForAccessibility="no"
+                        android:text="#1" />
+                </LinearLayout>
+                <TextView
+                    style="@style/WidgetLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textSize="8sp"
+                    android:textColor="#B45309"
+                    android:text="RANK" />
             </LinearLayout>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:minHeight="2dp"
-            android:orientation="vertical" />
-
+        <!-- AL: the four labeled stat chips (always shown). -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="3dp"
-            android:paddingEnd="3dp">
-
-            <TextView
-                android:id="@+id/w_prow_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="8.5sp"
-                android:letterSpacing="0.1"
-                android:textColor="#6D28D9"
-                android:maxLines="1" />
-
-            <TextView
-                android:id="@+id/w_prow_status"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="5dp"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="8.5sp"
-                android:letterSpacing="0.05"
-                android:textColor="#6D28D9"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <ImageView
-                android:id="@+id/w_prow_flame"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/icon3d_flame"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:id="@+id/w_prow_streak"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:textColor="#C2410C"
-                android:maxLines="1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_marginTop="5dp"
+            android:orientation="horizontal">
             <LinearLayout
-                android:id="@+id/w_puz0"
+                android:id="@+id/w_streak_row"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
+                android:orientation="vertical"
+                android:background="@drawable/widget_chip_flame"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
                     <ImageView
-                        android:id="@+id/w_puz0_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
+                        android:src="@drawable/icon3d_flame"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
                         android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz0_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz0_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
                     <TextView
-                        android:id="@+id/w_puz0_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
+                        android:id="@+id/w_streak"
+                        style="@style/WidgetNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="17dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:gravity="center_vertical"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="9sp"
+                        android:autoSizeMaxTextSize="14sp"
+                        android:importantForAccessibility="no"
+                        android:text="0" />
+                </LinearLayout>
+                <TextView
+                    style="@style/WidgetLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textSize="8sp"
+                    android:textColor="#C2410C"
+                    android:text="DAY STREAK" />
             </LinearLayout>
             <LinearLayout
-                android:id="@+id/w_puz1"
+                android:id="@+id/w_solved_chip"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:background="@drawable/widget_chip_solved"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
                     <ImageView
-                        android:id="@+id/w_puz1_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
+                        android:src="@drawable/icon3d_badge_check"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
                         android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz1_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz1_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
                     <TextView
-                        android:id="@+id/w_puz1_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
+                        android:id="@+id/w_solved"
+                        style="@style/WidgetNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="17dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:gravity="center_vertical"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="9sp"
+                        android:autoSizeMaxTextSize="14sp"
+                        android:importantForAccessibility="no"
+                        android:text="0/18" />
+                </LinearLayout>
+                <TextView
+                    style="@style/WidgetLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textSize="8sp"
+                    android:textColor="#6D28D9"
+                    android:text="SOLVED" />
             </LinearLayout>
             <LinearLayout
-                android:id="@+id/w_puz2"
+                android:id="@+id/w_points_chip"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:background="@drawable/widget_chip_points"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
                     <ImageView
-                        android:id="@+id/w_puz2_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
+                        android:src="@drawable/art_badge_icon_star_sprite"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
                         android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz2_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz2_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
                     <TextView
-                        android:id="@+id/w_puz2_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
+                        android:id="@+id/w_points"
+                        style="@style/WidgetNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="17dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:gravity="center_vertical"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="9sp"
+                        android:autoSizeMaxTextSize="14sp"
+                        android:importantForAccessibility="no"
+                        android:text="0" />
+                </LinearLayout>
+                <TextView
+                    style="@style/WidgetLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textSize="8sp"
+                    android:textColor="#B45309"
+                    android:text="POINTS" />
             </LinearLayout>
             <LinearLayout
-                android:id="@+id/w_puz3"
+                android:id="@+id/w_clock_chip"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
+                android:layout_weight="1.35"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:background="@drawable/widget_chip_clock"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
                     <ImageView
-                        android:id="@+id/w_puz3_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
+                        android:id="@+id/w_clock_icon"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
                         android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz3_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz3_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz3_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
+                    <Chronometer
+                        android:id="@+id/w_countdown"
+                        style="@style/WidgetNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="17dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:gravity="center_vertical"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="9sp"
+                        android:autoSizeMaxTextSize="14sp" />
+                </LinearLayout>
+                <TextView
+                    style="@style/WidgetLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textSize="8sp"
+                    android:textColor="#0F766E"
+                    android:importantForAccessibility="yes"
+                    android:contentDescription="New puzzles in"
+                    android:text="NEW PUZZLES IN" />
             </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_puz4"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
-                    <ImageView
-                        android:id="@+id/w_puz4_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz4_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz4_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz4_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_puz5"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
-                    <ImageView
-                        android:id="@+id/w_puz5_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz5_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz5_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz5_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_puz6"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
-                    <ImageView
-                        android:id="@+id/w_puz6_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz6_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz6_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz6_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_puz7"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
-                    <ImageView
-                        android:id="@+id/w_puz7_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz7_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz7_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz7_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_puz8"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
-                    <ImageView
-                        android:id="@+id/w_puz8_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz8_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz8_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz8_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/w_puz9"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <FrameLayout
-                    android:layout_width="25dp"
-                    android:layout_height="25dp">
-
-                    <ImageView
-                        android:id="@+id/w_puz9_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_fill"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz9_dash"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_chip_sm_dash"
-                        android:contentDescription="@null" />
-
-                    <ImageView
-                        android:id="@+id/w_puz9_icon"
-                        android:layout_width="13dp"
-                        android:layout_height="13dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null" />
-
-                    <TextView
-                        android:id="@+id/w_puz9_glyph"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:fontFamily="@font/nunito"
-                        android:textStyle="bold"
-                        android:textSize="11sp"
-                        android:maxLines="1" />
-                </FrameLayout>
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:minHeight="2dp"
-            android:orientation="vertical" />
-
-        <!-- Footer strip: wordmark - N/18 · points - live countdown to local midnight -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/widget_footer_bg"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp">
-
-            <TextView
-                android:id="@+id/w_wordmark"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="9sp"
-                android:letterSpacing="0.12"
-                android:textColor="#A78BFA"
-                android:maxLines="1"
-                android:text="WORDOCIOUS" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1"
-                android:orientation="horizontal" />
-
-            <TextView
-                android:id="@+id/w_stat"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:textColor="#CC1F2937"
-                android:maxLines="1"
-                android:text="0/18" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1"
-                android:orientation="horizontal" />
-
-            <ImageView
-                android:id="@+id/w_hourglass"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:layout_marginEnd="2dp"
-                android:src="@drawable/ic_w_hourglass"
-                android:contentDescription="@null" />
-
-            <Chronometer
-                android:id="@+id/w_countdown"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/nunito"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:textColor="#7C3AED" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.Nunito
+import com.wordocious.app.ui.FinishInk
+import com.wordocious.app.ui.game.TrayState
+import com.wordocious.app.ui.game.gameTray
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.TileState
 import kotlinx.coroutines.delay
@@ -80,50 +87,75 @@ fun VsOpponentBar(
     }
     val dur = if (WTheme.reducedMotion) 0 else 400
     val animated by androidx.compose.animation.core.animateFloatAsState(fraction.coerceIn(0f, 1f), androidx.compose.animation.core.tween(dur), label = "oppBar")
+    // FINISH_SPEC A1 / D3: a tinted strip (always light, over the solo page) with a
+    // 4 dp teal band on top; a bot is its own character; the guess count is soft (A2).
+    val botId = avatarUrl?.takeIf { it.startsWith("bot:") }?.removePrefix("bot:")
     Row(
-        modifier.fillMaxWidth().height(56.dp).vsCard(14.dp).padding(horizontal = 10.dp, vertical = 8.dp),
+        // AB: at least 58 dp; grows with Larger Text instead of clipping the name.
+        modifier.fillMaxWidth().heightIn(min = 58.dp).vsRow(botId?.let { vsBotColor(it) } ?: VS_ACCENT, 14.dp)
+            .drawWithContent { drawContent(); drawRect(VS_ACCENT, size = androidx.compose.ui.geometry.Size(size.width, 4.dp.toPx())) }
+            .padding(start = 8.dp, end = 10.dp, top = 8.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        VsAvatar(avatarName, avatarUrl, size = 36.dp, borderColor = Color.Transparent)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (botId != null) BotAvatar(botId, 40.dp)
+        else VsAvatar(avatarName, avatarUrl, size = 36.dp, borderColor = Color.Transparent)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(
-                    name, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = VsTeal.deep,
+                    name, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = FinishInk.heading,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                 )
-                if (opponent.solved) Icon(Icons.Filled.Check, "Solved", tint = VsTeal.ink, modifier = Modifier.size(12.dp))
+                if (opponent.solved) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 13.dp, contentDescription = "Solved")
                 // Space is always reserved: the dot fades, the row never shifts.
                 Box(Modifier.size(7.dp).graphicsLayer { alpha = if (typing && !opponent.solved) 1f else 0f }) {
                     TypingPulseDot()
                 }
             }
-            Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(VsTeal.soft)) {
-                Box(Modifier.fillMaxWidth(animated).height(4.dp).clip(RoundedCornerShape(2.dp)).background(VsTeal.ink))
+            Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(vsWash(VS_ACCENT, 0.24f))) {
+                Box(
+                    Modifier.fillMaxWidth(animated).height(5.dp).clip(RoundedCornerShape(3.dp))
+                        .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF5EEAD4), VS_ACCENT))),
+                )
             }
-            Text(
-                "${opponent.attempts} ${if (opponent.attempts == 1) "guess" else "guesses"}",
-                fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub, maxLines = 1,
-            )
+            Row(
+                Modifier.semantics(mergeDescendants = true) { },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                VsNumber("${opponent.attempts}", 12.sp)
+                Text(if (opponent.attempts == 1) "guess" else "guesses", fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub, maxLines = 1)
+            }
         }
         when {
             stageName != null -> Column(horizontalAlignment = Alignment.End) {
-                Text("STAGE ${opponent.stagesCleared + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.label)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    VsCapsLabel("STAGE", color = VsTeal.label, fontSize = 9.sp)
+                    VsNumber("${opponent.stagesCleared + 1}", 12.sp)
+                }
                 Text(
                     stageName, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                    color = stageGradient.firstOrNull() ?: VsTeal.deep,
+                    color = stageGradient.firstOrNull()?.let { vsInk(it) } ?: VsTeal.deep,
                 )
             }
-            multi -> Text(
-                "${opponent.boardsSolved}/$liveTotalBoards boards",
-                fontSize = 12.sp, fontWeight = FontWeight.Black, color = VsTeal.ink, maxLines = 1,
-            )
+            multi -> Row(
+                Modifier.vsPill(VS_ACCENT, 10.dp).padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 3.dp)
+                    .semantics(mergeDescendants = true) { contentDescription = "${opponent.boardsSolved} of $liveTotalBoards boards" },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                VsNumber("${opponent.boardsSolved}/$liveTotalBoards", 13.sp)
+                VsCapsLabel("BOARDS", color = VsTeal.ink, fontSize = 8.5.sp)
+            }
             // A tiny colors-only board — only where it reads (Classic/Six/Seven;
-            // a long ProperNoundle name would not fit the row).
+            // a long ProperNoundle name would not fit the row) — in its own small tray (L).
             wordLength <= 7 -> {
                 val rows = maxOf(maxGuesses, opponent.tiles[0]?.size ?: 0, 1)
-                val cell = minOf(6f, (40f - (rows - 1)) / rows).dp
-                OpponentMiniBoard(opponent.tiles[0] ?: emptyList(), maxGuesses, wordLength, cell)
+                val cell = minOf(5.5f, (36f - (rows - 1)) / rows).dp
+                Box(
+                    Modifier.gameTray(
+                        VS_ACCENT, if (opponent.solved) TrayState.WON else TrayState.PLAYING,
+                        corner = 6.dp, padding = androidx.compose.foundation.layout.PaddingValues(2.dp), shadow = false,
+                    ),
+                ) { OpponentMiniBoard(opponent.tiles[0] ?: emptyList(), maxGuesses, wordLength, cell) }
             }
         }
     }
@@ -137,7 +169,7 @@ private fun TypingPulseDot() {
     val a by androidx.compose.animation.core.animateFloatAsState(
         if (on || WTheme.reducedMotion) 1f else 0.3f, androidx.compose.animation.core.tween(if (WTheme.reducedMotion) 0 else 450), label = "typingDot",
     )
-    Box(Modifier.fillMaxSize().graphicsLayer { alpha = a }.clip(CircleShape).background(VsTeal.ink))
+    Box(Modifier.fillMaxSize().graphicsLayer { alpha = a }.clip(CircleShape).background(VS_ACCENT))
 }
 
 /**
@@ -187,8 +219,9 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
                                 rotationX = -85f * (1f - v)
                                 cameraDistance = 12f * density
                             }
-                            .clip(RoundedCornerShape(radius)).background(color)
-                            .then(if (st == null || st == TileState.EMPTY) Modifier.border(1.dp, WTheme.border, RoundedCornerShape(radius)) else Modifier),
+                            .clip(RoundedCornerShape(radius))
+                            // L: empty cells are soft wells in the tray color, not a gray grid.
+                            .background(if (st == null || st == TileState.EMPTY) Color(0xFF7C3AED).copy(alpha = 0.08f) else color),
                     )
                 }
             }

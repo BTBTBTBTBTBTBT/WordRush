@@ -33,6 +33,11 @@ object FriendsService {
         @SerialName("avatar_url") val avatarUrl: String? = null,
         // Additive (Aug 11): emoji avatar beats the initial fallback.
         @SerialName("avatar_emoji") val avatarEmoji: String? = null,
+        // FINISH_SPEC AH additive: the worn character + level-tier frame (absent → null).
+        @SerialName("avatar_cast_id") val avatarCastId: String? = null,
+        @SerialName("avatar_frame") val avatarFrame: String? = null,
+        // FINISH_SPEC AN3 additive: the build-your-own mascot (absent / null → the default).
+        @SerialName("avatar_config") val avatarConfig: kotlinx.serialization.json.JsonElement? = null,
         val level: Int = 0,
         val since: String? = null,
         val requestedAt: String? = null,

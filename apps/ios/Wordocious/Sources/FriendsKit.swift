@@ -32,6 +32,18 @@ enum FriendsKit {
         }
     }
 
+    /// FINISH_SPEC §C4: each friend game's card accent + top bar (mockup `.gt`).
+    static func tileAccent(_ k: FriendlyKind) -> Color {
+        switch k {
+        case .rps: return Color(hex: 0xF97316)
+        case .ttt: return Color(hex: 0x7C3AED)
+        case .coin: return Color(hex: 0xEAB308)
+        case .pass: return Color(hex: 0x0EA5E9)
+        case .ghost: return Color(hex: 0x8B5CF6)
+        case .chain: return Color(hex: 0x10B981)
+        }
+    }
+
     /// The game screen's title gradient (§4).
     static func gradient(_ k: FriendlyKind) -> [Color] {
         switch k {
@@ -89,13 +101,14 @@ enum FriendsKit {
 
 // MARK: - Section rows
 
-/// 11/900 gray section label with an optional right side.
+/// The section label (FINISH_SPEC §C4: the mockup's 11/900 `.lbl` in the Friends
+/// pink ink) with an optional right side.
 struct FriendsSectionHeader<Trailing: View>: View {
     let title: String
     @ViewBuilder var trailing: () -> Trailing
     var body: some View {
         HStack(spacing: 8) {
-            VSSectionLabel(text: title)
+            FriendsLabel(title)
             Spacer(minLength: 6)
             trailing()
         }
@@ -105,20 +118,6 @@ struct FriendsSectionHeader<Trailing: View>: View {
 
 extension FriendsSectionHeader where Trailing == EmptyView {
     init(title: String) { self.init(title: title) { EmptyView() } }
-}
-
-/// Solid or soft pink pill (PLAY / Challenge / Nudge / WAITING).
-struct FriendsPill: View {
-    let title: String
-    var solid = true
-    var muted = false
-    var body: some View {
-        Text(title).font(Brand.font(11, .black)).tracking(0.5)
-            .foregroundStyle(muted ? FriendsKit.label : solid ? .white : FriendsKit.solid)
-            .padding(.horizontal, 12).frame(height: 28)
-            .background(Capsule().fill(muted ? Color(hex: 0xF3F4F6) : solid ? FriendsKit.solid : FriendsKit.soft))
-            .lineLimit(1).fixedSize()
-    }
 }
 
 // MARK: - Pocket-game icons (outline, §0)
@@ -246,7 +245,7 @@ struct FriendsPresenceAvatar: View {
     var body: some View {
         // §20: the on-now ring follows the avatar — circle around a photo,
         // rounded square around a letter tile.
-        let tile = AvatarView.showsTile(url)
+        let tile = AvatarView.showsTile(url, username: username)
         AvatarView(url: url, username: username, size: size, emoji: emoji)
             .padding(online && ring ? 3 : 0)
             .background {
@@ -262,9 +261,13 @@ struct FriendsPresenceAvatar: View {
             }
             .overlay(alignment: .bottomTrailing) {
                 if online {
-                    Circle().fill(FriendsKit.green)
-                        .frame(width: max(8, size * 0.26), height: max(8, size * 0.26))
+                    // FINISH_SPEC §C4: a 12-pt green dot with a 2-pt white ring, bottom-right.
+                    let dot = size >= 30 ? 12 : max(8, size * 0.3)
+                    Circle().fill(FriendsInk.online)
+                        .frame(width: dot, height: dot)
                         .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        .offset(x: 3, y: 1)
+                        .accessibilityHidden(true)
                 }
             }
             .onAppear {

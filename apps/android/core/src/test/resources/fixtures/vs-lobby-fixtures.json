@@ -386,7 +386,7 @@
         "losses": 9
       },
       "ladder": 2,
-      "line": "PEOPLE 12–7 · BOTS 31–9 · LADDER 2/4"
+      "line": "PEOPLE 12–7 · BOTS 31–9 · LADDER 2/10"
     },
     {
       "people": {
@@ -409,7 +409,7 @@
         "wins": 1,
         "losses": 0
       },
-      "ladder": 4,
+      "ladder": 10,
       "line": "PEOPLE 1–0 · BOTS 1–0 · LADDER CLEARED"
     },
     {
@@ -422,7 +422,7 @@
         "losses": 1
       },
       "ladder": 0,
-      "line": "PEOPLE 3–3 · BOTS 0–1 · LADDER 0/4"
+      "line": "PEOPLE 3–3 · BOTS 0–1 · LADDER 0/10"
     }
   ],
   "outcomes": [
@@ -599,7 +599,7 @@
   ],
   "ladder": [
     {
-      "bot": "rook",
+      "bot": "rip",
       "won": true,
       "after": {
         "cleared": 0,
@@ -607,29 +607,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "next",
           "line": "Win 3 in a row to clear · 1 so far"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "locked",
-          "line": "Clear Rook to unlock"
+          "line": "Clear Rip to unlock"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "locked",
-          "line": "Clear Lexi to unlock"
+          "line": "Clear Ivy to unlock"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "nova",
+      "bot": "dewey",
       "won": false,
       "after": {
         "cleared": 0,
@@ -637,29 +667,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "next",
           "line": "Win 3 in a row to clear · 1 so far"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "locked",
-          "line": "Clear Rook to unlock"
+          "line": "Clear Rip to unlock"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "locked",
-          "line": "Clear Lexi to unlock"
+          "line": "Clear Ivy to unlock"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "rook",
+      "bot": "rip",
       "won": true,
       "after": {
         "cleared": 0,
@@ -667,24 +727,234 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "next",
           "line": "Win 3 in a row to clear · 2 so far"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "locked",
-          "line": "Clear Rook to unlock"
+          "line": "Clear Rip to unlock"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "locked",
-          "line": "Clear Lexi to unlock"
+          "line": "Clear Ivy to unlock"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "rip",
+      "won": true,
+      "after": {
+        "cleared": 1,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "ollie",
+          "state": "locked",
+          "line": "Clear Ivy to unlock"
+        },
+        {
+          "id": "opal",
+          "state": "locked",
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "ivy",
+      "won": true,
+      "after": {
+        "cleared": 1,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "ollie",
+          "state": "locked",
+          "line": "Clear Ivy to unlock"
+        },
+        {
+          "id": "opal",
+          "state": "locked",
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "ivy",
+      "won": false,
+      "after": {
+        "cleared": 1,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "ollie",
+          "state": "locked",
+          "line": "Clear Ivy to unlock"
+        },
+        {
+          "id": "opal",
+          "state": "locked",
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
@@ -693,123 +963,63 @@
       "won": true,
       "after": {
         "cleared": 1,
-        "run": 0
-      },
-      "rungs": [
-        {
-          "id": "rook",
-          "state": "cleared",
-          "line": "Cleared"
-        },
-        {
-          "id": "lexi",
-          "state": "next",
-          "line": "Win 3 in a row to clear · 0 so far"
-        },
-        {
-          "id": "nova",
-          "state": "locked",
-          "line": "Clear Lexi to unlock"
-        },
-        {
-          "id": "adapt",
-          "state": "locked",
-          "line": "Clear Nova to unlock"
-        }
-      ]
-    },
-    {
-      "bot": "lexi",
-      "won": true,
-      "after": {
-        "cleared": 1,
         "run": 1
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "next",
           "line": "Win 3 in a row to clear · 1 so far"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "locked",
-          "line": "Clear Lexi to unlock"
+          "line": "Clear Ivy to unlock"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "lexi",
-      "won": false,
-      "after": {
-        "cleared": 1,
-        "run": 0
-      },
-      "rungs": [
-        {
-          "id": "rook",
-          "state": "cleared",
-          "line": "Cleared"
-        },
-        {
-          "id": "lexi",
-          "state": "next",
-          "line": "Win 3 in a row to clear · 0 so far"
-        },
-        {
-          "id": "nova",
-          "state": "locked",
-          "line": "Clear Lexi to unlock"
-        },
-        {
-          "id": "adapt",
-          "state": "locked",
-          "line": "Clear Nova to unlock"
-        }
-      ]
-    },
-    {
-      "bot": "lexi",
-      "won": true,
-      "after": {
-        "cleared": 1,
-        "run": 1
-      },
-      "rungs": [
-        {
-          "id": "rook",
-          "state": "cleared",
-          "line": "Cleared"
-        },
-        {
-          "id": "lexi",
-          "state": "next",
-          "line": "Win 3 in a row to clear · 1 so far"
-        },
-        {
-          "id": "nova",
-          "state": "locked",
-          "line": "Clear Lexi to unlock"
-        },
-        {
-          "id": "adapt",
-          "state": "locked",
-          "line": "Clear Nova to unlock"
-        }
-      ]
-    },
-    {
-      "bot": "lexi",
+      "bot": "ivy",
       "won": true,
       "after": {
         "cleared": 1,
@@ -817,29 +1027,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "next",
           "line": "Win 3 in a row to clear · 2 so far"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "locked",
-          "line": "Clear Lexi to unlock"
+          "line": "Clear Ivy to unlock"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "lexi",
+      "bot": "ivy",
       "won": true,
       "after": {
         "cleared": 2,
@@ -847,29 +1087,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "next",
           "line": "Win 3 in a row to clear · 0 so far"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "nova",
+      "bot": "ollie",
       "won": true,
       "after": {
         "cleared": 2,
@@ -877,29 +1147,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "next",
           "line": "Win 3 in a row to clear · 1 so far"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "nova",
+      "bot": "ollie",
       "won": true,
       "after": {
         "cleared": 2,
@@ -907,29 +1207,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "next",
           "line": "Win 3 in a row to clear · 2 so far"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "locked",
-          "line": "Clear Nova to unlock"
+          "line": "Clear Ollie to unlock"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "nova",
+      "bot": "ollie",
       "won": true,
       "after": {
         "cleared": 3,
@@ -937,29 +1267,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "next",
           "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "adapt",
+      "bot": "opal",
       "won": true,
       "after": {
         "cleared": 3,
@@ -967,29 +1327,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "next",
           "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "adapt",
+      "bot": "opal",
       "won": true,
       "after": {
         "cleared": 3,
@@ -997,29 +1387,59 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "adapt",
+          "id": "opal",
           "state": "next",
           "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "cosmo",
+          "state": "locked",
+          "line": "Clear Opal to unlock"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
         }
       ]
     },
     {
-      "bot": "adapt",
+      "bot": "opal",
       "won": true,
       "after": {
         "cleared": 4,
@@ -1027,56 +1447,1421 @@
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "adapt",
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "cosmo",
+      "won": true,
+      "after": {
+        "cleared": 4,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "cosmo",
+      "won": true,
+      "after": {
+        "cleared": 4,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "umi",
+          "state": "locked",
+          "line": "Clear Cosmo to unlock"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "cosmo",
+      "won": true,
+      "after": {
+        "cleared": 5,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "umi",
+      "won": true,
+      "after": {
+        "cleared": 5,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "umi",
+      "won": true,
+      "after": {
+        "cleared": 5,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "ozzy",
+          "state": "locked",
+          "line": "Clear Umi to unlock"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "umi",
+      "won": true,
+      "after": {
+        "cleared": 6,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "ozzy",
+      "won": true,
+      "after": {
+        "cleared": 6,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "ozzy",
+      "won": true,
+      "after": {
+        "cleared": 6,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "dewey",
+          "state": "locked",
+          "line": "Clear Ozzy to unlock"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "ozzy",
+      "won": true,
+      "after": {
+        "cleared": 7,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "dewey",
+      "won": true,
+      "after": {
+        "cleared": 7,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "dewey",
+      "won": true,
+      "after": {
+        "cleared": 7,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "scoot",
+          "state": "locked",
+          "line": "Clear Dewey to unlock"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "dewey",
+      "won": true,
+      "after": {
+        "cleared": 8,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "scoot",
+      "won": true,
+      "after": {
+        "cleared": 8,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "scoot",
+      "won": true,
+      "after": {
+        "cleared": 8,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        },
+        {
+          "id": "webster",
+          "state": "locked",
+          "line": "Clear Scoot to unlock"
+        }
+      ]
+    },
+    {
+      "bot": "scoot",
+      "won": true,
+      "after": {
+        "cleared": 9,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "webster",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 0 so far"
+        }
+      ]
+    },
+    {
+      "bot": "webster",
+      "won": true,
+      "after": {
+        "cleared": 9,
+        "run": 1
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "webster",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 1 so far"
+        }
+      ]
+    },
+    {
+      "bot": "webster",
+      "won": true,
+      "after": {
+        "cleared": 9,
+        "run": 2
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "webster",
+          "state": "next",
+          "line": "Win 3 in a row to clear · 2 so far"
+        }
+      ]
+    },
+    {
+      "bot": "webster",
+      "won": true,
+      "after": {
+        "cleared": 10,
+        "run": 0
+      },
+      "rungs": [
+        {
+          "id": "rip",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ivy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ollie",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "webster",
           "state": "cleared",
           "line": "Cleared"
         }
       ]
     },
     {
-      "bot": "adapt",
+      "bot": "webster",
       "won": true,
       "after": {
-        "cleared": 4,
+        "cleared": 10,
         "run": 0
       },
       "rungs": [
         {
-          "id": "rook",
+          "id": "rip",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "lexi",
+          "id": "ivy",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "nova",
+          "id": "ollie",
           "state": "cleared",
           "line": "Cleared"
         },
         {
-          "id": "adapt",
+          "id": "opal",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "cosmo",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "umi",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "ozzy",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "dewey",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "scoot",
+          "state": "cleared",
+          "line": "Cleared"
+        },
+        {
+          "id": "webster",
           "state": "cleared",
           "line": "Cleared"
         }
       ]
+    }
+  ],
+  "cast": [
+    {
+      "id": "rip",
+      "name": "Rip",
+      "castId": "r",
+      "rung": 1,
+      "tier": "easy",
+      "guesses": [
+        6,
+        6
+      ],
+      "trait": "Easy going",
+      "color": "#22c55e",
+      "solveLine": "Solves in 6"
+    },
+    {
+      "id": "ivy",
+      "name": "Ivy",
+      "castId": "i",
+      "rung": 2,
+      "tier": "easy",
+      "guesses": [
+        5,
+        6
+      ],
+      "trait": "Shy but steady",
+      "color": "#10b981",
+      "solveLine": "Solves in 5–6"
+    },
+    {
+      "id": "ollie",
+      "name": "Ollie",
+      "castId": "o1",
+      "rung": 3,
+      "tier": "easy",
+      "guesses": [
+        5,
+        5
+      ],
+      "trait": "Cheers every guess",
+      "color": "#f97316",
+      "solveLine": "Solves in 5"
+    },
+    {
+      "id": "opal",
+      "name": "Opal",
+      "castId": "o2",
+      "rung": 4,
+      "tier": "medium",
+      "guesses": [
+        4,
+        5
+      ],
+      "trait": "A little dramatic",
+      "color": "#ec4899",
+      "solveLine": "Solves in 4–5"
+    },
+    {
+      "id": "cosmo",
+      "name": "Cosmo",
+      "castId": "c",
+      "rung": 5,
+      "tier": "medium",
+      "guesses": [
+        4,
+        5
+      ],
+      "trait": "Bold openers",
+      "color": "#0ea5e9",
+      "solveLine": "Solves in 4–5"
+    },
+    {
+      "id": "umi",
+      "name": "Umi",
+      "castId": "u",
+      "rung": 6,
+      "tier": "adaptive",
+      "guesses": null,
+      "trait": "Matches your form",
+      "color": "#8b5cf6",
+      "solveLine": "Matches your form"
+    },
+    {
+      "id": "ozzy",
+      "name": "Ozzy",
+      "castId": "o3",
+      "rung": 7,
+      "tier": "medium",
+      "guesses": [
+        4,
+        5
+      ],
+      "trait": "Tricky guesses",
+      "color": "#eab308",
+      "solveLine": "Solves in 4–5"
+    },
+    {
+      "id": "dewey",
+      "name": "Dewey",
+      "castId": "d",
+      "rung": 8,
+      "tier": "hard",
+      "guesses": [
+        3,
+        4
+      ],
+      "trait": "Studies every letter",
+      "color": "#2563eb",
+      "solveLine": "Solves in 3–4"
+    },
+    {
+      "id": "scoot",
+      "name": "Scoot",
+      "castId": "s",
+      "rung": 9,
+      "tier": "hard",
+      "guesses": [
+        2,
+        4
+      ],
+      "trait": "Lightning fast",
+      "color": "#ef4444",
+      "solveLine": "Solves in 2–4"
+    },
+    {
+      "id": "webster",
+      "name": "Webster",
+      "castId": "w",
+      "rung": 10,
+      "tier": "hard",
+      "guesses": [
+        2,
+        3
+      ],
+      "trait": "The boss",
+      "color": "#7c3aed",
+      "solveLine": "Solves in 2–3"
+    }
+  ],
+  "legacy": [
+    {
+      "id": "rook",
+      "canonical": "ivy"
+    },
+    {
+      "id": "lexi",
+      "canonical": "opal"
+    },
+    {
+      "id": "nova",
+      "canonical": "dewey"
+    },
+    {
+      "id": "adapt",
+      "canonical": "umi"
+    },
+    {
+      "id": "ghost",
+      "canonical": "ghost"
+    },
+    {
+      "id": "daily",
+      "canonical": "daily"
+    },
+    {
+      "id": "webster",
+      "canonical": "webster"
+    }
+  ],
+  "legacyCleared": [
+    {
+      "old": 0,
+      "cleared": 0
+    },
+    {
+      "old": 1,
+      "cleared": 2
+    },
+    {
+      "old": 2,
+      "cleared": 4
+    },
+    {
+      "old": 3,
+      "cleared": 7
+    },
+    {
+      "old": 4,
+      "cleared": 10
+    }
+  ],
+  "botOfDay": [
+    {
+      "day": "2026-10-04",
+      "id": "ozzy"
+    },
+    {
+      "day": "2026-10-05",
+      "id": "dewey"
+    },
+    {
+      "day": "2026-10-06",
+      "id": "ivy"
+    },
+    {
+      "day": "2026-10-07",
+      "id": "umi"
+    },
+    {
+      "day": "2026-10-08",
+      "id": "scoot"
+    },
+    {
+      "day": "2026-10-09",
+      "id": "opal"
+    },
+    {
+      "day": "2026-10-10",
+      "id": "ollie"
+    },
+    {
+      "day": "2027-01-01",
+      "id": "opal"
     }
   ]
 }

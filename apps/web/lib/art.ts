@@ -42,7 +42,9 @@ export type TitleArtName =
   | 'art-title-welcome'
   | 'art-title-leaderboard'
   // §12: the Home section header above the daily games (§19.2: reads just DAILIES).
-  | 'art-title-dailies';
+  | 'art-title-dailies'
+  // FINISH_SPEC O1: the Home VS BATTLE section title (lettering only).
+  | 'art-title-vsbattle';
 
 /**
  * The seamless letter-tile page pattern (§11; v2 §18): 720 px square of big
@@ -105,7 +107,21 @@ export type SceneName =
   | 'flawless-star'
   | 'sweep-broom'
   | 'banner-sweep'
-  | 'banner-flawless';
+  | 'banner-flawless'
+  // VS lobby hero banner and the ladder-cleared celebration (FINISH_SPEC D)
+  | 'vs-faceoff'
+  | 'ladder-cleared'
+  // Gauntlet finish screen (FINISH_SPEC Q): S on the gold staircase with the trophy, D cheering
+  | 'gauntlet-champion'
+  // Unlimited (FINISH_SPEC R3): U floating with a loop of candy tiles orbiting her
+  | 'unlimited-loop'
+  // Friends invites + gifts (FINISH_SPEC T)
+  | 'friends-match'
+  | 'invite-sent'
+  | 'gift-pro'
+  // First-run onboarding (FINISH_SPEC W)
+  | 'onboard-tiles'
+  | 'onboard-score';
 export type SceneArtName = `art-scene-${SceneName}`;
 
 /** Which scene each empty / error / done state draws (§7), beside PAGE_HOSTS. */
@@ -174,7 +190,87 @@ export function poseSrc<K extends PoseCastId>(id: K, pose: PoseTable[K][number])
   return artSrc(poseArt(id, pose));
 }
 
-export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName | PoseArtName;
+/**
+ * Starsweep pieces (FINISH_SPEC H): glossy candy star / cross images, 256 px
+ * square, transparent — a placed (unchecked) star, a right star, a wrong star
+ * and the lilac X — drawn at ~78% of a board cell in place of the ★ / × glyphs.
+ */
+export const STARSWEEP_PIECES = ['star-placed', 'star-correct', 'star-wrong', 'cross'] as const;
+export type StarsweepPiece = (typeof STARSWEEP_PIECES)[number];
+export type StarsweepArtName = `art-starsweep-${StarsweepPiece}`;
+
+/** Public path of a Starsweep piece, e.g. starsweepSrc('cross') → /art/art-starsweep-cross.webp. */
+export function starsweepSrc(piece: StarsweepPiece): string {
+  return artSrc(`art-starsweep-${piece}`);
+}
+
+/**
+ * Muddle coins (FINISH_SPEC I): glossy blank coins, 256 px square,
+ * transparent; the letter is drawn on top in code. Empty = a gold ring (over
+ * a frosted cell), filled = purple with a gold rim, hint = violet + sparkle,
+ * punchline = gold (the punchline tray).
+ */
+export const MUDDLE_COINS = ['empty', 'filled', 'hint', 'punchline'] as const;
+export type MuddleCoin = (typeof MUDDLE_COINS)[number];
+export type MuddleCoinArtName = `art-muddle-coin-${MuddleCoin}`;
+
+/** Public path of a Muddle coin, e.g. muddleCoinSrc('filled') → /art/art-muddle-coin-filled.webp. */
+export function muddleCoinSrc(coin: MuddleCoin): string {
+  return artSrc(`art-muddle-coin-${coin}`);
+}
+
+/**
+ * Game pieces (FINISH_SPEC J): glossy blank pieces, 256 px square,
+ * transparent — Hubbub's lilac hexagon and gold center hexagon (the letter is
+ * drawn on top in code), Tic-Tac-Tile's purple X and pink O.
+ */
+export const GAME_PIECES = ['hex', 'hex-center', 'ttt-x', 'ttt-o'] as const;
+export type GamePiece = (typeof GAME_PIECES)[number];
+export type GamePieceArtName = `art-piece-${GamePiece}`;
+
+/** Public path of a game piece, e.g. pieceSrc('hex-center') → /art/art-piece-hex-center.webp. */
+export function pieceSrc(piece: GamePiece): string {
+  return artSrc(`art-piece-${piece}`);
+}
+
+/** Medals (Stats Daily Medals, the ladder trophy): glossy 3D, 256 px square, transparent. */
+export const MEDALS = ['gold', 'silver', 'bronze', 'trophy'] as const;
+export type Medal = (typeof MEDALS)[number];
+export type MedalArtName = `art-medal-${Medal}`;
+
+/** Public path of a medal, e.g. medalSrc('gold') → /art/art-medal-gold.webp. */
+export function medalSrc(medal: Medal): string {
+  return artSrc(`art-medal-${medal}`);
+}
+
+/**
+ * 3D badges (FINISH_SPEC V, AA): achievement icons (one per achievement-service
+ * `icon` key), the level tiers + the Pro member mark, and the small gold crown
+ * sprite Pro members wear. 256 px square, transparent.
+ */
+export const ACHIEVEMENT_BADGES = ['calendar', 'crown', 'flame', 'grid', 'group', 'key-round', 'medal', 'quote', 'shuffle', 'sparkles', 'star', 'swords', 'target', 'trending-up', 'trophy', 'zap'] as const;
+export const LEVEL_BADGES = ['level-bronze', 'level-diamond', 'level-gold', 'level-platinum', 'level-pro', 'level-silver'] as const;
+export type BadgeName = (typeof ACHIEVEMENT_BADGES)[number] | (typeof LEVEL_BADGES)[number] | 'pro-crown-sprite' | 'icon-star-sprite' | 'icon-zap-sprite';
+export type BadgeArtName = `art-badge-${BadgeName}`;
+
+/** Public path of a badge, e.g. badgeSrc('flame') → /art/art-badge-flame.webp. */
+export function badgeSrc(name: BadgeName): string {
+  return artSrc(`art-badge-${name}`);
+}
+
+/**
+ * Halloween cast skins (FINISH_SPEC X): one per cast member, 320 px square,
+ * the same framing as the cast poses; they replace the hero cast during the
+ * season (core currentSeason).
+ */
+export type HalloweenArtName = `art-halloween-${PoseCastId}`;
+
+/** Public path of a cast member's Halloween skin. */
+export function halloweenSrc(id: PoseCastId): string {
+  return artSrc(`art-halloween-${id}`);
+}
+
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName | PoseArtName | StarsweepArtName | MuddleCoinArtName | GamePieceArtName | MedalArtName | BadgeArtName | HalloweenArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -185,25 +281,26 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-day-thursday': [879, 482],
   'art-day-friday': [853, 591],
   'art-day-saturday': [898, 502],
-  'art-title-friends': [980, 249],
-  'art-title-stats': [1080, 257],
-  'art-title-records': [1080, 154],
-  'art-title-vs': [757, 158],
-  'art-title-puzzles': [1080, 206],
-  'art-title-wotd': [1080, 174],
-  'art-title-settings': [1080, 205],
-  'art-title-howto': [1080, 211],
-  'art-title-guides': [1080, 238],
-  'art-title-strategy': [1080, 239],
-  'art-title-words': [1080, 244],
-  'art-title-faq': [966, 290],
-  'art-title-privacy': [1080, 254],
-  'art-title-terms': [1080, 246],
-  'art-title-gopro': [1080, 218],
-  'art-title-moregames': [1080, 211],
-  'art-title-welcome': [1049, 233],
-  'art-title-leaderboard': [1080, 214],
-  'art-title-dailies': [1080, 246],
+  'art-title-friends': [900, 238],
+  'art-title-stats': [900, 312],
+  'art-title-records': [899, 85],
+  'art-title-vs': [572, 95],
+  'art-title-puzzles': [607, 124],
+  'art-title-wotd': [899, 96],
+  'art-title-settings': [662, 123],
+  'art-title-howto': [900, 122],
+  'art-title-guides': [648, 166],
+  'art-title-strategy': [899, 167],
+  'art-title-words': [900, 227],
+  'art-title-faq': [539, 242],
+  'art-title-privacy': [899, 201],
+  'art-title-terms': [737, 209],
+  'art-title-gopro': [620, 141],
+  'art-title-moregames': [899, 129],
+  'art-title-welcome': [805, 153],
+  'art-title-leaderboard': [900, 135],
+  'art-title-vsbattle': [1080, 262],
+  'art-title-dailies': [900, 244],
   'art-bg-tiles': [720, 720],
   'art-moment-victory': [880, 180],
   'art-moment-soclose': [899, 179],
@@ -220,12 +317,12 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-scene-o3-notfound': [374, 298],
   'art-scene-i-invite': [291, 340],
   'art-scene-d-nostats': [332, 277],
-  'art-scene-pro-crown': [600, 755],
-  'art-scene-shield-guard': [600, 520],
-  'art-scene-flawless-star': [600, 689],
-  'art-scene-sweep-broom': [600, 538],
-  'art-scene-banner-sweep': [600, 367],
-  'art-scene-banner-flawless': [600, 387],
+  'art-scene-pro-crown': [746, 939],
+  'art-scene-shield-guard': [894, 775],
+  'art-scene-flawless-star': [796, 914],
+  'art-scene-sweep-broom': [900, 807],
+  'art-scene-banner-sweep': [1200, 734],
+  'art-scene-banner-flawless': [1200, 774],
   'art-game-practice': [900, 232],
   'art-game-gauntlet': [895, 208],
   'art-game-quordle': [900, 204],
@@ -268,6 +365,71 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-wall-game-cryptogram': [1179, 2556],
   'art-wall-game-wordsearch': [1179, 2556],
   'art-wall-game-regions': [1179, 2556],
+  // FINISH_SPEC H: the Starsweep pieces, 256 px square.
+  'art-starsweep-star-placed': [256, 256],
+  'art-starsweep-star-correct': [256, 256],
+  'art-starsweep-star-wrong': [256, 256],
+  'art-starsweep-cross': [256, 256],
+  // FINISH_SPEC I: the Muddle coins, 256 px square.
+  'art-muddle-coin-empty': [256, 256],
+  'art-muddle-coin-filled': [256, 256],
+  'art-muddle-coin-hint': [256, 256],
+  'art-muddle-coin-punchline': [256, 256],
+  'art-scene-vs-faceoff': [1200, 638],
+  'art-scene-ladder-cleared': [875, 926],
+  'art-scene-gauntlet-champion': [1200, 815],
+  'art-scene-unlimited-loop': [900, 759],
+  'art-scene-friends-match': [1200, 832],
+  'art-scene-invite-sent': [802, 870],
+  'art-scene-gift-pro': [900, 755],
+  'art-medal-gold': [256, 256],
+  'art-medal-silver': [256, 256],
+  'art-medal-bronze': [256, 256],
+  'art-medal-trophy': [256, 256],
+  // FINISH_SPEC V / AA badges, X Halloween skins, W onboarding scenes.
+  'art-badge-calendar': [256, 256],
+  'art-badge-crown': [256, 256],
+  'art-badge-flame': [256, 256],
+  'art-badge-grid': [256, 256],
+  'art-badge-group': [256, 256],
+  'art-badge-key-round': [256, 256],
+  'art-badge-level-bronze': [256, 256],
+  'art-badge-level-diamond': [256, 256],
+  'art-badge-level-gold': [256, 256],
+  'art-badge-level-platinum': [256, 256],
+  'art-badge-level-pro': [256, 256],
+  'art-badge-level-silver': [256, 256],
+  'art-badge-medal': [256, 256],
+  'art-badge-pro-crown-sprite': [256, 256],
+  // FINISH_SPEC AL addendum 2: chip icons (points star, speed bolt).
+  'art-badge-icon-star-sprite': [256, 256],
+  'art-badge-icon-zap-sprite': [256, 256],
+  'art-badge-quote': [256, 256],
+  'art-badge-shuffle': [256, 256],
+  'art-badge-sparkles': [256, 256],
+  'art-badge-star': [256, 256],
+  'art-badge-swords': [256, 256],
+  'art-badge-target': [256, 256],
+  'art-badge-trending-up': [256, 256],
+  'art-badge-trophy': [256, 256],
+  'art-badge-zap': [256, 256],
+  'art-halloween-w': [320, 320],
+  'art-halloween-o1': [320, 320],
+  'art-halloween-r': [320, 320],
+  'art-halloween-d': [320, 320],
+  'art-halloween-o2': [320, 320],
+  'art-halloween-c': [320, 320],
+  'art-halloween-i': [320, 320],
+  'art-halloween-o3': [320, 320],
+  'art-halloween-u': [320, 320],
+  'art-halloween-s': [320, 320],
+  'art-scene-onboard-tiles': [1200, 565],
+  'art-scene-onboard-score': [900, 809],
+  // FINISH_SPEC J: game pieces, 256 px square.
+  'art-piece-hex': [256, 256],
+  'art-piece-hex-center': [256, 256],
+  'art-piece-ttt-x': [256, 256],
+  'art-piece-ttt-o': [256, 256],
   // Finishing build: the 62 cast poses, all 320 px square.
   ...(Object.fromEntries(POSE_ART_NAMES.map((n) => [n, [POSE_SIZE, POSE_SIZE] as const])) as Record<PoseArtName, readonly [number, number]>),
 };
@@ -285,6 +447,65 @@ export function gameTitleArtLabel(name: GameTitleArtName): string {
   if (id === 'six') return 'Classic Six';
   if (id === 'seven') return 'Classic Seven';
   return MODES.find((m) => m.id === id)?.title ?? id;
+}
+
+/**
+ * FINISH_SPEC AB: the words each whole-cast page title (art-title-*) draws, its
+ * accessible name. Lettering images don't scale with Larger Text; their labels do.
+ */
+export const TITLE_ART_LABEL: Record<TitleArtName, string> = {
+  'art-title-friends': 'Friends',
+  'art-title-stats': 'Stats',
+  'art-title-records': 'All-Time Records',
+  'art-title-vs': 'VS Battle',
+  'art-title-puzzles': 'Puzzles',
+  'art-title-wotd': 'Word of the Day',
+  'art-title-settings': 'Settings',
+  'art-title-howto': 'How to Play',
+  'art-title-guides': 'Guides',
+  'art-title-strategy': 'Strategy',
+  'art-title-words': 'Words',
+  'art-title-faq': 'FAQ',
+  'art-title-privacy': 'Privacy',
+  'art-title-terms': 'Terms',
+  'art-title-gopro': 'Go Pro',
+  'art-title-moregames': 'More Games',
+  'art-title-welcome': 'Welcome!',
+  'art-title-leaderboard': 'Leaderboard',
+  'art-title-dailies': 'Dailies',
+  'art-title-vsbattle': 'VS Battle',
+};
+
+/** The Leaderboard day titles' words (core leaderboardTitle's weekday names), Sunday first. */
+export const DAY_ART_LABEL: Record<DayArtName, string> = {
+  'art-day-sunday': 'Sunday Superstars',
+  'art-day-monday': 'Monday Masters',
+  'art-day-tuesday': 'Tuesday Titans',
+  'art-day-wednesday': 'Wednesday Wizards',
+  'art-day-thursday': 'Thursday Thunder',
+  'art-day-friday': 'Friday’s Finest',
+  'art-day-saturday': 'Saturday Stars',
+};
+
+/** Lettering art: an image whose job is to show words (page / day / game titles, moments). */
+export type LetteringArtName = TitleArtName | DayArtName | GameTitleArtName | MomentArtName;
+
+/** True for lettering art (it needs a label and the heading trait); everything else is decorative. */
+export function isLetteringArt(name: string): name is LetteringArtName {
+  return /^art-(title|day|game|moment)-/.test(name) && !name.endsWith('-wide');
+}
+
+/**
+ * FINISH_SPEC AB: the accessible name of any lettering art (the words it shows),
+ * or '' for decorative art (poses, scenes, props, wallpaper, badges), which
+ * renders with alt="" and aria-hidden.
+ */
+export function artLabel(name: string): string {
+  if (name in TITLE_ART_LABEL) return TITLE_ART_LABEL[name as TitleArtName];
+  if (name in DAY_ART_LABEL) return DAY_ART_LABEL[name as DayArtName];
+  if (name.startsWith('art-moment-')) return MOMENT_LABEL[name.slice('art-moment-'.length) as MomentName] ?? '';
+  if (name.startsWith('art-game-') && GAME_TITLE_ART_SET.has(name.slice('art-game-'.length))) return gameTitleArtLabel(name as GameTitleArtName);
+  return '';
 }
 
 /**
@@ -314,7 +535,8 @@ export const GAME_TITLE_ART_HEIGHT = {
  * buttons (Home left, ? / sound right) sit in their own top row `pad` px from
  * the top; the title art starts `gap` px under that row and spans the full
  * viewport width minus `inset` (16 px each side; the header's own side padding
- * is `side`, px-2), so its height is (100vw − inset) × the art's aspect ratio.
+ * is `side`, px-2), so its height is (100vw − inset) × the art's aspect ratio
+ * (on desktop web the 560 px game column's width instead: --game-col-w, FINISH_SPEC AG).
  * The guess / timer status line follows the art; `pad` px under the header.
  */
 export const GAME_HEADER = { pad: 6, side: 8, button: 44, gap: 2, inset: 32 } as const;
@@ -330,7 +552,7 @@ export const GAME_TITLE_TOP = GAME_HEADER.pad + GAME_HEADER.button + GAME_HEADER
  */
 export function gameHeaderArtHeight(name: GameTitleArtName): string {
   const [w, h] = ART_SIZE[name];
-  return `clamp(${GAME_TITLE_ART_HEIGHT.headerMin}px, calc((100vw - ${GAME_HEADER.inset}px) * ${(h / w).toFixed(4)}), var(--game-title-cap, ${GAME_TITLE_ART_HEIGHT.header}px))`;
+  return `clamp(${GAME_TITLE_ART_HEIGHT.headerMin}px, calc((var(--game-col-w, 100vw) - ${GAME_HEADER.inset}px) * ${(h / w).toFixed(4)}), var(--game-title-cap, ${GAME_TITLE_ART_HEIGHT.header}px))`;
 }
 
 /**
@@ -397,6 +619,8 @@ export const GAME_ART_IDS: ReadonlySet<string> = new Set([
   'practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven', 'gauntlet',
   'propernoundle', 'more', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder',
   'cryptogram', 'wordsearch', 'regions',
+  // FINISH_SPEC C2b: the glossy broom for the Sweep board's picker tile.
+  'sweep',
 ]);
 
 /**

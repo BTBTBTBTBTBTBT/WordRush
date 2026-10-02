@@ -213,13 +213,16 @@ fun HomeScreen(
         if (seen == token || seen == "$day:flawless") return@LaunchedEffect
         com.wordocious.app.data.SettingsPref.set("sweep-celebrated-day", token)
         sweepCeleb = completions
-        // Rating ask rides the Flawless celebration only (peak-delight moment,
-        // iOS parity): let the banner land for 3s first. 30-day self-throttle
-        // + Play's own quota live inside maybeAsk.
-        if (totals.flawless) {
-            delay(3_000)
+        // FINISH_SPEC AI: the review ask now fires when the celebration CLOSES (SweepCelebration).
+    }
+    // FINISH_SPEC AI: a won game that hit a 7-day streak milestone asks for a review once
+    // Home is back on screen with no celebration up (gates in StoreReview).
+    androidx.compose.runtime.LaunchedEffect(homeHidden, sweepCeleb, moreCeleb) {
+        if (homeHidden || sweepCeleb != null || moreCeleb != null) return@LaunchedEffect
+        delay(1_200)
+        if (com.wordocious.app.data.StoreReview.takePendingStreakMilestone()) {
             (context as? android.app.Activity)?.let {
-                com.wordocious.app.data.RatingPrompt.maybeAsk(it)
+                com.wordocious.app.data.StoreReview.maybeAsk(it, com.wordocious.app.data.StoreReview.Moment.STREAK_MILESTONE)
             }
         }
     }
@@ -227,8 +230,10 @@ fun HomeScreen(
     Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // (Shared AppHeader is rendered by MainScreen above all tabs.)
+        val homeScroll = rememberScrollState()
+        ScrollToTopOnReselect(homeScroll) // AJ: Home / re-tap scrolls to the top.
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(homeScroll)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -297,6 +302,15 @@ fun HomeScreen(
                 if (!isPro && !unlimitedMode && played) limitModal = card
                 else onSelectMode(card, unlimitedMode && card.engineMode != null)
             }
+            // X: the Halloween Home banner art (only in season and once the art ships), above the
+            // banner in both modes so the Daily ⇄ Unlimited switch never moves anything (Z).
+            HalloweenBannerSlot { res ->
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(res), contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.FillWidth,
+                )
+            }
             HomeBannerView(
                 word = BannerRow(wordCards, progress(wordKeys), wordStreaks, wordKeys.sumOf { unlimitedCounts[it] ?: 0 }),
                 puzzles = BannerRow(puzzleCards, progress(puzzleKeys), puzzleStreaks, puzzleKeys.sumOf { unlimitedCounts[it] ?: 0 }),
@@ -348,31 +362,32 @@ fun HomeScreen(
 
             WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
 
-            // VS Battle merged with the old LIVE bar, last in the game area.
+            // VS Battle merged with the old LIVE bar, last in the game area. FINISH_SPEC O1:
+            // its own VS BATTLE section title above the card, the same size + spacing as
+            // DAILIES / PUZZLES / WORD OF THE DAY (Home reads … → WORD OF THE DAY → VS BATTLE).
             visibleCards.firstOrNull { it.id == "vs" }?.let { vs ->
-                VSLiveTile(
-                    card = vs, vsDailyWon = vsDailyWon, unlimitedMode = unlimitedMode, isPro = isPro,
-                    // VS overhaul (2026-10-01): the tile always opens the VS lobby; a used
-                    // free Daily Battle reads "Played today" there instead of a lock here.
-                    onOpen = { onSelectMode(vs, unlimitedMode) },
-                    onInvite = { inviteOpen = true },
-                )
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionTitleArt(TitleArt.VSBATTLE)
+                    VSLiveTile(
+                        card = vs, vsDailyWon = vsDailyWon, unlimitedMode = unlimitedMode, isPro = isPro,
+                        // VS overhaul (2026-10-01): the tile always opens the VS lobby; a used
+                        // free Daily Battle reads "Played today" there instead of a lock here.
+                        onOpen = { onSelectMode(vs, unlimitedMode) },
+                        onInvite = { inviteOpen = true },
+                    )
+                }
             }
             // Sign Out (web + iOS home footer parity) — subtle muted text button.
             // Only when there's a real session: a guest has nothing to sign out
             // of (the header shows "Sign In").
             val isAuthed by com.wordocious.app.data.AuthService.isAuthenticated.collectAsState()
             if (isAuthed) {
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .clickableNoRipple { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } }
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Sign Out", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                // FINISH_SPEC A8: a small soft peach candy button (was a muted text link).
+                Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                    CandyButton(
+                        "Sign Out", onClick = { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } },
+                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                    )
                 }
             }
             FooterLinks(onNavigate)
@@ -392,6 +407,9 @@ fun HomeScreen(
                 onClose = { limitModal = null },
                 onGoPro = onGoPro,
                 onViewPuzzle = viewPuzzle,
+                // R3: a purchase from the limit screen starts this mode's Unlimited game
+                // directly (VS has no Unlimited puzzle: its lobby opens instead).
+                onPlayUnlimited = { onSelectMode(card, card.engineMode != null) },
             )
         }
 
@@ -436,16 +454,15 @@ private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .padding(12.dp),
+            // FINISH_SPEC A1: a tinted card in Classic's color with its top band.
+            .tintedPill(accent, 16.dp)
+            .padding(start = 12.dp, end = 4.dp, top = 14.dp, bottom = 12.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // 32dp tinted tile behind the sparkle (iOS: RoundedRectangle(9) @ 8%).
+        // The icon tile is a mini game card (A1).
         Box(
-            Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(accent.copy(alpha = 0.08f)),
+            Modifier.size(32.dp).miniGameCard(accent, 9.dp),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.AutoAwesome, null, tint = accent, modifier = Modifier.size(16.dp))
@@ -464,19 +481,11 @@ private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss
                 // Flat accent capsule with a play glyph + soft drop shadow (iOS btn).
                 // FINISH_SPEC A8: the glossy candy PLAY pill.
                 CandyButton("Play", onClick = onPlay, color = CandyColor.PURPLE, size = CandySize.SMALL, icon = CandyIcon.PLAY)
-                Text(
-                    "How to play",
-                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = accent,
-                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
-                    modifier = Modifier.clickableNoRipple(onHowToPlay),
-                )
+                // A8: a soft peach candy button (was an underlined text link).
+                CandyButton("How to play", onClick = onHowToPlay, color = CandyColor.PEACH, size = CandySize.SMALL)
             }
         }
-        Icon(
-            Icons.Filled.Close, null,
-            tint = WTheme.textMuted,
-            modifier = Modifier.size(16.dp).clickableNoRipple(onDismiss),
-        )
+        HomeDismissX(onDismiss)
     }
 }
 
@@ -491,10 +500,9 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
             .fillMaxWidth()
             // iOS floats this banner above the page (.shadow radius 16, y 8).
             .shadow(16.dp, RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.1f), ambientColor = Color.Black.copy(alpha = 0.1f))
-            .clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp))
-            .padding(14.dp),
+            // FINISH_SPEC G1: the gold card family (wash, line, gold band) — never white.
+            .tintedPill(Color(0xFFF5A524), 16.dp)
+            .padding(start = 14.dp, end = 4.dp, top = 16.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -508,11 +516,7 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
         }
         // FINISH_SPEC A8: a small glossy candy pill.
         CandyButton("Go Pro", onClick = onGoPro, color = CandyColor.AMBER, size = CandySize.SMALL)
-        Icon(
-            androidx.compose.material.icons.Icons.Filled.Close, null,
-            tint = WTheme.textMuted,
-            modifier = Modifier.size(16.dp).clickableNoRipple(onDismiss),
-        )
+        HomeDismissX(onDismiss)
     }
 }
 
@@ -661,7 +665,7 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
                     // Web parity (page.tsx): plain italic purple text, no background pill.
                     Text(
                         it.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color(0xFF7C3AED),
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = purpleTextInk,
                     )
                 }
             }
@@ -670,7 +674,7 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
         // PROPORTIONAL lineHeight (not bodyLarge's flat 24sp): the definition
         // reflows at the user's full text size, but on iOS-tight lines.
         w.definition?.takeIf { it.definition.isNotBlank() }?.let {
-            Text(it.definition, fontSize = 11.sp, lineHeight = 1.3.em, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), modifier = Modifier.padding(top = 2.dp))
+            Text(it.definition, fontSize = 11.sp, lineHeight = 1.3.em, fontWeight = FontWeight.Bold, color = darkSafe(Color(0xFF4B5563), WTheme.textSecondary), modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
@@ -712,7 +716,8 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 "@${inviterNames[top.inviterId] ?: "A friend"} invited you to $modeTitle",
-                fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                // AD: the banner is fixed light in every theme, so its ink is too.
+                fontSize = 12.sp, fontWeight = FontWeight.Black, color = FinishInk.heading,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             if (invites.size > 1) {
@@ -730,19 +735,20 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
             color = CandyColor.PINK, size = CandySize.SMALL, icon = CandyIcon.PLAY,
         )
         Box(
-            Modifier.size(28.dp).clip(androidx.compose.foundation.shape.CircleShape)
-                .background(WTheme.surface)
-                .border(1.5.dp, Color(0xFFF5D0FE), androidx.compose.foundation.shape.CircleShape)
-                .clickableNoRipple {
+            // A1 / A9: a tinted pink dismiss circle that squishes (was a white circle).
+            Modifier.squishClickable("Dismiss", icon = true) {
                     scope.launch {
                         com.wordocious.app.data.InviteService.markInviteDeclined(top.id)
                         invites = invites.filter { it.id != top.id }
                         // Next inviter's name is already in the batched map — no extra query.
                     }
-                },
+                }
+                .size(28.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                .background(accentWash(Color(0xFFEC4899), 0.14f))
+                .border(1.5.dp, accentLine(Color(0xFFEC4899)), androidx.compose.foundation.shape.CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(androidx.compose.material.icons.Icons.Filled.Close, "Dismiss", tint = Color(0xFFA21CAF), modifier = Modifier.size(14.dp))
+            Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFFA21CAF), modifier = Modifier.size(14.dp))
         }
     }
 }
@@ -778,10 +784,9 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
     }
     Row(
         modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            // FINISH_SPEC A1: a tinted teal (VS) pill, not the plain surface.
+            .tintedPill(Color(0xFF0D9488), 14.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -866,7 +871,7 @@ internal fun formatCountdown(secs: Long): String {
 /**
  * A home section's 2-column grid (web grid-cols-2 gap-2) of the shared mode card.
  * Daily: today's W/L badge + tint, and a free player's played card locks (dimmed;
- * tap → ModeLimitModal). Unlimited (Pro): no badges, no lock, an infinity mark,
+ * tap → ModeLimitModal). Unlimited (Pro): no badges, no lock, no infinity mark (Y),
  * and every tap starts a fresh puzzle.
  */
 @Composable
@@ -890,5 +895,16 @@ private fun ModeCardGrid(
             }
             if (rowCards.size == 1) Spacer(Modifier.weight(1f))
         }
+    }
+}
+
+/** A bare dismiss X (no bubble) in a 44 dp tap area that squishes (A3 / A9). */
+@Composable
+private fun HomeDismissX(onDismiss: () -> Unit) {
+    Box(
+        Modifier.size(SOFT_CONTROL_TAP).squishClickable("Dismiss", icon = true, onClick = onDismiss),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.Close, null, tint = if (WTheme.isDark) WTheme.textMuted else FinishInk.label, modifier = Modifier.size(16.dp))
     }
 }

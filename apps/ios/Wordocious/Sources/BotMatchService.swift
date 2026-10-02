@@ -50,20 +50,31 @@ extension VSMatchService: VSTransport {}
 
 // MARK: - CPU opponent identity
 
-/// Every way to pick a CPU opponent from the chooser.
+/// Every way to pick a CPU opponent from the chooser. FINISH_SPEC §D1: the ten
+/// cast bots (rip … webster); the old tier kinds (easy / medium / hard /
+/// adaptive) still resolve — onto Ivy / Opal / Dewey / Umi — so stored or
+/// in-flight opponent ids keep working.
 enum CpuKind: String {
-    case easy, medium, hard, adaptive, ghost, daily
+    case rip, ivy, ollie, opal, cosmo, umi, ozzy, dewey, scoot, webster
+    case ghost, daily
+    case easy, medium, hard, adaptive
 }
 
 struct CpuIdentity {
     let name: String
-    /// Bot art asset (`bot-<id>`) — drawn in a circle, never an emoji (VS overhaul §9).
+    /// Avatar art: the bot's own character (`mascot-<id>`); `bot-ghost` for Your Ghost.
     let art: String
     let color: Int
     let tier: BotTier
-    /// The ladder / progression bot id this kind plays as: easy→rook, medium→lexi,
-    /// hard→nova, adaptive→adapt, Bot of the Day→daily, ghost→ghost (spec §7).
+    /// The ladder / progression bot id this kind plays as: the cast id (old kinds map
+    /// onto the cast), Bot of the Day → "daily", ghost → "ghost" (spec §7).
     let botId: String
+    /// The character (nil for Your Ghost).
+    var mascot: MascotID? = nil
+    /// The cast persona behind it (the Bot of the Day's character too; nil for the ghost).
+    var persona: BotPersona? = nil
+    /// Plays at the player's level (Umi).
+    var adaptive: Bool { persona?.isAdaptive ?? false }
 }
 
 enum CpuOpponent {
@@ -80,13 +91,19 @@ enum CpuOpponent {
         switch raw {
         case "ghost": return CpuIdentity(name: "Your Ghost", art: BotPersonas.art("ghost"), color: 0x64748B, tier: .hard, botId: "ghost")
         case "daily":
-            // The Bot of the Day is Lexi on the shared daily seed.
+            // The Bot of the Day: today's day-host character on the shared daily seed.
             let p = BotPersonas.botOfDay
-            return CpuIdentity(name: p.name, art: p.art, color: p.color, tier: p.tier, botId: "daily")
-        case "adaptive": return CpuIdentity(name: "Adapt", art: BotPersonas.art("adapt"), color: 0x7C3AED, tier: .medium, botId: "adapt")
+            return CpuIdentity(name: p.name, art: p.art, color: p.color, tier: p.tier, botId: "daily", mascot: p.mascot, persona: p)
         default:
-            let p = BotPersonas.persona(BotTier(rawValue: raw) ?? .medium)
-            return CpuIdentity(name: p.name, art: p.art, color: p.color, tier: p.tier, botId: p.id)
+            let p: BotPersona
+            switch raw {
+            case "easy": p = BotPersonas.persona(.easy)
+            case "medium": p = BotPersonas.persona(.medium)
+            case "hard": p = BotPersonas.persona(.hard)
+            case "adaptive": p = BotPersonas.persona("umi")
+            default: p = BotPersonas.persona(raw)
+            }
+            return CpuIdentity(name: p.name, art: p.art, color: p.color, tier: p.tier, botId: p.id, mascot: p.mascot, persona: p)
         }
     }
 }
@@ -100,6 +117,8 @@ struct BotConfig {
     var ghostSolves: Bool? = nil
     var fixedSeed: String? = nil
     var opponentId: String? = nil
+    /// The cast bot's guess range (BotCast) — nil keeps the speed tier's range.
+    var guessRange: ClosedRange<Int>? = nil
 }
 
 // MARK: - Local bot transport
@@ -169,7 +188,8 @@ final class LocalBotMatchService: VSTransport {
             targetSolveMs: config.ghostTimeMs,
             forceSolve: config.ghostGuesses != nil && config.ghostSolves != false,
             forceFail: config.ghostSolves == false,
-            adaptive: config.adaptive
+            adaptive: config.adaptive,
+            guessRange: config.guessRange
         )
     }
 

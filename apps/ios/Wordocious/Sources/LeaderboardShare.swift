@@ -7,11 +7,9 @@ import UIKit
 
 // LEADERBOARD SHARE — the daily-leaderboard share card (solo / VS / yesterday's
 // podium) + its share flow. Mirrors web lib/leaderboard-share.ts (pure input
-// builders), lib/share-image.ts drawLeaderboardCard (1080² canvas renderer),
-// and lib/leaderboard-share-flow.ts + share-utils.ts shareResult linkOnly (the
-// /s/ unfurl IS the card, so the share sheet gets the URL alone — image+link
-// would render twice in Messages; the image attaches only when upload fails).
-// Keep copy strings, layout coordinates, and URL params identical to web.
+// builders) and lib/share-image.ts drawLeaderboardCard (a 1080-wide canvas
+// sized to its rows). FINISH_SPEC §S1: the share sheet gets the IMAGE ONLY (the
+// old linkOnly /s/ path and its upload are gone). Keep copy strings identical to web.
 
 // MARK: - Card input model (web ShareLeaderboardInput parity)
 
@@ -547,11 +545,42 @@ enum LeaderboardShareBuilder {
 }
 
 // MARK: - Card renderer (web drawLeaderboardCard parity, 1080×1080)
+//
+// FINISH_SPEC §E1 (leaderboard family): the page wallpaper, the board day's title
+// art (art-day-*; the Friends / Records titles for the race + trophy cards), a
+// tinted rows card with a top bar and soft striped rows, the medal art
+// (art-medal-gold / -silver / -bronze) for the top three, scores and ranks as soft
+// numbers, and a footer cast pose that is neither the day's nor the page's host.
+// Drawn in a Canvas, static, always light; every image falls back to the old drawing.
 
 #if canImport(UIKit)
 struct LeaderboardShareCardView: View {
     let input: LbShareInput
-    var size: CGSize { CGSize(width: 1080, height: 1080) }
+
+    // §S2: the canvas is sized to its rows (4:5 … 9:16).
+    private static let rowBand: CGFloat = 110
+    private static let castW: CGFloat = 972
+    private var castH: CGFloat { ShareCastWordmark.height(Self.castW) }
+
+    /// The title art's drawn size: ~70% of the width, height capped (the day
+    /// titles are nearly square, so they cap at 280).
+    private func titleRect(_ ui: UIImage) -> CGSize {
+        let cap: CGFloat = ui.size.width / max(1, ui.size.height) < 2 ? 280 : 200
+        var w: CGFloat = 756
+        var h = w * ui.size.height / max(1, ui.size.width)
+        if h > cap { h = cap; w = h * ui.size.width / max(1, ui.size.height) }
+        return CGSize(width: w, height: h)
+    }
+
+    private var titleImage: UIImage? { titleArt.flatMap { UIImage(named: $0) } }
+
+    var size: CGSize {
+        let titleH = titleImage.map { titleRect($0).height } ?? 90
+        let n = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
+        let panel = 14 + 32 + Self.rowBand * n + (input.you != nil ? 46 : 0)
+        let h = 30 + titleH + 46 + 26 + 56 + 30 + panel + 40 + castH + 40
+        return CGSize(width: 1080, height: min(1920, max(1350, h)).rounded())
+    }
 
     // Per-variant identity: lavender for the daily board + podium, mint/teal
     // for the VS battle board (web LB_THEME).
@@ -610,8 +639,66 @@ struct LeaderboardShareCardView: View {
         }
     }
 
-    private let textDark = Color(hex: 0x1A1A2E)
-    private let textMuted = Color(hex: 0x6B7280)
+    private let textDark = ShareInk.heading
+    private let textMuted = ShareInk.muted
+
+    // ── §E1 art choices ──────────────────────────────────────────────────
+
+    /// The page wallpaper behind the card.
+    private var wallpaper: String {
+        switch input.variant {
+        case .solo, .podium, .flawlessStreak, .trophyCase: return "art-wall-leaderboard"
+        case .vs: return "art-wall-vs"
+        case .friends, .friendsPodium, .weeklyRace: return "art-wall-friends"
+        case .sweep, .sweepPodium: return "art-wall-home"
+        }
+    }
+
+    /// The board day's weekday index (0 = Sunday), from the yyyy-MM-dd day.
+    private var weekday: Int? {
+        let parts = input.day.split(separator: "-")
+        guard parts.count == 3, let y = Int(parts[0]), let m = Int(parts[1]), let d = Int(parts[2]) else { return nil }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC") ?? .current
+        guard let date = cal.date(from: DateComponents(year: y, month: m, day: d)) else { return nil }
+        return cal.component(.weekday, from: date) - 1
+    }
+
+    private static let dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+    /// The character on each day title (Sun O3, Mon D, Tue I, Wed U, Thu S, Fri O2, Sat O1).
+    private static let dayHosts: [MascotID] = [.o3, .d, .i, .u, .s, .o2, .o1]
+
+    /// The title art: the board day's title, or the race / records page title.
+    private var titleArt: String? {
+        let name: String
+        switch input.variant {
+        case .weeklyRace: name = "art-title-friends"
+        case .trophyCase: name = "art-title-records"
+        default:
+            guard let w = weekday, w >= 0, w < Self.dayNames.count else { return nil }
+            name = "art-day-\(Self.dayNames[w])"
+        }
+        return ArtAsset.exists(name) ? name : nil
+    }
+
+    /// The panel's accent (the variant's identity color).
+    private var panelAccent: Color { theme.label }
+
+    /// An image asset aspect-filled into `rect`.
+    private func drawFill(_ ctx: GraphicsContext, _ ui: UIImage, in rect: CGRect) {
+        let s = max(rect.width / max(1, ui.size.width), rect.height / max(1, ui.size.height))
+        let w = ui.size.width * s, h = ui.size.height * s
+        ctx.draw(ctx.resolve(Image(uiImage: ui)),
+                 in: CGRect(x: rect.midX - w / 2, y: rect.midY - h / 2, width: w, height: h))
+    }
+
+    /// Text with the soft white under-shadow that keeps it crisp on the wallpaper.
+    private func drawLifted(_ ctx: GraphicsContext, _ s: String, _ size: CGFloat, _ weight: Font.Weight,
+                            _ color: Color, at p: CGPoint, anchor: UnitPoint, tracking: CGFloat = 0) {
+        let under = resolved(ctx, s, size, weight, Color.white.opacity(0.85), tracking: tracking)
+        ctx.draw(under, at: CGPoint(x: p.x, y: p.y + max(2, size * 0.06)), anchor: anchor)
+        ctx.draw(resolved(ctx, s, size, weight, color, tracking: tracking), at: p, anchor: anchor)
+    }
 
     var body: some View {
         Canvas(rendersAsynchronously: false) { ctx, _ in
@@ -690,8 +777,14 @@ struct LeaderboardShareCardView: View {
         // §248: flawlessStreak rows are DAYS, not competitors — crown/medals
         // read as ranking, so that card numbers every row instead.
         if input.variant == .flawlessStreak {
-            let t = resolved(ctx, "\(rank)", 30, .black, textMuted)
-            ctx.draw(t, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
+            drawLifted(ctx, "\(rank)", 34, .black, ShareInk.number, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
+            return
+        }
+        // §E1: the medal art for the top three.
+        let medal = rank == 1 ? "art-medal-gold" : rank == 2 ? "art-medal-silver" : rank == 3 ? "art-medal-bronze" : nil
+        if let medal, let ui = UIImage(named: medal) {
+            let side: CGFloat = 60
+            ctx.draw(ctx.resolve(Image(uiImage: ui)), in: CGRect(x: cx - side / 2, y: cy - side / 2, width: side, height: side))
             return
         }
         switch rank {
@@ -711,8 +804,7 @@ struct LeaderboardShareCardView: View {
                 ctx.draw(img, in: CGRect(x: cx - w / 2, y: cy - h / 2, width: w, height: h))
             }
         default:
-            let t = resolved(ctx, "\(rank)", 30, .black, textMuted)
-            ctx.draw(t, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
+            drawLifted(ctx, "\(rank)", 34, .black, ShareInk.number, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
         }
     }
 
@@ -728,10 +820,17 @@ struct LeaderboardShareCardView: View {
         var edgeBottom = false
         /// Panel inner padding to consume when bleeding.
         var bleed: CGFloat = 16
+        /// §E1 soft striped rows: this row takes the stripe.
+        var stripe = false
     }
 
     private func drawRow(_ ctx: GraphicsContext, _ row: LbShareRow,
                          x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat, opts: RowOpts) {
+        if opts.stripe, !row.isYou {
+            let band = Path(roundedRect: CGRect(x: x + 8, y: y + 3, width: w - 16, height: h - 6), cornerRadius: 16)
+            ctx.fill(band, with: .color(panelAccent.wash(0.10).opacity(0.75)))
+        }
+
         // Gold "you" highlight — full-bleed across the panel with a soft amber
         // glow instead of a hard border, flush to the panel edge at the
         // first/last slot (web founder polish, Aug 7).
@@ -775,8 +874,9 @@ struct LeaderboardShareCardView: View {
 
         // Right block: bold score, optional subline underneath.
         let rightX = x + w - 30
-        let score = resolved(ctx, row.scoreDisplay, 34, .black, textDark)
-        ctx.draw(score, at: CGPoint(x: rightX, y: row.subline != nil ? midY - 13 : midY), anchor: .trailing)
+        let score = resolved(ctx, row.scoreDisplay, 34, .black, ShareInk.number)
+        drawLifted(ctx, row.scoreDisplay, 34, .black, ShareInk.number,
+                   at: CGPoint(x: rightX, y: row.subline != nil ? midY - 13 : midY), anchor: .trailing)
         var rightBlockW = width(of: score)
         if let sub = row.subline {
             let s = resolved(ctx, sub, 21, .bold, textMuted)
@@ -822,7 +922,7 @@ struct LeaderboardShareCardView: View {
                                  with: .color(Color(hex: 0x7C3AED, alpha: 0.18 + 0.82 * d)))
                     }
                 } else {
-                    ctx.stroke(Path(ellipseIn: rect), with: .color(Color(hex: 0xE5E7EB)), lineWidth: 2)
+                    ctx.stroke(Path(ellipseIn: rect), with: .color(panelAccent.wash(0.35)), lineWidth: 2)
                 }
             }
             dotsEndX = nameX + r + CGFloat(dots.count - 1) * 20 + r + 14
@@ -859,7 +959,7 @@ struct LeaderboardShareCardView: View {
             var sep = Path()
             sep.move(to: CGPoint(x: x + 26, y: y + h))
             sep.addLine(to: CGPoint(x: x + w - 26, y: y + h))
-            ctx.stroke(sep, with: .color(Color(hex: 0xE5E7EB)), lineWidth: 1.5)
+            ctx.stroke(sep, with: .color(panelAccent.opacity(0.12)), lineWidth: 1.5)
         }
     }
 
@@ -868,37 +968,57 @@ struct LeaderboardShareCardView: View {
     private func draw(_ ctx: GraphicsContext) {
         let cw = size.width, ch = size.height
 
-        // Variant-tinted background (lavender / mint).
+        // §E1: the page wallpaper (the variant's tint when it doesn't ship).
         ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(theme.bg))
+        if let wall = UIImage(named: wallpaper) {
+            drawFill(ctx, wall, in: CGRect(origin: .zero, size: size))
+            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color.white.opacity(0.12)))
+        }
 
-        // Wordmark — the established two-tone (violet→pink) treatment.
-        let wordmarkY: CGFloat = 96
-        var wm = ctx.resolve(Text("WORDOCIOUS").font(Brand.fixedFont(60, .black)))
-        wm.shading = .linearGradient(
-            Gradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]),
-            startPoint: CGPoint(x: cw / 2 - 220, y: wordmarkY - 52),
-            endPoint: CGPoint(x: cw / 2 + 220, y: wordmarkY + 8))
-        drawAtBaseline(ctx, wm, x: cw / 2, baseline: wordmarkY, fontSize: 60)
+        // The title: the day's title art (fallback: the two-tone wordmark).
+        var titleBottom: CGFloat
+        if let ui = titleImage, ui.size.height > 0 {
+            let t = titleRect(ui)
+            ctx.draw(ctx.resolve(Image(uiImage: ui)), in: CGRect(x: (cw - t.width) / 2, y: 30, width: t.width, height: t.height))
+            titleBottom = 30 + t.height
+        } else {
+            let wordmarkY: CGFloat = 96
+            var wm = ctx.resolve(Text("WORDOCIOUS").font(Brand.fixedFont(60, .black)))
+            wm.shading = .linearGradient(
+                Gradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]),
+                startPoint: CGPoint(x: cw / 2 - 220, y: wordmarkY - 52),
+                endPoint: CGPoint(x: cw / 2 + 220, y: wordmarkY + 8))
+            drawAtBaseline(ctx, wm, x: cw / 2, baseline: wordmarkY, fontSize: 60)
+            titleBottom = wordmarkY + 10
+        }
 
         // Letterspaced variant label.
-        let labelY = wordmarkY + 74
-        let label = resolved(ctx, labelText, 36, .black, theme.label, tracking: 10)
-        drawAtBaseline(ctx, label, x: cw / 2, baseline: labelY, fontSize: 36)
+        let labelY = titleBottom + 46
+        drawLifted(ctx, labelText, 34, .black, theme.label, at: CGPoint(x: cw / 2, y: labelY - 34 * 0.36),
+                   anchor: .center, tracking: 9)
 
-        // Chips: mode (accent bg; swords glyph on the VS variant) + date chip.
+        // Chips: mode (glossy accent; swords glyph on the VS variant) + date chip (tinted).
         let chipH: CGFloat = 56
-        let chipY = labelY + 36
+        let chipY = labelY + 26
         let swordsSize: CGFloat = input.variant == .vs ? 30 : 0
         let swordsGap: CGFloat = input.variant == .vs ? 10 : 0
         let modeText = resolved(ctx, input.modeChip, 27, .heavy, .white)
         let modeChipW = width(of: modeText) + swordsSize + swordsGap + 48
-        let dateText = resolved(ctx, input.dateChip, 27, .heavy, textMuted)
+        let dateText = resolved(ctx, input.dateChip, 27, .heavy, ShareInk.date)
         let dateChipW = width(of: dateText) + 44
         let chipGap: CGFloat = 16
         var chipX = (cw - modeChipW - chipGap - dateChipW) / 2
 
         let modeRect = CGRect(x: chipX, y: chipY, width: modeChipW, height: chipH)
-        ctx.fill(Path(roundedRect: modeRect, cornerRadius: chipH / 2), with: .color(input.modeAccent))
+        let modePath = Path(roundedRect: modeRect, cornerRadius: chipH / 2)
+        // Candy chip: a darker lip, the accent face and a top gloss.
+        ctx.fill(Path(roundedRect: modeRect.offsetBy(dx: 0, dy: 4), cornerRadius: chipH / 2),
+                 with: .color(input.modeAccent.mixed(over: .black, 0.65)))
+        ctx.fill(modePath, with: .color(input.modeAccent))
+        ctx.fill(Path(roundedRect: CGRect(x: chipX + 10, y: chipY + 4, width: modeChipW - 20, height: chipH * 0.42),
+                      cornerRadius: chipH * 0.21),
+                 with: .linearGradient(Gradient(colors: [Color.white.opacity(0.42), Color.white.opacity(0)]),
+                                       startPoint: CGPoint(x: 0, y: chipY + 4), endPoint: CGPoint(x: 0, y: chipY + 4 + chipH * 0.42)))
         var modeTextX = chipX + 24
         if input.variant == .vs, let swords = tintedImage(ctx, asset: "swords", color: .white) {
             ctx.draw(swords, in: CGRect(x: modeTextX, y: chipY + chipH / 2 - swordsSize / 2,
@@ -910,32 +1030,43 @@ struct LeaderboardShareCardView: View {
         chipX += modeChipW + chipGap
         let dateRect = CGRect(x: chipX, y: chipY, width: dateChipW, height: chipH)
         let datePath = Path(roundedRect: dateRect, cornerRadius: chipH / 2)
-        ctx.fill(datePath, with: .color(.white))
-        ctx.stroke(datePath, with: .color(Color(hex: 0xE5E7EB)), lineWidth: 2)
+        ctx.fill(datePath, with: .color(panelAccent.wash(0.12)))
+        ctx.stroke(datePath, with: .color(panelAccent.wash(0.34)), lineWidth: 3)
         ctx.draw(dateText, at: CGPoint(x: chipX + 22, y: chipY + chipH / 2 + 1), anchor: .leading)
 
         // Rows panel — sized to its content, centered between chips and footer,
         // so short boards don't strand dead padding (web founder note, Aug 7).
-        let panelX: CGFloat = 64
+        let panelX: CGFloat = 56
         let panelW = cw - panelX * 2
-        let areaTop = chipY + chipH + 40
-        let footerY = ch - 52
-        let areaBottom = footerY - 46
+        let areaTop = chipY + chipH + 26
+        let castTop = ch - 40 - castH
+        let areaBottom = castTop - 40
         let pad: CGFloat = 16
+        let barH: CGFloat = 14
         let dividerH: CGFloat = input.you != nil ? 46 : 0
         let nRows = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
         guard nRows > 0 else { return }
         // Max row height — roomier for the 3-row podium than a 6-slot board.
         // Podium carries the same top 5 (+ you-row) as the daily card now.
-        let band: CGFloat = 130
-        let rowH = min(band, (areaBottom - areaTop - pad * 2 - dividerH) / nRows)
-        let contentH = rowH * nRows + dividerH + pad * 2
+        let band: CGFloat = Self.rowBand
+        let rowH = min(band, (areaBottom - areaTop - pad * 2 - barH - dividerH) / nRows)
+        let contentH = rowH * nRows + dividerH + pad * 2 + barH
         let panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
-        let panel = Path(roundedRect: CGRect(x: panelX, y: panelTop, width: panelW, height: contentH),
-                         cornerRadius: 28)
-        ctx.fill(panel, with: .color(.white))
-        ctx.stroke(panel, with: .color(theme.panelBorder), lineWidth: 3)
-        var y = panelTop + pad
+        let panelRect = CGRect(x: panelX, y: panelTop, width: panelW, height: contentH)
+        let panel = Path(roundedRect: panelRect, cornerRadius: 34)
+        // §A1 tinted card: the accent wash + border, a top bar, a soft shadow.
+        ctx.drawLayer { layer in
+            layer.addFilter(.shadow(color: Color(hex: 0x3C1E6E).opacity(0.14), radius: 16, x: 0, y: 10))
+            layer.fill(panel, with: .color(panelAccent.wash(0.08)))
+        }
+        ctx.drawLayer { layer in
+            layer.clip(to: panel)
+            layer.fill(Path(CGRect(x: panelX, y: panelTop, width: panelW, height: barH)),
+                       with: .linearGradient(Gradient(colors: [panelAccent, panelAccent.wash(0.55)]),
+                                             startPoint: CGPoint(x: panelX, y: 0), endPoint: CGPoint(x: panelX + panelW, y: 0)))
+        }
+        ctx.stroke(panel, with: .color(panelAccent.wash(0.26)), lineWidth: 3.5)
+        var y = panelTop + barH + pad
 
         for (i, row) in input.rows.enumerated() {
             drawRow(ctx, row, x: panelX, y: y, w: panelW, h: rowH, opts: RowOpts(
@@ -943,7 +1074,7 @@ struct LeaderboardShareCardView: View {
                 separator: i < input.rows.count - 1 || input.you != nil,
                 edgeTop: i == 0,
                 edgeBottom: i == input.rows.count - 1 && input.you == nil,
-                bleed: pad))
+                bleed: pad, stripe: i % 2 == 0))
             y += rowH
         }
 
@@ -959,9 +1090,22 @@ struct LeaderboardShareCardView: View {
                 bleed: pad))
         }
 
-        // Footer hook.
-        let footer = resolved(ctx, input.footer, 29, .heavy, theme.footer)
-        drawAtBaseline(ctx, footer, x: cw / 2, baseline: footerY + 30, fontSize: 29)
+        // §S3: the cast IS the wordmark — the ten heroes standing together
+        // (6% overlap) across ~90% of the width on a soft ground shadow, then the
+        // one tiny "wordocious.com" line.
+        let side = ShareCastWordmark.heroSide(Self.castW)
+        let rowX = (cw - Self.castW) / 2
+        let shadowRect = CGRect(x: rowX, y: castTop + side * 0.82, width: Self.castW, height: side * 0.30)
+        ctx.fill(Path(ellipseIn: shadowRect), with: .radialGradient(
+            Gradient(colors: [Color(hex: 0x3C1E6E).opacity(0.28), Color(hex: 0x3C1E6E).opacity(0)]),
+            center: CGPoint(x: shadowRect.midX, y: shadowRect.midY), startRadius: 0, endRadius: Self.castW * 0.5))
+        for (i, m) in Mascots.cast.enumerated() {
+            guard let ui = UIImage(named: m.assetName) else { continue }
+            let x = rowX + CGFloat(i) * side * 0.94
+            ctx.draw(ctx.resolve(Image(uiImage: ui)), in: CGRect(x: x, y: castTop, width: side, height: side))
+        }
+        drawLifted(ctx, "wordocious.com", 26, .black, ShareInk.link,
+                   at: CGPoint(x: cw / 2, y: castTop + side + 10 + 17), anchor: .center, tracking: 1)
     }
 }
 #endif
@@ -969,62 +1113,16 @@ struct LeaderboardShareCardView: View {
 // MARK: - Share flow (web leaderboard-share-flow.ts + shareResult linkOnly)
 
 extension ShareService {
-    /// Render the leaderboard card, upload it, and share the /s/ URL ALONE —
-    /// the /s/ unfurl IS the card, so attaching image+link would render the
-    /// card twice in the Messages compose sheet. The rendered image attaches
-    /// only as the fallback when the upload (or URL build) fails.
+    /// Render the leaderboard card and share it — FINISH_SPEC §S1: the IMAGE ONLY
+    /// (no hosted /s link, no upload; old links keep working on web).
     @MainActor
     static func shareLeaderboard(_ input: LbShareInput) {
         #if canImport(UIKit)
         let card = LeaderboardShareCardView(input: input)
-        let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(card.size)
-        renderer.scale = 1
-        guard let image = renderer.uiImage, let png = image.pngData() else { return }
-
-        Task {
-            let url = await uploadLeaderboardURL(png: png, input: input)
-            await MainActor.run {
-                if let url {
-                    ShareEvents.log(kind: "other", gameMode: input.gameModeRaw, surface: "leaderboard")
-                    present(items: [url])
-                } else {
-                    // Upload failed → image-attach fallback (web parity).
-                    ShareEvents.log(kind: "image", gameMode: input.gameModeRaw, surface: "leaderboard")
-                    present(items: [image])
-                }
-            }
-        }
+        guard let image = renderCard(card, size: card.size) else { return }
+        ShareEvents.log(kind: "image", gameMode: input.gameModeRaw, surface: "leaderboard")
+        presentImages([image], game: input.shareMode)
         #endif
-    }
-
-    /// Upload to share-images/<uid>/<Kind>-<Mode>-<date>.png and build the
-    /// /s/ URL with m/lm/r/tp/w/h/v — identical to web uploadAndBuildShareUrl's
-    /// leaderboard branch.
-    private static func uploadLeaderboardURL(png: Data, input: LbShareInput) async -> URL? {
-        let client = AuthService.shared.client
-        guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
-
-        let key = "\(uid)/\(input.variant.kind)-\(input.shareMode)-\(input.day)"
-        do {
-            try await client.storage.from("share-images").upload(
-                "\(key).png", data: png,
-                options: FileOptions(contentType: "image/png", upsert: true))
-        } catch { return nil }
-
-        var q: [String: String] = [
-            "m": input.variant.kind, "lm": input.shareMode,
-            "w": "1080", "h": "1080",
-            // Unlike a puzzle result, a board changes all day — a minute-granular
-            // buster makes a later re-share re-scrape the fresh standings.
-            "v": "lb\(input.shareRank ?? 0)-\(Int(Date().timeIntervalSince1970 / 60))",
-        ]
-        if let r = input.shareRank { q["r"] = "\(r)" }
-        if let tp = input.sharePlayers { q["tp"] = "\(tp)" }
-
-        var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
-        comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
-        return comps?.url
     }
 }
 

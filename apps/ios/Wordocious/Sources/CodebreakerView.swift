@@ -179,8 +179,8 @@ final class CodebreakerVM: ObservableObject {
         state = cryptogramReduce(state, a, now: Date().timeIntervalSince1970 * 1000)
         if case .check = a {
             let n = state.lastWrong.count
-            if n > 0 { flash("\(n) wrong letter\(n == 1 ? "" : "s") cleared"); Haptics.error(); SoundManager.shared.playInvalid() }
-            else { flash("Everything penciled is right"); SoundManager.shared.playSuccess() }
+            if n > 0 { flash("\(n) wrong letter\(n == 1 ? "" : "s") cleared"); Haptics.warning(); SoundManager.shared.playInvalid() }
+            else { flash("Everything penciled is right"); SoundManager.shared.playFound() }
             Task { try? await Task.sleep(nanoseconds: 700_000_000); if !state.lastWrong.isEmpty { state.lastWrong = [] } }
         }
         if state.status != .playing { finish() }
@@ -198,7 +198,7 @@ final class CodebreakerVM: ObservableObject {
         guard !isFinished, let code = selected else { return }
         if state.locked.contains(code) { flash("That letter is locked"); return }
         if state.mapping[code] != nil { dispatch(.set(code: code, plain: nil)) }
-        SoundManager.shared.playKeyTap()
+        SoundManager.shared.playDelete()
     }
     func check() {
         guard !isFinished else { return }
@@ -210,7 +210,7 @@ final class CodebreakerVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = guessCount, used = state.hintsUsed
         let row = cryptogramMatchRow(state)
@@ -257,17 +257,38 @@ struct CodebreakerView: View {
         ZStack {
             PageBackground(tint: .forGame(.cryptogram))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        header
-                        CipherBoardView(vm: vm, finished: true, cell: CodebreakerSizing.cell(for: vm.state.cipher, width: UIScreen.main.bounds.width - 32, height: nil))
+                // FINISH_SPEC §R2: one screen — header + result strip, the saying scaled
+                // to the height left, the dock; the decoded saying card + breakdown
+                // below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 4) { header; resultHeadline }
+                } board: { size in
+                    let trayW = GameTray.padding * 2, trayH = GameTray.padding * 2 + GameTray.lip
+                    let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: size.width - 12 - trayW,
+                                                      height: size.height - 8 - trayH, withStrip: false)
+                    // A saying too long even at the floor size scrolls inside its area.
+                    ScrollView(showsIndicators: false) {
+                        CipherBoardView(vm: vm, finished: true, cell: cell, tray: true)
                             .padding(.horizontal, 6)
-                        Text("“\(vm.state.text)”").font(Brand.font(16, .heavy)).foregroundStyle(Theme.textPrimary)
-                            .multilineTextAlignment(.center).frame(maxWidth: 420).padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, minHeight: size.height)
+                    }
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "CRYPTOGRAM", game: "Codebreaker", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    VStack(spacing: 10) {
+                        // §A1: the decoded saying on a tinted card.
+                        Text("“\(vm.state.text)”").font(Brand.font(16, .heavy)).foregroundStyle(FinishInk.heading)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                            .tintedCard(accent: codebreakerAccent, bar: [Color(hex: 0xF59E0B), codebreakerAccent], radius: 16, barHeight: 6)
+                            .frame(maxWidth: 420).padding(.horizontal, 12)
                         result
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.top, 8)
                 }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
@@ -282,10 +303,12 @@ struct CodebreakerView: View {
                     // strip is pinned below the band (outside the ScrollView); the board
                     // alone fills the band, shrinking as far as 26 pt so every saying fits.
                     GeometryReader { geo in
-                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12, height: geo.size.height - 8, withStrip: false)
+                        // §L: the board's tray (padding both sides + the lip) comes out of the band first.
+                        let trayW = GameTray.padding * 2, trayH = GameTray.padding * 2 + GameTray.lip
+                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12 - trayW, height: geo.size.height - 8 - trayH, withStrip: false)
                         ScrollView {
                             VStack(spacing: 8) {
-                                CipherBoardView(vm: vm, finished: false, cell: cell).padding(.horizontal, 6)
+                                CipherBoardView(vm: vm, finished: false, cell: cell, tray: true).padding(.horizontal, 6)
                                 let conflicts = vm.conflicts
                                 if !conflicts.isEmpty {
                                     Text("\(conflicts.joined(separator: ", ")) used for two code letters").font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
@@ -294,15 +317,22 @@ struct CodebreakerView: View {
                             .padding(.vertical, 4)
                             .frame(maxWidth: .infinity, minHeight: geo.size.height)
                         }
-                        .scrollDisabled(CodebreakerSizing.boardHeight(cipher: vm.state.cipher, cell: cell, width: geo.size.width - 12) + 32 <= geo.size.height)
+                        .scrollDisabled(CodebreakerSizing.boardHeight(cipher: vm.state.cipher, cell: cell, width: geo.size.width - 12 - trayW) + 32 + trayH <= geo.size.height)
                     }
                     FrequencyStripView(vm: vm, fontSize: 12).padding(.bottom, 2)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        HStack(spacing: 8) {
-                            capsule("Delete", "delete.left") { Haptics.tap(); vm.clearLetter() }
-                            capsule(vm.state.checks > 0 ? "Check · \(vm.state.checks)" : "Check", "checkmark.circle") { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
-                            capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb") { SoundManager.shared.playKeyTap(); vm.hint() }
-                            capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", "eye", dim: vm.revealIn > 0) { vm.reveal() }
+                        // §A8: candy pills — peach Delete, purple Check, amber Hint, peach
+                        // Reveal (faded until it unlocks). One row when it fits, else two.
+                        let delete = capsule("Delete", nil, variant: .peach) { Haptics.tap(); vm.clearLetter() }
+                        let check = capsule(vm.state.checks > 0 ? "Check · \(vm.state.checks)" : "Check", nil, variant: .purple) { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
+                        let hint = capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { SoundManager.shared.playKeyTap(); vm.hint() }
+                        let reveal = capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", "eye", variant: .peach, dim: vm.revealIn > 0) { vm.reveal() }
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 6) { delete; check; hint; reveal }
+                            VStack(spacing: 6) {
+                                HStack(spacing: 6) { delete; check }
+                                HStack(spacing: 6) { hint; reveal }
+                            }
                         }
                     }
                     // Hardware keys (founder, 2026-09-30): web cryptogram-game keydown —
@@ -325,9 +355,8 @@ struct CodebreakerView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -371,17 +400,11 @@ struct CodebreakerView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    private func capsule(_ label: String, _ symbol: String, dim: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .foregroundStyle(dim ? Theme.textMuted.opacity(0.5) : codebreakerAccent)
-                .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(Capsule().fill(dim ? Color.clear : codebreakerAccent.opacity(0.05)))
-                .overlay(Capsule().stroke(dim ? Theme.border : codebreakerAccent.opacity(0.4), lineWidth: 1.5))
-        }
-        .buttonStyle(.squish)
-        .disabled(dim)
-        .accessibilityLabel(label)
+    /// §A8: a small candy pill; `dim` disables it (the candy fades).
+    private func capsule(_ label: String, _ symbol: String?, variant: CandyButtonStyle.Variant, dim: Bool = false,
+                         action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+            .disabled(dim)
     }
 
     private var header: some View {
@@ -406,31 +429,33 @@ struct CodebreakerView: View {
         }
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.state.status == .won
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? (vm.state.checks == 0 ? "Code cracked clean" : "Code cracked") : "Answer revealed", won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: vm.points)
+        }
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let gc = vm.guessCount
         let hints = vm.state.hintsUsed
         return VStack(spacing: 10) {
-            Text(won ? (vm.state.checks == 0 ? "Code cracked clean" : "Code cracked") : "Answer revealed")
-                .font(Brand.title(20)).foregroundStyle(won ? Theme.win : Theme.lossText)
             Text("\(vm.checksLabel) · \(timeText(secs))\(hints > 0 ? " · \(hints) hint\(hints == 1 ? "" : "s")" : "")")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Theme.gold)
-                }
-            }
-            .foregroundStyle(codebreakerAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(codebreakerAccent)
             if vm.isDaily { DailyRankBadge(gameMode: .cryptogram) }
             ScoreBreakdownView(gameMode: GameMode.cryptogram.rawValue, completed: won,
                                guessCount: gc, timeSeconds: secs,
                                boardsSolved: won ? 1 : 0, totalBoards: CRYPTOGRAM_TOTAL_BOARDS, hintsUsed: hints,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "CRYPTOGRAM") }
         }
         .padding(.vertical, 12)
     }
@@ -610,27 +635,31 @@ struct WordWrapLayout: Layout {
     }
 }
 
-/// One letter of the cipher — the Classic tile geometry (14% corner,
-/// proportional stroke) with the penciled plain letter inside and the CODE
-/// letter in small monospace beneath.
+/// One letter of the cipher (FINISH_SPEC §J3): a B1 glossy tile with the
+/// penciled plain letter inside (it pops in) and the CODE letter as a small chip
+/// beneath (filled in the accent while that code letter is selected).
 private struct CipherTile: View {
     let plain: String
     let code: String
-    var fill: Color = Theme.surface
-    var border: Color = Theme.emptyBorder
-    var ink: Color = Theme.textPrimary
+    var face: GlossyFace = .empty
+    var hinted = false
     var selected = false
     var width: CGFloat = 28
 
     var body: some View {
-        let h = width * 1.14, r = width * 0.14
+        let h = CodebreakerSizing.cellHeight(width)
+        let r = width * 0.22
+        let codeSize = CodebreakerSizing.codeFont(width)
         VStack(spacing: 2) {
-            Text(plain).font(Brand.font(width * 0.55, .black)).foregroundStyle(ink)
-                .frame(width: width, height: h)
-                .background(RoundedRectangle(cornerRadius: r).fill(fill))
-                .overlay(RoundedRectangle(cornerRadius: r).strokeBorder(border, lineWidth: max(1.5, width * 0.06)))
-                .overlay(selected ? RoundedRectangle(cornerRadius: r + 3).stroke(codebreakerAccent, lineWidth: 2).padding(-3) : nil)
-            Text(code).font(.system(size: CodebreakerSizing.codeFont(width), weight: .heavy, design: .monospaced)).foregroundStyle(selected ? codebreakerAccent : Theme.textMuted)
+            GlossyTile(face: face, letter: plain, width: width, height: h, letterScale: 0.55,
+                       glowAmount: hinted ? 0.85 : 0, goldRing: hinted)
+                .modifier(TypePop(letter: face == .typed ? plain : "", size: CGSize(width: width, height: h)))
+                .overlay(selected ? RoundedRectangle(cornerRadius: r + 3, style: .continuous).stroke(codebreakerAccent, lineWidth: 2).padding(-3) : nil)
+            Text(code).font(.system(size: codeSize, weight: .heavy, design: .monospaced))
+                .foregroundStyle(selected ? Color.white : (Theme.isDark ? Theme.textSecondary : codebreakerAccent))
+                .frame(minWidth: max(codeSize * 1.3, width * 0.62), minHeight: codeSize * 1.25)
+                .background(Capsule().fill(selected ? codebreakerAccent : PuzKit.face(codebreakerAccent, 0.14)))
+                .overlay(Capsule().strokeBorder(selected ? codebreakerAccent : PuzKit.line(codebreakerAccent, 0.3), lineWidth: 0.75))
         }
     }
 }
@@ -645,6 +674,9 @@ struct CipherBoardView: View {
     let finished: Bool
     /// Cell side from `CodebreakerSizing.cell(for:width:height:)`.
     let cell: CGFloat
+    /// §L: sit the saying on the shared game tray (the live game; recaps tray at
+    /// their own call sites). Callers size `cell` for the tray's padding.
+    var tray = false
 
     var body: some View {
         let s = vm.state
@@ -659,13 +691,14 @@ struct CipherBoardView: View {
                         if CRYPTOGRAM_ALPHABET.contains(code) {
                             tile(code, state: s, conflicts: conflicts, width: tw)
                         } else {
-                            Text(code).font(Brand.font(tw * 0.6, .black)).foregroundStyle(Theme.textPrimary)
+                            Text(code).font(Brand.font(tw * 0.6, .black)).foregroundStyle(PuzKit.ink)
                                 .frame(width: tw * 0.4, height: CodebreakerSizing.cellHeight(tw)).padding(.horizontal, 1)
                         }
                     }
                 }
             }
         }
+        .modifier(CipherTrayChrome(on: tray, state: finished ? (s.status == .won ? .won : .lost) : .normal))
         .accessibilityLabel("Coded saying")
     }
 
@@ -677,14 +710,18 @@ struct CipherBoardView: View {
         let wrong = s.lastWrong.contains(code)
         let conflict = !plain.isEmpty && conflicts.contains(plain) && !locked
         let correct = finished && plain == cryptogramPlainFor(code, key: s.key)
-        var fill = Theme.surface, border = Theme.emptyBorder, ink = Theme.textPrimary
-        if locked && hinted { fill = codebreakerHint; border = codebreakerHint; ink = .white }
-        else if locked && s.given.contains(plain) { fill = codebreakerAccent; border = codebreakerAccent; ink = .white }
-        else if locked { fill = codebreakerAccent.opacity(0.13); border = codebreakerAccent; ink = codebreakerAccent }
-        else if conflict || wrong { border = codebreakerWrong; ink = codebreakerWrong }
-        else if correct { ink = codebreakerAccent }
+        // §B1 faces: a given letter the plain light tile, a hint purple with the gold
+        // ring, Check-locked (and finished-right) letters purple, a conflict or a
+        // just-cleared letter red, a pencil mark the typed tile, empty frosted.
+        let face: GlossyFace
+        if locked && hinted { face = .correct }
+        else if locked && s.given.contains(plain) { face = .given }
+        else if locked { face = .correct }
+        else if conflict || wrong { face = .bad }
+        else if correct { face = .correct }
+        else { face = plain.isEmpty ? .empty : .typed }
         return Button { vm.select(code); SoundManager.shared.playKeyTap() } label: {
-            CipherTile(plain: plain, code: code, fill: fill, border: border, ink: ink, selected: isSel, width: width)
+            CipherTile(plain: plain, code: code, face: face, hinted: locked && hinted, selected: isSel, width: width)
         }
         .buttonStyle(.squish)
         .disabled(finished)
@@ -711,12 +748,13 @@ struct FrequencyStripView: View {
                     HStack(spacing: 4) {
                         Text(c).font(.system(size: fontSize, weight: .bold, design: .monospaced))
                         Text("\(freq[c] ?? 0)").font(Brand.font(fontSize, .bold)).opacity(0.7)
-                        if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerAccent : Theme.textPrimary) }
+                        if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerAccent : PuzKit.ink) }
                     }
-                    .foregroundStyle(locked ? codebreakerAccent : Theme.textMuted)
+                    .foregroundStyle(locked ? codebreakerAccent : FinishInk.secondary)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(isSel ? codebreakerAccent.opacity(0.07) : Theme.surface))
-                    .overlay(Capsule().stroke(isSel ? codebreakerAccent : Theme.border, lineWidth: 1))
+                    // §A1: tinted chips; the selected one the stronger tint + accent ring.
+                    .background(Capsule().fill(PuzKit.face(codebreakerAccent, isSel ? 0.22 : 0.09)))
+                    .overlay(Capsule().stroke(isSel ? codebreakerAccent : PuzKit.line(codebreakerAccent, 0.28), lineWidth: isSel ? 1.5 : 1))
                 }
                 .buttonStyle(.squish)
                 .accessibilityLabel("Code letter \(c), \(freq[c] ?? 0) times\(plain.map { ", pencilled \($0)" } ?? "")")
@@ -724,5 +762,16 @@ struct FrequencyStripView: View {
         }
         .padding(.horizontal, 8)
         .accessibilityLabel("Letter frequencies")
+    }
+}
+
+/// §L: the saying on the shared game tray (opt-in).
+private struct CipherTrayChrome: ViewModifier {
+    let on: Bool
+    let state: GameTrayState
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on { content.gameTray(accent: codebreakerAccent, state: state) } else { content }
     }
 }

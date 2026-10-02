@@ -5,6 +5,7 @@ import { Icon3D } from '@/components/ui/icon3d';
 
 import { getUserDailyRank } from '@/lib/daily-service';
 import { topPercentLabel } from '@/lib/format';
+import { BRAND_ACCENT, softPill } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 
 interface DailyRankBadgeProps {
@@ -25,13 +26,14 @@ export function DailyRankBadge({ gameMode, playType = 'solo' }: DailyRankBadgePr
 
   const { label, gold } = topPercentLabel(rank.rank, rank.totalPlayers);
 
+  // A1: a tinted pill (gold in the top quarter, brand purple otherwise) — no
+  // plain white; the gold ink lightens on the dark theme (globals.css .lb-gold-ink).
   return (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full"
+      className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 tabular-nums ${gold ? 'lb-gold-ink' : ''}`}
       style={{
-        background: gold ? '#fef3c7' : 'var(--color-surface-hover)',
-        border: `1px solid ${gold ? '#fde68a' : 'var(--color-border)'}`,
-        color: gold ? '#92400e' : 'var(--color-text-muted)',
+        ...softPill(gold ? '#f59e0b' : BRAND_ACCENT, { bar: false }),
+        color: gold ? undefined : 'var(--color-text-secondary)',
       }}
     >
       <Icon3D name="trophy" size={14} />

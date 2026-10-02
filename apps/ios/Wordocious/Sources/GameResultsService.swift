@@ -750,7 +750,11 @@ enum GameResultsService {
                 streak_shields: p.streakShields
             )
             try await client.from("profiles").update(upd).eq("id", value: userId).execute()
-            if grantShield { await ShieldService.grantMilestoneShield() }
+            if grantShield {
+                await ShieldService.grantMilestoneShield()
+                // FINISH_SPEC §AI: a 7-day streak milestone on a win is a happy moment.
+                if won { await MainActor.run { RatingsPrompt.happyMoment(delay: 4.0) } }
+            }
             return XpResult(xpGain: xpGain, streakBonus: streakBonus, dailyBonus: dailyBonus,
                             totalXp: xpGain + streakBonus + dailyBonus,
                             newLevel: newLevel, leveledUp: newLevel > (p.level ?? 1))

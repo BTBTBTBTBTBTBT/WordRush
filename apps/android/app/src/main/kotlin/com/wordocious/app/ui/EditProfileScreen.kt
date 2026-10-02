@@ -52,6 +52,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.AvatarFrame
+import com.wordocious.app.data.AvatarSave
+import com.wordocious.app.data.AvatarSaveResult
+import com.wordocious.app.data.MascotAvatars
+import com.wordocious.app.data.MascotConfigRules
+import com.wordocious.core.AvatarConfig
+import com.wordocious.core.AvatarOptions
+import com.wordocious.core.defaultAvatar
 import com.wordocious.app.data.SupabaseConfig
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.Profanity
@@ -102,6 +110,16 @@ fun EditProfileScreen(onDone: () -> Unit) {
     var featured by remember { mutableStateOf<String?>(null) }
     var avatarEmoji by remember { mutableStateOf("") }
     var isPrivate by remember { mutableStateOf(false) }
+    // FINISH_SPEC AH: the worn character (null = photo / initials) + the level-tier frame.
+    var castId by remember { mutableStateOf<String?>(null) }
+    var frame by remember { mutableStateOf<String?>(null) }
+    // FINISH_SPEC AN4: the build-your-own mascot (live, unsaved; its frame is the avatar
+    // frame for the photo too) and whether the avatar shows the photo instead.
+    var mascot by remember { mutableStateOf<AvatarConfig?>(null) }
+    // Which one shows (avatar_config.display): the photo is never deleted, the toggle only picks.
+    val wearPhoto = mascot?.display == AvatarOptions.DISPLAY_PHOTO
+    var mascotSaving by remember { mutableStateOf(false) }
+    var mascotSaved by remember { mutableStateOf(false) }
     var unlocked by remember { mutableStateOf<Set<String>>(emptySet()) }
     val catalog by androidx.compose.runtime.produceState(com.wordocious.app.data.AchievementCatalog.cached()) {
         value = com.wordocious.app.data.AchievementCatalog.load()
@@ -118,6 +136,13 @@ fun EditProfileScreen(onDone: () -> Unit) {
         featured = profile?.featuredAchievement
         avatarEmoji = profile?.avatarEmoji ?: ""
         isPrivate = profile?.isPrivate ?: false
+        com.wordocious.app.data.CastAvatars.ownLook(profile).let { castId = it.castId; frame = it.frame }
+        profile?.let { p ->
+            // display: the saved one, else "photo" when they have a photo (a worn AH character → "mascot").
+            mascot = MascotConfigRules.forDisplay(
+                MascotAvatars.ownConfig(p), castId, frame, p.username, p.accentColor, hasPhoto = !p.avatarUrl.isNullOrBlank(),
+            )
+        }
         val uid = profile?.id ?: return@LaunchedEffect
         unlocked = com.wordocious.app.data.AchievementService.fetchUnlocked(uid)
         runCatching {
@@ -149,12 +174,36 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 }
                 AuthService.refreshProfile()
                 avatarOverride = url
+                // AH / AN: a fresh photo means "show my photo" — kept right away on a saved
+                // mascot (display = "photo"); the rest of the builder waits for Save.
+                castId = null
+                mascot = mascot?.copy(display = AvatarOptions.DISPLAY_PHOTO)
+                MascotAvatars.ownConfig(AuthService.profile.value)?.takeIf { it.display != AvatarOptions.DISPLAY_PHOTO }?.let {
+                    AvatarSave.saveConfig(it.copy(display = AvatarOptions.DISPLAY_PHOTO))
+                }
             } else {
                 // Web parity: surface upload failures instead of silently bailing.
                 error = "Avatar upload failed. Please try again."
             }
             uploading = false
         }
+    }
+
+    // AN4: what the mascot half of a save writes — the look (Pro / tier items the player
+    // can't wear dropped; display = mascot | photo), AH's character (the preset it matches
+    // exactly; none while the photo shows) and the tier frame. The photo is never cleared.
+    fun mascotPlan(): MascotPlan {
+        val lvl = profile?.level ?: 1
+        val photoNow = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
+        val look = MascotBuilderLogic.sanitize(
+            mascot ?: defaultAvatar(profile?.username?.lowercase(), profile?.accentColor, hasPhoto = photoNow != null), AuthService.isProActive, lvl,
+        )
+        val showPhoto = look.display == AvatarOptions.DISPLAY_PHOTO && photoNow != null
+        return MascotPlan(
+            look = look,
+            castId = if (showPhoto) null else MascotBuilderLogic.presetOf(look),
+            frame = AvatarFrame.effective(look.frame, lvl),
+        )
     }
 
     var showPhotoChoice by remember { mutableStateOf(false) }
@@ -174,21 +223,37 @@ fun EditProfileScreen(onDone: () -> Unit) {
 
     if (showPhotoChoice) {
         val currentAvatar = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
+        // A1 / A8: a tinted dialog; the three choices as candy buttons.
         androidx.compose.material3.AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { showPhotoChoice = false },
-            containerColor = WTheme.surface,
+            containerColor = accentWash(EDIT_PURPLE, 0.10f),
             title = { Text("Change Photo", fontWeight = FontWeight.Black, color = WTheme.text) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Take a new photo or choose one from your library.", color = WTheme.textSecondary)
+                    Text("Take a new photo or choose one from your library.", color = WTheme.textSecondary, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(2.dp))
+                    CandyButton(
+                        "Take Photo", onClick = {
+                            showPhotoChoice = false
+                            cameraLauncher.launch(cameraUri)
+                        },
+                        color = CandyColor.PURPLE, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
+                    )
+                    CandyButton(
+                        "Choose from Library", onClick = {
+                            showPhotoChoice = false
+                            picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        color = CandyColor.PURPLE, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
+                    )
                     // iOS offers Remove Photo whenever an avatar_url exists —
                     // without it an uploaded photo can never be cleared.
                     if (currentAvatar != null) {
-                        Text(
-                            "Remove Photo", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
-                            modifier = Modifier.fillMaxWidth().clickableNoRipple {
+                        CandyButton(
+                            "Remove Photo", onClick = {
                                 showPhotoChoice = false
-                                val uid = AuthService.userId ?: return@clickableNoRipple
+                                val uid = AuthService.userId ?: return@CandyButton
                                 scope.launch {
                                     runCatching {
                                         SupabaseConfig.client.postgrest["profiles"]
@@ -196,23 +261,16 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                     }
                                     AuthService.refreshProfile()
                                     avatarOverride = null
+                                    mascot = mascot?.copy(display = AvatarOptions.DISPLAY_MASCOT)
                                 }
-                            }.padding(vertical = 4.dp),
+                            },
+                            color = CandyColor.PINK, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
                         )
                     }
                 }
             },
             confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    showPhotoChoice = false
-                    cameraLauncher.launch(cameraUri)
-                }) { Text("Take Photo", color = WTheme.primary, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    showPhotoChoice = false
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }) { Text("Choose from Library", color = WTheme.primary, fontWeight = FontWeight.Bold) }
+                CandyButton("Cancel", onClick = { showPhotoChoice = false }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
         )
     }
@@ -225,27 +283,31 @@ fun EditProfileScreen(onDone: () -> Unit) {
     // 48dp. Reported by the Play tester on the profile editor.
     Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        // The shared page header (HEADER_SPEC §4): Cancel is the white close circle; Save
-        // stays the purple text action on the right.
+        // The shared page header (HEADER_SPEC §4): Cancel is the bare close control; Save
+        // is a small purple candy button on the right (A8).
         PageHeader("EDIT PROFILE", onBack = onDone, backAsClose = true, backLabel = "Cancel", titleSize = 18.sp) {
-            Text(
-                if (saving) "Saving…" else "Save", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
-                modifier = Modifier.clickableNoRipple {
-                    if (saving) return@clickableNoRipple
+            CandyButton(
+                if (saving) "Saving…" else "Save", color = CandyColor.PURPLE, size = CandySize.SMALL,
+                onClick = {
+                    if (saving) return@CandyButton
                     val t = username.trim()
                     // Only screen a CHANGED name — mirrors the DB trigger,
                     // which leaves existing rows alone so a name that predates
                     // the policy doesn't block unrelated profile edits.
                     if (t != profile?.username) {
-                        validate(t)?.let { error = it; return@clickableNoRipple }
+                        validate(t)?.let { error = it; return@CandyButton }
                     }
-                    val uid = profile?.id ?: return@clickableNoRipple
+                    val uid = profile?.id ?: return@CandyButton
                     val cleaned = SOCIAL_PLATFORMS.mapNotNull { (k, _, _) ->
                         val v = sanitize(k, socials[k] ?: ""); if (v.isNotEmpty()) k to v else null
                     }.toMap()
                     saving = true; error = null
+                    val plan = mascotPlan()
                     scope.launch {
-                        val ok = runCatching {
+                        val castVal = plan.castId
+                        val frameVal = plan.frame
+                        // AH: the avatar columns ride along only while the server knows them.
+                        suspend fun write(withAvatar: Boolean) = runCatching {
                             val bioVal = bio.trim().takeCodePoints(80).ifBlank { null }
                             val emojiVal = avatarEmoji.trim().ifBlank { null }
                             val titleVal = featured?.takeIf { unlocked.contains(it) }
@@ -258,9 +320,32 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                 set("featured_achievement", titleVal)
                                 set("avatar_emoji", emojiVal)
                                 set("is_private", isPrivate)
+                                if (withAvatar) {
+                                    set(AvatarSave.CAST_COLUMN, castVal)
+                                    set(AvatarSave.FRAME_COLUMN, frameVal)
+                                }
                             }) { filter { eq("id", uid) } }
                         }
-                        if (ok.isSuccess) { AuthService.refreshProfile(); onDone() }
+                        var columnsAccepted = true
+                        var ok = write(withAvatar = true)
+                        if (ok.isFailure && AvatarSave.isMissingAvatarColumn(ok.exceptionOrNull()?.message)) {
+                            // profiles has no avatar_cast_id / avatar_frame yet: save the rest, keep the choice here.
+                            columnsAccepted = false
+                            ok = write(withAvatar = false)
+                        }
+                        if (ok.isSuccess) {
+                            AvatarSave.localCopyAfterSave(columnsAccepted, castVal, frameVal).let { (c, f) ->
+                                com.wordocious.app.data.CastAvatars.storeLocal(uid, c, f)
+                            }
+                            com.wordocious.app.data.CastAvatars.record(t, castVal, frameVal)
+                            // AN3/AN4: the mascot (profiles.avatar_config; kept locally while the column is missing).
+                            val mascotResult = AvatarSave.saveConfig(plan.look)
+                            AuthService.refreshProfile()
+                            if (mascotResult == AvatarSaveResult.FAILED) {
+                                error = "Your profile saved, but your mascot didn't. Please try again."
+                                saving = false
+                            } else onDone()
+                        }
                         else {
                             val msg = ok.exceptionOrNull()?.message ?: ""
                             // enforce_username_policy_trg raises check_violation
@@ -292,45 +377,110 @@ fun EditProfileScreen(onDone: () -> Unit) {
             val favCard = favoriteMode?.let { dk -> dailyModes.firstOrNull { it.engineMode?.name == dk } }
             val featuredName = featured?.let { key -> catalog.firstOrNull { it.key == key }?.name }
 
-            // Live preview
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+            // Live preview — a tinted card in the chosen accent with its top bar (A1), O2
+            // strutting in the corner (A7: a cast pose where there is room).
+            Box(Modifier.fillMaxWidth()) {
+            TintedCard(
+                accentColor, Modifier.fillMaxWidth(), corner = 18.dp,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+              Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // ART_SPEC §20: photo in a circle, else the letter tile (live username / accent / emoji).
-                if (avatarUrl != null) coil.compose.AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.size(64.dp).clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                else LetterTileAvatar(username.trim().ifBlank { "?" }, 64.dp, accentHex = accent, emoji = avatarEmoji)
+                // AA2: a Pro member's preview wears the gold ring + crown.
+                val pro = profile != null && com.wordocious.app.data.AuthService.isProActive
+                // AN4/AN6: the live mascot (or the square-framed photo when that is what shows) + the Pro crown.
+                EditAvatar(mascot, username.trim().ifBlank { "?" }, avatarUrl, wearPhoto, 64.dp, pro)
                 Text(username.trim().ifBlank { "username" }, fontSize = 18.sp, fontWeight = FontWeight.Black, color = accentColor)
-                if (featuredName != null) Row(Modifier.background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("★", fontSize = 10.sp, color = accentColor); Text(featuredName.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, color = accentColor)
+                if (featuredName != null) Row(Modifier.background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    GlyphArtImage(GlyphArt.STAR, 13.dp); Text(featuredName.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, color = accentColor)
                 }
                 if (bio.trim().isNotEmpty()) Text(bio.trim(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 if (favCard != null) Row(Modifier.background(favCard.accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     ModeGlyph(favCard, tint = favCard.accent, box = 28.dp); Text(favCard.title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = favCard.accent)
                 }
+              }
+            }
+            // A7: never the worn character twice in the card — O1 steps in when O2 is the avatar.
+            if (castId == "o2") CastPose(MascotId.O1, "cheer", 56.dp, Modifier.align(Alignment.TopEnd).padding(top = 14.dp, end = 6.dp))
+            else CastPose(MascotId.O2, "strut", 56.dp, Modifier.align(Alignment.TopEnd).padding(top = 14.dp, end = 6.dp))
             }
 
-            // Avatar + Change Photo
-            if (avatarUrl != null) {
-                coil.compose.AsyncImage(model = avatarUrl, contentDescription = "Avatar", modifier = Modifier.size(72.dp).clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-            } else {
-                LetterTileAvatar(profile?.username ?: "P", 72.dp, accentHex = accent, emoji = avatarEmoji)
+            val proSelf = profile != null && com.wordocious.app.data.AuthService.isProActive
+            // FINISH_SPEC AM2: the emoji avatar option is retired (the cast + photo + letter
+            // tile replace it; the stored avatar_emoji is left as is, no DB change). Players
+            // who still have one get a one-time gentle nudge toward the character picker.
+            var emojiNudge by remember { mutableStateOf(false) }
+            LaunchedEffect(profile?.id, profile?.avatarEmoji) {
+                if (!profile?.avatarEmoji.isNullOrBlank() && !com.wordocious.app.data.SettingsPref.get(EMOJI_AVATAR_NUDGED, false)) {
+                    emojiNudge = true
+                    com.wordocious.app.data.SettingsPref.set(EMOJI_AVATAR_NUDGED, true)
+                }
             }
-            Text(
-                if (uploading) "Uploading…" else "Change Photo", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
-                modifier = Modifier.clickableNoRipple { if (!uploading) showPhotoChoice = true },
-            )
-            // Avatar emoji
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Avatar emoji", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                OutlinedTextField(
-                    value = avatarEmoji, onValueChange = { avatarEmoji = it.take(2) }, singleLine = true,
-                    modifier = Modifier.width(72.dp),
-                    placeholder = { Text("🎯", fontSize = 13.sp) },
-                    colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
+            if (emojiNudge) {
+                TintedCard(accentColor, Modifier.fillMaxWidth(), corner = 16.dp, barHeight = 6.dp) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // A7: D here (O1 / O2 already sit in the preview card above).
+                        CastPose(MascotId.D, "eureka", 48.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("Pick your character!", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                            Text(
+                                "Emoji avatars are retired. Choose one of the cast below, or use your photo or letter tile.",
+                                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                            )
+                        }
+                    }
+                }
+            }
+
+            // AN4: make your mascot — the cast presets (AH's character pick), every part, the
+            // level-tier / Pro frames, Randomize and Save. The photo stays an option below.
+            SectionCard("MAKE YOUR MASCOT") {
+                if (avatarUrl != null) MascotWearToggle(wearPhoto, onChange = { photo ->
+                    mascot = mascot?.copy(display = if (photo) AvatarOptions.DISPLAY_PHOTO else AvatarOptions.DISPLAY_MASCOT)
+                    mascotSaved = false
+                })
+                // Built once the saved look has loaded (so opening the page doesn't hop / play the sound).
+                val look = mascot
+                if (look != null) MascotBuilder(
+                    config = look,
+                    onChange = { mascot = it; mascotSaved = false },
+                    initial = MascotConfigRules.initialOf(username.trim().ifBlank { profile?.username }),
+                    level = profile?.level ?: 1,
+                    isPro = proSelf,
+                    saving = mascotSaving,
+                    saved = mascotSaved,
+                    onSave = save@{
+                        val uid = profile?.id ?: return@save
+                        if (mascotSaving) return@save
+                        val plan = mascotPlan()
+                        mascotSaving = true; error = null
+                        scope.launch {
+                            val r = saveMascotLook(uid, profile?.username, plan)
+                            mascotSaving = false
+                            mascotSaved = r != AvatarSaveResult.FAILED
+                            if (r == AvatarSaveResult.FAILED) error = "Couldn't save your mascot. Please try again."
+                        }
+                    },
                 )
-                Text("(shown when you have no photo)", fontSize = 10.sp, color = WTheme.textMuted)
+            }
+            SectionCard("PHOTO") {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // AN6: the photo as a rounded square with the chosen frame.
+                    if (avatarUrl != null) PhotoAvatar(avatarUrl, 56.dp, frame = mascot?.frame?.takeIf { it != "none" }, pro = proSelf, contentDescription = "Your photo")
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            if (avatarUrl != null) "Prefer your own face? Show your photo instead of your mascot."
+                            else "Add a photo to show it instead of your mascot.",
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        )
+                        CandyButton(
+                            when { uploading -> "Uploading…"; avatarUrl != null -> "Change Photo"; else -> "Add Photo" },
+                            onClick = { if (!uploading) showPhotoChoice = true },
+                            color = CandyColor.PURPLE, size = CandySize.SMALL, enabled = !uploading,
+                        )
+                    }
+                }
             }
 
             // Username
@@ -338,7 +488,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 OutlinedTextField(
                     value = username, onValueChange = { username = it; error = null }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
+                    colors = editFieldColors(),
                 )
                 error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
             }
@@ -349,21 +499,27 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     value = bio, onValueChange = { bio = it.takeCodePoints(80) },
                     placeholder = { Text("A short tagline…", fontSize = 13.sp, color = WTheme.textMuted) },
                     modifier = Modifier.fillMaxWidth(), maxLines = 3,
-                    colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
+                    colors = editFieldColors(),
                 )
             }
 
             // Accent color
             SectionCard("ACCENT COLOR") {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // A1: each swatch a mini tinted tile; the selected one takes the stronger tint + ring.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     ProfileAccent.palette.forEach { (id, hex) ->
                         val selected = ProfileAccent.hex(accent).equals(hex, true)
+                        val c = ProfileAccent.color(hex)
                         Box(
-                            Modifier.size(30.dp).clip(CircleShape)
-                                .background(ProfileAccent.color(hex))
-                                .border(if (selected) 2.5.dp else 0.dp, if (selected) ProfileAccent.color(hex) else Color.Transparent, CircleShape)
-                                .clickableNoRipple { accent = if (id == "purple") null else hex },
-                        )
+                            Modifier.weight(1f, fill = false).size(40.dp)
+                                .squishClickable(label = "$id accent" + if (selected) ", selected" else "", role = androidx.compose.ui.semantics.Role.RadioButton) {
+                                    accent = if (id == "purple") null else hex
+                                }
+                                .miniGameCard(c, 10.dp, selected = selected),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(Modifier.padding(top = 3.dp).size(20.dp).clip(CircleShape).background(c))
+                        }
                     }
                 }
             }
@@ -378,7 +534,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                         item { EditChip("None", featured == null, ProfileAccent.color(accent)) { featured = null } }
                         items(unlockedDefs.size) { i ->
                             val def = unlockedDefs[i]
-                            EditChip("★ ${def.name}", featured == def.key, ProfileAccent.color(accent)) { featured = def.key }
+                            EditChip(def.name, featured == def.key, ProfileAccent.color(accent), star = true) { featured = def.key }
                         }
                     }
                 }
@@ -406,9 +562,10 @@ fun EditProfileScreen(onDone: () -> Unit) {
             // Saves profiles.is_private with the rest of the form.
             SectionCard("PRIVACY") {
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
-                        .border(1.5.dp, if (isPrivate) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(10.dp))
-                        .clickableNoRipple { isPrivate = !isPrivate }
+                    Modifier.fillMaxWidth()
+                        .squishClickable(label = "Private profile, ${if (isPrivate) "on" else "off"}", role = androidx.compose.ui.semantics.Role.Switch) { isPrivate = !isPrivate }
+                        .clip(RoundedCornerShape(12.dp)).background(accentWash(EDIT_PURPLE, if (isPrivate) 0.2f else 0.08f))
+                        .border(1.5.dp, if (isPrivate) EDIT_PURPLE else accentLine(EDIT_PURPLE), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -425,7 +582,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                         fontSize = 10.sp, fontWeight = FontWeight.Black,
                         color = if (isPrivate) Color(0xFF7C3AED) else WTheme.textMuted,
                         modifier = Modifier.clip(RoundedCornerShape(50))
-                            .background(if (isPrivate) Color(0xFFF3F0FF) else WTheme.surfaceHover)
+                            .background(if (isPrivate) accentWash(EDIT_PURPLE, 0.3f) else accentWash(EDIT_PURPLE, 0.12f))
                             .padding(horizontal = 8.dp, vertical = 3.dp),
                     )
                 }
@@ -445,7 +602,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                             placeholder = { Text(placeholder, fontSize = 13.sp, color = WTheme.textMuted) },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = if (key == "website") KeyboardType.Uri else KeyboardType.Text),
-                            colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
+                            colors = editFieldColors(),
                         )
                     }
                 }
@@ -455,29 +612,92 @@ fun EditProfileScreen(onDone: () -> Unit) {
     }
 }
 
-/** A titled bordered surface card — iOS EditProfileView.sectionCard. */
+/** AN4: what the mascot half of a save writes (see mascotPlan in EditProfileScreen). */
+private data class MascotPlan(val look: AvatarConfig, val castId: String?, val frame: String?)
+
+/**
+ * The builder's own Save: the mascot (AvatarSave.saveConfig — local copy while the
+ * column is missing), AH's character + frame columns (same missing-column fallback as
+ * the page Save). The photo is never touched (avatar_config.display picks what shows).
+ */
+private suspend fun saveMascotLook(uid: String, username: String?, plan: MascotPlan): AvatarSaveResult {
+    val r = AvatarSave.saveConfig(plan.look)
+    if (r == AvatarSaveResult.FAILED) return r
+    val cols = runCatching {
+        SupabaseConfig.client.postgrest["profiles"].update({
+            set(AvatarSave.CAST_COLUMN, plan.castId)
+            set(AvatarSave.FRAME_COLUMN, plan.frame)
+        }) { filter { eq("id", uid) } }
+    }
+    AvatarSave.localCopyAfterSave(cols.isSuccess, plan.castId, plan.frame).let { (c, f) ->
+        com.wordocious.app.data.CastAvatars.storeLocal(uid, c, f)
+    }
+    com.wordocious.app.data.CastAvatars.record(username, plan.castId, plan.frame)
+    AuthService.refreshProfile()
+    return r
+}
+
+/** The avatar as it will show: the square-framed photo when that is worn, else the live mascot. Decorative. */
+@Composable
+private fun EditAvatar(mascot: AvatarConfig?, username: String, photoUrl: String?, wearPhoto: Boolean, size: androidx.compose.ui.unit.Dp, pro: Boolean) {
+    if (wearPhoto && photoUrl != null) {
+        PhotoAvatar(photoUrl, size, frame = mascot?.frame?.takeIf { it != "none" }, pro = pro)
+    } else {
+        MascotAvatar(
+            config = mascot ?: defaultAvatar(username?.lowercase(), null), initial = MascotConfigRules.initialOf(username),
+            size = size, pro = pro,
+        )
+    }
+}
+
+/** The Edit Profile page accent (purple, like Settings / Home). */
+private val EDIT_PURPLE = Color(0xFF7C3AED)
+
+/** A titled section — iOS EditProfileView.sectionCard — as a tinted card with its top bar (A1). */
 @Composable
 private fun SectionCard(title: String, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+    TintedCard(
+        EDIT_PURPLE, Modifier.fillMaxWidth(), corner = 18.dp, barHeight = 8.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+        FinishLabel(title)
         content()
     }
 }
 
+/** A choice chip: a tinted pill (selected = filled in the accent), squishing (A9). */
 @Composable
-private fun EditChip(label: String, selected: Boolean, accent: Color, onClick: () -> Unit) {
-    Text(
-        label, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-        color = if (selected) Color.White else WTheme.text,
-        modifier = Modifier.clip(RoundedCornerShape(50))
-            .background(if (selected) accent else WTheme.surfaceAlt)
-            .clickableNoRipple(onClick).padding(horizontal = 10.dp, vertical = 6.dp),
-    )
+private fun EditChip(label: String, selected: Boolean, accent: Color, star: Boolean = false, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier
+            .squishClickable(label = label + if (selected) ", selected" else "", role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick)
+            .clip(shape)
+            .background(if (selected) accent else accentWash(accent, 0.12f))
+            .border(1.5.dp, if (selected) accent else accentLine(accent), shape)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        // AL addendum 2: the featured-title star is our gold star art, not a glyph.
+        if (star) GlyphArtImage(GlyphArt.STAR, 13.dp)
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, color = if (selected) Color.White else WTheme.text)
+    }
 }
+
+/** AM2: the one-time "Pick your character!" nudge for players who still wear an emoji avatar. */
+private const val EMOJI_AVATAR_NUDGED = "pref-emoji-avatar-nudged"
+
+/** The text fields: a soft purple-tinted container (A1, no white). */
+@Composable
+private fun editFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = accentWash(EDIT_PURPLE, 0.06f),
+    unfocusedContainerColor = accentWash(EDIT_PURPLE, 0.06f),
+    focusedIndicatorColor = EDIT_PURPLE,
+    unfocusedIndicatorColor = accentLine(EDIT_PURPLE, 0.45f),
+    cursorColor = EDIT_PURPLE,
+)
 
 private fun validate(name: String): String? {
     // Shape AND content (core Profanity mirrors the DB word list — this is the

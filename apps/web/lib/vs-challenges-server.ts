@@ -5,6 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { VsRun } from '@wordle-duel/core';
 import { isProActive } from './pro';
+import { avatarFieldsOf, type AvatarFields } from './avatar-fields-server';
 
 export const VS_MODES = new Set(['DUEL', 'DUEL_6', 'DUEL_7', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE']);
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easier to type
@@ -102,19 +103,24 @@ export interface ChallengeView {
   code: string;
   gameMode: string;
   seed: string;
-  challenger: { id: string; username: string; avatarUrl: string | null };
+  /** + FINISH_SPEC AH/AN3 (additive): avatar_cast_id, avatar_frame, avatar_config, is_pro (active). */
+  challenger: { id: string; username: string; avatarUrl: string | null } & AvatarFields;
   run: VsRun & { totalBoards: number; guessLog: string[]; solutions: string[] };
   createdAt: string;
   expiresAt: string;
   isLink: boolean;
 }
 
-export function toView(row: any, prof: { username?: string | null; avatar_url?: string | null } | null | undefined): ChallengeView {
+export function toView(
+  row: any,
+  // The profile row; is_pro / pro_expires_at / avatar_* when selected (missing → null / false).
+  prof: { username?: string | null; avatar_url?: string | null; [column: string]: unknown } | null | undefined,
+): ChallengeView {
   return {
     code: row.code,
     gameMode: row.game_mode,
     seed: row.seed,
-    challenger: { id: row.challenger_id, username: prof?.username || 'Player', avatarUrl: prof?.avatar_url ?? null },
+    challenger: { id: row.challenger_id, username: prof?.username || 'Player', avatarUrl: prof?.avatar_url ?? null, ...avatarFieldsOf(prof) },
     run: {
       solved: row.solved,
       boardsSolved: row.boards_solved,

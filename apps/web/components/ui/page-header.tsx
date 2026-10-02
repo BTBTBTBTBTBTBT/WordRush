@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ArtTitle } from '@/components/ui/art-title';
-import type { TitleArtName } from '@/lib/art';
+import { ART_SIZE, type TitleArtName } from '@/lib/art';
+import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { Mascot, type MascotMotion } from '@/components/ui/mascot';
 import type { MascotId } from '@/lib/mascots';
 
@@ -143,12 +144,14 @@ export function PageHeader({
       <div className={`flex items-center gap-2 ${className}`} style={{ minHeight: 44 }}>
         {back && <HeaderBack kind="back" {...back} />}
         <div className="flex-1 min-w-0">
+          {/* FINISH_SPEC N1: lettering-only titles are small centered headlines (≈62%, ≤ 300 × 64). */}
           <ArtTitle
             name={art}
             label={artLabel ?? (typeof title === 'string' ? title : '')}
             as={titleTag}
-            maxWidth={artMaxWidth}
-            align={back || close || right ? 'left' : 'center'}
+            maxWidth={Math.min(artMaxWidth, headlineMaxWidth(ART_SIZE[art][0], ART_SIZE[art][1]))}
+            widthPct={HEADLINE.widthPct}
+            align="center"
           />
           {sub}
         </div>

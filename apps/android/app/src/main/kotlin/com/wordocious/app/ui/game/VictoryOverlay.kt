@@ -1,60 +1,18 @@
 package com.wordocious.app.ui.game
 
-import com.wordocious.app.ui.theme.Nunito
-
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material3.Text
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.wordocious.app.ui.FitText
-import com.wordocious.app.ui.clickableNoRipple
-import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.app.ui.modeAccent
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
-import kotlin.random.Random
 
 /**
  * Victory / game-over celebration overlay (spec line 150). Shown for a game that
- * finished LIVE this session, before the post-game stats screen. Dim backdrop +
- * confetti, a card with the 6pt accent bar, the VICTORY!/SO CLOSE! moment art, the
- * solution (single) or board count (multi), stat blocks, tap-to-continue.
+ * finished LIVE this session, before the post-game stats screen. FINISH_SPEC R1: the
+ * shared [WinPopup] — the host on its stage, VICTORY! / SO CLOSE!, the answer(s) on
+ * glossy tiles in the tinted tray (multi-board: the 2-column grid with checks), the
+ * definition under a single word, the stat chips and the CONTINUE candy.
  */
 @Composable
 fun VictoryOverlay(
@@ -65,10 +23,14 @@ fun VictoryOverlay(
     // Play/Try-again button on the card. Callers pass it ONLY on unlimited
     // games — same non-daily + Pro gate as the post-game screen's button.
     onPlayAgain: (() -> Unit)? = null,
-    /** Composite score of the run — a third stat on the card (founder,
+    /** Composite score of the run — a stat chip on the card (founder,
      *  2026-09-22: the points are the number players care about). */
     points: Int? = null,
     onContinue: () -> Unit,
+    /** R1 extra chips, only when the caller knows them. */
+    streakDay: Int? = null,
+    flawless: Boolean = false,
+    newRecord: Boolean = false,
 ) {
     val won = state.status == GameStatus.WON
     val board = state.boards[0]
@@ -86,173 +48,32 @@ fun VictoryOverlay(
         else com.wordocious.app.data.SoundManager.playGameOver()
     }
 
-    // Spring-in scale of the card
-    var shown by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { shown = true }
-    // Web fade-in-scale: 0.8 → 1.0 over 300ms ease-out; snap under reduced motion.
-    val dur = if (WTheme.reducedMotion) 0 else 300
-    val scale by animateFloatAsState(if (shown) 1f else 0.8f, tween(dur, easing = EaseOut), label = "victoryScale")
-    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(dur, easing = EaseOut), label = "victoryAlpha")
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF18182E).copy(alpha = 0.6f))
-            .clickableNoRipple(onContinue),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (won && !WTheme.reducedMotion) ConfettiView()
-
-        // The game’s host pops above VICTORY!; R stands, static, above SO CLOSE!
-        // (MASCOT_SPEC §3, §5). Its feet rest on the card, clear of the headline.
-        com.wordocious.app.ui.ResultHostBox(won, mode.name, Modifier.widthIn(max = 380.dp).padding(24.dp)) { hostInset ->
-        Column(
-            modifier = Modifier
-                .padding(top = hostInset)
-                .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha }
-                .clip(RoundedCornerShape(16.dp))
-                .background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // 6pt accent bar
-            Box(
-                Modifier.fillMaxWidth().height(6.dp)
-                    .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))),
-            )
-            Column(
-                Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                // Moment lettering (ART_SPEC §6): VICTORY! on a win, SO CLOSE! on a loss.
-                com.wordocious.app.ui.MomentTitle(
-                    if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE,
-                )
-                Spacer(Modifier.height(8.dp))
-                if (!multi) {
-                    // ProperNoundle answers are stored normalized ("TAYLORSWIFT");
-                    // iOS passes the spaced display name into the overlay.
-                    val display = if (mode == GameMode.PROPERNOUNDLE)
-                        com.wordocious.core.ProperNoundle.puzzleFor(board.solution)?.display ?: board.solution
-                    else board.solution
-                    Text(display.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp, color = WTheme.text)
-                    // iOS shows the dictionary definition right under the word —
-                    // ProperNoundle skips it (proper noun; its Wikipedia clue stands in).
-                    if (mode != GameMode.PROPERNOUNDLE) {
-                        Spacer(Modifier.height(12.dp))
-                        DefinitionCard(board.solution.uppercase())
-                    }
-                } else {
-                    // Multi-board reveal: 2 columns (≤4 boards) / 4 columns (>4).
-                    val solutions = state.boards.map { it.solution.uppercase() }
-                    val cols = if (solutions.size > 4) 4 else 2
-                    Column(
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        solutions.chunked(cols).forEach { rowWords ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                rowWords.forEach { w ->
-                                    Text(
-                                        w, fontSize = if (solutions.size > 4) 13.sp else 16.sp,
-                                        fontWeight = FontWeight.Black, letterSpacing = 1.sp, maxLines = 1,
-                                        color = WTheme.text, textAlign = TextAlign.Center,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
-                                repeat(cols - rowWords.size) { Spacer(Modifier.weight(1f)) }
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    if (multi) StatBlock("Boards", "$boardsSolved/${state.boards.size}")
-                    StatBlock("Guesses", if (board.maxGuesses > 0) "$rowsUsed/${board.maxGuesses}" else "$rowsUsed")
-                    StatBlock("Time", fmtVTime(elapsedSeconds))
-                    if (points != null) StatBlock("Points", "%,d".format(points))
-                }
-                Spacer(Modifier.height(16.dp))
-                if (onPlayAgain != null) {
-                    // FINISH_SPEC A8: the glossy candy button.
-                    com.wordocious.app.ui.CandyButton(
-                        if (won) "Play again" else "Try again", onClick = onPlayAgain,
-                        color = if (won) com.wordocious.app.ui.CandyColor.PINK else com.wordocious.app.ui.CandyColor.AMBER,
-                        size = com.wordocious.app.ui.CandySize.MEDIUM, icon = com.wordocious.app.ui.CandyIcon.PLAY,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                }
-                Text("Tap anywhere to continue", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-            }
-        }
-        }
+    val answers = if (!multi) {
+        // ProperNoundle answers are stored normalized ("TAYLORSWIFT"); the spaced
+        // display name gives one word per row.
+        val display = if (mode == GameMode.PROPERNOUNDLE)
+            com.wordocious.core.ProperNoundle.puzzleFor(board.solution)?.display ?: board.solution
+        else board.solution
+        WinAnswers(display.trim().split(Regex("\\s+")).filter { it.isNotEmpty() })
+    } else {
+        WinAnswers(state.boards.map { it.solution }, state.boards.map { it.status == GameStatus.WON })
     }
-}
 
-@Composable
-private fun StatBlock(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // One line always — a long time must never break inside its cell (founder, 2026-09-28).
-        // A2: a soft number (Nunito Black, dark purple, tabular) — shrinks to fit, never breaks.
-        FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) com.wordocious.app.ui.FinishInk.softNumberDark else com.wordocious.app.ui.FinishInk.softNumber)
-        Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = WTheme.textMuted)
-    }
-}
-
-/** Confetti — web effects/confetti.tsx parity: 50 pieces, 12×12 rounded squares,
- *  8-color palette, 0–0.5s random delay, 2–4s LINEAR full-height fall, 720° spin,
- *  fading to 0 at the end. */
-@Composable
-private fun ConfettiView() {
-    val colors = listOf(
-        Color(0xFFFFD700), Color(0xFFFF6B9D), Color(0xFFC084FC), Color(0xFF60A5FA),
-        Color(0xFF34D399), Color(0xFFFBBF24), Color(0xFFF97316), Color(0xFFEC4899),
+    WinPopup(
+        won = won,
+        hostKey = mode.name,
+        accent = modeAccent(mode),
+        onContinue = onContinue,
+        answers = answers,
+        stats = WinPopupMath.wordGameStats(
+            multi, boardsSolved, state.boards.size, rowsUsed, board.maxGuesses, elapsedSeconds, points,
+        ),
+        onPlayAgain = onPlayAgain,
+        streakDay = streakDay,
+        flawless = flawless,
+        newRecord = newRecord,
+        // iOS shows the dictionary definition right under the word —
+        // ProperNoundle skips it (proper noun; its Wikipedia clue stands in).
+        extra = if (!multi && mode != GameMode.PROPERNOUNDLE) ({ DefinitionCard(board.solution.uppercase()) }) else null,
     )
-    // Stable per-piece params (seeded once)
-    val pieces = remember {
-        List(50) {
-            ConfettiPiece(
-                xFrac = Random.nextFloat(),
-                color = colors[Random.nextInt(colors.size)],
-                delayMs = Random.nextInt(0, 500),
-                durationMs = Random.nextInt(2000, 4000),
-            )
-        }
-    }
-    Box(Modifier.fillMaxSize()) {
-        pieces.forEach { p -> ConfettiRect(p) }
-    }
 }
-
-private data class ConfettiPiece(val xFrac: Float, val color: Color, val delayMs: Int, val durationMs: Int)
-
-@Composable
-private fun ConfettiRect(p: ConfettiPiece) {
-    var go by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { go = true }
-    val progress by animateFloatAsState(
-        targetValue = if (go) 1f else 0f,
-        animationSpec = tween(durationMillis = p.durationMs, delayMillis = p.delayMs, easing = LinearEasing),
-        label = "confetti",
-    )
-    val rot = progress * 720f
-    val fade = (1f - progress).coerceIn(0f, 1f)
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val fall = maxHeight * progress
-        Box(
-            Modifier
-                .padding(start = maxWidth * p.xFrac)
-                .offset(y = fall - 20.dp)
-                .rotate(rot)
-                .size(12.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(p.color.copy(alpha = fade)),
-        )
-    }
-}
-
-/** Compact "45s" under a minute, "35:17" above — "35m 17s" wrapped inside the stat cell (founder, 2026-09-28; iOS/web match). */
-private fun fmtVTime(secs: Int): String = if (secs < 60) "${secs}s" else "${secs / 60}:${"%02d".format(secs % 60)}"

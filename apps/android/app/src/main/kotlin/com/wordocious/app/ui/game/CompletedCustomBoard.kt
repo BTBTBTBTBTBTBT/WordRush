@@ -130,13 +130,11 @@ internal fun FinishedBoardView(b: FinishedBoard) {
                 CipherBoard(b.s, selected = null, finished = true, maxCell = 24.dp) {}
                 BoardCaption("“${b.s.text}”")
             }
-            is FinishedBoard.Groups -> Column(Modifier.widthIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                b.solved.forEach { GroupBar(it) }
-                b.unsolved.forEach { GroupBar(it, revealed = true) }
-            }
+            // L the finished groups sit in Kindred's tray (purple solved, slate not).
+            is FinishedBoard.Groups -> KindredFinishedBars(b.solved, b.unsolved)
             is FinishedBoard.Crossword -> {
                 if (b.s.title.isNotBlank()) BoardCaption(b.s.title)
-                Box(Modifier.widthIn(max = 280.dp)) { CrosswordGrid(b.s, null, emptySet(), 0, maxCell = 28.dp) {} }
+                Box(Modifier.widthIn(max = 280.dp)) { CrosswordGrid(b.s, null, emptySet(), 0, maxCell = 28.dp, interactive = false) {} }
             }
             is FinishedBoard.Muddle -> MuddleFinishedBoard(b.s, b.puzzle, b.byHint)
             is FinishedBoard.Spyglass -> {

@@ -56,6 +56,8 @@ export function PageBackground({
     '--page-wall-a11y-light': String(WALL_OVERLAY.a11yLight),
     '--page-wall-a11y-dark': String(WALL_OVERLAY.a11yDark),
     '--page-card-shadow': accentCardShadow(accent),
+    // FINISH_SPEC N3: the cast row's ground shadow leans toward the page accent.
+    '--page-accent': accent,
   } as React.CSSProperties;
   return (
     <div className={className} style={{ ...vars, ...style }} data-page-tint={colors ? 'game' : tint} data-page-scheme={scheme}>
@@ -72,7 +74,7 @@ export function PageBackground({
  * matches. The game's root element: it takes the className / style the old
  * flat-background div had.
  */
-export function GameBackground({ mode, ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'wall' | 'dim'> & {
+export function GameBackground({ mode, className = '', ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'wall' | 'dim'> & {
   /** The mode's db key (DUEL, QUORDLE, SCRAMBLE, …). */
   mode: string;
 }) {
@@ -81,6 +83,10 @@ export function GameBackground({ mode, ...rest }: Omit<PageBackgroundProps, 'tin
       colors={gameTintForDbKey(mode) ?? undefined}
       wall={gameWallForDbKey(mode)}
       dim={WALL_OVERLAY.darkGame}
+      // FINISH_SPEC AG: on desktop web (≥ 900 px) every game screen is the 560 px
+      // centered column (globals.css .page-col); the wallpaper layer stays fixed
+      // to the whole window and the board fit measures the column.
+      className={`page-col ${className}`}
       {...rest}
     />
   );

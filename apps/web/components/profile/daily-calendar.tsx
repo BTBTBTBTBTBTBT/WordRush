@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CALENDAR_RAMP } from '@/lib/tile-theme';
+import { softCard } from '@/lib/soft-surface';
 
 interface DailyCalendarProps {
   data: Array<{ day: string; gamesPlayed: number; gamesWon: number }>;
@@ -75,7 +76,7 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
   return (
     <div
       className="p-4"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+      style={softCard('#7c3aed', { radius: 18 })}
     >
       {months.length > 0 && (
         <div className="flex gap-0 mb-1 relative" style={{ height: '14px', marginLeft: `${DAY_LABEL_W}px` }}>

@@ -67,7 +67,7 @@ struct ProfilePersonalizationRow: View {
                         }
                     }
                     if let bio = bioText {
-                        Text(bio).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        Text(bio).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                             .multilineTextAlignment(.leading).lineLimit(2)
                     }
                 }
@@ -75,7 +75,7 @@ struct ProfilePersonalizationRow: View {
                 VStack(spacing: 6) {
                     if titleName != nil { titleChip }
                     if let bio = bioText {
-                        Text(bio).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                        Text(bio).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                             .multilineTextAlignment(.center).frame(maxWidth: 300)
                     }
                     if favMode != nil { favChip }
@@ -96,8 +96,9 @@ struct ProfilePersonalizationRow: View {
                 Image(systemName: "star.fill").font(.system(size: 9, weight: .bold))
                 Text(name.uppercased()).font(Brand.font(10, .black)).tracking(0.4)
             }
-            .foregroundStyle(accent).padding(.horizontal, 9).padding(.vertical, 3)
-            .background(Capsule().fill(accent.opacity(0.12)))
+            .foregroundStyle(accent).padding(.horizontal, 9).padding(.top, 5).padding(.bottom, 3)
+            // FINISH_SPEC §A1: chips are tinted pills (wash + border + 4-pt top bar).
+            .tintedPill(accent)
             .lineLimit(1).minimumScaleFactor(0.8)
         }
     }
@@ -108,8 +109,8 @@ struct ProfilePersonalizationRow: View {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 16)
                 Text(m.title).font(Brand.font(11, .bold)).foregroundStyle(m.accent)
             }
-            .padding(.horizontal, 9).padding(.vertical, 3)
-            .background(Capsule().fill(m.accent.opacity(0.12)))
+            .padding(.horizontal, 9).padding(.top, 5).padding(.bottom, 3)
+            .tintedPill(m.accent)
             .lineLimit(1).minimumScaleFactor(0.8)
         }
     }

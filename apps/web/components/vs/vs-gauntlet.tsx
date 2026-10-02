@@ -1,6 +1,8 @@
 'use client';
 
+import { REVEAL } from '@/lib/tile-motion';
 import { useReducer, useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { modeColor } from '@/lib/vs-lobby';
 import {
   gameReducer,
   initializeGame,
@@ -158,7 +160,7 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
       setMessage(msg);
       playInvalid();
       setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
       setTimeout(() => setMessage(''), 1500);
     };
 
@@ -247,6 +249,8 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
         <div ref={classicAreaRef} className="flex flex-col items-center gap-1 w-full h-full justify-center">
           <Board
             sizePx={classicSize ?? undefined}
+            // FINISH_SPEC L: the shared game tray in the mode's accent.
+            trayAccent={modeColor(mode)}
             guesses={board.guesses}
             currentGuess={currentGuess}
             maxGuesses={board.maxGuesses}
@@ -287,6 +291,7 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
     } else {
       return (
         <MultiBoard
+          accent={modeColor(mode)}
           boards={state.boards}
           currentGuess={currentGuess}
           isShaking={isShaking}
@@ -364,6 +369,9 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
             ? gauntlet.stages[gauntlet.currentStage + 1]
             : null
           }
+          cleared={gauntlet.currentStage + 1}
+          totalStages={gauntlet.totalStages}
+          guessesSoFar={gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) + state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
           onComplete={handleTransitionComplete}
         />
       )}

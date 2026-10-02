@@ -27,14 +27,14 @@ os.makedirs(WEB, exist_ok=True)
 
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 PAGES = ['friends', 'stats', 'records', 'vs', 'puzzles', 'wotd', 'settings', 'howto', 'gopro', 'moregames',
-         'welcome', 'leaderboard', 'dailies', 'guides', 'strategy', 'words', 'faq', 'privacy', 'terms']
+         'welcome', 'leaderboard', 'dailies', 'guides', 'strategy', 'words', 'faq', 'privacy', 'terms', 'vsbattle']
 GAMES = ['practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven', 'gauntlet',
          'propernoundle', 'more', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder',
          'cryptogram', 'wordsearch', 'regions',
          'pocket-rps', 'pocket-ttt', 'pocket-coin', 'pocket-pass', 'pocket-ghost', 'pocket-chain']
 MOMENTS = ['victory', 'soclose', 'sweep', 'flawless', 'youwin', 'youlose', 'draw', 'newrecord', 'streak']
 SCENES = ['r-asleep', 'r-unplugged', 'u-alldone', 'o3-notfound', 'i-invite', 'd-nostats',
-          'pro-crown', 'shield-guard', 'flawless-star', 'sweep-broom', 'banner-sweep', 'banner-flawless']
+          'pro-crown', 'shield-guard', 'flawless-star', 'sweep-broom', 'banner-sweep', 'banner-flawless', 'vs-faceoff', 'ladder-cleared', 'gauntlet-champion', 'unlimited-loop', 'friends-match', 'invite-sent', 'gift-pro', 'onboard-tiles', 'onboard-score']
 UI = ['badge-w', 'badge-l', 'badge-check', 'lock', 'bell', 'add-friend', 'share', 'sound', 'back']
 
 
@@ -110,7 +110,8 @@ n = 0
 for d in DAYS:
     ship(f'art-day-{d}', wide(os.path.join(HERE, 'titles', f'{d}-keyed.png'))); n += 1
 for p in PAGES:
-    ship(f'art-title-{p}', wide(os.path.join(HERE, 'titles', f'{p}-cast.png'))); n += 1
+    # Founder 10-02: the living cast row is the one cast per screen → page titles are lettering only.
+    ship(f'art-title-{p}', wide(os.path.join(HERE, 'titles', f'{p}-lettering-keyed.png'))); n += 1
 for g in GAMES:
     ship(f'game-{g}', square(os.path.join(HERE, 'games', f'{g}.png'))); n += 1
 for u in UI:
@@ -118,12 +119,29 @@ for u in UI:
 for m in MOMENTS:
     ship(f'art-moment-{m}', wide(os.path.join(HERE, 'titles', f'{m}-lettering-keyed.png'), 900)); n += 1
 for sc in SCENES:
-    ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), 600)); n += 1
+    w_ = 1200 if sc.startswith('banner-') or sc in ('vs-faceoff', 'gauntlet-champion', 'friends-match', 'onboard-tiles') else 900 if sc == 'ladder-cleared' else 900 if sc in ('pro-crown', 'shield-guard', 'flawless-star', 'sweep-broom', 'unlimited-loop', 'invite-sent', 'gift-pro', 'onboard-score') else 600
+    ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), w_)); n += 1
 for g in GAMES:
     if g.startswith('pocket-') or g in ('vs', 'more'):
         continue
     ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
 ship('game-sweep', square(os.path.join(HERE, 'games', 'sweep.png'))); n += 1   # Sweep tile (founder 10-02)
+for pc in ['star-placed', 'star-correct', 'star-wrong', 'cross']:   # Starsweep pieces (founder 10-02)
+    ship(f'art-starsweep-{pc}', square(os.path.join(HERE, 'games', 'starsweep', f'{pc}.png'), 256, 0.04)); n += 1
+for pc in ['coin-empty', 'coin-filled', 'coin-hint', 'coin-punchline']:   # Muddle circled-letter coins (founder 10-02)
+    ship(f'art-muddle-{pc}', square(os.path.join(HERE, 'games', 'muddle', f'{pc}.png'), 256, 0.02)); n += 1
+for pc in ['hex', 'hex-center', 'ttt-x', 'ttt-o']:   # Hubbub hexes + Tic-Tac-Tile pieces (founder 10-02)
+    ship(f'art-piece-{pc}', square(os.path.join(HERE, 'games', 'pieces', f'{pc}.png'), 256, 0.03)); n += 1
+for md in ['gold', 'silver', 'bronze', 'trophy']:   # 3D medals (founder 10-02)
+    ship(f'art-medal-{md}', square(os.path.join(HERE, 'icons', 'medals', f'{md}.png'), 256, 0.03)); n += 1
+BADGES_DIR = os.path.join(HERE, 'badges')   # achievement + level badges (founder 10-02)
+for f in sorted(os.listdir(BADGES_DIR)) if os.path.isdir(BADGES_DIR) else []:
+    if f.endswith('.png'):
+        ship('art-badge-' + f[:-4], square(os.path.join(BADGES_DIR, f), 256, 0.03)); n += 1
+HALLOWEEN_DIR = os.path.join(HERE, 'cast', 'halloween')   # seasonal cast skins (founder 10-02)
+for f in sorted(os.listdir(HALLOWEEN_DIR)) if os.path.isdir(HALLOWEEN_DIR) else []:
+    if f.endswith('.png'):
+        ship('art-halloween-' + f[:-4], square(os.path.join(HALLOWEEN_DIR, f), 320, 0.02)); n += 1
 ship('art-bg-tiles', Image.open(os.path.join(HERE, 'backgrounds', 'tile-pattern.png')).convert('RGBA')); n += 1
 # every cast pose on its own (founder 10-02 build: popups, share footers, VS, empty states)
 POSES_DIR = os.path.join(HERE, 'poses')

@@ -17,11 +17,8 @@ struct GauntletCompletedView: View {
 
     @State private var expanded: Int?
 
-    // Web palette.
-    private let greenBg = Color(hex: 0xF5F3FF), greenBorder = Color(hex: 0xDDD6FE)
-    private let greenBadgeBg = Color(hex: 0xF5F3FF), greenBadge = Color(hex: 0x7C3AED)
-    private let redBg = Color(hex: 0xFEF2F2), redBorder = Color(hex: 0xFECACA)
-    private let redBadgeBg = Color(hex: 0xFEE2E2), redBadge = Color(hex: 0xDC2626)
+    // FINISH_SPEC §L / §A1: won = the purple family, lost = slate (tinted, never white).
+    private let wonInk = Color(hex: 0x7C3AED), lostInk = Color(hex: 0x6B7891)
 
     private var stagesCleared: Int { progress.stageResults.filter { $0.status == .won }.count }
     private var totalGuesses: Int { progress.stageResults.reduce(0) { $0 + $1.guesses } }
@@ -41,10 +38,10 @@ struct GauntletCompletedView: View {
                 // "SEE RESULTS" hint: the expandable rows weren't discoverable
                 // (Doug feedback, Aug 10).
                 HStack {
-                    Text("STAGE BREAKDOWN").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                    FinishLabel("Stage breakdown")
                     Spacer()
                     Text("TAP A STAGE TO SEE RESULTS").font(Brand.font(9, .black)).tracking(0.6)
-                        .foregroundStyle(Color(hex: 0x7C3AED))
+                        .foregroundStyle(A11yInk.on(Color(hex: 0x7C3AED)))
                 }
             }
             // One row per stage; tap to expand its boards.
@@ -60,8 +57,8 @@ struct GauntletCompletedView: View {
 
     private func summaryStat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
-            Text(value).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-            Text(label).font(Brand.font(9, .bold)).tracking(0.6).foregroundStyle(Theme.textMuted)
+            Text(value).softNumber(16)
+            Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
         }
     }
 
@@ -79,26 +76,23 @@ struct GauntletCompletedView: View {
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Text(won ? "✓" : "✗").font(Brand.font(8, .black))
-                        .foregroundStyle(won ? greenBadge : redBadge)
-                        .frame(width: 14, height: 14)
-                        .background(Circle().fill(won ? greenBadgeBg : redBadgeBg))
-                    // Fixed pastel row fill demands fixed ink — themed was 1.04:1 in Dark.
-                    Text(stage.name).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x1A1A2E))
+                    // §Q: a small W badge per cleared stage (L for the stage that stopped the run).
+                    Icon3D(won ? .badgeW : .badgeL, size: 16)
+                    // The tinted row flips to the dark surface in Dark, so the ink flips too.
+                    Text(stage.name).font(Brand.font(11, .black)).foregroundStyle(FinishInk.heading)
                     Spacer(minLength: 6)
                     Text("\(result.guesses)g · \(fmtTime(result.timeMs))")
-                        .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
                     if hasBoards {
                         // Win-purple / loss-red so the expander reads as a
                         // door, not decoration (Doug feedback, Aug 10).
                         Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
+                            .foregroundStyle(won ? wonInk : lostInk)
                             .rotationEffect(.degrees(isExpanded ? 180 : 0))
                     }
                 }
-                .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(RoundedRectangle(cornerRadius: 10).fill(won ? greenBg : redBg))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(won ? greenBorder : redBorder, lineWidth: 1))
+                .padding(.horizontal, 10).padding(.top, 9).padding(.bottom, 7)
+                .tintedPill(won ? wonInk : lostInk, radius: 11)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.squish)
@@ -120,22 +114,21 @@ struct GauntletCompletedView: View {
     private func solutionsReveal(_ boards: [BoardState]) -> some View {
         let cols = boards.count == 1 ? 1 : (boards.count <= 4 ? 2 : 4)
         return VStack(spacing: 4) {
-            Text(boards.count == 1 ? "ANSWER" : "ANSWERS")
-                .font(Brand.font(9, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            FinishLabel(boards.count == 1 ? "Answer" : "Answers")
                 .frame(maxWidth: .infinity, alignment: .leading)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: cols), spacing: 4) {
                 ForEach(boards.indices, id: \.self) { i in
                     let bWon = boards[i].status == .won
                     Text(boards[i].solution.uppercased())
                         .font(Brand.font(11, .black))
-                        .foregroundStyle(bWon ? greenBadge : redBadge)
+                        .foregroundStyle(bWon ? wonInk : lostInk)
                         .padding(.horizontal, 8).padding(.vertical, 2)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(bWon ? greenBadgeBg : redBadgeBg))
+                        .background(RoundedRectangle(cornerRadius: 6).fill((bWon ? wonInk : lostInk).opacity(Theme.isDark ? 0.22 : 0.12)))
                 }
             }
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0xF9FAFB)))
+        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.isDark ? Theme.surface : Color(hex: 0x8B5CF6).wash(0.07)))
     }
 
     /// The stage's boards (1 col / 2 cols / 4 cols by count, web-matching),
@@ -204,6 +197,15 @@ struct GauntletResultsView: View {
     var onPlayAgain: (() -> Void)? = nil
 
     @State private var appeared = false
+    /// §Q: how many stars have popped in (90 ms apart; Reduce Motion: all at once).
+    @State private var starsShown = 0
+    @State private var bob = false
+    @State private var confetti = false
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+    private var still: Bool { envReduce || Theme.reduceMotion }
+
+    /// The Gauntlet accent (amber).
+    private static let amber = Color(hex: 0xF59E0B)
 
     private var cleared: Int { progress.stageResults.filter { $0.status == .won }.count }
     private var totalGuesses: Int { progress.stageResults.reduce(0) { $0 + $1.guesses } }
@@ -219,71 +221,195 @@ struct GauntletResultsView: View {
     }
     private var cumTotal: Int { max(1, progress.stages.reduce(0) { $0 + $1.boardCount }) }
 
+    /// §Q LOST: the stage that stopped the run — its unsolved answers.
+    private var failedAnswers: [String] {
+        guard let r = progress.stageResults.first(where: { $0.status != .won }),
+              let boards = r.boardsSnapshot else { return [] }
+        return boards.filter { $0.status != .won }.map { $0.solution.uppercased() }
+    }
+
     var body: some View {
-        ScrollView {
+        // FINISH_SPEC §R2 + §Q: one screen — the headline, the result strip and the
+        // star row; the amber hero (champion scene / the two poses + the missed
+        // answer) scaled to the height left; then the dock (share + the amber
+        // candy + Next daily / Unlimited). Rank, breakdown and the stage list
+        // sit below the dock.
+        FinishedScreenLayout(minBoardHeight: 110, header: {
+            VStack(spacing: 8) {
+                title
+                FinishedResultStrip(won: won, items: [("\(cleared)/\(progress.totalStages)", "stages"),
+                                                      (fmt(totalTimeMs), "time"),
+                                                      ("\(totalGuesses)", totalGuesses == 1 ? "guess" : "guesses")])
+                starRow
+            }
+            .padding(.top, 50)   // clear of the corner Home control
+            .modifier(RiseIn(appeared: appeared, delay: 0.05))
+        }, board: { size in
+            heroCard(size)
+        }, dock: {
+            dock
+                .modifier(RiseIn(appeared: appeared, delay: 0.3))
+        }, extras: {
             VStack(spacing: 16) {
-                VStack(spacing: 8) {
-                    SymbolGlyph(won ? "trophy.fill" : "xmark.circle.fill", size: 60, color: won ? Color(hex: 0xD97706) : Color(hex: 0xF87171))
-                        .scaleEffect(appeared ? 1 : 0.6).opacity(appeared ? 1 : 0)
-                        .animation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.05)), value: appeared)
-                    title.modifier(RiseIn(appeared: appeared, delay: 0.15))
-                    HStack(spacing: 16) {
-                        Button("Home", action: onHome).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted).underline()
-                        Button("Share", action: onShare).font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
-                        if let onPlayAgain {
-                            Button("Play Again", action: onPlayAgain).font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0xA855F7)).underline()
-                        }
-                    }
-                    .modifier(RiseIn(appeared: appeared, delay: 0.25))
-                    if isDaily { DailyRankBadge(gameMode: mode).modifier(RiseIn(appeared: appeared, delay: 0.3)) }
-                }
-                .padding(.top, 4)
-
-                HStack(spacing: 12) {
-                    statCard("trophy.fill", Color(hex: 0x7C3AED), "\(cleared)/\(progress.totalStages)", "Stages")
-                    statCard("number", Color(hex: 0x60A5FA), "\(totalGuesses)", "Guesses")
-                    statCard("clock", Color(hex: 0xFB923C), fmt(totalTimeMs), "Time")
-                }
-                .modifier(RiseIn(appeared: appeared, delay: 0.4))
-
+                if isDaily { DailyRankBadge(gameMode: mode) }
                 ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
                                    timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal,
                                    stagesCompleted: cleared,
                                    day: isDaily ? LeaderboardService.todayLocal() : nil)
-                    .modifier(RiseIn(appeared: appeared, delay: 0.5))
-
-                if isDaily && showNextDaily {
-                    NextDailyCTA(currentMode: "GAUNTLET").modifier(RiseIn(appeared: appeared, delay: 0.55))
-                }
-
                 GauntletCompletedView(progress: progress, totalTimeMs: totalTimeMs, showSummary: false, showStageHeader: true)
-                    .modifier(RiseIn(appeared: appeared, delay: 0.6))
             }
-            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+            .padding(.top, 16).padding(.bottom, 24)
+        })
+        .padding(.horizontal, 16)
+        .overlay {
+            // One confetti burst on a cleared run (Reduce Motion: none).
+            if won && confetti && !still { ConfettiView().ignoresSafeArea() }
         }
-        .onAppear { appeared = true }
+        .onAppear {
+            appeared = true
+            if won { Feedback.celebrate() }   // §U: Gauntlet champion — celebrate · success+heavy
+            if still {
+                starsShown = progress.totalStages
+            } else {
+                confetti = won
+                for i in 0..<max(0, progress.totalStages) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.45 + Double(i) * 0.09) {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.5)) { starsShown = i + 1 }
+                    }
+                }
+                if won && !Motion.calm() {   // §AD: no endless bob in Low Power Mode
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                        withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { bob = true }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: §Q hero card + §R2 dock
+
+    /// The amber hero card filling the board area: the art scaled to fit, plus the
+    /// missed answer on glossy tiles after a lost run.
+    private func heroCard(_ size: CGSize) -> some View {
+        let showTiles = !won && !failedAnswers.isEmpty
+        let tilesH: CGFloat = showTiles ? 22 + CGFloat(min(failedAnswers.count, 2)) * 31 : 0
+        return VStack(spacing: 8) {
+            heroArt
+                .frame(maxWidth: .infinity, maxHeight: max(40, size.height - tilesH - 28))
+            if showTiles { failedAnswerTiles }
+        }
+        .padding(14)
+        .frame(width: size.width, height: size.height)
+        .tintedCard(accent: Self.amber, bar: [Color(hex: 0xFFC56B), Color(hex: 0xF97316)], radius: 22, barHeight: 8,
+                    tint: won ? 0.14 : 0.08, line: won ? 0.34 : 0.26)
+    }
+
+    /// B6: the 3D share icon + the large amber candy ("Play again tomorrow" / Home);
+    /// on the live daily finish, Next daily / Leaderboard (+ the Pro Unlimited card)
+    /// below; after an Unlimited run (Pro), the KEEP PLAYING card.
+    private var dock: some View {
+        let nextDaily = isDaily && showNextDaily
+        return VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                FinishedShareButton(hasSpoilers: false, size: 30, onShare: { _ in onShare() })
+                Button(action: onHome) {
+                    CandyLabel(title: isDaily ? "Play again tomorrow" : "Home") { Icon3D(.tabHome, size: 20) }
+                }
+                .buttonStyle(CandyButtonStyle(variant: nextDaily ? .peach : .amber, size: nextDaily ? .medium : .large))
+                .accessibilityLabel(isDaily ? "Play again tomorrow. Home" : "Home")
+            }
+            if nextDaily {
+                NextDailyCTA(currentMode: "GAUNTLET", compact: true)
+            }
+            if let onPlayAgain {
+                UnlimitedKeepPlayingCard(game: "Gauntlet", afterUnlimited: true, action: onPlayAgain, onOtherGames: onHome)
+            }
+        }
+        .padding(.bottom, 6)
+    }
+
+    @ViewBuilder private var heroArt: some View {
+        if won {
+            Group {
+                if ArtAsset.exists("art-scene-gauntlet-champion") {
+                    Image("art-scene-gauntlet-champion").resizable().interpolation(.high).scaledToFit()
+                        .accessibilityHidden(true)
+                } else {
+                    PoseImage(.s, "trophy", height: 150)
+                }
+            }
+            .scaleEffect(appeared || still ? 1 : 0.6)
+            .opacity(appeared || still ? 1 : 0)
+            .offset(y: bob && !still ? -5 : 0)
+            .animation(still ? nil : .spring(response: 0.5, dampingFraction: 0.6).delay(0.05), value: appeared)
+        } else {
+            // Kind, never sad: R with cocoa and I's good game, side by side.
+            // Scales with the hero area (each pose fits half the width).
+            HStack(spacing: 6) {
+                Image(ArtPose.assetName(.r, "cocoa")).resizable().interpolation(.high).scaledToFit()
+                Image(ArtPose.assetName(.i, "goodgame")).resizable().interpolation(.high).scaledToFit()
+            }
+            .accessibilityHidden(true)
+            .frame(maxWidth: .infinity)
+            .scaleEffect(appeared || still ? 1 : 0.7)
+            .opacity(appeared || still ? 1 : 0)
+            .animation(still ? nil : .spring(response: 0.5, dampingFraction: 0.65).delay(0.05), value: appeared)
+        }
+    }
+
+    /// One star per stage — cleared stages gold, the rest soft grey; they pop in
+    /// 90 ms apart (Reduce Motion: all at once).
+    private var starRow: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<max(0, progress.totalStages), id: \.self) { i in
+                let lit = i < cleared
+                Image(systemName: "star.fill")
+                    .font(.system(size: 26, weight: .black))
+                    .foregroundStyle(lit
+                        ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xFFD66B), Color(hex: 0xF59E0B)], startPoint: .top, endPoint: .bottom))
+                        : AnyShapeStyle(Theme.isDark ? Color.white.opacity(0.18) : Color(hex: 0xDAD4E6)))
+                    .shadow(color: lit ? Color(hex: 0xB0650B).opacity(0.35) : .clear, radius: 0, x: 0, y: 2)
+                    .scaleEffect(i < starsShown ? 1 : 0.2)
+                    .opacity(i < starsShown ? 1 : 0)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(cleared) of \(progress.totalStages) stars")
+    }
+
+    /// §Q LOST: the failed stage's answer revealed on glossy tiles.
+    private var failedAnswerTiles: some View {
+        VStack(spacing: 6) {
+            FinishLabel(failedAnswers.count == 1 ? "The answer" : "The answers")
+            ForEach(Array(failedAnswers.prefix(2).enumerated()), id: \.offset) { _, word in
+                HStack(spacing: 3) {
+                    ForEach(Array(word.enumerated()), id: \.offset) { _, ch in
+                        GlossyTile(face: .correct, letter: String(ch), width: 28)
+                    }
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(word)
+            }
+        }
     }
 
     @ViewBuilder private var title: some View {
-        let t = Text(won ? "GAUNTLET CLEARED!" : "GAUNTLET FAILED")
-            .font(Brand.font(34, .black)).multilineTextAlignment(.center)
-        if won {
-            t.foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF472B6), Color(hex: 0xC084FC)],
-                                             startPoint: .leading, endPoint: .trailing))
-        } else {
-            t.foregroundStyle(Color(hex: 0xFCA5A5))
-        }
+        // §Q: the headline in soft-number ink (no gradient digit art).
+        Text(won ? "GAUNTLET CLEARED!" : "SO CLOSE!")
+            .softNumber(30)
+            .multilineTextAlignment(.center)
+            .lineLimit(1).minimumScaleFactor(0.6)
     }
 
     private func statCard(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {
         VStack(spacing: 4) {
             SymbolGlyph(icon, size: 18, color: color)
             Text(value).softNumber(22).lineLimit(1).minimumScaleFactor(0.6)
-            Text(label).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            Text(label).font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.secondary)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 14)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surfaceHover))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1))
+        .frame(maxWidth: .infinity).padding(.top, 16).padding(.bottom, 12)
+        // §A1: each stat tile is tinted in its own color with the 4-pt top bar.
+        .tintedPill(color, radius: 14)
     }
 
     private func fmt(_ ms: Int) -> String { let s = ms / 1000; return s < 60 ? "\(s)s" : "\(s / 60)m \(s % 60)s" }

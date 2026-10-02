@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Local daily-reminder notification — Android port of iOS NotificationService
  * (which mirrors the web's daily-reminder cron as an on-device local nudge).
- * One reminder at 18:00 local: "Your daily puzzles are ready — keep your
- * streak alive! 🔥".
+ * One reminder at 18:00 local, copy from core PushCopy (FINISH_SPEC AE): "Your 🔥
+ * 12-day streak misses you! One quick game?" / "Today's puzzles are fresh 🌅".
  *
  * Implemented as a SELF-RESCHEDULING ONE-SHOT WorkManager chain rather than a
  * fixed-24h PeriodicWorkRequest: the worker recomputes the next wall-clock
@@ -126,19 +126,32 @@ object NotificationService {
             // §244: a live flawless run outranks the login streak — the harder
             // thing to lose gets the headline. Cached (day-stamped); 0 when stale.
             val flawless = MatchStatsService.cachedFlawlessStreak()
+            // FINISH_SPEC AE: the streak + daily lines come from the shared cast-voice bank
+            // (core PushCopy = packages/core push-copy.ts), titled with the app name so the body
+            // carries the voice. The flawless-run line has no bank entry yet and keeps its copy.
             val title = when {
                 flawless >= 2 -> "FLAWLESS STREAK AT RISK! 🏆"
-                streak >= 3 -> "STREAK AT RISK! 🔥"
-                else -> "DAILY CHALLENGE 🧩"
+                else -> com.wordocious.core.PushCopy.TITLE
             }
             val body = when {
                 flawless >= 2 -> "$flawless straight days winning every daily. Win them all today to make it ${flawless + 1}."
-                streak >= 3 -> "Your $streak-day streak ends at midnight. One quick game keeps it alive."
-                else -> "Today's puzzles are live. Keep the streak going."
+                streak >= 3 -> com.wordocious.core.PushCopy.text(com.wordocious.core.PushCopy.Kind.STREAK_REMINDER, days = streak)
+                else -> com.wordocious.core.PushCopy.text(com.wordocious.core.PushCopy.Kind.DAILY_READY)
             }
             ensureChannel(applicationContext)
+            // FINISH_SPEC K2: the white W-mascot small icon, the brand purple accent, and a
+            // cast pose as the large icon that fits the message (S racing the clock for a
+            // streak at risk, O2 gasping at a flawless run on the line, W waving hello).
+            val pose = when {
+                flawless >= 2 -> R.drawable.art_pose_o2_gasp
+                streak >= 3 -> R.drawable.art_pose_s_stopwatch
+                else -> R.drawable.art_pose_w_wave
+            }
+            val large = runCatching { android.graphics.BitmapFactory.decodeResource(applicationContext.resources, pose) }.getOrNull()
             val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_wordocious)
+                .setColor(0xFF7C3AED.toInt())
+                .apply { if (large != null) setLargeIcon(large) }
                 .setContentTitle(title)
                 .setContentText(body)
                 .setAutoCancel(true)

@@ -69,6 +69,13 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     WOTD(R.drawable.art_title_wotd, "Word of the Day"),
     SETTINGS(R.drawable.art_title_settings, "Settings"),
     HOWTO(R.drawable.art_title_howto, "How to Play"),
+    // FINISH_SPEC C6: each footer / info page shows its OWN title (same height, FooterHeadline).
+    GUIDES(R.drawable.art_title_guides, "Guides"),
+    STRATEGY(R.drawable.art_title_strategy, "Strategy"),
+    WORDS(R.drawable.art_title_words, "Words"),
+    FAQ(R.drawable.art_title_faq, "FAQ"),
+    PRIVACY(R.drawable.art_title_privacy, "Privacy"),
+    TERMS(R.drawable.art_title_terms, "Terms"),
     GOPRO(R.drawable.art_title_gopro, "Go Pro"),
     MOREGAMES(R.drawable.art_title_moregames, "More Games"),
     /** §8 the whole cast around WELCOME! at the top of sign-in / onboarding. */
@@ -77,6 +84,8 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     LEADERBOARD(R.drawable.art_title_leaderboard, "Leaderboard"),
     /** §12 / §19.2 the whole cast around DAILIES (Home's daily games section). */
     DAILIES(R.drawable.art_title_dailies, "Dailies"),
+    /** FINISH_SPEC O1 the VS BATTLE Home section title (lettering only). */
+    VSBATTLE(R.drawable.art_title_vsbattle, "VS Battle"),
 }
 
 /**
@@ -86,9 +95,10 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
 val TITLE_ART_MAX_WIDTH: Dp = 600.dp
 
 /**
- * A page title image (§2): fills the width it is given up to [maxWidth], height
- * follows the aspect ratio (never stretched). TalkBack reads [contentDescription]
- * (the title text) as a heading.
+ * A page title image (§2), FINISH_SPEC N1: lettering only, a calm centered headline —
+ * ≈62% of the width it is given, at most 300 dp wide (and [maxWidth]) and 64 dp tall,
+ * aspect kept (HeadlineSize). TalkBack reads [contentDescription] (the title text) as a
+ * heading. [alignment] places it in the row.
  */
 @Composable
 fun PageTitleArt(
@@ -98,13 +108,19 @@ fun PageTitleArt(
     contentDescription: String = art.label,
     alignment: Alignment = Alignment.Center,
 ) {
-    Image(
-        painterResource(art.res),
-        contentDescription = contentDescription,
-        contentScale = ContentScale.Fit,
-        alignment = alignment,
-        modifier = modifier.widthIn(max = maxWidth).fillMaxWidth().semantics { heading() }.titleArtMotion(float = true),
-    )
+    val painter = painterResource(art.res)
+    val intrinsic = painter.intrinsicSize
+    val aspect = if (intrinsic.height > 0f && intrinsic.width > 0f) intrinsic.width / intrinsic.height else 4f
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = alignment) {
+        val (w0, _) = HeadlineSize.fit(this.maxWidth.value, aspect)
+        val w = minOf(w0, maxWidth.value)
+        Image(
+            painter,
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.width(w.dp).height((w / aspect).dp).semantics { heading() }.titleArtMotion(float = false),
+        )
+    }
 }
 
 /** §19.2 Home section title art: ≈78% of the content width, at most this wide. */
@@ -127,12 +143,10 @@ fun SectionTitleArt(
     modifier: Modifier = Modifier,
     below: (@Composable () -> Unit)? = null,
 ) {
-    BoxWithConstraints(modifier.fillMaxWidth().padding(top = 2.dp)) {
-        val artWidth = sectionTitleArtWidth(maxWidth)
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            PageTitleArt(art, Modifier.width(artWidth), maxWidth = artWidth, alignment = Alignment.Center)
-            below?.invoke()
-        }
+    // FINISH_SPEC N1: the Home section titles follow the page-title rule (≈62% / ≤ 300 × 64).
+    Column(modifier.fillMaxWidth().padding(top = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        PageTitleArt(art, alignment = Alignment.Center)
+        below?.invoke()
     }
 }
 
@@ -160,15 +174,20 @@ fun dayTitleArtRes(day: String, holiday: String?): Int? {
 fun titleCaseLabel(caps: String): String =
     caps.lowercase().split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
 
-/** §1 The day title art, centered at [height] (≈96–120), labeled with the title text. */
+/** §1 The day title art, centered — FINISH_SPEC N1: ≈58% of the width, at most [height] (150 dp) tall. */
 @Composable
-fun DayTitleArt(@DrawableRes res: Int, title: String, modifier: Modifier = Modifier, height: Dp = 110.dp) {
-    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+fun DayTitleArt(@DrawableRes res: Int, title: String, modifier: Modifier = Modifier, height: Dp = 150.dp) {
+    val painter = painterResource(res)
+    val intrinsic = painter.intrinsicSize
+    val aspect = if (intrinsic.height > 0f && intrinsic.width > 0f) intrinsic.width / intrinsic.height else 1.5f
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val (w0, _) = HeadlineSize.fit(maxWidth.value, aspect, day = true)
+        val w = minOf(w0, height.value * aspect)
         Image(
-            painterResource(res),
+            painter,
             contentDescription = titleCaseLabel(title),
             contentScale = ContentScale.Fit,
-            modifier = Modifier.height(height).semantics { heading() }.titleArtMotion(float = true),
+            modifier = Modifier.width(w.dp).height((w / aspect).dp).semantics { heading() }.titleArtMotion(float = false),
         )
     }
 }

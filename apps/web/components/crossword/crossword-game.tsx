@@ -19,7 +19,8 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { CrosswordBoard, ClueColumns, CROSSWORD_ACCENT } from './crossword-board';
+import { CrosswordBoard, ClueColumns, CROSSWORD_ACCENT, CROSSWORD_GAP, CROSSWORD_TRAY_CHROME } from './crossword-board';
+import { alphaHex, softBackground, softBorder } from '@/lib/soft-surface';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -32,18 +33,17 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { crosswordElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass, candyVars } from '@/components/ui/candy-button';
 import { fitBoard } from '@/lib/board-fit';
 
@@ -75,9 +75,11 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
     const el = bandRef.current;
     if (!el || !rows) return;
     // FINISH_SPEC B5: the shared board-sizing rule (lib/board-fit.ts) with this
-    // grid's 3 px gaps, 12 px sides, 16 px of air and the 26–42 px cell range.
+    // grid's 3 px gaps, 12 px sides, 16 px of air and the 26–42 px cell range,
+    // inside the game tray (FINISH_SPEC L: its padding, border and lip come off first).
     const measure = () => {
-      const fit = fitBoard({ width: el.clientWidth, height: el.clientHeight, cols, rows, gap: 3, side: 12, vPad: 16, maxTile: 42 });
+      const chrome = CROSSWORD_TRAY_CHROME;
+      const fit = fitBoard({ width: el.clientWidth - chrome.x, height: el.clientHeight - chrome.y, cols, rows, gap: CROSSWORD_GAP, side: 12, vPad: 16, maxTile: 42 });
       const next = Math.max(26, fit?.tile ?? 26);
       setBoardCell((prev) => (prev === next ? prev : next));
     };
@@ -210,7 +212,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
 
   useEffect(() => {
     if (!state || state.status === 'playing') return;
-    if (!restoredRef.current) { if (state.status === 'won') { setShowVictory(true); playSuccess(); } else setShowGameOver(true); }
+    if (!restoredRef.current) { if (state.status === 'won') { setShowVictory(true); } else setShowGameOver(true); }
     recordModePlayed('crosswordocious');
     recordResult();
     restoredRef.current = false;
@@ -339,7 +341,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const capsuleStyle = (_dim: boolean, danger = false) => (danger ? candyVars('pink') : undefined);
 
   return (
-    <GameBackground mode="CROSSWORD" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="CROSSWORD" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="CROSSWORD" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -369,15 +371,11 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // day's grid and clues with the recorded fill from the matches row, then the card.
-        <CompletedCustomDaily dbKey="CROSSWORD" completion={completion}
-          boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
-          {elsewhere?.state && (
-            <>
-              <CrosswordBoard state={elsewhere.state} selected={null} activeCells={[]} onSelect={() => {}} finished />
-              <ClueColumns state={elsewhere.state} activeEntry={null} onPick={() => {}} finished />
-            </>
-          )}
-        </CompletedCustomDaily>
+        <PuzzleElsewhere dbKey="CROSSWORD" completion={completion}
+          boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}
+          moreExtra={elsewhere?.state ? <ClueColumns state={elsewhere.state} activeEntry={null} onPick={() => {}} finished /> : undefined}>
+          {elsewhere?.state && <CrosswordBoard state={elsewhere.state} selected={null} activeCells={[]} onSelect={() => {}} finished />}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
@@ -389,8 +387,8 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
             {activeEntry && (
-              <button type="button" onClick={() => setDir((d) => (d === 'A' ? 'D' : 'A'))} className="mx-auto max-w-[700px] w-full flex items-center gap-2 rounded-xl px-3 py-2 text-left" style={{ background: `${CROSSWORD_ACCENT}12`, border: `1.5px solid ${CROSSWORD_ACCENT}44` }} aria-label="Active clue; tap to switch direction">
-                <span className="shrink-0 rounded text-[11px] font-black w-6 h-6 flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed', border: '1px solid #c4b5fd' }}>{activeEntry.n}{activeEntry.dir}</span>
+              <button type="button" onClick={() => setDir((d) => (d === 'A' ? 'D' : 'A'))} className="mx-auto max-w-[700px] w-full flex items-center gap-2 rounded-xl px-3 pt-2.5 pb-2 text-left" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}` }} aria-label="Active clue; tap to switch direction">
+                <span className="shrink-0 rounded-md text-[11px] font-black w-6 h-6 flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed', boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex('#7c3aed', 0.2)}` }}>{activeEntry.n}{activeEntry.dir}</span>
                 <span className="text-[15px] font-extrabold leading-snug flex-1" style={{ color: 'var(--color-text)' }}>{activeEntry.clue}</span>
                 <ArrowLeftRight className="w-4 h-4 shrink-0" style={{ color: CROSSWORD_ACCENT }} />
               </button>
@@ -413,37 +411,31 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the finished grid
+        // scaled to the room left, then the dock. The clues and the score
+        // breakdown sit under More.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 px-3 py-3">
-              <CrosswordBoard state={state} selected={null} activeCells={[]} onSelect={() => {}} finished />
-              <ClueColumns state={state} activeEntry={null} onPick={() => {}} finished />
-            </div>
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={CROSSWORD_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
-                  style={{ backgroundColor: `${CROSSWORD_ACCENT}15`, border: `2px solid ${CROSSWORD_ACCENT}44`, color: CROSSWORD_ACCENT }}>
-                  {won ? (state.checks === 0 ? '✓' : state.checks) : '✗'}
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.checks} guessLabel={state.checks === 1 ? 'check' : 'checks'} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? (state.checks === 0 ? 'Grid finished clean' : 'Grid finished') : 'Puzzle revealed'}. ${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
+            }
+            board={<div className="flex justify-center px-1 pb-1"><CrosswordBoard state={state} selected={null} activeCells={[]} onSelect={() => {}} finished /></div>}
+            dock={
+              <FinishedDock currentMode="CROSSWORD" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="CROSSWORD" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure label="Clues & score" accent={CROSSWORD_ACCENT}>
+                <div className="flex flex-col items-center gap-3">
+                  <ClueColumns state={state} activeEntry={null} onPick={() => {}} finished />
+                  <ScoreBreakdownCard gameMode="CROSSWORD" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
+                    boardsSolved={won ? 1 : 0} totalBoards={CROSSWORD_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
                 </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? (state.checks === 0 ? 'Grid finished clean' : 'Grid finished') : 'Puzzle revealed'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {`${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="CROSSWORD" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard gameMode="CROSSWORD" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
-                boardsSolved={won ? 1 : 0} totalBoards={CROSSWORD_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-              {mode === 'daily' && <NextDailyCta currentMode="CROSSWORD" />}
-            </div>
-          </div>
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

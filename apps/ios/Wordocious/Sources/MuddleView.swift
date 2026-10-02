@@ -14,9 +14,9 @@ import WordociousCore
 private let muddleAccent = Color(hex: 0xF97316)
 /// The cream paper of the cartoon panel (web CartoonPanel).
 private let mdPaper = Color(hex: 0xFDF8EC)
-/// Placed tiles purple, pinned/revealed tiles violet; the punchline row in the lilac tint.
-private let mdPurple = Color(hex: 0x7C3AED), mdHint = Color(hex: 0x8B5CF6)
-private let mdLilac = Color(hex: 0xF5F3FF), mdLilacBorder = Color(hex: 0xC4B5FD), mdLilacText = Color(hex: 0x5B21B6)
+/// The placeholder sketch's purple dot; the solved caption's punchline ink.
+private let mdPurple = Color(hex: 0x7C3AED)
+private let mdLilacText = Color(hex: 0x5B21B6)
 private let mdCols = 6
 
 /// The bundled bank (Resources/scramble-puzzles.json — sha-guarded to match the web copy).
@@ -176,10 +176,10 @@ final class MuddleVM: ObservableObject {
             switch state.lastResult {
             case .wrong:
                 flash(judged == SCRAMBLE_FINAL ? "Not the punchline" : "Not that word")
-                Haptics.error(); SoundManager.shared.playInvalid()
+                Haptics.warning(); SoundManager.shared.playInvalid()
                 withAnimation(Theme.animation(.linear(duration: 0.4))) { shakes[judged] += 1 }
             case .correct:
-                SoundManager.shared.playSuccess(); Haptics.tap()
+                SoundManager.shared.playFound(); Haptics.tap()
             case .none: break
             }
         }
@@ -223,7 +223,7 @@ final class MuddleVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = guessCount, used = state.hintsUsed, solved = boardsSolved
         let matchRow = scrambleMatchRow(state)
@@ -279,6 +279,10 @@ private enum MdSize {
     static let captionFont: CGFloat = 14.5
     /// Delete · Clear capsules.
     static let capsuleHeight: CGFloat = 30
+    /// §L: the word rows' compact game tray padding.
+    static let trayPad: CGFloat = 8
+    /// §I3: the scrambled-letter chips (~70% of a tile).
+    static let chip: CGFloat = 25
     /// Horizontal padding of the play column and of a word block.
     static let columnPad: CGFloat = 10
     static let rowPad: CGFloat = 6
@@ -307,6 +311,8 @@ struct MuddleView: View {
     @State private var showGuide = false
     /// Measured caption height (two 14.5 pt lines until the first layout reports).
     @State private var captionHeight: CGFloat = 36
+    /// §R2: the finished screen's "See all" (the four words).
+    @State private var showAllWords = false
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: MuddleVM(seed: seed))
@@ -319,22 +325,25 @@ struct MuddleView: View {
         ZStack {
             PageBackground(tint: .forGame(.scramble))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        header
-                        board(finished: true)
-                        result
-                    }
-                    .padding(.horizontal, MdSize.columnPad)
+                // FINISH_SPEC §R2: one screen — header + result strip, the cartoon +
+                // filled caption + the punchline scaled to the height left (the four
+                // words fold behind "See all"), the dock; the breakdown below it.
+                FinishedScreenLayout {
+                    VStack(spacing: 4) { header; resultHeadline }
+                } board: { size in
+                    finishedBoard(size)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "SCRAMBLE", game: "Muddle", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    result
                 }
+                .padding(.horizontal, MdSize.columnPad)
             } else {
                 playing
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.horizontal, 24)
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
@@ -389,21 +398,21 @@ struct MuddleView: View {
             GeometryReader { geo in
                 topArea(available: geo.size.height)
             }
+            // §L: the four words and the punchline sit on the shared game tray.
             VStack(spacing: MdSize.wordGap) {
                 ForEach(0..<SCRAMBLE_WORDS, id: \.self) { i in
                     MuddleWordRow(vm: vm, row: i, finished: false)
                         .modifier(ShakeEffect(animatableData: vm.shakes[i]))
                 }
+                MuddleFinalRow(vm: vm, finished: false)
+                    .modifier(ShakeEffect(animatableData: vm.shakes[SCRAMBLE_FINAL]))
             }
+            .gameTray(accent: muddleAccent, radius: 18, padding: MdSize.trayPad)
             .frame(maxWidth: 420)
-            MuddleFinalRow(vm: vm, finished: false)
-                .modifier(ShakeEffect(animatableData: vm.shakes[SCRAMBLE_FINAL]))
-                .frame(maxWidth: 420)
             HStack(spacing: 8) {
-                capsule("Delete", "delete.left") { SoundManager.shared.playKeyTap(); vm.deleteLetter() }
-                capsule("Clear", "xmark.circle") { SoundManager.shared.playKeyTap(); vm.clearRow() }
+                capsule("Delete", "delete.left") { SoundManager.shared.playDelete(); vm.deleteLetter() }
+                capsule("Clear", "xmark.circle") { SoundManager.shared.playDelete(); vm.clearRow() }
             }
-            .padding(.top, 2)
             // Hardware keys (founder, 2026-09-30): web muddle-game keydown —
             // A–Z / Delete as the keys, Return or Tab = next row, ↑ ↓ step rows.
             LetterKeyboard(onLetter: { vm.typeLetter($0) }, onEnter: { vm.nextRow() }, onDelete: { vm.deleteLetter() },
@@ -441,26 +450,6 @@ struct MuddleView: View {
         .modifier(MdNoBounceIfFits())
     }
 
-    /// The finished-state column (scrolls with the results beneath): cartoon at
-    /// its cap, caption, the four words, divider, punchline.
-    private func board(finished: Bool) -> some View {
-        VStack(spacing: MdSize.wordGap) {
-            MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
-                .frame(height: floor(UIScreen.main.bounds.height * MdSize.cartoonCap))
-            caption(finished: finished)
-            VStack(spacing: MdSize.wordGap) {
-                ForEach(0..<SCRAMBLE_WORDS, id: \.self) { i in
-                    MuddleWordRow(vm: vm, row: i, finished: finished)
-                        .modifier(ShakeEffect(animatableData: vm.shakes[i]))
-                }
-                MuddleFinalRow(vm: vm, finished: finished)
-                    .modifier(ShakeEffect(animatableData: vm.shakes[SCRAMBLE_FINAL]))
-            }
-        }
-        .frame(maxWidth: 420)
-        .frame(maxWidth: .infinity)
-    }
-
     /// The caption with the blank as an accent underline — the punchline fills it
     /// in lowercase purple once solved. At most two lines; its height is reported
     /// up so the cartoon can take exactly what remains.
@@ -474,20 +463,9 @@ struct MuddleView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    /// Accent-outlined 30 pt capsule (the web's Delete · Clear controls); the hit
-    /// shape is grown to 44 pt around the visible pill.
+    /// §A8: Delete · Clear as small quiet (peach) candy pills.
     private func capsule(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(12, .heavy))
-                .foregroundStyle(muddleAccent)
-                .padding(.horizontal, 14)
-                .frame(height: MdSize.capsuleHeight)
-                .background(Capsule().fill(muddleAccent.opacity(0.05)))
-                .overlay(Capsule().stroke(muddleAccent.opacity(0.4), lineWidth: 1.5))
-                .contentShape(Rectangle().inset(by: -(MdSize.hitTarget - MdSize.capsuleHeight) / 2))
-        }
-        .buttonStyle(.squish)
-        .accessibilityLabel(label)
+        PuzCandyAction(title: label, symbol: symbol, variant: .peach, action: action)
     }
 
     /// Title plus ONE meta line, tight. The title is the game's art (ART_SPEC §19.3:
@@ -517,32 +495,62 @@ struct MuddleView: View {
         .padding(.horizontal, 44)
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.state.status == .won
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? (vm.state.checks == 5 && vm.state.hintsUsed == 0 ? "Muddle solved clean" : "Muddle solved") : "Out of checks",
+                                won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: vm.points)
+        }
+    }
+
+    /// §R2: the finished puzzle in the height left — the cartoon takes what the
+    /// caption, the punchline and the "See all" leave; the four words expand in
+    /// place under the punchline (the area scrolls once expanded).
+    private func finishedBoard(_ size: CGSize) -> some View {
+        let reserved: CGFloat = 40 + 96 + 48 + MdSize.trayPad * 2 + GameTray.lip + MdSize.wordGap * 3
+        let cartoon = max(70, min(floor(UIScreen.main.bounds.height * MdSize.cartoonCap), size.height - reserved))
+        let won = vm.state.status == .won
+        return ScrollView(showsIndicators: false) {
+            VStack(spacing: MdSize.wordGap) {
+                MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
+                    .frame(height: cartoon)
+                caption(finished: true)
+                MuddleFinalRow(vm: vm, finished: true)
+                    .gameTray(accent: muddleAccent, state: won ? .won : .lost, radius: 18, padding: MdSize.trayPad)
+                PuzSeeAllToggle(expanded: $showAllWords, title: "See all words")
+                if showAllWords {
+                    VStack(spacing: MdSize.wordGap) {
+                        ForEach(0..<SCRAMBLE_WORDS, id: \.self) { i in MuddleWordRow(vm: vm, row: i, finished: true) }
+                    }
+                    .gameTray(accent: muddleAccent, state: won ? .won : .lost, radius: 18, padding: MdSize.trayPad)
+                }
+            }
+            .frame(maxWidth: 420)
+            .frame(maxWidth: .infinity, minHeight: size.height)
+        }
+        .scrollDisabled(!showAllWords)
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let gc = vm.guessCount
         let hints = vm.state.hintsUsed
         return VStack(spacing: 10) {
-            Text(won ? (vm.state.checks == 5 && hints == 0 ? "Muddle solved clean" : "Muddle solved") : "Out of checks")
-                .font(Brand.title(20)).foregroundStyle(won ? Theme.win : Theme.lossText)
-                .multilineTextAlignment(.center)
             Text("\(vm.boardsSolved)/\(SCRAMBLE_TOTAL_BOARDS) solved · \(vm.checksLabel) · \(timeText(secs))\(hints > 0 ? " · \(hints) hint\(hints == 1 ? "" : "s")" : "")")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Theme.gold)
-                }
-            }
-            .foregroundStyle(muddleAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(muddleAccent)
             if vm.isDaily { DailyRankBadge(gameMode: .scramble) }
             ScoreBreakdownView(gameMode: GameMode.scramble.rawValue, completed: won,
                                guessCount: gc, timeSeconds: secs,
                                boardsSolved: vm.boardsSolved, totalBoards: SCRAMBLE_TOTAL_BOARDS, hintsUsed: hints,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "SCRAMBLE") }
         }
         .padding(.vertical, 12)
     }
@@ -621,8 +629,11 @@ struct MuddleCartoonPanel: View {
             }
         }
         .aspectRatio(4 / 3, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        // §I4 / §A1: the cream paper card keeps its tone with the A1 border + shadow.
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(Theme.isDark ? muddleAccent.opacity(0.4) : muddleAccent.wash(0.32), lineWidth: 1.5))
+        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)
         .frame(maxWidth: .infinity)
         .accessibilityLabel(altText)
     }
@@ -680,7 +691,7 @@ private func muddleStarts(_ pattern: [Int]) -> [Int] {
 /// The width a word block's left column may use: the column minus the row
 /// padding, the spacer and the two 44 pt hint targets at the right.
 private func muddleColumnWidth() -> CGFloat {
-    min(UIScreen.main.bounds.width, 420) - 2 * MdSize.columnPad - 2 * MdSize.rowPad - MdSize.gap - 2 * MdSize.hitTarget
+    min(UIScreen.main.bounds.width, 420) - 2 * MdSize.columnPad - 2 * MdSize.trayPad - 2 * MdSize.rowPad - MdSize.gap - 2 * MdSize.hitTarget
 }
 
 /// The tile side on the fixed six-column grid: 36 pt, or less only on a phone
@@ -689,58 +700,136 @@ private func muddleTileSide() -> CGFloat {
     min(MdSize.tile, floor((muddleColumnWidth() - MdSize.tileGap * CGFloat(mdCols - 1)) / CGFloat(mdCols)))
 }
 
-/// One answer box: a placed letter is a purple tile with white ink (violet when
-/// pinned by a hint); a circled position is a ring ≈ 60 % of the tile drawn
-/// INSIDE the box — white on a filled tile, purple on an empty one — never an
-/// outline around the tile. Letters ≥ 17 pt (half the tile) and Dynamic Type still scales them.
+/// How an answer slot reads.
+private enum MdLook: Equatable { case empty, typed, pinned, solved }
+
+/// The coin letter ink: white with the tile shadow (dark amber on the gold coin).
+private let mdCoinShadow = Color(hex: 0x2E0C63).opacity(0.55)
+private let mdAmberInk = Color(hex: 0x7A3D00)
+
+/// The frosted empty cell under a gold ring (B1 empty: white ~58% + faint lilac).
+private struct MdFrostedRing: View {
+    let side: CGFloat
+    var body: some View {
+        ZStack {
+            Circle().fill(Theme.isDark ? Color.white.opacity(0.10) : Color.white.opacity(0.58))
+                .overlay(Circle().strokeBorder(Color(hex: 0x7C3AED).opacity(Theme.isDark ? 0.28 : 0.16), lineWidth: 1))
+                .padding(side * 0.07)
+            Image("art-muddle-coin-empty").resizable().interpolation(.high).scaledToFit()
+        }
+        .frame(width: side, height: side)
+        .accessibilityHidden(true)
+    }
+}
+
+/// One answer box (FINISH_SPEC §I1). An uncircled slot is the B1 glossy square
+/// tile (frosted empty, typed white face, purple once solved, a hint letter
+/// purple with the gold ring); a circled slot is a round coin in the same
+/// footprint — the gold ring over a frosted cell when empty, purple with a gold
+/// rim once a letter is in, violet with a sparkle for a hint letter — its letter
+/// ~52% of the coin. A placed letter pops in (§B3 type); a solved word turns
+/// over and glows (the reveal flip, staggered by `index`).
 private struct MuddleTile: View {
     let letter: String
-    let filled: Bool
-    let pinned: Bool
+    let look: MdLook
     let ring: Bool
     let side: CGFloat
+    var rowSolved: Bool = false
+    var index: Int = 0
 
     var body: some View {
-        let bg = filled ? (pinned ? mdHint : mdPurple) : Theme.surface
-        let border = filled ? bg : Theme.border
-        ZStack {
-            RoundedRectangle(cornerRadius: 7).fill(bg)
-            RoundedRectangle(cornerRadius: 7).strokeBorder(border, lineWidth: 1.5)
-            Text(letter).font(Brand.font(max(17, side * 0.5), .black)).foregroundStyle(filled ? Color.white : Theme.textPrimary)
-            if ring {
-                Circle().stroke(filled ? Color.white : mdPurple, lineWidth: 2).padding(side * 0.2).opacity(0.9)
+        face
+            .frame(width: side, height: side)
+            .modifier(TypePop(letter: look == .typed || look == .pinned ? letter : "", size: CGSize(width: side, height: side)))
+            .modifier(PuzSolveFlip(solved: rowSolved, delay: Double(index) * TileMotion.flipStagger * 0.5, size: side))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(letter.isEmpty ? "empty" : letter)\(ring ? ", circled" : "")")
+    }
+
+    @ViewBuilder private var face: some View {
+        if ring {
+            if look == .empty {
+                MdFrostedRing(side: side)
+            } else {
+                ZStack {
+                    Image(look == .pinned ? "art-muddle-coin-hint" : "art-muddle-coin-filled")
+                        .resizable().interpolation(.high).scaledToFit()
+                        .accessibilityHidden(true)
+                    Text(letter)
+                        .font(Brand.fixedFont(side * 0.52, .black))
+                        .foregroundStyle(.white)
+                        .shadow(color: mdCoinShadow, radius: side * 0.02, x: 0, y: side * 0.03)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                }
+            }
+        } else {
+            let tileFace: GlossyFace = {
+                switch look {
+                case .empty: return .empty
+                case .typed: return .typed
+                case .pinned, .solved: return .correct
+                }
+            }()
+            GlossyTile(face: tileFace, letter: letter, width: side, letterScale: 0.52,
+                       glowAmount: look == .pinned ? 0.9 : 0, goldRing: look == .pinned)
+        }
+    }
+}
+
+/// One punchline slot (FINISH_SPEC §I2): a gold coin with a dark amber letter;
+/// empty = the gold ring on frosted. The solved punchline hops in a wave.
+private struct MuddlePunchCoin: View {
+    let letter: String
+    let side: CGFloat
+    let solved: Bool
+    let index: Int
+
+    var body: some View {
+        Group {
+            if letter.isEmpty {
+                MdFrostedRing(side: side)
+            } else {
+                ZStack {
+                    Image("art-muddle-coin-punchline").resizable().interpolation(.high).scaledToFit()
+                        .accessibilityHidden(true)
+                    Text(letter)
+                        .font(Brand.fixedFont(side * 0.52, .black))
+                        .foregroundStyle(mdAmberInk)
+                        .shadow(color: Color.white.opacity(0.5), radius: 0, x: 0, y: 1)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                }
             }
         }
         .frame(width: side, height: side)
-        .accessibilityLabel("\(letter.isEmpty ? "empty" : letter)\(ring ? ", circled" : "")")
+        .modifier(TypePop(letter: solved ? "" : letter, size: CGSize(width: side, height: side)))
+        .modifier(PuzHop(on: solved, delay: Double(index) * TileMotion.hopStagger, size: CGSize(width: side, height: side)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(letter.isEmpty ? "empty" : letter)
     }
 }
 
-/// Letter · Solve as a 28–30 pt icon-only accent circle inside a 44 pt hit
-/// frame. The label is the accessibility label ("Reveal a letter" / "Solve this word").
+/// Letter · Solve as small round candy buttons (§I4: amber bulb, pink eye)
+/// inside a 44 pt hit frame. The label is the accessibility label ("Reveal a
+/// letter" / "Solve this word").
 private func hintButton(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-        Image(systemName: symbol).font(.system(size: 14, weight: .bold))
-            .foregroundStyle(muddleAccent)
-            .frame(width: MdSize.hintButton, height: MdSize.hintButton)
-            .background(Circle().fill(muddleAccent.opacity(0.06)))
-            .overlay(Circle().stroke(muddleAccent.opacity(0.45), lineWidth: 1.5))
-            .frame(width: MdSize.hitTarget, height: MdSize.hitTarget)
-            .contentShape(Rectangle())
-    }
-    .buttonStyle(.squish)
-    .accessibilityLabel(label)
+    PuzCandyIcon(symbol: symbol, label: label, variant: symbol == "eye" ? .pink : .amber, action: action)
+        .frame(width: MdSize.hitTarget, height: MdSize.hitTarget)
 }
 
-/// A tappable tray letter (scrambled or circled): the glyph sits in a short
-/// line, the hit shape is grown to ≈ 44 pt around it.
+/// A tappable tray letter (§I3): a small glossy letter chip (the B1 tile recipe
+/// at ~70% size, light amber face, dark-purple letter). A used letter sinks
+/// (scale .9, faded to 35%). The hit shape is grown to ≈ 44 pt around it.
 private func trayLetter(_ letter: Character, size: CGFloat, color: Color, dimmed: Bool, action: @escaping () -> Void) -> some View {
     Button(action: action) {
-        Text(String(letter)).font(Brand.font(size, .bold)).tracking(MdSize.scrambleTracking)
+        Text(String(letter)).font(Brand.fixedFont(MdSize.chip * 0.6, .black))
             .foregroundStyle(color)
-            .opacity(dimmed ? 0.25 : 1)
-            .frame(minWidth: 20, minHeight: 24)
-            .contentShape(Rectangle().inset(by: -10))
+            .frame(width: MdSize.chip, height: MdSize.chip - 3)
+            .puzChip(Color(hex: 0xFFD98A), light: Color(hex: 0xFFF1CF), edge: Color(hex: 0xE0A43A),
+                     radius: MdSize.chip * 0.24, lip: 3, gloss: 0.6)
+            .scaleEffect(dimmed ? 0.9 : 1)
+            .opacity(dimmed ? 0.35 : 1)
+            .animation(Theme.reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.6), value: dimmed)
+            .contentShape(Rectangle().inset(by: -8))
     }
     .buttonStyle(.squish)
     .disabled(dimmed)
@@ -769,9 +858,9 @@ struct MuddleWordRow: View {
         let side = muddleTileSide()
         HStack(alignment: .center, spacing: MdSize.gap) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
                     ForEach(0..<scramble.count, id: \.self) { i in
-                        trayLetter(scramble[i], size: MdSize.scrambleFont, color: Theme.textPrimary, dimmed: dimmed[i] || solved) {
+                        trayLetter(scramble[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i] || solved) {
                             vm.tapTile(row, String(scramble[i]))
                         }
                         .disabled(solved || finished || dimmed[i])
@@ -783,8 +872,9 @@ struct MuddleWordRow: View {
                     ForEach(0..<mdCols, id: \.self) { i in
                         if i < answer.count {
                             let ch: String = solved ? String(answer[i]) : (i < entry.count ? String(entry[i]) : "")
-                            MuddleTile(letter: ch, filled: !ch.isEmpty, pinned: !solved && i < revealed.count && revealed[i] != "_",
-                                       ring: circled.contains(i), side: side)
+                            let pinned = !solved && i < revealed.count && revealed[i] != "_"
+                            MuddleTile(letter: ch, look: solved ? .solved : (ch.isEmpty ? .empty : (pinned ? .pinned : .typed)),
+                                       ring: circled.contains(i), side: side, rowSolved: solved, index: i)
                         } else {
                             Color.clear.frame(width: side, height: side)
                         }
@@ -799,9 +889,10 @@ struct MuddleWordRow: View {
                 }
             }
         }
-        .padding(.horizontal, MdSize.rowPad).padding(.vertical, 2)
-        .background(RoundedRectangle(cornerRadius: 10).fill(active ? mdLilac : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(active ? mdLilacBorder.opacity(0.8) : Color.clear, lineWidth: 1))
+        .padding(.horizontal, MdSize.rowPad).padding(.vertical, 3)
+        // §I4: the active word row is a tinted card (A1) on the tray.
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(active ? PuzKit.face(muddleAccent, 0.2) : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(active ? PuzKit.line(muddleAccent, 0.5) : Color.clear, lineWidth: 1.5))
         .contentShape(Rectangle())
         .onTapGesture { if !solved && !finished { vm.select(row) } }
         .accessibilityElement(children: .contain)
@@ -839,12 +930,12 @@ struct MuddleFinalRow: View {
         HStack(alignment: .center, spacing: MdSize.gap) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(open || finished ? "THE PUNCHLINE" : "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE")
-                    .font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 if showTray {
                     WordWrapLayout(spacing: 6, lineSpacing: 2) {
                         ForEach(0..<tray.count, id: \.self) { i in
-                            trayLetter(tray[i], size: MdSize.scrambleFont, color: mdLilacText, dimmed: dimmed[i]) {
+                            trayLetter(tray[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i]) {
                                 vm.tapTile(SCRAMBLE_FINAL, String(tray[i]))
                             }
                         }
@@ -859,15 +950,7 @@ struct MuddleFinalRow: View {
                                 let idx = starts[wi] + k
                                 let ch: String = (solved || finished) ? (idx < target.count ? String(target[idx]) : "")
                                     : (idx < entry.count ? String(entry[idx]) : "")
-                                let filled = !ch.isEmpty
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 7).fill(filled ? mdLilac : Theme.surface)
-                                    RoundedRectangle(cornerRadius: 7).strokeBorder(filled ? mdLilacBorder : Theme.border, lineWidth: 1.5)
-                                    Text(ch).font(Brand.font(max(17, side * 0.55), .black)).foregroundStyle(mdLilacText)
-                                    Circle().stroke(mdPurple, lineWidth: 1.5).padding(side * 0.2).opacity(filled ? 0.9 : 0.35)
-                                }
-                                .frame(width: side, height: side)
-                                .accessibilityLabel(ch.isEmpty ? "empty" : ch)
+                                MuddlePunchCoin(letter: ch, side: side, solved: solved, index: idx)
                             }
                         }
                     }
@@ -879,8 +962,10 @@ struct MuddleFinalRow: View {
             }
         }
         .padding(.horizontal, MdSize.rowPad).padding(.top, 8).padding(.bottom, 4)
-        .background(RoundedRectangle(cornerRadius: 10).fill(active ? mdLilac.opacity(0.7) : Color.clear))
-        .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1.5).padding(.horizontal, 4) }
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(active ? PuzKit.face(Color(hex: 0xF5A524), 0.2) : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(active ? PuzKit.line(Color(hex: 0xF5A524), 0.5) : Color.clear, lineWidth: 1.5))
+        // A soft seam in the tray's color divides the punchline (no gray rule).
+        .overlay(alignment: .top) { Capsule().fill(GameTray.seam(muddleAccent)).frame(height: 1.5).padding(.horizontal, 4) }
         .opacity(open || finished ? 1 : 0.55)
         .contentShape(Rectangle())
         .onTapGesture { if !solved && !finished { vm.select(SCRAMBLE_FINAL) } }

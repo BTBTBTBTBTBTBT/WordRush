@@ -15,6 +15,8 @@ export const CIPHER_CELL_STEP = 2;
 
 /** Gap between the board and the frequency strip (Tailwind gap-3). */
 export const CIPHER_STRIP_GAP = 12;
+/** The code-letter chip's vertical padding + rim (px, both sides together): 2 px padding + 1 px rim each side. */
+export const CIPHER_CODE_CHIP_PAD = 6;
 
 export interface CipherMetrics {
   /** Cell side in px (cells are square). */
@@ -29,7 +31,9 @@ export interface CipherMetrics {
   codeFont: number;
   /** Gap between a cell and its code letter. */
   codeGap: number;
-  /** Full height of one wrapped line: cell + code letter. */
+  /** Height of the code-letter chip under each cell (FINISH_SPEC J3): the letter + its padding and rim. */
+  codeChip: number;
+  /** Full height of one wrapped line: cell + code-letter chip. */
   rowHeight: number;
   /** Vertical gap between wrapped lines. */
   rowGap: number;
@@ -58,7 +62,8 @@ export function cipherMetrics(cell: number): CipherMetrics {
     punctWidth: Math.round(cell * 0.35),
     codeFont,
     codeGap,
-    rowHeight: cell + codeGap + codeFont,
+    codeChip: codeFont + CIPHER_CODE_CHIP_PAD,
+    rowHeight: cell + codeGap + codeFont + CIPHER_CODE_CHIP_PAD,
     rowGap: Math.round(cell * 0.25),
     chipFont,
     chipHeight: Math.round(chipFont * 1.25) + 6,

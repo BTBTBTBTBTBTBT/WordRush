@@ -34,6 +34,25 @@ struct VSGameView: View {
     @State private var waitingInMode: Int?
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
+    /// FINISH_SPEC §D3 banter (CPU matches only — never people or the ghost): the
+    /// bot's hello at match start (intro + a moment over the HUD) and its kind
+    /// sign-off on the result. Presentation only; picked once per match.
+    @State private var startBanter: String?
+    @State private var hudBanterShown = false
+    @State private var endBanter: String?
+
+    /// The cast bot this CPU match plays as (the Bot of the Day's own character); nil
+    /// for people and Your Ghost.
+    private var castBotId: String? { vm.isCpu ? VsLobbyKit.castId(vm.cpuPersona) : nil }
+    /// The opponent's character (CPU cast bots).
+    private var castMascot: MascotID? { vm.isCpu ? vm.cpuPersona?.mascot : nil }
+    /// The opponent's accent: a cast bot's own color, else VS teal.
+    private var oppAccent: Color { castBotId.map { VsLobbyKit.castColor($0) } ?? VsLobbyKit.ink }
+
+    private func pickStartBanter() {
+        guard startBanter == nil, let id = castBotId else { return }
+        startBanter = BotPersonas.line(id, .matchStart)
+    }
 
     var body: some View {
         ZStack {
@@ -93,6 +112,7 @@ struct VSGameView: View {
                                                                subtitle: vm.raceChallenge.map { "@\($0.challenger.username)’s run" }) : nil,
                     headToHead: vm.headToHead,
                     purple: vm.isRace,
+                    banter: startBanter,
                     onDone: { vm.showIntro = false; vm.startCountdownTick() })
             }
 
@@ -143,6 +163,19 @@ struct VSGameView: View {
                 .animation(Theme.animation(.easeOut(duration: 0.25)), value: c.id)
             }
 
+            // §D3: the bot's hello over the HUD for a moment as the match starts.
+            if hudBanterShown, let line = startBanter, vm.screen == .match {
+                VStack {
+                    VSBanterBubble(line: line, accent: oppAccent)
+                        .padding(.horizontal, 32)
+                        .padding(.top, 150)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+                .transition(.opacity)
+                .zIndex(3)
+            }
+
             // Post-match XP/level-up toast (parity with solo + web VS result).
             if let xp = vm.xpResult, vm.screen == .result {
                 XpToastView(result: xp) { vm.xpResult = nil }
@@ -177,6 +210,8 @@ struct VSGameView: View {
         .animation(Theme.animation(.easeInOut(duration: 0.3)), value: vm.countdown == nil)
         .animation(Theme.animation(.easeInOut(duration: 0.3)), value: vm.showIntro)
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: confirmForfeit)
+        .animation(Theme.animation(.easeInOut(duration: 0.3)), value: hudBanterShown)
+        .onChange(of: vm.showIntro) { on in if on { pickStartBanter() } }
         // The game renders its own KeyboardView — never let a lingering SYSTEM
         // keyboard inset (e.g. from the share sheet's iMessage compose) squeeze
         // the layout: post-rematch the board rendered tiny with a keyboard-sized
@@ -218,6 +253,20 @@ struct VSGameView: View {
             }
             // The confirm only belongs to a live match.
             if screen != .match { confirmForfeit = false }
+            // §D3 banter: the hello over the HUD (3.5 s), the sign-off on the result.
+            if screen == .match {
+                pickStartBanter()
+                if startBanter != nil {
+                    hudBanterShown = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { hudBanterShown = false }
+                }
+            } else {
+                hudBanterShown = false
+            }
+            if screen == .result, endBanter == nil, let id = castBotId {
+                let won = vm.result?.winner == "player"
+                endBanter = BotPersonas.line(id, won ? .botLoss : .botWin)
+            }
         }
         .onDisappear { vm.leave() }
         // A backgrounded app drops the VS socket; past the server's reconnect
@@ -244,6 +293,7 @@ struct VSGameView: View {
             // covers it a beat later).
             VSLoadingView(mode: mode, botArt: vm.cpuPersona?.art,
                           line: vm.cpuPersona.map { "Matching you with \($0.name)…" })
+                .onAppear { pickStartBanter() }
         } else if vm.isRace || vm.isSend {
             VSLoadingView(mode: mode)
         } else {
@@ -269,10 +319,10 @@ struct VSGameView: View {
                 VStack(spacing: 6) {
                     Text("SEARCHING").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.ink)
                     Text(vm.inviteCode == nil ? "LOOKING FOR A RIVAL" : "WAITING FOR YOUR FRIEND")
-                        .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.deep)
+                        .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.titleInk)
                         .multilineTextAlignment(.center)
                     if vm.inviteCode == nil {
-                        Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                        Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -302,14 +352,23 @@ struct VSGameView: View {
     /// PLAY NOW and KEEP WAITING (which turns the card into "We'll keep looking").
     private var stepInCard: some View {
         let bot = CpuOpponent.identity(vm.stepInKind)
+        let accent = bot.persona.map { Color(hex: UInt($0.color)) } ?? VsLobbyKit.ink
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                BotArtCircle(art: bot.art, size: 48)
+                // The bot that steps in, in character (waiting for its cue).
+                if let m = bot.mascot {
+                    PoseImage(m, vm.keepWaiting ? "waiting" : "ready", height: 64).frame(width: 60)
+                } else {
+                    BotArtCircle(art: bot.art, size: 48)
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(vm.keepWaiting ? "We’ll keep looking" : "\(bot.name) steps in at 0:15")
-                        .font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.deep)
+                        .font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
                     Text(vm.keepWaiting ? "\(bot.name) is ready whenever you are." : "If a person joins first, you get them.")
-                        .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
+                        .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+                    if let p = bot.persona {
+                        Text(p.tierLine).font(Brand.font(10.5, .heavy)).foregroundStyle(accent)
+                    }
                 }
                 Spacer(minLength: 0)
             }
@@ -319,21 +378,18 @@ struct VSGameView: View {
             HStack(spacing: 10) {
                 VSPrimaryButton(title: "PLAY \(bot.name.uppercased()) NOW") { Haptics.tap(); vm.stepInNow() }
                 if !vm.keepWaiting {
-                    Button { Haptics.tap(); vm.keepWaitingTapped() } label: {
-                        Text("KEEP WAITING").font(Brand.font(12, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.ink)
-                            .padding(.horizontal, 14).frame(height: 46)
-                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.soft))
-                    }.buttonStyle(PressableStyle())
+                    Button { Haptics.tap(); vm.keepWaitingTapped() } label: { CandyLabel(title: "Keep waiting") }
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .large, fullWidth: false))
                 }
             }
             // KEEP WAITING pinged the opted-in players (§13).
             if vm.keepWaiting, let note = vm.lookingNote {
-                Text(note).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
+                Text(note).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(16).frame(maxWidth: 380)
-        .vsCard()
+        .vsTinted(accent, bar: [accent.wash(0.7), accent], tint: 0.10, line: 0.32)
     }
 
     /// Private-match invite panel shown on the queue screen — the code + a
@@ -341,18 +397,16 @@ struct VSGameView: View {
     /// the friend joins with the same code (server buckets by inviteCode).
     private func invitePanel(_ code: String) -> some View {
         VStack(spacing: 10) {
-            Text("PRIVATE MATCH").font(Brand.font(10, .black)).tracking(2).foregroundStyle(VsLobbyKit.label)
-            Text(code).font(Brand.font(30, .black)).tracking(6).foregroundStyle(VsLobbyKit.deep)
+            Text("PRIVATE MATCH").font(Brand.font(10, .black)).tracking(2).foregroundStyle(VsLobbyKit.mutedInk)
+            Text(code).tracking(6).vsNumber(32)
             Text("Share this code — the match starts when your friend joins.")
-                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
+                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             ShareLink(item: URL(string: "https://wordocious.com/vs/join/\(code)")!,
-                      message: Text("Join my Wordocious VS match — code \(code)")) {
-                Label { Text("SHARE INVITE") } icon: { Icon3D(.share, size: 17) }
-                    .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.ink))
-            }.buttonStyle(.squish)
+                      // FINISH_SPEC §S4: the shared invite copy (the link is its own item).
+                      message: Text("\(ShareCopy.vsInvite(game: vsModeLabel, url: "").trimmingCharacters(in: .whitespaces)) Code \(code)")) {
+                CandyLabel(title: "Share invite") { Icon3D(.share, size: 20) }
+            }.buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
             // Logs alongside the ShareLink's own tap (share-sheet open = the
             // user's choice to share the invite link).
             .simultaneousGesture(TapGesture().onEnded {
@@ -360,7 +414,7 @@ struct VSGameView: View {
             })
         }
         .padding(16).frame(maxWidth: .infinity)
-        .vsCard(radius: 16)
+        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
         .padding(.horizontal, 4)
     }
 
@@ -374,15 +428,15 @@ struct VSGameView: View {
             VSOverlayWordmark()
             VStack(spacing: 18) {
                 Text(vm.countdownLabel)
-                    .font(Brand.font(12, .black)).tracking(2).foregroundStyle(VsLobbyKit.label)
+                    .font(Brand.font(12, .black)).tracking(2).foregroundStyle(VsLobbyKit.mutedInk)
                 HStack(spacing: 8) {
                     VSModeGlyphTile(mode: mode, selected: true, size: 30)
                     Text(modeName.uppercased()).font(Brand.font(22, .black)).tracking(0.4)
-                        .foregroundStyle(VsLobbyKit.deep).lineLimit(1).minimumScaleFactor(0.6)
+                        .foregroundStyle(VsLobbyKit.titleInk).lineLimit(1).minimumScaleFactor(0.6)
                     VSTagPill(size: 12)
                 }
                 ZStack {
-                    Circle().fill(accent.opacity(0.10)).frame(width: 150, height: 150)
+                    Circle().fill(accent.wash(0.14)).frame(width: 150, height: 150)
                     // A ring that pops on each tick, so the number pulses out of
                     // a burst instead of just swapping.
                     Circle().stroke(accent, lineWidth: 4)
@@ -391,11 +445,11 @@ struct VSGameView: View {
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                     // Stays inside the 150 pt ring at every Dynamic Type size (Oliver's
                     // phone pushed the "!" outside it, 2026-09-26).
+                    // §A2: the countdown is a soft number.
                     Text(vm.countdown == 0 ? "GO!" : "\(vm.countdown ?? 0)")
-                        .font(Brand.font(vm.countdown == 0 ? 64 : 96, .black))
+                        .vsNumber(vm.countdown == 0 ? 64 : 96)
                         .lineLimit(1).minimumScaleFactor(0.5)
                         .frame(width: 118)
-                        .foregroundStyle(accent)
                         .id(vm.countdown)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -457,6 +511,7 @@ struct VSGameView: View {
             VSOpponentStrip(name: vm.opponentName,
                             avatarUrl: vm.opponentInfo?.avatarUrl,
                             botArt: vm.opponentInfo?.botArt,
+                            accent: oppAccent,
                             opponent: vm.opponent,
                             totalBoards: vm.totalBoards,
                             maxGuesses: maxGuesses,
@@ -473,9 +528,9 @@ struct VSGameView: View {
 
     private func vsHintButtons(_ game: GameViewModel) -> some View {
         HStack(spacing: 12) {
-            vsHintPill(label: game.vowelUsed ? (game.vowelRevealed == "—" ? "No vowels left" : "Vowel: \(game.vowelRevealed ?? "")") : "💡 Vowel",
+            vsHintPill(label: game.vowelUsed ? (game.vowelRevealed == "—" ? "No vowels left" : "Vowel: \(game.vowelRevealed ?? "")") : "Vowel",
                        used: game.vowelUsed) { Haptics.success(); game.revealVowel() }
-            vsHintPill(label: game.consonantUsed ? (game.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(game.consonantRevealed ?? "")") : "💡 Consonant",
+            vsHintPill(label: game.consonantUsed ? (game.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(game.consonantRevealed ?? "")") : "Consonant",
                        used: game.consonantUsed) { Haptics.success(); game.revealConsonant() }
         }
         // 16pt bottom: keeps the pills clear of the Q-row so reaching for the
@@ -483,17 +538,13 @@ struct VSGameView: View {
         .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
+    /// §A8: the hint buttons are small teal candy pills (a bulb before the unused
+    /// ones); a used hint reads as the quiet peach pill with its revealed letter.
     private func vsHintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(Brand.font(13, .heavy))
-                .foregroundStyle(used ? Theme.textMuted : hintAccent)
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 10).fill(used ? Theme.surfaceHover : hintAccent.opacity(0.08)))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
+            CandyLabel(title: label, symbol: used ? nil : "lightbulb.fill")
         }
-        .buttonStyle(.squish)
+        .buttonStyle(CandyButtonStyle(variant: used ? .peach : .teal, size: .small))
         .disabled(used)
     }
 
@@ -504,14 +555,14 @@ struct VSGameView: View {
         return HStack(spacing: 10) {
             AvatarView(url: AuthService.shared.profile?.avatarUrl, username: AuthService.shared.profile?.username ?? "You", size: 34)
             VStack(alignment: .leading, spacing: 2) {
-                Text("YOUR RUN").font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
-                Text(who).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
+                Text("YOUR RUN").font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.purpleSub)
+                Text(who).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
             }
             Spacer()
-            Image(systemName: "paperplane.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
+            Image(systemName: "paperplane.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.purple)
         }
         .padding(.horizontal, 12).frame(height: VSOpponentStrip.height)
-        .vsCard(radius: 14)
+        .vsTinted(VsLobbyKit.purple, radius: 16, tint: 0.10, line: 0.32)
     }
 
     /// Bounced-guess toast — the solo GameScreen's toast (fixed dark fill so it
@@ -543,11 +594,12 @@ struct VSGameView: View {
                     } else {
                         // Full frame from the start (all maxGuesses rows) so you can
                         // tell how many guesses the opponent has left.
+                        // §L: their live boards sit on the shared game tray.
                         OpponentBoardsGrid(opponent: vm.opponent, boards: liveTotalBoards,
                                            rows: vm.modeMaxGuesses, wordLength: vm.wordLen,
                                            width: boardsWidth, cap: liveTotalBoards <= 1 ? 40 : 26)
-                            .padding(14).frame(maxWidth: .infinity)
-                            .vsCard(radius: 14)
+                            .padding(3).frame(maxWidth: .infinity)
+                            .gameTray(accent: ModeStyle.accent(mode), lightOnly: true)
                     }
 
                     if let guesses = vm.myFinalGuesses { yourResultCard(guesses: guesses, totalBoards: liveTotalBoards) }
@@ -558,16 +610,11 @@ struct VSGameView: View {
                     // (which may be a win OR a loss — whatever the plan resolves to).
                     if vm.isCpu {
                         if cpuWinLocked {
-                            VSPrimaryButton(title: "CLAIM YOUR WIN") { Haptics.success(); vm.finishCpuNow() }
+                            VSPrimaryButton(title: "CLAIM YOUR WIN", symbol: "trophy.fill") { Haptics.success(); vm.finishCpuNow() }
                         } else {
-                            Button { Haptics.success(); vm.finishCpuNow() } label: {
-                                Label("SKIP TO RESULT", systemImage: "forward.fill")
-                                    .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.ink)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.soft))
-                                    .contentShape(Rectangle())
+                            VSPrimaryButton(title: "SKIP TO RESULT", variant: .teal, symbol: "forward.fill") {
+                                Haptics.success(); vm.finishCpuNow()
                             }
-                            .buttonStyle(PressableStyle())
                         }
                     }
 
@@ -592,36 +639,50 @@ struct VSGameView: View {
     /// The teal one-window card: `<NAME> IS STILL PLAYING`, the stakes line,
     /// and their art/avatar with live guesses · clock · boards.
     private func waitingWindow(totalBoards: Int) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-        return VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("\(opponentShortName.uppercased()) IS STILL PLAYING")
-                    .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                if let stakes = stakesCopy {
-                    Text(stakes).font(Brand.font(11.5, .heavy)).foregroundStyle(VsLobbyKit.ink)
-                        .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("\(opponentShortName.uppercased()) IS STILL PLAYING")
+                        .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    if let stakes = stakesCopy {
+                        Text(stakes).font(Brand.font(11.5, .heavy)).foregroundStyle(oppAccent)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // §D3: a bot waits in character while it finishes; against a person
+                // (or your ghost) the VS host S waits with you.
+                PoseImage(castMascot ?? Mascots.vs, "waiting", height: 84).frame(width: 76)
             }
-            .padding(.horizontal, 12).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.5))
+            .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
 
             HStack(spacing: 12) {
-                LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: vm.opponentName, accent: VsLobbyKit.ink,
-                                botArt: vm.opponentInfo?.botArt)
+                if castMascot == nil {
+                    LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: vm.opponentName, accent: oppAccent,
+                                    botArt: vm.opponentInfo?.botArt)
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(vm.opponentName).font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.deep)
+                        Text(vm.opponentName).font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
                             .lineLimit(1).minimumScaleFactor(0.7)
                         TypingDots(dotSize: 5).opacity(vm.opponentTyping ? 1 : 0)
                     }
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         let secs = max(0, Int((Date().timeIntervalSince1970 * 1000 - vm.startTimeMs) / 1000))
-                        Text("\(vm.opponent.attempts) \(vm.opponent.attempts == 1 ? "guess" : "guesses") · \(secs / 60):\(String(format: "%02d", secs % 60))"
-                             + (totalBoards > 1 ? " · \(vm.opponent.boardsSolved)/\(totalBoards) boards" : ""))
-                            .font(Brand.font(11.5, .heavy)).foregroundStyle(VsLobbyKit.ink).monospacedDigit()
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("\(vm.opponent.attempts)").vsNumber(17)
+                            Text(vm.opponent.attempts == 1 ? "guess" : "guesses").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                            Text("·").foregroundStyle(VsLobbyKit.mutedInk)
+                            Text("\(secs / 60):\(String(format: "%02d", secs % 60))").vsNumber(17)
+                            if totalBoards > 1 {
+                                Text("·").foregroundStyle(VsLobbyKit.mutedInk)
+                                Text("\(vm.opponent.boardsSolved)/\(totalBoards)").vsNumber(17)
+                                Text("boards").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                            }
+                        }
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .accessibilityElement(children: .combine)
                     }
                 }
                 Spacer(minLength: 0)
@@ -629,15 +690,7 @@ struct VSGameView: View {
             }
             .padding(12)
         }
-        .background {
-            ZStack {
-                LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom)
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
-        }
-        .clipShape(shape)
-        .shadow(color: VsLobbyKit.deep.opacity(0.08), radius: 7, x: 0, y: 4)
+        .vsTinted(oppAccent, bar: [oppAccent.wash(0.7), oppAccent], tint: 0.10, line: 0.3)
     }
 
     /// YOUR RESULT in the soft card style: guesses, time, solved / boards.
@@ -647,23 +700,28 @@ struct VSGameView: View {
             : (vm.myStatus == .won ? "Solved" : "Not solved")
         return VStack(alignment: .leading, spacing: 10) {
             VSSectionLabel(text: "YOUR RESULT")
-            HStack(spacing: 0) {
-                resultStat("GUESSES", "\(guesses)")
-                resultStat("TIME", VsLobby.vsClock(vm.playerTimeMs))
-                resultStat(totalBoards > 1 ? "BOARDS" : "RESULT", solvedValue)
+            HStack(spacing: 8) {
+                resultStat("GUESSES", "\(guesses)", accent: VsLobbyKit.purple)
+                resultStat("TIME", VsLobby.vsClock(vm.playerTimeMs), accent: Color(hex: 0x2563EB))
+                resultStat(totalBoards > 1 ? "BOARDS" : "RESULT", solvedValue,
+                           accent: vm.myStatus == .won || totalBoards > 1 ? VsLobbyKit.gold : VsLobbyKit.slate)
             }
         }
         .padding(14).frame(maxWidth: .infinity)
-        .vsCard(radius: 14)
+        .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar, radius: 18, barHeight: 6)
     }
 
-    private func resultStat(_ label: String, _ value: String) -> some View {
+    /// A tinted stat tile with a soft number (purple guesses, blue time, gold result).
+    private func resultStat(_ label: String, _ value: String, accent: Color) -> some View {
         VStack(spacing: 3) {
-            Text(value).font(Brand.font(18, .black)).monospacedDigit().foregroundStyle(VsLobbyKit.deep)
+            Text(value).vsNumber(19)
                 .lineLimit(1).minimumScaleFactor(0.6)
-            Text(label).font(Brand.font(9.5, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.label)
+            Text(label).font(Brand.font(9.5, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.mutedInk)
         }
+        .padding(.vertical, 10).padding(.horizontal, 4)
         .frame(maxWidth: .infinity)
+        .vsTile(accent)
+        .accessibilityElement(children: .combine)
     }
 
     /// True once the (CPU) opponent can no longer beat the player — mirrors the
@@ -759,8 +817,21 @@ struct VSGameView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     if r != nil {
-                        // YOU WIN → S pops in; a loss → R; a draw → U (MASCOT_SPEC §3).
-                        ResultHost(outcome: isWin ? .win : (isDraw ? .draw : .loss))
+                        if let m = castMascot {
+                            // §D3: the bot in character — its victory pose when it won,
+                            // a good-game pose when you did (or on a draw) — with its
+                            // kind sign-off.
+                            VStack(spacing: 10) {
+                                PoseImage(m, isLoss ? "victory" : "goodgame", height: 120)
+                                if let line = endBanter {
+                                    VSBanterBubble(line: line, accent: oppAccent)
+                                        .padding(.horizontal, 24)
+                                }
+                            }
+                        } else {
+                            // YOU WIN → S pops in; a loss → R; a draw → U (MASCOT_SPEC §3).
+                            ResultHost(outcome: isWin ? .win : (isDraw ? .draw : .loss))
+                        }
                     }
                     if let r {
                         resultWindow(headline: headline, margin: margin, isWin: isWin, isDraw: isDraw, isLoss: isLoss,
@@ -771,7 +842,7 @@ struct VSGameView: View {
                                                       score: r.opponentScore, guesses: r.opponentGuesses, timeMs: r.opponentTime,
                                                       solved: oppSolved, winner: isLoss))
                         Text("Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving")
-                            .font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.label)
+                            .font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                             .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 8)
                     } else {
@@ -838,13 +909,13 @@ struct VSGameView: View {
         let winner: Bool
     }
 
-    /// Split halves (winner `#ebd6fd`, other `#e2e6ff`; a draw both `#ece8ff`)
-    /// under a frosted strip with the caps headline + mode icon + margin.
+    /// The result window (§D3): a tinted card in the outcome's color (purple win,
+    /// slate loss, lavender draw) with its top bar; the moment lettering + margin,
+    /// then the two sides as tinted stat tiles with soft-number scores.
     private func resultWindow(headline: String, margin: String, isWin: Bool, isDraw: Bool, isLoss: Bool,
                               me: ResultSide, them: ResultSide) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-        let mineBg = isDraw ? Color(hex: 0xECE8FF) : (isWin ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
-        let theirBg = isDraw ? Color(hex: 0xECE8FF) : (isLoss ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
+        let tone: Color = isWin ? VsLobbyKit.purple : (isDraw ? Color(hex: 0x8B5CF6) : VsLobbyKit.slate)
+        let bar: [Color] = isWin ? VsLobbyKit.purpleBar : (isDraw ? [Color(hex: 0xC4B5FD), Color(hex: 0x8B5CF6)] : VsLobbyKit.slateBar)
         // ART_SPEC §6: YOU WIN! / YOU LOSE / DRAW lettering in place of the text
         // headline (a loss or forfeit reads YOU LOSE); the text row is the fallback.
         let moment: MomentArt = isWin ? .youwin : (isDraw ? .draw : .youlose)
@@ -855,7 +926,7 @@ struct VSGameView: View {
                         Image("swords").renderingMode(.template).resizable().scaledToFit()
                             .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
                         Text(headline)
-                            .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                            .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                             .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -872,52 +943,51 @@ struct VSGameView: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.5))
 
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .top, spacing: 8) {
                 resultColumn(me, label: "YOU").frame(maxWidth: .infinity)
-                resultColumn(them, label: (vm.isCpu ? opponentShortName : them.name).uppercased()).frame(maxWidth: .infinity)
+                resultColumn(them, label: (vm.isCpu ? opponentShortName : them.name).uppercased(),
+                             accent: vm.isCpu ? oppAccent : Color(hex: 0xEC4899)).frame(maxWidth: .infinity)
             }
-            .padding(.vertical, 14)
+            .padding(.horizontal, 10).padding(.bottom, 12)
         }
-        .background {
-            ZStack {
-                HStack(spacing: 0) { mineBg; theirBg }
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                if isWin && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
+        .vsTinted(tone, bar: bar, tint: isWin ? 0.10 : 0.09, line: 0.32)
+        .overlay {
+            if isWin && !Theme.reduceMotion {
+                BannerSweep().allowsHitTesting(false)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
         }
-        .clipShape(shape)
-        .shadow(color: VsLobbyKit.purpleInk.opacity(0.08), radius: 7, x: 0, y: 4)
         .accessibilityElement(children: .combine)
     }
 
-    private func resultColumn(_ p: ResultSide, label: String) -> some View {
+    private func resultColumn(_ p: ResultSide, label: String, accent: Color = VsLobbyKit.purple) -> some View {
         let penalty = max(0, p.score - Double(p.guesses))
         return VStack(spacing: 6) {
-            VSPlayerAvatar(url: p.avatarUrl, username: p.name, botArt: p.botArt, size: 36)
+            VSPlayerAvatar(url: p.avatarUrl, username: p.name, botArt: p.botArt, size: 38)
             HStack(spacing: 4) {
-                if p.winner { Icon3D(.trophy, size: 12) }
-                Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.purpleSub)
+                if p.winner { Icon3D(.crown, size: 14) }
+                Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.titleInk)
                     .lineLimit(1).minimumScaleFactor(0.6)
             }
             Text(String(format: "%.2f", p.score))
-                .font(Brand.font(32, .black)).monospacedDigit().foregroundStyle(VsLobbyKit.purpleInk)
+                .vsNumber(32)
                 .lineLimit(1).minimumScaleFactor(0.6)
             // The exact calculation, spelled out.
             Text("\(p.guesses) \(p.guesses == 1 ? "guess" : "guesses") + \(String(format: "%.2f", penalty)) time")
-                .font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.purpleSub)
+                .font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(VsLobby.vsClock(Int(p.timeMs)))
-                .font(Brand.font(10, .bold)).monospacedDigit().foregroundStyle(VsLobbyKit.purpleSub)
+                .font(Brand.font(10, .heavy)).monospacedDigit().foregroundStyle(VsLobbyKit.mutedInk)
             // Solve chip — the tiebreak that actually decides most matches.
             Text(p.solved ? "SOLVED" : "NOT SOLVED")
                 .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(.white)
                 .padding(.horizontal, 9).padding(.vertical, 4)
-                .background(Capsule().fill(p.solved ? VsLobbyKit.purple : Color(hex: 0x64748B)))
+                .background(Capsule().fill(p.solved ? VsLobbyKit.purple : VsLobbyKit.slate))
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6).padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .vsTile(p.winner ? VsLobbyKit.gold : accent, strong: p.winner)
     }
 
     private func h2hCard(_ h2h: HeadToHeadRecord) -> some View {
@@ -925,27 +995,41 @@ struct VSGameView: View {
             VSPlayerAvatar(url: vm.opponentInfo?.avatarUrl, username: vm.opponentName, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text("YOU AND \(vm.opponentName.uppercased())").font(Brand.font(10, .black)).tracking(0.6)
-                    .foregroundStyle(VsLobbyKit.label).lineLimit(1).minimumScaleFactor(0.7)
+                    .foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1).minimumScaleFactor(0.7)
                 Text(HeadToHeadService.headToHeadLine(opponentName: vm.opponentName, h2h))
-                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.purpleInk)
+                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
-        .padding(14).vsCard(radius: 14)
+        .padding(14).vsTinted(Color(hex: 0xEC4899), radius: 18)
     }
 
-    /// Bot extras in one soft card: photo finish, ladder clear, streak or
-    /// milestone, badge unlock, the session tally and the Bots-record note.
+    /// Bot extras in one tinted card: photo finish, ladder clear (the celebration
+    /// art when the LAST rung falls), streak or milestone, badge unlock (the gold
+    /// medal), the session tally and the Bots-record note.
     private var botExtras: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             if let pf = vm.photoFinish {
                 PhotoFinishStamp(clutch: pf == "clutch")
             }
             if let rung = vm.cpuClearedRung {
-                Text("\(VsLobby.botName(rung).uppercased()) CLEARED ON THE LADDER!")
-                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.ink)
-                    .multilineTextAlignment(.center)
+                if BotCast.canonicalId(rung) == VsLobby.ladderBots.last && ArtAsset.exists("art-scene-ladder-cleared") {
+                    Image("art-scene-ladder-cleared").resizable().interpolation(.high).scaledToFit()
+                        .frame(maxHeight: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .accessibilityHidden(true)
+                    Text("LADDER CLEARED — YOU BEAT THE BOSS!")
+                        .font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                        .multilineTextAlignment(.center)
+                } else {
+                    HStack(spacing: 6) {
+                        Icon3D(.badgeCheck, size: 22)
+                        Text("\(VsLobby.botName(rung).uppercased()) CLEARED ON THE LADDER!")
+                            .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.castColor(rung))
+                            .multilineTextAlignment(.center)
+                    }
+                }
             }
             if let m = vm.cpuMilestone {
                 // ART_SPEC §6: the streak milestone gets the STREAK! lettering over
@@ -953,31 +1037,54 @@ struct VSGameView: View {
                 if MomentArt.streak.isAvailable {
                     VStack(spacing: 2) {
                         MomentLettering(.streak, maxWidth: 200, maxHeight: 56) { EmptyView() }
-                        Text("\(m)-win bot streak").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        HStack(spacing: 4) {
+                            Text("\(m)").vsNumber(18)
+                            Text("-win bot streak").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        }
                     }
                 } else {
                     HStack(spacing: 4) {
                         Icon3D(.flame, size: 18)
-                        Text("\(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        Text("\(m)").vsNumber(18)
+                        Text("-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
                     }
                 }
             } else if vm.cpuStreak > 0 {
-                Text("Bot win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.sub)
+                HStack(spacing: 4) {
+                    Icon3D(.flame, size: 16)
+                    Text("Bot win streak").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                    Text("\(vm.cpuStreak)").vsNumber(16)
+                }
+                .accessibilityElement(children: .combine)
             }
-            if vm.cpuUnlock != nil {
-                Text("🏅 Unlocked \(BotPersonas.persona(vm.cpuPersona?.tier ?? .hard).name)’s badge!")
-                    .font(Brand.font(12, .black)).foregroundStyle(Color(hex: UInt(vm.cpuPersona?.color ?? 0xEF4444)))
+            if let unlock = vm.cpuUnlock {
+                // The badge unlock: the gold medal art (never an emoji).
+                HStack(spacing: 6) {
+                    if ArtAsset.exists("art-medal-gold") {
+                        VSArt("art-medal-gold", height: 30).frame(width: 28)
+                    } else {
+                        Icon3D(.trophy, size: 22)
+                    }
+                    Text("Unlocked \(BotPersonas.persona(unlock).name)’s badge!")
+                        .font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.castColor(unlock))
+                }
+                .accessibilityElement(children: .combine)
             }
             if vm.cpuSessionWins + vm.cpuSessionLosses > 0 {
-                Text("THIS SESSION · YOU \(vm.cpuSessionWins) · BOTS \(vm.cpuSessionLosses)")
-                    .font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.deep)
+                HStack(spacing: 5) {
+                    Text("THIS SESSION · YOU").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.mutedInk)
+                    Text("\(vm.cpuSessionWins)").vsNumber(15)
+                    Text("· BOTS").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.mutedInk)
+                    Text("\(vm.cpuSessionLosses)").vsNumber(15)
+                }
+                .accessibilityElement(children: .combine)
             }
             Text("Bot game — counts in your Bots record, not People")
-                .font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.label)
+                .font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity)
-        .vsCard(radius: 14)
+        .vsTinted(oppAccent, bar: [oppAccent.wash(0.6), oppAccent], radius: 18, barHeight: 6, tint: 0.08)
     }
 
     @ViewBuilder private var rematchSection: some View {
@@ -985,15 +1092,15 @@ struct VSGameView: View {
         case .received:
             VStack(spacing: 10) {
                 Text("\(opponentShortName.uppercased()) WANTS A REMATCH")
-                    .font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                    .font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                     .multilineTextAlignment(.center)
                 HStack(spacing: 10) {
-                    VSSoftPurpleButton(title: "DECLINE") { vm.declineRematch() }
-                    VSPrimaryButton(title: "ACCEPT", color: VsLobbyKit.purple) { vm.acceptRematch() }
+                    VSSoftPurpleButton(title: "DECLINE", variant: .peach) { vm.declineRematch() }
+                    VSPrimaryButton(title: "ACCEPT") { vm.acceptRematch() }
                 }
             }
             .padding(14).frame(maxWidth: .infinity)
-            .vsCard(radius: 14)
+            .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar, radius: 18, barHeight: 6)
         default: EmptyView()
         }
     }
@@ -1003,30 +1110,31 @@ struct VSGameView: View {
         VStack(spacing: 10) {
             switch vm.rematch {
             case .declined:
-                Text("NO REMATCH").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.label)
+                Text("NO REMATCH").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.mutedInk)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEEF0F3)))
+                    .background(Capsule().fill(VsLobbyKit.slate.wash(0.14)))
+                    .overlay(Capsule().stroke(VsLobbyKit.slate.wash(0.34), lineWidth: 1.5))
             case .offered:
-                HStack(spacing: 8) {
-                    ProgressView().tint(.white).controlSize(.small)
-                    Text("WAITING FOR \(opponentShortName.uppercased())…").font(Brand.font(14, .black)).tracking(0.6)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                // The candy REMATCH, pressed and waiting (not tappable).
+                Button(action: {}) {
+                    CandyLabel(title: "Waiting for \(opponentShortName)…") {
+                        ProgressView().tint(.white).controlSize(.small)
+                    }
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity).padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.purple.opacity(0.6)))
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .disabled(true)
             case .received:
                 EmptyView()   // the "wants a rematch" card carries the buttons
             case .idle:
                 // Free users get the Pro upsell modal instead of an inline error
                 // (web parity — Rematch opens VsLimitModal for non-Pro).
-                VSPrimaryButton(title: "REMATCH", color: VsLobbyKit.purple) {
+                VSPrimaryButton(title: "REMATCH", symbol: "arrow.clockwise") {
                     if vm.isPro { vm.offerRematch() } else { showRematchUpsell = true }
                 }
             }
 
             HStack(spacing: 10) {
-                VSSoftPurpleButton(title: "HOME", icon: "house.fill", action: goHome)
+                VSSoftPurpleButton(title: "HOME", icon: "house.fill", variant: .peach, action: goHome)
                 VSSoftPurpleButton(title: "SHARE", icon: "square.and.arrow.up") { shareVSCard() }
             }
         }
@@ -1069,19 +1177,18 @@ struct VSGameView: View {
         VSShareService.share(card: card, text: shareText)
     }
 
-    /// Share copy — ports the web result-screen handleShare strings.
+    /// FINISH_SPEC §S4: the shared caption bank (only the no-payload text fallback
+    /// still sends text; results share the image alone).
     private var shareText: String {
         let oppName = vm.opponentName
         let winner = vm.result?.winner
-        let text: String
+        let day = LeaderboardService.todayLocal()
         if winner == "player" {
-            text = "I just beat \(oppName) in a Wordocious VS \(vsModeLabel) duel! ⚔️🏆"
+            return ShareCopy.caption(.vsWin(opponent: oppName), game: vsModeLabel, date: day)
         } else if winner == "draw" {
-            text = "\(oppName) and I battled to a draw in VS \(vsModeLabel) on Wordocious! ⚔️"
-        } else {
-            text = "Epic VS \(vsModeLabel) duel against \(oppName) on Wordocious! ⚔️"
+            return ShareCopy.caption(.vsDraw(opponent: oppName), game: vsModeLabel, date: day)
         }
-        return "\(text)\nhttps://wordocious.com"
+        return ShareCopy.caption(.vsLoss(opponent: oppName), game: vsModeLabel, date: day)
     }
 
     // MARK: - Opponent left / match gone / not configured (soft VS cards)
@@ -1107,15 +1214,15 @@ struct VSGameView: View {
         VStack(spacing: 14) {
             VSModeGlyphTile(mode: mode, selected: false, size: 44)
             Image(systemName: icon).font(.system(size: 30, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
-            Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+            Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                 .multilineTextAlignment(.center)
             if let sub {
-                Text(sub).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub).multilineTextAlignment(.center)
+                Text(sub).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center)
             }
             VSPrimaryButton(title: button, action: goHome).padding(.top, 4)
         }
         .padding(20).frame(maxWidth: 380)
-        .vsCard(radius: 16)
+        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1126,7 +1233,8 @@ struct VSGameView: View {
         Text(text).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xB91C1C))
             .multilineTextAlignment(.center)
             .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(Capsule().fill(Color(hex: 0xFEF2F2)))
+            .background(Capsule().fill(Color(hex: 0xF0435F).wash(0.12)))
+            .overlay(Capsule().stroke(Color(hex: 0xF0435F).wash(0.34), lineWidth: 1.5))
     }
 }
 
@@ -1211,9 +1319,10 @@ struct VSMatchHeader: View {
     private func clock(_ size: CGFloat) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
             HStack(spacing: 3) {
-                Image(systemName: "clock").font(.system(size: size - 1)).foregroundStyle(Color(hex: 0x60A5FA))
+                Image(systemName: "clock").font(.system(size: size - 1, weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
+                // §A2: the live timer is a soft number.
                 Text("\(game.elapsedSeconds / 60):\(String(format: "%02d", game.elapsedSeconds % 60))")
-                    .font(Brand.caption(size)).foregroundStyle(Theme.textMuted).monospacedDigit()
+                    .softNumber(size + 2)
             }
         }
     }
@@ -1275,6 +1384,8 @@ struct VSOpponentStrip: View {
     let name: String
     let avatarUrl: String?
     let botArt: String?
+    /// The strip's tint: a cast bot's own color, else VS teal.
+    var accent: Color = VsLobbyKit.ink
     let opponent: VSMatchViewModel.OpponentProgress
     /// The MODE's board count, known from match start (opponent.totalBoards is
     /// 0 until their first progress event).
@@ -1291,23 +1402,34 @@ struct VSOpponentStrip: View {
     var body: some View {
         let progress = min(1, max(0, stageProgress ?? Double(opponent.boardsSolved) / Double(max(1, total))))
         HStack(spacing: 10) {
-            VSPlayerAvatar(url: avatarUrl, username: name, botArt: botArt, size: 34)
+            // §D3: a cast bot is its own character (a little larger, no circle).
+            if let m = VsLobbyKit.mascot(fromArt: botArt) {
+                Image(m.assetName).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 42, height: 42)
+                    .accessibilityHidden(true)
+            } else {
+                VSPlayerAvatar(url: avatarUrl, username: name, botArt: botArt, size: 34)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Text(name).font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
+                    Text(name).font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
                         .lineLimit(1).minimumScaleFactor(0.7)
                     // Reserved slot: the dots fade, they never shift the row.
                     TypingDots(dotSize: 4).opacity(typing ? 1 : 0)
                         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: typing)
                     Spacer(minLength: 4)
-                    Text("\(opponent.attempts) \(opponent.attempts == 1 ? "guess" : "guesses")")
-                        .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.sub).monospacedDigit()
-                        .lineLimit(1).fixedSize()
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(opponent.attempts)").vsNumber(15)
+                        Text(opponent.attempts == 1 ? "guess" : "guesses")
+                            .font(Brand.font(10.5, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                    }
+                    .lineLimit(1).fixedSize()
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(VsLobbyKit.soft)
-                        Capsule().fill(VsLobbyKit.ink).frame(width: geo.size.width * progress)
+                        Capsule().fill(accent.wash(0.2))
+                        Capsule().fill(LinearGradient(colors: [accent.wash(0.7), accent], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: geo.size.width * progress)
                     }
                 }
                 .frame(height: 5)
@@ -1318,21 +1440,20 @@ struct VSOpponentStrip: View {
         .padding(.horizontal, 12)
         .frame(height: Self.height)
         .frame(maxWidth: .infinity)
-        .vsCard(radius: 14)
+        .vsTinted(accent, radius: 16, tint: 0.11, line: 0.34)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(a11y)
     }
 
     @ViewBuilder private var trailing: some View {
         if let stageLine {
-            Text(stageLine).font(Brand.font(11, .black)).foregroundStyle(VsLobbyKit.ink)
+            Text(stageLine).font(Brand.font(11, .black)).foregroundStyle(accent)
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .frame(maxWidth: 110, alignment: .trailing)
         } else if total > 1 {
-            HStack(spacing: 3) {
-                Text("\(opponent.boardsSolved)/\(total)").font(Brand.font(14, .black)).monospacedDigit()
-                    .foregroundStyle(VsLobbyKit.deep)
-                Text("boards").font(Brand.font(10.5, .heavy)).foregroundStyle(VsLobbyKit.sub)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text("\(opponent.boardsSolved)/\(total)").vsNumber(16)
+                Text("boards").font(Brand.font(10.5, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
             }
             .fixedSize()
         } else {
@@ -1478,12 +1599,12 @@ private struct GauntletSpectatorView: View {
                         Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(accent.first ?? Theme.primary)
                     } else {
                         Text("\(idx + 1)").font(Brand.font(12, .black))
-                            .foregroundStyle(st == .locked ? Theme.textMuted : (accent.first ?? Theme.primary))
+                            .foregroundStyle(st == .locked ? VsLobbyKit.mutedInk : (accent.first ?? Theme.primary))
                     }
                 }
                 Text(stage.name).font(Brand.font(15, .black))
                     .foregroundStyle(st == .locked
-                                     ? AnyShapeStyle(Theme.textMuted)
+                                     ? AnyShapeStyle(VsLobbyKit.mutedInk)
                                      : AnyShapeStyle(LinearGradient(colors: accent, startPoint: .leading, endPoint: .trailing)))
                 Spacer()
                 statusChip(st)
@@ -1499,8 +1620,9 @@ private struct GauntletSpectatorView: View {
                                    offset: offset)
             }
         }
-        .padding(14).frame(maxWidth: .infinity)
-        .vsCard(radius: 14)
+        .padding(3).frame(maxWidth: .infinity)
+        // §L: each stage's boards sit on the shared game tray in its color.
+        .gameTray(accent: accent.first ?? Theme.primary, state: st == .active ? .active : (st == .cleared ? .won : .normal), lightOnly: true)
         .opacity(st == .locked ? 0.55 : 1)
     }
 
@@ -1516,7 +1638,8 @@ private struct GauntletSpectatorView: View {
                 TypingDots(dotSize: 4)
             }
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(VsLobbyKit.soft))
+            .background(Capsule().fill(VsLobbyKit.ink.wash(0.14)))
+            .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.34), lineWidth: 1))
         case .locked:
             Icon3D(.lock, size: 14) // ART_SPEC §5
         }
@@ -1579,7 +1702,8 @@ private struct OpponentTile: View {
     private var color: Color {
         switch state {
         case .correct, .present, .absent: return Theme.tileColor(for: state ?? .empty)
-        default: return Color(hex: 0xE5E7EB)
+        // §A1: an empty cell is a soft lilac wash, never flat gray / white.
+        default: return Color(hex: 0x7C3AED).wash(0.12)
         }
     }
 }
@@ -1660,21 +1784,19 @@ private struct DailyVsAlreadyPlayed: View {
                 Text(isPro
                      ? "Want more? Jump into unlimited VS battles with fresh puzzles."
                      : "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                    .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .multilineTextAlignment(.center).padding(.horizontal, 16)
                 if isPro {
                     // Pro: back to the VS lobby (where the Daily Battle launched from,
                     // VS overhaul 2026-10-01) for unlimited any-mode battles
                     // (web parity — DailyVsAlreadyPlayed's "Play Unlimited VS").
-                    VSPrimaryButton(title: "PLAY UNLIMITED VS", action: onHome)
+                    VSPrimaryButton(title: "PLAY UNLIMITED VS", symbol: "play.fill", action: onHome)
                 } else {
                     // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
                     NavigationLink { ProView() } label: {
-                        Label { Text("UPGRADE TO PRO") } icon: { Icon3D(.crown, size: 18) }.font(Brand.font(14, .black)).tracking(0.6)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
-                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xD97706)))
-                    }.buttonStyle(PressableStyle())
+                        CandyLabel(title: "Upgrade to Pro") { Icon3D(.crown, size: 20) }
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
                 }
                 VSGreyPill(title: "VS HOME", icon: "house.fill", action: onHome)
             }
@@ -1688,7 +1810,7 @@ private struct DailyVsAlreadyPlayed: View {
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("TODAY’S DAILY BATTLE").font(Brand.font(10, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
-                    Text("ALREADY PLAYED").font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+                    Text("ALREADY PLAYED").font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                 }
                 Spacer(minLength: 6)
                 // Today's daily VS outcome as moment lettering (ART_SPEC §6/§10: YOU WIN! /
@@ -1703,32 +1825,36 @@ private struct DailyVsAlreadyPlayed: View {
                 }
             }
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.5))
 
             VStack(spacing: 14) {
                 // Played today: U's all-done scene (ART_SPEC §7; §10 parity with Android).
                 SceneArt(.allDone, height: 110, fallbackSize: 72)
                 if !answer.isEmpty {
+                    // §B1: today's answer in glossy purple tiles.
                     HStack(spacing: 5) {
                         ForEach(Array(answer.uppercased().enumerated()), id: \.offset) { _, ch in
-                            TileView(letter: String(ch), state: .correct, revealed: true, size: 44)
+                            GlossyTile(face: .correct, letter: String(ch), width: 44)
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Answer: \(answer)")
                 }
                 // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight pill).
                 TimelineView(.periodic(from: Date(), by: 1)) { _ in
                     let s = secondsUntilLocalMidnight()
-                    Text("NEXT DAILY BATTLE IN \(cd(s))")
-                        .font(Brand.font(10.5, .black)).tracking(0.5).monospacedDigit().foregroundStyle(VsLobbyKit.ink)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Capsule().fill(Color.white.opacity(0.75)))
+                    HStack(spacing: 6) {
+                        Text("NEXT DAILY BATTLE IN").font(Brand.font(10.5, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.mutedInk)
+                        Text(cd(s)).vsNumber(15)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(VsLobbyKit.ink.wash(0.12)))
+                    .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.32), lineWidth: 1.5))
+                    .accessibilityElement(children: .combine)
                 }
             }
             .padding(16)
         }
-        .background(LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: VsLobbyKit.deep.opacity(0.08), radius: 7, x: 0, y: 4)
+        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
     }
 
     private func cd(_ s: Int) -> String {
@@ -1753,7 +1879,7 @@ private struct VSLookingPingRow: View {
                 .foregroundStyle(on ? Color(hex: 0x0F766E) : VsLobbyKit.sub)
                 .frame(width: 22)
             Text("Ping me when someone’s looking for \(VsLobbyKit.modeName(mode))")
-                .font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.deep)
+                .font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.titleInk)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Toggle("", isOn: Binding(get: { on }, set: { NotificationPrefsWriter.set(VsLookingService.prefKey, $0, saving: $saving) }))
@@ -1763,7 +1889,7 @@ private struct VSLookingPingRow: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
         .frame(maxWidth: 380)
-        .vsCard()
+        .vsTinted(VsLobbyKit.ink, radius: 18)
         .opacity(saving ? 0.6 : 1)
     }
 }

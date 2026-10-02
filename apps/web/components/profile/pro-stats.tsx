@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/lib/supabase-client';
 import { CORE_MODES } from '@/lib/modes.generated';
+import { softCard } from '@/lib/soft-surface';
 
 // More Games (§11): this global view charts the core word modes only. A
 // More Games row would show up with its raw key and a near-100% win rate
@@ -93,7 +94,7 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
         {/* Win Rate Chart */}
         <div
           className="p-4"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={softCard('#7c3aed', { radius: 18 })}
         >
           <h3 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>Win Rate by Mode</h3>
           <div className="h-44">
@@ -123,7 +124,7 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
         {/* Avg Solve Time Chart */}
         <div
           className="p-4"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={softCard('#7c3aed', { radius: 18 })}
         >
           <h3 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>Avg Solve Time by Mode</h3>
           <div className="h-44">

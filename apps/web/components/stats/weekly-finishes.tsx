@@ -4,7 +4,9 @@ import useSWR from 'swr';
 import { Flag } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { ordinal } from '@/lib/weekly-race';
-import { onPageShadow } from '@/lib/art';
+import { SoftNum } from '@/components/ui/soft-number';
+import { softCard, softPill } from '@/lib/soft-surface';
+import { MedalArt } from '@/components/stats/medal-art';
 
 // Weekly race finishes on the Stats tab's All-time page (D3.3): the settled
 // weeks from weekly_race_results (owner read via RLS) — how many times you won,
@@ -37,19 +39,19 @@ export function WeeklyFinishesCard({ userId }: { userId: string }) {
   const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
   const f = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   return (
-    <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() }}>
-      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
+    <div className="overflow-hidden" style={softCard('#ec4899', { radius: 18 })}>
+      <div aria-hidden="true" style={{ height: 10, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
       <div className="px-4 pt-3 pb-3">
         <div className="flex items-center gap-2 mb-2">
           <Flag className="w-4 h-4" style={{ color: '#7c3aed' }} />
           <span className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Weekly Race Finishes</span>
           <span className="text-[10px] font-bold ml-auto" style={{ color: 'var(--color-text-muted)' }}>{rows.length} {rows.length === 1 ? 'week' : 'weeks'}</span>
         </div>
-        <div className="flex items-center justify-around">
-          {[['🥇', count(1)], ['🥈', count(2)], ['🥉', count(3)]].map(([m, n]) => (
-            <div key={m as string} className="text-center">
-              <div className="text-lg">{m}</div>
-              <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>{n as number}</div>
+        <div className="grid grid-cols-3 gap-2">
+          {([['gold', count(1), '#f5a524'], ['silver', count(2), '#94a3b8'], ['bronze', count(3), '#d97706']] as const).map(([m, n, tint]) => (
+            <div key={m} className="text-center py-1.5" style={softPill(tint, { radius: 12 })}>
+              <MedalArt medal={m} size={28} className="mx-auto" />
+              <SoftNum size={18} as="div" className="soft-num-auto">{n}</SoftNum>
             </div>
           ))}
         </div>

@@ -174,6 +174,8 @@ object Mascots {
 
 /** True when mascots should hold still (in-app toggle or system "Remove animations"). */
 private val mascotStill: Boolean get() = WTheme.reducedMotion
+/** AD: continuous idle bobbing also stops in Power Save (calm motion); one-shot POP / WAVE keep [mascotStill]. */
+private val mascotBobStill: Boolean get() = WTheme.calmMotion
 
 /**
  * One cast member, square [size]. Decorative (hidden from screen readers).
@@ -190,7 +192,7 @@ fun Mascot(
 ) {
     val still = mascotStill
     val hidden by LocalTabHidden.current
-    val animated = if (still || hidden) MascotMotion.NONE else motion
+    val animated = if (still || hidden || (motion == MascotMotion.BOB && mascotBobStill)) MascotMotion.NONE else motion
     val layer: Modifier = when (animated) {
         MascotMotion.NONE -> Modifier
         MascotMotion.BOB -> Modifier.mascotBob()
@@ -303,7 +305,7 @@ fun CastRow(
         }
         a.asState()
     }
-    val bobMod = if (motion == MascotMotion.BOB && !still && !hidden) Modifier.mascotBob() else Modifier
+    val bobMod = if (motion == MascotMotion.BOB && !still && !mascotBobStill && !hidden) Modifier.mascotBob() else Modifier
     Row(
         modifier.clearAndSetSemantics { }.then(bobMod).padding(top = if (crown) size * crownWidth * 0.62f else 0.dp),
         horizontalArrangement = Arrangement.spacedBy(gap),
@@ -435,5 +437,5 @@ fun TitleHost(id: MascotId, modifier: Modifier = Modifier, size: Dp = 40.dp) {
 @Composable
 fun Modifier.mascotGroupBob(): Modifier {
     val hidden by LocalTabHidden.current
-    return if (mascotStill || hidden) this else this.then(Modifier.mascotBob())
+    return if (mascotBobStill || hidden) this else this.then(Modifier.mascotBob())
 }

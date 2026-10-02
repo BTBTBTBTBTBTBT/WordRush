@@ -1,5 +1,6 @@
 'use client';
 
+import { setLeaveGuard } from '@/lib/nav-home';
 import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
 import {
   GameMode,
@@ -13,20 +14,26 @@ import {
   vsClock,
   GAUNTLET_STAGES,
 } from '@wordle-duel/core';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SocketIOMatchService, type MatchEndedData, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
-import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, botIdForKind, type CpuKind } from '@/lib/adapters/bot-match-service';
+import { shareCaption } from '@wordle-duel/core';
+import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, botIdForKind, castBotForKind, engineDifficultyForKind, guessRangeForKind, parseCpuKind, type CpuKind } from '@/lib/adapters/bot-match-service';
 import { VsSoloHudContext, VsOpponentContext } from './opponent-hud';
-import { BOT_PERSONAS, botArt, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import { BOT_PERSONAS, botLine, botPersona, botRosterEntry, isBotCastId, type BotDifficulty, type BotEvent, type BotPose, type BotTier } from '@/lib/bot/bot-personas';
 import { recordCpuGame, recordBotOfDay, recordBotOfDayResult, recordLadderGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
-import { VS, modeColor, ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily, lookingRowLabel, vsLookingOn } from '@/lib/vs-lobby';
+import { VS, ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily, lookingRowLabel, vsLookingOn } from '@/lib/vs-lobby';
 import { pingVsLooking, postRaceResult, sendChallenge, type ChallengeRun, type ChallengeView } from '@/lib/vs-challenges-client';
 import { PENDING_RACE_SAVED_LINE, isRetryableFailure, savePendingRace } from '@/lib/vs-pending-races';
 import { supabase } from '@/lib/supabase-client';
 import { ChallengeResult, ChallengeSent } from './challenge-result';
 import { VsQueueScreen, VsStartingScreen } from './vs-queue';
-import { BotAvatar, InitialAvatar, ModeChip, VsLoadingScreen, VsModeIcon, VsPill } from './vs-ui';
+import { BotFigure, BotPoseAvatar, BotSpeech, CardBar, GhostAvatar, InitialAvatar, ModeChip, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsLoadingScreen, VsModeIcon, VsModeTile, VsPill, vsCard } from './vs-ui';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { PageBackground } from '@/components/ui/page-background';
+import { darken } from '@/lib/soft-surface';
+import { medalSrc, poseSrc } from '@/lib/art';
+import { LADDER_BOTS } from '@wordle-duel/core';
 import { letterTileRadius } from '@/components/ui/letter-tile-avatar';
 import { useVsCounts } from './use-vs-lobby';
 import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
@@ -41,7 +48,8 @@ import { useProperNoundleBank } from '@/components/propernoundle/puzzle-service'
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
-import { Loader2, Home, RotateCcw, X, Swords, Bot, Users, ChevronLeft } from 'lucide-react';
+import { feedback } from '@/lib/sound-events';
+import { Loader2, X, Swords } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { GameHomeButton } from '@/components/game/game-home-button';
@@ -106,7 +114,6 @@ interface VsGameProps {
 /** Opponent ids for the async-challenge games (never a real socket opponent). */
 const SOLO_OPPONENT_ID = 'solo:run';
 const RACE_OPPONENT_PREFIX = 'race:';
-const CPU_KINDS: CpuKind[] = ['easy', 'medium', 'hard', 'adaptive', 'ghost', 'daily'];
 
 type VsScreen = 'entry' | 'queue' | 'warmup' | 'match' | 'waiting' | 'result';
 
@@ -165,7 +172,7 @@ const SOLO_TITLES: Record<string, { title: string; className: string; style?: CS
 function VsToast({ text, className = 'bottom-8' }: { text: string; className?: string }) {
   return (
     <div className={`fixed left-0 right-0 text-center z-50 px-4 pointer-events-none ${className}`} style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
-      <span className="inline-block text-[13px] font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ background: '#ffffff', color: VS.deep, boxShadow: '0 4px 16px rgba(76,29,149,0.14)' }}>
+      <span className="inline-block text-[13px] font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ ...vsCard(VS_ACCENT, { radius: 999 }), color: VS.deep }}>
         {text}
       </span>
     </div>
@@ -372,8 +379,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // arrives as the `race` prop from /vs/challenge/<code>.
   const searchParams = useSearchParams();
   const liveParam = searchParams?.get('live') === '1';
-  const cpuParamRaw = searchParams?.get('cpu') as CpuKind | null;
-  const cpuParam = cpuParamRaw && CPU_KINDS.includes(cpuParamRaw) ? cpuParamRaw : null;
+  // ?cpu=<cast id | daily | ghost> (old tier kinds still parse, FINISH_SPEC D1).
+  const cpuParam = parseCpuKind(searchParams?.get('cpu'));
   const sendFriendIds = useMemo(() => (searchParams?.get('friends') ?? '').split(',').filter(Boolean), [searchParams]);
   // The challenge-send game's HUD line (VS overhaul §3): who will race this run.
   const soloHudLine = sendFriendIds.length > 0
@@ -400,7 +407,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // CPU practice is available for every mode (Gauntlet's 21-board / 5-stage run
   // is modeled by the bot engine, which also emits stage-completed events).
   const cpuSupported = true;
-  const [cpuPersona, setCpuPersona] = useState<{ tier: BotTier; name: string; avatar: string; color: string } | null>(null);
+  // botId = the cast bot (rip … webster) or 'ghost' (D1): its art, color and banter.
+  const [cpuPersona, setCpuPersona] = useState<{ tier: BotTier; name: string; avatar: string; color: string; botId: string } | null>(null);
   const cpuPersonaRef = useRef(cpuPersona);
   cpuPersonaRef.current = cpuPersona;
   const [showCpuChooser, setShowCpuChooser] = useState(false);
@@ -420,6 +428,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const [photoFinish, setPhotoFinish] = useState<PhotoFinishKind | null>(null);
   const [cpuMilestone, setCpuMilestone] = useState<number | null>(null);
   const [cpuUnlock, setCpuUnlock] = useState<string | null>(null);
+  // The bot's word on the result (D3 banter: bot_win / bot_loss), picked once per match.
+  const [cpuResultLine, setCpuResultLine] = useState<string | null>(null);
+  // This game cleared a ladder rung (D1) — `final` = the whole ladder (Webster beaten).
+  const [ladderMoment, setLadderMoment] = useState<{ cleared: number; final: boolean } | null>(null);
   const [cpuStreak, setCpuStreak] = useState(0);
   const [cpuSession, setCpuSession] = useState({ wins: 0, losses: 0 });
   const presenceId = usePresenceId();
@@ -455,6 +467,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const [opponentTiles, setOpponentTiles] = useState<Record<number, string[][]>>({});
   const [puzzleMetadata, setPuzzleMetadata] = useState<{ display: string; category: string; answerLength: number; themeCategory?: string } | undefined>();
   const [matchResult, setMatchResult] = useState<any>(null);
+  // FINISH_SPEC U: the whole bot ladder cleared = `celebrate`.
+  useEffect(() => { if (matchResult && ladderMoment?.final) feedback('celebrate'); }, [matchResult, ladderMoment]);
+  // FINISH_SPEC AJ: during a match, leaving through the footer tabs asks first (quitting counts as a forfeit).
+  useEffect(() => {
+    const live = screen === 'match' && !matchResult;
+    setLeaveGuard(live ? 'Leave the match? It counts as a forfeit.' : null);
+    return () => setLeaveGuard(null);
+  }, [screen, matchResult]);
   const [playerStats, setPlayerStats] = useState<{ guesses: number; timeMs: number } | null>(null);
   const [message, setMessage] = useState('');
   const [rematchState, setRematchState] = useState<'idle' | 'offered' | 'received' | 'declined'>('idle');
@@ -548,7 +568,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const [myFinalRows, setMyFinalRows] = useState<EvaluatedRow[] | null>(null);
   const [myBoardsSolved, setMyBoardsSolved] = useState(0);
   const [myStatus, setMyStatus] = useState<'won' | 'lost' | null>(null);
-  const [callout, setCallout] = useState<{ id: number; text: string } | null>(null);
+  // `botId` set = a line in that bot's own voice (D3 banter), drawn with its character.
+  const [callout, setCallout] = useState<{ id: number; text: string; botId?: string; pose?: BotPose } | null>(null);
   const lastCalloutRef = useRef('');
   const calloutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [opponentTyping, setOpponentTyping] = useState(false);
@@ -577,11 +598,11 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const mySolutionsRef = useRef<string[]>([]);
   mySolutionsRef.current = mySolutions;
 
-  const showCallout = useCallback((text: string) => {
+  const showCallout = useCallback((text: string, botId?: string, pose?: BotPose) => {
     // Dedupe consecutive identical callouts while one is still visible.
     if (text === lastCalloutRef.current && calloutTimerRef.current) return;
     lastCalloutRef.current = text;
-    setCallout({ id: Date.now(), text });
+    setCallout({ id: Date.now(), text, botId, pose });
     if (calloutTimerRef.current) clearTimeout(calloutTimerRef.current);
     calloutTimerRef.current = setTimeout(() => {
       setCallout(null);
@@ -589,6 +610,21 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       lastCalloutRef.current = '';
     }, 2500);
   }, []);
+
+  // Bot banter (FINISH_SPEC D3): the CPU opponent's line for an event, in its
+  // own character's voice (lib/bot/bot-personas botLine — kind, never mean),
+  // through the same callout channel. Ghosts and people never talk.
+  const botSay = useCallback((event: BotEvent) => {
+    const botId = isCpuRef.current ? cpuPersonaRef.current?.botId : undefined;
+    if (!botId || !isBotCastId(botId)) return false;
+    const line = botLine(botId, event);
+    if (!line) return false;
+    // A7: the HUD already shows the bot's 'ready' image, so its lines use another pose.
+    showCallout(line, botId, event === 'bot_solved_board' ? 'victory' : 'waiting');
+    return true;
+  }, [showCallout]);
+  const botSayRef = useRef(botSay);
+  botSayRef.current = botSay;
 
   const resetPerMatchState = useCallback(() => {
     boardsSolvedRef.current = 0;
@@ -607,6 +643,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     setPhotoFinish(null);
     setCpuMilestone(null);
     setCpuUnlock(null);
+    setCpuResultLine(null);
+    setLadderMoment(null);
   }, []);
 
   const formatTime = (ms: number) => {
@@ -635,6 +673,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     });
 
     matchService.onMatchFound((data) => {
+      feedback('vs'); // FINISH_SPEC U: match found = `vs` + medium haptic (the intro's stinger collapses into it)
       // Park the countdown length; it starts when the intro splash finishes.
       pendingCountdownRef.current = Math.max(1, data.countdownSeconds);
       // The challenge-send game has nobody to meet: no intro, straight to 3-2-1.
@@ -721,6 +760,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       // belt-and-braces (recordModePlayed just re-sets the same flag/row).
       // A bot that steps into the Daily Battle (§6) consumes it the same way.
       if (dailyVsActive) recordModePlayed('vs');
+      // The bot says hello in character (after the reset above cleared old callouts).
+      botSayRef.current('match_start');
     });
 
     matchService.onOpponentProgress((data: any) => {
@@ -728,6 +769,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
       // Moment callouts (one per progress event, most dramatic first).
       const name = opponentNameRef.current;
+      const prevBoardsForBanter = prevOppBoardsSolvedRef.current;
       let calloutText: string | null = null;
       if (data.boardsSolved > prevOppBoardsSolvedRef.current && data.totalBoards > 1) {
         calloutText = `${name} solved board ${data.boardsSolved}!`;
@@ -756,12 +798,15 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         const greens = primary.tiles.filter((t: string) => t === 'CORRECT').length;
         const len = primary.tiles.length;
         if (!calloutText && len >= 2 && greens === len - 1) {
-          calloutText = `${name} got ${greens} greens! 😱`;
+          calloutText = `${name} got ${greens} greens!`;
         }
       }
       if (!calloutText && !data.solved && data.attempts === modeMaxGuesses - 1) {
         calloutText = `${name} is on their last guess!`;
       }
+      // A bot that just solved a board (or the puzzle) says so in its own voice.
+      const botSolved = (data.totalBoards > 1 && data.boardsSolved > (prevBoardsForBanter ?? 0)) || (data.totalBoards <= 1 && data.solved);
+      if (botSolved && botSayRef.current('bot_solved_board')) return;
       if (calloutText) showCallout(calloutText);
     });
 
@@ -803,11 +848,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           // Fun layer: progression (streak / ladder / cosmetics / milestone),
           // session tally, and the photo-finish flourish on a close/last win.
           const tier: BotTier = cpuPersonaRef.current?.tier ?? 'medium';
-          const outcome = recordCpuGame(won, tier, BOT_PERSONAS[tier].id);
+          const kind = cpuKindRef.current;
+          const outcome = recordCpuGame(won, tier, kind ? botIdForKind(kind) : BOT_PERSONAS[tier].id);
           const dayResult = isDraw ? 'draw' : won ? 'won' : 'lost';
           // The ladder (§7): only games against the next bot count (core ladderAfterGame).
-          const kind = cpuKindRef.current;
-          recordLadderGame(kind ? botIdForKind(kind) : BOT_PERSONAS[tier].id, won);
+          const clearedBefore = loadCpuProgression().ladderCleared;
+          const ladderAfter = recordLadderGame(kind ? botIdForKind(kind) : BOT_PERSONAS[tier].id, won);
+          // A rung just cleared (the 3rd win in a row) — the whole ladder when it was Webster.
+          setLadderMoment(ladderAfter.ladderCleared > clearedBefore ? { cleared: ladderAfter.ladderCleared, final: ladderAfter.ladderCleared >= LADDER_BOTS.length } : null);
           // Bot of the Day: track the personal "beat today's bot" day-streak + today's result.
           if (kind === 'daily') {
             recordBotOfDay(won, getTodayUTC());
@@ -816,12 +864,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           // A bot stepped into the Daily Battle (§6): the local result key, never a
           // daily_results 'vs' row (People record and the VS leaderboard stay people-only).
           if (dailyVsActive) {
-            writeBotDaily(getTodayUTC(), { result: dayResult, opponent: cpuPersonaRef.current?.name ?? 'Lexi' });
+            writeBotDaily(getTodayUTC(), { result: dayResult, opponent: cpuPersonaRef.current?.name ?? 'Opal' });
             recordModePlayed('vs');
           }
           setCpuStreak(outcome.progression.streak);
           setCpuMilestone(outcome.milestone);
           setCpuUnlock(outcome.unlockedPersona);
+          const talker = cpuPersonaRef.current?.botId;
+          setCpuResultLine(talker && !isDraw ? botLine(talker, won ? 'bot_loss' : 'bot_win') : null);
           setCpuSession((s) => (won ? { ...s, wins: s.wins + 1 } : { ...s, losses: s.losses + 1 }));
           if (won) {
             const margin = Math.abs(data.playerTime - data.opponentTime);
@@ -1005,7 +1055,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     matchService.reportBoardSolved(boardIndex);
     boardsSolvedRef.current += 1;
     setMyBoardsSolved((n) => n + 1);
-  }, [matchService]);
+    // Multi-board: pulling ahead of the bot gets a kind word from it.
+    if (totalBoards > 1 && boardsSolvedRef.current === prevOppBoardsSolvedRef.current + 1) botSay('player_overtakes');
+  }, [matchService, totalBoards, botSay]);
 
   const handleCompleted = useCallback((status: 'won' | 'lost', totalGuesses: number, timeMs: number) => {
     setPlayerStats({ guesses: totalGuesses, timeMs });
@@ -1041,11 +1093,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       try {
         const states = evaluateGuess(solution.toUpperCase(), guess.toUpperCase()).tiles.map((t: any) => t.state as string);
         setMyTiles(prev => ({ ...prev, [boardIndex]: [...(prev[boardIndex] || []), states] }));
+        // One letter away: the bot cheers you on.
+        const greens = states.filter((t) => t === 'CORRECT').length;
+        if (states.length >= 4 && greens === states.length - 1) botSay('player_near_miss');
       } catch {
         // Length mismatch (shouldn't happen outside ProperNoundle) — skip greens.
       }
     }
-  }, [matchService]);
+  }, [matchService, botSay]);
 
   // Throttled typing relay: at most one ping per 1.5s while letters are
   // being entered in the current row.
@@ -1078,8 +1133,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     const oppId = cpuOpponentIdForKind(kind);
     const id = cpuIdentity(oppId);
     cpuKindRef.current = kind;
-    setCpuPersona({ tier: id.tier, name: id.name, avatar: id.avatar, color: id.color });
-    const engineDifficulty: BotDifficulty = kind === 'adaptive' ? 'adaptive' : id.tier;
+    setCpuPersona({ tier: id.tier, name: id.name, avatar: id.avatar, color: id.color, botId: id.botId });
+    cpuPersonaRef.current = { tier: id.tier, name: id.name, avatar: id.avatar, color: id.color, botId: id.botId };
+    // The cast bot's own tier (Umi adaptive) and solve range (core BOT_CAST).
+    const engineDifficulty: BotDifficulty = engineDifficultyForKind(kind);
     setCpuDifficulty(engineDifficulty);
     setShowCpuChooser(false);
     setMessage('');
@@ -1091,8 +1148,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // already there.
     setScreen('queue');
     // Adaptive: shadow the player's recent form (higher CPU streak → tougher).
-    const config: { opponentId: string; adaptive?: { winRate: number }; ghost?: GhostRun; fixedSeed?: string } = { opponentId: oppId };
-    if (kind === 'adaptive') config.adaptive = { winRate: Math.min(0.9, 0.4 + loadCpuProgression().streak * 0.05) };
+    const config: { opponentId: string; adaptive?: { winRate: number }; ghost?: GhostRun; fixedSeed?: string; guessRange?: readonly [number, number] | null } = { opponentId: oppId, guessRange: kind === 'ghost' ? null : guessRangeForKind(kind) };
+    if (engineDifficulty === 'adaptive') config.adaptive = { winRate: Math.min(0.9, 0.4 + loadCpuProgression().streak * 0.05) };
     if (extra?.ghost) config.ghost = extra.ghost;
     if (extra?.fixedSeed) config.fixedSeed = extra.fixedSeed;
     matchService.swap(new LocalBotMatchService(engineDifficulty, config), { mode });
@@ -1192,16 +1249,18 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authGated, ghostChecked, ghostRun]);
 
-  // Live search step-in (§6): the Daily Battle gets Lexi on the day's puzzle;
+  // Live search step-in (§6): the Daily Battle gets the Bot of the Day character on the day's puzzle;
   // otherwise the ladder's next bot (Adapt once cleared). Private matches wait
   // for the friend, so no bot steps in there.
   const stepInKind: CpuKind | null = useMemo(
-    () => (inviteCode ? null : dailyVsActive ? 'medium' : ladderNextKind(loadCpuProgression().ladderCleared)),
+    // The Daily Battle's step-in is today's Bot of the Day character (as its own
+    // kind, so it never counts as the Bot of the Day game itself).
+    () => (inviteCode ? null : dailyVsActive ? castBotForKind('daily', getTodayUTC()) : ladderNextKind(loadCpuProgression().ladderCleared)),
     [inviteCode, dailyVsActive],
   );
   const stepInBot = useCallback(() => {
     if (!stepInKind) return;
-    if (dailyVsActive) startCpu('medium', { fixedSeed: generateDailySeed(getTodayUTC(), 'DUEL_VS') });
+    if (dailyVsActive) startCpu(stepInKind, { fixedSeed: generateDailySeed(getTodayUTC(), 'DUEL_VS') });
     else startCpu(stepInKind);
   }, [stepInKind, dailyVsActive, startCpu]);
   const liveSearch = screen === 'queue' && !isCpu && !flow && !cpuParam;
@@ -1306,31 +1365,23 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // socket effect above also early-returns while authGated).
   if (authGated) {
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative px-5" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <PageBackground tint="vs" scheme="light" className="h-screen-stable flex flex-col items-center justify-center relative px-5" style={{ ...VS_LIGHT_VARS, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="w-full max-w-sm space-y-5">
           <VsScreenTitle mode={mode} />
-          <div className="p-5 text-center space-y-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
-            <div className="text-[16px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>Sign in to play VS</div>
-            <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>
-              VS Battle pits you against a live opponent and records your results — it needs an account.
-            </p>
-            <button
-              onClick={exitGuest}
-              className="w-full py-3 text-[14px] font-black text-white uppercase transition-transform active:scale-[0.98]"
-              style={{ background: '#7c3aed', borderRadius: 12, letterSpacing: 0.6 }}
-            >
-              Sign in
-            </button>
+          <VsCard>
+            <div className="p-5 text-center space-y-3">
+              <div className="text-[16px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>Sign in to play VS</div>
+              <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>
+                VS Battle pits you against a live opponent and records your results — it needs an account.
+              </p>
+              <CandyButton color="teal" size="lg" block onClick={exitGuest}>Sign in</CandyButton>
+            </div>
+          </VsCard>
+          <div className="flex justify-center">
+            <CandyButton color="peach" size="sm" onClick={() => router.push('/')} icon={<X className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={3} />}>Cancel</CandyButton>
           </div>
-          <button
-            onClick={() => router.push('/')}
-            className="mx-auto flex items-center gap-1.5 px-5 py-2 text-[13px] font-black"
-            style={{ color: VS.label }}
-          >
-            <X className="w-4 h-4" /> Cancel
-          </button>
         </div>
-      </div>
+      </PageBackground>
     );
   }
 
@@ -1373,13 +1424,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {countdownIsRematch ? 'Rematch starting in' : 'Match found'}
         </div>
         <div className="flex justify-center"><ModeChip mode={mode} /></div>
-        <div
-          key={countdown}
-          className={`${countdown === 0 ? 'text-8xl' : 'text-9xl'} font-black tabular-nums animate-fade-in-scale`}
-          style={{ color: modeColor(mode), lineHeight: 1.05 }}
-        >
+        {/* A2: the 3-2-1-GO in soft numbers. */}
+        <SoftNum key={countdown} as="div" size={countdown === 0 ? 96 : 128} className="animate-fade-in-scale" style={{ lineHeight: 1.05 }}>
           {countdown === 0 ? 'GO!' : countdown}
-        </div>
+        </SoftNum>
       </div>
     </div>
   ) : null;
@@ -1397,94 +1445,117 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     </div>
   ) : null;
 
-  // Shared CPU opponent picker (difficulty grid + adaptive + ghost/daily), used
-  // by both the entry chooser's "Bot Match" and the queue-screen auto-offer.
-  // Pro-gated: non-Pro sees an unlock CTA instead of the grid.
-  const cpuChooserContent = () => (
-    isPro ? (
+  // The bot picker (FINISH_SPEC D1): the ten cast bots in ladder order — each
+  // its own character — with the ladder's progress marked (cleared ✓, NEXT).
+  // Every bot is playable here, as every tier was in the old chooser (only
+  // games against the NEXT bot count toward the ladder), then today's Bot of the
+  // Day and Your Ghost (a faded version of your own letter tile). Pro-gated:
+  // non-Pro sees an unlock CTA instead.
+  const cpuChooserContent = () => {
+    if (!isPro) {
+      return (
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: VS.label }}>
+            <Icon3D name="lock" size={17} /> Bot matches are a Pro feature
+          </div>
+          <CandyButton color="purple" size="md" block onClick={() => router.push('/pro')} icon={<Icon3D name="crown" size={18} />}>Unlock with Pro</CandyButton>
+        </div>
+      );
+    }
+    const cleared = Math.min(loadCpuProgression().ladderCleared, LADDER_BOTS.length);
+    const today = botPersona(castBotForKind('daily', getTodayUTC()) ?? 'opal');
+    const me = profile as { username?: string | null; avatar_emoji?: string | null; accent_color?: string | null } | null;
+    return (
       <>
-        <div className="grid grid-cols-3 gap-2">
-          {(['easy', 'medium', 'hard'] as BotTier[]).map((tier) => {
-            const p = BOT_PERSONAS[tier];
+        <div className="grid grid-cols-5 gap-1.5" role="list" aria-label="The bot ladder">
+          {LADDER_BOTS.map((id, i) => {
+            const b = botPersona(id);
+            // Ladder progress is shown, never enforced here (the old chooser offered every tier).
+            const locked = false;
+            const next = i === cleared;
             return (
               <button
-                key={tier}
-                onClick={() => startCpu(tier)}
-                className="flex flex-col items-center gap-1 px-2 py-3 transition-transform active:scale-[0.97]"
-                style={{ background: VS.page, borderRadius: 12 }}
+                key={id}
+                type="button"
+                role="listitem"
+                onClick={() => { if (!locked) startCpu(id); }}
+                disabled={locked}
+                aria-label={`${b.name}, rung ${b.rung}: ${b.line}${next ? ', next on the ladder' : i < cleared ? ', cleared' : ''}`}
+                className="relative flex flex-col items-center gap-0.5 pt-1.5 pb-1 overflow-hidden"
+                style={{ ...vsCard(locked ? '#94a3b8' : b.color, { selected: next, radius: 12, shadow: !locked }), cursor: locked ? 'default' : 'pointer' }}
               >
-                <BotAvatar src={p.avatar} name={p.name} size={40} bg={VS.soft} />
-                <span className="text-[12px] font-black uppercase" style={{ color: p.color, letterSpacing: 0.4 }}>{tierLabel(tier)}</span>
-                <span className="text-[10.5px] font-bold" style={{ color: VS.label }}>{p.name}</span>
+                <BotPoseAvatar id={id} pose="ready" accent={b.color} size={40} faded={locked} />
+                {i < cleared && <span className="absolute top-1 right-0.5"><Icon3D name="badge-check" size={14} /></span>}
+                {locked && <span className="absolute top-1 right-0.5"><Icon3D name="lock" size={12} /></span>}
+                <span className="text-[10.5px] font-black truncate max-w-full" style={{ color: locked ? '#64748b' : VS.deep }}>{b.name}</span>
+                <span className="text-[8.5px] font-extrabold uppercase" style={{ color: next ? darken(b.color, 0.35) : VS.label, letterSpacing: 0.3 }}>{next ? 'Next' : `Rung ${b.rung}`}</span>
               </button>
             );
           })}
         </div>
-        <button
-          onClick={() => startCpu('adaptive')}
-          className="w-full px-3 py-2.5 text-[12px] font-black transition-transform active:scale-[0.98]"
-          style={{ background: VS.page, borderRadius: 12, color: '#6d28d9' }}
-        >
-          <span className="inline-flex items-center gap-2"><BotAvatar src={botArt('adapt')} name="Adapt" size={22} bg={VS.soft} />Adaptive — matched to your form</span>
-        </button>
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => ghostRun && startCpu('ghost', { ghost: ghostRun })}
-            disabled={!ghostRun}
-            className="px-2 py-2.5 text-[11.5px] font-black transition-transform enabled:active:scale-[0.98] disabled:opacity-40"
-            style={{ background: VS.page, borderRadius: 12, color: '#475569' }}
-            title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
+            type="button"
+            onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
+            className="flex items-center gap-2 px-2 py-2 text-left overflow-hidden"
+            style={vsCard(today.color, { radius: 12 })}
           >
-            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('ghost')} name="Your Ghost" size={22} bg={VS.soft} />Beat Your Best</span>
+            {/* Today's bot, in another pose than its ladder tile (A7). */}
+            <BotPoseAvatar id={today.id} pose="waiting" accent={today.color} size={34} />
+            <span className="min-w-0">
+              <span className="block text-[11.5px] font-black" style={{ color: VS.deep }}>Bot of the Day</span>
+              <span className="block text-[10.5px] font-bold truncate" style={{ color: '#4b5563' }}>{today.name} · same puzzle for all</span>
+            </span>
           </button>
           <button
-            onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
-            className="px-2 py-2.5 text-[11.5px] font-black transition-transform active:scale-[0.98]"
-            style={{ background: VS.page, borderRadius: 12, color: '#b45309' }}
+            type="button"
+            onClick={() => ghostRun && startCpu('ghost', { ghost: ghostRun })}
+            disabled={!ghostRun}
+            className="flex items-center gap-2 px-2 py-2 text-left overflow-hidden disabled:opacity-50"
+            style={vsCard('#64748b', { radius: 12 })}
+            title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
           >
-            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('lexi')} name="Lexi" size={22} bg={VS.soft} />Bot of the Day</span>
+            <GhostAvatar name={me?.username ?? 'You'} emoji={me?.avatar_emoji} accent={me?.accent_color} size={32} />
+            <span className="min-w-0">
+              <span className="block text-[11.5px] font-black" style={{ color: VS.deep }}>Your Ghost</span>
+              <span className="block text-[10.5px] font-bold truncate" style={{ color: '#4b5563' }}>{ghostRun ? 'Beat your best run' : 'Win this mode once'}</span>
+            </span>
           </button>
         </div>
         <p className="text-center text-[10.5px] font-bold" style={{ color: VS.label }}>Practice only — doesn’t affect your ranked stats</p>
       </>
-    ) : (
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: VS.label }}>
-          <Icon3D name="lock" size={17} /> Bot matches are a Pro feature
-        </div>
-        <button
-          onClick={() => router.push('/pro')}
-          className="w-full px-4 py-2.5 text-[13px] font-black text-white uppercase"
-          style={{ background: '#7c3aed', borderRadius: 12, letterSpacing: 0.5 }}
-        >
-          Unlock with Pro
-        </button>
-      </div>
-    )
-  );
+    );
+  };
 
   // Entry chooser — the first thing you see when you tap a VS mode: pick Quick
   // Match (live queue), Bot Match (CPU practice), or Invite a Friend (private
   // match). Replaces the old flow that silently queued AND offered the CPU at
   // the same time.
   if (screen === 'entry') {
-    const entryRow = (opts: { onClick: () => void; icon: React.ReactNode; iconBg: string; title: string; sub: string; locked?: boolean }) => (
+    // A tinted card per way to play (A1), each with a character in its pose.
+    const entryRow = (opts: { onClick: () => void; art: string; accent: string; title: string; sub: string; locked?: boolean }) => (
       <button
+        type="button"
         onClick={opts.onClick}
-        className="w-full flex items-center gap-3.5 p-3.5 text-left transition-transform active:scale-[0.98]"
-        style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}
+        className="w-full flex flex-col text-left overflow-hidden"
+        style={vsCard(opts.accent, { radius: 16 })}
       >
-        <span className="w-11 h-11 flex items-center justify-center shrink-0" style={{ background: opts.iconBg, borderRadius: 12 }}>{opts.icon}</span>
-        <span className="flex-1 min-w-0">
-          <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.3 }}>
-            {opts.title} {opts.locked && <Icon3D name="lock" size={17} />}
+        <CardBar accent={opts.accent} />
+        <span className="w-full flex items-center gap-3 px-3.5 py-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={opts.art} alt="" aria-hidden="true" width={52} height={52} loading="lazy" draggable={false} className="shrink-0" style={{ width: 52, height: 52, objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(59,26,120,0.18))' }} />
+          <span className="flex-1 min-w-0">
+            <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.3 }}>
+              {opts.title} {opts.locked && <Icon3D name="lock" size={17} />}
+            </span>
+            <span className="block text-[12px] font-bold" style={{ color: '#4b5563' }}>{opts.sub}</span>
           </span>
-          <span className="block text-[12px] font-bold" style={{ color: '#4b5563' }}>{opts.sub}</span>
         </span>
       </button>
     );
+    const nextBot = castBotForKind(ladderNextKind(loadCpuProgression().ladderCleared)) ?? 'opal';
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative px-5 overflow-y-auto" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <PageBackground tint="vs" scheme="light" className="h-screen-stable flex flex-col items-center justify-center relative px-5 overflow-y-auto" style={{ ...VS_LIGHT_VARS, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); router.push('/'); }} />
         <InviteModal open={showInvite} onClose={() => setShowInvite(false)} />
         <div className="w-full max-w-sm space-y-5 py-6">
@@ -1494,17 +1565,17 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             <div className="space-y-2.5">
               {entryRow({
                 onClick: handleQuickMatch,
-                icon: <Swords className="w-5 h-5 text-white" />,
-                iconBg: VS.ink,
+                art: poseSrc('c', 'telescope'),
+                accent: VS_ACCENT,
                 title: 'Quick Match',
                 sub: 'Get matched with a live opponent',
               })}
               {entryRow({
                 onClick: () => (isPro ? setShowCpuChooser(true) : router.push('/pro')),
-                icon: <Bot className="w-5 h-5" style={{ color: VS.ink }} />,
-                iconBg: VS.soft,
+                art: botPersona(nextBot).avatar,
+                accent: botPersona(nextBot).color,
                 title: 'Bot Match',
-                sub: 'Practice vs a bot — pick a difficulty',
+                sub: 'Play the cast, from Rip to Webster',
                 locked: !isPro,
               })}
               {/* Invite a Friend — this MINTS an invite code, which is the
@@ -1513,41 +1584,40 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                   does the same); only creating one is the perk. */}
               {entryRow({
                 onClick: () => (isPro ? setShowInvite(true) : router.push('/pro')),
-                icon: <Users className="w-5 h-5" style={{ color: '#7c3aed' }} />,
-                iconBg: '#ede9fe',
+                art: poseSrc('o1', 'hug'),
+                accent: '#7c3aed',
                 title: 'Invite a Friend',
                 sub: 'Send a private match link or @username',
                 locked: !isPro,
               })}
 
-              <button
-                onClick={() => router.push('/')}
-                className="mx-auto flex items-center gap-1.5 px-5 py-2 text-[13px] font-black"
-                style={{ color: VS.label }}
-              >
-                <X className="w-4 h-4" /> Cancel
-              </button>
+              <div className="flex justify-center pt-1">
+                <CandyButton color="peach" size="sm" onClick={() => router.push('/')} icon={<X className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={3} />}>Cancel</CandyButton>
+              </div>
             </div>
           ) : (
-            /* Bot Match → difficulty/options picker */
-            <div className="p-4 space-y-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
-              <div className="flex items-center gap-2 text-[13px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>
-                <button onClick={() => setShowCpuChooser(false)} aria-label="Back" className="flex items-center justify-center" style={{ width: 28, height: 28, marginLeft: -4 }}>
-                  <ChevronLeft className="w-5 h-5" style={{ color: VS.ink }} strokeWidth={2.6} />
-                </button>
-                Choose your opponent
+            /* Bot Match → the cast picker */
+            <VsCard>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-1 text-[13px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>
+                  <HeaderBack kind="back" onClick={() => setShowCpuChooser(false)} size={32} />
+                  Choose your opponent
+                </div>
+                {cpuChooserContent()}
               </div>
-              {cpuChooserContent()}
-            </div>
+            </VsCard>
           )}
         </div>
-      </div>
+      </PageBackground>
     );
   }
 
   if (screen === 'queue') {
+    const cpuBotId = isCpu ? cpuPersona?.botId ?? null : null;
+    const cpuIsGhost = cpuBotId === 'ghost';
+    const cpuRoster = cpuBotId && !cpuIsGhost ? botRosterEntry(cpuBotId) : null;
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <PageBackground tint="vs" scheme="light" className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ ...VS_LIGHT_VARS, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Match-intro splash — sits above the countdown for 2.5s (or until tapped). */}
         {showIntro && (
@@ -1559,12 +1629,23 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               emoji: (profile as any)?.avatar_emoji ?? null,
               accent: (profile as any)?.accent_color ?? null,
             }}
-            opponent={opponentUserId ? {
-              username: isCpu ? `${opponentInfo?.username ?? 'CPU'} · ${cpuPersona ? tierLabel(cpuPersona.tier) : 'CPU'}` : (opponentInfo?.username ?? '…'),
+            // A cast bot shows its own character in its 'ready' pose (D3); Your
+            // Ghost is a faded version of your own letter tile; people their avatar.
+            opponent={opponentUserId ? (isCpu ? {
+              username: opponentInfo?.username ?? cpuPersona?.name ?? 'Bot',
+              avatarUrl: null,
+              level: null,
+              botId: cpuIsGhost ? undefined : cpuBotId ?? undefined,
+              ghost: cpuIsGhost,
+              ghostName: profile?.username || 'You',
+              emoji: cpuIsGhost ? (profile as any)?.avatar_emoji ?? null : null,
+              accent: cpuIsGhost ? (profile as any)?.accent_color ?? null : null,
+              tag: cpuIsGhost ? 'Your best run' : cpuRoster ? `${cpuRoster.tier} · ${cpuRoster.line}` : undefined,
+            } : {
+              username: opponentInfo?.username ?? '…',
               avatarUrl: opponentInfo?.avatarUrl ?? null,
-              level: isCpu || flow ? null : (opponentInfo?.level ?? null),
-              art: isCpu,
-            } : null}
+              level: flow ? null : (opponentInfo?.level ?? null),
+            }) : null}
             headToHead={headToHead}
             mode={mode}
             onDone={() => { setShowIntro(false); startCountdown(pendingCountdownRef.current); }}
@@ -1577,7 +1658,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           <VsQueueScreen
             modeName={modeTitle(mode)}
             othersWaiting={vsCounts ? Math.max(0, (vsCounts[mode] ?? 0) - 1) : null}
-            stepIn={stepInKind ? (() => { const id = cpuIdentity(cpuOpponentIdForKind(stepInKind)); return { name: id.name, art: id.avatar }; })() : null}
+            // The step-in bot waits in its own 'waiting' pose (D3).
+            stepIn={stepInKind ? (() => { const id = cpuIdentity(cpuOpponentIdForKind(stepInKind)); return { name: id.name, botId: id.botId, color: id.color }; })() : null}
             searching={!showIntro && !showCountdown && !opponentUserId}
             onPlayBot={stepInBot}
             onCancel={handleCancel}
@@ -1590,12 +1672,12 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             } : undefined}
           >
             {inviteCode && !isCpu && (
-              <div className="w-full max-w-xs mx-auto p-4 space-y-2"
-                   style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+              <VsCard className="w-full max-w-xs mx-auto">
+              <div className="p-4 space-y-2">
                 <div className="text-[11px] font-black uppercase" style={{ color: VS.label, letterSpacing: 1.2 }}>
                   Private match
                 </div>
-                <div className="text-3xl font-black tracking-[6px]" style={{ color: VS.deep }}>{inviteCode}</div>
+                <SoftNum size={30} as="div" style={{ letterSpacing: 6 }}>{inviteCode}</SoftNum>
                 <p className="text-xs font-bold" style={{ color: '#4b5563' }}>
                   Share this code — the match starts when your friend joins.
                 </p>
@@ -1608,12 +1690,12 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                     }
                     try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
                   }}
-                  className="w-full py-2.5 text-[13px] font-black text-white uppercase"
-                  style={{ background: VS.ink, borderRadius: 12, letterSpacing: 0.5 }}
+                  className="candy candy-teal candy-md candy-block"
                 >
-                  Share invite
+                  <span className="candy-label">Share invite</span>
                 </button>
               </div>
+              </VsCard>
             )}
 
           </VsQueueScreen>
@@ -1621,12 +1703,17 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           <VsStartingScreen
             mode={mode}
             title={flow === 'race' ? `RACE @${(race?.challenger.username ?? '').toUpperCase()}’S RUN` : flow === 'send' ? 'YOUR RUN' : `${cpuPersona?.name ?? 'Your bot'} is ready`}
-            sub={flow === 'send' ? sendPanelLine(sendFriendIds.length, sendLink) : flow === 'race' ? 'Same puzzle. Their pace plays out beside you.' : undefined}
+            sub={flow === 'send' ? sendPanelLine(sendFriendIds.length, sendLink) : flow === 'race' ? 'Same puzzle. Their pace plays out beside you.' : cpuRoster ? `${cpuRoster.tier} · ${cpuRoster.line}` : undefined}
+            // The bot steps up in its 'waiting' pose (the intro then shows 'ready');
+            // Your Ghost is your own letter tile, faded.
+            figure={cpuBotId && !flow ? (cpuIsGhost
+              ? <GhostAvatar name={profile?.username || 'You'} emoji={(profile as any)?.avatar_emoji ?? null} accent={(profile as any)?.accent_color ?? null} size={84} />
+              : <BotFigure id={cpuBotId} pose="waiting" size={120} />) : undefined}
           />
         )}
 
         {message && <VsToast text={message} />}
-      </div>
+      </PageBackground>
     );
   }
 
@@ -1656,9 +1743,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             onHome={() => { matchService.disconnect(); router.push('/vs'); }}
           />
         ) : (
-          <div className="h-screen-stable flex items-center justify-center" style={{ backgroundColor: VS.page }}>
+          <PageBackground tint="vs" scheme="light" className="h-screen-stable flex items-center justify-center" style={VS_LIGHT_VARS}>
             <VsStartingScreen mode={mode} title="SENDING YOUR RUN" />
-          </div>
+          </PageBackground>
         )}
         {message && <VsToast text={message} />}
       </>
@@ -1666,8 +1753,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   }
   if (screen === 'result' && flow === 'race' && race && challengeRun && raceOutcome) {
     const share = async () => {
-      const text = `${raceOutcome === 'win' ? 'I beat' : raceOutcome === 'loss' ? 'I raced' : 'I tied'} ${race.challenger.username}’s ${modeTitle(mode)} run on Wordocious ⚔️`;
-      const payload = `${text}\nhttps://wordocious.com/vs`;
+      // FINISH_SPEC S4: the shared fun copy.
+      const day = new Date().toISOString().slice(0, 10);
+      const text = shareCaption(raceOutcome === 'draw' ? 'vsDraw' : raceOutcome === 'win' ? 'vsWin' : 'vsLose', { date: day, game: modeTitle(mode), opp: race.challenger.username });
+      const payload = `${text}\nwordocious.com`;
       if (typeof navigator !== 'undefined' && navigator.share) navigator.share({ text: payload }).catch(() => {});
       else navigator.clipboard?.writeText(payload).then(() => setMessage('Copied to clipboard!')).catch(() => {});
     };
@@ -1725,12 +1814,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     const resultSub = [modeTitle(mode).toUpperCase(), margin].filter(Boolean).join(' · ');
 
     const handleShare = async () => {
-      const text = isWin
-        ? `I just beat ${oppName} in a Wordocious VS ${label} duel! ⚔️🏆`
-        : isDraw
-          ? `${oppName} and I battled to a draw in VS ${label} on Wordocious! ⚔️`
-          : `Epic VS ${label} duel against ${oppName} on Wordocious! ⚔️`;
-      const payload = `${text}\nhttps://wordocious.com`;
+      // FINISH_SPEC S4: the shared fun copy (core shareCaption), only used when no image can be sent.
+      const day = new Date().toISOString().slice(0, 10);
+      const text = shareCaption(isDraw ? 'vsDraw' : isWin ? 'vsWin' : 'vsLose', { date: day, game: modeTitle(mode), opp: oppName });
+      const payload = `${text}\nwordocious.com`;
 
       // Render the VS share card (same aesthetic as the daily cards) and share
       // it as an image when the platform supports file sharing; text fallback.
@@ -1754,9 +1841,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             },
           });
           if (blob) {
-            const file = new File([blob], 'wordocious-vs.png', { type: 'image/png' });
+            // S1: the IMAGE ONLY (no text, no link) so it never becomes a link-preview card.
+            const file = new File([blob], `Wordocious-VS-${modeTitle(mode).replace(/[^A-Za-z0-9]+/g, '')}.png`, { type: 'image/png' });
             if (typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
-              await navigator.share({ files: [file], text: payload });
+              await navigator.share({ files: [file] });
               return;
             }
           }
@@ -1773,9 +1861,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       }
     };
 
-    const softBtn = 'flex-1 py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2 transition-transform active:scale-[0.98]';
+    // D3: a cast bot reacts in character — its 'victory' pose when it won,
+    // 'goodgame' when it lost (or drew) — with a kind line in its own voice.
+    // People and Your Ghost keep the result host (S win / R loss / U draw).
+    const resultBotId = isCpu && cpuPersona && isBotCastId(cpuPersona.botId) ? cpuPersona.botId : null;
+    const isGhostOpp = isCpu && cpuPersona?.botId === 'ghost';
+    const meTile = { name: myName, emoji: (profile as any)?.avatar_emoji ?? null, accent: (profile as any)?.accent_color ?? null };
     return (
-      <div className="h-screen-stable overflow-y-auto relative" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <PageBackground tint="vs" scheme="light" className="h-screen-stable overflow-y-auto relative" style={{ ...VS_LIGHT_VARS, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Rematch countdown plays over the result screen before the new game. */}
         {countdownOverlayEl}
         {/* Photo-finish flourish (CPU close/last-guess win) — plays FIRST and is
@@ -1795,8 +1888,30 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             </span>
           </div>
 
-          {/* The result host: S pops on a win, R on a loss, U on a draw. */}
-          {matchResult && <ResultHost id={vsResultHost(outcome)} pop={outcome === 'win'} />}
+          {/* The ladder-cleared celebration when this game cleared the final rung. */}
+          {matchResult && ladderMoment?.final && (
+            <div className="flex flex-col items-center gap-1 animate-fade-in-scale">
+              <ArtScene scene="ladder-cleared" height={170} maxWidthPct={70} />
+              <p className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.5 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={28} height={28} style={{ width: 28, height: 28 }} /> Ladder cleared!
+              </p>
+            </div>
+          )}
+          {matchResult && ladderMoment && !ladderMoment.final && (
+            <p className="flex items-baseline justify-center gap-1 text-[13px] font-black uppercase" style={{ color: VS.ink, letterSpacing: 0.4 }}>
+              Rung cleared! <SoftNum size={18}>{ladderMoment.cleared}/{LADDER_BOTS.length}</SoftNum> on the ladder
+            </p>
+          )}
+          {matchResult && (resultBotId ? (
+            <div className="flex items-center justify-center gap-2 animate-fade-in-up" style={{ marginBottom: -4 }}>
+              <BotFigure id={resultBotId} pose={outcome === 'loss' ? 'victory' : 'goodgame'} size={96} />
+              {cpuResultLine && <BotSpeech text={cpuResultLine} accent={cpuPersona?.color ?? VS_ACCENT} />}
+            </div>
+          ) : (
+            /* The result host: S pops on a win, R on a loss, U on a draw. */
+            <ResultHost id={vsResultHost(outcome)} pop={outcome === 'win'} />
+          ))}
           {/* The one-window result (home palette). */}
           {matchResult && (
             <VsResultWindow
@@ -1804,8 +1919,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               sub={resultSub}
               why={whyLine}
               outcome={outcome}
-              me={{ name: myName, avatarUrl: (profile as any)?.avatar_url ?? null, accent: (profile as any)?.accent_color ?? null, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved }}
-              opponent={{ name: oppName, avatarUrl: opponentInfo?.avatarUrl ?? null, isBot: isCpu, score: matchResult.opponentScore ?? matchResult.opponentGuesses, guesses: matchResult.opponentGuesses, timeMs: matchResult.opponentTime, solved: oppSolved }}
+              me={{ name: myName, avatarUrl: (profile as any)?.avatar_url ?? null, accent: meTile.accent, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved }}
+              opponent={{ name: oppName, avatarUrl: isGhostOpp ? null : opponentInfo?.avatarUrl ?? null, isBot: isCpu, ghost: isGhostOpp ? meTile : undefined, score: matchResult.opponentScore ?? matchResult.opponentGuesses, guesses: matchResult.opponentGuesses, timeMs: matchResult.opponentTime, solved: oppSolved }}
             />
           )}
           {matchResult && (
@@ -1816,59 +1931,54 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
           {/* Updated all-time head-to-head (refetched after the match was recorded) */}
           {opponentUserId && headToHead && !isCpu && (
-            <div className="flex items-center gap-3 p-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
-              <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={34} />
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-black uppercase truncate" style={{ color: VS.label, letterSpacing: 0.8 }}>You and {oppName}</div>
-                <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{headToHeadLine(oppName, headToHead)}</div>
+            <VsCard accent="#7c3aed">
+              <div className="flex items-center gap-3 p-3">
+                <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={34} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-black uppercase truncate" style={{ color: VS.label, letterSpacing: 0.8 }}>You and {oppName}</div>
+                  <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{headToHeadLine(oppName, headToHead)}</div>
+                </div>
               </div>
-            </div>
+            </VsCard>
           )}
 
-          {/* Rematch offer — soft card, caps title, purple primary / soft secondary. */}
+          {/* Rematch offer — a tinted card, teal Accept / peach Decline. */}
           {rematchState === 'received' && (
-            <div className="p-4 text-center space-y-3 animate-fade-in-up" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
-              <p className="text-[14px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>{oppName} wants a rematch!</p>
-              <div className="flex gap-2.5">
-                <button onClick={handleDeclineRematch} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-                  Decline
-                </button>
-                <button onClick={handleRematch} className={`${softBtn} text-white`} style={{ background: '#7c3aed', borderRadius: 14 }}>
-                  Accept
-                </button>
+            <VsCard accent="#7c3aed" className="animate-fade-in-up">
+              <div className="p-4 text-center space-y-3">
+                <p className="text-[14px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>{oppName} wants a rematch!</p>
+                <div className="flex gap-2.5">
+                  <CandyButton color="peach" size="md" className="flex-1" onClick={handleDeclineRematch}>Decline</CandyButton>
+                  <CandyButton color="teal" size="md" className="flex-1" icon="replay" onClick={handleRematch}>Accept</CandyButton>
+                </div>
               </div>
-            </div>
+            </VsCard>
           )}
 
-          {/* Actions — solid purple REMATCH, soft HOME + SHARE. */}
+          {/* Actions (A8 candy): teal REMATCH / RUN IT BACK, peach HOME + SHARE. */}
           <div className="space-y-2.5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             {rematchState === 'declined' ? (
-              <div className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2" style={{ background: '#f1f5f9', color: '#64748b', borderRadius: 14 }}>
-                <X className="w-4 h-4" /> No rematch
+              <div className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2" style={{ ...vsCard('#64748b', { radius: 999, shadow: false }), color: '#475569' }}>
+                <X className="w-4 h-4" aria-hidden="true" /> No rematch
               </div>
             ) : rematchState === 'offered' ? (
-              <div className="w-full py-3.5 text-[15px] font-black uppercase flex items-center justify-center gap-2" style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-                <Loader2 className="w-4 h-4 animate-spin" /> Waiting…
-              </div>
+              <CandyButton color="teal" size="lg" block disabled icon={<Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}>Waiting…</CandyButton>
             ) : rematchState !== 'received' ? (
-              <button
+              /* Honest label: for free users the tap opens the Pro upsell,
+                 not a rematch — say so instead of a bait "Rematch". */
+              <CandyButton
+                color={isCpu || isPro ? 'teal' : 'purple'}
+                size="lg"
+                block
                 onClick={handleRematch}
-                className="w-full py-3.5 text-[15px] font-black uppercase text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
-                style={{ background: '#7c3aed', borderRadius: 14, letterSpacing: 0.6 }}
+                icon={isCpu || isPro ? 'replay' : <Icon3D name="lock" size={20} />}
               >
-                {/* Honest label: for free users the tap opens the Pro upsell,
-                    not a rematch — say so instead of a bait "Rematch". */}
-                {isCpu || isPro ? <RotateCcw className="w-4 h-4" /> : <Icon3D name="lock" size={20} />}
-                {isCpu ? 'Run it back' : isPro ? 'Rematch' : 'Rematch — Pro'}
-              </button>
+                {isCpu ? (resultBotId ? `Run it back vs ${cpuPersona?.name}` : 'Run it back') : isPro ? 'Rematch' : 'Rematch — Pro'}
+              </CandyButton>
             ) : null}
             <div className="flex gap-2.5">
-              <button onClick={handleHome} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-                <Home className="w-4 h-4" /> Home
-              </button>
-              <button onClick={handleShare} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-                <Icon3D name="share" size={20} /> Share
-              </button>
+              <CandyButton color="peach" size="md" className="flex-1" onClick={handleHome} icon={<Icon3D name="tab-home" size={18} />}>Home</CandyButton>
+              <CandyButton color="peach" size="md" className="flex-1" onClick={handleShare} icon={<Icon3D name="share" size={18} />}>Share</CandyButton>
             </div>
           </div>
 
@@ -1876,22 +1986,25 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {isCpu && (
             <div className="text-center space-y-1">
               {(cpuSession.wins + cpuSession.losses) > 0 && (
-                <p className="text-[12px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>
-                  This session — You {cpuSession.wins} · Bots {cpuSession.losses}
+                <p className="flex items-baseline justify-center gap-1 text-[12px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>
+                  This session — You <SoftNum size={17}>{cpuSession.wins}</SoftNum> · Bots <SoftNum size={17}>{cpuSession.losses}</SoftNum>
                 </p>
               )}
               {cpuMilestone ? (
                 // STREAK! lettering over the milestone (docs/ART_SPEC.md §6).
                 <div className="flex flex-col items-center gap-0.5">
-                  <MomentArt moment="streak" as="div" maxHeight={56} widthPct={60} />
-                  <p className="text-[13px] font-black" style={{ color: '#b45309' }}>{cpuMilestone}-win bot streak</p>
+                  <MomentArt moment="streak" as="div" level={2} maxHeight={56} widthPct={60} />
+                  <p className="flex items-baseline gap-1 text-[13px] font-black" style={{ color: '#b45309' }}><SoftNum size={20}>{cpuMilestone}</SoftNum>-win bot streak</p>
                 </div>
               ) : cpuStreak > 0 ? (
-                <p className="text-[11.5px] font-extrabold" style={{ color: VS.label }}>Bot win streak: {cpuStreak}</p>
+                <p className="flex items-center justify-center gap-1 text-[11.5px] font-extrabold" style={{ color: VS.label }}>
+                  <Icon3D name="flame" size={16} /> Bot win streak: <SoftNum size={15}>{cpuStreak}</SoftNum>
+                </p>
               ) : null}
               {cpuUnlock && (
-                <p className="text-[12px] font-black" style={{ color: BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].color }}>
-                  🏅 Unlocked {BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].name}’s badge!
+                // The badge of the bot you just beat (cpu-progression: a cast id).
+                <p className="flex items-center justify-center gap-1 text-[12px] font-black" style={{ color: darken(botPersona(cpuUnlock).color, 0.3) }}>
+                  <Icon3D name="badge-check" size={18} /> Unlocked {botPersona(cpuUnlock).name}’s badge!
                 </p>
               )}
               <p className="text-[11px] font-bold" style={{ color: VS.label }}>Bot game — counts in your Bots record, not People</p>
@@ -1918,7 +2031,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         </div>
 
         {message && <VsToast text={message} />}
-      </div>
+      </PageBackground>
     );
   }
 
@@ -1936,6 +2049,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // size the frame columns to the real answer so opponent rows aren't cut off.
     const specWordLen = mode === GameMode.PROPERNOUNDLE ? (puzzleMetadata?.answerLength || wordLen) : wordLen;
     const clockStr = clockOf(waitingClock);
+    const myNameForGhost = profile?.username || 'You';
 
     // STAKES copy. The real win rule is: solve, then tie-break on
     // boardsSolved, then composite score = guesses + timeSeconds/45.
@@ -1975,9 +2089,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // The challenge-send game has nobody to watch — its result follows at once.
     if (opponentUserId === SOLO_OPPONENT_ID) {
       return (
-        <div className="h-screen-stable flex items-center justify-center" style={{ backgroundColor: VS.page }}>
+        <PageBackground tint="vs" scheme="light" className="h-screen-stable flex items-center justify-center" style={VS_LIGHT_VARS}>
           <VsStartingScreen mode={mode} title="SENDING YOUR RUN" />
-        </div>
+        </PageBackground>
       );
     }
 
@@ -1998,39 +2112,49 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     ].filter(Boolean).join(' · ');
     const myBoardsLine = myStatus === 'won' ? totalBoards : Math.min(totalBoards, myBoardsSolved);
 
+    // Who is still playing: a cast bot in its 'waiting' pose (D3), Your Ghost
+    // as your own faded letter tile, a person (or a friend's run) as their avatar.
+    const waitBotId = isCpu && cpuPersona && isBotCastId(cpuPersona.botId) ? cpuPersona.botId : null;
+    const waitGhost = isCpu && cpuPersona?.botId === 'ghost';
+    const waitAccent = waitBotId ? cpuPersona?.color ?? VS_ACCENT : VS_ACCENT;
     return (
-      <div className="h-screen-stable overflow-y-auto relative" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <PageBackground tint="vs" scheme="light" className="h-screen-stable overflow-y-auto relative" style={{ ...VS_LIGHT_VARS, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {disconnectBannerEl}
         <div className="max-w-md w-full mx-auto px-4 py-4 space-y-3.5">
-          {/* Teal one-window card: who's still playing, the stakes, their live boards. */}
-          <div
-            className="relative overflow-hidden animate-fade-in-up"
-            style={{ borderRadius: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #ccfbf1, #e0f2fe)', boxShadow: '0 4px 14px rgba(15,118,110,0.10)' }}
-          >
-            <div className="relative flex flex-col gap-1 text-center" style={{ padding: '14px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+          {/* One tinted window (A1): who's still playing, the stakes, their live boards. */}
+          <VsCard accent={waitAccent} className="relative animate-fade-in-up">
+            <div className="relative flex flex-col gap-1 text-center" style={{ padding: '12px 12px 4px' }}>
               <span className="font-black" style={{ fontSize: 19, letterSpacing: 0.4, lineHeight: 1.2, color: VS.deep }}>
                 {oppName.toUpperCase()} IS STILL PLAYING
               </span>
               {stakes && <span className="text-[12px] font-extrabold" style={{ color: VS.ink }}>{stakes}</span>}
             </div>
 
-            <div className="relative flex items-center gap-3 px-4 pt-3">
-              {/* Breathing "live" ring signals an active opponent while you wait. */}
-              <span className="relative flex items-center justify-center shrink-0" style={{ width: 44, height: 44 }}>
-                {/* Circle around a photo / bot; rounded square around a letter tile (ART_SPEC §20). */}
-                <span
-                  className={`absolute inset-0 animate-ping${opponentInfo?.avatarUrl ? ' rounded-full' : ''}`}
-                  style={{ border: `2px solid ${VS.ink}`, opacity: 0.35, borderRadius: opponentInfo?.avatarUrl ? undefined : letterTileRadius(44) }}
-                />
-                {isCpu && opponentInfo?.avatarUrl ? (
-                  <BotAvatar src={opponentInfo.avatarUrl} name={oppName} size={44} bg="#ffffff" />
-                ) : (
-                  <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={44} />
-                )}
-              </span>
+            <div className="relative flex items-center gap-3 px-4 pt-2">
+              {waitBotId ? (
+                <BotFigure id={waitBotId} pose="waiting" size={64} />
+              ) : (
+                /* Breathing "live" ring signals an active opponent while you wait. */
+                <span className="relative flex items-center justify-center shrink-0" style={{ width: 44, height: 44 }}>
+                  {/* Circle around a photo; rounded square around a letter tile (ART_SPEC §20). */}
+                  <span
+                    className={`absolute inset-0 animate-ping${opponentInfo?.avatarUrl && !waitGhost ? ' rounded-full' : ''}`}
+                    style={{ border: `2px solid ${VS.ink}`, opacity: 0.35, borderRadius: opponentInfo?.avatarUrl && !waitGhost ? undefined : letterTileRadius(44) }}
+                  />
+                  {waitGhost ? (
+                    <GhostAvatar name={myNameForGhost} emoji={(profile as any)?.avatar_emoji ?? null} accent={(profile as any)?.accent_color ?? null} size={44} />
+                  ) : (
+                    <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={44} />
+                  )}
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="text-[14px] font-black truncate" style={{ color: VS.deep }}>{oppName}</div>
-                <div className="text-[11.5px] font-bold tabular-nums" style={{ color: '#4b5563' }}>{progressLine}</div>
+                <div className="flex items-baseline gap-1 text-[11.5px] font-bold" style={{ color: '#4b5563' }}>
+                  <SoftNum size={15}>{opponentProgress.attempts}</SoftNum> {opponentProgress.attempts === 1 ? 'guess' : 'guesses'}
+                  <span aria-hidden="true">·</span> <SoftNum size={15}>{clockStr}</SoftNum>
+                  {gStage ? <><span aria-hidden="true">·</span> Stage <SoftNum size={15}>{opponentStage + 1}/5</SoftNum></> : liveTotalBoards > 1 ? <><span aria-hidden="true">·</span> <SoftNum size={15}>{opponentProgress.boardsSolved}/{liveTotalBoards}</SoftNum> boards</> : null}
+                </div>
               </div>
               <span className={`flex gap-0.5 items-center shrink-0 transition-opacity duration-200 ${opponentTyping ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true">
                 {[0, 1, 2].map((i) => (
@@ -2038,6 +2162,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 ))}
               </span>
             </div>
+            <span className="sr-only">{progressLine}</span>
 
             {/* Opponent live board(s) — the solo mini-board, colors only. */}
             <div className="relative px-3 pt-3 pb-4">
@@ -2049,50 +2174,44 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 wordLength={specWordLen}
               />
             </div>
-          </div>
+          </VsCard>
 
-          {/* Your stats */}
+          {/* Your stats (A2 soft numbers) */}
           {playerStats && (
-            <div className="p-4" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
-              <div className="text-[11px] font-black uppercase mb-2" style={{ color: VS.label, letterSpacing: 1.2 }}>Your result</div>
-              <div className="flex">
-                {[
-                  { k: 'Guesses', v: String(playerStats.guesses) },
-                  { k: 'Time', v: formatTime(playerStats.timeMs) },
-                  { k: totalBoards > 1 ? 'Boards' : 'Solved', v: totalBoards > 1 ? `${myBoardsLine}/${totalBoards}` : myStatus === 'won' ? 'Yes' : 'No' },
-                ].map((c) => (
-                  <div key={c.k} className="flex-1 text-center">
-                    <div className="text-[20px] font-black tabular-nums" style={{ color: '#4c1d95' }}>{c.v}</div>
-                    <div className="text-[10.5px] font-bold uppercase" style={{ color: VS.label, letterSpacing: 0.6 }}>{c.k}</div>
-                  </div>
-                ))}
+            <VsCard accent="#7c3aed">
+              <div className="p-4">
+                <div className="text-[11px] font-black uppercase mb-2" style={{ color: VS.label, letterSpacing: 1.2 }}>Your result</div>
+                <div className="flex">
+                  {[
+                    { k: 'Guesses', v: String(playerStats.guesses) },
+                    { k: 'Time', v: formatTime(playerStats.timeMs) },
+                    { k: totalBoards > 1 ? 'Boards' : 'Solved', v: totalBoards > 1 ? `${myBoardsLine}/${totalBoards}` : myStatus === 'won' ? 'Yes' : 'No' },
+                  ].map((c) => (
+                    <div key={c.k} className="flex-1 text-center">
+                      <SoftNum size={22} as="div">{c.v}</SoftNum>
+                      <div className="text-[10.5px] font-bold uppercase" style={{ color: VS.label, letterSpacing: 0.6 }}>{c.k}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </VsCard>
           )}
 
           {(isCpu || flow === 'race') && (
-            <button
-              onClick={() => matchService.resolveNow?.()}
-              className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
-              style={cpuWinLocked
-                ? { background: VS.ink, color: '#ffffff', borderRadius: 14, letterSpacing: 0.6 }
-                : { background: VS.soft, color: VS.ink, borderRadius: 14, letterSpacing: 0.6 }}
-            >
-              {cpuWinLocked ? 'Claim your win' : 'Skip to result'}
-            </button>
+            cpuWinLocked ? (
+              <CandyButton color="teal" size="lg" block icon="trophy" onClick={() => matchService.resolveNow?.()}>Claim your win</CandyButton>
+            ) : (
+              <CandyButton color="peach" size="md" block icon="arrow" onClick={() => matchService.resolveNow?.()}>Skip to result</CandyButton>
+            )
           )}
 
-          <button
-            onClick={handleForfeit}
-            className="mx-auto flex items-center gap-1.5 px-4 py-1.5 text-[12px] font-black uppercase rounded-full transition-transform active:scale-95"
-            style={{ background: '#f1f5f9', color: '#64748b', letterSpacing: 0.5 }}
-          >
-            <X className="w-3.5 h-3.5" /> Leave
-          </button>
+          <div className="flex justify-center">
+            <CandyButton color="peach" size="sm" onClick={handleForfeit} icon={<X className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={3} />}>Leave</CandyButton>
+          </div>
         </div>
 
         {message && <VsToast text={message} />}
-      </div>
+      </PageBackground>
     );
   }
 
@@ -2145,17 +2264,24 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
   // Who the opponent strip shows (VS polish §1): the bot's art + "Bot", a
   // friend's run, or the live opponent.
+  const hudBotId = isCpu && cpuPersona && isBotCastId(cpuPersona.botId) ? cpuPersona.botId : undefined;
+  const hudGhost = isCpu && cpuPersona?.botId === 'ghost';
   const opponentIdentity = {
     name: opponentInfo?.username || (isCpu ? 'Bot' : 'Opponent'),
     avatarUrl: opponentInfo?.avatarUrl ?? null,
     isBot: isCpu,
-    tag: isCpu ? 'Bot' : flow === 'race' ? 'Their run' : undefined,
+    tag: hudBotId ? `Rung ${botPersona(hudBotId).rung}` : hudGhost ? 'Your best run' : isCpu ? 'Bot' : flow === 'race' ? 'Their run' : undefined,
     typing: opponentTyping,
+    // The bot's own character + color on the strip (D3); Your Ghost = your faded tile.
+    botId: hudBotId,
+    color: hudBotId ? botPersona(hudBotId).color : undefined,
+    ghost: hudGhost ? { name: profile?.username || 'You', emoji: (profile as any)?.avatar_emoji ?? null, accent: (profile as any)?.accent_color ?? null } : undefined,
   };
   const soloTitle = SOLO_TITLES[mode];
 
   return (
-    <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: 'var(--color-bg)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    // FINISH_SPEC AG: the match is the 560 px centered game column on desktop web (globals.css .page-col).
+    <div className="h-screen-stable flex flex-col relative page-col" style={{ backgroundColor: 'var(--color-bg)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* 3-2-1-GO: the screen flips to 'match' the moment the count hits 0,
           so the overlay must render HERE too — otherwise the "GO!" beat
           (held ~600ms over the board, native parity) never showed and the
@@ -2191,14 +2317,22 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
       {/* Moment callout — opponent milestones (greens / board solved / last guess) as a soft pill. */}
       {callout && (
-        <div className="absolute left-0 right-0 text-center z-40 pointer-events-none px-4" style={{ top: 'calc(env(safe-area-inset-top) + 52px)' }}>
-          <span
-            key={callout.id}
-            className="inline-block text-xs font-extrabold px-4 py-2 rounded-full animate-fade-in-up"
-            style={{ background: VS.soft, color: VS.deep, boxShadow: '0 4px 14px rgba(15,118,110,0.16)' }}
-          >
-            {callout.text}
-          </span>
+        <div className="absolute left-0 right-0 text-center z-40 pointer-events-none px-4" style={{ top: 'calc(env(safe-area-inset-top) + 52px)' }} role="status" aria-live="polite">
+          {callout.botId ? (
+            // A bot's line, in its own voice and color, beside its character (D3).
+            <span key={callout.id} className="inline-flex items-center gap-1.5 text-xs font-extrabold pl-1 pr-4 py-1 rounded-full animate-fade-in-up" style={{ ...vsCard(botPersona(callout.botId).color, { radius: 999 }), color: VS.deep }}>
+              <BotPoseAvatar id={callout.botId} pose={callout.pose ?? 'waiting'} accent={botPersona(callout.botId).color} size={28} />
+              <span><b className="font-black">{botPersona(callout.botId).name}:</b> {callout.text}</span>
+            </span>
+          ) : (
+            <span
+              key={callout.id}
+              className="inline-block text-xs font-extrabold px-4 py-2 rounded-full animate-fade-in-up"
+              style={{ ...vsCard(VS_ACCENT, { radius: 999 }), color: VS.deep }}
+            >
+              {callout.text}
+            </span>
+          )}
         </div>
       )}
 
@@ -2225,9 +2359,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 function VsScreenTitle({ mode }: { mode: GameMode }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <span className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 14, background: `${modeColor(mode)}1f` }}>
-        <VsModeIcon mode={mode} size={24} />
-      </span>
+      <VsModeTile mode={mode} size={48} icon={24} />
       <h1 className="text-center text-[24px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.5 }}>
         VS · {modeTitle(mode)}
       </h1>
@@ -2268,9 +2400,11 @@ function DailyVsAlreadyPlayed({
   const letters = displayWord.split('');
 
   return (
-    <div
+    <PageBackground
+      tint="vs"
+      scheme="light"
       className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto"
-      style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{ ...VS_LIGHT_VARS, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="text-center space-y-5 max-w-sm w-full px-5 py-6">
         {/* U, all done for today (docs/ART_SPEC.md §7). */}
@@ -2288,7 +2422,7 @@ function DailyVsAlreadyPlayed({
         {/* Today's outcome as YOU WIN! / YOU LOSE lettering, ≈28 tall
             (docs/ART_SPEC.md §10 parity with Android). */}
         {won !== null && (
-          <MomentArt moment={resultMoment(won ? 'win' : 'loss')} maxHeight={28} as="div" className="animate-fade-in-scale" />
+          <MomentArt moment={resultMoment(won ? 'win' : 'loss')} maxHeight={28} as="div" level={2} className="animate-fade-in-scale" />
         )}
 
         {/* Answer tiles */}
@@ -2304,12 +2438,11 @@ function DailyVsAlreadyPlayed({
 
         {/* Countdown */}
         <div
-          className="inline-block px-4 py-2 rounded-full animate-fade-in-up"
-          style={{ background: '#ffffff', boxShadow: VS.cardShadow, animationDelay: '0.25s' }}
+          className="inline-flex items-baseline gap-1.5 px-4 py-2 animate-fade-in-up"
+          style={{ ...vsCard('#7c3aed', { radius: 999 }), animationDelay: '0.25s' }}
         >
-          <span className="text-xs font-black tabular-nums" style={{ color: '#6d28d9' }}>
-            Next daily VS in {countdown}
-          </span>
+          <span className="text-xs font-black" style={{ color: '#6d28d9' }}>Next daily VS in</span>
+          <SoftNum size={16}>{countdown}</SoftNum>
         </div>
 
         {/* Pro: prompt unlimited VS. Freemium: upsell to Pro. */}
@@ -2321,24 +2454,20 @@ function DailyVsAlreadyPlayed({
 
         {/* Actions */}
         <div className="space-y-2.5 animate-fade-in-up" style={{ animationDelay: '0.45s' }}>
-          <Link
+          <CandyLink
             href={isPro ? '/practice/vs' : '/pro'}
-            className="w-full py-3 text-[14px] font-black uppercase text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
-            style={{ background: '#7c3aed', borderRadius: 14, letterSpacing: 0.5 }}
+            color={isPro ? 'teal' : 'purple'}
+            size="lg"
+            block
+            icon={isPro ? <Swords className="w-5 h-5 text-white" aria-hidden="true" /> : <Icon3D name="crown" size={20} />}
           >
-            {isPro ? <Swords className="w-4 h-4" /> : <Icon3D name="crown" size={18} />}
             {isPro ? 'Play unlimited VS' : 'Upgrade to Pro'}
-          </Link>
-          <Link
-            href="/"
-            className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
-            style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14, letterSpacing: 0.5 }}
-          >
-            <Home className="w-4 h-4" />
+          </CandyLink>
+          <CandyLink href="/" color="peach" size="md" block icon={<Icon3D name="tab-home" size={18} />}>
             Home
-          </Link>
+          </CandyLink>
         </div>
       </div>
-    </div>
+    </PageBackground>
   );
 }

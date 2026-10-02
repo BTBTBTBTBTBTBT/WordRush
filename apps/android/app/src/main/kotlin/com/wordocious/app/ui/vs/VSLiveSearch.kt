@@ -23,9 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -59,7 +56,17 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.CpuOpponent
 import com.wordocious.app.data.VSCountsService
 import com.wordocious.app.data.VsChallengeService
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.CandyColor
+import com.wordocious.app.ui.CandyIcon
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.data.BotPersonas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.ui.saveNotificationPref
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.vsClock
@@ -99,7 +106,7 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     var keepWaiting by remember { mutableStateOf(false) }
     var waiting by remember { mutableStateOf<Int?>(null) }
     val kind = remember { vm.stepInKind }
-    val bot = remember(kind) { CpuOpponent.identity(CpuOpponent.opponentId(kind)) }
+    val bot = remember(kind) { CpuOpponent.identity(CpuOpponent.opponentId(kind, vm.stepInCastId)) }
     val modeName = vsModeName(vm.mode)
     // §13: Pro, live random queue only (not the Daily Battle, not a private invite).
     val scope = rememberCoroutineScope()
@@ -131,61 +138,72 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true),
     ) {
-        VsNavBar("VS BATTLE", onBack = onCancel, host = com.wordocious.app.ui.Mascots.vs) { VsModeChip(vm.mode) }
+        // A7: the page host (S) steps aside when Scoot is the bot waiting on this screen.
+        val botMascot = vsBotMascot(bot.artId)
+        VsNavBar("VS BATTLE", onBack = onCancel, host = com.wordocious.app.ui.Mascots.vs.takeIf { it != botMascot }) { VsModeChip(vm.mode) }
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
             RingTimer(elapsedSec * 1000L) { frameMs.longValue }
-            Text("SEARCHING", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.label)
-            Text("LOOKING FOR A RIVAL", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, textAlign = TextAlign.Center)
-            val n = waiting ?: 0
+            VsCapsLabel("SEARCHING", color = VsTeal.label, fontSize = 11.sp)
             Text(
-                if (n > 0) "$n waiting in $modeName" else "Nobody else is waiting in $modeName right now",
+                "LOOKING FOR A RIVAL", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep,
+                textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
+            )
+            val n = waiting ?: 0
+            if (n > 0) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                VsNumber("$n", 16.sp)
+                Text("waiting in $modeName", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
+            } else Text(
+                "Nobody else is waiting in $modeName right now",
                 fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center,
             )
-            // Step-in card.
-            Column(
-                Modifier.widthIn(max = 380.dp).fillMaxWidth().vsCard().padding(14.dp),
+            // Step-in card (A1 tinted, D3: the step-in bot waits in its own "waiting" pose).
+            VsTintedCard(
+                Modifier.widthIn(max = 380.dp).fillMaxWidth(), corner = 18.dp,
+                contentPadding = PaddingValues(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BotAvatar(bot.artId, 48.dp)
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            if (keepWaiting) "We’ll keep looking" else "${bot.name} steps in at 0:15",
-                            fontSize = 15.sp, fontWeight = FontWeight.Black, color = VsTeal.deep,
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VsBotPose(bot.artId, "waiting", 76.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        if (keepWaiting) Text("We’ll keep looking", fontSize = 15.sp, fontWeight = FontWeight.Black, color = VsTeal.deep)
+                        else Row(
+                            Modifier.semantics(mergeDescendants = true) { },
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            Text("${bot.name} steps in at", fontSize = 15.sp, fontWeight = FontWeight.Black, color = VsTeal.deep)
+                            VsNumber("0:15", 16.sp)
+                        }
+                        Text(BotPersonas.tierLine(bot.artId), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.ink)
                         Text("If a person joins first, you get them.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
                     }
                 }
                 if (!keepWaiting) {
                     // Drawn, not laid out: the fill follows every frame.
                     Box(
-                        Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(VsTeal.soft)
+                        Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(vsWash(VS_ACCENT, 0.24f))
                             .drawWithContent {
                                 drawContent()
                                 val f = (frameMs.longValue.toFloat() / STEP_IN_MS).coerceIn(0f, 1f)
                                 drawRoundRect(
-                                    VsTeal.ink, size = Size(size.width * f, size.height),
+                                    Brush.horizontalGradient(listOf(Color(0xFF5EEAD4), VS_ACCENT)), size = Size(size.width * f, size.height),
                                     cornerRadius = CornerRadius(size.height / 2f),
                                 )
-                            },
+                            }
+                            .clearAndSetSemantics { },
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VsTealButton("PLAY ${bot.name.uppercase()} NOW", Modifier.weight(1f)) { vm.stepIn() }
+                    VsTealButton("PLAY ${bot.name.uppercase()} NOW", Modifier.weight(1f), fill = true, icon = CandyIcon.PLAY) { vm.stepIn() }
                     if (!keepWaiting) {
-                        Box(
-                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(VsTeal.soft)
-                                .clickableNoRipple {
-                                    keepWaiting = true
-                                    // §13: KEEP WAITING also pings the players who opted in.
-                                    if (lookingEligible) scope.launch { pingLine = keepWaitingPingLine(VsChallengeService.looking(vm.mode.name)) }
-                                }.padding(vertical = 12.dp),
-                            Alignment.Center,
-                        ) { Text("KEEP WAITING", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink) }
+                        VsTealButton("KEEP WAITING", Modifier.weight(1f), fill = true, color = CandyColor.PEACH) {
+                            keepWaiting = true
+                            // §13: KEEP WAITING also pings the players who opted in.
+                            if (lookingEligible) scope.launch { pingLine = keepWaitingPingLine(VsChallengeService.looking(vm.mode.name)) }
+                        }
                     }
                 }
                 if (keepWaiting) pingLine?.let {
@@ -205,22 +223,26 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
                     }
                 }
                 Row(
-                    Modifier.widthIn(max = 380.dp).fillMaxWidth().vsCard()
-                        .clickableNoRipple { toggle() }.padding(horizontal = 14.dp, vertical = 8.dp),
+                    Modifier.widthIn(max = 380.dp).fillMaxWidth()
+                        .squishClickable(role = androidx.compose.ui.semantics.Role.Switch) { toggle() }
+                        .vsCard(16.dp).padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(Icons.Filled.Notifications, null, tint = VsTeal.ink, modifier = Modifier.size(18.dp))
+                    com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BELL, 20.dp)
                     Text(
                         "Ping me when someone’s looking for $modeName",
                         fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, modifier = Modifier.weight(1f),
                     )
                     Switch(
                         checked = lookingOn, onCheckedChange = { toggle() }, enabled = !lookingSaving,
-                        colors = SwitchDefaults.colors(checkedTrackColor = VsTeal.ink, checkedThumbColor = Color.White),
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = VS_ACCENT, checkedThumbColor = Color.White,
+                            uncheckedTrackColor = vsWash(VS_ACCENT, 0.18f), uncheckedBorderColor = vsLine(VS_ACCENT), uncheckedThumbColor = vsLine(VS_ACCENT, 0.6f),
+                        ),
                     )
                 }
             }
-            Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onCancel))
+            VsSoftPill("CANCEL", color = CandyColor.PEACH, onClick = onCancel)
             message?.let {
                 Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
             }
@@ -238,18 +260,23 @@ private fun RingTimer(clockMs: Long, frameMs: () -> Long) {
         if (!WTheme.reducedMotion) {
             val t = rememberInfiniteTransition(label = "ringPulse")
             val s by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(1400), RepeatMode.Reverse), label = "s")
-            Box(Modifier.size(120.dp).scale(s).clip(CircleShape).background(VsTeal.soft.copy(alpha = 0.6f)))
+            Box(Modifier.size(120.dp).scale(s).clip(CircleShape).background(vsWash(VS_ACCENT, 0.22f).copy(alpha = 0.7f)))
         }
         Canvas(Modifier.size(112.dp)) {
             val w = 8.dp.toPx()
             val inset = w / 2
             val arc = Size(size.width - w, size.height - w)
-            drawArc(VsTeal.soft, 0f, 360f, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w))
+            drawArc(vsWash(VS_ACCENT, 0.24f), 0f, 360f, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w))
             val frac = ((frameMs() % 60_000L).toFloat() / 60_000f)
-            drawArc(VsTeal.ink, -90f, 360f * frac, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w, cap = StrokeCap.Round))
+            drawArc(VS_ACCENT, -90f, 360f * frac, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w, cap = StrokeCap.Round))
         }
-        Box(Modifier.size(96.dp).clip(CircleShape).background(Color.White), Alignment.Center) {
-            Text(vsClock(clockMs), fontSize = 24.sp, fontWeight = FontWeight.Black, color = VsTeal.deep)
+        // A1 the dial takes the teal wash; A2 the clock is a soft number.
+        Box(
+            Modifier.size(96.dp).clip(CircleShape).background(vsWash(VS_ACCENT, 0.10f)).border(1.5.dp, vsLine(VS_ACCENT), CircleShape)
+                .semantics { contentDescription = "Searching for " + vsClock(clockMs) },
+            Alignment.Center,
+        ) {
+            VsNumber(vsClock(clockMs), 26.sp, Modifier.clearAndSetSemantics { })
         }
     }
 }

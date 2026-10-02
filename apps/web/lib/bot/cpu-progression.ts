@@ -7,10 +7,12 @@
  * boss-ladder rung, unlocked cosmetics, and the Bot-of-the-Day streak. (Can be
  * promoted to a profiles.cpu_meta jsonb later for cross-device sync.)
  */
-import { ladderAfterGame } from '@wordle-duel/core';
+import { canonicalBotId, ladderAfterGame, migrateLegacyLadderCleared } from '@wordle-duel/core';
 import type { BotTier } from './bot-personas';
 
 const KEY = 'wd_cpu_progression_v1';
+/** The cast ladder's save version (see CpuProgression.ladderVersion). */
+export const LADDER_VERSION = 2;
 
 export interface CpuProgression {
   /** Current consecutive CPU wins (any tier). Resets on a loss. */
@@ -24,8 +26,13 @@ export interface CpuProgression {
   /** Bot-of-the-Day: current day-streak + the last day it was beaten (UTC yyyy-mm-dd). */
   botOfDayStreak: number;
   botOfDayLastDay: string | null;
-  /** The bot ladder (VS overhaul §7, core ladderAfterGame): rungs cleared 0–4. */
+  /** The bot ladder (core ladderAfterGame): rungs cleared 0–10 (the cast ladder, FINISH_SPEC D1). */
   ladderCleared: number;
+  /**
+   * 2 = the ten-bot cast ladder. Missing (older saves) = the old four-rung
+   * ladder, migrated on load: cleared N → [0, 2, 4, 7, 10][N], run reset.
+   */
+  ladderVersion?: number;
   /** Wins in a row against the next ladder bot. */
   ladderRun: number;
   /** UTC day the Bot of the Day was last played, and how it went. */
@@ -42,6 +49,7 @@ const DEFAULT: CpuProgression = {
   botOfDayLastDay: null,
   ladderCleared: 0,
   ladderRun: 0,
+  ladderVersion: LADDER_VERSION,
   botOfDayPlayedDay: null,
   botOfDayResult: null,
 };
@@ -51,12 +59,31 @@ export function emptyCpuProgression(): CpuProgression {
   return { ...DEFAULT, unlocked: [] };
 }
 
+/**
+ * A stored progression brought up to the cast ladder (FINISH_SPEC D1): an
+ * old save's four-rung count maps to the ten-rung one (core
+ * migrateLegacyLadderCleared) and its run restarts; old persona ids in the
+ * unlocked list become their cast replacement. Pure: unit-tested.
+ */
+export function migrateCpuProgression(saved: Partial<CpuProgression>): CpuProgression {
+  const p: CpuProgression = { ...DEFAULT, ...saved, unlocked: [...(saved.unlocked ?? [])] };
+  if (saved.ladderVersion !== LADDER_VERSION) {
+    p.ladderCleared = migrateLegacyLadderCleared(saved.ladderCleared ?? 0);
+    p.ladderRun = 0;
+    p.ladderVersion = LADDER_VERSION;
+  }
+  p.unlocked = Array.from(new Set(p.unlocked.map(canonicalBotId)));
+  return p;
+}
+
 export function loadCpuProgression(): CpuProgression {
   if (typeof window === 'undefined') return { ...DEFAULT };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return { ...DEFAULT };
-    return { ...DEFAULT, ...JSON.parse(raw) };
+    const p = migrateCpuProgression(JSON.parse(raw));
+    if (JSON.parse(raw).ladderVersion !== LADDER_VERSION) save(p);
+    return p;
   } catch {
     return { ...DEFAULT };
   }
@@ -101,9 +128,10 @@ export function recordCpuGame(won: boolean, tier: BotTier, personaId: string): C
     // Champion rung: a Hard win while on a 3+ streak.
     if (tier === 'hard' && p.streak >= 3) p.rung = Math.max(p.rung, 4);
     // Cosmetic: beating a persona on Hard unlocks its badge.
-    if (tier === 'hard' && !p.unlocked.includes(personaId)) {
-      p.unlocked = [...p.unlocked, personaId];
-      unlockedPersona = personaId;
+    const castId = canonicalBotId(personaId);
+    if (tier === 'hard' && !p.unlocked.includes(castId)) {
+      p.unlocked = [...p.unlocked, castId];
+      unlockedPersona = castId;
     }
   } else {
     p.streak = 0;

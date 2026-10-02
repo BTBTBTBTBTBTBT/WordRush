@@ -1,11 +1,16 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
-import { CAST, mascotSrc, type MascotId } from '@/lib/mascots';
-import { CAST_FIRST_MOVE, CAST_MOVES, castAspect, castTrimLayout, nextCastDelay, pickCastMove } from '@/lib/cast-moves';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CAST, type MascotId } from '@/lib/mascots';
+import { CAST_FIRST_MOVE, CAST_MOVES, nextCastDelay, pickCastMove } from '@/lib/cast-moves';
 import { prefersReducedMotion } from '@/lib/motion';
-import { Icon3D } from '@/components/ui/icon3d';
+import { badgeSrc } from '@/lib/art';
+import { castArt, useSeason } from '@/lib/season';
+import { PRO_CROWN, crownTarget } from '@/lib/pro-crown';
+import { CROWN_DROP_EVENT } from '@/lib/pro-welcome';
+import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
+import { ProCrownSheet } from '@/components/pro/pro-crown-sheet';
 
 // The living cast header (docs/FINISH_SPEC.md A5, option A; mockup
 // game-kit.html §5 `.castrow`): the ten cast heroes (/mascots/<id>.png) as
@@ -14,12 +19,41 @@ import { Icon3D } from '@/components/ui/icon3d';
 // character (never the same twice in a row) plays its personality move
 // (lib/cast-moves.ts; keyframes in globals.css `.cm.act-*`). Off with Reduce
 // Motion (OS or the in-app toggle) and while the tab is hidden. Decorative:
-// aria-hidden, never takes a tap. Pro: W wears the 3D crown.
+// aria-hidden, never takes a tap.
+// FINISH_SPEC X: during the season (lib/season.ts; `?season=halloween` to
+// preview) the Halloween skins stand in, each cut to its own measured box.
+// FINISH_SPEC AA1: Pro — W wears the small gold crown sprite, tilted, on his
+// head (inside W's element, so it hops with him), with a tiny sparkle every
+// ~8 s; a separate small focusable button over the crown opens the
+// "You're Pro" sheet.
 // The cold-start intro (components/providers/cold-start-intro.tsx) glides into
 // the row marked `data-cast-row`.
 
-export function CastHeader({ crown = false, className = '', style }: { crown?: boolean; className?: string; style?: React.CSSProperties }) {
+/**
+ * The calmer top (FINISH_SPEC N3/N4): the row spans ≈90% of the screen,
+ * centered, 8–10 px under the status bar, on a soft elliptical ground shadow
+ * (the page accent at ~14%, blurred); the controls row sits 6 px below it.
+ */
+export const CAST_ROW = { widthPct: 90, topMargin: 9, controlsGap: 6, groundAlpha: 14 } as const;
+
+type Box = { left: number; top: number; width: number; height: number };
+
+/** A four-point sparkle (the crown's twinkle). */
+function Sparkle() {
+  return (
+    <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
+      <path d="M10 0 C11 6 14 9 20 10 C14 11 11 14 10 20 C9 14 6 11 0 10 C6 9 9 6 10 0 Z" fill="#fffbe6" stroke="#fbbf24" strokeWidth="1" />
+    </svg>
+  );
+}
+
+export function CastHeader({ crown = false, ground = false, className = '', style }: { crown?: boolean; ground?: boolean; className?: string; style?: React.CSSProperties }) {
   const rowRef = useRef<HTMLDivElement>(null);
+  const crownRef = useRef<HTMLSpanElement>(null);
+  const sparkleRef = useRef<HTMLSpanElement>(null);
+  const season = useSeason();
+  const [crownBox, setCrownBox] = useState<Box | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -27,7 +61,9 @@ export function CastHeader({ crown = false, className = '', style }: { crown?: b
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
       const row = rowRef.current;
-      if (row && document.visibilityState === 'visible' && !prefersReducedMotion()) {
+      // F2 fix: wait while the cold-start intro runs or the landing flourish plays.
+      const busy = document.documentElement.hasAttribute(INTRO_RUNNING_ATTR) || document.documentElement.hasAttribute(CAST_FLOURISH_ATTR);
+      if (row && !busy && document.visibilityState === 'visible' && !prefersReducedMotion()) {
         const id = pickCastMove(last);
         last = id;
         const el = row.querySelector<HTMLElement>(`[data-cast="${id}"]`);
@@ -45,46 +81,176 @@ export function CastHeader({ crown = false, className = '', style }: { crown?: b
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <div
-      ref={rowRef}
-      aria-hidden="true"
-      data-cast-row=""
-      className={`castrow pointer-events-none select-none ${className}`}
-      style={{ paddingTop: crown ? '5%' : 4, ...style }}
-    >
-      {CAST.map((id) => {
-        const aspect = castAspect(id);
-        const trim = castTrimLayout(id);
-        return (
-          <span
-            key={id}
-            data-cast={id}
-            className="cm"
-            style={{ flex: `${aspect.toFixed(3)} 1 0`, aspectRatio: `${aspect.toFixed(4)}` }}
-          >
-            <Image
-              src={mascotSrc(id)}
-              alt=""
-              width={512}
-              height={512}
-              priority
-              draggable={false}
-              sizes="20vw"
-              style={{ width: trim.width, height: 'auto', left: trim.left, top: trim.top }}
-            />
-            {crown && id === 'w' && (
-              <Icon3D
-                name="crown"
-                size={24}
-                priority
-                className="absolute left-1/2"
-                style={{ width: '48%', height: 'auto', aspectRatio: '1 / 1', top: '-30%', transform: 'translateX(-50%) rotate(-8deg)', filter: 'drop-shadow(0 1px 1px rgba(146, 64, 14, 0.3))' }}
-              />
-            )}
-          </span>
+  // AA1: the crown's tiny sparkle twinkle, about every 8 s (never with Reduce Motion or a hidden tab).
+  useEffect(() => {
+    if (!crown) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const twinkle = () => {
+      const el = sparkleRef.current;
+      if (el && typeof el.animate === 'function' && document.visibilityState === 'visible' && !prefersReducedMotion()) {
+        el.animate(
+          [
+            { opacity: 0, transform: 'scale(0.3) rotate(0deg)' },
+            { opacity: 1, transform: 'scale(1.1) rotate(45deg)', offset: 0.45 },
+            { opacity: 0, transform: 'scale(0.4) rotate(90deg)' },
+          ],
+          { duration: PRO_CROWN.sparkleMs, easing: 'ease-in-out' },
         );
-      })}
+      }
+      timer = setTimeout(twinkle, PRO_CROWN.sparkleEveryMs);
+    };
+    timer = setTimeout(twinkle, PRO_CROWN.sparkleFirstMs);
+    return () => clearTimeout(timer);
+  }, [crown]);
+
+  // AP: after the Welcome to Pro screen, the crown drops onto W with a sparkle.
+  useEffect(() => {
+    if (!crown) return;
+    const onDrop = () => {
+      const c = crownRef.current;
+      const sp = sparkleRef.current;
+      if (prefersReducedMotion() || !c || typeof c.animate !== 'function') return;
+      c.animate(
+        [
+          { transform: 'translate(-50%, -160%) rotate(-30deg)', opacity: 0 },
+          { transform: 'translate(-50%, 8%) rotate(-4deg)', opacity: 1, offset: 0.7 },
+          { transform: 'translate(-50%, 0) rotate(-8deg)', opacity: 1 },
+        ],
+        { duration: 620, easing: 'cubic-bezier(0.3, 1.4, 0.5, 1)' },
+      );
+      sp?.animate?.(
+        [{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 1, transform: 'scale(1.2) rotate(45deg)', offset: 0.5 }, { opacity: 0, transform: 'scale(0.4) rotate(90deg)' }],
+        { duration: PRO_CROWN.sparkleMs, delay: 520, easing: 'ease-in-out' },
+      );
+    };
+    window.addEventListener(CROWN_DROP_EVENT, onDrop);
+    return () => window.removeEventListener(CROWN_DROP_EVENT, onDrop);
+  }, [crown]);
+
+  // The crown button's frame: the crown's laid-out box (offsets ignore W's
+  // hop transforms) in the wrapper's coordinates, re-measured on resize.
+  const measureCrown = useCallback(() => {
+    const row = rowRef.current;
+    const c = crownRef.current;
+    const cell = c?.offsetParent as HTMLElement | null;
+    if (!row || !c || !cell) { setCrownBox(null); return; }
+    const box = {
+      // (the crown's own translateX(-50%) isn't in offsetLeft either)
+      left: row.offsetLeft + cell.offsetLeft + c.offsetLeft - c.offsetWidth / 2,
+      top: row.offsetTop + cell.offsetTop + c.offsetTop,
+      width: c.offsetWidth,
+      height: c.offsetHeight,
+    };
+    if (box.width <= 0) { setCrownBox(null); return; }
+    setCrownBox((prev) => (prev && prev.left === box.left && prev.top === box.top && prev.width === box.width && prev.height === box.height ? prev : box));
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!crown) { setCrownBox(null); return; }
+    measureCrown();
+    const row = rowRef.current;
+    if (!row || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measureCrown);
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, [crown, season, measureCrown]);
+
+  const target = crownBox ? crownTarget(crownBox) : null;
+
+  return (
+    <div className="relative">
+      <div
+        ref={rowRef}
+        aria-hidden="true"
+        data-cast-row=""
+        data-season={season ?? undefined}
+        className={`castrow relative pointer-events-none select-none ${className}`}
+        style={{ paddingTop: crown ? '5%' : 4, ...style }}
+      >
+        {ground && (
+          <span
+            aria-hidden="true"
+            className="absolute pointer-events-none"
+            style={{
+              left: '6%', right: '6%', bottom: -5, height: 14, borderRadius: '50%',
+              background: `radial-gradient(ellipse at center, color-mix(in srgb, var(--page-accent, #7c3aed) ${CAST_ROW.groundAlpha}%, transparent) 0%, transparent 72%)`,
+              filter: 'blur(3px)',
+            }}
+          />
+        )}
+        {CAST.map((id) => {
+          const art = castArt(id, season);
+          return (
+            <span
+              key={id}
+              data-cast={id}
+              className="cm"
+              style={{ flex: `${art.aspect.toFixed(3)} 1 0`, aspectRatio: `${art.aspect.toFixed(4)}` }}
+            >
+              <Image
+                key={art.src}
+                src={art.src}
+                alt=""
+                width={art.artSize}
+                height={art.artSize}
+                priority
+                draggable={false}
+                sizes="(min-width: 900px) 112px, 20vw"
+                style={{ width: art.layout.width, height: 'auto', left: art.layout.left, top: art.layout.top }}
+              />
+              {crown && id === 'w' && (
+                <span
+                  ref={crownRef}
+                  className="absolute left-1/2"
+                  style={{
+                    width: `${PRO_CROWN.widthPct}%`, aspectRatio: '1 / 1', top: `${PRO_CROWN.topPct}%`,
+                    transform: `translateX(-50%) rotate(${PRO_CROWN.tilt}deg)`,
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={badgeSrc('pro-crown-sprite')}
+                    alt=""
+                    width={256}
+                    height={256}
+                    draggable={false}
+                    onLoad={measureCrown}
+                    style={{ position: 'static', display: 'block', width: '100%', height: '100%', filter: 'drop-shadow(0 1px 1px rgba(146, 64, 14, 0.3))' }}
+                  />
+                  <span
+                    ref={sparkleRef}
+                    className="absolute"
+                    style={{ width: '38%', height: '38%', top: '-6%', right: '-4%', opacity: 0 }}
+                  >
+                    <Sparkle />
+                  </span>
+                </span>
+              )}
+            </span>
+          );
+        })}
+      </div>
+      {crown && target && (
+        // The row is aria-hidden and takes no taps, so the crown gets its own
+        // small focusable button laid over it. The header sits inside the
+        // home link: the tap must not follow it.
+        <button
+          type="button"
+          aria-label="Your Pro membership"
+          aria-haspopup="dialog"
+          data-no-squish=""
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSheetOpen(true); }}
+          className="absolute rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-500"
+          style={{ left: target.left, top: target.top, width: target.width, height: target.height, background: 'transparent', zIndex: 1 }}
+        />
+      )}
+      {crown && (
+        // React events from the sheet's portal bubble up the React tree into
+        // the home link around the header; stop them here.
+        <span style={{ display: 'contents' }} onClick={(e) => e.stopPropagation()}>
+          <ProCrownSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+        </span>
+      )}
     </div>
   );
 }

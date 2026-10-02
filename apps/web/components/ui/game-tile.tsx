@@ -115,7 +115,7 @@ export function GameTile({ accent, glyph, title, sub, tone = 'theme', className 
       {sub != null && (
         <span
           className="text-[10px] font-bold mt-0.5"
-          style={{ color: t.muted, height: 28, lineHeight: '14px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+          style={{ color: t.muted, height: '2.8em', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
         >
           {sub}
         </span>
@@ -167,7 +167,7 @@ export function GameSquare({ accent, glyph, label, selected = false, size, tone 
         // Up to two centered lines, no ellipsis ("Rock Paper Scissors" in the quick-play sheet).
         <span
           className="block w-full text-center text-[10px] font-extrabold"
-          style={{ color: selected ? accent : t.text, lineHeight: '12px', maxHeight: 24, overflow: 'hidden', overflowWrap: 'break-word' }}
+          style={{ color: selected ? accent : t.text, lineHeight: 1.2, maxHeight: '2.4em', overflow: 'hidden', overflowWrap: 'break-word' }}
         >
           {label}
         </span>

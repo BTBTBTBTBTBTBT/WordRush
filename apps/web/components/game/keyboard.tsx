@@ -3,7 +3,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
-import { playKeyTap } from '@/lib/sounds';
+import { playDelete, playKeyTap } from '@/lib/sounds';
 import { getKeyboardLayout, onKeyboardLayoutChange, type KeyboardLayout } from '@/lib/keyboard-layout';
 
 // Three arrangements of the same keys (§213) — see lib/keyboard-layout.ts.
@@ -190,7 +190,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
               return (
                 <button
                   key={`${key}-${ki}`}
-                  onClick={() => { if (isBlackedOut) return; if (key === 'ENTER') haptic('medium'); else if (key !== 'BACK') haptic('light'); playKeyTap(); onKey(key); }}
+                  onClick={() => { if (isBlackedOut) return; if (key === 'ENTER') haptic('medium'); else haptic('light'); if (key === 'BACK') playDelete(); else playKeyTap(); onKey(key); }}
                   disabled={isBlackedOut}
                   aria-label={key === 'BACK' ? 'Backspace' : 'Submit guess'}
                   className={cn(

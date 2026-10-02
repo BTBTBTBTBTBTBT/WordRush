@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  CHAIN_TARGET, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, whoseTurn,
+  CHAIN_TARGET, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, tttLine, whoseTurn,
   type ChainState, type CoinFace, type CoinState, type FriendlyMove, type GhostState, type PassState, type RpsPick, type RpsState,
   type Side, type TttState,
 } from '@wordle-duel/core';
@@ -12,10 +12,25 @@ import {
   FR, TILE, chainNeededLetter, chainPrecheck, ghostRoundCard, ghostTiles, otherSide, passKeyStates, tileState, tttThreats,
 } from '@/lib/friends-play';
 import { FriendAvatar, SectionLabel } from './friends-ui';
+import { GameTray } from '@/components/ui/game-tray';
+import { CandyButton } from '@/components/ui/candy-button';
+import { pieceSrc } from '@/lib/art';
+import type { TrayState } from '@/lib/game-tray';
+import { softMix } from '@/lib/soft-surface';
 
 // The six pocket-game boards (Friends overhaul §4 + §9, canvas board AE). Each one
 // only renders the server's state and hands a move up; the screen sends it.
 // Tiles always use our colors: purple = you, amber = them, slate = absent.
+// Finishing build (docs/FINISH_SPEC.md L, J2, A1, A8): every board sits on the
+// shared GameTray in the game's color (purple once won, slate once lost), no
+// plain-white tiles or keys (a soft lilac wash), Tic-Tac-Tile draws the 3D
+// X / O pieces (they drop in with the type pop; a winning three glows), and
+// the actions are candy buttons.
+
+/** The light lilac wash every empty tile / key / pick card takes (A1: never plain white). */
+const EMPTY = { background: softMix('#7c3aed', 0.08), border: `1.5px solid ${softMix('#7c3aed', 0.26)}` } as const;
+/** A key / pick card's soft bottom lip. */
+const LIP = `inset 0 -2.5px 0 ${softMix('#7c3aed', 0.3)}`;
 
 export interface Player { name: string; url: string | null; emoji: string | null; /** Profile accent for the letter tile (ART_SPEC §20), when known. */ accent?: string | null }
 
@@ -29,6 +44,10 @@ interface BoardProps<S> {
   /** Bumps when a new round / flip arrives, so the reveal animates once. */
   revealKey: number;
   onMove: (move: FriendlyMove) => Promise<boolean>;
+  /** The game's accent (its tray color while playing). */
+  accent: string;
+  /** The tray's wash: playing, or purple / slate once the match is won / lost. */
+  tray: TrayState;
 }
 
 const PICKS: RpsPick[] = ['rock', 'paper', 'scissors'];
@@ -41,7 +60,7 @@ function Art({ name, size }: { name: string; size: number }) {
 
 // ── Rock Paper Scissors ─────────────────────────────────────────────────────
 
-export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<RpsState>) {
+export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray }: BoardProps<RpsState>) {
   const theirSide = otherSide(me);
   const theirPick = state.picks[theirSide] as string | undefined;
   const myPick = state.picks[me];
@@ -78,8 +97,8 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: B
           key={`${revealKey}-${side}`}
           className="flex items-center justify-center"
           style={{
-            width: 104, height: 118, borderRadius: 16, background: '#ffffff',
-            boxShadow: won ? `0 0 0 2px ${glow}, 0 0 18px ${glow}99` : FR.cardShadow,
+            width: 104, height: 118, borderRadius: 16, ...EMPTY,
+            boxShadow: won ? `0 0 0 2px ${glow}, 0 0 18px ${glow}99` : LIP,
             animation: revealing ? 'friends-flip 0.45s ease-out both' : undefined,
           }}
         >
@@ -94,6 +113,7 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: B
 
   return (
     <div className="flex flex-col items-center gap-3">
+      <GameTray accent={accent} state={tray} className="w-full flex justify-center">
       {showReveal ? (
         <div className="flex items-start justify-center gap-4">
           {revealCard(me, 'YOU')}
@@ -119,6 +139,7 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: B
           )}
         </div>
       )}
+      </GameTray>
 
       {active && (
         <>
@@ -138,13 +159,13 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: B
                   className="flex flex-col items-center justify-center gap-1 transition-transform active:scale-95"
                   style={{
                     width: 104, height: 118, borderRadius: 16,
-                    background: sel ? TILE.you : '#ffffff',
-                    boxShadow: sel ? '0 0 16px rgba(124,58,237,0.55)' : FR.cardShadow,
+                    ...(sel ? { background: TILE.you, border: `1.5px solid ${TILE.you}` } : EMPTY),
+                    boxShadow: sel ? '0 0 16px rgba(124,58,237,0.55)' : `${LIP}, 0 4px 10px rgba(124,58,237,0.12)`,
                     opacity: locked && !sel ? 0.5 : 1,
                   }}
                 >
                   <Art name={p} size={70} />
-                  <span className="text-[11px] font-black uppercase" style={{ color: sel ? '#ffffff' : FR.text, letterSpacing: 0.6 }}>{p}</span>
+                  <span className="text-[11px] font-black uppercase" style={{ color: sel ? '#ffffff' : '#2a1650', letterSpacing: 0.6 }}>{p}</span>
                 </button>
               );
             })}
@@ -160,23 +181,27 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: B
 
 // ── Tic-Tac-Tile ────────────────────────────────────────────────────────────
 
-function Cross() {
+/** A Tic-Tac-Tile piece (J2): the 3D purple X (you) or pink O (them); decorative, the cell carries the label. */
+function Piece({ side }: { side: 'x' | 'o' }) {
   return (
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
-      <line x1="6" y1="6" x2="18" y2="18" />
-      <line x1="18" y1="6" x2="6" y2="18" />
-    </svg>
-  );
-}
-function Ring() {
-  return (
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" aria-hidden="true">
-      <circle cx="12" cy="12" r="6.5" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={pieceSrc(side === 'x' ? 'ttt-x' : 'ttt-o')}
+      alt=""
+      aria-hidden="true"
+      width={256}
+      height={256}
+      draggable={false}
+      className="gt-pop pointer-events-none select-none"
+      style={{ width: '76%', height: '76%', objectFit: 'contain', filter: 'drop-shadow(0 2px 2px rgba(40,20,80,0.25))' }}
+    />
   );
 }
 
-export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<TttState>) {
+/** The O piece's pink (the legend dot). */
+const TTT_O = '#ec4899';
+
+export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }: BoardProps<TttState>) {
   const [pendingCell, setPendingCell] = useState<number | null>(null);
   const myTurn = active && whoseTurn(state) === me;
   const sig = `${state.board.join(',')}|${state.games.length}`;
@@ -184,6 +209,8 @@ export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<T
   const board = [...state.board];
   if (pendingCell !== null && !board[pendingCell]) board[pendingCell] = me;
   const threats = myTurn && pendingCell === null ? tttThreats(state.board, me) : [];
+  // The winning three glow (the server clears the board after a game, so this shows only when a line is on it).
+  const winLine = tttLine(board)?.cells ?? [];
 
   const tap = async (i: number) => {
     if (!myTurn || busy || pendingCell !== null || state.board[i]) return;
@@ -194,11 +221,13 @@ export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<T
 
   return (
     <div className="flex flex-col items-center gap-3">
+      <GameTray accent={accent} state={tray}>
       <div className="grid grid-cols-3" style={{ gap: 10 }}>
         {board.map((m, i) => {
           const mine = m === me;
           const theirs = !!m && !mine;
           const threat = threats.includes(i);
+          const win = winLine.includes(i);
           return (
             <button
               key={i}
@@ -208,25 +237,29 @@ export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<T
               aria-label={m ? (mine ? 'Your tile' : `${them.name}'s tile`) : `Empty tile ${i + 1}`}
               className="flex items-center justify-center transition-transform active:scale-95"
               style={{
-                width: 98, height: 98, borderRadius: 16,
-                background: mine ? TILE.you : theirs ? TILE.them : '#ffffff',
-                boxShadow: mine ? '0 0 12px rgba(124,58,237,0.45)' : theirs ? '0 0 12px rgba(245,158,11,0.45)' : threat ? '0 0 14px rgba(124,58,237,0.35)' : FR.cardShadow,
+                width: 92, height: 92, borderRadius: 16,
+                background: mine ? softMix(TILE.you, 0.16) : theirs ? softMix(TTT_O, 0.14) : EMPTY.background,
+                border: mine ? `1.5px solid ${softMix(TILE.you, 0.4)}` : theirs ? `1.5px solid ${softMix(TTT_O, 0.4)}` : EMPTY.border,
+                boxShadow: win
+                  ? `${LIP}, 0 0 0 2.5px ${mine ? TILE.you : TTT_O}, 0 0 18px ${mine ? TILE.you : TTT_O}aa`
+                  : threat ? `${LIP}, 0 0 14px rgba(124,58,237,0.35)` : LIP,
                 outline: threat ? `2px dashed ${TILE.you}` : undefined,
                 outlineOffset: threat ? -6 : undefined,
                 cursor: myTurn && !m ? 'pointer' : 'default',
               }}
             >
-              {mine ? <Cross /> : theirs ? <Ring /> : null}
+              {mine ? <Piece side="x" /> : theirs ? <Piece side="o" /> : null}
             </button>
           );
         })}
       </div>
+      </GameTray>
       <div className="flex items-center gap-4 text-[11px] font-black" style={{ letterSpacing: 0.8 }}>
         <span className="flex items-center gap-1.5" style={{ color: TILE.you }}>
           <span className="w-2.5 h-2.5 rounded-full" style={{ background: TILE.you }} /> YOU · X
         </span>
-        <span className="flex items-center gap-1.5 uppercase" style={{ color: '#b45309' }}>
-          <span className="w-2.5 h-2.5 rounded-full" style={{ background: TILE.them }} /> {them.name} · O
+        <span className="flex items-center gap-1.5 uppercase" style={{ color: '#be185d' }}>
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: TTT_O }} /> {them.name} · O
         </span>
       </div>
       {active && !myTurn && (
@@ -238,7 +271,7 @@ export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<T
 
 // ── Call It ─────────────────────────────────────────────────────────────────
 
-export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<CoinState>) {
+export function CoinBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray }: BoardProps<CoinState>) {
   const last = state.rounds[state.rounds.length - 1];
   const face: CoinFace = last ? last.flip : 'heads';
   const myCall = active && whoseTurn(state) === me;
@@ -254,17 +287,19 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: 
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div
-        key={revealKey}
-        style={{ width: 150, height: 150, animation: revealKey ? 'friends-coin-spin 1.1s cubic-bezier(.2,.7,.3,1) both' : undefined }}
-      >
-        <Art name={face} size={150} />
-      </div>
-      <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6 }}>
-        {last
-          ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}`
-          : 'No flips yet'}
-      </p>
+      <GameTray accent={accent} state={tray} className="w-full flex flex-col items-center gap-2">
+        <div
+          key={revealKey}
+          style={{ width: 150, height: 150, animation: revealKey ? 'friends-coin-spin 1.1s cubic-bezier(.2,.7,.3,1) both' : undefined }}
+        >
+          <Art name={face} size={150} />
+        </div>
+        <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6 }}>
+          {last
+            ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}`
+            : 'No flips yet'}
+        </p>
+      </GameTray>
 
       {active && (
         <>
@@ -272,18 +307,16 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: 
           {myCall ? (
             <div className="w-full grid grid-cols-2 gap-2.5">
               {(['heads', 'tails'] as CoinFace[]).map((c) => (
-                <button
+                <CandyButton
                   key={c}
-                  type="button"
+                  color={c === 'heads' ? 'purple' : 'pink'}
+                  size="md"
+                  block
                   onClick={() => call(c)}
                   disabled={busy || calling !== null}
-                  className="py-3 text-[15px] font-black uppercase rounded-[14px] transition-transform active:scale-[0.98] disabled:opacity-60"
-                  style={c === 'heads'
-                    ? { background: TILE.you, color: '#ffffff', boxShadow: '0 0 12px rgba(124,58,237,0.4)', letterSpacing: 0.8 }
-                    : { background: '#ede9fe', color: '#6d28d9', letterSpacing: 0.8 }}
                 >
                   {calling === c ? 'Flipping…' : c}
-                </button>
+                </CandyButton>
               ))}
             </div>
           ) : (
@@ -310,7 +343,7 @@ function passTileStyle(st: 'correct' | 'present' | 'absent'): React.CSSPropertie
   return { background: TILE.absent, color: '#475569' };
 }
 
-export function PassBoard({ state, me, you, them, active, busy, onMove, answer }: BoardProps<PassState> & { answer: string | null }) {
+export function PassBoard({ state, me, you, them, active, busy, onMove, answer, accent, tray }: BoardProps<PassState> & { answer: string | null }) {
   const [input, setInput] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   const myTurn = active && whoseTurn(state) === me;
@@ -354,6 +387,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer }
 
   return (
     <div className="flex flex-col items-center gap-3">
+      <GameTray accent={accent} state={tray}>
       <div className="flex flex-col" style={{ gap: 5 }}>
         {Array.from({ length: PASS_MAX_GUESSES }, (_, r) => {
           const g = state.guesses[r];
@@ -367,7 +401,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer }
                   const letter = g ? g.word[i] : current && myTurn ? input[i] ?? '' : '';
                   const style: React.CSSProperties = g
                     ? passTileStyle(tileState(g.tiles[i] ?? 'ABSENT'))
-                    : { background: '#ffffff', color: FR.text, boxShadow: letter ? `0 0 0 2px #c4b5fd` : current ? '0 0 0 1.5px #ede9fe, 0 1px 3px rgba(76,29,149,0.08)' : '0 1px 3px rgba(76,29,149,0.08)' };
+                    : { ...EMPTY, color: '#2a1650', boxShadow: letter ? `0 0 0 2px #c4b5fd` : current ? `0 0 0 1.5px ${softMix('#7c3aed', 0.3)}` : undefined };
                   return (
                     <span
                       key={i}
@@ -384,6 +418,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer }
           );
         })}
       </div>
+      </GameTray>
 
       {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
       {answer && (
@@ -443,8 +478,8 @@ function LetterKeys({ onKey, selected, disabled }: { onKey: (k: string) => void;
                 className="flex items-center justify-center font-black transition-transform active:scale-95"
                 style={{
                   flex: '1 1 0', maxWidth: 36, height: 46, borderRadius: 8, fontSize: 16,
-                  background: sel ? TILE.you : '#ffffff', color: sel ? '#ffffff' : FR.text,
-                  boxShadow: sel ? '0 0 10px rgba(124,58,237,0.45)' : '0 1px 3px rgba(76,29,149,0.12)',
+                  ...(sel ? { background: TILE.you, border: `1.5px solid ${TILE.you}` } : EMPTY), color: sel ? '#ffffff' : '#2a1650',
+                  boxShadow: sel ? '0 0 10px rgba(124,58,237,0.45)' : LIP,
                 }}
               >
                 {k}
@@ -462,7 +497,7 @@ const sideGlow = (mine: boolean) => (mine ? '0 0 6px rgba(124,58,237,0.4)' : '0 
 
 // ── Ghost ───────────────────────────────────────────────────────────────────
 
-export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<GhostState>) {
+export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray }: BoardProps<GhostState>) {
   const myTurn = active && whoseTurn(state) === me;
   const [pick, setPick] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -507,6 +542,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }:
         </div>
       )}
 
+      <GameTray accent={accent} state={tray} className="w-full">
       <div className="flex justify-center items-center" style={{ gap: 6, minHeight: 56 }}>
         {tiles.map((t, i) => (
           <span
@@ -522,7 +558,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }:
             className="flex items-center justify-center font-black uppercase"
             style={{
               width: size, height: size, borderRadius: 10, fontSize: Math.round(size * 0.46),
-              background: pick ? '#ede9fe' : '#ffffff', color: TILE.you, border: `2px dashed ${TILE.you}`,
+              background: softMix('#7c3aed', pick ? 0.16 : 0.06), color: TILE.you, border: `2px dashed ${TILE.you}`,
             }}
             aria-label={pick ? `Your letter ${pick}` : 'Your letter goes here'}
           >
@@ -533,6 +569,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }:
           <span className="text-[12px] font-bold" style={{ color: FR.label }}>No letters yet</span>
         )}
       </div>
+      </GameTray>
 
       {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
 
@@ -544,15 +581,9 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }:
               : `${them.name} is adding a letter. It lands here live.`}
           </p>
           {myTurn && (
-            <button
-              type="button"
-              onClick={() => void send()}
-              disabled={!pick || busy}
-              className="w-full py-3 text-[15px] font-black text-white transition-transform active:scale-[0.98] disabled:opacity-50"
-              style={{ background: FR.solid, borderRadius: 14, letterSpacing: 0.6 }}
-            >
+            <CandyButton color="pink" block icon={pick ? 'plus' : undefined} onClick={() => void send()} disabled={!pick || busy}>
               {pick ? `ADD ${pick}` : 'PICK A LETTER'}
-            </button>
+            </CandyButton>
           )}
           <LetterKeys onKey={onKey} selected={pick} disabled={!myTurn} />
         </>
@@ -569,7 +600,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }:
 const CHAIN_TILE = 30;
 const INPUT_TILE = 40;
 
-export function ChainBoard({ state, me, you, them, active, busy, onMove }: BoardProps<ChainState>) {
+export function ChainBoard({ state, me, you, them, active, busy, onMove, accent, tray }: BoardProps<ChainState>) {
   const myTurn = active && whoseTurn(state) === me;
   const locked = chainNeededLetter(state);
   const [typed, setTyped] = useState('');
@@ -597,6 +628,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove }: Board
 
   return (
     <div className="flex flex-col items-center gap-3">
+      <GameTray accent={accent} state={tray} className="w-full">
       <div className="w-full flex flex-col" style={{ gap: 6 }}>
         {state.words.length === 0 && (
           <p className="text-center text-[12px] font-bold py-2" style={{ color: FR.label }}>
@@ -638,6 +670,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove }: Board
           );
         })}
       </div>
+      </GameTray>
 
       {active && myTurn && (
         <div className="flex justify-center" style={{ gap: 5 }} aria-label="Your word">
@@ -648,10 +681,10 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove }: Board
             const style: React.CSSProperties = isLocked
               ? { background: TILE.you, color: '#ffffff', boxShadow: `0 0 10px ${TILE.you}88` }
               : ch
-                ? { background: '#ffffff', color: FR.text, boxShadow: '0 0 0 2px #c4b5fd' }
+                ? { ...EMPTY, color: '#2a1650', boxShadow: '0 0 0 2px #c4b5fd' }
                 : optional
-                  ? { background: 'transparent', color: FR.text, border: '1.5px dashed #c4b5fd' }
-                  : { background: '#ffffff', color: FR.text, boxShadow: '0 1px 3px rgba(76,29,149,0.10)' };
+                  ? { background: softMix('#7c3aed', 0.04), color: '#2a1650', border: '1.5px dashed #c4b5fd' }
+                  : { ...EMPTY, color: '#2a1650', boxShadow: LIP };
             return (
               <span
                 key={i}

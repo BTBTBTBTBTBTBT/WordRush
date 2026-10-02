@@ -4,6 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import type { UserIdentity } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase-client';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
+import { CandyButton } from '@/components/ui/candy-button';
+import { Icon3D } from '@/components/ui/icon3d';
+import { SETTINGS_ACCENT, SettingsSection, settingsRowStyle } from './settings-kit';
 import {
   LINK_PROVIDERS,
   type LinkProvider,
@@ -121,31 +124,30 @@ export function LinkedSignIns() {
   const unlinkable = identities ? canUnlink(identities.length) : false;
 
   return (
-    <div className="space-y-2">
-      <div className="section-header">LINKED SIGN-INS</div>
+    <SettingsSection title="Linked sign-ins" accent={SETTINGS_ACCENT.linked}>
       <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-text-muted)' }}>
         Link your sign-ins so each one opens this same account, even with Apple’s Hide My Email.
       </p>
       <div className="space-y-1.5">
         {identities === null && !loadError && (
-          <div className="p-3 rounded-xl text-[10px] font-bold" style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+          <div className="p-3 text-[10px] font-bold" style={{ ...settingsRowStyle(SETTINGS_ACCENT.linked), color: 'var(--color-text-muted)' }}>
             Loading…
           </div>
         )}
         {loadError && (
-          <p className="text-[10px] font-bold px-1" style={{ color: '#dc2626' }}>Couldn’t load your sign-ins. Close Settings and try again.</p>
+          <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-loss-text)' }}>Couldn’t load your sign-ins. Close Settings and try again.</p>
         )}
         {(identities ?? []).map((identity) => {
           const email = identityEmail(identity);
           return (
             <div
               key={identity.identity_id}
-              className="flex items-center justify-between p-3 rounded-xl"
-              style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}
+              className="flex items-center justify-between gap-2 p-3"
+              style={settingsRowStyle(SETTINGS_ACCENT.linked)}
             >
               <div className="min-w-0">
                 <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>
-                  {providerLabel(identity.provider)} <span style={{ color: '#16a34a' }}>✓</span>
+                  {providerLabel(identity.provider)} <Icon3D name="badge-check" size={14} inline label="Linked" />
                 </div>
                 {email && (
                   <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
@@ -154,32 +156,30 @@ export function LinkedSignIns() {
                 )}
               </div>
               {unlinkable && (
-                <button
+                <CandyButton
+                  color="peach"
+                  size="sm"
                   onClick={() => handleUnlink(identity)}
                   disabled={busy !== null}
-                  className="text-[10px] font-extrabold px-2 py-1 rounded-lg disabled:opacity-50"
-                  style={{ color: 'var(--color-text-muted)', border: '1.5px solid var(--color-border)' }}
                 >
                   {busy === identity.identity_id ? 'Unlinking…' : 'Unlink'}
-                </button>
+                </CandyButton>
               )}
             </div>
           );
         })}
         {identities !== null && missing.map((provider) => (
-          <button
+          <CandyButton
             key={provider}
+            color="purple"
+            size="md"
+            block
+            icon="plus"
             onClick={() => handleLink(provider)}
             disabled={busy !== null}
-            className="block w-full text-left p-3 rounded-xl transition-all disabled:opacity-50"
-            style={{ background: 'var(--color-bg)', border: '1.5px dashed var(--color-border)' }}
           >
-            <div className="flex items-center justify-between">
-              <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>
-                {busy === provider ? 'Opening…' : `Link ${providerLabel(provider)}`}
-              </div>
-            </div>
-          </button>
+            {busy === provider ? 'Opening…' : `Link ${providerLabel(provider)}`}
+          </CandyButton>
         ))}
         {appleMissing && (
           <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-text-muted)' }}>
@@ -187,11 +187,11 @@ export function LinkedSignIns() {
           </p>
         )}
         {notice && (
-          <p className="text-[10px] font-bold px-1" style={{ color: notice.tone === 'ok' ? '#16a34a' : '#dc2626' }}>
+          <p className="text-[10px] font-bold px-1" style={{ color: notice.tone === 'ok' ? 'var(--color-text)' : 'var(--color-loss-text)' }}>
             {notice.text}
           </p>
         )}
       </div>
-    </div>
+    </SettingsSection>
   );
 }

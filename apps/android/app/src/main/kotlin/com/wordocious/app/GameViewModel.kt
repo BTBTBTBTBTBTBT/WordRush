@@ -404,22 +404,25 @@ class GameViewModel(
 
     /**
      * Flag the rejected guess: red row (full-length only) + shake + toast.
-     * Timing mirrors iOS rejectGuess: the row clears at 600ms but ONLY if the
-     * player hasn't already started a new entry (keys are never swallowed), and
-     * the toast auto-dismisses at 1500ms.
+     * Timing mirrors iOS rejectGuess (FINISH_SPEC B3): the rejected letters hold
+     * with the red glow for ~1 s ([TileMotion.BAD_MS]; 600 ms under Reduce
+     * Motion), then clear right to left 90 ms apart (the board's
+     * rememberRejectClear pass) — but ONLY if the player hasn't already started a
+     * new entry (keys are never swallowed). The toast auto-dismisses at 1500ms.
      */
     private fun reject(message: String) {
         if (_input.value.length == wordLength) _invalidWord.value = true
         _shakeKey.value = _shakeKey.value + 1
         flash(message)
-        com.wordocious.app.data.SoundManager.playInvalid()
+        // Spec U: not-a-word = invalid · warning.
+        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.INVALID)
         // ProperNoundle keeps whatever was typed — iOS ProperNoundleVM.submit()
         // flashes "Not enough letters" and leaves the input intact.
         if (mode == GameMode.PROPERNOUNDLE) return
         val rejected = _input.value
         rejectJob?.cancel()
         rejectJob = viewModelScope.launch {
-            delay(600)
+            delay(rejectHoldMs(com.wordocious.app.ui.theme.WTheme.reducedMotion).toLong())
             if (_input.value == rejected) {
                 _input.value = ""
                 _invalidWord.value = false
@@ -619,3 +622,7 @@ internal fun properNoundleCategoryLabel(c: String?): String = when (c) {
     "currentevents" -> "Current Events"
     else -> (c ?: "general").replaceFirstChar { it.uppercase() }
 }
+
+/** FINISH_SPEC B3 how long a rejected guess holds its red letters (≈1 s; 600 ms under Reduce Motion) before the right-to-left clear. */
+internal fun rejectHoldMs(reduced: Boolean): Int =
+    if (reduced) 600 else com.wordocious.app.ui.game.TileMotion.BAD_MS

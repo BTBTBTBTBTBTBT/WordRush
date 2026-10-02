@@ -8,7 +8,11 @@ import { DailyCompletionsProvider } from '@/lib/daily-completions-context';
 import { SitePresenceProvider } from '@/components/providers/site-presence-provider';
 import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reload';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
+import { GoProPopupHost } from '@/components/pro/go-pro-popup';
+import { ProWelcomeHost } from '@/components/pro/pro-welcome';
+import { AchievementUnlockHost } from '@/components/badges/achievement-unlock-host';
 import { WelcomeModal } from '@/components/modals/welcome-modal';
+import { FirstRunTour } from '@/components/onboarding/first-run-tour';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { ShareVariantHost } from '@/components/share/share-variant-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
@@ -164,7 +168,11 @@ export default function RootLayout({
                     {children}
                     <RotateOverlay />
                     <WelcomeModal />
+                    <FirstRunTour />
                     <ProPromptModal />
+                    <GoProPopupHost />
+                    <ProWelcomeHost />
+                    <AchievementUnlockHost />
                     <SharePreviewHost />
                     <ShareVariantHost />
                     <PwaProvider />

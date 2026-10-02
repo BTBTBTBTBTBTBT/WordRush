@@ -8,7 +8,6 @@ import WordociousCore
 // move. guess_count = moves − par + 1.
 
 private let ladderAccent = Color(hex: 0x0284C7)
-private let ladderHint = Color(hex: 0x8B5CF6)
 
 /// The bundled bank (Resources/ladder-puzzles.json — sha-guarded to match the web copy).
 enum LadderBankStore {
@@ -126,18 +125,18 @@ final class LadderVM: ObservableObject {
         guard !isFinished, typing.count < LADDER_WORD_LENGTH else { return }
         typing += letter.uppercased()
     }
-    func delete() { guard !typing.isEmpty else { return }; typing.removeLast() }
+    func delete() { guard !typing.isEmpty else { return }; typing.removeLast(); SoundManager.shared.playDelete() }
     func submit() {
         guard !isFinished else { return }
         guard typing.count == LADDER_WORD_LENGTH else { flash("Five letters, please"); return }
         let before = state.words.count
         dispatch(.submit(typing))
         if let r = state.reject {
-            flash(rejectCopy(r)); Haptics.error(); SoundManager.shared.playInvalid()
+            flash(rejectCopy(r)); Haptics.warning(); SoundManager.shared.playInvalid()
             invalid = true
             Task { try? await Task.sleep(nanoseconds: 500_000_000); invalid = false; typing = "" }
         } else if state.words.count > before {
-            typing = ""; SoundManager.shared.playKeyTap()
+            typing = ""; if !isFinished { Feedback.found() }   // §U: a rung climbed — notify @0.7 · light
         }
     }
     func undo() { dispatch(.undo); typing = "" }
@@ -156,7 +155,7 @@ final class LadderVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = state.guessCount, used = state.hintsUsed
         let row = ladderMatchRow(state)
@@ -191,6 +190,8 @@ struct LadderView: View {
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
+    /// §R2: the finished ladder's "See all".
+    @State private var showAllRungs = false
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: LadderVM(seed: seed))
@@ -203,14 +204,27 @@ struct LadderView: View {
         ZStack {
             PageBackground(tint: .forGame(.ladder))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView { VStack(spacing: 10) { header; LadderBoardView(vm: vm, revealPath: vm.state.status == .lost).padding(.horizontal, 6); result }.padding(.horizontal, 10) }
+                // FINISH_SPEC §R2: one screen — header + result strip, the ladder as a
+                // summary scaled to the height left ("See all" expands it in place),
+                // the dock; the breakdown sits below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 6) { header; resultHeadline }
+                } board: { size in
+                    finishedLadder(size)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "LADDER", game: "Letter Ladder", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    result
+                }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
-                    ScrollView { LadderBoardView(vm: vm, revealPath: false).padding(.horizontal, 6).padding(.vertical, 4) }
+                    ScrollView { LadderBoardView(vm: vm, revealPath: false, tray: true).padding(.horizontal, 6).padding(.vertical, 4) }
                     HStack(spacing: 8) {
-                        capsule("Undo", "arrow.uturn.backward", dim: vm.state.words.count <= 1) { vm.undo() }
-                        capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb") { vm.hint() }
+                        capsule("Undo", "arrow.uturn.backward", variant: .peach, dim: vm.state.words.count <= 1) { vm.undo() }
+                        capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { vm.hint() }
                     }
                     // Hardware keys (founder, 2026-09-30): web ladder-game keydown —
                     // A–Z / Return / Delete as the keys, plus ⌘Z = Undo.
@@ -224,9 +238,8 @@ struct LadderView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -270,17 +283,11 @@ struct LadderView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    private func capsule(_ label: String, _ symbol: String, dim: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .foregroundStyle(dim ? Theme.textMuted.opacity(0.5) : ladderAccent)
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Capsule().fill(dim ? Color.clear : ladderAccent.opacity(0.05)))
-                .overlay(Capsule().stroke(dim ? Theme.border : ladderAccent.opacity(0.4), lineWidth: 1.5))
-        }
-        .buttonStyle(.squish)
-        .disabled(dim)
-        .accessibilityLabel(label)
+    /// §A8: small candy pills (peach Undo, amber Hint).
+    private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, dim: Bool = false,
+                         action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+            .disabled(dim)
     }
 
     private var header: some View {
@@ -304,31 +311,55 @@ struct LadderView: View {
         }
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.state.status == .won
+        let gc = vm.state.guessCount
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? (gc == 1 ? "Ladder climbed on par" : "Ladder climbed") : "Out of moves", won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.moves)", vm.state.moves == 1 ? "move" : "moves"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: vm.points)
+        }
+    }
+
+    /// §R2: the finished ladder in the height left — collapsed to a summary with a
+    /// "See all" that expands it in place (the area scrolls once expanded).
+    private func finishedLadder(_ size: CGSize) -> some View {
+        let s = vm.state
+        let hasHidden = LadderBoardView.hasHidden(s, revealPath: s.status == .lost)
+        let collapsed = hasHidden && !showAllRungs
+        let rows = CGFloat((collapsed ? min(s.words.count, 2) : s.words.count) + (s.current != s.end ? 1 : 0))
+        let chrome: CGFloat = GameTray.padding * 2 + GameTray.lip + (hasHidden ? 48 : 0) + (collapsed ? 26 : 0) + (s.current != s.end ? 18 : 0)
+        let tile = collapsed ? max(24, min(44, (size.height - chrome) / max(1, rows) - 6)) : 44
+        return ScrollView(showsIndicators: false) {
+            VStack(spacing: 8) {
+                LadderBoardView(vm: vm, revealPath: s.status == .lost, tray: true, collapsed: collapsed, tileSize: tile)
+                    .padding(.horizontal, 6)
+                if hasHidden { PuzSeeAllToggle(expanded: $showAllRungs, title: "See all rungs") }
+            }
+            .frame(maxWidth: .infinity, minHeight: size.height)
+        }
+        .scrollDisabled(collapsed)
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let gc = vm.state.guessCount
         let parLabel = formatGuessStat(semantics: "overPar", guessBase: 1, guessCount: gc)
         return VStack(spacing: 10) {
-            Text(won ? (gc == 1 ? "Ladder climbed on par" : "Ladder climbed") : "Out of moves")
-                .font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
             Text("\(vm.state.moves) move\(vm.state.moves == 1 ? "" : "s") · Par \(vm.state.par)\(won ? " · \(parLabel)" : "") · \(timeText(secs))\(vm.state.hintsUsed > 0 ? " · \(vm.state.hintsUsed) hint\(vm.state.hintsUsed == 1 ? "" : "s")" : "")")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Color(hex: 0xD97706))
-                }
-            }
-            .foregroundStyle(ladderAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(ladderAccent)
             if vm.isDaily { DailyRankBadge(gameMode: .ladder) }
             ScoreBreakdownView(gameMode: GameMode.ladder.rawValue, completed: won,
                                guessCount: gc, timeSeconds: secs,
                                boardsSolved: won ? 1 : 0, totalBoards: 1, hintsUsed: vm.state.hintsUsed,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "LADDER") }
         }
         .padding(.vertical, 12)
     }
@@ -347,32 +378,69 @@ struct LadderView: View {
 
 // MARK: - Board
 
-/// One tile of the ladder — the Classic tile geometry (14% corner, proportional
-/// stroke) with the ladder's own fills: START purple, a changed letter in the
-/// accent (violet for a hint rung), plain rungs white, END a dashed target,
-/// the revealed route muted.
+/// One tile of the ladder in the game kit's glossy look (FINISH_SPEC §B1 / §J):
+/// START purple, a changed letter in the ladder's sky accent (a hint rung purple
+/// with the gold ring), plain rungs the light "given" tile, the typing row
+/// frosted → typed (it pops in) → red when not a word, END a frosted target with
+/// a dashed accent ring, the revealed route ghosted.
+private enum LadderLook: Equatable { case start, changed, hint, plain, empty, typed, invalid, end, reveal }
+
 private struct LadderTile: View {
     let letter: String
-    var fill: Color = Theme.surface
-    var border: Color = Theme.emptyBorder
-    var ink: Color = Theme.textPrimary
-    var dashed = false
-    var ring: Color? = nil
+    let look: LadderLook
     var size: CGFloat = 44
 
     var body: some View {
-        let r = size * 0.14
-        Text(letter).font(Brand.font(size * 0.5, .black)).foregroundStyle(ink)
-            .frame(width: size, height: size)
-            .background(RoundedRectangle(cornerRadius: r).fill(fill))
-            .overlay(RoundedRectangle(cornerRadius: r).strokeBorder(style: StrokeStyle(lineWidth: max(1.5, size * 0.05), dash: dashed ? [5, 4] : [])).foregroundStyle(border))
-            .overlay(ring.map { RoundedRectangle(cornerRadius: r + 3).stroke($0.opacity(0.35), lineWidth: 2).padding(-3) })
+        Group {
+            switch look {
+            case .changed:
+                PuzPaletteTile(palette: TilePalette.from(ladderAccent), letter: letter, width: size)
+            case .end:
+                GlossyTile(face: .empty, letter: "", width: size)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                            .strokeBorder(style: StrokeStyle(lineWidth: max(1.5, size * 0.05), dash: [5, 4]))
+                            .foregroundStyle(ladderAccent.opacity(0.55))
+                            .padding(.bottom, size * 0.07)
+                    )
+                    .overlay(
+                        Text(letter).font(Brand.fixedFont(size * 0.5, .black)).foregroundStyle(ladderAccent)
+                            .padding(.bottom, size * 0.07)
+                    )
+            default:
+                GlossyTile(face: face, letter: letter, width: size, letterScale: 0.5,
+                           glowAmount: look == .hint ? 0.9 : 0, goldRing: look == .hint)
+            }
+        }
+        .modifier(TypePop(letter: look == .typed ? letter : "", size: CGSize(width: size, height: size)))
+    }
+
+    private var face: GlossyFace {
+        switch look {
+        case .start, .hint: return .correct
+        case .plain: return .given
+        case .typed: return .typed
+        case .invalid: return .bad
+        case .reveal: return .hintUsed
+        default: return .empty
+        }
     }
 }
 
 struct LadderBoardView: View {
     @ObservedObject var vm: LadderVM
     let revealPath: Bool
+    /// §L: sit the rungs on the shared game tray (the live game; recaps tray at
+    /// their own call sites).
+    var tray = false
+    /// §R2: the finished screen's summary — START, a "N more rungs" pill, the last
+    /// rung (and the target); the shortest route stays hidden until "See all".
+    var collapsed = false
+    /// The tile side (the finished screen shrinks it to fit the height left).
+    var tileSize: CGFloat = 44
+
+    /// Whether `collapsed` actually hides anything.
+    static func hasHidden(_ s: LadderState, revealPath: Bool) -> Bool { s.words.count > 3 || (revealPath && !s.path.isEmpty) }
 
     private func row(_ word: String, prev: String?, kind: String, invalid: Bool = false) -> some View {
         let chars = Array(word.padding(toLength: 5, withPad: " ", startingAt: 0))
@@ -382,15 +450,13 @@ struct LadderBoardView: View {
                 let ch = chars[i] == " " ? "" : String(chars[i])
                 let changed = prevChars.map { $0[i] != chars[i] } ?? false
                 switch kind {
-                case "start": LadderTile(letter: ch, fill: Color(hex: 0x7C3AED), border: Color(hex: 0x7C3AED), ink: .white)
+                case "start": LadderTile(letter: ch, look: .start, size: tileSize)
                 case "rung", "hint":
-                    if changed {
-                        let c = kind == "hint" ? ladderHint : ladderAccent
-                        LadderTile(letter: ch, fill: c, border: c, ink: .white, ring: c)
-                    } else { LadderTile(letter: ch) }
-                case "typing": LadderTile(letter: ch, fill: invalid ? Color(hex: 0xFEF2F2) : Theme.surface, border: invalid ? Color(hex: 0xF87171) : (ch.isEmpty ? Theme.emptyBorder : Theme.borderAlt), ink: invalid ? Color(hex: 0xEF4444) : Theme.textPrimary)
-                case "end": LadderTile(letter: ch, fill: .clear, border: ladderAccent.opacity(0.55), ink: ladderAccent, dashed: true)
-                default: LadderTile(letter: ch, fill: Color(hex: 0xF9FAFB), border: Color(hex: 0xE5E7EB), ink: Color(hex: 0x9CA3AF))
+                    if changed { LadderTile(letter: ch, look: kind == "hint" ? .hint : .changed, size: tileSize) }
+                    else { LadderTile(letter: ch, look: .plain, size: tileSize) }
+                case "typing": LadderTile(letter: ch, look: ch.isEmpty ? .empty : (invalid ? .invalid : .typed), size: tileSize)
+                case "end": LadderTile(letter: ch, look: .end, size: tileSize)
+                default: LadderTile(letter: ch, look: .reveal, size: tileSize)
                 }
             }
         }
@@ -398,20 +464,43 @@ struct LadderBoardView: View {
 
     var body: some View {
         let s = vm.state
+        let hints = Array(s.hintMask)
+        let fold = collapsed && s.words.count > 3
+        let shown: [Int] = fold ? [0, s.words.count - 1] : Array(s.words.indices)
         VStack(spacing: 6) {
-            ForEach(Array(s.words.enumerated()), id: \.offset) { i, w in
-                row(w, prev: i > 0 ? s.words[i - 1] : nil, kind: i == 0 ? "start" : (Array(s.hintMask)[i] == "1" ? "hint" : "rung"))
+            ForEach(shown, id: \.self) { i in
+                if fold && i == s.words.count - 1 {
+                    // The hidden middle rungs as one summary pill.
+                    let hidden = s.words.count - 2
+                    Text("⋯ \(hidden) more rung\(hidden == 1 ? "" : "s") ⋯")
+                        .font(Brand.font(11, .black)).foregroundStyle(FinishInk.secondary)
+                        .padding(.horizontal, 10).padding(.vertical, 3)
+                        .tintedPill(ladderAccent)
+                }
+                row(s.words[i], prev: i > 0 ? s.words[i - 1] : nil, kind: i == 0 ? "start" : (i < hints.count && hints[i] == "1" ? "hint" : "rung"))
             }
             if s.status == .playing { row(vm.typing, prev: s.current, kind: "typing", invalid: vm.invalid) }
             if s.current != s.end {
                 Text("↓ \(s.status == .playing ? "REACH" : "TARGET")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(ladderAccent.opacity(0.7))
                 row(s.end, prev: nil, kind: "end")
             }
-            if revealPath {
-                Text("ONE SHORTEST ROUTE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted).padding(.top, 8)
+            if revealPath && !collapsed {
+                Text("ONE SHORTEST ROUTE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(FinishInk.secondary).padding(.top, 8)
                 ForEach(Array(s.path.enumerated()), id: \.offset) { i, w in row(w, prev: i > 0 ? s.path[i - 1] : nil, kind: "reveal") }
             }
         }
+        .modifier(LadderTrayChrome(on: tray, state: s.status == .won ? .won : (s.status == .lost ? .lost : .normal)))
         .accessibilityLabel("Letter Ladder")
+    }
+}
+
+/// §L: the rungs on the shared game tray (opt-in).
+private struct LadderTrayChrome: ViewModifier {
+    let on: Bool
+    let state: GameTrayState
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on { content.gameTray(accent: ladderAccent, state: state) } else { content }
     }
 }

@@ -13,6 +13,9 @@ struct RootTabView: View {
     // re-tapping the active Leaderboard tab pops to root, and leaving the tab
     // clears it so returning shows the leaderboard (not the profile you left on).
     @State private var leaderboardPath: [String] = []
+    /// §AJ: the Friends tab's stack, so a tab tap can pop it.
+    @State private var friendsPath: [String] = []
+    @ObservedObject private var router = TabRouterModel.shared
     @ObservedObject private var chrome = ChromeVisibility.shared
     /// Universal-link VS invites (wordocious.com/vs/join/*) present from the
     /// tab root — same cover the pending-invite banner accept uses.
@@ -105,15 +108,49 @@ struct RootTabView: View {
     }
 
     /// Tab selection with stack-reset side effects (web-like tab behavior).
+    /// FINISH_SPEC §AJ: every tap runs core `TabRouter` — Home from anywhere
+    /// dismisses overlays, pops every stack and lands on Home's root at the top;
+    /// re-tapping the current tab pops it to its root. (A live VS match lives in a
+    /// full-screen cover that hides this nav, and the match's own Home control
+    /// already confirms the forfeit, so `liveVSMatch` is never true here.)
     private var tabSelection: Binding<Tab> {
         Binding(
             get: { tab },
             set: { newTab in
-                // Re-tap the active Leaderboard tab, or leave it, → reset to root.
-                if newTab == .leaderboard && tab == .leaderboard { leaderboardPath = [] }
-                if tab == .leaderboard && newTab != .leaderboard { leaderboardPath = [] }
-                tab = newTab
+                let state = TabRouterState(
+                    tab: Self.appTab(tab),
+                    depth: [.leaderboard: leaderboardPath.count, .friends: friendsPath.count,
+                            .home: router.pushed.contains(.home) ? 1 : 0,
+                            .stats: router.pushed.contains(.stats) ? 1 : 0],
+                    overlays: TabRouterModel.rootPresented ? 1 : 0)
+                for action in TabRouter.tap(Self.appTab(newTab), in: state) {
+                    switch action {
+                    case .dismissOverlays: TabRouterModel.dismissAllOverlays()
+                    case .popToRoot(let t):
+                        switch t {
+                        case .leaderboard: leaderboardPath = []
+                        case .friends: friendsPath = []
+                        case .home, .stats: router.popToRoot(t)
+                        }
+                    case .select(let t):
+                        // Leaving the Leaderboard resets it to root (unchanged behavior).
+                        if tab == .leaderboard && t != .leaderboard { leaderboardPath = [] }
+                        tab = Self.tab(t)
+                        router.current = t
+                    case .scrollToTop(let t):
+                        NotificationCenter.default.post(name: TabRouterModel.scrollToTop, object: t.rawValue)
+                    case .confirmForfeit: break
+                    }
+                }
             })
+    }
+
+    private static func appTab(_ t: Tab) -> AppTab {
+        switch t { case .home: return .home; case .leaderboard: return .leaderboard; case .stats: return .stats; case .friends: return .friends }
+    }
+
+    private static func tab(_ t: AppTab) -> Tab {
+        switch t { case .home: return .home; case .leaderboard: return .leaderboard; case .stats: return .stats; case .friends: return .friends }
     }
 
     var body: some View {
@@ -121,7 +158,7 @@ struct RootTabView: View {
             HomeView().tag(Tab.home).tabItem { Label("Home", systemImage: "house") }
             LeaderboardTab(path: $leaderboardPath).tag(Tab.leaderboard).tabItem { Label("Leaderboard", systemImage: "trophy") }
             ProfileTab().tag(Tab.stats).tabItem { Label("Stats", systemImage: "chart.bar") }
-            NavigationStack {
+            NavigationStack(path: $friendsPath) {
                 // The bottom-nav inset does not reach this ScrollView's tail (founder, 2026-09-26:
                 // "I can't scroll all the way to the bottom") — pad by the chrome height like a push.
                 FriendsScreenView(padsForChrome: true, asTab: true)
@@ -389,9 +426,17 @@ private struct BottomNav: View {
     // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
     // in D1): pushes were the only signal before — a missed push meant a request
     // nobody saw. Friends overhaul §5: + pocket games waiting on your move.
-    @State private var pendingRequests = 0
+    // FINISH_SPEC §M: the count is everything waiting on the player in Friends,
+    // minus what they've already seen (FriendsBadgeStore); opening Friends clears it.
+    @ObservedObject private var badge = FriendsBadgeStore.shared
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+    /// The Friends icon's happy wiggle when a new item arrives (±8°, 2 swings).
+    @State private var wiggle: Double = 0
+    /// The badge's spring-in (scale 0 → 1.15 → 1).
+    @State private var badgeScale: CGFloat = 1
     private func recount() {
-        pendingRequests = FriendsService.incoming.count + FriendlyGamesService.yourTurnCount
+        badge.recount()
+        if selection == .friends { badge.markSeen() }
     }
 
     var body: some View {
@@ -399,7 +444,7 @@ private struct BottomNav: View {
             item(.home, .tabHome, "Home")
             item(.leaderboard, .tabLeaderboard, "Leaderboard")
             item(.stats, .tabStats, "Stats")
-            item(.friends, .tabFriends, "Friends", badge: pendingRequests)
+            item(.friends, .tabFriends, "Friends", badge: badge.count)
         }
         .padding(.top, 8).padding(.bottom, 2)
         .frame(maxWidth: .infinity)
@@ -408,9 +453,27 @@ private struct BottomNav: View {
             await FriendsService.load()
             await FriendlyGamesService.load()
             recount()
+            await badge.loadChallenges()
+            recount()
         }
+        .onChange(of: selection) { t in if t == .friends { badge.markSeen() } }
+        .onChange(of: badge.arrivals) { _ in celebrateArrival() }
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in recount() }
         .onReceive(NotificationCenter.default.publisher(for: FriendlyGamesService.changed)) { _ in recount() }
+    }
+
+    /// §M: a new item springs the badge in and wiggles the Friends icon (Reduce Motion: none).
+    private func celebrateArrival() {
+        Feedback.notify()   // §U: notify · light (sound plays under Reduce Motion too)
+        guard !(envReduce || Theme.reduceMotion) else { return }
+        badgeScale = 0
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.45)) { badgeScale = 1 }
+        Task { @MainActor in
+            for angle in [8.0, -8.0, 8.0, -8.0, 0.0] {
+                withAnimation(.easeInOut(duration: 0.11)) { wiggle = angle }
+                try? await Task.sleep(nanoseconds: 110_000_000)
+            }
+        }
     }
 
     /// The bar's tint for the page on screen (game-kit.html `.tabbar`).
@@ -448,16 +511,13 @@ private struct BottomNav: View {
                 Icon3D(icon, size: 28)
                     .saturation(active ? 1 : 0.6)
                     .opacity(active ? 1 : 0.55)
+                    .rotationEffect(.degrees(t == .friends ? wiggle : 0), anchor: .bottom)
                     .overlay(alignment: .topTrailing) {
                         if badge > 0 {
-                            // Win purple (founder, Aug 11); §5 shows the count.
-                            Text(badge > 9 ? "9+" : "\(badge)")
-                                .font(Brand.font(9, .black)).foregroundStyle(.white)
-                                .padding(.horizontal, 4).frame(minWidth: 15, minHeight: 15)
-                                .background(Capsule().fill(Color(hex: 0x7C3AED)))
-                                .overlay(Capsule().stroke(Color(hex: 0xF7F1FF), lineWidth: 1.5))
-                                .offset(x: 9, y: -5)
-                                .accessibilityLabel("\(badge) waiting")
+                            // FINISH_SPEC §M: the glossy candy count badge (pulses while unseen).
+                            CandyCountBadge(count: badge, size: 18, pulse: true)
+                                .scaleEffect(badgeScale)
+                                .offset(x: 11, y: -6)
                         }
                     }
                 Text(label)
@@ -475,6 +535,7 @@ private struct BottomNav: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.squishIcon)
+        .accessibilityLabel(badge > 0 ? "\(label), \(badge) new" : label)
         .accessibilityAddTraits(active ? .isSelected : [])
     }
 }

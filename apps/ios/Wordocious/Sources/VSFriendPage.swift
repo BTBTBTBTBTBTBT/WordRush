@@ -74,7 +74,8 @@ struct VSFriendPage: View {
             segment(.live, "LIVE NOW", "both online")
         }
         .padding(4)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.soft))
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(VsLobbyKit.ink.wash(0.14)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(VsLobbyKit.ink.wash(0.3), lineWidth: 1.5))
     }
 
     private func segment(_ t: Tab, _ title: String, _ sub: String) -> some View {
@@ -84,9 +85,12 @@ struct VSFriendPage: View {
                 Text(title).font(Brand.font(12, .black)).tracking(0.5)
                 Text(sub).font(Brand.font(9.5, .bold)).opacity(0.8)
             }
-            .foregroundStyle(on ? VsLobbyKit.deep : VsLobbyKit.ink)
+            .foregroundStyle(on ? VsLobbyKit.titleInk : VsLobbyKit.ink)
             .frame(maxWidth: .infinity).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(on ? Color.white : Color.clear))
+            // The selected option: a light warm pill with a soft lift (the shared
+            // SoftSegmented look — never plain white).
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(on ? Color(hex: 0xFFFBF6) : Color.clear)
+                .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.12) : .clear, radius: 3, x: 0, y: 2))
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
@@ -107,15 +111,14 @@ struct VSFriendPage: View {
                                   size: 72, color: VsLobbyKit.sub)
                         .padding(16).frame(maxWidth: .infinity)
                 }
-                ForEach(friends) { f in
-                    friendRow(f)
-                    Divider().padding(.leading, 60)
+                ForEach(Array(friends.enumerated()), id: \.element.id) { i, f in
+                    friendRow(f).vsStripedRow(i)
                 }
-                linkRow
+                linkRow.vsStripedRow(friends.count)
             }
-            .vsCard()
+            .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar, radius: 18, barHeight: 6)
             Text("They get a notification with your time to beat.")
-                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.label)
+                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .frame(maxWidth: .infinity).multilineTextAlignment(.center).padding(.top, 4)
         }
     }
@@ -138,13 +141,14 @@ struct VSFriendPage: View {
             HStack(spacing: 12) {
                 AvatarView(url: f.avatar_url, username: f.username, size: 36, emoji: f.avatar_emoji)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("@\(f.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep).lineLimit(1)
-                    Text(h2hLine(f)).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub).lineLimit(1)
+                    Text("@\(f.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
+                    Text(h2hLine(f)).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1)
                 }
                 Spacer(minLength: 4)
                 check(on)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 12).fill(on ? VsLobbyKit.ink.wash(0.16) : Color.clear))
             .background(RoundedRectangle(cornerRadius: 12).strokeBorder(on ? VsLobbyKit.ink : .clear, lineWidth: 2))
             .contentShape(Rectangle())
         }
@@ -156,12 +160,15 @@ struct VSFriendPage: View {
         Button { Haptics.tap(); link.toggle() } label: {
             HStack(spacing: 12) {
                 Image(systemName: "link").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
-                    .frame(width: 36, height: 36).background(Circle().fill(VsLobbyKit.soft))
-                Text("Send a link instead").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(VsLobbyKit.ink.wash(0.18)))
+                    .overlay(Circle().stroke(VsLobbyKit.ink.wash(0.4), lineWidth: 1))
+                Text("Send a link instead").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
                 Spacer(minLength: 4)
                 check(link)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 12).fill(link ? VsLobbyKit.ink.wash(0.16) : Color.clear))
             .background(RoundedRectangle(cornerRadius: 12).strokeBorder(link ? VsLobbyKit.ink : .clear, lineWidth: 2))
             .contentShape(Rectangle())
         }
@@ -171,7 +178,8 @@ struct VSFriendPage: View {
 
     private func check(_ on: Bool) -> some View {
         ZStack {
-            Circle().strokeBorder(on ? VsLobbyKit.ink : Color(hex: 0xD1D5DB), lineWidth: 2)
+            Circle().fill(on ? Color.clear : VsLobbyKit.ink.wash(0.08))
+            Circle().strokeBorder(on ? VsLobbyKit.ink : VsLobbyKit.ink.wash(0.4), lineWidth: 2)
             if on {
                 Circle().fill(VsLobbyKit.ink)
                 Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(.white)
@@ -186,7 +194,7 @@ struct VSFriendPage: View {
         let n = ids.count
         let title = n > 0 ? "PLAY, THEN SEND TO \(n) \(n == 1 ? "FRIEND" : "FRIENDS")"
             : (link ? "PLAY, THEN SHARE A LINK" : "PICK A FRIEND OR A LINK")
-        return VSPrimaryButton(title: title, disabled: n == 0 && !link) {
+        return VSPrimaryButton(title: title, symbol: n == 0 && !link ? nil : "paperplane.fill", disabled: n == 0 && !link) {
             Haptics.tap()
             playing = VSIntent.SendTarget(friendIds: ids, link: link)
         }
@@ -198,27 +206,29 @@ struct VSFriendPage: View {
 
     private var liveTab: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("PLAY RIGHT NOW").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.deep)
+            Text("PLAY RIGHT NOW").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
             Text("You’re both online: send a private match link or an @username invite, and the match starts when they join.")
-                .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .fixedSize(horizontal: false, vertical: true)
-            VSPrimaryButton(title: "INVITE TO A LIVE MATCH") { showInvite = true }
+            VSPrimaryButton(title: "INVITE TO A LIVE MATCH", symbol: "dot.radiowaves.left.and.right") { showInvite = true }
         }
-        .padding(16).vsCard()
+        .padding(16).vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
     }
 
     private var proGate: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SENDING CHALLENGES IS PRO").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.purpleInk)
-            Text("Answering a friend’s challenge is always free.")
-                .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
-            NavigationLink { ProView() } label: {
-                Text("SEE PRO").font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(.white)
-                    .padding(.horizontal, 18).frame(height: 34)
-                    .background(Capsule().fill(VsLobbyKit.purple))
+            HStack(spacing: 6) {
+                Icon3D(.crown, size: 20)
+                Text("SENDING CHALLENGES IS PRO").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
             }
-            .buttonStyle(PressableStyle())
+            Text("Answering a friend’s challenge is always free.")
+                .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+            NavigationLink { ProView() } label: {
+                CandyLabel(title: "See Pro", symbol: "crown.fill")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium, fullWidth: false))
         }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading).vsCard()
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, tint: 0.12, line: 0.34)
     }
 }

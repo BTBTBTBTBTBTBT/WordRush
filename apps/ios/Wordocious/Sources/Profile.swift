@@ -1,4 +1,5 @@
 import Foundation
+import WordociousCore
 
 /// Subset of the `profiles` table needed by the app. Mirrors
 /// apps/web/lib/database.types.ts (snake_case → keyDecodingStrategy).
@@ -47,6 +48,16 @@ struct Profile: Codable, Identifiable, Equatable {
     /// nudge / feed); a missing key means ON. Optional so a pre-migration
     /// row or cache never breaks profile loading.
     var notificationPrefs: [String: Bool]?
+    /// FINISH_SPEC §AH: the worn cast hero ("w" … "s") and level-tier frame
+    /// ("bronze" … "diamond"). NOT in selectColumns — the columns may not exist
+    /// yet; CastAvatars reads them in a separate best-effort query. Optional, so
+    /// a row or cache without them decodes as nil.
+    var avatarCastId: String?
+    var avatarFrame: String?
+    /// FINISH_SPEC §AN3: the build-your-own mascot (profiles.avatar_config jsonb).
+    /// NOT in selectColumns — the column may not exist yet; MascotLooks reads it in
+    /// a separate best-effort query. Lenient (never fails the row's decoding).
+    var avatarConfig: AvatarConfigRaw?
 
     enum CodingKeys: String, CodingKey {
         case id, username, level, xp, bio
@@ -77,6 +88,9 @@ struct Profile: Codable, Identifiable, Equatable {
         case proPromptShown = "pro_prompt_shown"
         case isPrivate = "is_private"
         case notificationPrefs = "notification_prefs"
+        case avatarCastId = "avatar_cast_id"
+        case avatarFrame = "avatar_frame"
+        case avatarConfig = "avatar_config"
     }
 
     /// Columns to request from the profiles table. (social_links is fetched

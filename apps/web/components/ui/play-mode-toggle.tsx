@@ -1,12 +1,17 @@
 'use client';
 
-import { Infinity as InfinityIcon, Star, Swords } from 'lucide-react';
+import { Star } from 'lucide-react';
+import { ProPill, UnlimitedLoopArt, UNLIMITED_PEACH } from '@/components/game/finished-kit';
+import { openGoProPopup } from '@/lib/payment/go-pro-popup';
+import { softBackground, softBorder, softShadow } from '@/lib/soft-surface';
 
 export type PlayMode = 'daily' | 'unlimited';
 
 interface Props {
   value: PlayMode;
   onChange: (next: PlayMode) => void;
+  /** R3: free players / guests see Unlimited with a PRO pill; tapping it opens the Go Pro popup. */
+  isPro?: boolean;
 }
 
 /**
@@ -16,38 +21,45 @@ interface Props {
  * never show the daily-limit lock (Pro bypasses caps anyway, but the
  * URL difference matters so each tap lands on a fresh-seeded puzzle).
  */
-export function PlayModeToggle({ value, onChange }: Props) {
+export function PlayModeToggle({ value, onChange, isPro = true }: Props) {
+  // FINISH_SPEC Y: no infinity glyph. Z: two equal fixed-width segments, one
+  // font weight in both states; only the sliding thumb moves.
   return (
     <div
-      className="flex items-center p-0.5 rounded-full mb-1"
+      className="relative flex items-center p-0.5 rounded-full mb-1"
+      // FINISH_SPEC R3 / A1: a tinted segment (no plain surface).
       style={{
-        background: 'var(--color-surface-hover)',
-        border: '1.5px solid var(--color-border)',
+        background: softBackground('#7c3aed', 0.1),
+        border: softBorder('#7c3aed', 0.1),
       }}
     >
+      <span
+        aria-hidden="true"
+        className="mode-switch-thumb absolute top-0.5 bottom-0.5 left-0.5 rounded-full"
+        style={{
+          width: 'calc(50% - 2px)',
+          transform: value === 'unlimited' ? 'translateX(100%)' : 'translateX(0)',
+          background: softBackground(value === 'unlimited' ? UNLIMITED_PEACH : '#7c3aed', 0.24),
+          boxShadow: '0 1px 3px rgba(124,58,237,0.12)',
+        }}
+      />
       <button
         onClick={() => onChange('daily')}
-        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold transition-colors"
-        style={{
-          background: value === 'daily' ? 'var(--color-surface)' : 'transparent',
-          color: value === 'daily' ? '#7c3aed' : '#9ca3af',
-          boxShadow: value === 'daily' ? '0 1px 3px rgba(124,58,237,0.12)' : undefined,
-        }}
+        aria-pressed={value === 'daily'}
+        className="relative flex-1 basis-0 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap"
+        style={{ color: value === 'daily' ? '#7c3aed' : '#9ca3af' }}
       >
         <Star className="w-3.5 h-3.5" fill={value === 'daily' ? 'currentColor' : 'none'} />
         Daily
       </button>
       <button
-        onClick={() => onChange('unlimited')}
-        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold transition-colors"
-        style={{
-          background: value === 'unlimited' ? 'var(--color-surface)' : 'transparent',
-          color: value === 'unlimited' ? '#7c3aed' : '#9ca3af',
-          boxShadow: value === 'unlimited' ? '0 1px 3px rgba(124,58,237,0.12)' : undefined,
-        }}
+        onClick={() => (isPro ? onChange('unlimited') : openGoProPopup({ reason: 'Unlimited play' }))}
+        aria-pressed={value === 'unlimited'}
+        className="relative flex-1 basis-0 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap"
+        style={{ color: value === 'unlimited' ? '#7c3aed' : '#9ca3af' }}
       >
-        <InfinityIcon className="w-3.5 h-3.5" />
         Unlimited
+        {!isPro && <ProPill />}
       </button>
     </div>
   );
@@ -59,27 +71,20 @@ export function PlayModeToggle({ value, onChange }: Props) {
  * cards below are the entry point into each Unlimited game.
  */
 export function UnlimitedHero() {
+  // FINISH_SPEC R3: the Unlimited card language — peach wash, U's candy-tile loop.
   return (
     <div
-      className="w-full h-full flex flex-col items-center justify-center py-2.5 relative"
-      style={{
-        background: 'linear-gradient(135deg, #fce7f3, #ede9fe)',
-        border: '1.5px solid #c4b5fd',
-        borderRadius: '14px',
-      }}
+      className="w-full h-full flex items-center justify-center gap-3 py-2 px-3 relative"
+      style={{ background: softBackground(UNLIMITED_PEACH, 0.14), border: softBorder(UNLIMITED_PEACH, 0.14), borderRadius: 16, boxShadow: `inset 0 4px 0 ${UNLIMITED_PEACH}, ${softShadow(UNLIMITED_PEACH, 0.14)}` }}
     >
-      <div className="flex items-center gap-2">
-        <InfinityIcon className="w-5 h-5" style={{ color: '#7c3aed' }} />
-        <span
-          className="text-lg font-black text-transparent bg-clip-text"
-          style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-        >
+      <UnlimitedLoopArt size={52} />
+      <div className="text-left">
+        <div className="flex items-center gap-1.5 text-lg font-black" style={{ color: 'var(--color-text)' }}>
           Unlimited Play
-        </span>
-        <InfinityIcon className="w-5 h-5" style={{ color: '#ec4899' }} />
-      </div>
-      <div className="text-[10px] font-bold mt-0.5" style={{ color: '#7c3aed' }}>
-        Infinite puzzles · All stats count
+        </div>
+        <div className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          Fresh puzzles, no waiting · All stats count
+        </div>
       </div>
     </div>
   );

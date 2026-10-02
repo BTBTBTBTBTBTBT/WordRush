@@ -2,17 +2,18 @@
 
 import Link from 'next/link';
 import { type ReactNode } from 'react';
-import { Zap, Swords, TrendingUp, LayoutGrid, Star, Timer } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { GameArt } from '@/components/ui/game-art';
+import { SoftNum } from '@/components/ui/soft-number';
+import { TintTile } from '@/components/profile/stat-kit';
+import { softCard, softIconTile, softPill } from '@/lib/soft-surface';
 import type { ModeMeta } from '@/lib/modes.generated';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { DailyStanding } from '@/lib/stats-service';
-import { MODE_CHROME } from '@/components/home/mode-chrome';
-import { WIN_FG } from '@/lib/tile-theme';
 import { guessNoun } from '@/lib/mode-stats';
-import { isGameArtIcon, onPageShadow } from '@/lib/art';
 import { MomentArt } from '@/components/ui/art-title';
+import { MedalArt } from '@/components/stats/medal-art';
 
 // The Stats tab's landing page — "your day in one card" (Stats + Friends
 // redesign D2, founder 2026-09-26): the eight sweep tiles with today's W/L,
@@ -65,6 +66,13 @@ export function bestMomentToday(todayDailies: Map<string, DailyCompletion>): { t
   return null;
 }
 
+const BLUE = '#2563eb';
+const GOLD = '#f5a524';
+const PURPLE = '#7c3aed';
+/** Today's W / L corner badges (FINISH_SPEC C3: purple W, slate L). */
+const W_BG = '#7c3aed';
+const L_BG = '#6b7891';
+
 export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, standing, sweepStreak, flawlessStreak, puzzleStreaks, flawlessFooter, onJump }: Props) {
   const sweepToday = sweepModes.filter((m) => todayDailies.has(m.id));
   const completed = sweepToday.length;
@@ -75,153 +83,157 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
   const moreDaily = moreModes.filter((m) => m.dailyEligible && m.dbKey);
   const morePlayed = moreDaily.filter((m) => todayDailies.has(m.dbKey as string)).length;
   const moment = bestMomentToday(todayDailies);
-  const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const dateLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  const cardStyle: React.CSSProperties = flawless
-    ? { background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1.5px solid #f59e0b', borderRadius: '16px', boxShadow: onPageShadow() }
-    : allDone
-      ? { background: 'linear-gradient(135deg, #f5f3ff, #fce7f3)', border: '1.5px solid #c4b5fd', borderRadius: '16px', boxShadow: onPageShadow() }
-      : { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() };
+  // C3 cont: Today on a soft blue card (gold on a Flawless day, lavender on a Sweep day).
+  const accent = flawless ? GOLD : allDone ? PURPLE : BLUE;
+  const ink = flawless ? '#a2560c' : allDone ? '#5b21b6' : '#2456a8';
+  const bar = flawless ? 'linear-gradient(90deg, #f59e0b, #fcd34d)' : allDone ? 'linear-gradient(90deg, #7c3aed, #ec4899)' : 'linear-gradient(90deg, #0a6cff, #60a5fa)';
 
-  const pill = (icon: ReactNode, label: string, value: ReactNode, color: string, onClick?: () => void) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex-1 min-w-0 flex flex-col items-center gap-0.5 py-2 px-1 text-center"
-      style={{ background: 'var(--color-bg)', borderRadius: '12px', border: '1px solid var(--color-border)' }}
-    >
-      <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider" style={{ color }}>
-        {icon}{label}
-      </span>
-      <span className="text-sm font-black leading-tight" style={{ color: 'var(--color-text)' }}>{value}</span>
-    </button>
-  );
+  // The three tinted pills (magenta Puzzles, teal VS, gold Standing) in soft numbers.
+  const pill = (pc: string, pink: string, label: string, value: ReactNode, onClick?: () => void, ariaLabel?: string) => {
+    const inner = (
+      <>
+        <SoftNum size={18} as="div" className="soft-num-auto">{value}</SoftNum>
+        <span className="block text-[10px] font-black uppercase tint-ink mt-1" style={{ letterSpacing: '0.08em', color: pink }}>{label}</span>
+      </>
+    );
+    const style: React.CSSProperties = { ...softPill(pc, { radius: 12 }), padding: '9px 6px 7px', textAlign: 'center', minWidth: 0 };
+    return onClick
+      ? <button type="button" onClick={onClick} aria-label={ariaLabel} className="flex-1" style={style}>{inner}</button>
+      : <div className="flex-1" style={style} aria-label={ariaLabel}>{inner}</div>;
+  };
 
   return (
     <div className="space-y-3">
-      <div className="p-3" style={cardStyle}>
-        <div className="flex items-center justify-between mb-2 px-0.5">
-          {allDone ? (
-            // FLAWLESS! / SWEEP! lettering (docs/ART_SPEC.md §6), sized for the card's header row.
-            <MomentArt
-              moment={flawless ? 'flawless' : 'sweep'}
-              label={flawless ? 'Flawless Victory!' : 'Daily Sweep!'}
-              as="div"
-              maxHeight={40}
-              className="w-full"
-            />
-          ) : (
-            <>
-              <span className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>Today · {dateLabel}</span>
-              <span className="text-[11px] font-black" style={{ color: 'var(--color-text-muted)' }}>{completed}/{total}</span>
-            </>
-          )}
-        </div>
+      <div className="overflow-hidden" style={softCard(accent, { radius: 20 })}>
+        <div aria-hidden="true" style={{ height: 10, background: bar }} />
+        <div className="grid gap-2.5" style={{ padding: '12px 14px 14px' }}>
+          <div className="flex items-center justify-between px-0.5">
+            {allDone ? (
+              // FLAWLESS! / SWEEP! lettering (docs/ART_SPEC.md §6), sized for the card's header row.
+              <MomentArt
+                moment={flawless ? 'flawless' : 'sweep'}
+                label={flawless ? 'Flawless Victory!' : 'Daily Sweep!'}
+                as="div"
+                maxHeight={40}
+                className="w-full"
+              />
+            ) : (
+              <>
+                <span className="text-[11px] font-black uppercase tint-ink" style={{ letterSpacing: '0.12em', color: ink }}>Today · {dateLabel}</span>
+                <SoftNum size={15} className="soft-num-auto">{completed} / {total}</SoftNum>
+              </>
+            )}
+          </div>
 
-        {/* The eight sweep tiles, one row — tap plays (or reopens) that daily. */}
-        <div className="flex justify-between gap-1">
-          {sweepModes.map((m) => {
-            const meta = MODE_BY_DBKEY[m.id];
-            const Icon = meta ? MODE_CHROME[meta.id]?.icon : null;
-            const result = todayDailies.get(m.id);
-            const played = result !== undefined;
-            const won = result?.won === true;
-            const color = meta?.accentHex ?? '#7c3aed';
-            // Played: the 3D W / L badge (docs/ART_SPEC.md §4) on the game's soft tint.
-            const tileBg = !played ? 'var(--color-bg)' : `${color}15`;
-            const tileBorder = !played ? 'var(--color-border)' : won ? WIN_FG : '#dc2626';
-            return (
-              <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1 min-w-0" style={{ width: '40px' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
-                  {played ? (
-                    <Icon3D name={won ? 'badge-w' : 'badge-l'} size={28} label={won ? 'Won' : 'Lost'} />
-                  ) : !(Icon && isGameArtIcon(Icon)) && meta?.romanNumeral ? (
-                    <span className="text-[11px] font-black" style={{ color }}>{meta.romanNumeral}</span>
-                  ) : Icon ? (
-                    <Icon className="w-3.5 h-3.5" style={{ color }} />
-                  ) : (
-                    <Zap className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                  )}
-                </div>
-                <span className="text-[8px] font-bold truncate w-full text-center" style={{ color: played ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{meta?.shortTitle ?? m.id}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {allDone && (
-          flawless
-            ? flawlessFooter
-            : (
-              <div className="text-center mt-2">
-                <div className="text-[11px] font-extrabold" style={{ color: '#6d28d9' }}>All {total} dailies completed · +200 XP earned</div>
-              </div>
-            )
-        )}
-
-        {/* The rest of the day: Puzzles, VS, where you stand. */}
-        <div className="flex gap-2 mt-3">
-          {pill(<LayoutGrid className="w-3 h-3" />, 'Puzzles', moreDaily.length > 0 ? `${morePlayed} of ${moreDaily.length}` : '—', '#4f46e5',
-            () => onJump(moreDaily[0]?.dbKey ?? 'today'))}
-          {pill(<Swords className="w-3 h-3" />, 'VS Battle', vsDailyWon === null ? '—' : <Icon3D name={vsDailyWon ? 'badge-w' : 'badge-l'} size={20} label={vsDailyWon ? 'Won' : 'Lost'} className="mx-auto" />, '#ec4899', () => onJump('vs'))}
-          {pill(<TrendingUp className="w-3 h-3" />, 'Standing', standing ? `Top ${standing.topPercent}%` : '—', '#7c3aed')}
-        </div>
-
-        {/* The ten Puzzles as tiny chips, so the day reads at a glance. */}
-        {moreDaily.length > 0 && (
-          <div className="flex items-center justify-center gap-1 mt-2" aria-hidden="true">
-            {moreDaily.map((m) => {
-              const Icon = MODE_CHROME[m.id]?.icon ?? null;
-              const r = todayDailies.get(m.dbKey as string);
-              const done = !!r;
-              const bg = !done ? `${m.accentHex}22` : r!.won ? m.accentHex : '#dc2626';
+          {/* The eight sweep tiles as mini game cards with today's W / L — tap plays (or reopens) that daily. */}
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(1, sweepModes.length)}, minmax(0, 1fr))` }}>
+            {sweepModes.map((m) => {
+              const meta = MODE_BY_DBKEY[m.id];
+              const result = todayDailies.get(m.id);
+              const played = result !== undefined;
+              const won = result?.won === true;
+              const color = meta?.accentHex ?? PURPLE;
+              const title = meta?.title ?? m.id;
               return (
-                <button
+                <Link
                   key={m.id}
-                  type="button"
-                  onClick={() => onJump(m.dbKey as string)}
-                  className="flex items-center justify-center rounded-[5px] shrink-0"
-                  style={{ width: 20, height: 20, background: bg, border: done ? 'none' : `1px solid ${m.accentHex}55` }}
-                  title={m.title}
+                  href={m.href}
+                  aria-label={`${title}: ${played ? (won ? 'won today' : 'lost today') : 'not played yet'}`}
+                  className="relative flex items-center justify-center min-w-0"
+                  style={{ ...softIconTile(color, { radius: 11 }), aspectRatio: '1 / 1', opacity: played ? 1 : 0.8 }}
                 >
-                  {Icon
-                    ? <Icon className="w-3 h-3" style={{ color: done ? '#fff' : m.accentHex }} />
-                    : <span className="text-[9px] font-black" style={{ color: done ? '#fff' : m.accentHex }}>{m.glyph ?? m.shortTitle[0]}</span>}
-                </button>
+                  {meta ? <GameArt id={meta.id} size={48} style={{ width: '72%', height: '72%', marginTop: 2 }} /> : null}
+                  {played && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute flex items-center justify-center font-black text-white"
+                      style={{ top: -4, right: -4, width: 16, height: 16, borderRadius: 5, fontSize: 10, background: won ? W_BG : L_BG, boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+                    >
+                      {won ? 'W' : 'L'}
+                    </span>
+                  )}
+                </Link>
               );
             })}
           </div>
-        )}
+
+          {allDone && (
+            flawless
+              ? flawlessFooter
+              : (
+                <div className="text-center">
+                  <div className="text-[11px] font-extrabold tint-ink" style={{ color: '#6d28d9' }}>All {total} dailies completed · +200 XP earned</div>
+                </div>
+              )
+          )}
+
+          {/* The rest of the day: Puzzles, VS, where you stand. */}
+          <div className="flex gap-1.5">
+            {pill('#c026d3', '#a21caf', 'Puzzles', moreDaily.length > 0 ? `${morePlayed} of ${moreDaily.length}` : '—',
+              () => onJump(moreDaily[0]?.dbKey ?? 'today'), `Puzzles: ${morePlayed} of ${moreDaily.length} played today`)}
+            {pill('#0d9488', '#0f766e', 'VS Battle', vsDailyWon === null ? '—' : vsDailyWon ? 'W' : 'L',
+              () => onJump('vs'), `VS Battle: ${vsDailyWon === null ? 'not played today' : vsDailyWon ? 'won today' : 'lost today'}`)}
+            {pill(GOLD, '#a2560c', 'Standing', standing ? `Top ${standing.topPercent}%` : '—', undefined,
+              standing ? `Standing: top ${standing.topPercent}% today` : 'Standing: no games yet today')}
+          </div>
+
+          {/* The Puzzles as tiny mini game cards, so the day reads at a glance. */}
+          {moreDaily.length > 0 && (
+            <div className="flex items-center justify-center gap-1">
+              {moreDaily.map((m) => {
+                const r = todayDailies.get(m.dbKey as string);
+                const done = !!r;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => onJump(m.dbKey as string)}
+                    aria-label={`${m.title}: ${done ? (r!.won ? 'won today' : 'lost today') : 'not played yet'}`}
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      ...softIconTile(done && !r!.won ? L_BG : m.accentHex, { selected: done, radius: 6 }),
+                      width: 24, height: 24, padding: 0, opacity: done ? 1 : 0.6,
+                    }}
+                    title={m.title}
+                  >
+                    <GameArt id={m.id} size={16} style={{ marginTop: 2 }} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Streaks + the best thing that happened today. */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
-          <Icon3D name="flame" size={16} className="shrink-0" />
-          <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Sweep streaks</div>
-            {/* Wordocious, then Puzzles: the same two runs the home banner shows. */}
-            {([['Wordocious', sweepStreak, flawlessStreak], ['Puzzles', puzzleStreaks?.sweep ?? 0, puzzleStreaks?.flawless ?? 0]] as const).map(([label, run, flaw]) => (
-              <div key={label} className="text-[12px] font-black leading-tight whitespace-nowrap" style={{ color: 'var(--color-text)' }}>
-                <span className="text-[9px] font-black uppercase mr-1" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-                {run} {run === 1 ? 'day' : 'days'}
-                {flaw >= 2 && <span className="text-[10px] font-black ml-1" style={{ color: '#b45309' }}>· {flaw} flawless</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => moment && onJump(moment.key)}
-          className="flex items-center gap-2 px-3 py-2.5 text-left"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}
+      {/* Streaks + the best thing that happened today, each on its own color with a 3D icon. */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <TintTile
+          accent={GOLD}
+          ink="#a2560c"
+          icon={<Icon3D name="flame" size={20} />}
+          label="Sweep streak"
+          value={sweepStreak}
+          sub={`${sweepStreak === 1 ? 'day' : 'days'}${flawlessStreak >= 2 ? ` · ${flawlessStreak} flawless` : ''}`}
         >
-          {moment?.text.startsWith('Perfect') ? <Star className="w-4 h-4 shrink-0" style={{ color: WIN_FG }} fill="currentColor" /> : <Timer className="w-4 h-4 shrink-0" style={{ color: '#2563eb' }} />}
-          <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Best moment</div>
-            <div className="text-[11px] font-black leading-tight truncate" style={{ color: 'var(--color-text)' }}>{moment?.text ?? 'Play a daily to start your day'}</div>
-          </div>
-        </button>
+          {/* Wordocious above, Puzzles here: the same two runs the home banner shows. */}
+          <span className="text-[10px] font-black uppercase truncate" style={{ color: 'var(--color-text-muted)' }}>
+            Puzzles {puzzleStreaks?.sweep ?? 0} {(puzzleStreaks?.sweep ?? 0) === 1 ? 'day' : 'days'}
+            {(puzzleStreaks?.flawless ?? 0) >= 2 ? ` · ${puzzleStreaks!.flawless} flawless` : ''}
+          </span>
+        </TintTile>
+        <TintTile
+          accent="#ec4899"
+          ink="#a0336b"
+          icon={moment?.text.startsWith('Perfect') ? <Icon3D name="crown" size={20} /> : <MedalArt medal="trophy" size={20} />}
+          label="Best moment"
+          value={moment?.text ?? 'Play a daily'}
+          size={15}
+          sub={moment ? undefined : 'to start your day'}
+          onClick={moment ? () => onJump(moment.key) : undefined}
+          ariaLabel={moment ? `Best moment: ${moment.text}` : undefined}
+        />
       </div>
     </div>
   );

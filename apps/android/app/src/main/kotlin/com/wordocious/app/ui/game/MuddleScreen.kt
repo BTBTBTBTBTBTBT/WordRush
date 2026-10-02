@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -90,6 +91,8 @@ import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.tintedPill
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
@@ -357,7 +360,7 @@ class MuddleSession(val seed: String, val isDaily: Boolean) {
                     flash(if (next.lastRow == SCRAMBLE_FINAL) "Not the punchline" else "Not that word")
                     SoundManager.playInvalid(); shakeRow = next.lastRow; shakeKey++
                 }
-                ScrambleResult.CORRECT -> SoundManager.playSuccess()
+                ScrambleResult.CORRECT -> SoundManager.playPartial()
                 null -> {}
             }
         }
@@ -485,16 +488,8 @@ fun MuddleScreen(
             .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
-            val cartoonH = LocalConfiguration.current.screenHeightDp.dp * CARTOON_SCREEN_FRACTION
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                MuddleHeader(session)
-                MuddlePicture(session, finished = true, cartoonHeight = cartoonH)
-                MuddlePuzzle(session, finished = true, onFinished)
-                MuddleResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            MuddleFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard, onFinished)
         } else {
             // Compact rule (founder, 2026-09-23): the WHOLE puzzle on one screen with the
             // keyboard pinned. Header, the four words, the punchline, Delete · Clear and the
@@ -542,7 +537,7 @@ fun MuddleScreen(
                     }
                     MuddlePuzzle(session, finished = false, onFinished)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Capsule("Delete", Icons.AutoMirrored.Outlined.Backspace) { SoundManager.playKeyTap(); session.back() }
+                        Capsule("Delete", Icons.AutoMirrored.Outlined.Backspace) { SoundManager.playDelete(); session.back() }
                         Capsule("Clear", Icons.Filled.Cancel) { SoundManager.playKeyTap(); session.clear() }
                     }
                     KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.back() }, onEnter = { session.jumpToActive() },
@@ -554,8 +549,9 @@ fun MuddleScreen(
         }
         session.toast?.let {
             Box(Modifier.fillMaxWidth().padding(top = 112.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(10.dp)).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
+                // G5 / K1 a toast is a tinted pill (no dark slab, no white).
+                Text(it, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp).tintedPill(MUDDLE_ACCENT, corner = 22.dp).padding(horizontal = 16.dp, vertical = 10.dp))
             }
         }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
@@ -608,18 +604,20 @@ private fun MuddleHeader(session: MuddleSession) {
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** The picture half of the founder's newspaper layout: the cartoon (at the height the screen allows) and its caption. */
-@Composable
-private fun MuddlePicture(session: MuddleSession, finished: Boolean, cartoonHeight: Dp) {
-    val puzzle = session.puzzle
-    CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = cartoonHeight)
-    Caption(session.state, finished)
-}
-
 /** The puzzle half, fixed-height: the four words as compact blocks, a divider, the punchline. */
 @Composable
 private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: () -> Unit) {
-    Column(Modifier.fillMaxWidth().widthIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // FINISH_SPEC L: Muddle's word rows sit in the shared game tray; I4 the punchline solved = confetti.
+    val trayState = when {
+        !finished -> TrayState.PLAYING
+        session.state.status == ScrambleStatus.WON -> TrayState.WON
+        else -> TrayState.LOST
+    }
+    Box(Modifier.fillMaxWidth().widthIn(max = 420.dp)) {
+    Column(
+        Modifier.fillMaxWidth().gameTray(MUDDLE_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 5.dp)),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         for (i in 0 until SCRAMBLE_FINAL) {
             WordRow(
                 session, i, active = !finished && session.row == i, shaking = session.shakeRow == i, finished = finished,
@@ -632,6 +630,8 @@ private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: 
             onSelect = { session.selectRow(SCRAMBLE_FINAL) }, onTapTile = { ch -> session.tapTile(SCRAMBLE_FINAL, ch, onFinished) },
             onRevealLetter = { SoundManager.playKeyTap(); session.revealLetter(SCRAMBLE_FINAL, onFinished) },
         )
+    }
+    MuddleConfetti(trigger = !finished && session.state.solved[SCRAMBLE_FINAL], modifier = Modifier.matchParentSize())
     }
 }
 
@@ -655,7 +655,10 @@ private fun CartoonPanel(cartoon: String?, altText: String, height: Dp) {
     var attempt by remember(cartoon) { mutableStateOf(0) }
     var failed by remember(cartoon) { mutableStateOf(false) }
     Box(
-        Modifier.size(width = height * 4f / 3f, height = height).clip(shape).background(PAPER).border(1.dp, WTheme.border, shape)
+        // I4: the cream paper card keeps its tone with the A1 border + soft shadow.
+        Modifier.size(width = height * 4f / 3f, height = height)
+            .shadow(6.dp, shape, clip = false, ambientColor = com.wordocious.app.ui.FinishInk.cardShadow, spotColor = com.wordocious.app.ui.FinishInk.cardShadow)
+            .clip(shape).background(PAPER).border(1.5.dp, com.wordocious.app.ui.accentLine(MUDDLE_ACCENT), shape)
             .then(if (failed) Modifier.clickableNoRipple { failed = false; attempt++ } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -774,10 +777,8 @@ internal fun MuddleFinishedBoard(s: ScrambleState, puzzle: ScramblePuzzle, solve
                 val fill = if (row in solvedByHint) HINT else PURPLE
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     w.answer.forEachIndexed { i, ch ->
-                        AnswerBox(
-                            ch.toString(), if (solved) fill else WTheme.surface, if (solved) fill else WTheme.border, if (solved) Color.White else WTheme.textMuted,
-                            ring = i in circled, ringColor = if (solved) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = LocalMuddleSizes.current.tileSp, modifier = Modifier.size(wordTile()),
-                        )
+                        @Suppress("UNUSED_VARIABLE") val unusedFill = fill
+                        MuddleSlot(ch.toString(), pinned = row in solvedByHint, circled = i in circled, size = wordTile(), muted = !solved)
                     }
                 }
             }
@@ -788,10 +789,8 @@ internal fun MuddleFinishedBoard(s: ScrambleState, puzzle: ScramblePuzzle, solve
                 for (len in s.final.pattern) {
                     val start = pos; pos += len
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        for (k in 0 until len) AnswerBox(
-                            target.getOrNull(start + k)?.toString() ?: "", if (solved) LILAC else WTheme.surface, if (solved) LILAC_BORDER else WTheme.border,
-                            if (solved) LILAC_TEXT else WTheme.textMuted, ring = true, ringColor = PURPLE, ringAlpha = if (solved) 0.9f else 0.35f,
-                            fontSize = 13.sp, modifier = Modifier.size(24.dp),
+                        for (k in 0 until len) MuddleSlot(
+                            if (solved) target.getOrNull(start + k)?.toString() ?: "" else "", pinned = false, circled = true, size = 24.dp, punchline = true,
                         )
                     }
                 }
@@ -838,22 +837,23 @@ private fun WordRow(
     Column(
         Modifier.fillMaxWidth()
             .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
-            .clip(shape)
-            .background(if (active) LILAC else Color.Transparent)
-            .border(1.dp, if (active) LILAC_BORDER else Color.Transparent, shape)
+            // I4: the active word row is a tinted card (A1), not a lilac fill.
+            .then(if (active) Modifier.tintedPill(MUDDLE_ACCENT, corner = 12.dp) else Modifier.clip(shape))
             .clickableNoRipple { if (!solved && !finished) onSelect() }
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .padding(top = if (active) 3.dp else 0.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = LocalMuddleSizes.current.hintRow), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+                // I3: the scrambled letters are small glossy amber chips; a used one sinks.
+                val chip = minOf(wordTile() * 0.7f, LocalMuddleSizes.current.hintRow - 4.dp)
                 w.scramble.forEachIndexed { i, ch ->
                     val dim = dimmed[i] || solved
-                    Text(
-                        ch.toString(), fontSize = LocalMuddleSizes.current.scrambleSp, lineHeight = LocalMuddleSizes.current.scrambleSp * 1.2f, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, letterSpacing = 1.sp,
-                        modifier = Modifier.alpha(if (dim) 0.25f else 1f)
-                            .then(if (!dim && !finished) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier)
-                            .padding(horizontal = 3.dp, vertical = LocalMuddleSizes.current.trayPadV),
+                    MuddleChip(
+                        ch.toString(), used = dim, size = chip,
+                        modifier = Modifier.padding(vertical = LocalMuddleSizes.current.trayPadV / 2).size(chip)
+                            .then(if (!dim && !finished) Modifier.squishClickable(label = "Letter $ch") { onTapTile(ch) } else Modifier),
                     )
                 }
             }
@@ -868,10 +868,9 @@ private fun WordRow(
             for (i in 0 until COLS) {
                 if (i >= w.answer.length) { Spacer(Modifier.size(wordTile())); continue }
                 val ch = if (solved) w.answer[i].toString() else entry.getOrNull(i)?.toString() ?: ""
-                val filled = ch.isNotEmpty()
                 val pinned = revealed[i] != '_'
-                val bg = if (solved) PURPLE else if (filled) (if (pinned) HINT else PURPLE) else WTheme.surface
-                AnswerBox(ch, bg, if (filled) bg else WTheme.border, if (filled) Color.White else WTheme.text, ring = i in circled, ringColor = if (filled) Color.White else PURPLE, ringAlpha = 0.9f, fontSize = LocalMuddleSizes.current.tileSp, modifier = Modifier.size(wordTile()))
+                // I1: circled slots are coins, the rest the B1 square glossy tiles.
+                MuddleSlot(ch, pinned, circled = i in circled, size = wordTile(), solved = solved, flipDelayMs = i * TileMotion.FLIP_STAGGER_MS)
             }
         }
     }
@@ -924,9 +923,7 @@ private fun FinalRow(
         Column(
             Modifier.fillMaxWidth()
                 .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
-                .clip(shape)
-                .background(if (active) LILAC else Color.Transparent)
-                .border(1.dp, if (active) LILAC_BORDER else Color.Transparent, shape)
+                .then(if (active) Modifier.tintedPill(Color(0xFFF5A524), corner = 12.dp) else Modifier.clip(shape))
                 .alpha(if (open || finished) 1f else 0.55f)
                 .clickableNoRipple { if (playable) onSelect() }
                 .padding(horizontal = 6.dp, vertical = 4.dp),
@@ -940,13 +937,14 @@ private fun FinalRow(
                     modifier = if (playable) Modifier else Modifier.weight(1f),
                 )
                 if (playable) {
-                    FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.Center) {
+                    FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalArrangement = Arrangement.Center) {
+                        // I3: the circled letters to place, as glossy chips that sink when used.
+                        val chip = LocalMuddleSizes.current.hintRow - 6.dp
                         tray.forEachIndexed { i, ch ->
-                            Text(
-                                ch.toString(), fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black, color = LILAC_TEXT, fontFamily = Nunito, letterSpacing = 1.sp,
-                                modifier = Modifier.alpha(if (dimmed[i]) 0.25f else 1f)
-                                    .then(if (!dimmed[i]) Modifier.clickableNoRipple { onTapTile(ch) } else Modifier)
-                                    .padding(horizontal = 3.dp, vertical = LocalMuddleSizes.current.trayPadV),
+                            MuddleChip(
+                                ch.toString(), used = dimmed[i], size = chip,
+                                modifier = Modifier.padding(vertical = LocalMuddleSizes.current.trayPadV / 2).size(chip)
+                                    .then(if (!dimmed[i]) Modifier.squishClickable(label = "Letter $ch") { onTapTile(ch) } else Modifier),
                             )
                         }
                     }
@@ -976,10 +974,11 @@ private fun FinalRow(
                         for (k in 0 until len) {
                             val idx = start + k
                             val ch = if (solved || finished) target.getOrNull(idx)?.toString() ?: "" else entry.getOrNull(idx)?.toString() ?: ""
-                            val filled = ch.isNotEmpty()
-                            AnswerBox(
-                                ch, if (filled) LILAC else WTheme.surface, if (filled) LILAC_BORDER else WTheme.border, LILAC_TEXT,
-                                ring = true, ringColor = PURPLE, ringAlpha = if (filled) 0.9f else 0.35f, fontSize = tileFont, modifier = Modifier.size(tile),
+                            @Suppress("UNUSED_VARIABLE") val unusedFont = tileFont
+                            // I2: the punchline letters are gold coins; solved = the hop wave.
+                            MuddleSlot(
+                                ch, pinned = false, circled = true, size = tile, punchline = true,
+                                hop = solved && !finished, hopDelayMs = TileMotion.revealMs(1) + idx * TileMotion.HOP_STAGGER_MS,
                             )
                         }
                     }
@@ -991,46 +990,51 @@ private fun FinalRow(
 }
 
 /**
- * The in-row hint control (Letter = lightbulb, Solve = eye): a 28 dp accent
- * circle, icon only — the label lives in the content description (and the
- * guide). It sits in a 40 × 32 dp touch box, and Compose's 48 dp minimum touch
- * target rounds the rest out.
+ * I4 the in-row hint control (Letter = lightbulb, Solve = eye): a small round candy
+ * button (A8) — amber bulb, purple eye — icon only, the label in the content
+ * description. It sits in a 40 × hint-row touch box.
  */
 @Composable
 private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Unit) {
-    Box(Modifier.size(width = 40.dp, height = LocalMuddleSizes.current.hintRow).clickableNoRipple(onClick), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier.size(LocalMuddleSizes.current.hintCircle).clip(CircleShape).background(MUDDLE_ACCENT.copy(alpha = 0.08f)).border(1.dp, MUDDLE_ACCENT.copy(alpha = 0.45f), CircleShape),
-            contentAlignment = Alignment.Center,
+    val d = LocalMuddleSizes.current.hintCircle
+    Box(Modifier.size(width = 40.dp, height = LocalMuddleSizes.current.hintRow), contentAlignment = Alignment.Center) {
+        com.wordocious.app.ui.CandyRoundButton(
+            contentDescription = description, onClick = onClick, diameter = d,
+            color = if (icon == Icons.Filled.Visibility) com.wordocious.app.ui.CandyColor.PURPLE else com.wordocious.app.ui.CandyColor.AMBER,
+            modifier = Modifier.padding(bottom = 2.dp),
         ) {
-            Icon(icon, contentDescription = description, tint = MUDDLE_ACCENT, modifier = Modifier.size(15.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(d * 0.5f))
         }
     }
 }
 
-/** Delete · Clear: 30 dp capsules on one row. */
+/** Delete · Clear: small candy buttons (A8) on one row. */
 @Composable
 private fun Capsule(label: String, icon: ImageVector, onClick: () -> Unit) {
-    Row(
-        Modifier.height(30.dp)
-            .clip(CircleShape)
-            .background(MUDDLE_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, MUDDLE_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple(onClick)
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = MUDDLE_ACCENT, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = MUDDLE_ACCENT, maxLines = 1, softWrap = false)
+    PadAction(label, icon, onClick = onClick)
+}
+
+/** I1 one answer slot: a coin when [circled], the square glossy tile otherwise. */
+@Composable
+private fun MuddleSlot(
+    ch: String, pinned: Boolean, circled: Boolean, size: Dp,
+    solved: Boolean = false, flipDelayMs: Int = 0, punchline: Boolean = false, hop: Boolean = false, hopDelayMs: Int = 0,
+    muted: Boolean = false,
+) {
+    if (circled || punchline) {
+        MuddleCoin(ch, pinned, punchline, size, Modifier.size(size), solved = solved, hop = hop, flipDelayMs = flipDelayMs, hopDelayMs = hopDelayMs)
+    } else {
+        MuddleSquare(ch, pinned, size, Modifier.size(size), solved = solved, hop = hop, flipDelayMs = flipDelayMs, hopDelayMs = hopDelayMs, muted = muted)
     }
 }
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun MuddleResult(
+private fun MuddleFinished(
     session: MuddleSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
+    onFinished: () -> Unit,
 ) {
     val s = session.state
     val won = s.status == ScrambleStatus.WON
@@ -1039,49 +1043,83 @@ private fun MuddleResult(
     val solvedCount = scrambleBoardsSolved(s)
     val context = LocalContext.current
     val hintsText = if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Row(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-                .border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(MUDDLE_ACCENT.copy(alpha = 0.08f))
-                    .border(2.dp, MUDDLE_ACCENT.copy(alpha = 0.27f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
+    val title = if (won) (if (s.checks == 5 && s.hintsUsed == 0) "Muddle solved clean" else "Muddle solved") else "Out of checks"
+    val cartoonCap = LocalConfiguration.current.screenHeightDp.dp * CARTOON_SCREEN_FRACTION
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}$solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · ${clockText(secs)}"
+        val text = "Wordocious Muddle${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · $solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · wordocious.com/muddle"
+        val bmp = ShareImage.renderScramble(
+            context, s.words.map { it.answer.length }, s.words.map { it.circled }, s.final.pattern, s.checks, solvedCount, won, meta,
+        )
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { MuddleHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOfNotNull(
+                    if (!won) stripCount("$solvedCount/$SCRAMBLE_TOTAL_BOARDS", "solved") else null,
+                    stripCount("${s.checks}", if (s.checks == 1) "check" else "checks", StripGlyph.CROWN),
+                    stripTime(secs), stripPoints(session.points),
+                ),
+                srText = "$title. $solvedCount of $SCRAMBLE_TOTAL_BOARDS solved, ${session.checksLabel}, time ${timeText(secs)}$hintsText, ${session.points} points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.SCRAMBLE, isDaily = session.isDaily, accent = MUDDLE_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) onPlayAgain else null,
+                onOtherGames = onBack,
+                more = {
+                    Text(
+                        "$title · $solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · ${timeText(secs)}$hintsText",
+                        fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, textAlign = TextAlign.Center,
+                    )
+                    if (session.isDaily) DailyRankBadge(GameMode.SCRAMBLE)
+                    ScoreBreakdownCard(GameMode.SCRAMBLE, won, gc, secs, solvedCount, SCRAMBLE_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
+                },
+            )
+        },
+    ) { _, maxH ->
+        // R2: the four words + punchline at the tier the height allows, then the cartoon
+        // takes what is left (the words are measured first). Too little room for the
+        // picture → a "See the cartoon" chip opens it in a sheet.
+        val sizes = when {
+            maxH < 380.dp -> MUDDLE_TIERS[2]
+            maxH < 470.dp -> MUDDLE_TIERS[1]
+            else -> MUDDLE_TIERS[0]
+        }
+        var showCartoon by remember { mutableStateOf(false) }
+        val puzzle = session.puzzle
+        androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
+            Column(
+                Modifier.fillMaxWidth().height(maxH),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
             ) {
-                Text(if (won) "${s.checks}" else "✗", fontSize = 20.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    if (won) (if (s.checks == 5 && s.hintsUsed == 0) "Muddle solved clean" else "Muddle solved") else "Out of checks",
-                    fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF16A34A) else Color(0xFFEF4444), fontFamily = Nunito,
-                )
-                Text("$solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · ${timeText(secs)}$hintsText", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                BoxWithConstraints(Modifier.weight(1f, fill = false).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val h = minOf(cartoonCap, maxWidth * 0.75f, maxHeight)
+                    if (h >= 64.dp) {
+                        CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = h)
+                    } else {
+                        FinishedChip("See the cartoon", MUDDLE_ACCENT) { showCartoon = true }
+                    }
+                }
+                Caption(s, finished = true)
+                MuddlePuzzle(session, finished = true, onFinished)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", MUDDLE_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", MUDDLE_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}$solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · ${clockText(secs)}"
-                val text = "Wordocious Muddle${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · $solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · wordocious.com/muddle"
-                val bmp = ShareImage.renderScramble(
-                    context, s.words.map { it.answer.length }, s.words.map { it.circled }, s.final.pattern, s.checks, solvedCount, won, meta,
-                )
-                ShareImage.shareBitmap(context, bmp, text)
+        if (showCartoon) {
+            FinishedSheet("The cartoon", MUDDLE_ACCENT, onDismiss = { showCartoon = false }) {
+                CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = 220.dp)
+                Caption(s, finished = true)
             }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain() }
         }
-        if (session.isDaily) DailyRankBadge(GameMode.SCRAMBLE)
-        ScoreBreakdownCard(GameMode.SCRAMBLE, won, gc, secs, solvedCount, SCRAMBLE_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.SCRAMBLE, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 /** Always m:ss — the header clock and the share caption. */
@@ -1091,40 +1129,24 @@ private fun clockText(s: Int) = "${s / 60}:${"%02d".format(s % 60)}"
 private fun MuddleOverlay(session: MuddleSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == ScrambleStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "SCRAMBLE") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
-        }
-    }
+    // FINISH_SPEC R1: the shared win / lose popup; the punchline is the answer on the tiles.
+    val punchline = session.state.final.answer.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    WinPopup(
+        won = won, hostKey = "SCRAMBLE", accent = MUDDLE_ACCENT, onContinue = onDismiss,
+        answers = if (punchline.isNotEmpty()) WinAnswers(punchline) else null,
+        stats = listOf(
+            WinStat(WinStatKind.GUESSES, "${session.state.checks}", "Checks"),
+            WinStat(WinStatKind.TIME, timeText(secs), "Time"),
+            WinStat(WinStatKind.POINTS, "%,d".format(session.points), "Points"),
+        ),
+        onPlayAgain = onPlayAgain,
+    )
 }
 
 @Composable
 private fun StatBlock(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
+        com.wordocious.app.ui.SoftNumber(value, 22.sp)
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.6.sp)
     }
 }

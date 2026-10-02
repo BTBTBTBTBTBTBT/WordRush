@@ -206,3 +206,652 @@ G5. **Everything else not yet touched** (sweep of the app): limit-reached window
     add-friend windows, sign-in + first launch, Settings + Edit profile, toasts, loading + empty screens —
     tinted surfaces, candy buttons, soft numbers, squish, and a cast pose (art-pose-*) where there is room,
     following A7 (different character than the page host).
+
+## H. Starsweep in the new look (founder 10-02)
+
+Pieces (OpenAI API, glossy candy style, transparent, 256 px): `art-starsweep-star-placed` (navy, an unchecked
+star), `art-starsweep-star-correct` (purple + sparkle), `art-starsweep-star-wrong` (coral with a crack),
+`art-starsweep-cross` (soft lilac X). Replace the drawn ★ / × glyphs with these images (~78% of the cell).
+Board: the region cells become soft glossy candy tiles — each region a pastel tint of a distinct hue
+(8–9 friendly pastels: lilac, peach, mint, sky, butter, pink, aqua, coral, lavender), cell = rounded 6–8 pt
+square with a faint lighter top gloss and a 1.5 pt darker bottom lip; region borders as a slightly thicker
+gap / darker seam instead of black lines; no plain white. Placing a star = the type pop; playing it =
+the flip-and-glow (purple glow when right, red glow + small shake when wrong); hint = gold glow. The pad /
+buttons = candy buttons; stats + result screen per B6. Same on web, iOS, Android.
+
+## I. Muddle letters (founder 10-02: "the letters that appear in circles … super polished")
+
+Coins (OpenAI API, glossy, blank — the letter is drawn on top in code, white Nunito Black with the tile
+text-shadow; dark amber #7a3d00 on the gold coin): `art-muddle-coin-empty` (a gold ring; draw it over a
+frosted empty cell), `-coin-filled` (purple with gold rim), `-coin-hint` (violet + sparkle, a revealed
+hint letter), `-coin-punchline` (gold, the punchline tray).
+I1. Circled answer slots use the round coins instead of a square tile with a thin ring (the uncircled
+    slots stay the B1 square glossy tiles); same footprint as the square tiles, letter ~52% of the coin.
+I2. The punchline tray letters are gold coins (empty = the gold ring on frosted).
+I3. The scrambled clue letters become small glossy letter chips (B1 tile recipe at ~70% size, light amber
+    face, dark-purple letter); used letters sink (scale .9, faded 35%) instead of only dimming text.
+I4. The bulb (reveal a letter) and eye (solve this word) buttons are small round candy buttons (A8), the
+    active word row is a tinted card (A1) instead of a lilac fill, the cartoon panel keeps its cream paper
+    card with the A1 border/shadow. Placing a letter = type pop; a solved word = the reveal flip + glow;
+    the punchline solved = hop wave + confetti. Same on web, iOS, Android.
+
+## J. Remaining game pieces (founder 10-02 audit)
+
+J1. Hubbub: the seven hive letters are glossy HEXAGONS — `art-piece-hex` (lilac) for the six outer letters
+    and `art-piece-hex-center` (gold) for the required center letter, laid out as a honeycomb (center + six
+    around); the letter drawn on top in code (white Nunito Black; dark amber #7a3d00 on the gold center).
+    Tap = squish + type pop.
+J2. Tic-Tac-Tile: the X and O pieces are `art-piece-ttt-x` (purple) and `art-piece-ttt-o` (pink) instead of
+    the thin white line drawings; a placed piece drops in (type pop); the winning three glow.
+J3. Code-only polish (no new art): Crosswordocious cells = B1 glossy tiles with the clue number as a small
+    soft badge in the corner (blocks stay absent); Kindred word cards = glossy chips (tinted face, lip,
+    gloss), selected = the tier color filled, solved bars = tinted cards with top bars; Cipher cells = B1
+    glossy tiles with the code letter as a small chip beneath; Spyglass = the 10×10 letters as small glossy
+    tiles (or crisp letters on a tinted board if tiles crowd the grid) and found words as glossy capsules in
+    the accent with a soft glow.
+
+## K. Notifications in the new look (founder 10-02: "the notifications (x beat you)")
+
+K1. In-app notices (friend beat you, challenge received / result, nudge, race lead change, friend request,
+    streak reminders shown in-app — the toast / banner / notification list): a tinted card (A1) in the event's
+    color with its top bar, the sender's letter-tile avatar (§20), a small cast pose that fits the event
+    (A7; e.g. O2 gasp for "beat you", S ready for a challenge, O1 cheer for a win, R sleepy for a nudge),
+    the headline in Nunito Black with soft numbers for scores ("Oliver beat you · 2,005 vs 1,860"), and a
+    candy action button (Rematch / Play / View). Slides in with a spring, squish on tap, swipe to dismiss.
+K2. Push notifications (OS-drawn): the new icon B; Android small icon = a white monochrome W-mascot
+    silhouette (`ic_stat_wordocious`), accent color #7c3aed; friendly copy with the sender + numbers; where
+    the platform allows a large icon / image, attach the matching cast pose. (iOS rich images would need a
+    Notification Service Extension — leave for later unless already present.)
+
+## L. The boards themselves (founder 10-02: "make sure the boards themselves match the same polish")
+
+Every board container (the panel the tiles sit on) becomes one shared GAME TRAY, drawn in code:
+rounded 20–22 pt, filled with a soft wash of the game's accent (10–12% over white, never plain white),
+a 1.5 pt accent border (30%), a 4 pt darker lip at the bottom, a faint inner top gloss, a soft accent
+drop shadow, and 10–12 pt inner padding. Applies to: the Classic-family boards, every QuadWord/OctoWord
+mini board (each its own tray; the active/zoomed one gets the stronger tint + ring), Succession/Deliverance
+boards, Sudocious (the 3×3 boxes are separated by soft darker seams in the tray color, not black lines),
+Crosswordocious, Cipher, Spyglass, Starsweep (regions as in H), Kindred's grid, Hubbub's honeycomb,
+Ladder, Muddle's word rows, and the Friends pocket boards. Solved boards: the tray takes a gentle purple
+(won) or slate (lost) wash. One shared tray component per platform; no black grid lines anywhere.
+
+## F2 fix (founder 10-02, on iOS 234: "there are two of them and the one that animates whips off the
+screen while the duplicate stays in place")
+
+The cold-start intro must hand off to the REAL header with no duplicate and no overshoot:
+1. While the intro runs, the real Home header cast row is hidden (opacity 0, still laid out).
+2. The intro measures the real row's on-screen frame (SwiftUI preference/anchor or onGeometryChange;
+   Compose onGloballyPositioned; web getBoundingClientRect) and glides its row to EXACTLY that frame
+   (position + width, matching per-character spacing/lift), easing in with no overshoot past it.
+3. On landing, in the same frame: the real row turns visible and the intro row is removed (no crossfade
+   overlap, no second copy). The rest of Home fades in under the glide as before.
+4. Then a brief all-cast flourish on the real row: each character hops once (the W hop keyframes,
+   ~420 ms each, 50 ms apart, left to right), then the normal one-at-a-time personality moves resume.
+5. Tap to skip jumps straight to step 3. Reduce Motion: a 200 ms crossfade, no flourish.
+
+## M. Friends tab notification badge (founder 10-02)
+
+When the player has anything waiting in Friends — incoming friend requests, game invites / challenges
+waiting on them ("Your turn"), unseen friendly-game moves — the Friends tab icon shows a badge:
+- a glossy candy badge at the icon's top-right: hot pink → coral gradient (#ff5fa2 → #f0435f), a 1.5 pt
+  gold (#f5c542) outline, a white top gloss and a darker lip, white Nunito Black count (1–9, then "9+");
+  min 18 pt round, grows into a pill for 2 digits;
+- it springs in (scale 0 → 1.15 → 1) when a new item arrives, and the Friends tab icon does a small
+  happy wiggle (±8°, 2 swings) at the same moment; afterwards a slow soft pulse of the badge's glow every
+  ~4 s while unseen (no pulse with Reduce Motion);
+- the count = incoming requests + invites/challenges awaiting the player + friendly games where it's their
+  turn; opening the Friends tab marks requests/invites as seen (badge clears; it returns only for new
+  items). Inside Friends, each waiting row/section shows the same small badge so the player can find it.
+- Accessibility: the tab's label reads "Friends, 3 new".
+Same on web (bottom nav), iOS and Android; use the data the apps already load (no new backend unless a
+count isn't available — then reuse the existing requests/invites queries).
+
+## N. Calmer top (founder 10-02: "the top is kind of ugly on the new pages and seems really busy … so
+the top characters really pop")
+
+N1. One cast per screen: the living cast row is the only whole-cast art. Page titles (`art-title-*`, now
+    re-shipped as LETTERING ONLY — no characters) are smaller centered headlines: ≈62% of the content width,
+    max 300 pt / px, height ≤ 64 pt; the Home section titles (DAILIES / PUZZLES / WORD OF THE DAY) follow the
+    same rule. The Leaderboard day title keeps its single host and is capped at ≈58% width / 150 pt tall.
+N2. Wallpapers re-shipped with a clean top third (no letter tiles behind the header). Add a very soft fade
+    under the header area: the page tint at 0% → 55% opacity over the top ~170 pt, so the cast sits on calm color.
+N3. Cast row breathing room: ≈90% of the screen width (not edge to edge), centered, with 8–10 pt top margin
+    under the status bar and a soft elliptical ground shadow under the row (the page accent at ~14%, blurred).
+N4. The controls row (streak / shields / help / settings) sits 6 pt below the cast row; icons stay 23 pt.
+    Order of attention: cast → title → cards; no other decoration in the top band.
+
+## O. VS Battle gets its own Home section (founder 10-02: "VS Battle needs its own title … it seems like
+it's extra … make this better without any drastic changes")
+
+O1. A VS BATTLE section title (`art-title-vsbattle`, lettering only, same size rule as DAILIES / PUZZLES /
+    WORD OF THE DAY, N1) above the VS card, with the same spacing as the other sections — so Home reads
+    DAILIES → PUZZLES → WORD OF THE DAY → VS BATTLE.
+O2. The VS card (same place, same data — no drastic change): teal-tinted game card with its top bar; on the
+    left the `art-scene-vs-faceoff` W-vs-S art as a small hero (~40% of the card width, cropped to the two
+    characters and the bolt); on the right "LIVE · N players online" with the pulsing green dot, today's
+    status line ("Today's shared battle" / "Battle won!"), and two candy buttons: PLAY (teal, primary) and
+    INVITE (peach). The W/L badge follows §21.1. Bot of the Day can show as a small line with that day's
+    cast bot pose (e.g. "Bot of the day: Dewey").
+
+## P. Gauntlet stage screens (founder 10-02: "a mascot on each one that shows next stage")
+
+The between-stage / "next stage" screen (components/gauntlet/stage-transition*, iOS / Android equivalents)
+becomes a tinted amber card (Gauntlet accent) with: a big cast pose that changes per upcoming stage —
+Stage 2 `art-pose-o1-cheer`, 3 `art-pose-d-eureka`, 4 `art-pose-c-telescope`, 5 `art-pose-s-flex`, and the
+final stage / boss `art-pose-w-proud` (the poses spring in); the stage number in soft numbers ("STAGE 3 OF 5")
+with a 5-dot progress row (done dots filled amber, current pulsing); the stage's word length / rule as a
+tinted pill; the running score in soft numbers; and a large amber candy CONTINUE button. Cleared stages
+show a small W badge per stage. A failed run shows `art-pose-r-sit` with a gentle message and candy buttons.
+Same on web, iOS, Android.
+
+## Q. Gauntlet finish screen (founder 10-02: "a custom designed gauntlet finish screen … with a mascot or two")
+
+New art: `art-scene-gauntlet-champion` (1200×815, transparent — S on top of a gold star staircase holding the
+trophy high, D cheering at the bottom with his pencil, confetti). Shipped ×3 (web public/art, Android
+drawable-nodpi art_scene_gauntlet_champion, iOS imageset); web must add it to ART_SIZE + SceneArtName.
+
+Gauntlet results (web components/gauntlet/gauntlet-results.tsx + iOS / Android equivalents), keeping the
+B6 finished-screen layout and all existing data:
+- WON (all 5 stages): an amber-tinted hero card at the top: the champion scene full card width (springs in,
+  then a gentle bob; confetti burst once), headline lettering-style "GAUNTLET CLEARED!" in soft numbers ink,
+  "5/5 stages" + total time + total guesses as three soft-number stat pills, a 5-star row (all filled gold,
+  popping in one by one 90 ms apart), then the share icon (B6) and a large amber candy button "Play again
+  tomorrow" / Home. The per-stage boards below sit on the shared game tray (L) with a small W badge each.
+- LOST (stopped at stage k): same card, lighter amber tint, two poses side by side instead of the scene —
+  `art-pose-r-cocoa` and `art-pose-i-goodgame` (kind, never sad) — headline "SO CLOSE!", "k/5 stages" with
+  the 5-star row showing k filled + the rest soft grey, the failed stage's answer revealed on glossy tiles,
+  and the same candy buttons.
+- Reduce Motion: no bob or confetti, stars appear at once. Same on web, iOS, Android.
+
+## R. Win / lose popup, one-screen finished screen, Unlimited (founder 10-02 with a Quadword VICTORY screenshot:
+"stylize this a bit more on all the completed game screens … looks pretty plain"; "keep the screen afterwards
+… fit one screen so the user doesn't have to scroll to the buttons"; "unlimited games buttons … polished,
+possibly with a mascot")
+
+R1. Win popup (web components/effects/victory-animation.tsx + game-over-animation.tsx; iOS / Android
+    equivalents) — one shared component for EVERY game, so all completed games get it at once:
+  - Card: no near-white. A soft game-accent gradient (accent at ~10% top → ~4% bottom over the warm cream),
+    the existing rainbow top bar kept, 28 radius, a soft accent glow shadow. Dark mode = deep accent tint.
+  - Mascot: keep the game host's pose but give it a stage — a soft radial glow + slow-turning light rays
+    (accent, 12% opacity, 24 s per turn) behind it, a ground shadow, a spring-in with a 1.06 overshoot,
+    then a gentle bob. One confetti burst in the cast colors on open (not looping).
+  - Lettering: keep art-moment-victory / youwin / soclose / youlose, add a single gloss sweep across it
+    0.4 s after it lands.
+  - Answers: replace the plain white box with a tinted inner tray (accent 8%, no border line) holding each
+    answer on small glossy SOLVED tiles (the game's win tile color, the B-kit glossy tile, ~26pt, soft
+    numbers font for letters), one word per row, flipping in left→right 40 ms apart. Multi-board games keep
+    the 2-column grid; each word gets a tiny check badge (icon3d-badge-check) on the right.
+    Loss: unsolved answers on the slate tile, a small "the answer" label.
+  - Stats: four stat chips instead of loose numbers — each a tinted pill (accent 10%) with a small glyph
+    (boards = grid, guesses = target, time = clock, points = star in gold), the value in soft numbers and
+    the label below in small caps. POINTS counts up from 0 over 700 ms with a sparkle at the end; the points
+    chip is gold-tinted. Extra chips when they apply: "🔥 Day N" streak +1 (flame, pops), FLAWLESS (pink),
+    NEW RECORD (art-moment-newrecord lettering small).
+  - Replace "Tap anywhere to continue" with a candy CONTINUE button in the game accent (tap-anywhere still
+    works). Reduce Motion: no rays/bob/confetti/count-up.
+
+R2. Finished screen fits one screen (every game, after the popup): no scrolling to reach the buttons on any
+    phone ≥ 667pt tall (iPhone SE). Layout top→bottom: header, compact result strip (one line: badge ·
+    guesses · time · points), the board(s) scaled to fit the remaining height (finished boards may shrink
+    below the playing size — Quadword / multi-board use the 2×2 mini grid; Crossword / Spyglass / Hubbub
+    boards scale to fit; long lists like Ladder/Muddle steps collapse to a summary with "See all"), then
+    the action dock pinned above the tab bar: the share icon + the primary candy button (Next daily /
+    Leaderboard) + the Unlimited card (R3). Anything extra (definitions, stats breakdowns) goes behind a
+    "More" disclosure or below the dock, never above the buttons. Measure, don't guess: the board area gets
+    whatever height is left after the dock.
+
+R3. Unlimited (web components/game/next-daily-cta.tsx KeepPlayingUnlimited + unlimited-gate.tsx +
+    play-mode-toggle.tsx + the end-of-unlimited-game "New puzzle" actions; iOS / Android equivalents):
+  - New art `art-scene-unlimited-loop` (900×759, U floating with a loop of candy tiles orbiting her),
+    shipped ×3 (web public/art — add to ART_SIZE + SceneName; Android art_scene_unlimited_loop; iOS imageset).
+  - Pro users: a peach-tinted "KEEP PLAYING" card in the dock: the U loop art on the left (~64pt, slow orbit
+    wobble), "Unlimited <Game>" title + "Fresh puzzles, no waiting" subtitle, and a peach candy button (NO infinity glyph — see Y). After finishing an UNLIMITED game the same card becomes the primary action:
+    "NEW PUZZLE" (peach candy, big) + a small "Other games" link that opens the game picker.
+  - Free users / guests (founder 10-02: "Free players can see keep playing unlimited, but if they do, it should
+    go back to the redesigned Go Pro popup"): they now SEE the same Keep Playing card (U art, "Unlimited <Game>",
+    a small gold PRO pill on the button). Tapping it opens the redesigned G1 Go Pro popup (pro-crown W art,
+    plan picker, amber candy button), never the old modal and never a plain page. Guests: same popup; its
+    button routes through sign-in first, then back to the popup. After a successful purchase the card
+    starts the Unlimited game directly. Applies to every surface that offers Unlimited to free users
+    (finished screen dock, play-mode toggle, unlimited-gate / mode-limit screens).
+  - unlimited-gate / limit screens: same card language, U art, candy buttons, no white.
+  - Same on web, iOS, Android, for every game that has Unlimited.
+
+## S. Share = the image only, fitted to the puzzle, the cast IS the wordmark, fun copy (founder 10-02 with an
+iMessage screenshot of a QuadWord share link preview: "adjust all share buttons so they have the images fit
+the puzzles better, are all polished with the new aesthetic … the Wordocious characters at the bottom need to
+be much larger and together so that is the only way you can read wordocious … I also don't think they should
+populate as a link anymore … populate only the image with all of the information on it when sending a
+completed game screen"; "The text should be more fun and make more sense too if there is text")
+
+S1. Completed-game shares send the IMAGE ONLY — no URL, no caption text, so iMessage / WhatsApp etc. show the
+    picture, not a link-preview card. Applies to every result share (all games, Sweep, Gauntlet, VS results,
+    leaderboard result, Stats/profile cards).
+    - iOS: activity items = [the PNG] only (UIImage or an NSItemProvider "public.png" with a suggested name
+      "Wordocious-<Game>.png"); no URL, no String. Leaderboard "linkOnly" path → image too.
+    - Android: ACTION_SEND, type image/png, EXTRA_STREAM (FileProvider uri + ClipData so the chooser previews
+      it), FLAG_GRANT_READ_URI_PERMISSION, NO EXTRA_TEXT. The 2-image sweep multi-send keeps its images only.
+    - Web: navigator.share({ files: [png] }) only (no url/text); drop the linkOnly / hosted-URL path for
+      results. Fallbacks: copy image to clipboard, then download the PNG. (Hosted share pages can stay for old
+      links; stop creating new ones from result shares.)
+    - Invites (friend invite, VS join / challenge links) KEEP their links — the link is the point — but get
+      the S4 copy treatment.
+
+S2. Image fits the puzzle (all share renderers):
+    - The canvas is sized to the content, no dead space: title art at the top (~70% width), one compact info
+      line (date · guesses · time · W badge), the board block, the stat windows (E1), then the cast wordmark.
+      Height = sum of those; aspect clamped between 4:5 and 9:16.
+    - The board block fills ~88% of the width: single-board games big; QuadWord / multi-board as a tight 2×2
+      (gap ≈ 4% of width); tall boards scale by height so the whole canvas still fits the clamp.
+    - New aesthetic everywhere: E1 wallpaper, glossy tiles (purple/gold/grey kit, no rim, no grid lines), the
+      tinted stat windows with top bars and soft numbers, no white.
+    - Remove the separate "WORDOCIOUS" text wordmark at the top.
+
+S3. The cast is the wordmark: the bottom row is the ten hero characters in order W·O·R·D·O·C·I·O·U·S, standing
+    TOGETHER (touching, ~-6% overlap like the Home cast header row), spanning ~90% of the image width, with a
+    soft ground shadow — big enough that it reads "WORDOCIOUS". It is the only wordmark on the image.
+    Under it, one tiny line "wordocious.com" (so a recipient knows where to play — there's no link anymore).
+
+S4. Copy that's fun and makes sense — wherever text still appears (clipboard/download toast, invite messages,
+    the Android chooser title "Share your QuadWord", hosted-page OG titles for old links, web <title> of
+    /s pages). Shared bank, pick deterministically by hash(date + game) % n so all three platforms agree.
+    Short, no em dashes, American spelling, never mean:
+    - Win: "{Game} solved in {n} guesses. Your move 😎" · "Cracked {Game} in {t} ⚡ Beat that!" ·
+      "{Game} in {n}. The letters never stood a chance."
+    - Multi-board win: "All {b} {Game} boards cleared in {n} guesses 🧠✨"
+    - Flawless: "Flawless {Game}! 💎 Not one wasted guess."
+    - Lose: "{Game} got me today 😅 Can you crack it?" · "So close on {Game}! Think you can do better?"
+    - Sweep: "Swept every Wordocious daily today 🧹✨"
+    - Streak ≥ 3 appends " 🔥 Day {d}"
+    - Gauntlet: "Cleared all 5 Gauntlet stages 🏆" · "Reached stage {k} of the Gauntlet. Can you go further?"
+    - VS: "Beat {opp} at {Game} ⚔️" · "{opp} edged me at {Game}. Rematch incoming 🔁"
+    - Invite: "Come play Wordocious with me! 🎉 {url}" · VS: "Race me at {Game}! ⚡ {url}"
+    Toasts: "Image copied! Paste it anywhere 📋" / "Saved! Share it anywhere 🖼️".
+
+## T. Friend invites + gift-a-week-of-Pro screens (founder 10-02: "make sure the friend invite screens that are
+sent and accepted are matching the new polish"; "the gift 7 days items … all updated with mascots")
+
+New art (shipped ×3; web add to ART_SIZE + SceneName): `art-scene-invite-sent` (802×870, I tossing a gold star
+envelope), `art-scene-friends-match` (1200×832, I and pink O high-five with hearts), `art-scene-gift-pro`
+(O3, the one-eyed orange O, holding a purple gift box with a gold crown on the bow).
+
+T1. Invite sent (invite sheet / invite panel / add-friend request sent; web components/invites/invite-modal.tsx,
+    components/referrals/invite-panel.tsx, friends "Add a friend"; iOS InviteSheet / InvitePanelView; Android
+    InviteSheet / InvitePanel): tinted card (Friends accent), invite-sent art springing in, lettering-style
+    headline "INVITE SENT!" (soft numbers ink), the friend's name/code on a glossy pill, candy buttons
+    ("Send another", "Done"). The invite code itself shown on glossy letter tiles (B-kit tiles) with a copy
+    candy button. Request-pending rows in Friends get a small "Pending" glossy pill.
+T2. Invite received / join landing (web app/join/[code]/page.tsx, the pending-invites banner, the accept/decline
+    notice; native equivalents): tinted card with the inviter's avatar + the invite-sent art, "<Name> wants to
+    be friends!", Accept = green candy, Decline = soft secondary candy. Loading, not-found (o3-notfound),
+    expired and already-used states all get a cast pose + tinted card + a candy "Go to Wordocious" button —
+    no bare text lines.
+T3. Accepted ("You're now friends!" — after accepting, and on the inviter's side when the request is
+    accepted via notice/toast): friends-match art full card width with one confetti + heart burst,
+    headline "NEW FRIENDS!", both avatars side by side, and candy buttons "Challenge them" (VS race) and
+    "See friends". Reduce Motion = no burst.
+T4. Gift a week of Pro (the referral / gift-trial program: the invite panel's gift section, the share copy,
+    the join landing's "Pro unlocked!" / "Not eligible" states, referral-redeemer, Pro page gift area,
+    the gift-shield send/receive in the activity feed): gift-pro art (O3 + crowned gift box) on a gold-tinted
+    card, headline "GIFT A WEEK OF PRO", soft-number "7 DAYS" badge, gifts-left counter in soft numbers,
+    gold candy "Send a gift" button. Recipient "Pro unlocked!" = pro-crown W art + gold confetti + "7 days of
+    Pro are yours!" + candy "Start playing". "Not eligible" = a kind pose (r-cocoa) + tinted card.
+    Gift-shield rows/notices use the shield-guard art small.
+
+## U. Sound + haptics (founder 10-02: "execute all of them")
+
+New sound pack (synthesized, ours; docs/design/brand/sounds/make-sounds.py; 16 sounds, 168 KB AAC):
+web `public/sounds/<name>.m4a`, iOS `Resources/Sounds/sfx-<name>.m4a` (XcodeGen picks up the folder),
+Android `res/raw/sfx_<name>.m4a`. Names: tap, delete, flip, press, release, hop, invalid, win, lose,
+celebrate, streak, tick, notify, unlock, vs, whoosh.
+- One sound service per platform replacing the synthesized tones (web lib/sounds.ts, iOS SoundManager, the
+  Android tone code): preload all 16 once (web: fetch + decodeAudioData into an AudioContext unlocked on the
+  first tap; iOS: AVAudioPlayer pool or AVAudioEngine buffers, `.ambient` + mixWithOthers so the mute
+  switch and the user's music are respected; Android: SoundPool, USAGE_GAME). Master volume ~0.6; `tap`
+  varies pitch ±3% per press so typing never sounds robotic. Keep the existing Sound Effects toggle
+  (`pref-sound`, default on) and add a separate Haptics toggle (default on) in Settings.
+- Event map (sound · haptic):
+  key press tap · light | delete/backspace delete · light | tile flip (each tile of a reveal) flip · selection
+  tick | correct-row land — · light | not-a-word invalid · warning | candy button / squish press press ·
+  soft | squish release release · — | cast hop / mascot spring-in hop · — | win popup win · success |
+  loss popup lose · soft | Sweep / Flawless / Gauntlet champion / ladder cleared celebrate · success+heavy |
+  streak +1 / shield saved streak · medium | points count-up tick (throttled ≤ 12/s) · — | in-app notice /
+  Friends badge notify · light | achievement unlock unlock · success | VS match found / start vs · medium |
+  popup / sheet open whoosh · —.
+- Web haptics: navigator.vibrate where supported (Android Chrome), no-op elsewhere. Reduce Motion does not
+  mute sound; Sound off mutes all.
+
+## V. 3D achievement badges + level badges
+
+22 new badges shipped ×3 as `art-badge-<name>` (256², transparent; web add to ART_SIZE):
+- Achievement icons (one per existing `icon` key in achievement-service.ts): star, crown, zap, flame, trophy,
+  sparkles, grid, swords, target, medal, trending-up, shuffle, quote, key-round, group, calendar.
+- Level tiers: level-bronze (1–10), level-silver (11–25), level-gold (26–50), level-platinum (51–99),
+  level-diamond (100+) — the thresholds already used on web stats/page.tsx; put `levelTier(level)` in
+  packages/core with a parity fixture so all three agree. Plus `level-pro` (crown on purple gem) = the Pro
+  member mark.
+V1. Achievements grid (Stats + public profile): replace the ✓ / ? text tiles with the badge art. Unlocked =
+    full color, soft glow, name + date below; locked = grayscale, 45% opacity, small icon3d-lock in the
+    corner, name + progress bar ("37/50") in soft numbers. Tap = a detail sheet with the big badge.
+V2. Unlock moment: when an achievement unlocks, a popup (R1 card language): the badge springs in big with
+    rays + confetti, "ACHIEVEMENT UNLOCKED" in lettering-style ink, its name/description, `unlock` sound +
+    success haptic, candy "Nice!" button. Several at once queue one after another.
+V3. Level badge: wherever "Lvl N · Tier" / a level pill shows (Stats player card, profile hero, Friends
+    rows, leaderboard rows, share profile card, level-up toast): the tier badge (16–64pt by context) with
+    the level number in soft numbers beside it. Level-up = a small popup with the new tier badge if the tier
+    changed. Pro members get the small level-pro mark next to their name where the PRO pill was a badge.
+
+## W. First-run onboarding (new players only)
+
+After the cold-start intro, ONLY for players who have never played (flag `onboarded-v1`; existing players
+never see it; How to Play gets a "Take the tour" link to replay it): three swipeable full-screen cards on
+the wallpaper with page dots, Skip top-right, candy Next:
+1. `art-scene-onboard-tiles` (W presenting tiles) — "GUESS THE WORD" + one line on what the tile colors
+   mean, using the app's real tile semantics/colors.
+2. `art-scene-onboard-score` (D with stars) — "SCORE BIG": fewer guesses + faster time = more points, medals,
+   the daily leaderboard.
+3. `art-scene-shield-guard` (U shielding the flame) — "KEEP YOUR STREAK": play daily, shields protect it.
+Final button "Play today's Classic" (candy, game accent) opens the Classic daily. Lettering-style
+headlines, soft numbers, spring-in art, `whoosh` between cards, Reduce Motion = crossfade.
+
+## X. Seasonal cast skins — Halloween (Oct 24 – Nov 1, local date)
+
+`packages/core` `currentSeason(date)` → 'halloween' | null (+ fixture). Shipped ×3: `art-halloween-<id>`
+(w, o1, r, d, o2, c, i, o3, u, s; 320², same framing as the cast poses): W vampire, O1 pumpkin
+cheerleader, R ghost, D wizard, O2 witch, C alien astronaut, I scarecrow, O3 mummy, U fairy-ghost with a
+lantern, S skeleton onesie. During the season these replace the hero cast in: the living cast header row
+(N3), the cold-start intro + landing flourish, the share-image cast wordmark (S3), and the loading screen.
+Admin preview: web `?season=halloween`; native admin debug toggle in Settings (is_admin only).
+(Coming tonight via ChatGPT: Halloween props — pumpkin, bat, candy, ghost — for the day titles and a
+Halloween Home banner; wire the slots now behind the season flag, art names `art-halloween-prop-*` and
+`art-scene-banner-halloween`, hidden if the file is missing.)
+
+## Y. No infinity symbols (founder 10-02: "remove the infinity symbols from the unlimited game windows,
+those look stupid")
+
+Remove every ∞ / infinity glyph/icon from Unlimited cards, buttons, the Daily/Unlimited switch, the gate and
+limit screens, and the finished dock — on all three platforms. Buttons just read "Play", "New puzzle",
+"Keep playing". The U loop art stays.
+
+## Z. Daily ⇄ Unlimited toggle must not move the board (founder 10-02: "toggling from daily to unlimited games
+on pro mode needs to keep the boards stationary, I don't want them to shift at all, and right now they shift
+slightly")
+
+Every game screen with the Daily/Unlimited switch: the board's top edge and size must be pixel-identical in
+both modes. Everything above the board lives in fixed-height slots that exist in BOTH modes (header, the
+switch, the subtitle/date/rank line — when a mode has nothing for a slot it keeps the slot empty, never
+collapses it); the switch's segments are fixed-width (no text-width reflow, no bold-weight jump — use the
+same weight and animate only the sliding thumb); the board-sizing measurement must not depend on mode-only
+elements; the keyboard/dock below is the same height. Swap content with a quick crossfade inside the
+slots. Add a test per platform that measures the board frame (or the computed layout inputs) in both modes
+and asserts they are equal.
+
+## AA. Pro identifier (founder 10-02: "there is no Pro identifier anymore, we need to cleverly get that
+inputted back somewhere nicely")
+
+New sprite `art-badge-pro-crown-sprite` (gold crown, 256², shipped ×3; web add to ART_SIZE).
+AA1. The crowned W: for Pro members, W in the living cast header row (N3) wears the small gold crown,
+     tilted ~-8°, sitting on his head; it does a tiny sparkle twinkle every ~8 s, and bounces with W's hop.
+     Tapping the crown opens a small "You're Pro 👑" sheet (plan, renewal date, Manage). This is the main
+     identifier — every page has the cast header, so Pro is always visible without clutter.
+AA2. Avatars: the Pro player's own avatar (Settings/profile/Friends/leaderboard rows, and OTHER Pro players'
+     avatars too) gets a thin gold ring + the tiny crown sprite on the top-right corner (≈35% of the avatar).
+AA3. Settings + profile: a gold-tinted "WORDOCIOUS PRO" member card at the top of Settings with the
+     art-badge-level-pro badge, "Member since <month year>", plan, and Manage subscription (candy).
+     Free users see the same slot as a G1 upsell card ("Go Pro" + pro-crown art).
+AA4. Pro-only buttons keep the small gold PRO pill only for FREE users (as an upsell); Pro users never see
+     PRO pills — they see the crown instead.
+
+## AB–AI. Pre-build finishing list (founder 10-02: "Do everything you can do out of that list that doesn't
+require new screenshots")
+
+AB. Accessibility for art titles: every image title/lettering (art-game-*, art-title-*, art-day-*,
+    art-moment-*, section titles, headlines) gets a real label = the words it shows ("QuadWord", "Friday's
+    Finest", "Victory!") and the heading trait/role (web: alt + role="heading" aria-level on the wrapper;
+    iOS: .accessibilityLabel + .isHeader; Android: contentDescription + semantics { heading() }). Purely
+    decorative art (poses, scenes, props, wallpaper) is hidden from screen readers. Candy buttons keep their
+    text label; icon-only buttons (home, sound, ?, share, crown, back) get labels. Larger Text / font scale up
+    to 200%: cards grow, nothing clips or overlaps (lettering images don't scale; their text labels do).
+    Add a test per platform that every art title in the registry has a non-empty label.
+
+AC. App size + speed: measure before/after and report.
+    - iOS: report the archived app size; re-encode Assets.xcassets PNGs losslessly (zopfli/optimize) and
+      quantize large transparent art (poses, scenes, badges, titles) to 256-color palette PNG where it's
+      visually identical (PIL quantize with dithering off; keep any image where the diff is visible); make
+      sure the widget target bundles only what it uses.
+    - Android: report the AAB size; art is WebP — confirm quality 92 → 85 is visually identical for poses/scenes
+      and apply if the size win is >15%.
+    - Web: preload the current page's title art (link rel=preload / priority on the img) so titles never pop
+      in late; lazy-load below-the-fold art; width/height on every <img> (no layout shift).
+AD. Dark mode + older phones: (native) audit every new tinted card/popup in dark mode against the web ink
+    rules (≥4.5:1 text contrast) and fix; Low Power Mode (iOS ProcessInfo.isLowPowerModeEnabled / Android
+    PowerManager.isPowerSaveMode) and Reduce Motion both turn off: light rays, continuous bobbing, the living
+    cast header's idle animations, confetti count halves. One-shot springs stay.
+AE. Push + reminder copy in the fun cast voice (pure text change; server pushes on web/API routes + native
+    local reminders): friend beat you ("{name} just beat your QuadWord time ⚡ Your move!"), your turn
+    ("{name} played. Your turn! 🎯"), streak reminder ("Your 🔥 12-day streak misses you! One quick game?"),
+    shield used ("A shield saved your streak 🛡️ Phew!"), challenge received ("{name} challenged you to
+    {Game} ⚔️"), friend request ("{name} wants to be friends! 🎉"), gift received ("{name} gifted you a week
+    of Pro 🎁"), daily ready ("Today's puzzles are fresh 🌅"). Short, American spelling, no em dashes, put the
+    bank in packages/core (push-copy.ts + fixture) so native local reminders match.
+AF. In-game "?" help popups (every game's rules sheet): the R1 card language — the game's host pose at top,
+    the game title art, 3–4 short steps each with a tiny animated example row of real B-kit glossy tiles
+    (e.g. a guess flipping purple/gold/grey), candy "Got it" button, `whoosh` on open. Content from the
+    existing how-to-play copy (shortened); "Take the tour" link (W).
+AG. Desktop web + iPad: wide-screen layout pass. Web ≥ 900px: content column max ~560px centered for game
+    screens (boards keep the phone sizing rule, never stretched), Home/Leaderboard/Stats/Friends use a
+    two-column grid of the tinted cards up to ~1100px, the wallpaper's wide variant fills the sides, the cast
+    header stays at 90% of the column. iPad (iOS) + Android tablets/foldables (width ≥ 600): same column
+    max-width idea, popups capped at ~440pt wide, centered; landscape doesn't break the board fit.
+AH. Pick-a-character avatars: in Edit Profile, a grid of the 10 cast heroes (plus the player's photo/initials
+    option). The chosen character becomes the avatar everywhere (Friends, leaderboard, VS, share profile
+    card) on a tinted circle in that character's color. Avatar frames unlock by level tier (bronze/silver/
+    gold/platinum/diamond ring, art `art-frame-<tier>` coming tonight — until then a code-drawn ring in the
+    tier color) and Pro adds the AA2 gold crown. Stored on profiles (avatar_cast_id text null, avatar_frame
+    text null) — web agent: write the migration SQL to docs/sql/ and STOP (the coordinator applies it after
+    a backup); the apps must work if the columns don't exist yet (treat as null).
+AI. Store review prompt at a happy moment: right after a Flawless, a Daily Sweep, or a 7-day streak milestone
+    — never in the first 3 days of play, at most once per 120 days, never after a loss. iOS
+    SKStoreReviewController/AppStore.requestReview(in:); Android Play In-App Review API (add
+    com.google.android.play:review-ktx); web: none. NO custom "do you like us?" pre-prompt (Apple 5.6.1 and
+    Google policy forbid gating/filtering) — just let the celebration finish, then call the system prompt.
+
+## AJ. Footer Home tab always goes Home (founder 10-02: "tapping the home button on the footer always gets you
+back to the main page when you're on another menu as a player would expect to happen at any time")
+
+From ANY depth — a game, a footer info page (Guides/FAQ/…), Settings, Edit Profile, a profile, Records,
+the VS lobby/ladder/results, a pocket game, Pro page, a sheet or popup — tapping the footer Home tab:
+- dismisses any open sheet/popup/modal, pops the whole navigation stack, and lands on Home (root), scrolled to
+  the top; tapping Home while already on Home root scrolls to the top (standard re-tap).
+- the same applies per tab: tapping the CURRENT tab pops that tab to its root (iOS/Android convention).
+- in-progress solo games are already saved — leave without a prompt.
+- the ONE exception: a live VS match (where quitting counts as a forfeit) shows a small candy confirm
+  "Leave the match? It counts as a forfeit." [Stay] [Leave] — never silently forfeit.
+- web: Home tab is a real link to "/" that also closes any open modal/overlay state (no stale overlay on
+  return); browser Back still works normally.
+- Add a test per platform: navigate 3 levels deep (e.g. Settings → Edit Profile → avatar picker, or a game →
+  its help popup) and assert Home tap lands on root with no overlay.
+
+## AK. Home game cards must squish (founder 10-02: "The game buttons on the main menu aren't squishy, they don't
+have any animation when pressed right now")
+
+A9 applies to Home first: every Home game card/tile (DAILIES cards, PUZZLES cards, the Word of the Day card,
+the VS card + its buttons, the banner, More games, Sweep) gets the shared squish: press → scale 0.95 with a
+spring, a slight darken/lip-compress, `press` sound + soft haptic; release → springs back past 1.0 (1.02) to
+1.0, `release` sound; then navigates. Must not break scrolling: iOS uses a ButtonStyle reading
+`configuration.isPressed` (never a DragGesture/onLongPress that steals the scroll); Android uses the
+interactionSource press state (pressSquish) so a scroll cancels silently; web uses pointer events + :active
+with touch-action: manipulation. Then sweep the rest of the app for any tappable without the squish
+(leaderboard/stats picker tiles, Friends rows, Records rows, footer page cards, Settings rows, badges,
+header icons, the cast-header crown) and add it. Add a small test/registry check where feasible (e.g. the
+shared card components route through the squish modifier/style).
+
+## AL. Widgets must show progress, points and time left (founder 10-02: "make sure the revamped widgets populate
+the amount of puzzles completed, total points, amount of time left in the day. The most recent smaller version
+dropped all of that information aside from the amount of time left until new puzzles")
+
+Both widget sizes on iOS (WordociousWidget) and Android (DailyWidgetProvider + widget_daily[_small].xml) must
+ALWAYS show these three, in the new look (soft numbers, tinted pills, no white):
+1. Puzzles completed today: "5/8 today" (all dailies incl. Puzzles group as the app counts them; the medium
+   may split "Dailies 5/8 · Puzzles 2/9").
+2. Total points today: the day's point total in soft numbers with the gold star glyph ("⭐ 3,420"); 0 before
+   the first game, never hidden.
+3. Time left until new puzzles: a live countdown to local midnight (iOS Text(timerInterval:countsDown:);
+   Android Chronometer countdown) — "New puzzles in 7:42:10".
+Plus the streak flame (already there). Small layout (2×2): top row streak flame + day host; middle the tile
+mini-grid (may shrink to one row of dots if needed to fit); bottom two lines: "5/8 · ⭐ 3,420" and the
+countdown. Medium keeps the cast row + tiles and adds the same three in a stat row.
+DATA: the app must write `played/total`, `points today` and the day into the shared widget snapshot (iOS App
+Group defaults; Android WidgetBridge) after every finished game, on app launch/foreground, and after sync;
+then reload (WidgetCenter.reloadAllTimelines / AppWidgetManager update). Points must be the same number the
+app shows for today (sum of today's daily scores). At local midnight the timeline/alarm resets to 0/N, ⭐ 0,
+fresh countdown — never shows yesterday's numbers. Add a unit test for the snapshot math (today's points sum,
+played/total, midnight rollover). Also fill the rank slot if the app has today's rank (else hide it cleanly).
+AL addendum (founder 10-02: "don't just show them as numbers, they should clearly highlight what they
+represent"): every widget number is a labeled stat — a small tinted pill/chip with an icon AND a word:
+  [icon3d-flame] 12 DAY STREAK · [grid/check glyph] 5/8 SOLVED · [gold star] 3,420 POINTS ·
+  [clock glyph] NEW PUZZLES IN 7:42:10.
+Small widget: two stacked chips at the bottom ("5/8 SOLVED" + "3,420 PTS") and a full-width countdown chip
+"NEW IN 7:42:10"; the label text is small caps (9–10pt, letter-spaced) under or beside the soft number so a
+glance reads what each number means. Medium: a row of four labeled chips. VoiceOver/TalkBack read full
+phrases ("5 of 8 puzzles solved today", "3,420 points today", "new puzzles in 7 hours 42 minutes").
+AL addendum 2 (founder 10-02: "I don't want any of those phone emojis … match the aesthetic"): NO system emoji
+in any widget or in-app UI. Widget chip icons are our 3D art: streak = icon3d-flame, solved = icon3d-badge-check,
+points = `art-badge-icon-star-sprite` (new gold star, shipped ×3), countdown = `art-badge-icon-clock-sprite`
+(3D clock, coming tonight via ChatGPT — until then a code-drawn soft gold clock face, no emoji). Also new:
+`art-badge-icon-zap-sprite` (gold bolt) for speed/time stats. The widget target must bundle these.
+Sweep the apps for emoji used as UI icons (stat chips, popups, R1 chips, toasts, badges, notices) and swap in
+the 3D art; emoji stay ONLY in plain-text channels that can't show images (share captions text, push
+notification text).
+
+## AM. No phone emoji anywhere in the app (founder 10-02: "No phone emojis anywhere on the app … the friends page
+… different reactions under moments. I'd like that to be polished, and all new emojis made using our style")
+
+AM1. Reactions (Friends moments / feed / VS results; web api/friends/react REACTIONS = clap, fire, wow, grr,
+     rematch): keep the stored KEYS unchanged (no data migration); render each as our 3D art
+     `art-react-clap|fire|wow|grr|rematch|heart` (coming tonight via ChatGPT, glossy candy style; until the
+     files exist, fall back to the existing 3D icons: fire → icon3d-flame, others → a tinted pill with the
+     word "Clap!", "Wow!", "Grr!", "Rematch" — never the emoji). Reaction bar = a tinted candy tray with the
+     icons as squishy buttons (AK), your chosen one pops + `press` sound + light haptic, counts in soft
+     numbers beside each, a little burst animation when you react. Push text may keep an emoji (plain text).
+AM2. Emoji avatars (profiles.avatar_emoji): retire the emoji option from the avatar picker — the AH cast
+     characters + photo + letter tile replace it. Existing emoji avatars render as the player's letter tile
+     in their accent color (never the emoji), and they get a one-time gentle nudge in Edit Profile:
+     "Pick your character!". No DB change.
+AM3. Any remaining emoji in UI strings (labels, chips, toasts, empty states, buttons, headlines, the R1 chips
+     "🔥 Day N" etc.) → our 3D art or plain words. Allowed only in plain-text channels: share captions, push
+     notification text, invite message text. Add a test per platform that scans UI source/strings for emoji
+     outside an allowlist of those files.
+
+## AN. Build-your-own-mascot avatar maker (founder 10-02: "selecting a body type/shape, color/pattern options, and
+different eyes nose and mouth options … accessories … build your own version of these mascots. Then those mascots
+will populate the initial parts on leaderboards flawlessly"; custom photos should be "a square, as well, possibly
+with a border … similar to the border selectable in our new avatar maker")
+
+AN1. The avatar is a LAYERED mascot in the cast's glossy 3D style, with the player's own INITIAL as the white
+     body letter (like the cast's W/O/R…), rendered in code (Nunito black, white, soft emboss + shadow so it
+     reads like the cast letters). Layers back→front: frame back, cape-type accessory (behind), body (tinted),
+     pattern (clipped to the body), body letter, cheeks/nose, eyes, mouth, face accessory (glasses, mustache),
+     head accessory (hats), front frame.
+AN2. Parts (art coming tonight via ChatGPT, transparent, one shared manifest of anchors):
+     - body shapes (6): classic rounded square, tall narrow, wide squat, round blob, bean, soft star — each a
+       neutral white/light-grey glossy body with stubby arms + feet and NO face/letter, so code can TINT it.
+     - colors (12 code swatches from the cast palette + 4 extras) applied by multiply onto the white body so
+       the gloss/shading survive; patterns (code-drawn, clipped to the body alpha, multiplied): solid, two-tone
+       (top/bottom), stripes, polka dots, gradient, sparkle speckles.
+     - eyes (9): beady (cast default), happy arcs, big sparkly, sleepy, wink, hearts, stars, round glasses,
+       one big cyclops eye.
+     - mouths (9): smile, big grin, tongue out, little o, cat :3, toothy grin, smirk, tiny smile, gasp.
+     - nose/cheeks (5): none, button nose, round red nose, blush cheeks, freckles.
+     - accessories (up to 1 head + 1 face + 1 neck/back): crown (Pro only), cape, nightcap, sweatband, sprout,
+       heart sunglasses, beanie, bow, headphones, wizard hat, party hat, pirate hat, mustache, bow tie, flower,
+       cowboy hat, chef hat, graduation cap, halo.
+     - Presets: the 10 cast members as one-tap starting points ("Start from W" …) → AH's character pick lives
+       here now.
+     Art names: art-av-body-<shape>, art-av-eyes-<id>, art-av-mouth-<id>, art-av-nose-<id>, art-av-acc-<id>.
+     Manifest `packages/core/src/avatar-parts.json` (written by the coordinator after the art lands): per body
+     shape the anchors {faceCenter, eyeY, mouthY, cheekY, headTop{x,y,w}, neckY, letterBox} in 0–1 body
+     coords; per part its anchor slot + scale. Until tonight, build against a placeholder manifest + simple
+     code-drawn placeholder parts so the engine and UI are done when the art drops in.
+AN3. Data: `profiles.avatar_config jsonb null` = {v:1, body, color, pattern, patternColor, eyes, nose, mouth,
+     head, face, neck, frame}. packages/core `avatar-config.ts`: schema/validate (unknown ids → defaults),
+     `defaultAvatar(userId, accent)` = a deterministic friendly default (seeded body/eyes/mouth, the player's
+     accent color, no accessory) so EVERY player without a photo shows a mascot with their initial — this
+     replaces the plain letter tiles on leaderboards, Friends, VS, Records, profiles, share cards. Fixture for
+     parity. Web agent writes the migration SQL to docs/sql/ (with AH's columns) and STOPS; the coordinator
+     applies it after a backup. Apps must work while the column is missing (fall back to the default).
+     APIs (/api/friends, leaderboard, VS, profile) return avatar_config (null-safe).
+AN4. The builder (Edit Profile → "Make your mascot"): a big live preview on a tinted stage (the mascot hops on
+     every change, `hop` sound), category tabs as candy chips (Body · Color · Pattern · Eyes · Nose · Mouth ·
+     Hats · Extras · Frame), each a grid of squishy option tiles showing that part on the current mascot,
+     Randomize (dice candy button, playful), Save (candy). Pro-only items (crown, diamond frame) show the
+     gold PRO pill for free users → G1 popup. Accessible: every option labeled.
+AN5. Rendering everywhere: one shared renderer per platform (web: layered <img>/canvas component; iOS ZStack;
+     Android Box) at any size 16–200pt; small sizes (≤ 28pt) drop the pattern + accessories except hats for
+     legibility; cache composed bitmaps per config+size. Leaderboard rows/podiums/Friends/VS/Records/profile/
+     share images/widget (if it shows the player) all use it.
+AN6. Photo avatars become SQUARE: rounded square (radius ≈ 22%), never a circle, with the player's selected
+     frame (same frame options as the builder: none, bronze/silver/gold/platinum/diamond by tier, Pro gold
+     with crown) — e.g. johnnyauer's photo. Frames are rounded-SQUARE (not rings), matching the mascot tile
+     shape. AH/AA2 "gold ring" become this rounded-square frame language.
+
+## AO. First-run welcome + guided profile setup (supersedes W) (founder 10-02: "something that matches the
+aesthetic that clearly welcomes and guides you to the app on the first go after downloading … a quick overview
+of everything and also guide to the first steps of creating a profile"; "the avatar maker feature walked through
+for a new user")
+
+Shown once, to a brand-new install/account (flag `onboarded-v2`; existing players never see it; How to Play →
+"Take the tour" replays steps 1–2). Every screen: wallpaper, lettering-style headline, cast art, candy buttons,
+squish, `whoosh` between steps, page dots, Skip (top-right) on 2–4, Reduce Motion = crossfades.
+1. WELCOME (after the cold-start intro lands): the whole cast waving (`art-scene-welcome-cast`, tonight),
+   "WELCOME TO WORDOCIOUS!", one line "Daily word games, a cast of friends, and bragging rights.",
+   candy "Let's go!" + text link "I already have an account" (→ sign in, then straight to Home).
+2. QUICK TOUR — 4 swipe cards, one sentence each:
+   a. Daily games — art-scene-onboard-tiles (W + tiles): "New puzzles every day. Guess the word, solve the board."
+   b. Score + leaderboards — art-scene-onboard-score (D): "Fewer guesses and faster times earn more points."
+   c. Streaks + shields — art-scene-shield-guard (U): "Play daily to grow your streak. Shields save it."
+   d. Friends + VS — art-scene-friends-match (I + pink O): "Race friends, react, and battle the cast."
+3. MAKE YOUR PROFILE (account): sign up (existing auth screens, restyled per G5) → pick a USERNAME (candy
+   field, live availability check with a green check / "taken" shake, suggestions as chips) → "Play as guest"
+   stays available on step 1 of this (guests skip 3–4 and get the default mascot).
+4. MAKE YOUR MASCOT (AN builder in onboarding mode): starts from the player's DEFAULT mascot with their
+   initial; a coach character (W, small pose in a speech-bubble card, 3 short tips, tap to advance):
+   "This is you! Your initial is on your belly." → points at the tabs "Change your body, colors, face and hats
+   here." → points at Surprise me "Stuck? Let me pick!" → points at Save "Love it? Save it!". Spotlight dims
+   everything except the pointed control. "Do it later" link keeps the default.
+5. ALL SET: the player's new mascot hops into the cast row next to W (`hop` sound, confetti),
+   "YOU'RE IN!", "Meet the gang. Your first puzzle is ready." → candy "Play today's Classic" (opens the daily)
+   + "Explore first" (Home). Then the first-game coach (existing W tips) continues.
+Fresh art tonight via ChatGPT: art-scene-welcome-cast (all ten waving, wide), art-scene-all-set (cast cheering
+with an empty spot in the row, wide). Until they land use the cast row + existing scenes.
+
+AN addendum (founder 10-02: "Add more hat and accessory options to the builder, as well as different background
+color options"; mockup https://claude.ai/artifact/FJVwK3UNHJM4p5cvZCamM7):
+- HATS (21): crown★, party, beanie, sprout, nightcap, headphones, bow, wizard, pirate, cowboy, chef, grad cap,
+  halo★, flower, top hat, propeller, cat ears, bunny ears, tiara★, viking, sweatband.
+- EXTRAS (8): cape, wings★, mustache, heart shades, monocle, bow tie, scarf, gold chain★.
+- NEW TAB "Backdrop" — the tile background behind the mascot (shown everywhere the avatar shows): tints lilac,
+  bubblegum, sky, mint, lemon, peach, cloud, night; gradients sunset, ocean, cotton candy, aurora★; patterns
+  galaxy★ (stars on purple), polka, starry (gold stars on navy), sunburst (rays), checkers, confetti.
+  ★ = Pro only (gold PRO pill → G1 popup for free users). avatar_config gains `bg` (default: a light tint of
+  the body color). Web: add AVATAR_HEADS/FACES/NECKS entries + AVATAR_BACKDROPS (id, kind solid|gradient|
+  pattern, colors) to avatar-config.ts with the fixture; natives port; renderers draw the backdrop.
+
+## AP. Welcome to Pro (first purchase) (founder 10-02: "a thanks for joining pro and a rundown of the benefits
+they have now … a custom screen when someone joins the pro version for the first time")
+
+Shown ONCE, right after the FIRST successful Pro purchase (or a gifted week's first activation — headline
+"YOUR FREE WEEK OF PRO!" then), full screen, never again (flag `pro-welcomed`; restores don't trigger it):
+- gold sunburst rays slowly turning + falling gold/cast-color confetti (calm motion: static rays, one burst),
+  `celebrate` sound + success haptic.
+- `art-scene-pro-crown` (W with the crown) springs in; lettering-style "WELCOME TO PRO!" in gold; "Thanks for
+  joining, <name>! Here's everything you just unlocked."
+- 8 benefit cards (2-col grid, each a tinted card with a top bar, 3D art, short title + one line, popping in
+  70 ms apart): Play unlimited (unlimited-loop) · No ads, ever (badge-check) · VS everything (swords) ·
+  Battle the cast (ladder-cleared) · 4 shields a cycle (shield-guard) · Gift Pro (gift-pro) · The Pro look
+  (level-pro badge: crown on W, gold frames, Pro hats/backdrops) · Deeper stats (trending-up).
+- chip "Your 4 streak shields are ready" (shield art) — only if shields were credited.
+- gold candy "LET'S PLAY!" → back to where they were (or the Unlimited game they reached for, R3) and the
+  crown then drops onto W in the cast header (AA1) with a sparkle; text link "Gift a friend a free week" → T4.
+- Also: update the Pro page / G1 benefit copy to the cast bots ("Battle all ten of the cast" — not
+  "Easy, Medium & Hard bots").

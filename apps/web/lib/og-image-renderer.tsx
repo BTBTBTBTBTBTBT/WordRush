@@ -98,10 +98,28 @@ function modeBadgeIcon(id: string, accent: string): React.ReactNode {
   }
 }
 
+/** Loads a bundled PNG for Satori (it can't decode WebP); null when it can't, so the card still renders. */
+async function loadOgPng(url: URL): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(url);
+    return res.ok ? await res.arrayBuffer() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The finishing look (FINISH_SPEC E1): the home wallpaper behind everything,
+ * the ten-character cast across the top (they spell WORDOCIOUS), the gradient
+ * wordmark, and the daily games as tinted pills (never white). Both PNGs ship
+ * in the bundle (public/og/), and a missing one only drops that layer.
+ */
 export async function renderWordociousOgImage(): Promise<ImageResponse> {
-  const nunitoData = await fetch(
-    new URL('../app/fonts/Nunito-Black.woff', import.meta.url),
-  ).then((res) => res.arrayBuffer());
+  const [nunitoData, wallData, castData] = await Promise.all([
+    fetch(new URL('../app/fonts/Nunito-Black.woff', import.meta.url)).then((res) => res.arrayBuffer()),
+    loadOgPng(new URL('../public/og/og-wall.png', import.meta.url)),
+    loadOgPng(new URL('../public/og/og-cast.png', import.meta.url)),
+  ]);
 
   return new ImageResponse(
     (
@@ -113,25 +131,22 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #f8f7ff 0%, #ede5ff 50%, #f3f0ff 100%)',
+          background: 'linear-gradient(135deg, #F3EEFF 0%, #FBEFFF 50%, #FFF1F7 100%)',
           position: 'relative',
           fontFamily: 'Nunito',
         }}
       >
-        {/* Decorative top accent — brand gradient bar */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '12px',
-            background: 'linear-gradient(90deg, #a78bfa, #ec4899, #7c3aed)',
-            display: 'flex',
-          }}
-        />
+        {wallData && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={wallData as unknown as string}
+            width={1200}
+            height={630}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+            alt=""
+          />
+        )}
 
-        {/* Main content — sits directly on the gradient, no card */}
         <div
           style={{
             display: 'flex',
@@ -140,44 +155,34 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             justifyContent: 'center',
           }}
         >
-          {/* App icon + WORDOCIOUS wordmark — the icon is the brand mark
-              everywhere else (favicon, home screen, store); link previews
-              should lead with it too, not text alone. Satori fetches the
-              absolute URL at render time (self-hosted, so it can't 404
-              without the whole site being down). */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '44px' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://wordocious.com/icon-512.png"
-              width={150}
-              height={150}
-              style={{ borderRadius: '38px' }}
-              alt=""
-            />
-            <div
-              style={{
-                // 140px + the icon ran the final S into the 1200px edge.
-                fontSize: '118px',
-                fontWeight: 900,
-                background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-                backgroundClip: 'text',
-                color: 'transparent',
-                letterSpacing: '-5px',
-                lineHeight: 1,
-                display: 'flex',
-              }}
-            >
-              WORDOCIOUS
-            </div>
+          {/* The cast: ten characters spelling WORDOCIOUS (the brand mark now). */}
+          {castData && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={castData as unknown as string} width={1000} height={136} alt="" />
+          )}
+          <div
+            style={{
+              fontSize: castData ? '100px' : '118px',
+              fontWeight: 900,
+              background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+              backgroundClip: 'text',
+              color: 'transparent',
+              letterSpacing: '-4px',
+              lineHeight: 1,
+              marginTop: castData ? '6px' : '0px',
+              display: 'flex',
+            }}
+          >
+            WORDOCIOUS
           </div>
 
           {/* Tagline */}
           <div
             style={{
-              fontSize: '52px',
+              fontSize: '40px',
               fontWeight: 800,
-              color: '#4b5563',
-              marginTop: '24px',
+              color: '#3b1a78',
+              marginTop: '10px',
               letterSpacing: '-0.5px',
               display: 'flex',
             }}
@@ -186,15 +191,14 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
           </div>
 
           {/* Game mode pills — every daily mode with its REAL tile icon
-              (§235). Two centered rows via flexWrap; badges are the app's
-              tile style: accent-tinted rounded square, icon in accent. */}
+              (§235), each pill tinted in its game's accent (A1: no white). */}
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
               justifyContent: 'center',
-              gap: '16px',
-              marginTop: '44px',
+              gap: '14px',
+              marginTop: '28px',
               maxWidth: '1100px',
             }}
           >
@@ -204,17 +208,17 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 24px 10px 12px',
-                  background: 'rgba(255, 255, 255, 0.55)',
-                  border: '2px solid #c4b5fd',
+                  gap: '10px',
+                  padding: '8px 22px 8px 10px',
+                  background: `${m.accentHex}1f`,
+                  border: `2px solid ${m.accentHex}66`,
                   borderRadius: '999px',
                 }}
               >
                 <div
                   style={{
-                    width: '46px',
-                    height: '46px',
+                    width: '42px',
+                    height: '42px',
                     borderRadius: '12px',
                     background: `${m.accentHex}26`,
                     display: 'flex',
@@ -232,13 +236,13 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
                   )}
                   {/* Satori can't draw SVG <text>: the hands' digits overlay. */}
                   {m.id === 'six' && (
-                    <div style={{ position: 'absolute', left: '17px', top: '22px', fontSize: '12px', fontWeight: 900, color: '#0e7490', display: 'flex' }}>6</div>
+                    <div style={{ position: 'absolute', left: '15px', top: '20px', fontSize: '12px', fontWeight: 900, color: '#0e7490', display: 'flex' }}>6</div>
                   )}
                   {m.id === 'seven' && (
-                    <div style={{ position: 'absolute', left: '19px', top: '22px', fontSize: '12px', fontWeight: 900, color: '#4d7c0f', display: 'flex' }}>7</div>
+                    <div style={{ position: 'absolute', left: '17px', top: '20px', fontSize: '12px', fontWeight: 900, color: '#4d7c0f', display: 'flex' }}>7</div>
                   )}
                 </div>
-                <div style={{ fontSize: '26px', fontWeight: 800, color: '#5b21b6', display: 'flex' }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#3b1a78', display: 'flex' }}>
                   {m.title}
                 </div>
               </div>
@@ -246,14 +250,14 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
           </div>
         </div>
 
-        {/* Footer tagline */}
+        {/* Footer line */}
         <div
           style={{
             position: 'absolute',
-            bottom: '36px',
+            bottom: '26px',
             fontSize: '24px',
-            fontWeight: 700,
-            color: '#7c3aed',
+            fontWeight: 800,
+            color: '#6d28d9',
             display: 'flex',
             alignItems: 'center',
             gap: '10px',

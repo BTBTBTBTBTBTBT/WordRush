@@ -1,14 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { HeaderBack, HEADER_GLYPH } from '@/components/ui/page-header';
+import { HEADER_GLYPH } from '@/components/ui/page-header';
+import { GameHelpCard } from '@/components/help/game-help-card';
 import { getGuide } from '@/lib/guide-content';
 import { setGuidePaused } from '@/hooks/use-active-play-timer';
-import { Mascot } from '@/components/ui/mascot';
-import { guideHost } from '@/lib/mascots';
-import { ArtTitle } from '@/components/ui/art-title';
-import { GAME_TITLE_ART_HEIGHT, gameTitleArtForGuide, gameTitleArtLabel } from '@/lib/art';
 
 interface Props {
   /** Guide slug (matches lib/guide-content.ts): classic, six, quadword, … */
@@ -19,10 +16,12 @@ interface Props {
 }
 
 /**
- * In-game "?" button (top-right, mirroring GameHomeButton at top-left). Opens a
- * slide-up sheet with this mode's strategy guide — the /guides content up to but
- * excluding "Keep reading". Reading it pauses the game clock (setGuidePaused),
- * and the sheet closes via the X, a backdrop tap, or a swipe-down.
+ * In-game "?" button (top-right, mirroring GameHomeButton at top-left). Opens
+ * the game's help card (components/help/game-help-card.tsx, FINISH_SPEC AF):
+ * 3–4 short steps with tiny tile examples, "Got it", "Take the tour", and the
+ * full rules / scoring / strategy under a disclosure. Reading it pauses the
+ * game clock (setGuidePaused); it closes via Got it, the X, Escape or a
+ * backdrop tap.
  */
 export function GameGuideButton({
   slug,
@@ -31,19 +30,13 @@ export function GameGuideButton({
 }: Props) {
   const [open, setOpen] = useState(false);
   const guide = getGuide(slug);
-  const host = guideHost(slug);
-  // ART_SPEC §10: the game's title art (lettering + host) tops its guide.
-  const titleArt = gameTitleArtForGuide(slug);
+  const close = useCallback(() => setOpen(false), []);
 
   // Pause the clock while the guide is open.
   useEffect(() => {
     setGuidePaused(open);
     return () => setGuidePaused(false);
   }, [open]);
-
-  // Swipe-down-to-close.
-  const startY = useRef<number | null>(null);
-  const [dragY, setDragY] = useState(0);
 
   if (!guide) return null;
 
@@ -53,135 +46,13 @@ export function GameGuideButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="How to play"
+        aria-haspopup="dialog"
         className={`${positionClass} hdr-glyph w-11 h-11 flex items-center justify-center`}
       >
         <Icon3D name="help" size={HEADER_GLYPH} priority />
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(26,26,46,0.5)' }}
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="w-full max-w-lg rounded-t-3xl overflow-hidden flex flex-col animate-slide-up"
-            style={{ background: 'var(--color-bg)', maxHeight: '88vh', transform: `translateY(${dragY}px)` }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Drag handle — also the swipe-to-close grabber. With title art the
-                close X sits at its right so the art gets the full width below. */}
-            <div className="relative">
-              <div
-                className={`${titleArt ? 'pt-2.5 pb-1.5 min-h-[44px] items-start' : 'pt-2.5 pb-1.5'} flex justify-center cursor-grab touch-none`}
-                onTouchStart={(e) => { startY.current = e.touches[0].clientY; }}
-                onTouchMove={(e) => {
-                  if (startY.current !== null) setDragY(Math.max(0, e.touches[0].clientY - startY.current));
-                }}
-                onTouchEnd={() => {
-                  if (dragY > 90) setOpen(false);
-                  setDragY(0);
-                  startY.current = null;
-                }}
-              >
-                <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }} />
-              </div>
-              {titleArt && (
-                <div className="absolute right-4 top-2">
-                  <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />
-                </div>
-              )}
-            </div>
-
-            {/* The game's host waves hello at the top of its guide (when the
-                game has no title art; the art carries its host, ART_SPEC §10). */}
-            {host && !titleArt && (
-              <div className="flex justify-center px-5 pt-1 pb-1">
-                <Mascot id={host} size={72} motion="wave" priority />
-              </div>
-            )}
-
-            {titleArt ? (
-              // ART_SPEC §14: the title art spans the sheet (full width minus
-              // 32), up to 72 px tall; the tagline sits under it.
-              <div className="px-4 pb-2">
-                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.guide} maxWidth={2000} as="h2" className="mb-1" />
-                <p className="text-xs font-bold mt-0.5 text-center" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
-              </div>
-            ) : (
-              <div className="flex items-start justify-between gap-2 px-5 pb-2">
-                <div className="min-w-0 flex-1">
-                  <h2
-                    className="text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text"
-                    style={{ backgroundImage: GUIDE_TITLE_GRADIENTS[slug] ?? `linear-gradient(135deg, ${accentColor}, ${accentColor})` }}
-                  >
-                    {guide.title}
-                  </h2>
-                  <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
-                </div>
-                <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />
-              </div>
-            )}
-
-            <div className="overflow-y-auto px-5 pb-8 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                {guide.facts.map((f) => (
-                  <div key={f.label} className="px-3 py-2.5" style={card}>
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{f.label}</div>
-                    <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{f.value}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-5" style={card}>
-                <h3 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How it works</h3>
-                {guide.rules.map((p, i) => (
-                  <p key={i} className="text-xs leading-relaxed mb-2 last:mb-0" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
-                ))}
-              </div>
-
-              <div className="p-5" style={card}>
-                <h3 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How scoring works</h3>
-                {guide.scoring.map((p, i) => (
-                  <p key={i} className="text-xs leading-relaxed mb-2 last:mb-0" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
-                ))}
-              </div>
-
-              <div className="p-5" style={card}>
-                <h3 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>Strategy</h3>
-                <div className="space-y-4">
-                  {guide.tips.map((tip) => (
-                    <div key={tip.heading}>
-                      <h4 className="text-xs font-black mb-1" style={{ color: guide.accent }}>{tip.heading}</h4>
-                      <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{tip.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {open && <GameHelpCard slug={slug} accent={accentColor} onClose={close} />}
     </>
   );
 }
-
-// Per-mode title gradients — 1:1 with each mode's in-game header so the guide
-// sheet title reads with the same accent aesthetic as the game screen.
-const GUIDE_TITLE_GRADIENTS: Record<string, string> = {
-  classic: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-  six: 'linear-gradient(135deg, #06b6d4, #22d3ee)',
-  seven: 'linear-gradient(135deg, #84cc16, #a3e635)',
-  quadword: 'linear-gradient(to right, #facc15, #f472b6, #c084fc)',
-  octoword: 'linear-gradient(to right, #22d3ee, #c084fc, #f472b6)',
-  succession: 'linear-gradient(to right, #facc15, #fb923c, #f87171)',
-  deliverance: 'linear-gradient(to right, #818cf8, #c084fc, #e879f9)',
-  gauntlet: 'linear-gradient(135deg, #d97706, #f59e0b)',
-  propernoundle: 'linear-gradient(135deg, #dc2626, #f87171)',
-};
-
-const card = {
-  background: 'var(--color-surface)',
-  border: '1.5px solid var(--color-border)',
-  borderRadius: '16px',
-} as const;

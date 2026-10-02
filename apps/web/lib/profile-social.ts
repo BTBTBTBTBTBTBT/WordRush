@@ -396,16 +396,19 @@ export async function fetchPerfectOcto(targetId: string): Promise<boolean> {
 
 // ── Lately feed (client reads) ──────────────────────────────────────────────
 
+/** A Lately row's icon — rendered as our 3D art (components/ui/ui-icon.tsx), never an emoji. */
+export type LatelyIcon = 'flame' | 'medal-gold' | 'medal-silver' | 'medal-bronze' | 'medal';
+
 export interface LatelyEvent {
   id: string;
-  emoji: string;
+  icon: LatelyIcon;
   text: string;
   when: string;
   /** Set for medal events — lets a row open that day's podium. */
   podium?: { day: string; mode: string };
 }
 
-const MEDAL_EMOJI: Record<string, string> = { gold: '\u{1F947}', silver: '\u{1F948}', bronze: '\u{1F949}' };
+const MEDAL_ICON: Record<string, LatelyIcon> = { gold: 'medal-gold', silver: 'medal-silver', bronze: 'medal-bronze' };
 
 function relativeDayLabel(day: string): string {
   const today = getTodayLocal();
@@ -442,7 +445,7 @@ export async function fetchLately(targetId: string): Promise<LatelyEvent[]> {
     if (streak > 0) {
       events.push({
         id: 'streak',
-        emoji: '\u{1F525}',
+        icon: 'flame',
         text: `On a ${streak}-day daily streak`,
         when: 'Now',
       });
@@ -463,7 +466,7 @@ export async function fetchLately(targetId: string): Promise<LatelyEvent[]> {
       if (events.length >= 5) break;
       events.push({
         id: `${g.day}-${g.medal}`,
-        emoji: MEDAL_EMOJI[g.medal] ?? '\u{1F3C5}',
+        icon: MEDAL_ICON[g.medal] ?? 'medal',
         text: g.modes.length === 1
           ? `Won ${g.medal}`
           : `Won ${g.medal} in ${g.modes.length} modes`,

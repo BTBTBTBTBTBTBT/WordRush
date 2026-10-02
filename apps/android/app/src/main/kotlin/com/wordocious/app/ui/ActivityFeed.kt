@@ -53,6 +53,7 @@ import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.ui.friends.friendsCard
+import com.wordocious.app.ui.friends.color
 import kotlinx.coroutines.launch
 
 // ACTIVITY (§290, Friends D3.2) — the Friends tab's feed: the last seven days
@@ -136,8 +137,11 @@ internal fun feedDayLabel(day: String, today: String): String {
     return d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.US)
 }
 
-/** The four reaction emoji + Rematch (§6) — keys MUST mirror /api/friends/react. */
-internal val REACTION_KEYS = listOf("clap" to "👏", "fire" to "🔥", "wow" to "😱", "grr" to "😤")
+/**
+ * The four reactions + Rematch (§6) — keys MUST mirror /api/friends/react. Drawn as our
+ * art via ReactionGlyph (FINISH_SPEC AM1), never as emoji.
+ */
+internal val REACTION_KEYS = listOf("clap", "fire", "wow", "grr")
 
 /** A game moment's kind: the feed's `gameKind`, else its title ("Tic-Tac-Tile" → TTT). */
 internal fun momentKind(e: FriendsService.FeedEvent): com.wordocious.core.FriendlyKind? =
@@ -145,12 +149,15 @@ internal fun momentKind(e: FriendsService.FeedEvent): com.wordocious.core.Friend
         ?: com.wordocious.core.FRIENDLY_TITLES.entries.firstOrNull { it.value == e.gameTitle }?.key
 
 /**
- * MOMENTS (§290 → Friends overhaul §6): the last seven days of your circle's
- * moments — sweeps, medals, records, shield gifts and now pocket-game wins and
- * draws. Reaction chips (👏 🔥 😱 😤, + Rematch on game moments) show inside a
- * moment only once it has reactions; double-tap toggles 👏, a hold opens a
- * floating reaction bar (founder 2026-10-01). A Rematch tap also opens the quick-play sheet with that game and
- * friend ([onRematch]).
+ * MOMENTS (§290 → Friends overhaul §6 → FINISH_SPEC K1): the last seven days of your
+ * circle's moments — sweeps, medals, records, shield gifts and pocket-game wins and
+ * draws — each a notice card tinted in the event's color with its top bar, the
+ * player's letter tile, a small cast pose that fits the event (each pose once per
+ * list, A7), the headline in Nunito Black with soft-number scores and a candy action
+ * (Rematch on a game, View on a friend's moment). Reaction chips (clap, fire, wow, grr,
+ * + Rematch on game moments; AM1 art, never emoji) show inside a moment only once it has
+ * reactions; double-tap toggles clap, a hold opens the reaction tray (founder 2026-10-01). A
+ * Rematch tap also opens the quick-play sheet with that game and friend ([onRematch]).
  */
 @Composable
 fun ActivityFeed(
@@ -172,6 +179,13 @@ fun ActivityFeed(
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val today = todayLocalDate()
 
+    /** Open the quick-play sheet for a game moment: mine → the other player; theirs → them. */
+    fun rematch(e: FriendsService.FeedEvent) {
+        val kind = momentKind(e)
+        val friend = if (e.me) e.otherId else e.userId
+        if (kind != null && friend != null) onRematch(kind, friend)
+    }
+
     fun toggle(e: FriendsService.FeedEvent, key: String) {
         val cur = reactions[e.id] ?: FriendsService.Reactions()
         val on = key !in cur.mine
@@ -181,75 +195,69 @@ fun ActivityFeed(
             mine = if (on) cur.mine + key else cur.mine - key,
         ))
         scope.launch { FriendsService.react(e.id, e.userId, key, on) }
-        if (on && key == "rematch") {
-            val kind = momentKind(e)
-            // Mine → the other player; theirs vs me → them; two other friends → the winner (the moment's owner).
-            val friend = when {
-                e.me -> e.otherId
-                else -> e.userId
-            }
-            if (kind != null && friend != null) onRematch(kind, friend)
-        }
+        if (on && key == "rematch") rematch(e)
     }
 
+    val pink = com.wordocious.app.ui.friends.FriendsPink
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             com.wordocious.app.ui.friends.FriendsLabel("MOMENTS")
             Spacer(Modifier.weight(1f))
-            Text(
-                "LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT", fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-                color = com.wordocious.app.ui.friends.FriendsPink.label, maxLines = 1, fontFamily = Nunito,
-            )
+            com.wordocious.app.ui.friends.FriendsLabel("LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT")
         }
-        Column(
-            modifier = Modifier.fillMaxWidth()
-                .friendsCard()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val list = events
-            when {
-                list == null -> {
+        val list = events
+        when {
+            list == null -> Column(
+                Modifier.fillMaxWidth().friendsCard(16.dp).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                // Reduce Motion: a still skeleton.
+                val a = if (WTheme.reducedMotion) 0.6f else {
                     val pulse = rememberInfiniteTransition(label = "feed-skeleton")
-                    val a by pulse.animateFloat(
+                    val v by pulse.animateFloat(
                         initialValue = 0.35f, targetValue = 0.9f,
                         animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Reverse),
                         label = "feed-skeleton-alpha",
                     )
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        repeat(3) {
-                            Box(
-                                Modifier.fillMaxWidth().height(32.dp).clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFEDE9FE)).alpha(a),
-                            )
-                        }
-                    }
+                    v
                 }
-                list.isEmpty() -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // An empty feed gets R asleep (ART_SPEC §7).
-                    SceneImage(SceneArt.ASLEEP, height = 110.dp)
-                    Text(
-                        "Quiet week so far — a game, a sweep, a medal or a record from anyone in your circle shows up here.",
-                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.wordocious.app.ui.friends.FriendsPink.sub, fontFamily = Nunito,
+                repeat(3) {
+                    Box(
+                        Modifier.fillMaxWidth().height(32.dp).alpha(a).clip(RoundedCornerShape(12.dp))
+                            .background(com.wordocious.app.ui.friends.friendsWash(PURPLE, 0.14f)),
                     )
                 }
-                else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val shown = if (expanded) list else list.take(8)
-                    shown.forEach { e ->
-                        MomentRow(
-                            e, today, reactions[e.id] ?: FriendsService.Reactions(),
-                            onOpenProfile = onOpenProfile,
-                            onToggle = { key -> toggle(e, key) },
-                        )
-                    }
-                    if (list.size > 8) {
-                        Text(
-                            if (expanded) "Show less" else "Show all ${list.size}",
-                            fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = com.wordocious.app.ui.friends.FriendsPink.solid, fontFamily = Nunito,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(vertical = 4.dp),
-                        )
-                    }
+            }
+            list.isEmpty() -> Column(
+                Modifier.fillMaxWidth().friendsCard(16.dp).padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                // An empty feed gets R asleep (ART_SPEC §7).
+                SceneImage(SceneArt.ASLEEP, height = 110.dp)
+                Text(
+                    "Quiet week so far — a game, a sweep, a medal or a record from anyone in your circle shows up here.",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = pink.sub, fontFamily = Nunito,
+                )
+            }
+            else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val shown = if (expanded) list else list.take(8)
+                // A7: each pose at most once down the list.
+                val poses = momentPoses(shown, userId)
+                shown.forEachIndexed { i, e ->
+                    MomentRow(
+                        e, today, reactions[e.id] ?: FriendsService.Reactions(),
+                        pose = poses[i],
+                        onOpenProfile = onOpenProfile,
+                        onToggle = { key -> toggle(e, key) },
+                        onRematch = { if ("rematch" !in (reactions[e.id]?.mine ?: emptyList())) toggle(e, "rematch") else rematch(e) },
+                    )
+                }
+                if (list.size > 8) {
+                    CandyButton(
+                        if (expanded) "Show less" else "Show all ${list.size}", onClick = { expanded = !expanded },
+                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
                 }
             }
         }
@@ -258,11 +266,66 @@ fun ActivityFeed(
 
 /** "You beat Doug at Tic-Tac-Tile (2–1)" / "Kate and you drew at Call It" (§6). */
 internal fun gameMomentText(e: FriendsService.FeedEvent): String {
+    val (head, score) = gameMomentParts(e)
+    return head + when (score) { null -> ""; "by resignation" -> " by resignation"; else -> " ($score)" }
+}
+
+/** The game moment's headline and its score ("2–1", "by resignation" or null) apart, so the score reads as a soft number (K1). */
+internal fun gameMomentParts(e: FriendsService.FeedEvent): Pair<String, String?> {
     val who = if (e.me) "You" else e.username
     val other = e.otherName ?: "a friend"
     val title = e.gameTitle ?: "a game"
-    return if (e.kind == "draw") "$who and $other drew at $title"
-    else "$who beat $other at $title" + when (val sc = e.score) { null, "" -> ""; "by resignation" -> " by resignation"; else -> " ($sc)" }
+    return if (e.kind == "draw") "$who and $other drew at $title" to null
+    else "$who beat $other at $title" to e.score?.takeIf { it.isNotEmpty() }
+}
+
+/** K1 the event's color: a game's own color, else the moment's tint. */
+private fun momentAccent(e: FriendsService.FeedEvent): Color {
+    if (e.type == "game") return momentKind(e)?.color ?: PURPLE
+    return when (e.type) {
+        "flawless", "more_flawless" -> Color(0xFFF59E0B)
+        "sweep" -> PURPLE
+        "more_sweep" -> Color(0xFF4F46E5)
+        "gift" -> Color(0xFF0D9488)
+        "record" -> Color(0xFFD97706)
+        else -> {
+            val k = e.kind ?: ""
+            when {
+                k == "gold" -> Color(0xFFF59E0B)
+                k == "silver" -> Color(0xFF94A3B8)
+                k == "bronze" -> Color(0xFFD9844A)
+                k.startsWith("streak_") -> Color(0xFFF97316)
+                else -> PURPLE
+            }
+        }
+    }
+}
+
+/**
+ * K1 the cast pose that fits a moment (pure): a friend beating you → O2 gasping, your
+ * win → W proud, a draw → U in lotus, someone else's win → O3 laughing, sweeps → S
+ * sliding, flawless → O2 twirling, records → D's eureka, medals → C cheering, streaks →
+ * S flexing, shield gifts → U with tea (drawn as the shield-guard art, T4). O1 (the banner
+ * host) never appears here (A7).
+ */
+internal fun momentPose(e: FriendsService.FeedEvent, myId: String): Pair<MascotId, String> = when (e.type) {
+    "game" -> when {
+        e.kind == "draw" -> MascotId.U to "lotus"
+        e.me -> MascotId.W to "proud"
+        e.otherId == myId -> MascotId.O2 to "gasp"
+        else -> MascotId.O3 to "laugh"
+    }
+    "flawless", "more_flawless" -> MascotId.O2 to "twirl"
+    "sweep", "more_sweep" -> MascotId.S to "slide"
+    "gift" -> MascotId.U to "tea"
+    "record" -> MascotId.D to "eureka"
+    else -> if ((e.kind ?: "").startsWith("streak_")) MascotId.S to "flex" else MascotId.C to "cheer"
+}
+
+/** A7: the poses down a list, each image at most once (a repeat gets none). */
+internal fun momentPoses(events: List<FriendsService.FeedEvent>, myId: String): List<Pair<MascotId, String>?> {
+    val used = HashSet<Pair<MascotId, String>>()
+    return events.map { e -> momentPose(e, myId).takeIf { used.add(it) } }
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -271,8 +334,10 @@ private fun MomentRow(
     e: FriendsService.FeedEvent,
     today: String,
     rx: FriendsService.Reactions,
+    pose: Pair<MascotId, String>?,
     onOpenProfile: (String) -> Unit,
     onToggle: (String) -> Unit,
+    onRematch: () -> Unit,
 ) {
     val isGame = e.type == "game"
     val gameKind = if (isGame) momentKind(e) else null
@@ -280,14 +345,17 @@ private fun MomentRow(
     var bar by remember { mutableStateOf(false) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val pink = com.wordocious.app.ui.friends.FriendsPink
-    val keys = REACTION_KEYS + if (isGame) listOf("rematch" to "Rematch") else emptyList()
+    val keys = REACTION_KEYS + if (isGame) listOf("rematch") else emptyList()
+    val accent = momentAccent(e)
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box {
-        // Tap = profile (friends' rows); double-tap = toggle 👏; hold = the reaction bar.
+        // Tap = profile (friends' rows); double-tap = toggle clap; hold = the reaction tray.
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                .background(if (e.me) Color(0xFFF5F3FF) else pink.page)
+            Modifier.fillMaxWidth()
+                .pressSquish(interaction)
+                .friendsCard(16.dp, accent = accent, bar = accent, barHeight = 5.dp)
                 .combinedClickable(
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    interactionSource = interaction,
                     indication = null,
                     onClick = { if (!e.me) onOpenProfile(e.userId) },
                     onDoubleClick = {
@@ -299,7 +367,7 @@ private fun MomentRow(
                         bar = true
                     },
                 )
-                .padding(horizontal = 8.dp, vertical = 7.dp),
+                .padding(start = 10.dp, end = 8.dp, top = 11.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(
@@ -313,77 +381,84 @@ private fun MomentRow(
                         avatarUrl = e.avatarUrl, avatarEmoji = e.avatarEmoji,
                     ),
                 )
-                when {
-                    gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 20.dp)
-                    line?.crown == true -> Icon3D(Icon3DName.CROWN, 20.dp)
-                    line?.icon3d != null -> Icon3D(line.icon3d, 20.dp)
-                    line?.icon != null -> Icon(line.icon, null, tint = line.tint, modifier = Modifier.size(16.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (isGame) {
+                        val (head, score) = gameMomentParts(e)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                head, fontSize = 12.sp, fontWeight = FontWeight.Black, color = INK, fontFamily = Nunito,
+                                lineHeight = 15.sp, modifier = Modifier.weight(1f, fill = false),
+                            )
+                            when (score) {
+                                null -> {}
+                                "by resignation" -> Text("by resignation", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = INK_MUTED, fontFamily = Nunito)
+                                else -> Text(score, style = softNumberStyle(14.sp, FinishInk.softNumber), maxLines = 1)
+                            }
+                        }
+                    } else {
+                        Text(line!!.text, fontSize = 12.sp, fontWeight = FontWeight.Black, color = INK, fontFamily = Nunito, lineHeight = 15.sp)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        when {
+                            gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 18.dp)
+                            line?.crown == true -> Icon3D(Icon3DName.CROWN, 18.dp)
+                            line?.icon3d != null -> Icon3D(line.icon3d, 18.dp)
+                            line?.icon != null -> Icon(line.icon, null, tint = line.tint, modifier = Modifier.size(14.dp))
+                        }
+                        Text(feedDayLabel(e.day, today), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = INK_MUTED, fontFamily = Nunito)
+                    }
                 }
-                Text(
-                    if (isGame) gameMomentText(e) else line!!.text, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                    color = WTheme.text, fontFamily = Nunito, lineHeight = 14.sp,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    feedDayLabel(e.day, today), fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                    color = WTheme.textMuted, fontFamily = Nunito,
-                )
+                // T4: a shield gift wears the shield-guard art small (once down the list, like the poses).
+                if (pose != null) {
+                    if (e.type == "gift") ShieldGuardArt(40.dp) else CastPose(pose.first, pose.second, 40.dp)
+                }
             }
-            // Reaction chips only when the moment has reactions (mine ringed), inside the card under its text.
-            val counted = keys.filter { (key, _) -> (rx.counts[key] ?: 0) > 0 }
-            if (counted.isNotEmpty()) {
+            // Reaction chips only when the moment has reactions (mine ringed), and the candy action.
+            val counted = keys.filter { key -> (rx.counts[key] ?: 0) > 0 }
+            val action: Pair<String, () -> Unit>? = when {
+                isGame && gameKind != null -> "Rematch" to onRematch
+                !e.me -> "View" to { onOpenProfile(e.userId) }
+                else -> null
+            }
+            if (counted.isNotEmpty() || action != null) {
                 Row(
-                    Modifier.padding(start = 40.dp),
+                    Modifier.fillMaxWidth().padding(start = 40.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    counted.forEach { (key, glyph) ->
-                        ReactionChip("$glyph ${rx.counts[key] ?: 0}", mine = key in rx.mine) { onToggle(key) }
+                    counted.forEach { key ->
+                        ReactionCountChip(key, rx.counts[key] ?: 0, mine = key in rx.mine, accent = accent, ink = INK) { onToggle(key) }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (action != null) {
+                        CandyButton(
+                            action.first, onClick = action.second,
+                            color = if (action.first == "Rematch") CandyColor.PINK else CandyColor.PURPLE, size = CandySize.SMALL,
+                            icon = if (action.first == "Rematch") CandyIcon.PLAY else CandyIcon.EYE,
+                            contentDescription = if (action.first == "Rematch") "Rematch ${e.gameTitle ?: ""}" else "View ${e.username}'s profile",
+                        )
                     }
                 }
             }
         }
-        // Hold: a floating pill reaction bar above the card; tap outside to dismiss.
+        // Hold: the floating reaction tray (AM1) above the card; tap outside to dismiss.
         if (bar) {
-            val lift = with(androidx.compose.ui.platform.LocalDensity.current) { 46.dp.roundToPx() }
+            val lift = with(androidx.compose.ui.platform.LocalDensity.current) { 52.dp.roundToPx() }
             androidx.compose.ui.window.Popup(
                 alignment = Alignment.TopCenter,
                 offset = androidx.compose.ui.unit.IntOffset(0, -lift),
                 onDismissRequest = { bar = false },
                 properties = androidx.compose.ui.window.PopupProperties(focusable = true),
             ) {
-                Row(
-                    Modifier.shadow(8.dp, RoundedCornerShape(50), ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))
-                        .clip(RoundedCornerShape(50)).background(Color.White)
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    keys.forEach { (key, glyph) ->
-                        val mine = key in rx.mine
-                        val shape = RoundedCornerShape(50)
-                        Text(
-                            glyph, fontSize = if (key == "rematch") 12.sp else 20.sp, fontWeight = FontWeight.Black,
-                            color = pink.solid, fontFamily = Nunito, maxLines = 1,
-                            modifier = Modifier.clip(shape)
-                                .then(if (mine) Modifier.background(pink.soft).border(1.5.dp, pink.solid, shape) else Modifier)
-                                .clickableNoRipple { bar = false; onToggle(key) }
-                                .padding(horizontal = 7.dp, vertical = 3.dp),
-                        )
-                    }
-                }
+                ReactionTray(
+                    keys = keys, counts = rx.counts, mine = rx.mine, accent = PINK, ink = pink.solid,
+                    onPick = { key -> onToggle(key) }, onDone = { bar = false },
+                )
             }
         }
     }
 }
 
-@Composable
-private fun ReactionChip(text: String, mine: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(50)
-    val pink = com.wordocious.app.ui.friends.FriendsPink
-    Text(
-        text, fontSize = 11.sp, fontWeight = FontWeight.Black, color = pink.solid, fontFamily = Nunito, maxLines = 1,
-        modifier = Modifier.clip(shape).background(pink.soft)
-            .then(if (mine) Modifier.border(1.5.dp, pink.solid, shape) else Modifier)
-            .clickableNoRipple(onClick)
-            .padding(horizontal = 9.dp, vertical = 3.dp),
-    )
-}
+/** Fixed-light feed inks (the Friends tab). */
+private val INK = Color(0xFF2A1650)
+private val INK_MUTED = Color(0xFF6F5F8F)
+private val PINK = Color(0xFFEC4899)

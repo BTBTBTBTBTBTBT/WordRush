@@ -77,6 +77,8 @@ import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.formatGuessStat
 import com.wordocious.app.ui.formatShortTime
 import com.wordocious.app.ui.pressScale
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.tintedPill
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
@@ -338,14 +340,8 @@ fun SudokuScreen(
             .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SudokuHeader(session)
-                SudokuBoard(session.state, selected = null, revealSolution = session.state.status == SudokuStatus.LOST) {}
-                SudokuResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            SudokuFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SudokuHeader(session)
@@ -359,8 +355,9 @@ fun SudokuScreen(
         }
         session.toast?.let {
             Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
+                // G5 a toast is a tinted pill (no dark slab, no white).
+                Text(it, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.tintedPill(SUDOKU_ACCENT, corner = 22.dp).padding(horizontal = 16.dp, vertical = 10.dp))
             }
         }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
@@ -407,14 +404,17 @@ private fun DifficultyPicker(current: SudokuDifficulty, onPick: (SudokuDifficult
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         SudokuDifficulty.values().forEach { d ->
             val active = d == current
+            // A1 / A9 a tinted segmented chip that squishes; the selected one filled.
             Text(
                 DIFFICULTY_LABEL[d] ?: d.key, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
                 color = if (active) Color.White else SUDOKU_ACCENT,
-                modifier = Modifier.clip(CircleShape)
-                    .background(if (active) SUDOKU_ACCENT else Color.Transparent)
-                    .border(1.5.dp, SUDOKU_ACCENT.copy(alpha = if (active) 1f else 0.35f), CircleShape)
-                    .clickableNoRipple { if (!active) onPick(d) }
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                modifier = Modifier
+                    .squishClickable(label = (DIFFICULTY_LABEL[d] ?: d.key) + if (active) ", selected" else "") { if (!active) onPick(d) }
+                    .then(
+                        if (active) Modifier.clip(CircleShape).background(SUDOKU_ACCENT)
+                        else Modifier.tintedPill(SUDOKU_ACCENT, corner = 20.dp),
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
     }
@@ -436,18 +436,38 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
     val selRow = selected?.let { it / 9 } ?: -1; val selCol = selected?.let { it % 9 } ?: -1; val selBox = selected?.let(::boxOf) ?: -1
     val selDigit = selected?.let { state.board[it] }?.takeIf { it != '0' }
     val density = LocalDensity.current
-    val panel = RoundedCornerShape(18.dp)
     val cellGap = 2.5.dp
     val boxGap = 6.dp
 
+    // FINISH_SPEC L: the board sits in the shared game tray (Sudocious accent; purple when
+    // solved, slate when out of mistakes); the 3×3 boxes are set apart by soft darker
+    // seams in the tray color, never black lines.
+    val trayState = when (state.status) {
+        SudokuStatus.WON -> TrayState.WON
+        SudokuStatus.LOST -> TrayState.LOST
+        else -> TrayState.PLAYING
+    }
+    val seam = if (WTheme.isDark) SUDOKU_ACCENT.copy(alpha = 0.35f) else GameTrayStyle.seam(GameTrayStyle.tint(SUDOKU_ACCENT, trayState))
     Box(
         Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
-            .clip(panel)
-            .background(if (WTheme.isDark) WTheme.surface.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.5f))
-            .border(2.dp, Color(0x407C3AED), panel)
-            .padding(6.dp),
+            .gameTray(SUDOKU_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(8.dp)),
     ) {
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(boxGap)) {
+        Column(
+            Modifier.fillMaxSize().drawBehind {
+                val g = boxGap.toPx()
+                val bw = (size.width - 2 * g) / 3f
+                val bh = (size.height - 2 * g) / 3f
+                val sw = 2.dp.toPx()
+                val cap = androidx.compose.ui.graphics.StrokeCap.Round
+                for (k in 1..2) {
+                    val x = k * bw + (k - 0.5f) * g
+                    val y = k * bh + (k - 0.5f) * g
+                    drawLine(seam, androidx.compose.ui.geometry.Offset(x, 4f), androidx.compose.ui.geometry.Offset(x, size.height - 4f), sw, cap)
+                    drawLine(seam, androidx.compose.ui.geometry.Offset(4f, y), androidx.compose.ui.geometry.Offset(size.width - 4f, y), sw, cap)
+                }
+            },
+            verticalArrangement = Arrangement.spacedBy(boxGap),
+        ) {
             for (br in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(boxGap)) {
                 for (bc in 0 until 3) Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(cellGap)) {
                     for (rr in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(cellGap)) {
@@ -560,57 +580,41 @@ private fun SudokuCell(
 
 // ── Pad ─────────────────────────────────────────────────────────────────────
 
-/** Nine keys styled like KeyboardView's keys, under the action row Undo · Erase
- *  · Notes · Hint, each with its icon. Notes is a toggle: fixed label, state
- *  shown by filling with the accent. */
+/** Nine keys as key tiles (FINISH_SPEC B2: the keyboard's lilac lip, light face,
+ *  dark-purple digit), under the action row Undo · Erase · Notes · Hint as small
+ *  candy buttons (A8), each with its icon. Notes is a toggle: fixed label, state
+ *  shown by the purple candy (and the pad's pencil tint). */
 @Composable
 private fun SudokuPad(session: SudokuSession, onFinished: () -> Unit) {
     val s = session.state
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Capsule("Undo", Icons.AutoMirrored.Filled.Undo, dim = s.history.isEmpty()) { session.undo(onFinished) }
-            Capsule("Erase", Icons.AutoMirrored.Filled.Backspace) { session.erase(onFinished) }
-            Capsule("Notes", Icons.Filled.Edit, active = s.notesMode) { session.toggleNotes(onFinished) }
-            Capsule(if (s.hintsUsed > 0) "Hint · ${s.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
+            PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) })
+            PadAction("Notes", Icons.Filled.Edit, onClick = { session.toggleNotes(onFinished) }, active = s.notesMode)
+            PadAction(
+                if (s.hintsUsed > 0) "Hint · ${s.hintsUsed}" else "Hint", Icons.Filled.Lightbulb,
+                onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
+            )
         }
         val done = session.completeDigits
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             for (d in 1..9) {
-                Box(
-                    Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(6.dp))
-                        .background(if (s.notesMode) SUDOKU_ACCENT.copy(alpha = 0.08f) else WTheme.keyDefault)
-                        .border(1.5.dp, if (s.notesMode) SUDOKU_ACCENT.copy(alpha = 0.35f) else WTheme.border, RoundedCornerShape(6.dp))
-                        .alpha(if (d in done) 0.4f else 1f)
-                        .pressScale { session.place(d, onFinished) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("$d", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.keyInk, fontFamily = Nunito)
-                }
+                PadKey(
+                    "$d", onClick = { session.place(d, onFinished) },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    notes = s.notesMode, faded = d in done,
+                    contentDescription = if (s.notesMode) "Note $d" else "$d",
+                )
             }
         }
-    }
-}
-
-@Composable
-private fun Capsule(label: String, icon: ImageVector, active: Boolean = false, dim: Boolean = false, onClick: () -> Unit) {
-    val fg = if (dim) WTheme.textMuted.copy(alpha = 0.5f) else if (active) Color.White else SUDOKU_ACCENT
-    Row(
-        Modifier.clip(CircleShape)
-            .background(if (active) SUDOKU_ACCENT else if (dim) Color.Transparent else SUDOKU_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (dim) WTheme.border else if (active) SUDOKU_ACCENT else SUDOKU_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple { if (!dim) onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg)
     }
 }
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun SudokuResult(
+private fun SudokuFinished(
     session: SudokuSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: ((SudokuDifficulty) -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
@@ -619,36 +623,57 @@ private fun SudokuResult(
     val secs = session.elapsed
     val remaining = sudokuRemaining(s)
     val context = LocalContext.current
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Text(if (won) "Sudocious solved" else "Out of mistakes", fontSize = 20.sp, fontWeight = FontWeight.Black,
-            color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
-        Text(
-            if (won) "${formatGuessStat("mistakes", 1, s.mistakes + 1)} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else "")
-            else "$remaining cell${if (remaining == 1) "" else "s"} left · ${timeText(secs)}",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", SUDOKU_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", SUDOKU_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}${DIFFICULTY_LABEL[s.difficulty]} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · ${timeText(secs)}"
-                // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
-                val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
-                val text = "Wordocious Sudocious${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/sudoku"
-                val bmp = ShareImage.renderSudoku(context, s.givens, s.board, s.hintMask, won, meta)
-                ShareImage.shareBitmap(context, bmp, text)
-            }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain(s.difficulty) }
+    val day = if (session.isDaily) todayLocalDate() else null
+    val points = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, null, null, day).total.toInt()
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}${DIFFICULTY_LABEL[s.difficulty]} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · ${timeText(secs)}"
+        // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
+        val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
+        val text = "Wordocious Sudocious${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/sudoku"
+        val bmp = ShareImage.renderSudoku(context, s.givens, s.board, s.hintMask, won, meta)
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { SudokuHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOf(
+                    if (won) stripCount("${s.mistakes}", if (s.mistakes == 1) "mistake" else "mistakes", StripGlyph.CROWN)
+                    else stripCount("$remaining", if (remaining == 1) "cell left" else "cells left"),
+                    stripTime(secs), stripPoints(points),
+                ),
+                srText = (if (won) "Sudocious solved" else "Out of mistakes") + ". " +
+                    (if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "$remaining cell${if (remaining == 1) "" else "s"} left") +
+                    ", time ${timeText(secs)}, $points points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.SUDOKU, isDaily = session.isDaily, accent = SUDOKU_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) { { onPlayAgain(s.difficulty) } } else null,
+                onOtherGames = onBack,
+                more = {
+                    if (session.isDaily) DailyRankBadge(GameMode.SUDOKU)
+                    if (won && s.hintsUsed > 0) {
+                        Text("${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    }
+                    ScoreBreakdownCard(GameMode.SUDOKU, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, day = day)
+                },
+            )
+        },
+    ) { maxW, maxH ->
+        // R2: the finished grid as big as the height left allows (digits scale with it).
+        FinishedSquare(maxW, maxH) { side ->
+            SudokuBoard(
+                s, selected = null, revealSolution = s.status == SudokuStatus.LOST,
+                digitSize = (side.value / 9f * 0.52f).coerceIn(11f, 22f).dp,
+            ) {}
         }
-        if (session.isDaily) DailyRankBadge(GameMode.SUDOKU)
-        ScoreBreakdownCard(GameMode.SUDOKU, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.SUDOKU, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 
@@ -657,42 +682,24 @@ private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}"
 private fun SudokuOverlay(session: SudokuSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == SudokuStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "SUDOKU") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, session.state.mistakes + 1, secs, if (won) 1 else 0, 1, session.state.hintsUsed).total.toInt()
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.mistakes}", "MISTAKES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(pts), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
-        }
-    }
+    // FINISH_SPEC R1: the shared win / lose popup (no word answers for Sudoku).
+    val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, session.state.mistakes + 1, secs, if (won) 1 else 0, 1, session.state.hintsUsed).total.toInt()
+    WinPopup(
+        won = won, hostKey = "SUDOKU", accent = SUDOKU_ACCENT, onContinue = onDismiss,
+        stats = listOf(
+            WinStat(WinStatKind.GUESSES, "${session.state.mistakes}", "Mistakes"),
+            WinStat(WinStatKind.TIME, timeText(secs), "Time"),
+            WinStat(WinStatKind.POINTS, "%,d".format(pts), "Points"),
+        ),
+        onPlayAgain = onPlayAgain,
+    )
 }
 
 @Composable
 private fun StatBlock(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
+        com.wordocious.app.ui.SoftNumber(value, 22.sp)
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.6.sp)
     }
 }
 
@@ -733,17 +740,17 @@ fun CustomCompletedDailyCard(mode: GameMode) {
     Column(
         // 12dp under the card like every other completed-card variant (the leaderboard relies on
         // the card's own bottom gap; this one sat flush on the rank banner).
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp)).background(WTheme.surface),
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(16.dp))
+            .background(com.wordocious.app.ui.accentWash(if (won) Color(0xFF7C3AED) else Color(0xFF6B7891)))
+            .border(1.5.dp, com.wordocious.app.ui.accentLine(if (won) Color(0xFF7C3AED) else Color(0xFF6B7891)), RoundedCornerShape(16.dp)),
     ) {
-        Box(Modifier.fillMaxWidth().height(4.dp).background(Brush.horizontalGradient(
-            if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA)) else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)))))
+        Box(Modifier.fillMaxWidth().height(10.dp).background(Brush.horizontalGradient(
+            if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA)) else listOf(Color(0xFF6B7891), Color(0xFF8D99B0)))))
         Row(
             Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), contentAlignment = Alignment.Center) {
-                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            }
+            com.wordocious.app.ui.ResultBadge(won, size = 18.dp)
             Text(if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.6.sp,
                 color = if (won) Color(0xFF7C3AED) else WTheme.textMuted)
             Spacer(Modifier.weight(1f))

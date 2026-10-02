@@ -6,6 +6,7 @@ import { getDailySeedDate } from '@wordle-duel/core';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
 import { isPlausibleDailyResult } from '@/lib/plausibility';
+import { avatarFieldsOf, mergeAvatarFields, selectWithAvatarColumns, type AvatarFields } from './avatar-fields-server';
 
 // ============================================================
 // Composite Score Calculation
@@ -332,6 +333,11 @@ export interface LeaderboardEntry {
   vs_losses: number;
   vs_games: number;
   completed: boolean;
+  /** FINISH_SPEC AH/AN3 (additive): avatar choice + active Pro (null / false until the columns exist). */
+  avatar_cast_id?: string | null;
+  avatar_frame?: string | null;
+  avatar_config?: Record<string, unknown> | null;
+  is_pro?: boolean;
 }
 
 /**
@@ -351,34 +357,39 @@ export async function fetchDailyLeaderboard(
 ): Promise<LeaderboardEntry[]> {
   const targetDay = day || getTodayLocal();
 
-  let query = (supabase as any)
-    .from('daily_results')
-    .select(`
-      user_id,
-      composite_score,
-      guess_count,
-      time_seconds,
-      boards_solved,
-      total_boards,
-      hints_used,
-      vs_wins,
-      vs_losses,
-      vs_games,
-      completed,
-      profiles!inner(username, avatar_url, avatar_emoji, is_banned)
-    `)
-    .eq('day', targetDay)
-    .eq('game_mode', gameMode)
-    .eq('play_type', playType);
-  if (userIds && userIds.length > 0) query = query.in('user_id', userIds);
-  const { data } = await query
-    .order('composite_score', { ascending: false })
-    // §217: time then created_at — the same ordering the daily-medals cron
-    // uses, so tied (score, time) groups are contiguous and the live board
-    // agrees with the overnight podium.
-    .order('time_seconds', { ascending: true })
-    .order('created_at', { ascending: true })
-    .range(offset, offset + limit - 1);
+  // FINISH_SPEC AH/AN3: the embed also asks for is_pro / pro_expires_at and
+  // the avatar columns; while those don't exist yet the select is retried
+  // without them (selectWithAvatarColumns), so the board never fails over them.
+  const { data } = await selectWithAvatarColumns<any[]>((extra) => {
+    let query = (supabase as any)
+      .from('daily_results')
+      .select(`
+        user_id,
+        composite_score,
+        guess_count,
+        time_seconds,
+        boards_solved,
+        total_boards,
+        hints_used,
+        vs_wins,
+        vs_losses,
+        vs_games,
+        completed,
+        profiles!inner(username, avatar_url, avatar_emoji, is_banned${extra})
+      `)
+      .eq('day', targetDay)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType);
+    if (userIds && userIds.length > 0) query = query.in('user_id', userIds);
+    return query
+      .order('composite_score', { ascending: false })
+      // §217: time then created_at — the same ordering the daily-medals cron
+      // uses, so tied (score, time) groups are contiguous and the live board
+      // agrees with the overnight podium.
+      .order('time_seconds', { ascending: true })
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
+  });
 
   if (!data) return [];
 
@@ -399,6 +410,7 @@ export async function fetchDailyLeaderboard(
     vs_losses: row.vs_losses ?? 0,
     vs_games: row.vs_games,
     completed: row.completed,
+    ...avatarFieldsOf(row.profiles),
   }));
 }
 
@@ -563,6 +575,11 @@ export interface SweepEntry {
   modes_won: number;
   is_flawless: boolean;
   rank: number;
+  /** FINISH_SPEC AH/AN3 (additive, one batched profiles read after the RPC). */
+  avatar_cast_id?: string | null;
+  avatar_frame?: string | null;
+  avatar_config?: Record<string, unknown> | null;
+  is_pro?: boolean;
 }
 
 export interface AllTimeSweepEntry {
@@ -573,6 +590,11 @@ export interface AllTimeSweepEntry {
   flawless_count: number;
   best_sweep_time: number;
   rank: number;
+  /** FINISH_SPEC AH/AN3 (additive, one batched profiles read after the RPC). */
+  avatar_cast_id?: string | null;
+  avatar_frame?: string | null;
+  avatar_config?: Record<string, unknown> | null;
+  is_pro?: boolean;
 }
 
 /**
@@ -594,7 +616,7 @@ export async function fetchDailySweepLeaderboard(
 
   if (!data) return [];
 
-  return (data as any[])
+  const rows: SweepEntry[] = (data as any[])
     .filter((row) => !isBlocked(row.user_id))
     .map((row) => ({
       user_id: row.user_id,
@@ -606,6 +628,8 @@ export async function fetchDailySweepLeaderboard(
       is_flawless: row.is_flawless,
       rank: Number(row.rank),
     }));
+  // FINISH_SPEC AH/AN3: the RPC returns no avatar columns; one batched read adds them.
+  return mergeAvatarFields(supabase, rows, (r) => r.user_id);
 }
 
 // §223: per-mode detail behind the Sweep board's dot strip + guess/hint
@@ -735,7 +759,7 @@ export async function fetchAllTimeSweepLeaderboard(
 
   if (!data) return [];
 
-  return (data as any[])
+  const rows: AllTimeSweepEntry[] = (data as any[])
     .filter((row) => !isBlocked(row.user_id))
     .map((row) => ({
       user_id: row.user_id,
@@ -746,6 +770,8 @@ export async function fetchAllTimeSweepLeaderboard(
       best_sweep_time: row.best_sweep_time,
       rank: Number(row.rank),
     }));
+  // FINISH_SPEC AH/AN3: the RPC returns no avatar columns; one batched read adds them.
+  return mergeAvatarFields(supabase, rows, (r) => r.user_id);
 }
 
 /**
@@ -935,6 +961,8 @@ export interface AllTimeRecord {
   holder_id: string;
   holder_username?: string;
   holder_avatar_url?: string | null;
+  /** FINISH_SPEC AH/AN3 (additive): the holder's avatar choice + active Pro. */
+  holder_avatar?: AvatarFields;
   record_value: number;
   achieved_at: string;
   /** §254: resolved at read time from the record-setting matches row — the
@@ -1018,13 +1046,13 @@ export async function checkAndUpdateRecord(
  * Fetch all all-time records.
  */
 export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
-  const { data } = await (supabase as any)
+  const { data } = await selectWithAvatarColumns<any[]>((extra) => (supabase as any)
     .from('all_time_records')
     .select(`
       *,
-      profiles!inner(username, avatar_url, avatar_emoji, is_banned)
+      profiles!inner(username, avatar_url, avatar_emoji, is_banned${extra})
     `)
-    .order('record_type');
+    .order('record_type'));
 
   if (!data) return [];
 
@@ -1037,6 +1065,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
     holder_id: row.holder_id,
     holder_username: row.profiles?.username,
     holder_avatar_url: row.profiles?.avatar_url,
+    holder_avatar: avatarFieldsOf(row.profiles),
     record_value: row.record_value,
     achieved_at: row.achieved_at,
   }));

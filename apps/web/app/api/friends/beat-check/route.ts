@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, acceptedFriendIds } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -91,7 +92,8 @@ export async function POST(req: NextRequest) {
       const fmt = (v: number) => labels.get(v) ?? formatScore(v);
       return broadcastPush(
         {
-          title: `😤 ${myName} just passed you`,
+          // FINISH_SPEC AE: the shared cast-voice push copy (core pushCopy).
+          title: pushCopy('friendBeat', { name: myName, game: label }),
           body: `${label}: ${fmt(mine.composite_score)} to your ${fmt(row.composite_score)}`,
           url: '/daily',
         },

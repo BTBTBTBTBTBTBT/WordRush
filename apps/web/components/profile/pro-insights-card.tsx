@@ -4,6 +4,9 @@ import { PersonalBests } from './personal-bests';
 import { TimeOfDayHeatmap } from './time-of-day-heatmap';
 import { ConsistencyGauge } from './consistency-gauge';
 import { HeadToHeadCard } from './head-to-head-card';
+import { softCard } from '@/lib/soft-surface';
+import { SoftNum } from '@/components/ui/soft-number';
+import { UiIcon } from '@/components/ui/ui-icon';
 
 interface WordInsights {
   nemesis: { word: string; losses: number } | null;
@@ -76,7 +79,7 @@ export function ProInsightsCard({
   return (
     <div
       className="relative overflow-hidden"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+      style={softCard(accentColor, { radius: 18 })}
     >
       <div className="p-4 space-y-4">
         <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>
@@ -96,7 +99,7 @@ export function ProInsightsCard({
         {/* Improvement Trend */}
         {improvement && improvement.overallAvg > 0 && (
           <div className="flex items-center gap-3 px-3 py-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-            <span className="text-xl">{improvement.improving ? '📈' : '📉'}</span>
+            <UiIcon name={improvement.improving ? 'trending-up' : 'target'} size={26} />
             <div>
               <div className="text-xs font-black" style={{ color: 'var(--color-text)' }}>
                 {improvement.improving ? 'Improving' : 'Slowing down'}
@@ -116,13 +119,13 @@ export function ProInsightsCard({
           <div className="flex gap-3">
             {perfectGames > 0 && (
               <div className="flex-1 text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-                <div className="text-lg font-black" style={{ color: accentColor }}>{perfectGames}</div>
+                <SoftNum size={18} as="div" className="soft-num-auto">{perfectGames}</SoftNum>
                 <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Perfect Games</div>
               </div>
             )}
             {winStreak && winStreak.current > 0 && (
               <div className="flex-1 text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-                <div className="text-lg font-black" style={{ color: accentColor }}>{winStreak.current}</div>
+                <SoftNum size={18} as="div" className="soft-num-auto">{winStreak.current}</SoftNum>
                 <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Win Streak</div>
               </div>
             )}
@@ -134,13 +137,13 @@ export function ProInsightsCard({
           <div className="grid grid-cols-2 gap-2">
             {wordInsights && wordInsights.avgGuesses > 0 && (
               <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-                <div className="text-lg font-black" style={{ color: accentColor }}>{wordInsights.avgGuesses}</div>
+                <SoftNum size={18} as="div" className="soft-num-auto">{wordInsights.avgGuesses}</SoftNum>
                 <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Avg Guesses</div>
               </div>
             )}
             {wordInsights && wordInsights.firstTryRate > 0 && (
               <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-                <div className="text-lg font-black" style={{ color: accentColor }}>{wordInsights.firstTryRate}%</div>
+                <SoftNum size={18} as="div" className="soft-num-auto">{wordInsights.firstTryRate}%</SoftNum>
                 <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>First Try Rate</div>
               </div>
             )}
@@ -148,7 +151,7 @@ export function ProInsightsCard({
               const peak = peakHourLabel(timeOfDay);
               return peak ? (
                 <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-                  <div className="text-lg font-black" style={{ color: accentColor }}>{peak}</div>
+                  <SoftNum size={18} as="div" className="soft-num-auto">{peak}</SoftNum>
                   <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Peak Hour</div>
                 </div>
               ) : null;
@@ -167,7 +170,7 @@ export function ProInsightsCard({
         {/* Nemesis Word */}
         {wordInsights?.nemesis && wordInsights.nemesis.losses >= 2 && (
           <div className="flex items-center gap-3 px-3 py-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
-            <span className="text-xl">💀</span>
+            <UiIcon name="swords" size={26} />
             <div>
               <div className="text-xs font-black" style={{ color: 'var(--color-text)' }}>
                 Nemesis: <span style={{ color: accentColor, letterSpacing: '1px' }}>{wordInsights.nemesis.word}</span>

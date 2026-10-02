@@ -134,7 +134,7 @@ fun keyboardViewKeys(
             true
         }
         k == HwKey.Enter -> { com.wordocious.app.data.SoundManager.playKeyTap(); onEnter(); true }
-        k.isErase -> { com.wordocious.app.data.SoundManager.playKeyTap(); onDelete(); true }
+        k.isErase -> { com.wordocious.app.data.SoundManager.playDelete(); onDelete(); true }
         else -> false
     }
 }

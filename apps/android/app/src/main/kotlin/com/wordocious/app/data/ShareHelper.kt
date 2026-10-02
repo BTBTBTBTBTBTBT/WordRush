@@ -1,17 +1,29 @@
 package com.wordocious.app.data
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.core.content.FileProvider
 import com.wordocious.app.ModeGen
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
+import com.wordocious.core.ShareCaptions
 import com.wordocious.core.TileState
 import com.wordocious.core.evaluateGuess
+import java.io.File
 
 /**
- * Builds the shareable emoji grid + launches the Android share sheet —
- * mirrors the web share text (🟪/🟧/⬛ grid, header line, wordocious.com).
+ * Builds the shareable emoji grid (the text fallback when no image can be written)
+ * and launches the Android share sheet.
+ *
+ * FINISH_SPEC S1: a completed-result share sends the IMAGE ONLY — ACTION_SEND
+ * image/png with the FileProvider uri in EXTRA_STREAM + ClipData (so the chooser
+ * previews it) + FLAG_GRANT_READ_URI_PERMISSION, and NO EXTRA_TEXT: no URL, no
+ * caption, so Messages / WhatsApp show the picture, not a link-preview card.
+ * Invites keep their links ([share], text/plain).
  */
 object ShareHelper {
 
@@ -85,17 +97,93 @@ object ShareHelper {
         return sb.toString()
     }
 
-    /** Launch the system share sheet. */
-    fun share(context: Context, text: String) {
+    /** Launch the system share sheet with plain text (invites; the no-image fallback). */
+    fun share(context: Context, text: String, title: String? = null) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
         }
-        val chooser = Intent.createChooser(intent, "Share your result").apply {
+        val chooser = Intent.createChooser(intent, title).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(chooser)
+        runCatching { context.startActivity(chooser) }
     }
+
+    // ── S4 copy (the shared bank in :core ShareCaptions; iOS ShareCopy parity) ──
+
+    /** "Come play Wordocious with me! 🎉 <url>" — friend / gift invites keep their link. */
+    fun inviteText(url: String): String =
+        ShareCaptions.caption(ShareCaptions.Kind.INVITE, ShareCaptions.Vars(date = "", game = "Wordocious", url = url))
+
+    /** "Race me at <Game>! ⚡ <url>" — VS join / challenge links keep their link. */
+    fun vsInviteText(game: String, url: String): String =
+        ShareCaptions.caption(ShareCaptions.Kind.VS_INVITE, ShareCaptions.Vars(date = "", game = game, url = url))
+
+    /** The VS result line ("Beat Doug at Classic ⚔️"); a draw reads "… tied …". */
+    fun vsResultText(won: Boolean, draw: Boolean, opp: String, game: String, date: String = com.wordocious.app.todayLocalDate()): String =
+        ShareCaptions.caption(
+            when { draw -> ShareCaptions.Kind.VS_DRAW; won -> ShareCaptions.Kind.VS_WIN; else -> ShareCaptions.Kind.VS_LOSE },
+            ShareCaptions.Vars(date = date, game = game, opp = opp),
+        )
+
+    /** S4 the chooser title: "Share your QuadWord". */
+    fun chooserTitle(game: String): String = "Share your $game"
+
+    /** "Wordocious-QuadWord.png" (letters and digits only, like the iOS suggested name). */
+    fun fileName(game: String): String =
+        "Wordocious-${game.filter { it.isLetterOrDigit() }.ifEmpty { "Share" }}.png"
+
+    /** Writes [bitmap] to the share cache and returns its FileProvider uri (null on failure). */
+    fun writePng(context: Context, bitmap: Bitmap, name: String): Uri? = runCatching {
+        val dir = File(context.cacheDir, "share").apply { mkdirs() }
+        val file = File(dir, name)
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }.getOrNull()
+
+    /**
+     * S1 the image-only intent: ACTION_SEND (one) / ACTION_SEND_MULTIPLE (several),
+     * image/png, EXTRA_STREAM, ClipData for the chooser preview, read grant. No
+     * EXTRA_TEXT, no EXTRA_SUBJECT: nothing but the picture travels.
+     */
+    fun imageIntent(context: Context, uris: List<Uri>): Intent {
+        val intent = if (uris.size == 1) {
+            Intent(Intent.ACTION_SEND).apply { putExtra(Intent.EXTRA_STREAM, uris[0]) }
+        } else {
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply { putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris)) }
+        }
+        intent.type = "image/png"
+        val clip = ClipData.newUri(context.contentResolver, "Wordocious", uris[0])
+        uris.drop(1).forEach { clip.addItem(ClipData.Item(it)) }
+        intent.clipData = clip
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return intent
+    }
+
+    /**
+     * S1 share one or more result images, nothing else. Returns false (after the
+     * [fallbackText] text share, when given) if no image could be written or the
+     * sheet could not open.
+     */
+    fun shareImages(context: Context, images: List<Pair<Bitmap, String>>, chooserTitle: String, fallbackText: String? = null): Boolean {
+        val uris = images.mapNotNull { (bmp, name) -> writePng(context, bmp, name) }
+        if (uris.isEmpty()) { fallbackText?.let { share(context, it, chooserTitle) }; return false }
+        return runCatching {
+            context.startActivity(Intent.createChooser(imageIntent(context, uris), chooserTitle).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                // The chooser inherits the target's ClipData + grant for its preview.
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            })
+            true
+        }.getOrElse {
+            fallbackText?.let { t -> share(context, t, chooserTitle) }
+            false
+        }
+    }
+
+    /** [shareImages] for a single image named after [game] ("Share your QuadWord"). */
+    fun shareImage(context: Context, bitmap: Bitmap, game: String, fallbackText: String? = null, chooserTitle: String = chooserTitle(game)): Boolean =
+        shareImages(context, listOf(bitmap to fileName(game)), chooserTitle, fallbackText)
 
     fun modeLabel(mode: GameMode): String = when (mode) {
         GameMode.DUEL -> "Classic"

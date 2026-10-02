@@ -66,6 +66,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 
 /**
  * Public profile — audit-then-match of web /profile/[id]/page.tsx (and the
@@ -101,12 +103,16 @@ data class PublicProfile(
     // the teaser card (docs/private-profiles-spec.md §3).
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("is_private") val isPrivate: Boolean = false,
+    // FINISH_SPEC AN3 (additive; select * — the column may not exist yet → null).
+    @SerialName("avatar_config") val avatarConfig: kotlinx.serialization.json.JsonElement? = null,
 )
 
 private suspend fun fetchPublicProfile(id: String): PublicProfile? = runCatching {
     SupabaseConfig.client.postgrest["profiles"]
         .select { filter { eq("id", id) }; limit(1) }
         .decodeSingleOrNull<PublicProfile>()
+        // AN3: their mascot shows on every avatar of them from now on.
+        ?.also { runCatching { com.wordocious.app.data.MascotAvatars.recordRaw(it.username, it.avatarConfig) } }
 }.getOrNull()
 
 // Web social-links.tsx PLATFORMS — label, brand color, URL builder.
@@ -297,48 +303,31 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 // iOS addFriendButton states: Add Friend → Requested (tap =
                 // cancel) · Accept request · Friends ✓ (tap → confirm unfriend).
                 if (sessionUserId != null && !blocked) {
-                    val pill = RoundedCornerShape(50)
+                    // A8: every friend state is a small candy button (same taps as before).
                     when {
-                        viewerIsFriend && confirmUnfriend -> Text(
-                            "Remove friend?", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                            color = Color.White,
-                            modifier = Modifier.clip(pill).background(Color(0xFFDC2626))
-                                .clickableNoRipple {
-                                    confirmUnfriend = false
-                                    moderationScope.launch { FriendsService.remove(userId) }
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        viewerIsFriend && confirmUnfriend -> CandyButton(
+                            "Remove friend?", onClick = {
+                                confirmUnfriend = false
+                                moderationScope.launch { FriendsService.remove(userId) }
+                            },
+                            color = CandyColor.PINK, size = CandySize.SMALL,
                         )
-                        viewerIsFriend -> Text(
-                            "Friends ✓", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                            color = Color(0xFF16A34A),
-                            modifier = Modifier.clip(pill)
-                                .background(Color(0xFF16A34A).copy(alpha = 0.10f))
-                                .border(1.5.dp, Color(0xFF16A34A).copy(alpha = 0.35f), pill)
-                                .clickableNoRipple { confirmUnfriend = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        viewerIsFriend -> CandyButton(
+                            "Friends", onClick = { confirmUnfriend = true },
+                            color = CandyColor.TEAL, size = CandySize.SMALL, contentDescription = "Friends. Tap to remove",
+                            leading = { Icon3D(Icon3DName.BADGE_CHECK, 16.dp) },
                         )
-                        FriendsService.hasIncomingFrom(userId) -> Text(
-                            "Accept request", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                            color = Color.White,
-                            modifier = Modifier.clip(pill).background(Color(0xFF16A34A))
-                                .clickableNoRipple { moderationScope.launch { FriendsService.accept(userId) } }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        FriendsService.hasIncomingFrom(userId) -> CandyButton(
+                            "Accept request", onClick = { moderationScope.launch { FriendsService.accept(userId) } },
+                            color = CandyColor.PURPLE, size = CandySize.SMALL,
                         )
-                        FriendsService.hasRequested(userId) -> Text(
-                            "Requested", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                            color = WTheme.textMuted,
-                            modifier = Modifier.clip(pill).background(WTheme.surfaceHover)
-                                .border(1.5.dp, WTheme.border, pill)
-                                .clickableNoRipple { moderationScope.launch { FriendsService.decline(userId) } }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        FriendsService.hasRequested(userId) -> CandyButton(
+                            "Requested", onClick = { moderationScope.launch { FriendsService.decline(userId) } },
+                            color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Requested. Tap to cancel",
                         )
-                        else -> Text(
-                            "Add Friend", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                            color = Color.White,
-                            modifier = Modifier.clip(pill).background(Color(0xFF7C3AED))
-                                .clickableNoRipple { moderationScope.launch { FriendsService.request(addresseeId = userId) } }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        else -> CandyButton(
+                            "Add Friend", onClick = { moderationScope.launch { FriendsService.request(addresseeId = userId) } },
+                            color = CandyColor.PURPLE, size = CandySize.SMALL,
                         )
                     }
                 }
@@ -347,7 +336,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     HeaderCircle(onClick = { menuOpen = true }, contentDescription = "More options", size = 34.dp) {
                         Icon(Icons.Filled.MoreVert, null, tint = HeaderInk.control, modifier = Modifier.size(20.dp))
                     }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = accentWash(PROFILE_PURPLE, 0.10f)) {
                         DropdownMenuItem(
                             text = { Text("Report user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) },
                             onClick = { menuOpen = false; showReportDialog = true },
@@ -381,10 +370,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 t, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .clip(RoundedCornerShape(50))
-                    .background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    .tintedPill(PROFILE_PURPLE, 50.dp)
+                    .padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 5.dp),
             )
         }
 
@@ -411,10 +398,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
-                androidx.compose.material3.Button(
-                    onClick = onClose,
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = WTheme.primary),
-                ) { Text("Back", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                CandyButton("Back", onClick = onClose, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
             }
             return@Column
         }
@@ -429,16 +413,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 Modifier.fillMaxWidth().padding(top = 4.dp),
                 horizontalArrangement = Arrangement.Center,
             ) {
-                Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                        .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                        .clickableNoRipple(onClose).padding(horizontal = 18.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon3D(Icon3DName.BACK, 17.dp) // ART_SPEC §5
-                    Text("Back", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
-                }
+                CandyButton(
+                    "Back", onClick = onClose, color = CandyColor.PEACH, size = CandySize.MEDIUM,
+                    leading = { Icon3D(Icon3DName.BACK, 17.dp) }, // ART_SPEC §5
+                )
             }
             Spacer(Modifier.height(20.dp))
             return@Column
@@ -456,15 +434,19 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 targetDailies.count { it.day == today && it.completed && it.gameMode in sweepSet }
             }
             // ART_SPEC §20: photo in a circle (round ring), else the letter tile (rounded-square ring).
-            TodayRingAvatar(completed = todayCount, square = avatarUrl == null, avatarSize = 96.dp) {
-                if (avatarUrl != null) {
-                    coil.compose.AsyncImage(
-                        model = avatarUrl, contentDescription = "Avatar",
-                        modifier = Modifier.size(96.dp).clip(CircleShape),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            // AA2: the signed-in Pro member's own profile wears the crown (other players' rows
+            // carry no Pro flag yet).
+            val proAvatar = isOwnProAvatar(p.username)
+            // AN6: photo and mascot are both rounded squares (the ring follows).
+            val photo = avatarUrl?.takeIf { !com.wordocious.app.data.MascotAvatars.wearsMascot(p.username) }
+            TodayRingAvatar(completed = todayCount, square = true, avatarSize = 96.dp) {
+                if (photo != null) {
+                    PhotoAvatar(
+                        photo, 96.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(p.username),
+                        pro = proAvatar, contentDescription = "Avatar",
                     )
                 } else {
-                    LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji)
+                    LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji, pro = proAvatar)
                 }
             }
             if (customAccent) {
@@ -485,9 +467,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // — this muted pill is the reminder that everyone else doesn't.
             if (p.isPrivate) {
                 Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                        .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    Modifier.tintedPill(PROFILE_PURPLE, 50.dp)
+                        .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
@@ -507,7 +488,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // XP bar to next level
             val intoLevel = p.xp % 1000
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Box(Modifier.width(160.dp).height(6.dp).clip(RoundedCornerShape(50)).background(WTheme.surfaceAlt)) {
+                Box(Modifier.width(160.dp).height(6.dp).clip(RoundedCornerShape(50)).background(accentWash(Color(0xFFF97316), 0.2f))) {
                     Box(
                         Modifier.fillMaxSize().fillMaxWidth(intoLevel / 1000f)
                             .background(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))),
@@ -528,8 +509,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                             Modifier
                                 .size(30.dp)
                                 .clip(CircleShape)
-                                .background(WTheme.surfaceHover)
-                                .border(1.5.dp, WTheme.border, CircleShape)
+                                .background(accentWash(PROFILE_PURPLE, 0.12f))
+                                .border(1.5.dp, accentLine(PROFILE_PURPLE), CircleShape)
                                 .clickableNoRipple {
                                     runCatching {
                                         ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pf.url(links[pf.key]!!))))
@@ -568,27 +549,27 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         )
         val highlights = buildList {
             persona?.longestWinStreak?.takeIf { it >= 2 }?.let { streak ->
-                add(ProfileHighlight("🏆", "$streak-win streak", "Career best", onTap = { showCalendar = true }))
+                add(ProfileHighlight(GlyphArt.TROPHY, "$streak-win streak", "Career best", onTap = { showCalendar = true }))
             }
             stats.filter { it.playType == "solo" }
                 .mapNotNull { s -> s.fastestTime?.takeIf { it > 0 }?.let { t -> s.gameMode to t } }
                 .minByOrNull { it.second }
                 ?.let { (m, t) ->
-                    add(ProfileHighlight("⚡", formatShortTime(t), "Fastest ${modeTitleFromDb(m)} solve"))
+                    add(ProfileHighlight(GlyphArt.ZAP, formatShortTime(t), "Fastest ${modeTitleFromDb(m)} solve"))
                 }
             val perfectOctos = targetDailies.filter { it.gameMode == "OCTORDLE" && (it.boardsSolved ?: 0) >= 8 }
             if (perfectOctos.isNotEmpty()) {
                 val latest = perfectOctos.first()
                 add(
                     ProfileHighlight(
-                        "💥", "8/8 boards",
+                        GlyphArt.TARGET, "8/8 boards",
                         "Perfect ${modeTitleFromDb("OCTORDLE")}" + if (perfectOctos.size > 1) " ×${perfectOctos.size}" else "",
                         onTap = { boardSeed = com.wordocious.core.generateDailySeed(latest.day, latest.gameMode) },
                     ),
                 )
             }
             persona?.flawless?.takeIf { it.count > 0 }?.let { fl ->
-                add(ProfileHighlight("💎", "×${fl.count} Flawless", "Every Daily Sweep game won in a day", onTap = { showCalendar = true }))
+                add(ProfileHighlight(GlyphArt.DIAMOND, "×${fl.count} Flawless", "Every Daily Sweep game won in a day", onTap = { showCalendar = true }))
             }
         }
         HighlightsCard(highlights)
@@ -614,7 +595,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         }
 
         // ── Game mode statistics ────────────────────────────────────────────────
-        Text("GAME MODE STATISTICS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+        FinishLabel("GAME MODE STATISTICS")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
                 val active = playType == key
@@ -622,11 +603,12 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     label,
                     fontSize = 12.sp, fontWeight = FontWeight.Black,
                     color = if (active) Color(0xFF7C3AED) else WTheme.textMuted,
+                    // A1 / A9: a tinted segment, selected = stronger tint + the purple ring.
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (active) Color(0xFF7C3AED).copy(alpha = 0.08f) else WTheme.surface)
-                        .border(1.5.dp, if (active) Color(0xFF7C3AED) else WTheme.border, RoundedCornerShape(10.dp))
                         .clickableNoRipple { playType = key }
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(accentWash(PROFILE_PURPLE, if (active) 0.22f else 0.08f))
+                        .border(1.5.dp, if (active) PROFILE_PURPLE else accentLine(PROFILE_PURPLE), RoundedCornerShape(10.dp))
                         .padding(horizontal = 14.dp, vertical = 7.dp),
                 )
             }
@@ -656,11 +638,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // returns all — filter for the selected mode is best-effort by mode name.
             val stat = stats.firstOrNull { it.gameMode == selectedMode.name && it.playType == playType }
             val accent = modeAccent(selectedMode)
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-            ) {
-                Box(Modifier.fillMaxWidth().height(3.dp).background(accent))
+            // A1: the mode's tinted card with its top bar.
+            TintedCard(accent, Modifier.fillMaxWidth(), corner = 16.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         modeCardFor(selectedMode)?.let { ModeIconBox(it, 28.dp) }
@@ -691,25 +670,25 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         }
         // Top words (web TopWordsCard, shown when non-empty)
         if (topWords.isNotEmpty()) {
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            TintedCard(
+                PROFILE_PURPLE, Modifier.fillMaxWidth(), corner = 16.dp,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("TOP WORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                FinishLabel("TOP WORDS")
                 topWords.forEach { w ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(w.word.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                        Text("×${w.count}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        SoftNumber("×${w.count}", 13.sp)
                     }
                 }
             }
         }
 
         // ── Recent matches — iOS renders this as a titled surface card ───────────
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        TintedCard(
+            Color(0xFF2563EB), Modifier.fillMaxWidth(), corner = 16.dp,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -721,11 +700,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             } else {
                 (if (showAllRecent) matches else matches.take(5)).forEach { m -> PublicMatchRow(m, userId) }
                 if (matches.size > 5) {
-                    Text(
-                        if (showAllRecent) "Show less" else "View all ${matches.size} ›",
-                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
+                    CandyButton(
+                        if (showAllRecent) "Show less" else "View all ${matches.size}", onClick = { showAllRecent = !showAllRecent },
+                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp),
                     )
                 }
             }
@@ -736,49 +714,52 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     // Report reason picker (iOS confirmationDialog parity, context "public_profile").
     if (showReportDialog) {
         androidx.compose.material3.AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { showReportDialog = false },
-            title = { Text("Report this user?", fontWeight = FontWeight.Black) },
+            containerColor = accentWash(PROFILE_PINK, 0.10f),
+            title = { Text("Report this user?", fontWeight = FontWeight.Black, color = WTheme.text) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Reports are reviewed by the Wordocious team.", fontSize = 12.sp, color = WTheme.textMuted)
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(2.dp))
                     listOf(
                         "Inappropriate username",
                         "Inappropriate profile content",
                         "Cheating / fake scores",
                         "Other",
                     ).forEach { reason ->
-                        Text(
+                        // A8: each reason is a candy button (tap = submit, as before).
+                        CandyButton(
                             reason,
-                            fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickableNoRipple {
-                                    showReportDialog = false
-                                    moderationScope.launch {
-                                        val ok = ModerationService.report(userId, reason, "public_profile")
-                                        moderationToast = if (ok) "Report submitted — thank you" else "Could not submit report"
-                                    }
+                            onClick = {
+                                showReportDialog = false
+                                moderationScope.launch {
+                                    val ok = ModerationService.report(userId, reason, "public_profile")
+                                    moderationToast = if (ok) "Report submitted — thank you" else "Could not submit report"
                                 }
-                                .padding(vertical = 8.dp),
+                            },
+                            color = CandyColor.PINK, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
                         )
                     }
                 }
             },
             confirmButton = {},
             dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { showReportDialog = false }) { Text("Cancel") }
+                CandyButton("Cancel", onClick = { showReportDialog = false }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
         )
     }
     // Block confirmation (iOS confirmationDialog parity).
     if (showBlockConfirm) {
         androidx.compose.material3.AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { showBlockConfirm = false },
-            title = { Text("Block this user?", fontWeight = FontWeight.Black) },
-            text = { Text("You won't see this player on leaderboards or records.") },
+            containerColor = accentWash(PROFILE_PINK, 0.10f),
+            title = { Text("Block this user?", fontWeight = FontWeight.Black, color = WTheme.text) },
+            text = { Text("You won't see this player on leaderboards or records.", color = WTheme.textSecondary) },
             confirmButton = {
-                androidx.compose.material3.TextButton(
+                CandyButton(
+                    "Block",
                     onClick = {
                         showBlockConfirm = false
                         moderationScope.launch {
@@ -787,10 +768,11 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                             moderationToast = "User blocked"
                         }
                     },
-                ) { Text("Block", color = Color(0xFFDC2626), fontWeight = FontWeight.Black) }
+                    color = CandyColor.PINK, size = CandySize.MEDIUM,
+                )
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { showBlockConfirm = false }) { Text("Cancel") }
+                CandyButton("Cancel", onClick = { showBlockConfirm = false }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
         )
     }
@@ -872,19 +854,19 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
     val tier = teaserTier(p.level)
     val customAccent = ProfileAccent.isCustom(p.accentColor)
     val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
+    TintedCard(
+        PROFILE_PURPLE, Modifier.fillMaxWidth(), corner = 18.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+    ) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
+        Modifier.fillMaxWidth().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (avatarUrl != null) {
-            coil.compose.AsyncImage(
-                model = avatarUrl, contentDescription = "Avatar",
-                modifier = Modifier.size(96.dp).clip(CircleShape),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            )
+        if (avatarUrl != null && !com.wordocious.app.data.MascotAvatars.wearsMascot(p.username)) {
+            // AN6: a rounded-square photo.
+            PhotoAvatar(avatarUrl, 96.dp, contentDescription = "Avatar")
         } else {
-            // ART_SPEC §20: no photo → the letter tile.
+            // AN5: no photo → the player's mascot.
             LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji)
         }
         Spacer(Modifier.height(12.dp))
@@ -903,9 +885,8 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
         Spacer(Modifier.height(8.dp))
         // Lock badge — the notation the founder asked for.
         Row(
-            Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                .padding(horizontal = 12.dp, vertical = 5.dp),
+            Modifier.tintedPill(PROFILE_PURPLE, 50.dp)
+                .padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
@@ -924,18 +905,12 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
         )
         Spacer(Modifier.height(16.dp))
         // Level + tier chip, member since — same chips as the profile header.
+        // FINISH_SPEC V3: the tier badge + "LVL N" in soft numbers + the tier, on a tier-tinted pill.
         Row(
-            Modifier.clip(RoundedCornerShape(50)).background(tier.bg)
-                .border(1.5.dp, tier.border, RoundedCornerShape(50))
-                .padding(horizontal = 12.dp, vertical = 5.dp),
+            Modifier.tintedPill(TierInk.accent(com.wordocious.core.levelTier(p.level)), 50.dp)
+                .padding(start = 7.dp, end = 13.dp, top = 6.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            Icon(Icons.Filled.Star, null, tint = tier.color, modifier = Modifier.size(13.dp))
-            Text("Level ${p.level}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tier.color)
-            Text("·", fontSize = 12.sp, color = tier.color.copy(alpha = 0.7f))
-            Text(tier.label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tier.color)
-        }
+        ) { LevelBadge(p.level, 32.dp, numberSize = 16.sp, prefix = "LVL", showTier = true, labelColor = tier.color) }
         teaserMemberSince(p.createdAt)?.let {
             Spacer(Modifier.height(6.dp))
             Text("Member since $it", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -943,15 +918,19 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
         Spacer(Modifier.height(16.dp))
         // Medal counts
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            listOf("🥇" to p.goldMedals, "🥈" to p.silverMedals, "🥉" to p.bronzeMedals).forEach { (emoji, count) ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(emoji, fontSize = 17.sp)
-                    Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            // AL addendum 2: the medal art, not 🥇 🥈 🥉 emoji; TalkBack reads "3 gold medals".
+            listOf(Triple(GlyphArt.GOLD, p.goldMedals, "gold"), Triple(GlyphArt.SILVER, p.silverMedals, "silver"), Triple(GlyphArt.BRONZE, p.bronzeMedals, "bronze")).forEach { (art, count, name) ->
+                Row(
+                    Modifier.clearAndSetSemantics { contentDescription = "$count $name medals" },
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    GlyphArtImage(art, 20.dp)
+                    SoftNumber("$count", 15.sp)
                 }
             }
         }
         Spacer(Modifier.height(12.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(accentLine(PROFILE_PURPLE)))
         Spacer(Modifier.height(12.dp))
         // Headline numbers
         Row(Modifier.fillMaxWidth()) {
@@ -961,22 +940,22 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
                 "Daily Streak" to p.dailyLoginStreak,
             ).forEach { (label, value) ->
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("$value", fontSize = 17.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    SoftNumber("$value", 20.sp)
                     Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp, maxLines = 1)
                 }
             }
         }
     }
+    }
 }
 
 @Composable
 private fun OverallCard(icon: Any, tint: Color, value: String, label: String, sub: String, modifier: Modifier = Modifier) {
+    // A1: a tinted tile in the stat's color (4 dp band on top); A2: the soft number.
     Column(
         modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .padding(12.dp),
+            .tintedPill(tint, 16.dp)
+            .padding(start = 8.dp, end = 8.dp, top = 14.dp, bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -985,8 +964,8 @@ private fun OverallCard(icon: Any, tint: Color, value: String, label: String, su
             is Icon3DName -> Icon3D(icon, 22.dp)
             is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
         }
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.4.sp)
+        SoftNumber(value, 20.sp)
+        Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.4.sp, maxLines = 1)
         Text(sub, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
     }
 }
@@ -994,8 +973,8 @@ private fun OverallCard(icon: Any, tint: Color, value: String, label: String, su
 @Composable
 private fun ModeStat(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        // iOS deliberately renders all four values in primary text, not the cell color.
-        Text(value, fontSize = 17.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        // A2: the four values as soft numbers (one ink, not the cell color — iOS parity).
+        SoftNumber(value, 18.sp)
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }
@@ -1031,11 +1010,13 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
         zdt.format(java.time.format.DateTimeFormatter.ofPattern("MMM d · h:mm a"))
     }.getOrDefault("")
 
+    // A1: the row in its mode's soft wash.
+    val rowAccent = card?.accent ?: Color(0xFFD97706)
     Row(
         Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+            .background(accentWash(rowAccent, 0.10f))
+            .border(1.5.dp, accentLine(rowAccent, 0.28f), RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1073,3 +1054,7 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
         }
     }
 }
+
+/** The public profile's purple (the Home / profile page accent) and the moderation pink. */
+private val PROFILE_PURPLE = Color(0xFF7C3AED)
+private val PROFILE_PINK = Color(0xFFEC4899)

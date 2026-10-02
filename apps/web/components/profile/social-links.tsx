@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase-client';
-import { Pencil, Check, X as XIcon, Globe } from 'lucide-react';
+import { Pencil, X as XIcon, Globe } from 'lucide-react';
+import { CandyButton } from '@/components/ui/candy-button';
+import { BRAND_ACCENT, softBackground, softBorder, softCard, softPill } from '@/lib/soft-surface';
 
 export type SocialLinks = {
   twitter?: string;
@@ -98,8 +100,8 @@ export function SocialLinksDisplay({ links }: DisplayProps) {
             href={href}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: p.color }}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ ...softPill(p.color, { bar: false }), color: p.color }}
             aria-label={p.label}
             title={p.label}
           >
@@ -150,14 +152,14 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
     return (
       <div className="flex items-center gap-2 flex-wrap justify-center">
         <SocialLinksDisplay links={initial} />
-        <button
+        <CandyButton
           onClick={() => { setValues(initial ?? {}); setOpen(true); }}
-          className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full"
-          style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
+          color="peach"
+          size="sm"
+          icon={<Pencil className="w-3.5 h-3.5" aria-hidden="true" />}
         >
-          <Pencil className="w-3 h-3" />
           {initial && Object.keys(initial).length > 0 ? 'Edit socials' : 'Add socials'}
-        </button>
+        </CandyButton>
       </div>
     );
   }
@@ -165,7 +167,7 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
   return (
     <div
       className="w-full max-w-sm mx-auto p-4 space-y-2.5"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+      style={softCard(BRAND_ACCENT, { radius: 18 })}
     >
       {PLATFORMS.map((p) => (
         <div key={p.key} className="flex items-center gap-2">
@@ -178,30 +180,19 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
             onChange={(e) => setValues((v) => ({ ...v, [p.key]: e.target.value }))}
             placeholder={p.placeholder}
             className="flex-1 text-xs font-bold px-2.5 py-1.5 outline-none"
-            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+            style={{ background: softBackground(p.color, 0.08), border: softBorder(p.color, 0.08), borderRadius: '10px', color: 'var(--color-text)' }}
           />
         </div>
       ))}
       {error && <p className="text-[10px] font-bold text-red-500">{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button
-          onClick={() => setOpen(false)}
-          disabled={saving}
-          className="flex-1 py-1.5 rounded-lg text-xs font-black"
-          style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-        >
-          <XIcon className="w-3 h-3 inline mr-1" />
+        <CandyButton onClick={() => setOpen(false)} disabled={saving} color="peach" size="sm" block className="flex-1"
+          icon={<XIcon className="w-3.5 h-3.5" aria-hidden="true" />}>
           Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex-1 py-1.5 rounded-lg text-xs font-black text-white disabled:opacity-50"
-          style={{ background: '#7c3aed' }}
-        >
-          <Check className="w-3 h-3 inline mr-1" />
+        </CandyButton>
+        <CandyButton onClick={handleSave} disabled={saving} color="purple" size="sm" block className="flex-1" icon="check">
           {saving ? 'Saving...' : 'Save'}
-        </button>
+        </CandyButton>
       </div>
     </div>
   );

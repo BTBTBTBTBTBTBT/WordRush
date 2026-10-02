@@ -485,7 +485,7 @@ function PushCampaignCard() {
       <div className="space-y-2">
         <input
           value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60}
-          placeholder="Title… e.g. NEW PUZZLES! 🧩"
+          placeholder="Title… e.g. NEW PUZZLES!"
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-violet-300"
         />
         <textarea

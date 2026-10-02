@@ -63,7 +63,10 @@ final class StoreManager: ObservableObject {
     func start() {
         updatesTask = Task { [weak self] in
             for await update in Transaction.updates {
+                // FINISH_SPEC §AP: renewals / re-deliveries never trigger Welcome to Pro.
+                ProWelcomeCenter.shared.beginQuiet()
                 await self?.handle(verification: update, isNewPurchase: false)
+                ProWelcomeCenter.shared.endQuiet()
             }
         }
         Task { await loadProducts() }
@@ -89,7 +92,10 @@ final class StoreManager: ObservableObject {
             return
         }
         purchasingId = plan.rawValue
-        defer { purchasingId = nil }
+        // FINISH_SPEC §AP: a purchase made in this session may open Welcome to Pro.
+        let welcome = ProWelcomeCenter.shared
+        welcome.purchaseWillStart()
+        defer { purchasingId = nil; welcome.purchaseEnded() }
         do {
             // Tag the purchase with the Supabase user UUID so the server-side
             // App Store Server Notifications webhook can map the transaction to
@@ -101,7 +107,9 @@ final class StoreManager: ObservableObject {
             let result = try await product.purchase(options: options)
             switch result {
             case .success(let verification):
+                welcome.purchaseSucceeded()
                 await handle(verification: verification, isNewPurchase: true)
+                welcome.purchaseHandled()
             case .userCancelled:
                 break
             case .pending:
@@ -260,6 +268,9 @@ final class StoreManager: ObservableObject {
     /// the renewal's +4 shields come from the ASSN webhook, which doesn't need
     /// the app to be opened at all.
     private func syncCurrentEntitlements() async {
+        // FINISH_SPEC §AP: restores and launch syncs never trigger Welcome to Pro.
+        ProWelcomeCenter.shared.beginQuiet()
+        defer { ProWelcomeCenter.shared.endQuiet() }
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result,
                   let plan = Plan(rawValue: transaction.productID),

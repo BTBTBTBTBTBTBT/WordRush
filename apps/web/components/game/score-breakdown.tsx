@@ -3,7 +3,7 @@
 import { computeScoreBreakdown } from '@/lib/daily-service';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { SoftNum } from '@/components/ui/soft-number';
-import { cardBarStyle } from '@/lib/soft-surface';
+import { SOFT_INK, cardBarStyle } from '@/lib/soft-surface';
 
 /** "Guess bonus" reads through the mode's guess semantics (More Games §11):
  *  Sudocious and Starsweep count mistakes, so their row says "Mistake bonus". */
@@ -72,19 +72,19 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
       style={{
         background: 'linear-gradient(#7c3aed12, #7c3aed12), var(--color-card-base, #ffffff)',
         borderRadius: 20,
-        border: '1.5px solid #e2d3ff',
+        border: '1.5px solid rgba(124, 58, 237, 0.18)', // ≈ #e2d3ff on light; a soft line on the dark card
         boxShadow: '0 8px 20px rgba(60, 30, 110, 0.10)',
       }}
     >
       <div aria-hidden="true" style={{ ...cardBarStyle('#7c3aed'), background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }} />
       <div className="px-3.5 pt-2.5 pb-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] font-black uppercase" style={{ letterSpacing: '0.12em', color: '#5b3c96' }}>
+        <span className="text-[11px] font-black uppercase" style={{ letterSpacing: '0.12em', color: SOFT_INK.title }}>
           Score Breakdown
         </span>
         <span className="flex items-baseline gap-1.5" aria-label={`${b.total.toFixed(0)} points`}>
           <SoftNum size={30}>{Math.round(b.total).toLocaleString('en-US')}</SoftNum>
-          <small className="font-black" style={{ fontSize: 12, letterSpacing: '0.1em', color: '#6d28d9' }}>PTS</small>
+          <small className="font-black" style={{ fontSize: 12, letterSpacing: '0.1em', color: SOFT_INK.value }}>PTS</small>
         </span>
       </div>
 
@@ -160,13 +160,13 @@ function Row({
         <span
           className="text-[14px] font-black"
           style={{
-            color: highlight === 'pure' ? '#7c3aed' : 'var(--color-text)',
+            color: highlight === 'pure' ? SOFT_INK.value : 'var(--color-text)',
           }}
         >
           {label}
         </span>
         {detail && (
-          <span className="text-[11.5px] font-bold truncate" style={{ color: '#7a6a95' }}>
+          <span className="text-[11.5px] font-bold truncate" style={{ color: SOFT_INK.detail }}>
             {detail}
           </span>
         )}
@@ -175,8 +175,8 @@ function Row({
         className="text-[15px] font-black shrink-0 ml-2 tabular-nums"
         style={{
           color:
-            value > 0 ? '#6d28d9'
-            : value < 0 ? '#dc2626'
+            value > 0 ? SOFT_INK.value
+            : value < 0 ? 'var(--color-loss-text, #dc2626)'
             : 'var(--color-text-muted)',
         }}
       >

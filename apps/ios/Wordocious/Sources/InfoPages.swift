@@ -26,25 +26,31 @@ struct InfoPage: View {
         // the "?" menu) and pushed from Settings — MenuScaffold's Close uses the
         // environment dismiss, and we hide the system nav bar so there's no
         // duplicate header in the pushed case.
-        MenuScaffold(title) {
+        // FINISH_SPEC §C6: Privacy and Terms wear their own title art; every page
+        // opens with the intro card, then section cards with top bars.
+        MenuScaffold(title, art: art, help: .howToPlay) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if let sub = subtitle { Text(sub).font(Brand.body(13)).foregroundStyle(Theme.textMuted) }
+                VStack(alignment: .leading, spacing: 12) {
+                    InfoIntroCard(heading: title, line: subtitle)
                     // About + Support are single-sourced via /api/content (ContentService);
                     // Privacy + Terms stay hardcoded for offline / pre-sign-in compliance.
                     if kind == .about || kind == .support {
                         let cs = kind == .about ? content.about : content.support
                         if cs.isEmpty {
-                            Text("Loading…").font(Brand.font(12, .regular)).foregroundStyle(Theme.textMuted)
+                            Text("Loading…").font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                         } else {
                             ForEach(cs) { contentSectionView($0) }
                         }
                     } else {
                         ForEach(0..<sections.count, id: \.self) { i in sectionView(sections[i]) }
                     }
-                    if let contact { Text(contact).font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary) }
+                    if let contact {
+                        Text(contact).font(Brand.font(13, .heavy)).foregroundStyle(accent)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .tintedPill(accent)
+                    }
                 }
-                .padding(16)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -53,45 +59,53 @@ struct InfoPage: View {
 
     private func contentSectionView(_ s: ContentService.ContentSection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
             ForEach(Array((s.paragraphs ?? []).enumerated()), id: \.offset) { _, p in
-                Text(p).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                Text(p).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                     .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
             }
             ForEach(s.items ?? []) { item in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.heading).font(Brand.font(12, .black))
                         .foregroundStyle(item.accent.flatMap { Color(hexString: $0) } ?? Theme.primary)
-                    Text(item.body).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                    Text(item.body).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                         .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-        .padding(20)
+        .padding(.horizontal, 16).padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .infoCard(accent)
     }
 
     private func sectionView(_ s: InfoSection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
             if let b = s.body {
-                Text(b).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                Text(b).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                     .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
             }
             ForEach(s.bullets, id: \.self) { b in
                 HStack(alignment: .top, spacing: 8) {
-                    Text("•").foregroundStyle(Theme.primary)
-                    Text(b).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                    Text("•").foregroundStyle(accent)
+                    Text(b).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                         .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-        .padding(20)
+        .padding(.horizontal, 16).padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .infoCard(accent)
+    }
+
+    /// §C6: the page's own title art (Privacy / Terms); About / Support keep the text title.
+    private var art: ArtTitleName? {
+        switch kind { case .privacy: return .privacy; case .terms: return .terms; default: return nil }
+    }
+
+    /// The section cards' color: green for Privacy, purple otherwise.
+    private var accent: Color {
+        kind == .privacy ? InfoPageStyle.green : InfoPageStyle.purple
     }
 
     private var navTitle: String {

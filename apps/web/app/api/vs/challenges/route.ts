@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
 import { vsClock } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, acceptedFriendIds, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { VS_MODES, challengeCode, isPro, parseRun, toView, type RunBody } from '@/lib/vs-challenges-server';
+import { avatarFieldsOf, selectWithAvatarColumns } from '@/lib/avatar-fields-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,7 +73,8 @@ export async function POST(req: NextRequest) {
     const result = run.solved ? `solved in ${run.guesses} · ${vsClock(run.timeMs)}` : 'a run to beat';
     void broadcastPush(
       {
-        title: `${meProf?.username ?? 'A friend'} challenged you!`,
+        // FINISH_SPEC AE: the shared cast-voice push copy.
+        title: pushCopy('challengeReceived', { name: meProf?.username ?? undefined, game: title }),
         body: `${title}: ${result}. Race their run within 24 hours.`,
         url: `/vs/challenge/${code}`,
       },
@@ -106,8 +109,9 @@ export async function GET(req: NextRequest) {
   const ids = new Set<string>();
   for (const r of open) ids.add(r.challenger_id);
   for (const e of entries ?? []) ids.add(e.user_id);
+  // + is_pro / avatar columns for FINISH_SPEC AH/AN3 (tolerant while the avatar columns are missing).
   const { data: profs } = ids.size
-    ? await admin.from('profiles').select('id, username, avatar_url').in('id', [...ids])
+    ? await selectWithAvatarColumns<any[]>((extra) => admin.from('profiles').select(`id, username, avatar_url${extra}`).in('id', [...ids]))
     : { data: [] as any[] };
   const byId = new Map((profs ?? []).map((p: any) => [p.id, p]));
 
@@ -121,6 +125,10 @@ export async function GET(req: NextRequest) {
       invitees: (r.invitee_ids ?? []).length,
       results: (entries ?? []).filter((e: any) => e.challenge_id === r.id).map((e: any) => ({
         username: (byId.get(e.user_id) as any)?.username ?? 'Player',
+        // Additive (FINISH_SPEC AH/AN3): the racer's id, avatar_url, avatar choice + active Pro.
+        userId: e.user_id,
+        avatar_url: (byId.get(e.user_id) as any)?.avatar_url ?? null,
+        ...avatarFieldsOf(byId.get(e.user_id)),
         // From the CHALLENGER's side, so the sender reads "you won" directly.
         outcome: e.outcome === 'win' ? 'loss' : e.outcome === 'loss' ? 'win' : 'draw',
         guesses: e.guesses,

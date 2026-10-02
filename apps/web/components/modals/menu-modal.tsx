@@ -14,6 +14,8 @@ import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { Help3D } from '@/components/ui/icon3d';
 import { PageHeader } from '@/components/ui/page-header';
 import { PAGE_HOSTS } from '@/lib/mascots';
+import { POPUP_ACCENT, POPUP_DIM, PopupBar, popupCard, softRow } from '@/components/ui/soft-popup';
+import { softIconTile } from '@/lib/soft-surface';
 
 interface MenuModalProps {
   open: boolean;
@@ -58,7 +60,7 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-overlay"
-      style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+      style={{ backgroundColor: POPUP_DIM }}
       onClick={onClose}
     >
       <div
@@ -68,11 +70,7 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
         // toolbar, so the panel's top sat under the browser chrome.
         className="relative w-full max-w-sm animate-modal-content max-h-modal"
         style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+          ...popupCard(POPUP_ACCENT.brand, { share: 0.09 }),
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -81,11 +79,8 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
         aria-modal="true"
         aria-label="Menu"
       >
-        {/* Top accent bar */}
-        <div
-          className="h-1.5 flex-shrink-0"
-          style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }}
-        />
+        {/* Top accent bar (A1: the 10 px card bar). */}
+        <PopupBar accent={POPUP_ACCENT.brand} gradient="linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)" />
 
         {/* Header (HEADER_SPEC §4): gradient caps title with C (Help / Guides) beside it, white close circle. */}
         <PageHeader
@@ -107,16 +102,16 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center gap-3 p-3 rounded-2xl transition-transform active:scale-[0.98]"
-                style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+                className="flex items-center gap-3 p-3"
+                style={softRow(item.accent, { radius: 18 })}
               >
                 <span
-                  className="flex-shrink-0 w-10 h-10 rounded-[11px] flex items-center justify-center"
-                  style={{ background: `${item.accent}24` }}
+                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center"
+                  style={softIconTile(item.accent, { radius: 11 })}
                 >
                   <Icon className="w-4 h-4" style={{ color: item.accent }} />
                 </span>
-                <span className="min-w-0 flex flex-col">
+                <span className="min-w-0 flex-1 flex flex-col">
                   <span className="text-[15px] font-black uppercase leading-tight" style={{ color: 'var(--color-text)' }}>
                     {item.title}
                   </span>

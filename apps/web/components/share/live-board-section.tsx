@@ -29,6 +29,10 @@ import { formatScore } from '@/lib/composite-scoring';
 import { formatShortTime as formatTime } from '@/lib/format';
 import { MODES } from '@/lib/modes.generated';
 import { requiredSweepCount } from '@/lib/daily-modes';
+import { softBackground, softBorder } from '@/lib/soft-surface';
+
+/** The Leaderboard page's accent (PAGE_TINTS.leaderboard). */
+const LB_ACCENT = '#f59e0b';
 
 interface LiveBoardSectionProps {
   kind: LeaderboardShareKind;
@@ -247,9 +251,12 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
       <div
         className="overflow-hidden"
         style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
-          borderRadius: 16,
+          // A1: the leaderboard's amber wash + its card top bar, never plain white.
+          background: softBackground(LB_ACCENT),
+          border: softBorder(LB_ACCENT),
+          borderRadius: 18,
+          boxShadow: `inset 0 6px 0 ${LB_ACCENT}`,
+          paddingTop: 6,
         }}
       >
         {sweepKind

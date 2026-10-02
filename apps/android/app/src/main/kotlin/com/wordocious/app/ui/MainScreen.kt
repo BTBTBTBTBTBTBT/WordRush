@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -100,17 +101,46 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     // Friends overhaul §5: the badge = pending requests + pocket games where it's your turn.
     // The games list refreshes every minute while the app is in the foreground.
     val navLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    // FINISH_SPEC M: the badge also counts game invites and VS challenges waiting on the
+    // player — refreshed with the games list (the same existing endpoints the Friends tab reads).
+    var inviteIds by remember { mutableStateOf<List<String>>(emptyList()) }
+    var challengeCodes by remember { mutableStateOf<List<String>>(emptyList()) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         navLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
             while (true) {
-                if (com.wordocious.app.data.AuthService.userId != null) com.wordocious.app.data.FriendlyGamesService.load()
+                val uid = com.wordocious.app.data.AuthService.userId
+                if (uid != null) {
+                    com.wordocious.app.data.FriendlyGamesService.load()
+                    runCatching { com.wordocious.app.data.InviteService.fetchPendingInvitesForUser(uid) }.getOrNull()
+                        ?.let { list -> inviteIds = list.map { it.id } }
+                    runCatching { com.wordocious.app.data.VsChallengeService.list() }.getOrNull()
+                        ?.let { l -> challengeCodes = l.incoming.map { it.code } }
+                }
                 kotlinx.coroutines.delay(60_000)
             }
         }
     }
     val activeGames by com.wordocious.app.data.FriendlyGamesService.active.collectAsState()
-    val friendsBadge = remember(friendsVersion, activeGames) {
-        com.wordocious.app.data.FriendsService.incoming.size + activeGames.count { it.yourTurn }
+    val waiting = remember(friendsVersion, activeGames, inviteIds, challengeCodes) {
+        FriendsBadge.waitingKeys(
+            requestIds = com.wordocious.app.data.FriendsService.incoming.map { it.id },
+            inviteIds = inviteIds,
+            challengeCodes = challengeCodes,
+            yourTurnGames = activeGames.filter { it.yourTurn }.map { it.id to it.updatedAt },
+        )
+    }
+    var seen by remember { mutableStateOf(FriendsBadge.loadSeen()) }
+    // Opening Friends marks everything waiting as seen; the badge returns only for new items.
+    androidx.compose.runtime.LaunchedEffect(selected, waiting) {
+        if (selected == 3) { FriendsBadge.markSeen(waiting); seen = waiting }
+    }
+    val friendsBadge = FriendsBadge.unseen(waiting, seen)
+    // A new item arriving springs the badge in and wiggles the tab icon.
+    var arrivals by remember { mutableIntStateOf(0) }
+    var lastCount by remember { mutableIntStateOf(friendsBadge) }
+    androidx.compose.runtime.LaunchedEffect(friendsBadge) {
+        if (friendsBadge > lastCount) arrivals++
+        lastCount = friendsBadge
     }
     // FINISH_SPEC A4: the docked tab bar — flush to the bottom edge, edge to edge and
     // opaque, so the page content ends right above it and nothing shows underneath; a soft
@@ -145,12 +175,14 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                     }.semantics(mergeDescendants = true) {
                         role = androidx.compose.ui.semantics.Role.Tab
                         this.selected = active
+                        // M: "Friends, 3 new" (the label Text below is folded into this).
+                        contentDescription = if (tab.label == "Friends") FriendsBadge.tabLabel(friendsBadge) else tab.label
                     },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 // A4: the icon squishes on tap (the icon press, .86 / .80 → 1.08 → 1).
-                Box(Modifier.pressSquish(interaction, icon = true)) {
+                Box(Modifier.pressSquish(interaction, icon = true).then(if (tab.label == "Friends") Modifier.friendsWiggle(arrivals) else Modifier)) {
                     // Selected = full color; unselected = the same icon at 55% opacity and
                     // 60% saturation (game-kit.html `.tab img`).
                     Icon3D(
@@ -158,23 +190,17 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                         alpha = if (active) 1f else 0.55f,
                         colorFilter = if (active) null else Icon3DMuted,
                     )
-                    // Pending requests + your-turn games → a count on the Friends icon.
+                    // M: the glossy candy count on the Friends icon (requests + invites +
+                    // challenges + your-turn games the player hasn't seen yet).
                     if (tab.label == "Friends" && friendsBadge > 0) {
-                        Box(
-                            Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-4).dp)
-                                .size(width = if (friendsBadge > 9) 20.dp else 15.dp, height = 15.dp)
-                                .clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                if (friendsBadge > 99) "99+" else "$friendsBadge",
-                                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1,
-                            )
-                        }
+                        FriendsCountBadge(
+                            friendsBadge, arrivals = arrivals, pulsing = !active,
+                            modifier = Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-6).dp),
+                        )
                     }
                 }
                 Text(
-                    tab.label, fontSize = 11.sp, maxLines = 1,
+                    tab.label, fontSize = 11.sp, maxLines = 1, modifier = Modifier.clearAndSetSemantics { },
                     fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
                     color = if (active) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
                 )
@@ -483,6 +509,30 @@ fun MainScreen() {
         }
     }
     val covered by coveredState
+
+    // FINISH_SPEC AJ: the per-tab "scroll to the top" counters and the leave-the-match confirm.
+    val tabReselect = remember { androidx.compose.runtime.mutableStateListOf(0, 0, 0, 0) }
+    var confirmLeaveTab by remember { mutableStateOf<Int?>(null) }
+    fun goToRoot(tab: Int, scrollToTop: Boolean) {
+        publicProfileId = null; showRecords = false
+        activeGame = null; activeSeed = null; infoRoute = null; showSettings = false; showSignIn = false
+        vsLobby = false; vsActive = null; vsInvite = null; vsChallengeCode = null; friendlyGameId = null
+        vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main
+        selectedTab = tab
+        if (scrollToTop && tab in tabReselect.indices) tabReselect[tab] = tabReselect[tab] + 1
+    }
+    fun onTabTap(tab: Int) {
+        val state = TabNavState(
+            selectedTab = selectedTab,
+            pushedPages = (if (publicProfileId != null) 1 else 0) + (if (showRecords) 1 else 0),
+            layers = if (covered) 1 else 0,
+            liveVsMatch = vsActive != null || vsInvite != null,
+        )
+        when (val out = TabNav.onTabTap(state, tab)) {
+            is TabTapOutcome.ConfirmLeaveMatch -> confirmLeaveTab = out.tab
+            is TabTapOutcome.GoToRoot -> goToRoot(out.tab, out.scrollToTop)
+        }
+    }
     val realBackOwner = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current
     val inertBackOwner = remember(mainLifecycleOwner) {
         object : androidx.activity.OnBackPressedDispatcherOwner {
@@ -514,17 +564,23 @@ fun MainScreen() {
                     Column(Modifier.fillMaxWidth()) {
                         // Switching tabs pops the public-profile push, mirroring iOS's
                         // per-tab path reset (RootTabView.swift:38-47).
-                        BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showRecords = false; selectedTab = it })
+                        // FINISH_SPEC AJ: a tab tap lands on that tab's root from any depth (every push,
+                        // layer and sheet cleared; Home / a re-tap also scrolls to the top). A live VS
+                        // match asks first, since leaving counts as a forfeit.
+                        BottomNav(selected = selectedTab, onSelect = { tab -> onTabTap(tab) })
                     }
                 },
             ) { innerPadding ->
                 androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                    // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield)
-                    AppHeader(
-                        onSettings = { showSettings = true },
-                        onNav = { infoRoute = it },
-                        onSignIn = { showSignIn = true },
-                    )
+                    // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield).
+                    // FINISH_SPEC AG: inside the page column on a tablet (the cast stays 90% of it).
+                    Box(Modifier.fillMaxWidth().contentColumn()) {
+                        AppHeader(
+                            onSettings = { showSettings = true },
+                            onNav = { infoRoute = it },
+                            onSignIn = { showSignIn = true },
+                        )
+                    }
                     Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                         // iOS hosts all four tabs in a TabView, "which keeps every tab's
                         // state alive" (RootTabView.swift:8-9). A `when` disposed the whole
@@ -540,8 +596,9 @@ fun MainScreen() {
                         visitedTabs.forEach { tab ->
                             val activeTab = tab == selectedTab
                             val tabHidden = remember(tab) { androidx.compose.runtime.derivedStateOf { coveredState.value || selectedTab != tab } }
-                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())) {
-                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalPageTint provides tabPageTint(tab)) {
+                            // FINISH_SPEC AG: a centered ~600 dp page column on a tablet (phones untouched).
+                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).contentColumn()) {
+                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
                                 when (tab) {
                                     0 -> HomeScreen(
                                         onJoinInvite = { m, code -> vsInvite = m to code },
@@ -608,10 +665,12 @@ fun MainScreen() {
                         if (showRecords) {
                             androidx.activity.compose.BackHandler { showRecords = false }
                             PageBackground(PageTint.LEADERBOARD, Modifier.fillMaxSize().zIndex(2f)) {
-                                RecordsScreen(
-                                    onOpenProfile = { publicProfileId = it },
-                                    onOpenStats = { showRecords = false; selectedTab = 2 },
-                                )
+                                Box(Modifier.fillMaxSize().contentColumn()) {
+                                    RecordsScreen(
+                                        onOpenProfile = { publicProfileId = it },
+                                        onOpenStats = { showRecords = false; selectedTab = 2 },
+                                    )
+                                }
                             }
                         }
 
@@ -621,16 +680,33 @@ fun MainScreen() {
                         publicProfileId?.let { pid ->
                             androidx.activity.compose.BackHandler { publicProfileId = null }
                             PageBackground(PageTint.HOME, Modifier.fillMaxSize().zIndex(2f)) {
-                                PublicProfileScreen(
-                                    userId = pid,
-                                    onClose = { publicProfileId = null },
-                                    // Profile-to-profile hop (nemesis row / podium rows):
-                                    // same push-inside-the-tab pattern, new target id.
-                                    onOpenProfile = { publicProfileId = it },
-                                )
+                                Box(Modifier.fillMaxSize().contentColumn()) {
+                                    PublicProfileScreen(
+                                        userId = pid,
+                                        onClose = { publicProfileId = null },
+                                        // Profile-to-profile hop (nemesis row / podium rows):
+                                        // same push-inside-the-tab pattern, new target id.
+                                        onOpenProfile = { publicProfileId = it },
+                                    )
+                                }
                             }
                         }
 
+                        // AJ: leaving a live VS match from the tab bar asks first (it counts as a forfeit).
+                        confirmLeaveTab?.let { tab ->
+                            androidx.compose.ui.window.Dialog(onDismissRequest = { confirmLeaveTab = null }) {
+                                TintedCard(Color(0xFF0D9488), corner = 24.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)) {
+                                    Text(
+                                        "Leave the match? It counts as a forfeit.", fontSize = 16.sp, fontWeight = FontWeight.Black,
+                                        color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        CandyButton("Stay", onClick = { confirmLeaveTab = null }, color = CandyColor.TEAL, size = CandySize.MEDIUM, modifier = Modifier.weight(1f), fill = true)
+                                        CandyButton("Leave", onClick = { confirmLeaveTab = null; goToRoot(tab, true) }, color = CandyColor.PEACH, size = CandySize.MEDIUM, modifier = Modifier.weight(1f), fill = true)
+                                    }
+                                }
+                            }
+                        }
                         if (showShieldModal && !covered) {
                             val p = profile
                             StreakShieldModal(
@@ -672,7 +748,15 @@ fun MainScreen() {
         },
         LocalGameTint provides soloGameAccent,
         LocalGameWallpaper provides gameWallpaperRes(soloGame?.id),
-      ) { Box(Modifier.fillMaxSize().zIndex(3f)) {
+      ) { Box(
+        // FINISH_SPEC AG: a solo game on a tablet sits in a centered ~560 dp column; its
+        // window-anchored wallpaper also fills the sides (the game repaints the same pixels).
+        Modifier.fillMaxSize().zIndex(3f)
+            .then(
+                if (soloGame != null && WideLayout.isWide(androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat()))
+                    Modifier.gameBackground { this }.gameColumn() else Modifier,
+            ),
+      ) {
         val card = activeGame
         val invite = vsInvite
         val active = vsActive

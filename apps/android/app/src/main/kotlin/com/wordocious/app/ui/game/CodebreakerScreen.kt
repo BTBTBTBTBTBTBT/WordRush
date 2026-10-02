@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,6 +69,7 @@ import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.CRYPTOGRAM_ALPHABET
@@ -105,7 +107,6 @@ import kotlinx.serialization.json.Json
 // The puzzle completes itself the moment every letter is right.
 
 private val CRYPTOGRAM_ACCENT = Color(0xFF92400E)
-private val CRYPTOGRAM_HINT = Color(0xFF8B5CF6)
 private val CRYPTOGRAM_WRONG = Color(0xFFDC2626)
 
 /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
@@ -283,7 +284,7 @@ class CodebreakerSession(val seed: String, val isDaily: Boolean) {
         dispatch(CryptogramAction.Check, onFinished)
         val wrong = state.lastWrong.size
         if (wrong > 0) { flash("$wrong wrong letter${if (wrong == 1) "" else "s"} cleared"); SoundManager.playInvalid() }
-        else { flash("Everything penciled is right"); SoundManager.playSuccess() }
+        else { flash("Everything penciled is right"); SoundManager.playPartial() }
     }
     /** The red flash on letters a Check cleared lasts 700ms (web parity). */
     fun clearLastWrong() { if (state.lastWrong.isNotEmpty()) state = state.copy(lastWrong = emptyList()) }
@@ -376,18 +377,8 @@ fun CodebreakerScreen(
             .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                CodebreakerHeader(session)
-                CipherBoard(session, finished = true)
-                Text(
-                    "“${session.state.text}”", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
-                    textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 8.dp),
-                )
-                CodebreakerResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            CodebreakerFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 CodebreakerHeader(session)
@@ -403,12 +394,8 @@ fun CodebreakerScreen(
                 Spacer(Modifier.height(6.dp))
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // G5 a toast is a tinted pill (no dark slab, no white).
+        session.toast?.let { PieceToast(it, CRYPTOGRAM_ACCENT, top = 100.dp) }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) CodebreakerOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(CRYPTOGRAM_ACCENT, onBack) }
@@ -425,8 +412,8 @@ private fun CodebreakerCapsules(session: CodebreakerSession, onFinished: () -> U
     val revealIn = maxOf(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - session.elapsed)
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
-        Capsule(if (session.state.checks > 0) "Check · ${session.state.checks}" else "Check", Icons.Filled.DoneAll) { session.check(onFinished) }
-        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
+        Capsule(if (session.state.checks > 0) "Check · ${session.state.checks}" else "Check", Icons.Filled.DoneAll, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.check(onFinished) }
+        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hint(onFinished) }
         Capsule(if (revealIn > 0) "Reveal · ${clockText(revealIn)}" else "Reveal", Icons.Filled.Visibility, dim = revealIn > 0) { session.reveal(onFinished) }
     }
 }
@@ -479,6 +466,9 @@ private const val CIPHER_LINE_GAP_RATIO = 0.15f
 private const val CIPHER_BLOCK_GAP = 10f         // board → conflict slot → strip
 private const val CIPHER_CONFLICT_SLOT = 16f     // fixed-height slot so a conflict appearing never resizes the board
 private const val CIPHER_CHIP_GAP = 4f
+/** L the board's game tray: inner padding across / down (dp); the tray adds its 4 dp lip below. */
+private const val CIPHER_TRAY_H = 8f
+private const val CIPHER_TRAY_V = 10f
 
 /** Code letter under a cell: 10 sp at the floor, 14 sp at the 64 dp top end. */
 internal fun cipherCodeSp(cell: Float): Float =
@@ -577,12 +567,13 @@ private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
         val words = remember(s.cipher) { s.cipher.split(" ") }
         val codeCount = remember(s.cipher) { cryptogramCodeLetters(s.cipher).size }
         val freqDigits = remember(s.cipher) { (cryptogramFrequencies(s.cipher).values.maxOrNull() ?: 1).toString().length }
-        // The board caps at 480 dp wide and pads 4 dp a side; wrap against that, not the raw band.
-        val innerWidth = minOf(maxWidth, 480.dp) - 8.dp
+        // The board caps at 480 dp wide, sits in its tray and pads 4 dp a side; wrap against that, not the raw band.
+        val innerWidth = minOf(maxWidth, 480.dp) - 8.dp - (CIPHER_TRAY_H * 2).dp
+        val trayHeight = CIPHER_TRAY_V * 2 + GameTrayStyle.LIP.value
         // The strip is pinned BELOW the band (founder, 2026-09-26: always visible over the
         // keyboard, never scrolled away), so the board alone has to fit this height.
         val fit = remember(s.cipher, maxWidth, maxHeight, fontScale) {
-            cipherCellFit(words, codeCount, freqDigits, innerWidth.value, maxHeight.value, fontScale, withStrip = false)
+            cipherCellFit(words, codeCount, freqDigits, innerWidth.value, maxHeight.value - trayHeight, fontScale, withStrip = false)
         }
         Column(
             Modifier.fillMaxSize().then(if (fit.fits) Modifier else Modifier.verticalScroll(rememberScrollState())),
@@ -601,28 +592,38 @@ private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
     }
 }
 
-/** One cipher cell — the Classic tile geometry with the penciled plain letter
- *  inside and the code letter in small monospace beneath (scaled with the cell
- *  by [cipherCodeSp]). The selected code letter wears an accent ring on every
- *  occurrence. */
+/** The given letters: a solid glossy tile in the game's amber-brown. */
+private val CIPHER_GIVEN = solidChipLook(Color(0xFFB45309))
+
+/** One cipher cell — FINISH_SPEC J3: a B1 glossy tile (the Classic geometry) with the
+ *  penciled plain letter on it and the code letter as a small chip beneath (scaled
+ *  with the cell by [cipherCodeSp]). The selected code letter wears an accent ring on
+ *  every occurrence and its chip fills with the accent. */
 @Composable
-private fun CipherTile(plain: String, code: String, fill: Color, border: Color, ink: Color, selected: Boolean, size: Dp, onClick: () -> Unit) {
-    val density = LocalDensity.current
-    val fs = with(density) { (size * 0.55f).toSp() }
+private fun CipherTile(plain: String, code: String, look: TileLook, selected: Boolean, size: Dp, interactive: Boolean, onClick: () -> Unit) {
     val codeSp = cipherCodeSp(size.value).sp
     val h = size * CIPHER_TILE_ASPECT
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.clickableNoRipple(onClick)) {
+    val dark = WTheme.isDark
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = if (interactive) Modifier.squishClickable(onClick = onClick) else Modifier,
+    ) {
         Box(
             Modifier.size(size + 6.dp, h + 6.dp)
-                .then(if (selected) Modifier.border(2.dp, CRYPTOGRAM_ACCENT, RoundedCornerShape(size * 0.14f + 4.dp)) else Modifier)
+                .then(if (selected) Modifier.border(2.dp, CRYPTOGRAM_ACCENT, RoundedCornerShape(size * TILE_CORNER + 4.dp)) else Modifier)
                 .padding(3.dp),
         ) {
-            Box(
-                Modifier.fillMaxSize().clip(RoundedCornerShape(size * 0.14f)).background(fill).border(2.dp, border, RoundedCornerShape(size * 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) { Text(plain, fontSize = fs, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito) }
+            Box(Modifier.fillMaxSize().typePop(plain).drawBehind { drawGameTile(look) }) {
+                TileGlyph(plain, look.glyph, look.glyphShadow, size.value * 0.55f, h.value)
+            }
         }
-        Text(code, fontSize = codeSp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (selected) CRYPTOGRAM_ACCENT else WTheme.textMuted, lineHeight = codeSp * 1.1f)
+        Text(
+            code, fontSize = codeSp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, lineHeight = codeSp * 1.1f,
+            color = if (selected) Color.White else if (dark) WTheme.textMuted else Color(0xFF7C2D12),
+            modifier = Modifier.clip(RoundedCornerShape(50))
+                .background(if (selected) CRYPTOGRAM_ACCENT else com.wordocious.app.ui.accentWash(CRYPTOGRAM_ACCENT, 0.16f))
+                .padding(horizontal = 4.dp),
+        )
     }
 }
 
@@ -645,7 +646,14 @@ internal fun CipherBoard(s: CryptogramState, selected: String?, finished: Boolea
     val words = s.cipher.split(" ")
     val longest = words.maxOfOrNull { w -> w.count { it in CRYPTOGRAM_ALPHABET } + (w.length - w.count { it in CRYPTOGRAM_ALPHABET }) / 2 }?.coerceAtLeast(1) ?: 1
     val density = LocalDensity.current
-    BoxWithConstraints(Modifier.fillMaxWidth().widthIn(max = 480.dp)) {
+    val dark = WTheme.isDark
+    // L the saying sits in the shared game tray (purple when cracked, slate when revealed).
+    BoxWithConstraints(
+        Modifier.fillMaxWidth().widthIn(max = 480.dp).gameTray(
+            CRYPTOGRAM_ACCENT, finishTray(s.status != CryptogramStatus.PLAYING, s.status == CryptogramStatus.WON),
+            padding = androidx.compose.foundation.layout.PaddingValues(horizontal = CIPHER_TRAY_H.dp, vertical = CIPHER_TRAY_V.dp),
+        ),
+    ) {
         val side = cell ?: ((maxWidth - 8.dp - 3.dp * (longest - 1)) / longest - 6.dp).coerceIn(minOf(18.dp, maxCell), maxCell)
         val punctSp = cipherPunctSp(side.value).sp
         // Punctuation sits just above the code-label row so it reads against the tile bottoms.
@@ -668,15 +676,18 @@ internal fun CipherBoard(s: CryptogramState, selected: String?, finished: Boolea
                             val wrong = code in s.lastWrong
                             val conflict = plain.isNotEmpty() && plain in conflicts && !locked
                             val correct = finished && plain == cryptogramPlainFor(code, s.key)
-                            var fill = WTheme.surface; var border = WTheme.border; var ink = WTheme.text
-                            when {
-                                locked && hinted -> { fill = CRYPTOGRAM_HINT; border = CRYPTOGRAM_HINT; ink = Color.White }
-                                locked && plain in s.given -> { fill = CRYPTOGRAM_ACCENT; border = CRYPTOGRAM_ACCENT; ink = Color.White }
-                                locked -> { fill = CRYPTOGRAM_ACCENT.copy(alpha = 0.13f); border = CRYPTOGRAM_ACCENT; ink = CRYPTOGRAM_ACCENT }
-                                conflict || wrong -> { border = CRYPTOGRAM_WRONG; ink = CRYPTOGRAM_WRONG }
-                                correct -> ink = CRYPTOGRAM_ACCENT
+                            // J3 the B1 tiles: given = the game's amber-brown, hinted = violet, locked by a
+                            // Check (or right at the finish) = purple, a conflict / just-cleared = the red
+                            // not-a-word tile, a penciled letter = typed, empty = frosted.
+                            val look = when {
+                                locked && hinted -> VIOLET_LOOK
+                                locked && plain in s.given -> CIPHER_GIVEN
+                                locked || correct -> TileLooks.CORRECT
+                                conflict || wrong -> TileLooks.BAD
+                                plain.isEmpty() -> TileLooks.of(TileFace.EMPTY, dark = dark)
+                                else -> TileLooks.TYPED
                             }
-                            CipherTile(plain, code, fill, border, ink, selected == code, side) { onSelect(code) }
+                            CipherTile(plain, code, look, selected == code, side, interactive = !finished) { onSelect(code) }
                         }
                     }
                 }
@@ -702,11 +713,10 @@ private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp
             val plain = s.mapping[c]
             val locked = c in s.locked
             val isSel = session.selected == c
+            // A1 + A9 a soft tinted chip that squishes.
             Row(
-                Modifier.clip(CircleShape)
-                    .background(if (isSel) CRYPTOGRAM_ACCENT.copy(alpha = 0.07f) else WTheme.surface)
-                    .border(1.dp, if (isSel) CRYPTOGRAM_ACCENT else WTheme.border, CircleShape)
-                    .clickableNoRipple { session.select(c) }
+                Modifier.squishClickable { session.select(c) }
+                    .softChip(CRYPTOGRAM_ACCENT, selected = isSel)
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
@@ -718,26 +728,15 @@ private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp
     }
 }
 
+/** A8 a game control: a small candy button with its icon; [dim] = not yet (taps ignored, as before). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, onClick: () -> Unit) {
-    val fg = if (dim) WTheme.textMuted.copy(alpha = 0.5f) else CRYPTOGRAM_ACCENT
-    Row(
-        Modifier.clip(CircleShape)
-            .background(if (dim) Color.Transparent else CRYPTOGRAM_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (dim) WTheme.border else CRYPTOGRAM_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple { if (!dim) onClick() }
-            .padding(horizontal = 10.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg)
-    }
-}
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun CodebreakerResult(
+private fun CodebreakerFinished(
     session: CodebreakerSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: (() -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
@@ -746,48 +745,66 @@ private fun CodebreakerResult(
     val secs = session.elapsed
     val gc = s.guessCount
     val context = LocalContext.current
-    val hintsText = if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Row(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-                .border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    val title = if (won) (if (s.checks == 0) "Code cracked clean" else "Code cracked") else "Answer revealed"
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}${session.checksLabel} · ${timeText(secs)}"
+        val text = "Wordocious Codebreaker${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · ${session.checksLabel} · wordocious.com/codebreaker"
+        val bmp = ShareImage.renderCryptogram(context, s.cipher, s.checks, won, meta)
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { CodebreakerHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOf(stripCount("${s.checks}", if (s.checks == 1) "check" else "checks"), stripTime(secs), stripPoints(session.points)),
+                srText = "$title. ${listOfNotNull(hintsNote(s.hintsUsed)).joinToString()} ${s.checks} check${if (s.checks == 1) "" else "s"}, time ${timeText(secs)}, ${session.points} points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.CRYPTOGRAM, isDaily = session.isDaily, accent = CRYPTOGRAM_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) onPlayAgain else null,
+                onOtherGames = onBack,
+                more = {
+                    hintsNote(s.hintsUsed)?.let { Text("$title · $it", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
+                    if (session.isDaily) DailyRankBadge(GameMode.CRYPTOGRAM)
+                    ScoreBreakdownCard(GameMode.CRYPTOGRAM, won, gc, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
+                },
+            )
+        },
+    ) { maxW, maxH ->
+        // R2: the cracked saying sized by [cipherCellFit] to the height left (minus the
+        // plain-text quote under it); a long saying keeps scrolling in place + "See all".
+        val fontScale = LocalDensity.current.fontScale
+        val words = remember(s.cipher) { s.cipher.split(" ") }
+        val codeCount = remember(s.cipher) { cryptogramCodeLetters(s.cipher).size }
+        val freqDigits = remember(s.cipher) { (cryptogramFrequencies(s.cipher).values.maxOrNull() ?: 1).toString().length }
+        val innerWidth = minOf(maxW, 480.dp) - 8.dp - (CIPHER_TRAY_H * 2).dp
+        val quoteReserve = 74f
+        val fit = remember(s.cipher, maxW, maxH, fontScale) {
+            cipherCellFit(
+                words, codeCount, freqDigits, innerWidth.value,
+                maxH.value - quoteReserve - (CIPHER_TRAY_V * 2 + GameTrayStyle.LIP.value), fontScale, withStrip = false,
+            )
+        }
+        val quote = @Composable {
+            Text(
+                "“${s.text}”", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+                textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 8.dp),
+            )
+        }
+        FinishedListSlot(
+            maxHeight = maxH, accent = CRYPTOGRAM_ACCENT, seeAllTitle = "The whole saying",
+            full = { CipherBoard(s, null, true) {}; quote() },
         ) {
-            Box(
-                Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(CRYPTOGRAM_ACCENT.copy(alpha = 0.08f))
-                    .border(2.dp, CRYPTOGRAM_ACCENT.copy(alpha = 0.27f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(if (won) (if (s.checks == 0) "✓" else "${s.checks}") else "✗", fontSize = 20.sp, fontWeight = FontWeight.Black, color = CRYPTOGRAM_ACCENT, fontFamily = Nunito)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    if (won) (if (s.checks == 0) "Code cracked clean" else "Code cracked") else "Answer revealed",
-                    fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF16A34A) else Color(0xFFEF4444), fontFamily = Nunito,
-                )
-                Text("${session.checksLabel} · ${timeText(secs)}$hintsText", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            }
+            CipherBoard(s, null, true, cell = fit.cell.dp, maxCell = fit.cell.dp) {}
+            quote()
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", CRYPTOGRAM_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", CRYPTOGRAM_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}${session.checksLabel} · ${timeText(secs)}"
-                val text = "Wordocious Codebreaker${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · ${session.checksLabel} · wordocious.com/codebreaker"
-                val bmp = ShareImage.renderCryptogram(context, s.cipher, s.checks, won, meta)
-                ShareImage.shareBitmap(context, bmp, text)
-            }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain() }
-        }
-        if (session.isDaily) DailyRankBadge(GameMode.CRYPTOGRAM)
-        ScoreBreakdownCard(GameMode.CRYPTOGRAM, won, gc, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.CRYPTOGRAM, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 /** Always m:ss — the header clock and the Reveal countdown. */
@@ -797,40 +814,17 @@ private fun clockText(s: Int) = "${s / 60}:${"%02d".format(s % 60)}"
 private fun CodebreakerOverlay(session: CodebreakerSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == CryptogramStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "CRYPTOGRAM") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
+    PieceOverlay(won, "CRYPTOGRAM", CRYPTOGRAM_ACCENT, onScrimTap = onDismiss) {
+        // Moment lettering (ART_SPEC §6).
+        com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
         }
+        onPlayAgain?.let { PiecePlayAgain(won, it) }
+        PieceTapHint()
     }
 }
 
+/** A2 a soft-number stat. */
 @Composable
-private fun StatBlock(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
-    }
-}
+private fun StatBlock(value: String, label: String) = PieceStat(value, label)

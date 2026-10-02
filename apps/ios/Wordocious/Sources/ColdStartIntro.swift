@@ -15,13 +15,77 @@ struct ColdStartIntroHost: View {
     @State private var visible = !ColdStartIntroHost.played
 
     var body: some View {
-        if visible {
-            ColdStartIntro {
-                ColdStartIntroHost.played = true
-                visible = false
+        ZStack {
+            // FINISH_SPEC §W: first-run onboarding — only once the intro has landed
+            // (never under it), only for players who have never played.
+            OnboardingHost(introDone: !visible)
+            if visible {
+                ColdStartIntro {
+                    ColdStartIntroHost.played = true
+                    visible = false
+                }
+                .onAppear {
+                    ColdStartIntroHost.played = true
+                    CastHandoff.shared.introStarted = true
+                }
             }
-            .onAppear { ColdStartIntroHost.played = true }
         }
+    }
+}
+
+/// FINISH_SPEC §F2 fix (founder, iOS 234: "there are two of them and the one that
+/// animates whips off the screen while the duplicate stays in place"): the hand-off
+/// between the cold-start intro and the REAL Home header cast row.
+///   1. While the intro runs, the real row is hidden (opacity 0, still laid out).
+///   2. The real row reports each character's on-screen frame here; the intro glides
+///      its row to exactly those frames (ease, no overshoot).
+///   3. On landing, in the same frame, the real row shows and the intro is removed.
+///   4. Then the real row plays the all-cast hop flourish (`CastMoves.flourishPose`).
+@MainActor
+final class CastHandoff: ObservableObject {
+    static let shared = CastHandoff()
+
+    /// The real header row is hidden while this is true. A cold process starts
+    /// with it on (the intro is about to cover the screen); a fail-safe turns it
+    /// off if the intro never runs.
+    @Published var introRunning = true
+    /// Each character's frame in the real row (global coordinates), reported by
+    /// LivingCastHeader while the intro runs.
+    @Published var frames: [MascotID: CGRect] = [:]
+    /// When the landing flourish started (nil = none playing).
+    @Published var flourishStart: Date?
+    var introStarted = false
+
+    private init() {
+        // Fail-safe: never leave the real row hidden (the intro is ≤ 1.6 s).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
+            guard let self, self.introRunning else { return }
+            self.introRunning = false
+        }
+    }
+
+    /// Step 3 + 4: show the real row (same frame the intro is removed in), then
+    /// the flourish unless `flourish` is false (Reduce Motion).
+    func land(flourish: Bool) {
+        introRunning = false
+        guard flourish else { return }
+        let start = Date()
+        flourishStart = start
+        // §U: the landing flourish's hops (the sound's min gap thins them to a quick cascade).
+        for i in 0..<CastMoves.ids.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * CastMoves.flourishStagger) { Feedback.hop(volume: 0.7) }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + CastMoves.flourishDuration() + 0.05) { [weak self] in
+            if self?.flourishStart == start { self?.flourishStart = nil }
+        }
+    }
+}
+
+/// The real row's per-character frames (global).
+struct CastFramesKey: PreferenceKey {
+    static var defaultValue: [MascotID: CGRect] = [:]
+    static func reduce(value: inout [MascotID: CGRect], nextValue: () -> [MascotID: CGRect]) {
+        value.merge(nextValue()) { $1 }
     }
 }
 
@@ -29,13 +93,15 @@ private struct ColdStartIntro: View {
     let onDone: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
+    @ObservedObject private var handoff = CastHandoff.shared
     @State private var start = Date()
     @State private var fade: Double = 1
     @State private var finishing = false
 
     /// The launch image's size: 512 px @3x.
     private static let launchSize: CGFloat = 512 / 3
-    private static let total: Double = 1.6
+    /// The glide lands at 1.55 s; the intro ends exactly then (≤ 1.6 s).
+    private static let landing: Double = 1.55
     private static let background = Color(hex: 0xF1D7F6)
 
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
@@ -44,15 +110,16 @@ private struct ColdStartIntro: View {
         GeometryReader { geo in
             let size = geo.size
             let safeTop = geo.safeAreaInsets.top
+            let origin = geo.frame(in: .global).origin
             ZStack {
                 if still {
                     Self.background
-                    Image(MascotID.w.assetName).resizable().interpolation(.high).scaledToFit()
+                    Image(CastSkin.assetName(for: .w)).resizable().interpolation(.high).scaledToFit()
                         .frame(width: Self.launchSize, height: Self.launchSize)
                         .position(x: size.width / 2, y: size.height / 2)
                 } else {
                     TimelineView(.animation) { ctx in
-                        frame(t: ctx.date.timeIntervalSince(start), size: size, safeTop: safeTop)
+                        frame(t: ctx.date.timeIntervalSince(start), size: size, safeTop: safeTop, origin: origin)
                     }
                 }
             }
@@ -60,29 +127,43 @@ private struct ColdStartIntro: View {
         }
         .ignoresSafeArea()
         .contentShape(Rectangle())
-        .onTapGesture { finish(after: 0, fadeOut: 0.15) }
+        // Tap to skip: straight to the landing (step 3), then the flourish.
+        .onTapGesture { land() }
         .accessibilityHidden(true)
         .task {
             if still {
-                finish(after: 0.05, fadeOut: 0.2)
+                // Reduce Motion: a 200 ms crossfade over the real row, no flourish.
+                handoff.introRunning = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    guard !finishing else { return }
+                    finishing = true
+                    withAnimation(.easeOut(duration: 0.2)) { fade = 0 }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { onDone() }
+                }
             } else {
-                finish(after: Self.total - 0.05, fadeOut: 0.05)
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.landing) { land() }
             }
         }
     }
 
-    private func finish(after delay: Double, fadeOut: Double) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            guard !finishing else { return }
-            finishing = true
-            withAnimation(.easeOut(duration: fadeOut)) { fade = 0 }
-            DispatchQueue.main.asyncAfter(deadline: .now() + fadeOut) { onDone() }
+    /// Step 3: in ONE frame the real row turns visible and the intro row is removed
+    /// (no crossfade overlap, no second copy); step 4 the real row's flourish.
+    private func land() {
+        guard !finishing else { return }
+        finishing = true
+        var t = Transaction()
+        t.disablesAnimations = true
+        withTransaction(t) {
+            handoff.land(flourish: !still)
+            onDone()
         }
     }
 
     // MARK: The choreography (t in seconds)
 
     private func ease(_ x: Double) -> Double { CubicBezier.easeInOut.value(at: min(1, max(0, x))) }
+    /// The glide eases OUT into the real row — it never passes its target.
+    private func easeOut(_ x: Double) -> Double { CubicBezier.easeOut.value(at: min(1, max(0, x))) }
 
     /// The slot centers of a WORDOCIOUS row laid out like the living cast header
     /// (same figure size, packing and stagger), with its bottom edge at `bottom`.
@@ -97,12 +178,25 @@ private struct ColdStartIntro: View {
         }
     }
 
-    private func frame(t: Double, size: CGSize, safeTop: CGFloat) -> some View {
+    /// Step 2: the real row's measured frames (in this overlay's coordinates) — the
+    /// computed header slots only when the real row hasn't reported yet.
+    private func targets(size: CGSize, safeTop: CGFloat, origin: CGPoint) -> [(center: CGPoint, side: CGFloat)] {
+        let s = LivingCastHeader.figure
+        let fallback = slots(width: size.width, bottom: safeTop + LivingCastHeader.height(pro: AuthService.shared.isProActive))
+        return Mascots.cast.enumerated().map { i, m in
+            if let f = handoff.frames[m], f.width > 0 {
+                return (CGPoint(x: f.midX - origin.x, y: f.midY - origin.y), f.width)
+            }
+            return (fallback[i], s)
+        }
+    }
+
+    private func frame(t: Double, size: CGSize, safeTop: CGFloat, origin: CGPoint) -> some View {
         let s = LivingCastHeader.figure
         let mid = slots(width: size.width, bottom: size.height / 2 + s / 2)
-        let header = slots(width: size.width, bottom: safeTop + LivingCastHeader.height(pro: AuthService.shared.isProActive))
-        // 1.20 → 1.55 s: the row glides up into the header while the backdrop fades.
-        let glide = ease((t - 1.2) / 0.35)
+        let header = targets(size: size, safeTop: safeTop, origin: origin)
+        // 1.20 → 1.55 s: the row glides up into the real header while the backdrop fades.
+        let glide = easeOut((t - 1.2) / 0.35)
         let backdrop = 1 - ease((t - 1.15) / 0.4)
         return ZStack {
             Self.background.opacity(backdrop)
@@ -113,19 +207,21 @@ private struct ColdStartIntro: View {
     }
 
     @ViewBuilder
-    private func figure(_ i: Int, t: Double, s: CGFloat, mid: CGPoint, header: CGPoint, glide: Double, size: CGSize) -> some View {
+    private func figure(_ i: Int, t: Double, s: CGFloat, mid: CGPoint, header: (center: CGPoint, side: CGFloat),
+                        glide: Double, size: CGSize) -> some View {
         let m = Mascots.cast[i]
-        let rowPoint = CGPoint(x: mid.x + (header.x - mid.x) * glide, y: mid.y + (header.y - mid.y) * glide)
+        let rowPoint = CGPoint(x: mid.x + (header.center.x - mid.x) * glide, y: mid.y + (header.center.y - mid.y) * glide)
+        let rowSide = s + (header.side - s) * glide
         if i == 0 {
             // W: the launch frame → one bounce (0–0.32 s) → into slot 0 (0.32–0.6 s).
             let bounce = Keyframes.sample([(0, .identity), (0.38, CastPose(ty: -0.07, sx: 1.08, sy: 1.08)),
                                            (0.7, CastPose(sx: 0.95, sy: 0.95)), (1, .identity)],
                                           at: min(1, t / 0.32), easing: .easeInOut)
             let k = ease((t - 0.32) / 0.28)
-            let side = Self.launchSize + (s - Self.launchSize) * k
+            let side = Self.launchSize + (rowSide - Self.launchSize) * k
             let center = CGPoint(x: size.width / 2 + (rowPoint.x - size.width / 2) * k,
                                  y: size.height / 2 + (rowPoint.y - size.height / 2) * k)
-            Image(m.assetName).resizable().interpolation(.high).scaledToFit()
+            Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
                 .frame(width: side, height: side)
                 .scaleEffect(x: CGFloat(bounce.sx), y: CGFloat(bounce.sy), anchor: .bottom)
                 .offset(y: CGFloat(bounce.ty) * side)
@@ -137,8 +233,8 @@ private struct ColdStartIntro: View {
             let pop = p <= 0 ? CastPose(sx: 0, sy: 0)
                 : Keyframes.sample([(0, CastPose(sx: 0.2, sy: 0.2)), (0.6, CastPose(sx: 1.12, sy: 1.12)), (1, .identity)],
                                    at: min(1, p), easing: CubicBezier(0.3, 1.4, 0.5, 1))
-            Image(m.assetName).resizable().interpolation(.high).scaledToFit()
-                .frame(width: s, height: s)
+            Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
+                .frame(width: rowSide, height: rowSide)
                 .scaleEffect(x: CGFloat(pop.sx), y: CGFloat(pop.sy), anchor: .bottom)
                 .opacity(p <= 0 ? 0 : 1)
                 .position(rowPoint)

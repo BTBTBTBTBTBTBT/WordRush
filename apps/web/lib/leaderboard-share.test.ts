@@ -9,6 +9,7 @@ import {
   formatRaceTimeLeft,
   puzzleNumberForDay,
   formatBoardDate,
+  shareHookLine,
   type RankedEntry,
 } from './leaderboard-share';
 import type { LeaderboardEntry, SweepEntry } from './daily-service';
@@ -367,5 +368,21 @@ describe('buildWeeklyRaceShareInput (§234)', () => {
       me: { id: 'me', username: 'brian', weekPoints: 0 },
     })).toBeNull();
     expect(buildWeeklyRaceShareInput({ friends: [], me: null })).toBeNull();
+  });
+});
+
+describe('shareHookLine (S3: the cast wordmark + "wordocious.com" carry the site)', () => {
+  it('drops the site part of every footer the builders write', () => {
+    expect(shareHookLine('Can you beat them? Play free at wordocious.com')).toBe('Can you beat them?');
+    expect(shareHookLine('Think you can take them? wordocious.com')).toBe('Think you can take them?');
+    expect(shareHookLine('Add your friends — play free at wordocious.com')).toBe('Add your friends');
+    expect(shareHookLine('Today’s board is open — wordocious.com')).toBe('Today’s board is open');
+    expect(shareHookLine('Can you sweep them all? Play free at wordocious.com')).toBe('Can you sweep them all?');
+    expect(shareHookLine('Think you can catch them? Play free at wordocious.com')).toBe('Think you can catch them?');
+  });
+
+  it('keeps brag footers whole and empties a bare site', () => {
+    expect(shareHookLine('3 straight days winning every daily')).toBe('3 straight days winning every daily');
+    expect(shareHookLine('wordocious.com')).toBe('');
   });
 });

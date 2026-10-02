@@ -5,6 +5,8 @@ import com.wordocious.app.ui.theme.Nunito
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +33,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
@@ -39,6 +44,9 @@ import com.wordocious.core.TileState
 /**
  * Help screen — 1:1 port of iOS HelpView / web help-modal.tsx. Three tabs
  * (How to Play / Game Modes / FAQ) with identical copy, examples, and mode list.
+ * FINISH_SPEC C6: the shared info page — back + help controls, the section's own
+ * title art (HOW TO PLAY / GUIDES / FAQ), an intro card, then tinted cards (game
+ * modes in each game's color, FAQ as question cards). Tabs are tinted chips that squish.
  */
 @Composable
 fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true) {
@@ -48,60 +56,65 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
     val content by androidx.compose.runtime.produceState(
         initialValue = com.wordocious.app.data.ContentService.cached()
     ) { value = com.wordocious.app.data.ContentService.load() }
+    val art = when (tab) { 0 -> TitleArt.HOWTO; 1 -> TitleArt.GUIDES; else -> TitleArt.FAQ }
+    val intro = when (tab) {
+        0 -> "Guess the word" to "The basics: tiles, colors and the daily reset."
+        1 -> "Every game, at a glance" to "What each daily puzzle asks of you."
+        else -> "Questions, answered" to "The things players ask us most."
+    }
 
-    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
-        // Top accent bar (purple → pink → amber)
-        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        // The shared page header (HEADER_SPEC §4) with the Help host, C the explorer (MASCOT_SPEC §6).
-        // ART_SPEC §2: the full Help screen (and its How to Play section) wears the whole-cast
-        // HOW TO PLAY art; a single section opened alone (FAQ from the menu) keeps its text title.
-        PageHeader(
-            tabs[tab], host = Mascots.help, onClose = onDone, titleSize = 20.sp,
-            art = if (showTabs || tab == 0) TitleArt.HOWTO else null,
-        )
+    InfoPage(tabs[tab], onBack = onDone, art = art, backLabel = "Close", intro = intro) {
         // Tab chips — hidden when opened for a single section (e.g. FAQ from the
-        // menu / footer), where the pill switcher makes no sense.
+        // menu / footer), where the switcher makes no sense.
         if (showTabs) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
                 tabs.forEachIndexed { i, t ->
-                    Text(
-                        t, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                        color = if (tab == i) WTheme.surface else WTheme.textSecondary,
-                        modifier = Modifier.clip(RoundedCornerShape(50)).background(if (tab == i) WTheme.text else WTheme.surfaceAlt)
-                            .clickableNoRipple { tab = i }.padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
+                    HelpTabChip(t, selected = tab == i) { tab = i }
                 }
             }
         }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-            // Per-tab spacing (iOS: 16 / 8 / 12), so each tab keeps its own rhythm.
-            when (tab) {
-                0 -> HowToPlay()
-                1 -> GameModesHelp(content?.helpModes ?: emptyList())
-                else -> Faq(content?.helpFaq ?: emptyList())
-            }
-            Spacer(Modifier.height(24.dp))
+        // Per-tab spacing (iOS: 16 / 8 / 12), so each tab keeps its own rhythm.
+        when (tab) {
+            0 -> HowToPlay()
+            1 -> GameModesHelp(content?.helpModes ?: emptyList())
+            else -> Faq(content?.helpFaq ?: emptyList())
         }
+    }
+}
+
+/** A segmented tab chip (A1 + A9): tinted purple, selected = the stronger tint + ring. */
+@Composable
+private fun HelpTabChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val accent = Color(0xFF7C3AED)
+    Box(
+        Modifier.squishClickable(label, role = Role.Tab, onClick = onClick)
+            .semantics { this.selected = selected }
+            .heightIn(min = 36.dp)
+            .miniGameCard(accent, 18.dp, selected = selected)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label, fontSize = 12.5.sp, fontWeight = FontWeight.Black,
+            color = if (WTheme.isDark) WTheme.text else if (selected) FinishInk.softNumber else darkenInk(accent),
+        )
     }
 }
 
 @Composable
 private fun HowToPlay() {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            "Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.",
-            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
-        )
+    val accent = Color(0xFF7C3AED)
+    InfoSectionCard(accent, title = "How to play") {
+        InfoBody("Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.")
         // Example tiles paint from the live tile palette so colorblind mode matches the board.
-        ExampleRow(listOf("W", "E", "A", "R", "Y"), 0, Color(0xFF7C3AED), "W", Color(0xFF7C3AED), " is in the word and in the correct spot.")
-        ExampleRow(listOf("P", "I", "L", "L", "S"), 1, WTheme.tileColor(TileState.PRESENT), "I", WTheme.tileColor(TileState.PRESENT), " is in the word but in the wrong spot.")
-        ExampleRow(listOf("V", "A", "G", "U", "E"), 3, WTheme.tileColor(TileState.ABSENT), "U", WTheme.tileColor(TileState.ABSENT), " is not in the word at all.")
-        Text(
-            "Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.",
-            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.bg)
-                .border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+            ExampleRow(listOf("W", "E", "A", "R", "Y"), 0, Color(0xFF7C3AED), "W", Color(0xFF7C3AED), " is in the word and in the correct spot.")
+            ExampleRow(listOf("P", "I", "L", "L", "S"), 1, WTheme.tileColor(TileState.PRESENT), "I", WTheme.tileColor(TileState.PRESENT), " is in the word but in the wrong spot.")
+            ExampleRow(listOf("V", "A", "G", "U", "E"), 3, WTheme.tileColor(TileState.ABSENT), "U", WTheme.tileColor(TileState.ABSENT), " is not in the word at all.")
+        }
+    }
+    InfoSectionCard(Color(0xFFF59E0B), title = "Daily reset") {
+        InfoBody("Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.")
     }
 }
 
@@ -111,17 +124,18 @@ private fun ExampleRow(letters: List<String>, highlightIdx: Int, fill: Color, hi
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             letters.forEachIndexed { i, l ->
                 val filled = i == highlightIdx
+                // A1: the empty example tiles take a soft lavender wash, never plain white.
                 Box(
-                    Modifier.size(36.dp).clip(RoundedCornerShape(4.dp))
-                        .background(if (filled) fill else WTheme.surface) // themed: white + themed ink is 1.09:1 in Dark
-                        .border(2.dp, if (filled) fill else Color(0xFFD1D5DB), RoundedCornerShape(4.dp)),
+                    Modifier.size(36.dp).clip(RoundedCornerShape(6.dp))
+                        .background(if (filled) fill else accentWash(Color(0xFF7C3AED), 0.10f))
+                        .border(2.dp, if (filled) fill else accentLine(Color(0xFF7C3AED)), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center,
-                ) { Text(l, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (filled) Color.White else WTheme.text) }
+                ) { Text(l, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (filled) Color.White else InfoInk.heading) }
             }
         }
         Row {
-            Text(hi, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = hiColor)
-            Text(rest, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+            Text(hi, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = hiColor)
+            Text(rest, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body)
         }
     }
 }
@@ -133,19 +147,20 @@ private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.Hel
     // The home tiles (minus the More Games tile itself) followed by every More
     // Games title this viewer can see, so ProperNoundle keeps its help row.
     val helpCards = MODE_CARDS.filter { it.id != "more" } + visibleDailyCards().filter { it !in MODE_CARDS }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        helpCards.forEach { card ->
-            // The game tile's chrome (docs/GAME_TILE_STYLE.md) on the guide row.
-            Row(
-                Modifier.fillMaxWidth().gameTileChrome(card.accent, WTheme.surface)
-                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                GameTileChip(card.accent, 32.dp) { ModeGlyph(card, card.accent, box = 32.dp) }
+    helpCards.forEach { card ->
+        // C6: each game in its own color — tinted card, top bar, the game's 3D icon.
+        TintedCard(
+            card.accent, Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { ModeGlyph(card, card.accent, box = 40.dp) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(card.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                    Text(modes.firstOrNull { it.title == card.title }?.desc ?: card.desc,
-                        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+                    Text(card.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = InfoInk.heading)
+                    Text(
+                        modes.firstOrNull { it.title == card.title }?.desc ?: card.desc,
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InfoInk.muted,
+                    )
                 }
             }
         }
@@ -154,12 +169,22 @@ private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.Hel
 
 @Composable
 private fun Faq(items: List<com.wordocious.app.data.ContentService.FaqItem>) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        items.forEach { item ->
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(item.q, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                Text(item.a, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
-            }
+    if (items.isEmpty()) {
+        CastLoader(null, Modifier.padding(top = 24.dp).fillMaxWidth())
+        return
+    }
+    // C6: FAQ as question cards — each a tinted card with a Q tile and its answer.
+    val accent = Color(0xFF8B5CF6)
+    items.forEach { item ->
+        InfoSectionCard(
+            accent, Modifier.semantics(mergeDescendants = true) { }, title = item.q,
+            leading = {
+                InfoIconTile(accent, 28.dp) {
+                    Text("Q", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else darkenInk(accent))
+                }
+            },
+        ) {
+            InfoBody(item.a)
         }
     }
 }
@@ -185,60 +210,47 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
         initialValue = if (fromApi) com.wordocious.app.data.ContentService.cached() else null
     ) { if (fromApi) value = com.wordocious.app.data.ContentService.load() }
     val contentSections = if (kind == "about") content?.about else content?.support
+    // C6: Privacy and Terms wear their own title art; the section cards take the page's color.
+    val art = when (kind) { "privacy" -> TitleArt.PRIVACY; "terms" -> TitleArt.TERMS; else -> null }
+    val accent = INFO_NAV.firstOrNull { it.route == kind }?.accent ?: Color(0xFF7C3AED)
 
-    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
-        // Accent bar — matches How to Play / the other menu screens.
-        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        PageHeader(title, onClose = onDone, titleSize = 20.sp)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(subtitle, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            if (fromApi) {
-                val cs = contentSections ?: emptyList()
-                if (cs.isEmpty()) Text("Loading…", fontSize = 12.sp, color = WTheme.textMuted)
-                else cs.forEach { ContentSectionCard(it) }
-            } else {
-                infoSections(kind).forEach { InfoSectionCard(it) }
-            }
-            if (contact != null) Text(contact, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
-            Spacer(Modifier.height(24.dp))
+    InfoPage(title, onBack = onDone, art = art, backLabel = "Close", intro = title to subtitle) {
+        if (fromApi) {
+            val cs = contentSections ?: emptyList()
+            if (cs.isEmpty()) CastLoader(null, Modifier.padding(top = 24.dp).fillMaxWidth())
+            else cs.forEach { ContentSectionCard(it, accent) }
+        } else {
+            infoSections(kind).forEach { InfoSectionCardFor(it, accent) }
+        }
+        if (contact != null) {
+            Text(
+                contact, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                color = if (WTheme.isDark) WTheme.primary else darkenInk(accent),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }
 
 @Composable
-private fun ContentSectionCard(s: com.wordocious.app.data.ContentService.Section) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(s.heading, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        s.paragraphs.forEach { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
+private fun ContentSectionCard(s: com.wordocious.app.data.ContentService.Section, accent: Color) {
+    InfoSectionCard(accent, title = s.heading) {
+        s.paragraphs.forEach { InfoBody(it) }
         s.items.forEach { item ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(item.heading, fontSize = 12.sp, fontWeight = FontWeight.Black,
+                Text(item.heading, fontSize = 13.sp, fontWeight = FontWeight.Black,
                     color = item.accent?.let { runCatching { Color(("ff" + it.removePrefix("#")).toLong(16)) }.getOrNull() } ?: WTheme.primary)
-                Text(item.body, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                InfoBody(item.body)
             }
         }
     }
 }
 
 @Composable
-private fun InfoSectionCard(s: InfoSec) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(s.heading, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        s.body?.let { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
-        s.bullets.forEach { b ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("•", color = WTheme.primary, fontSize = 12.sp)
-                Text(b, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
-            }
-        }
+private fun InfoSectionCardFor(s: InfoSec, accent: Color) {
+    InfoSectionCard(accent, title = s.heading) {
+        s.body?.let { InfoBody(it) }
+        s.bullets.forEach { b -> InfoBullet(accent) { InfoBody(b) } }
     }
 }
 

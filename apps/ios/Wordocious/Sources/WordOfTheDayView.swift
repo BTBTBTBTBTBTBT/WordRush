@@ -62,21 +62,27 @@ struct WordOfTheDayView: View {
         return Quiz(choices: c, answer: a)
     }
 
+    @ViewBuilder private var cardContent: some View {
+        if let info {
+            content(info)
+        } else {
+            placeholderCard
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
-            Group {
-                if let info {
-                    content(info)
-                } else {
-                    placeholderCard
-                }
-            }
             // Tappable → the full Word of the Day archive (web parity: the card links
             // to /words). While the quiz is asking, only "Past words" opens it, so a
-            // near-miss on a choice never jumps to the archive.
-            .contentShape(Rectangle())
-            .onTapGesture { if !isAsking { showWords = true } }
+            // near-miss on a choice never jumps to the archive. FINISH_SPEC §AK: the
+            // card squishes like every Home card (a Button style, so scrolling stays).
+            if isAsking {
+                cardContent
+            } else {
+                Button { showWords = true } label: { cardContent.contentShape(Rectangle()) }
+                    .buttonStyle(.squishCard)
+            }
         }
         // Re-fetch when the UTC day rolls over (the Home tab stays alive in the
         // TabView, so a one-shot `if info == nil` would show yesterday's word
@@ -206,18 +212,13 @@ struct WordOfTheDayView: View {
     /// ABOVE the card, centered on the DAILIES / PUZZLES width rule, with a small
     /// centered "Past words" link under it.
     private var header: some View {
-        let link = scheme == .dark ? Color(hex: 0xC4B5FD) : Theme.primary
-        return VStack(spacing: 0) {
+        VStack(spacing: 4) {
             SectionTitleArt(.wotd)
+            // §A8: a small quiet candy instead of a text link.
             Button { showWords = true } label: {
-                HStack(spacing: 2) {
-                    Text("Past words").font(Brand.font(11, .heavy)).foregroundStyle(link)
-                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .black)).foregroundStyle(link)
-                }
-                .padding(.vertical, 6).padding(.horizontal, 8)
-                .contentShape(Rectangle())
+                CandyLabel(title: "Past words", symbol: "book.fill")
             }
-            .buttonStyle(.squish)
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
             .fixedSize()
         }
         .frame(maxWidth: .infinity)
@@ -229,15 +230,15 @@ struct WordOfTheDayView: View {
             Text(Self.letters[i]).font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x5B21B6))
                 .frame(width: 20, height: 20)
                 .background(Circle().fill(Color(hex: 0xEDE9FE)))
-            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+            Text(text).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.heading)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: 0xDDD6FE), lineWidth: 1.5))
+        // §A1: each choice is a mini tinted tile (lilac), never white.
+        .g5Option(active: false, accent: Color(hex: 0x8B5CF6), radius: 10)
         .contentShape(Rectangle())
         .accessibilityLabel("Choice \(Self.letters[i]): \(text)")
     }
@@ -245,7 +246,9 @@ struct WordOfTheDayView: View {
     private func resultPanel(_ a: HomeStreaksService.QuizAnswer, _ q: Quiz) -> some View {
         let ink = a.correct ? Color(hex: 0x15803D) : Color(hex: 0xB91C1C)
         return HStack(spacing: 8) {
-            Image(systemName: "sparkles").font(.system(size: 18, weight: .bold)).foregroundStyle(ink)
+            // §G5 / §A7: a small pose (the card's host is I) — O1 cheers a right
+            // answer, R sits with a wrong one.
+            PoseImage(a.correct ? .o1 : .r, a.correct ? "cheer" : "sit", height: 40)
             VStack(alignment: .leading, spacing: 1) {
                 Text(a.correct ? "Nice! You knew it." : "Not this time.")
                     .font(Brand.font(14, .black)).foregroundStyle(ink)

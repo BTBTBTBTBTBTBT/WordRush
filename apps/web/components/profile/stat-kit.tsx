@@ -4,6 +4,9 @@ import type { ReactNode, ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
+import { SoftNum } from '@/components/ui/soft-number';
+import { candyClass } from '@/components/ui/candy-button';
+import { BRAND_ACCENT, cardBarStyle, softCard } from '@/lib/soft-surface';
 
 /** Counts from 0 to `target` over ~500ms on mount (F4). Snaps under
  *  prefers-reduced-motion. Re-snaps (no re-count) when the target changes. */
@@ -58,25 +61,32 @@ export function SectionHeader({
   );
 }
 
-/** The standard card surface (matches the app's rounded/bordered card idiom). */
+/**
+ * The standard card surface (docs/FINISH_SPEC.md A1): the accent's soft wash
+ * and border (lavender when no accent is given), rounded, never plain white.
+ * `accent` also draws the 10 px game-card top bar; `tint` washes without a bar.
+ */
 export function KitCard({
   children,
   className = '',
   padded = true,
   accent,
+  tint,
+  style,
 }: {
   children: ReactNode;
   className?: string;
   padded?: boolean;
-  /** Optional 3px top accent bar (mode color), like the leaderboard card. */
+  /** Wash + the 10 px top bar in this color (mode color). */
   accent?: string;
+  /** Wash only (no bar); defaults to the brand lavender. */
+  tint?: string;
+  style?: React.CSSProperties;
 }) {
+  const wash = accent ?? tint ?? BRAND_ACCENT;
   return (
-    <div
-      className={`overflow-hidden ${className}`}
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-    >
-      {accent && <div style={{ height: 3, background: accent }} />}
+    <div className={`overflow-hidden ${className}`} style={{ ...softCard(wash, { radius: 18 }), ...style }}>
+      {accent && <div aria-hidden="true" style={cardBarStyle(accent)} />}
       <div className={padded ? 'p-4' : ''}>{children}</div>
     </div>
   );
@@ -90,12 +100,12 @@ export interface StatCellProps {
   color?: string;
 }
 
-/** One stat: icon, big value, small uppercase label, optional sub line. */
+/** One stat: icon, big soft number (A2), small uppercase label, optional sub line. */
 export function StatCell({ icon: Icon, label, value, sub, color }: StatCellProps) {
   return (
     <div className="text-center">
       {Icon && <Icon className="w-4 h-4 mx-auto mb-1" style={{ color: color ?? 'var(--color-text-muted)' }} />}
-      <div className="text-lg font-black leading-tight" style={{ color: color && !Icon ? color : 'var(--color-text)' }}>{value}</div>
+      <SoftNum size={18} as="div" className="soft-num-auto leading-tight">{value}</SoftNum>
       <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{label}</div>
       {sub && <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{sub}</div>}
     </div>
@@ -114,13 +124,50 @@ export function StatGrid({ stats, cols = 4, accent }: { stats: StatCellProps[]; 
   );
 }
 
-/** Chart frame: title row + optional timeframe hint + consistent empty state. */
+/**
+ * A colored stat tile (C3 cont: the streak / best-moment and the four
+ * all-time tiles): its own wash, a 3D icon beside a small tracked label in the
+ * tile's ink, a big soft number and a small line under it.
+ */
+export function TintTile({ accent, ink, icon, label, value, sub, size = 28, onClick, ariaLabel, children }: {
+  accent: string;
+  /** Label ink (light theme); dark mode falls back to the muted text. */
+  ink: string;
+  icon?: ReactNode;
+  label: string;
+  value: ReactNode;
+  sub?: ReactNode;
+  size?: number;
+  onClick?: () => void;
+  ariaLabel?: string;
+  children?: ReactNode;
+}) {
+  const body = (
+    <>
+      <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tint-ink" style={{ letterSpacing: '0.1em', color: ink }}>
+        {icon}{label}
+      </span>
+      <SoftNum size={size} as="div" className="soft-num-auto truncate" style={{ lineHeight: 1.1 }}>{value}</SoftNum>
+      {sub != null && <span className="text-[11px] font-extrabold truncate" style={{ color: 'var(--color-text-muted)' }}>{sub}</span>}
+      {children}
+    </>
+  );
+  const style: React.CSSProperties = { ...softCard(accent, { radius: 18 }), padding: 12, display: 'grid', gap: 4, minWidth: 0, textAlign: 'left' };
+  return onClick ? (
+    <button type="button" onClick={onClick} aria-label={ariaLabel} className="w-full" style={style}>{body}</button>
+  ) : (
+    <div style={style}>{body}</div>
+  );
+}
+
+/** Chart frame: title row + optional timeframe hint + consistent empty state, on a tinted card. */
 export function ChartCard({
   title,
   hint,
   empty,
   children,
   accent,
+  tint,
 }: {
   title: string;
   hint?: string;
@@ -128,9 +175,10 @@ export function ChartCard({
   empty?: string | false | null;
   children?: ReactNode;
   accent?: string;
+  tint?: string;
 }) {
   return (
-    <KitCard accent={accent}>
+    <KitCard accent={accent} tint={tint}>
       <div className="flex items-baseline justify-between mb-2">
         <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>{title}</span>
         {hint && <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{hint}</span>}
@@ -152,11 +200,9 @@ export function ProLockOverlay({ children, label = 'Unlock with Pro' }: { childr
         className="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
         aria-label={label}
       >
-        <span
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black text-white"
-          style={{ background: 'linear-gradient(90deg,#a78bfa,#ec4899)' }}
-        >
-          <Icon3D name="lock" size={15} /> {label}
+        {/* A8: the gate's call to action is a small candy pill (the whole overlay is the link). */}
+        <span className={candyClass({ color: 'pink', size: 'sm' })}>
+          <Icon3D name="lock" size={15} /> <span className="candy-label">{label}</span>
         </span>
       </Link>
     </div>

@@ -64,25 +64,26 @@ struct CompletedDailyCard: View {
             } else if let d = data {
                 let won = d.won
                 VStack(spacing: 0) {
-                    // Top accent bar: green won / gray attempted.
-                    LinearGradient(colors: won ? [Color(hex: 0x7C3AED), Color(hex: 0xA78BFA)] : [Color(hex: 0x9CA3AF), Color(hex: 0xD1D5DB)],
+                    // Top accent bar: purple won / slate attempted.
+                    LinearGradient(colors: won ? [Color(hex: 0x7C3AED), Color(hex: 0xA78BFA)] : [Color(hex: 0x6B7891), Color(hex: 0xA3AEC2)],
                                    startPoint: .leading, endPoint: .trailing).frame(height: 4)
 
+                    // FINISH_SPEC §G5: the toggle row stays (it opens the solved board)
+                    // but compact and tinted — it now sits under the Leaderboard's gold
+                    // result card, which already carries the solve line.
                     Button { withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { expanded.toggle() } } label: {
-                        HStack(spacing: 8) {
-                            Text(won ? "✓" : "✗").font(Brand.font(9, .black)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
-                                .frame(width: 16, height: 16)
-                                .background(Circle().fill(won ? Color(hex: 0xF5F3FF) : Color(hex: 0xFEE2E2)))
+                        HStack(spacing: 7) {
+                            Icon3D(won ? .badgeCheck : .badgeL, size: 16)
                             Text(won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
-                                .font(Brand.font(10, .heavy)).tracking(0.6)
-                                .foregroundStyle(won ? Color(hex: 0x7C3AED) : Theme.textMuted)
+                                .font(Brand.font(10, .black)).tracking(0.6)
+                                .foregroundStyle(won ? Color(hex: 0x7C3AED) : FinishInk.secondary)
                             Spacer()
-                            Text(summaryLabel(d))
-                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Theme.textMuted).rotationEffect(.degrees(expanded ? 180 : 0))
+                            Text(summaryLabel(d)).softNumber(11)
+                            Image(systemName: "chevron.down").font(.system(size: 10, weight: .heavy))
+                                .foregroundStyle(FinishInk.secondary).rotationEffect(.degrees(expanded ? 180 : 0))
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(Theme.isDark ? Color.clear : (won ? G5Accent.purple : G5Accent.slate).wash(0.07))
                         .contentShape(Rectangle())   // whole header tappable
                     }.buttonStyle(.squish)
 
@@ -114,15 +115,17 @@ struct CompletedDailyCard: View {
                                     // guesses (matches row) — re-derive tiles against today's
                                     // answer, lay out the multi-word groups. Matches the web card.
                                     if let p = ProperNoundle.dailyPuzzle(), !d.guesses.isEmpty {
+                                        // §L: the solved board on the shared game tray.
                                         CompletedProperNoundleMiniBoard(guesses: d.guesses, puzzle: p)
-                                        Text(p.display.uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                            .gameTray(accent: ModeStyle.accent(mode), state: won ? .won : .lost)
+                                        Text(p.display.uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(FinishInk.heading)
                                     } else if d.solutions.count == 1 {
-                                        Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                        Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(FinishInk.heading)
                                     }
                                 } else {
                                     boards(d)
                                     if d.solutions.count == 1 {
-                                        Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                        Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(FinishInk.heading)
                                     }
                                 }
                                 HStack(spacing: 20) {
@@ -243,7 +246,10 @@ struct CompletedDailyCard: View {
                                                                  guesses: d.guesses, maxGuesses: maxGuesses)
         let rowCount = bs.map(\.maxGuesses).max() ?? 6
         if bs.count == 1 {
+            // §L: the single solved board sits on the shared game tray (won →
+            // purple wash, lost → slate). Mini boards tray themselves (framed).
             CompletedMiniBoardView(board: bs[0], tileSize: tileSize, rowCount: rowCount, framed: false)
+                .gameTray(accent: ModeStyle.accent(mode), state: bs[0].status == .won ? .won : .lost)
         } else {
             let cols = Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing),
                              count: CompletedBoardLayout.cols(bs.count))
@@ -258,8 +264,8 @@ struct CompletedDailyCard: View {
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
-            Text(value).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-            Text(label).font(Brand.font(9, .bold)).tracking(0.6).foregroundStyle(Theme.textMuted)
+            Text(value).softNumber(16)
+            Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
         }
     }
 

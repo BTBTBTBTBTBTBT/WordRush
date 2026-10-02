@@ -6,6 +6,8 @@ import { normalizeString } from './game-logic';
 import { LetterTile, type TileLook } from '@/components/game/letter-tile';
 import { REVEAL } from '@/lib/tile-motion';
 import { fitBoard, tileFontPx } from '@/lib/board-fit';
+import { GameTray } from '@/components/ui/game-tray';
+import { modeTrayAccent, trayChrome } from '@/lib/tray-fit';
 
 interface NoundleBoardProps {
   guesses: Guess[];
@@ -14,7 +16,12 @@ interface NoundleBoardProps {
   answerLength: number;
   answerDisplay?: string;
   shouldShake?: boolean;
+  /** The tray's accent (FINISH_SPEC L); ProperNoundle's catalog accent by default. */
+  accent?: string;
 }
+
+/** The tray's chrome around the rows (lib/tray-fit.ts). */
+const CHROME = trayChrome();
 
 /** A ProperNoundle tile state → the shared tile look (FINISH_SPEC B1). */
 function noundleLook(state: TileState, letter: string): TileLook {
@@ -69,6 +76,7 @@ export default memo(function NoundleBoard({
   answerLength,
   answerDisplay = '',
   shouldShake = false,
+  accent = modeTrayAccent('PROPERNOUNDLE'),
 }: NoundleBoardProps) {
   const [lastGuessCount, setLastGuessCount] = useState(guesses.length);
   const [shouldFlipRow, setShouldFlipRow] = useState(-1);
@@ -107,9 +115,10 @@ export default memo(function NoundleBoard({
     // gaps between the words of a multi-word answer as extra row width.
     const calculateTileSize = () => {
       const totalTiles = wordGroups.reduce((sum, count) => sum + count, 0);
+      // FINISH_SPEC L: the rows sit on the game tray, so its chrome comes out of the area.
       const fit = fitBoard({
-        width: el.clientWidth,
-        height: el.clientHeight,
+        width: el.clientWidth - 2 * CHROME.x,
+        height: el.clientHeight - CHROME.top - CHROME.bottom,
         cols: totalTiles,
         rows: maxGuesses,
         gap: TILE_GAP,
@@ -214,11 +223,19 @@ export default memo(function NoundleBoard({
     }
   };
 
+  const last = guesses[guesses.length - 1];
+  const won = !!last && last.tiles.length > 0 && last.tiles.every((t) => t === 'correct');
+  const lost = !won && guesses.length >= maxGuesses;
+
   return (
-    <div ref={containerRef} className="flex flex-col w-full h-full justify-center" style={{ gap: TILE_GAP }}>
-      {Array(maxGuesses)
-        .fill(0)
-        .map((_, i) => renderRow(i))}
+    <div ref={containerRef} className="flex flex-col w-full h-full justify-center items-center">
+      <GameTray accent={accent} state={won ? 'won' : lost ? 'lost' : 'playing'} className="w-fit max-w-full">
+        <div className="flex flex-col" style={{ gap: TILE_GAP }}>
+          {Array(maxGuesses)
+            .fill(0)
+            .map((_, i) => renderRow(i))}
+        </div>
+      </GameTray>
     </div>
   );
 });

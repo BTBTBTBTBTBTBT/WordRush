@@ -88,6 +88,8 @@ final class AuthService: ObservableObject {
             AuthService.cacheProEntitlement(from: profile)
             AuthService.cacheHeaderValues(from: profile)
             AuthService.cacheProfileRow(profile)
+            // FINISH_SPEC §AP: a fresh (gifted) Pro activation opens Welcome to Pro.
+            ProWelcomeCenter.shared.profileChanged(from: oldValue, to: profile)
         }
     }
     @Published private(set) var isAuthenticated = false

@@ -1,5 +1,7 @@
 'use client';
 
+import { softCard } from '@/lib/soft-surface';
+
 interface TopWord {
   word: string;
   count: number;
@@ -19,7 +21,7 @@ export function TopWordsCard({ words, accentColor }: TopWordsCardProps) {
   return (
     <div
       className="overflow-hidden"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+      style={softCard(accentColor, { radius: 18 })}
     >
       <div className="px-4 pt-3 pb-1">
         <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { prefersReducedMotion } from '@/lib/motion';
 
 interface ConfettiPiece {
   id: number;
@@ -26,10 +27,20 @@ export const CONFETTI_PALETTES: Record<string, string[]> = {
   rainbow: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'],
 };
 
-export function Confetti({ colors }: { colors?: string[] }) {
+/** The finishing build's candy palettes (G2 / G3): one per celebration color. */
+export const CANDY_CONFETTI = {
+  purple: ['#a66bff', '#7c3aed', '#f5c542', '#f472b6', '#c4b5fd', '#ffffff'],
+  gold: ['#ffd166', '#f5a524', '#f97316', '#fde68a', '#a66bff', '#ffffff'],
+  pink: ['#f472b6', '#ec4899', '#f5c542', '#c084fc', '#fbcfe8', '#ffffff'],
+  indigo: ['#818cf8', '#6366f1', '#f5c542', '#c4b5fd', '#a5b4fc', '#ffffff'],
+} as const;
+
+export function Confetti({ colors }: { colors?: readonly string[] }) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
 
   useEffect(() => {
+    // Reduce Motion (OS or the in-app toggle): no falling pieces at all.
+    if (prefersReducedMotion()) return;
     const palette = colors || DEFAULT_COLORS;
 
     const newPieces = Array.from({ length: 50 }, (_, i) => ({

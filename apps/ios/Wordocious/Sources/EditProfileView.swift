@@ -17,6 +17,16 @@ struct EditProfileView: View {
     @State private var favoriteMode: String?    // dbKey or nil
     @State private var featured: String?        // achievement key or nil
     @State private var avatarEmoji = ""
+    /// FINISH_SPEC §AH: the worn cast hero (nil = photo / initials) + level-tier frame.
+    @State private var castId: String?
+    @State private var frame: String?
+    /// FINISH_SPEC §AN: the mascot being built (live), whether the player changed
+    /// it this visit (only then is avatar_config written), and a token that
+    /// re-seeds the builder when the page changes the mascot itself (new photo).
+    @State private var mascot: AvatarConfig = AvatarCatalog.defaultAvatar(userId: "")
+    @State private var mascotTouched = false
+    @State private var builderToken = 0
+    @State private var showCharacterNudge = false
     @State private var isPrivate = false
     @State private var unlocked: Set<String> = []
     @State private var error: String?
@@ -36,10 +46,6 @@ struct EditProfileView: View {
     private var dailyModes: [HomeMode] { homeModes.filter { $0.dbKey != nil && $0.dbKey != "VS" } }
     private var unlockedDefs: [AchievementDef] { catalog.all.filter { unlocked.contains($0.key) } }
     private var accentColor: Color { ProfileAccent.color(accent) }
-    private var card: some View {
-        RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow()
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,40 +56,62 @@ struct EditProfileView: View {
                 Spacer()
                 PageTitle("EDIT PROFILE", size: 18)
                 Spacer()
-                Button(saving ? "Saving…" : "Save") { save() }.font(Brand.font(15, .black)).foregroundStyle(Theme.primary).disabled(saving)
+                // §A8: Save is a small candy button.
+                Button { save() } label: { CandyLabel(title: saving ? "Saving…" : "Save") }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    .disabled(saving)
             }
             .padding(.horizontal, 18).padding(.vertical, 12)
 
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 14) {
+                    if showCharacterNudge { characterNudge(proxy) }
                     preview
                     avatarSection
-                    sectionCard("USERNAME") {
+                    // §AN4: "Make your mascot" — the build-your-own-mascot builder (the AH
+                    // cast pick lives here now as presets; frames are its Frame tab).
+                    sectionCard("MAKE YOUR MASCOT", accent: Color(hex: AvatarCatalog.colorValue(mascot.color))) {
+                        MascotBuilderView(initial: AvatarCatalog.initial(username.isEmpty ? auth.profile?.username : username),
+                                          config: mascot, mode: .profile,
+                                          hasPhoto: hasPhoto, level: auth.profile?.level ?? 1, isPro: auth.isProActive,
+                                          saving: saving,
+                                          onChange: { c in mascot = c; mascotTouched = true },
+                                          onSave: { c in mascot = c; mascotTouched = true; save() })
+                            .id(builderToken)
+                    }
+                    .id(Self.characterGridAnchor)
+                    sectionCard("USERNAME", accent: G5Accent.purple) {
                         TextField("username", text: $username)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .font(Brand.font(15, .bold))
-                        if let error { Text(error).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xDC2626)) }
+                            .font(Brand.font(15, .bold)).foregroundStyle(FinishInk.heading)
+                            .g5Field(G5Accent.purple, error: error != nil)
+                        if let error { G5Notice(error, tone: .error) }
                     }
                     // Count/truncate by unicode SCALARS, not Characters: the DB
                     // CHECK is char_length (code points), and one family emoji
                     // is 1 Character but 7 code points — a Character-counted
                     // "80/80" bio can violate the CHECK and fail the whole save.
-                    sectionCard("BIO  ·  \(bio.unicodeScalars.count)/\(bioMax)") {
+                    sectionCard("BIO  ·  \(bio.unicodeScalars.count)/\(bioMax)", accent: G5Accent.pink) {
                         TextField("A short tagline…", text: $bio, axis: .vertical)
-                            .lineLimit(1...3).font(Brand.font(14, .regular))
+                            .lineLimit(1...3).font(Brand.font(14, .regular)).foregroundStyle(FinishInk.heading)
+                            .g5Field(G5Accent.pink)
                             .onChange(of: bio) {
                                 if $0.unicodeScalars.count > bioMax {
                                     bio = String(String.UnicodeScalarView($0.unicodeScalars.prefix(bioMax)))
                                 }
                             }
                     }
-                    sectionCard("ACCENT COLOR") { accentRow }
-                    sectionCard("FEATURED TITLE") { titlePicker }
-                    sectionCard("FAVORITE MODE") { modeRow }
-                    sectionCard("PRIVACY") { privacyRow }
-                    sectionCard("SOCIALS") { socialFields }
+                    sectionCard("ACCENT COLOR", accent: accentColor) { accentRow }
+                    sectionCard("FEATURED TITLE", accent: G5Accent.gold) { titlePicker }
+                    sectionCard("FAVORITE MODE", accent: G5Accent.blue) { modeRow }
+                    sectionCard("PRIVACY", accent: G5Accent.lilac) { privacyRow }
+                    sectionCard("SOCIALS", accent: G5Accent.teal) { socialFields }
+                    // §G5 / §A7: a cast pose where there's room — C leaning in.
+                    PoseImage(.c, "lean", height: 84).padding(.top, 2)
                 }
                 .padding(16)
+            }
             }
         }
         .pageBackground(.home)
@@ -95,6 +123,25 @@ struct EditProfileView: View {
             featured = auth.profile?.featuredAchievement
             avatarEmoji = auth.profile?.avatarEmoji ?? ""
             isPrivate = auth.profile?.isPrivate ?? false
+            let look = CastAvatars.shared.ownLook(auth.profile)
+            castId = look.castId
+            frame = look.frame
+            // §AN: the saved mascot, else the worn AH hero's preset, else the default.
+            if let p = auth.profile {
+                let has = !(p.avatarUrl?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
+                var m = MascotLooks.shared.ownConfig(p)
+                    ?? MascotLooks.display(saved: nil, castId: look.castId, frame: look.frame, username: p.username,
+                                           accentHex: LetterTileAvatar.defaultAccentHex(username: p.username, accentHex: p.accentColor))
+                // No saved mascot: a worn hero showed over the photo (AH); else the photo shows.
+                if MascotLooks.shared.ownConfig(p) == nil { m.display = (has && look.castId == nil) ? "photo" : "mascot" }
+                mascot = m
+                builderToken += 1
+            }
+            // §AM2: a one-time nudge for players still on a (retired) emoji avatar.
+            if let uid = auth.profile?.id, !avatarEmoji.trimmingCharacters(in: .whitespaces).isEmpty, look.castId == nil,
+               !UserDefaults.standard.bool(forKey: Self.nudgeKey(uid)) {
+                showCharacterNudge = true
+            }
             await catalog.load()
             if let uid = auth.profile?.id {
                 socials = await ProfileExtras.socialLinks(userId: uid)
@@ -134,23 +181,65 @@ struct EditProfileView: View {
                 pill(label: def.name, system: "star.fill", color: accentColor)
             }
             let b = bio.trimmingCharacters(in: .whitespaces)
-            if !b.isEmpty { Text(b).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center) }
+            if !b.isEmpty { Text(b).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center) }
             if let m = dailyModes.first(where: { $0.dbKey == favoriteMode }) {
                 HStack(spacing: 5) {
                     ModeIconView(icon: m.icon, accent: m.accent, box: 16)
                     Text(m.title).font(Brand.font(11, .bold)).foregroundStyle(m.accent)
                 }
-                .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Capsule().fill(m.accent.opacity(0.12)))
+                .padding(.horizontal, 8).padding(.top, 5).padding(.bottom, 3)
+                .tintedPill(m.accent)
             }
         }
-        .frame(maxWidth: .infinity).padding(16).background(card)
+        .frame(maxWidth: .infinity).padding(16)
+        // §A1: the live preview sits on a card tinted by the chosen accent.
+        .tintedCard(accent: accentColor, bar: G5Accent.bar(accentColor), radius: 20, barHeight: 8)
     }
 
     private var previewAvatar: some View {
-        // §20: photo circle, else the live letter tile (accent + emoji preview).
+        // §AN: the live mascot (or the photo, when "My photo" is picked).
         AvatarView(url: auth.profile?.avatarUrl, username: username, size: 64,
-                   accentHex: accent, emoji: avatarEmoji)
+                   accentHex: accent, emoji: avatarEmoji, pro: auth.isProActive,
+                   castId: nil, frame: nil, lookup: false, mascot: mascot)
+    }
+
+    private var hasPhoto: Bool { !(auth.profile?.avatarUrl?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) }
+
+    // MARK: - §AM2 "Pick your character!" nudge
+
+    private static let characterGridAnchor = "edit-profile-character-grid"
+    private static func nudgeKey(_ uid: String) -> String { "wd_pick_character_nudge_v1:\(uid.lowercased())" }
+
+    private func dismissCharacterNudge() {
+        if let uid = auth.profile?.id { UserDefaults.standard.set(true, forKey: Self.nudgeKey(uid)) }
+        showCharacterNudge = false
+    }
+
+    private func characterNudge(_ proxy: ScrollViewProxy) -> some View {
+        HStack(spacing: 12) {
+            PoseImage(.o1, "cheer", height: 64)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Make your mascot!")
+                    .font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                    .accessibilityAddTraits(.isHeader)
+                Text("Emoji avatars are retiring. Build your own mascot, or start from one of the cast!")
+                    .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Button {
+                        dismissCharacterNudge()
+                        if Theme.reduceMotion { proxy.scrollTo(Self.characterGridAnchor, anchor: .top) }
+                        else { withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo(Self.characterGridAnchor, anchor: .top) } }
+                    } label: { CandyLabel(title: "Choose") }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    Button { dismissCharacterNudge() } label: { CandyLabel(title: "Not now") }
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .tintedCard(accent: G5Accent.purple, bar: G5Accent.bar(G5Accent.purple), radius: 20, barHeight: 8)
     }
 
     // MARK: - Sections
@@ -158,15 +247,12 @@ struct EditProfileView: View {
     private var avatarSection: some View {
         VStack(spacing: 8) {
             Button { showPhotoChoice = true } label: {
-                Text(uploadingAvatar ? "Uploading…" : "Change Photo").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
-            }.disabled(uploadingAvatar).buttonStyle(.squish)
-            HStack(spacing: 8) {
-                Text("Avatar emoji").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                TextField("🎯", text: $avatarEmoji).frame(width: 44).multilineTextAlignment(.center)
-                    .onChange(of: avatarEmoji) { avatarEmoji = String($0.prefix(2)) }
-                    .padding(6).background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceAlt))
-                Text("(shown when you have no photo)").font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted)
+                CandyLabel(title: uploadingAvatar ? "Uploading…" : "Change Photo", symbol: "camera.fill")
             }
+            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+            .disabled(uploadingAvatar)
+            // §AM2: the emoji avatar option is retired (the cast grid below replaces
+            // it); a stored avatar_emoji is saved back unchanged, never drawn.
         }
         .frame(maxWidth: .infinity).padding(.vertical, 4)
     }
@@ -175,19 +261,29 @@ struct EditProfileView: View {
         HStack(spacing: 10) {
             ForEach(ProfileAccent.palette, id: \.id) { sw in
                 let selected = ProfileAccent.hex(accent) == sw.hex
-                Circle().fill(Color(hex: sw.hex)).frame(width: 30, height: 30)
-                    .overlay(Circle().stroke(Theme.surface, lineWidth: 2))
-                    .overlay(selected ? Circle().stroke(Color(hex: sw.hex), lineWidth: 2).padding(-3) : nil)
-                    .onTapGesture { accent = sw.id == "purple" ? nil : String(format: "#%06X", sw.hex) }
+                // §G5: each swatch is a mini tinted tile (selected = stronger tint +
+                // ring), squish on tap.
+                Button { accent = sw.id == "purple" ? nil : String(format: "#%06X", sw.hex) } label: {
+                    Circle()
+                        .fill(LinearGradient(colors: [Color.white.mixed(over: Color(hex: sw.hex), 0.3), Color(hex: sw.hex)],
+                                             startPoint: .top, endPoint: .bottom))
+                        .frame(width: 22, height: 22)
+                        .overlay(Circle().stroke(Color.white.opacity(0.7), lineWidth: 1.5))
+                        .frame(width: 34, height: 34)
+                        .g5Option(active: selected, accent: Color(hex: sw.hex), radius: 11)
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("\(sw.id.capitalized) accent")
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
-            Spacer()
+            Spacer(minLength: 0)
         }
     }
 
     private var titlePicker: some View {
         Group {
             if unlockedDefs.isEmpty {
-                Text("Unlock achievements to wear one as a title.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                Text("Unlock achievements to wear one as a title.").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
             } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], alignment: .leading, spacing: 8) {
                     chip("None", selected: featured == nil) { featured = nil }
@@ -228,24 +324,23 @@ struct EditProfileView: View {
                 HStack(spacing: 10) {
                     Image(systemName: isPrivate ? "lock.fill" : "globe")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(isPrivate ? Color(hex: 0x7C3AED) : Theme.textMuted)
+                        .foregroundStyle(isPrivate ? Color(hex: 0x7C3AED) : FinishInk.secondary)
                     Text("Private profile")
-                        .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                        .font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                     Spacer()
                     Text(isPrivate ? "ON" : "OFF")
                         .font(Brand.font(10, .black))
-                        .foregroundStyle(isPrivate ? Color(hex: 0x7C3AED) : Theme.textMuted)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(isPrivate ? Color(hex: 0xF3F0FF) : Theme.surfaceHover))
+                        .foregroundStyle(isPrivate ? Color(hex: 0x7C3AED) : FinishInk.secondary)
+                        .padding(.horizontal, 8).padding(.top, 5).padding(.bottom, 3)
+                        .tintedPill(isPrivate ? Color(hex: 0x7C3AED) : G5Accent.slate)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                .overlay(RoundedRectangle(cornerRadius: 10)
-                    .stroke(isPrivate ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
+                .contentShape(Rectangle())
+                .g5Option(active: isPrivate, accent: G5Accent.lilac, radius: 14)
             }
             .buttonStyle(.squish)
             Text("Hide your words, stats, and game history from other players. You'll still appear on leaderboards.")
-                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
         }
     }
 
@@ -253,10 +348,12 @@ struct EditProfileView: View {
         VStack(spacing: 8) {
             ForEach(platforms, id: \.key) { p in
                 HStack {
-                    Text(p.label).font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary).frame(width: 96, alignment: .leading)
+                    Text(p.label).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary).frame(width: 96, alignment: .leading)
                     TextField(p.placeholder, text: Binding(get: { socials[p.key] ?? "" }, set: { socials[p.key] = $0 }))
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                         .keyboardType(p.key == "website" ? .URL : .default).font(Brand.font(13, .regular))
+                        .foregroundStyle(FinishInk.heading)
+                        .g5Field(G5Accent.teal, radius: 10)
                 }
             }
         }
@@ -264,12 +361,9 @@ struct EditProfileView: View {
 
     // MARK: - Small components
 
-    private func sectionCard<C: View>(_ title: String, @ViewBuilder _ inner: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(Brand.font(11, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
-            inner()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(14).background(card)
+    /// §G5: a tinted section card with its own top bar (§A1).
+    private func sectionCard<C: View>(_ title: String, accent: Color, @ViewBuilder _ inner: @escaping () -> C) -> some View {
+        G5Card(title, accent: accent, spacing: 8) { inner() }
     }
 
     private func pill(label: String, system: String, color: Color) -> some View {
@@ -277,8 +371,8 @@ struct EditProfileView: View {
             Image(systemName: system).font(.system(size: 9, weight: .bold))
             Text(label.uppercased()).font(Brand.font(10, .black)).tracking(0.4)
         }
-        .foregroundStyle(color).padding(.horizontal, 8).padding(.vertical, 3)
-        .background(Capsule().fill(color.opacity(0.12)))
+        .foregroundStyle(color).padding(.horizontal, 8).padding(.top, 5).padding(.bottom, 3)
+        .tintedPill(color)
     }
 
     private func chip(_ label: String, selected: Bool, icon: String? = nil, _ action: @escaping () -> Void) -> some View {
@@ -287,10 +381,13 @@ struct EditProfileView: View {
                 if let icon { Image(systemName: icon).font(.system(size: 9, weight: .bold)) }
                 Text(label).font(Brand.font(11, .bold))
             }
-            .foregroundStyle(selected ? .white : Theme.textPrimary)
+            .foregroundStyle(selected ? accentColor : FinishInk.heading)
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(Capsule().fill(selected ? accentColor : Theme.surfaceAlt))
-        }.buttonStyle(.squish)
+            // §A1: chips are mini tinted tiles (selected = stronger tint + ring).
+            .g5Option(active: selected, accent: accentColor, radius: 14)
+        }
+        .buttonStyle(.squish)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     // MARK: - Save
@@ -318,6 +415,23 @@ struct EditProfileView: View {
         }
     }
     private struct AvatarUpdate: Encodable { let avatar_url: String? }
+    /// §AN3: profiles.avatar_config, written in its OWN best-effort update (the
+    /// column may not exist yet).
+    private struct MascotUpdate: Encodable {
+        let avatar_config: AvatarConfig
+    }
+    /// §AH: the two new columns, written in their OWN best-effort update so a
+    /// missing column never breaks the profile save. Nulls are sent (they clear).
+    private struct AvatarLookUpdate: Encodable {
+        let avatar_cast_id: String?
+        let avatar_frame: String?
+        enum CodingKeys: String, CodingKey { case avatar_cast_id, avatar_frame }
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(avatar_cast_id, forKey: .avatar_cast_id)
+            try c.encode(avatar_frame, forKey: .avatar_frame)
+        }
+    }
 
     private func validate(_ name: String) -> String? {
         // Shape AND content (core Profanity mirrors the DB word list). The DB
@@ -359,6 +473,36 @@ struct EditProfileView: View {
         Task {
             do {
                 try await auth.client.from("profiles").update(payload).eq("id", value: uid).execute()
+                // §AN: the mascot (only when changed this visit), best effort; any error
+                // (e.g. the column doesn't exist yet) keeps it locally on this device.
+                // A saved mascot replaces AH's worn hero; its tier frame mirrors into
+                // avatar_frame for older clients.
+                var castVal = AvatarCastRules.normalize(castId)
+                var frameVal = AvatarFrameRules.effective(frame, level: auth.profile?.level ?? 1)
+                if mascotTouched {
+                    let level = auth.profile?.level ?? 1
+                    var m = AvatarCatalog.enforcePro(mascot, isPro: auth.isProActive)
+                    if AvatarFrameRules.tier(m.frame) != nil, !AvatarFrameRules.isUnlocked(m.frame, level: level) { m.frame = "none" }
+                    if !hasPhoto { m.display = "mascot" }
+                    var mascotAccepted = false
+                    do {
+                        try await auth.client.from("profiles").update(MascotUpdate(avatar_config: m)).eq("id", value: uid).execute()
+                        mascotAccepted = true
+                    } catch { mascotAccepted = false }
+                    MascotLooks.shared.applyOwn(userId: uid, username: t, config: m, serverAccepted: mascotAccepted)
+                    castVal = nil
+                    frameVal = AvatarFrameRules.normalize(m.frame)
+                }
+                var accepted = false
+                do {
+                    try await auth.client.from("profiles")
+                        .update(AvatarLookUpdate(avatar_cast_id: castVal, avatar_frame: frameVal))
+                        .eq("id", value: uid).execute()
+                    accepted = true
+                } catch { accepted = false }
+                CastAvatars.shared.applyOwnChoice(userId: uid, username: t, castId: castVal, frame: frameVal,
+                                                  serverAccepted: accepted)
+                if castVal != nil || mascotTouched { UserDefaults.standard.set(true, forKey: Self.nudgeKey(uid)) }
                 await auth.refreshProfile()
                 dismiss()
             } catch {
@@ -398,6 +542,12 @@ struct EditProfileView: View {
             error = "Avatar upload failed. Please try again."; return
         }
         _ = try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: url)).eq("id", value: uid).execute()
+        // §AH / §AN: a fresh photo means the player wants their photo — show it (saved
+        // with Save). The mascot itself is kept; only `display` flips.
+        castId = nil
+        mascot.display = "photo"
+        mascotTouched = true
+        builderToken += 1
         await auth.refreshProfile()
     }
     private func removeAvatar() async {

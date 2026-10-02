@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +38,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import com.wordocious.app.ui.tintedPill
+import androidx.compose.animation.core.animateFloat
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.BoardState
@@ -50,9 +58,13 @@ import kotlinx.coroutines.delay
 
 /**
  * Gauntlet stage-transition overlay — ports web gauntlet/stage-transition.tsx:
- * a 2.5s full-screen interstitial after clearing a stage (tap to skip) with the
- * green check, "STAGE COMPLETE" + cleared name, and "NEXT UP" + gradient name
- * + the next stage's board/guess detail line.
+ * a 2.5s full-screen interstitial after clearing a stage (tap to skip).
+ *
+ * FINISH_SPEC P: a tinted amber card in the Gauntlet accent with a big cast pose per
+ * upcoming stage that springs in (GauntletLook.stagePose), "STAGE 3 OF 5" in soft
+ * numbers over a 5-dot progress row (cleared = amber with a W badge, the next one
+ * pulsing), the next stage's rule as a tinted pill, the running guess total in soft
+ * numbers and a large amber candy CONTINUE. The whole screen still taps to skip.
  */
 @Composable
 fun StageTransitionOverlay(
@@ -61,6 +73,12 @@ fun StageTransitionOverlay(
     /** VS shortens the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for it,
      *  so a 2.5s flourish per stage is a real handicap over a 5-stage run. */
     isVersus: Boolean = false,
+    /** Stages cleared, counting the one just finished (drives the dots and the pose). */
+    cleared: Int = completed.stageIndex + 1,
+    /** Stages in the run (5). */
+    totalStages: Int = com.wordocious.core.gauntletStages.size,
+    /** Guesses used so far — the running score (GauntletLook.guessesSoFar); null hides it. */
+    guessesSoFar: Int? = null,
     onComplete: () -> Unit,
 ) {
     // Between stages: auto-advance after 2.5s (web StageTransition). After the
@@ -72,74 +90,129 @@ fun StageTransitionOverlay(
         delay(if (next == null) 4000L else if (isVersus) 1000L else 2500L)
         onComplete()
     }
+    val dark = WTheme.isDark
+    val accent = GAUNTLET_ACCENT
+    val ink = if (dark) WTheme.text else GAUNTLET_INK
+    val heading = if (dark) WTheme.text else com.wordocious.app.ui.FinishInk.heading
+    val done = cleared.coerceIn(0, totalStages)
+    val pose = GauntletLook.stagePose(if (next != null) done + 1 else null)
+    val dots = GauntletLook.stageDots(totalStages, if (next != null) done else totalStages)
+    val shape = RoundedCornerShape(24.dp)
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickableNoRipple(onComplete),
+        Modifier.fillMaxSize().background(Color(0x731E0F3C)).clickableNoRipple(onComplete)
+            .semantics { contentDescription = if (next != null) "Stage complete. Next: ${next.name}" else "Stage complete" },
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(26.dp)) {
-            Box(
-                Modifier.size(80.dp).clip(CircleShape)
-                    .background(Color(0xFF8B5CF6).copy(alpha = 0.3f))
-                    .border(4.dp, Color(0xFFA78BFA), CircleShape),
-                contentAlignment = Alignment.Center,
+        Column(
+            Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).fillMaxWidth()
+                .clip(shape).background(com.wordocious.app.ui.accentWash(accent)).border(1.5.dp, com.wordocious.app.ui.accentLine(accent), shape),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(Modifier.fillMaxWidth().height(10.dp).background(GAUNTLET_BAR))
+            Column(
+                Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon(Icons.Filled.Check, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(34.dp))
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    "STAGE COMPLETE",
-                    color = Color(0xFFA78BFA), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
-                )
-                Text(completed.name, color = Color.White.copy(alpha = 0.6f), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-            // Final stage: invite a tap, but the 4s timer above still fires — the
-            // win only records on advance, so this must never wait forever.
-            if (next == null) {
-                Text(
-                    "Tap to see your results",
-                    color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp, fontWeight = FontWeight.Black,
-                    modifier = Modifier
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                        .background(Color(0xFF8B5CF6).copy(alpha = 0.35f))
-                        .border(1.5.dp, Color(0xFFA78BFA), androidx.compose.foundation.shape.RoundedCornerShape(50))
-                        .padding(horizontal = 16.dp, vertical = 9.dp),
-                )
-            }
-            if (next != null) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(12.dp))
-                        Text("NEXT UP", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
-                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(12.dp))
-                    }
-                    Text(
-                        next.name,
-                        fontSize = 30.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(
-                            fontFamily = com.wordocious.app.ui.theme.Nunito,
-                            brush = Brush.horizontalGradient(
-                                listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC)),
-                            ),
-                        ),
-                    )
-                    Text(
-                        buildString {
-                            append("${next.boardCount} board${if (next.boardCount > 1) "s" else ""} · ${next.maxGuesses} guesses")
-                            if (next.sequential) append(" · sequential")
-                            if (next.hasPrefill) append(" · pre-filled clues")
-                        },
-                        color = Color.White.copy(alpha = 0.4f), fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    )
-                    // The overlay has ALWAYS been tap-to-skip, but only the final
-                    // stage said so — mid-run it read as a cutscene you had to sit
-                    // through. Say it every time.
-                    Text(
-                        "Tap to continue",
-                        color = Color.White.copy(alpha = 0.5f),
-                        fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp,
-                        modifier = Modifier.padding(top = 6.dp),
+                // The pose springs in (keyed so a new stage replays the spring). Decorative.
+                androidx.compose.runtime.key(pose) {
+                    com.wordocious.app.ui.SceneArtPop(
+                        com.wordocious.app.ui.CastPoses.res(pose.mascot, pose.pose) ?: pose.mascot.res,
+                        height = 132.dp, glow = accent.copy(alpha = 0.5f),
                     )
                 }
+                Text(
+                    "STAGE COMPLETE · ${completed.name.uppercase()}",
+                    color = ink, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+                    fontFamily = com.wordocious.app.ui.theme.Nunito, textAlign = TextAlign.Center,
+                )
+                com.wordocious.app.ui.SoftNumber(
+                    if (next != null) "STAGE ${done + 1} OF $totalStages" else "ALL $totalStages CLEARED", 26.sp,
+                    Modifier.semantics { heading() },
+                )
+                StageDotsRow(dots, done, totalStages)
+                if (next != null) {
+                    Text(
+                        next.name,
+                        color = heading, fontSize = 22.sp, fontWeight = FontWeight.Black,
+                        fontFamily = com.wordocious.app.ui.theme.Nunito, textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        GauntletLook.stageRuleLine(next).uppercase(),
+                        color = ink, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                        fontFamily = com.wordocious.app.ui.theme.Nunito, textAlign = TextAlign.Center,
+                        modifier = Modifier.tintedPill(accent, 50.dp).padding(horizontal = 12.dp, vertical = 4.dp),
+                    )
+                }
+                if (guessesSoFar != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.semantics(mergeDescendants = true) {},
+                    ) {
+                        com.wordocious.app.ui.SoftNumber("$guessesSoFar", 22.sp)
+                        Text(
+                            "GUESSES SO FAR", color = ink, fontSize = 10.sp, fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp, fontFamily = com.wordocious.app.ui.theme.Nunito,
+                        )
+                    }
+                }
+                // Final stage: invite a tap, but the 4s timer above still fires — the
+                // win only records on advance, so this must never wait forever.
+                com.wordocious.app.ui.CandyButton(
+                    "CONTINUE", onClick = onComplete,
+                    color = com.wordocious.app.ui.CandyColor.AMBER, size = com.wordocious.app.ui.CandySize.LARGE,
+                    icon = com.wordocious.app.ui.CandyIcon.ARROW, fill = true,
+                    contentDescription = if (next == null) "Tap to see your results" else "Tap to continue",
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/** The Gauntlet catalog accent (amber). */
+internal val GAUNTLET_ACCENT = Color(GauntletLook.ACCENT_ARGB)
+/** Labels on the amber card: the accent darkened ~35%. */
+internal val GAUNTLET_INK = Color(0xFF8D4D04)
+/** The amber card's top bar. */
+internal val GAUNTLET_BAR = Brush.horizontalGradient(listOf(Color(0xFFFFC56B), Color(0xFFF59E0B), Color(0xFFD97706)))
+
+/**
+ * P the 5-dot progress row: cleared stages filled amber with a small W badge, the
+ * next stage pulsing (still with Reduce Motion), the rest a soft amber ring.
+ */
+@Composable
+private fun StageDotsRow(dots: List<GauntletLook.Dot>, done: Int, total: Int) {
+    val accent = GAUNTLET_ACCENT
+    val still = WTheme.reducedMotion
+    val pulse = if (still) 1f else {
+        val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "stageDot")
+        t.animateFloat(
+            1f, 1.18f,
+            androidx.compose.animation.core.infiniteRepeatable(
+                androidx.compose.animation.core.tween(700, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                androidx.compose.animation.core.RepeatMode.Reverse,
+            ),
+            label = "stageDotPulse",
+        ).value
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "$done of $total stages cleared" },
+    ) {
+        dots.forEach { d ->
+            when (d) {
+                GauntletLook.Dot.DONE -> Box(
+                    Modifier.size(24.dp).shadow(2.dp, CircleShape, clip = false, spotColor = GAUNTLET_INK)
+                        .clip(CircleShape).background(Brush.verticalGradient(listOf(Color(0xFFFFC56B), accent))),
+                    contentAlignment = Alignment.Center,
+                ) { com.wordocious.app.ui.ResultBadge(true, size = 16.dp) }
+                GauntletLook.Dot.CURRENT -> Box(
+                    Modifier.size(24.dp).graphicsLayer { scaleX = pulse; scaleY = pulse }
+                        .clip(CircleShape).background(accent.copy(alpha = 0.35f)).border(1.5.dp, accent.copy(alpha = 0.6f), CircleShape),
+                )
+                GauntletLook.Dot.TODO -> Box(
+                    Modifier.size(24.dp).clip(CircleShape).background(accent.copy(alpha = 0.12f)).border(1.5.dp, accent.copy(alpha = 0.4f), CircleShape),
+                )
             }
         }
     }
@@ -158,14 +231,15 @@ internal fun GauntletStageInlineReview(result: GauntletStageResult) {
     val cols = if (boards.size == 1) 1 else if (boards.size <= 4) 2 else 4
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         // ANSWERS pills
+        // A1 the answers window is tinted, never near-white.
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFF9FAFB))
-                .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp)).padding(8.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(com.wordocious.app.ui.accentWash(Color(0xFF7C3AED)))
+                .border(1.5.dp, com.wordocious.app.ui.accentLine(Color(0xFF7C3AED)), RoundedCornerShape(12.dp)).padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
                 if (boards.size == 1) "ANSWER" else "ANSWERS",
-                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF9CA3AF), letterSpacing = 0.8.sp,
+                fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.textMuted else com.wordocious.app.ui.FinishInk.muted, letterSpacing = 0.8.sp,
             )
             boards.chunked(cols).forEach { rowBoards ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -175,8 +249,8 @@ internal fun GauntletStageInlineReview(result: GauntletStageResult) {
                             b.solution.uppercase(),
                             fontSize = 11.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
                             color = if (bWon) Color(0xFF7C3AED) else Color(0xFFDC2626),
-                            modifier = Modifier.weight(1f).clip(RoundedCornerShape(6.dp))
-                                .background(if (bWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)).padding(vertical = 2.dp),
+                            modifier = Modifier.weight(1f)
+                                .softChip(if (bWon) Color(0xFF7C3AED) else Color(0xFFDC2626), corner = 8.dp).padding(vertical = 2.dp),
                         )
                     }
                     repeat(cols - rowBoards.size) { Spacer(Modifier.weight(1f)) }
@@ -201,16 +275,11 @@ private fun StageReviewBoard(board: BoardState, stageWon: Boolean, modifier: Mod
     val totalRows = prefills.size + board.maxGuesses
 
     Column(
-        modifier
-            .clip(RoundedCornerShape(10.dp))
-            // FINISH_SPEC A1: frosted, never plain white; won lavender, lost rose.
-            .background(if (won) Color(0xFFEFE6FF) else if (lost) Color(0xFFFDECEF) else Color.White.copy(alpha = 0.45f))
-            .border(
-                1.5.dp,
-                if (won) Color(0xFFA78BFA) else if (lost) Color(0xFFF87171) else Color(0x407C3AED),
-                RoundedCornerShape(10.dp),
-            )
-            .padding(4.dp),
+        // FINISH_SPEC L: each mini board in its own game tray — purple won, slate lost.
+        modifier.gameTray(
+            Color(0xFF7C3AED), if (won) TrayState.WON else if (lost) TrayState.LOST else TrayState.PLAYING,
+            corner = 12.dp, padding = androidx.compose.foundation.layout.PaddingValues(4.dp), shadow = false,
+        ),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         val rows: List<List<Pair<String, TileState>>> = buildList {

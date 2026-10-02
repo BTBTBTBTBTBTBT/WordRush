@@ -85,6 +85,8 @@ class MainActivity : ComponentActivity() {
         // LevelPlay: region gate -> privacy flags -> init -> preload the
         // game-start interstitial. Dormant until the dashboard keys exist.
         com.wordocious.app.data.AdsManager.start(this)
+        // FINISH_SPEC AO (was W): decide new vs existing player BEFORE this launch is recorded.
+        com.wordocious.app.ui.Onboarding.prime(com.wordocious.app.data.SettingsPref.get(LAST_LAUNCHED_VERSION, -1))
         tagLaunchAfterUpdate()
         // setContentView(ComposeView), NOT the androidx setContent extension:
         // the extension does findViewById(android.R.id.content).getChildAt(0),
@@ -153,6 +155,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = WTheme.bg,
                 ) {
+                  // F2 the cold-start intro's state (drawn last, below); W waits for it.
+                  var intro by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(coldStart) }
                   Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     val isLoading by AuthService.isLoading.collectAsState()
                     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
@@ -184,21 +188,32 @@ class MainActivity : ComponentActivity() {
                             Box(Modifier.fillMaxSize()) {
                                 MainScreen()
                                 // First-run onboarding cover (web WelcomeModal / iOS WelcomeView).
-                                if (profile?.hasOnboarded == false) {
+                                // FINISH_SPEC AO: not while the first-run flow is up (it picks the username itself).
+                                if (profile?.hasOnboarded == false && !com.wordocious.app.ui.Onboarding.coversWelcome) {
                                     com.wordocious.app.ui.WelcomeScreen()
                                 }
+                                // FINISH_SPEC V2: achievement-unlock / new-tier popups, over everything.
+                                com.wordocious.app.ui.AchievementUnlockHost()
+                                // FINISH_SPEC AP: the one-time "Welcome to Pro", full screen, over everything.
+                                com.wordocious.app.ui.ProWelcomeHost()
                             }
                         }
                         isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             // The cast's wave replaces the spinner, with D's rotating tips (MASCOT_SPEC §3, §6).
-                            com.wordocious.app.ui.CastLoader(null, tips = true)
+                            // X: in costume during Halloween.
+                            com.wordocious.app.ui.SeasonalCastLoader(null, tips = true)
                         }
                         else -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
                     }
+                    // FINISH_SPEC AO: the first-run welcome + profile setup (new players only), after
+                    // the intro — over everything, the sign-in gate included (a new install starts signed out).
+                    com.wordocious.app.ui.OnboardingHost(
+                        signedIn = isAuthenticated && !isGuest,
+                        blocked = intro,
+                    )
                   }
                   // F2 the cold-start intro, over the whole window (outside the nav-bar
                   // inset) so its W sits exactly where the launch screen's W was.
-                  var intro by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(coldStart) }
                   if (intro) com.wordocious.app.ui.ColdStartIntro(onDone = { intro = false })
                 }
             }

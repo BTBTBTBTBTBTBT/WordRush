@@ -13,7 +13,11 @@ export interface GameView {
   kind: FriendlyKind;
   title: string;
   me: Side;
-  opponent: { id: string; username: string; avatarUrl: string | null; avatarEmoji: string | null };
+  opponent: {
+    id: string; username: string; avatarUrl: string | null; avatarEmoji: string | null;
+    /** FINISH_SPEC AH/AN3 (additive): avatar choice + active Pro. */
+    avatar_cast_id?: string | null; avatar_frame?: string | null; avatar_config?: Record<string, unknown> | null; is_pro?: boolean;
+  };
   state: FriendlyState;
   status: 'active' | 'done' | 'resigned' | 'expired';
   yourTurn: boolean;

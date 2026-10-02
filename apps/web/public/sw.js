@@ -34,8 +34,10 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Wordocious';
   const options = {
     body: data.body || "Your daily puzzles are ready!",
+    // FINISH_SPEC K2: the app icon B; a large image (the event's cast pose) when the payload carries one.
     icon: '/icon-192.png',
     badge: '/icon-192.png',
+    ...(data.image ? { image: data.image } : {}),
     data: { url: data.url || '/' },
   };
   event.waitUntil(self.registration.showNotification(title, options));

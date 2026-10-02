@@ -87,7 +87,9 @@ enum WidgetBridge {
         let more = moreTotals(byMode: byMode, modes: moreModes.filter { m in puzzleGen.contains { $0.id == m.id } })
         let auth = AuthService.shared
         let snap = Snapshot(day: LeaderboardService.todayLocal(), streak: streak, modes: modes,
-                            points: Int(totals.totalScore + more.totalScore.rounded()), seconds: Int(totals.totalTimeSeconds),
+                            // FINISH_SPEC §AL: the same points the app shows for today (core WidgetStats).
+                            points: WidgetStats.points(wordScore: totals.totalScore, puzzleScore: more.totalScore),
+                            seconds: Int(totals.totalTimeSeconds),
                             shields: auth.headerShields,
                             puzzles: puzzles,
                             username: auth.isAuthenticated ? auth.profile?.username : nil,

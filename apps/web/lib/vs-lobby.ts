@@ -4,7 +4,7 @@
 // fallback result, the lobby's line builders and the record sums. Everything
 // here is pure (or a guarded localStorage read) so it is unit tested.
 
-import { vsClock, LADDER_BOTS, type VsDayResult, type VsRun, type WinLoss } from '@wordle-duel/core';
+import { vsClock, LADDER_BOTS, botCastMember, type VsDayResult, type VsRun, type WinLoss } from '@wordle-duel/core';
 import { MODE_BY_DBKEY } from './modes.generated';
 import type { CpuKind } from './adapters/bot-match-service';
 
@@ -150,18 +150,17 @@ export function liveTileSub(waiting: number, mode: string): string {
   return waiting > 0 ? `${waiting} waiting now in ${modeTitle(mode)}.` : '0 waiting now. A bot steps in at 0:15.';
 }
 
-const botName = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+const botName = (id: string) => botCastMember(id)?.name ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 export function botsTileSub(cleared: number): string {
   if (cleared >= LADDER_BOTS.length) return 'Ladder cleared!';
   return `Ladder ${cleared} of ${LADDER_BOTS.length}. ${botName(LADDER_BOTS[cleared])} is next.`;
 }
 
-/** The ladder's next bot as a CpuKind (Adapt once the ladder is cleared). */
+/** The ladder's next bot as a CpuKind (Umi, the adaptive one, once the ladder is cleared). */
 export function ladderNextKind(cleared: number): CpuKind {
-  const id = LADDER_BOTS[Math.min(cleared, LADDER_BOTS.length - 1)];
-  if (cleared >= LADDER_BOTS.length || id === 'adapt') return 'adaptive';
-  return id === 'rook' ? 'easy' : id === 'lexi' ? 'medium' : 'hard';
+  if (cleared >= LADDER_BOTS.length) return 'umi';
+  return LADDER_BOTS[Math.max(0, cleared)];
 }
 
 /** "Classic · solved in 4 · 1:52 · 17h left" / "Classic · not solved · 17h left". */

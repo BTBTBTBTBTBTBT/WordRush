@@ -19,7 +19,15 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import { HubRankBar, HubAllWordChips, HUB_ACCENT } from './hub-finished';
+import { HubRankBar, HubAllWordChips, HubHive, HUB_ACCENT } from './hub-finished';
+import { GameTray } from '@/components/ui/game-tray';
+import { pieceSrc } from '@/lib/art';
+import { hiveBox, hiveOffsets } from '@/lib/hive-layout';
+import { prefersReducedMotion } from '@/lib/motion';
+
+/** J1: the honeycomb's six outer positions and its box, in tile units. */
+const HIVE_OFFSETS = hiveOffsets();
+const HIVE_BOX = hiveBox();
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -31,20 +39,19 @@ import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { hubElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
-import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
+import { playDelete, playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { CandyButton, candyClass } from '@/components/ui/candy-button';
-import { darken, softMix } from '@/lib/soft-surface';
+import { softPill } from '@/lib/soft-surface';
 
 // Hubbub (More Games §12): seven letters, one required center, words of 4+
 // letters. The game finalizes ONCE — reaching Hubbub (50% of max) is the win,
@@ -341,16 +348,37 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const capsule = (dim: boolean, filled = false) => candyClass({ dim, color: filled ? 'amber' : 'purple' });
   const capsuleStyle = (_dim: boolean, _filled = false) => undefined;
 
-  // FINISH_SPEC B1: the hive letters are the shared glossy tiles — the center
-  // letter in the Hubbub accent, the rest plain light tiles.
-  const letterTile = (ch: string, isCentre: boolean) => (
-    <button key={ch} type="button" onClick={() => { haptic('light'); playKeyTap(); type(ch); }} disabled={state.ended}
-      className="gtile shrink-0"
-      data-s={isCentre ? 'correct' : 'given'}
-      style={{ width: 'var(--tile)', height: 'var(--tile)', padding: 0, border: 0, ['--gt-font' as string]: 'calc(var(--tile) * 0.46)',
-        ...(isCentre ? { ['--gt-edge' as string]: darken(HUB_ACCENT, 0.35), ['--gt-face' as string]: `linear-gradient(${softMix(HUB_ACCENT, 0.7)}, ${HUB_ACCENT} 70%, ${darken(HUB_ACCENT, 0.08)})` } : null) } as React.CSSProperties}
+  // FINISH_SPEC J1: the hive letters are glossy HEXAGONS — art-piece-hex
+  // (lilac) for the six outer letters, art-piece-hex-center (gold) for the
+  // required center letter — laid out as a honeycomb; the letter is drawn on
+  // top (white, dark amber on the gold center). Tap = squish + type pop.
+  const popHex = (el: HTMLElement) => {
+    if (prefersReducedMotion()) return;
+    const inner = el.querySelector<HTMLElement>('.hive-hex-in');
+    if (!inner) return;
+    inner.classList.remove('gt-pop');
+    void inner.offsetWidth;
+    inner.classList.add('gt-pop');
+  };
+  const letterTile = (ch: string, isCentre: boolean, at?: [number, number]) => (
+    <button key={`${ch}-${isCentre ? 'c' : 'o'}`} type="button" onClick={(e) => { haptic('light'); playKeyTap(); type(ch); popHex(e.currentTarget); }} disabled={state.ended}
+      className="hive-hex absolute shrink-0 p-0 border-0 bg-transparent"
+      style={{
+        width: 'var(--tile)', height: 'var(--tile)',
+        left: `calc(50% - var(--tile) / 2 + var(--tile) * ${at ? at[0].toFixed(4) : 0})`,
+        top: `calc(50% - var(--tile) / 2 + var(--tile) * ${at ? at[1].toFixed(4) : 0})`,
+      } as React.CSSProperties}
       aria-label={isCentre ? `${ch}, center letter` : ch}>
-      <b>{ch}</b>
+      <span className="hive-hex-in absolute inset-0 block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={pieceSrc(isCentre ? 'hex-center' : 'hex')} alt="" aria-hidden="true" draggable={false} width={256} height={256}
+          className="absolute inset-0 w-full h-full pointer-events-none select-none" style={{ filter: 'drop-shadow(0 3px 5px rgba(60, 30, 110, 0.22))' }} />
+        <b className="absolute inset-0 flex items-center justify-center font-black uppercase"
+          style={{ fontSize: 'calc(var(--tile) * 0.42)', lineHeight: 1, paddingBottom: 'calc(var(--tile) * 0.04)', color: isCentre ? '#7a3d00' : '#ffffff',
+            textShadow: isCentre ? '0 1px 0 rgba(255, 255, 255, 0.55)' : '0 1px 1px rgba(0, 0, 0, 0.25), 0 2px 3px rgba(40, 10, 80, 0.3)' }}>
+          {ch}
+        </b>
+      </span>
     </button>
   );
 
@@ -367,7 +395,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     const revealed = state.revealed.includes(w);
     return (
       <span key={w} className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${dim ? 'opacity-60' : ''}`}
-        style={pangram ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : revealed ? { background: 'var(--color-surface)', borderColor: '#8b5cf6', color: '#8b5cf6' } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}>
+        // A1: tinted chips — pangrams in the accent, revealed words violet, the rest brand lilac.
+        style={pangram ? { ...softPill(HUB_ACCENT, { bar: false }), color: HUB_ACCENT } : revealed ? { ...softPill('#8b5cf6', { bar: false }), color: '#8b5cf6' } : { ...softPill('#7c3aed', { bar: false }), color: 'var(--color-text)' }}>
         {w}{pangram ? ' ★' : ''}
       </span>
     );
@@ -377,7 +406,6 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   // cluster band (flex: 1, cluster centered), two control rows, found-words header + wrapping chip
   // flow (flex: 1, scrolls, newest first), End link pinned at the bottom. The fixed rows carry
   // refs so the tile formula can subtract them from the column height.
-  const clusterGap = 'calc(var(--tile) * 0.14)';
   const boardView = (
     <div ref={colRef} className="flex-1 min-h-0 flex flex-col px-3">
       <div ref={setFixed(0)} className="shrink-0 pt-1 pb-2">{rankBar}</div>
@@ -391,17 +419,20 @@ export function HubGame({ isDaily = false }: HubGameProps) {
             : <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Tap letters or type · Space shuffles</span>}
         </div>
       </div>
-      {/* Cluster band — the hero. --tile drives side, gap and type size together so the 2-3-2 keeps its proportions. */}
+      {/* Cluster band — the hero. --tile drives the hexagons' side and type size together. */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="flex flex-col items-center" style={{ '--tile': tileCss, gap: clusterGap } as CSSProperties}>
-          <div className="flex" style={{ gap: clusterGap }}>{outer.slice(0, 2).map((ch) => letterTile(ch, false))}</div>
-          <div className="flex" style={{ gap: clusterGap }}>{letterTile(outer[2] ?? '', false)}{letterTile(centre, true)}{letterTile(outer[3] ?? '', false)}</div>
-          <div className="flex" style={{ gap: clusterGap }}>{outer.slice(4, 6).map((ch) => letterTile(ch, false))}</div>
-        </div>
+        {/* FINISH_SPEC J1 + L: the honeycomb (center + six around) on the shared game tray. */}
+        <GameTray accent={HUB_ACCENT} state={state.ended ? (won ? 'won' : 'lost') : 'playing'} padding={10}>
+          <div className="relative" role="group" aria-label="Hive letters"
+            style={{ '--tile': tileCss, width: `calc(var(--tile) * ${HIVE_BOX[0].toFixed(3)})`, height: `calc(var(--tile) * ${HIVE_BOX[1].toFixed(3)})` } as CSSProperties}>
+            {letterTile(centre, true)}
+            {outer.slice(0, 6).map((ch, i) => letterTile(ch, false, HIVE_OFFSETS[i]))}
+          </div>
+        </GameTray>
       </div>
       <div ref={setFixed(2)} className="shrink-0 flex flex-col items-center gap-2 pt-3 pb-2">
         <div className="flex justify-center gap-2" role="group" aria-label="Entry controls">
-          <button type="button" onClick={() => { haptic('light'); playKeyTap(); del(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete"><Delete className="w-3.5 h-3.5" /> Delete</button>
+          <button type="button" onClick={() => { haptic('light'); playDelete(); del(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete"><Delete className="w-3.5 h-3.5" /> Delete</button>
           <button type="button" onClick={shuffle} className={capsule(false)} style={capsuleStyle(false)} aria-label="Shuffle"><Shuffle className="w-3.5 h-3.5" /> Shuffle</button>
           <button type="button" onClick={() => { haptic('light'); submit(); }} className={capsule(false, true)} style={capsuleStyle(false, true)} aria-label="Enter"><CornerDownLeft className="w-3.5 h-3.5" /> Enter</button>
         </div>
@@ -426,51 +457,67 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       </div>
       <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
         {won
-          ? <button type="button" onClick={finish} className="underline flex items-center gap-1" style={{ color: HUB_ACCENT }}><Flag className="w-3 h-3" /> Finish</button>
-          : <button type="button" onClick={endPuzzle} className="underline text-gray-400 flex items-center gap-1"><Flag className="w-3 h-3" /> End puzzle and see answers</button>}
+          ? <button type="button" onClick={finish} className={candyClass({ color: 'amber' })}><Flag className="w-3.5 h-3.5" /> Finish</button>
+          : <button type="button" onClick={endPuzzle} className={candyClass({ color: 'peach' })}><Flag className="w-3.5 h-3.5" /> End puzzle and see answers</button>}
+      </div>
+    </div>
+  );
+
+  // FINISH_SPEC R2: the results on one screen — the strip (words · time ·
+  // points), the rank bar + the hive + a words summary scaled to the room
+  // left, Keep going (a won hunt that has not ended) right above the dock.
+  // Every word (or the words found so far) and the breakdown sit under More.
+  const pangramsFound = (s: HubState) => s.found.filter((w) => s.pangrams.includes(w)).length;
+  const hubFinishedBoard = (s: HubState) => (
+    <div className="flex flex-col items-center gap-2 px-1 pb-1">
+      <div className="w-full">{renderRankBar(s)}</div>
+      <HubHive state={s} />
+      <div className="text-[11px] font-extrabold text-center" style={{ color: 'var(--color-text-muted)' }}>
+        {s.found.length}/{s.words.length} words · {pangramsFound(s)}/{s.pangrams.length} pangram{s.pangrams.length === 1 ? '' : 's'} · {Math.floor((s.points * 100) / Math.max(1, s.max))}%
+      </div>
+    </div>
+  );
+  const allWordsBlock = (s: HubState, ended: boolean) => (
+    <div className="w-full max-w-md mx-auto">
+      <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
+        {ended ? 'ALL WORDS' : `FOUND SO FAR · ${s.words.length - s.found.length} MORE TO FIND`}
+      </div>
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {ended ? allWordChips(s) : wordChips(sortedFound)}
       </div>
     </div>
   );
 
   const resultsView = (
     <>
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="px-4 pt-2 pb-4 animate-fade-in-up flex flex-col gap-3">
-          {rankBar}
-          <ResultCard accent={HUB_ACCENT}>
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-lg font-black" style={{ backgroundColor: `${HUB_ACCENT}15`, border: `2px solid ${HUB_ACCENT}44`, color: HUB_ACCENT }}>
-              {Math.floor((state.points * 100) / Math.max(1, state.max))}%
+      <PuzzleFinished
+        strip={
+          <ResultStrip won={won} guesses={`${state.found.length}/${state.words.length}`} guessLabel="words" time={formatTime(scoredSeconds)} points={points}
+            srText={`${won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}. ${state.points}/${state.max} pts · ${state.found.length}/${state.words.length} words · ${pangramsFound(state)}/${state.pangrams.length} pangram${state.pangrams.length === 1 ? '' : 's'} · ${formatTime(scoredSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
+        }
+        board={hubFinishedBoard(state)}
+        beforeDock={!state.ended ? <CandyButton size="sm" color="purple" onClick={() => setView('board')}>Keep going</CandyButton> : undefined}
+        dock={
+          <FinishedDock currentMode="HUB" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+            onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+            extra={mode === 'daily' ? <DailyRankBadge gameMode="HUB" /> : undefined} />
+        }
+        more={
+          <MoreDisclosure label={state.ended ? 'See all words' : 'Words so far'} accent={HUB_ACCENT}>
+            <div className="flex flex-col gap-3">
+              {allWordsBlock(state, state.ended)}
+              <ScoreBreakdownCard gameMode="HUB" completed={won} guessCount={hubGuessCount(rank)} timeSeconds={scoredSeconds}
+                boardsSolved={hubBoardsSolved(state.points, state.max)} totalBoards={HUB_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
             </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>{won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}</span>
-              <span className="text-xs text-gray-400">{state.points}/{state.max} pts · {state.found.length}/{state.words.length} words · {state.found.filter((w) => state.pangrams.includes(w)).length}/{state.pangrams.length} pangram{state.pangrams.length === 1 ? '' : 's'} · {formatTime(scoredSeconds)}{state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}</span>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <ShareGlyph onShare={handleShare} copied={copied} />
-                {!state.ended && <CandyButton size="sm" color="purple" onClick={() => setView('board')}>Keep going</CandyButton>}
-                {mode === 'daily' && <DailyRankBadge gameMode="HUB" />}
-                {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-              </div>
-            </div>
-          </ResultCard>
-          <div className="w-full max-w-md mx-auto">
-            <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
-              {state.ended ? 'ALL WORDS' : `FOUND SO FAR · ${state.words.length - state.found.length} MORE TO FIND`}
-            </div>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {state.ended ? allWordChips(state) : wordChips(sortedFound)}
-            </div>
-          </div>
-          <ScoreBreakdownCard gameMode="HUB" completed={won} guessCount={hubGuessCount(rank)} timeSeconds={scoredSeconds}
-            boardsSolved={hubBoardsSolved(state.points, state.max)} totalBoards={HUB_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-          {mode === 'daily' && <NextDailyCta currentMode="HUB" />}
-        </div>
-      </div>
+          </MoreDisclosure>
+        }
+      />
       <BottomNav />
     </>
   );
 
   return (
-    <GameBackground mode="HUB" className={`h-screen-stable flex flex-col relative ${view === 'results' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="HUB" className="h-screen-stable flex flex-col relative" style={view === 'results' || completion ? FINISHED_SHELL_PAD : undefined}>
       {/* Victory card (founder, 2026-09-28): the clock is paused under it; the time is the
           moment of the win. "Keep playing" resumes the hunt, "I'm done" ends the puzzle. */}
       {showVictory && <VictoryAnimation mode="HUB" onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points}
@@ -505,18 +552,11 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // rank reached and every word (found ones solid) from the matches row, then the card.
-        <CompletedCustomDaily dbKey="HUB" completion={completion}
-          boardsSolved={elsewhere?.progress?.boardsSolved} totalBoards={elsewhere?.progress?.totalBoards} hintsUsed={elsewhere?.progress?.hintsUsed}>
-          {elsewhere?.state && (
-            <div className="w-full flex flex-col gap-3">
-              {renderRankBar(elsewhere.state)}
-              <div className="w-full max-w-md mx-auto">
-                <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>ALL WORDS</div>
-                <div className="flex flex-wrap justify-center gap-1.5">{allWordChips(elsewhere.state)}</div>
-              </div>
-            </div>
-          )}
-        </CompletedCustomDaily>
+        <PuzzleElsewhere dbKey="HUB" completion={completion}
+          boardsSolved={elsewhere?.progress?.boardsSolved} totalBoards={elsewhere?.progress?.totalBoards} hintsUsed={elsewhere?.progress?.hintsUsed}
+          moreExtra={elsewhere?.state ? allWordsBlock(elsewhere.state, true) : undefined}>
+          {elsewhere?.state && hubFinishedBoard(elsewhere.state)}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-hive flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />

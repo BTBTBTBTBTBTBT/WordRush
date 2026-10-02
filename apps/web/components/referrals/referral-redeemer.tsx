@@ -1,20 +1,24 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { toast } from '@/hooks/use-toast';
+import { ProUnlockedModal } from '@/components/friends/invite-screens';
+import { startProWelcome } from '@/lib/pro-welcome';
 
 /**
  * Silent referral redemption. Mounted once in the root layout: when a
  * signed-in session appears AND a referral code is pending (wr_ref cookie
  * from /join/[code], or referral_code signup metadata from an
- * email-confirmation flow), redeem it server-side and toast the result.
+ * email-confirmation flow), redeem it server-side and celebrate the result
+ * with the T4 "Pro unlocked!" window (docs/FINISH_SPEC.md: W crowned, gold
+ * confetti, "7 days of Pro are yours!", candy "Start playing").
  * The redeem endpoint clears the cookie and is idempotent, so at worst
  * this fires a cheap no-op once per sign-in.
  */
 export function ReferralRedeemer() {
   const { user, session, refreshProfile } = useAuth();
   const attempted = useRef(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
     if (!user || !session || attempted.current) return;
@@ -33,8 +37,13 @@ export function ReferralRedeemer() {
         });
         const data = await res.json();
         if (data.ok) {
+          // AP: a gifted week's first activation gets the full "Welcome to
+          // Pro" screen ("YOUR FREE WEEK OF PRO!"). Signal it BEFORE the
+          // profile refresh so the host sees the not-Pro -> Pro transition.
+          // Redeeming is only possible for never-Pro accounts (proBefore false).
+          const welcomed = startProWelcome(user.id, { kind: 'gift', proBefore: false });
           await refreshProfile();
-          toast({ title: '🎁 Gift claimed', description: '7 days of Wordocious Pro unlocked!' });
+          if (!welcomed) setUnlocked(true);
         }
         // Ineligible/expired stays silent: the user may not even know a
         // cookie was set, and /join/[code] already explains eligibility.
@@ -44,5 +53,5 @@ export function ReferralRedeemer() {
     })();
   }, [user, session, refreshProfile]);
 
-  return null;
+  return unlocked ? <ProUnlockedModal onClose={() => setUnlocked(false)} /> : null;
 }

@@ -16,6 +16,13 @@ enum FriendsService {
         let username: String
         let avatar_url: String?
         var avatar_emoji: String?   // additive (Aug 11): emoji avatar beats the initial
+        /// FINISH_SPEC §AH (additive, optional): the worn cast hero + level-tier frame,
+        /// when the route returns them (nil until then). CastAvatars records them.
+        var avatar_cast_id: String?
+        var avatar_frame: String?
+        /// FINISH_SPEC §AN3 (additive, optional): the build-your-own mascot when the
+        /// route returns it (lenient: a malformed value never fails the row). MascotLooks records it.
+        var avatar_config: AvatarConfigRaw?
         let level: Int
         var since: String?
         var requestedAt: String?
@@ -421,19 +428,21 @@ enum FriendsService {
     }
 }
 
-/// The canned taunt list — MUST mirror apps/web/lib/friends-taunts.ts (ids
-/// are validated server-side; unknown ids 400).
+/// The canned taunt list — the ids MUST mirror apps/web/lib/friends-taunts.ts
+/// (validated server-side; unknown ids 400). The text here is only the picker's
+/// display copy: FINISH_SPEC §AM3, no emoji in UI — the push the friend gets is
+/// built server-side from the id and keeps its emoji (plain-text channel).
 enum FriendTaunts {
     struct Taunt: Identifiable { let id: String; let text: String }
     static let all: [Taunt] = [
-        .init(id: "hi", text: "👋 Hey! Glad we're friends — game on."),
-        .init(id: "sweep", text: "🧹 Swept it. Your move."),
-        .init(id: "silver", text: "🥈 Silver looks good on you"),
-        .init(id: "slowpoke", text: "🐢 Still waiting on you today…"),
-        .init(id: "scoreboard", text: "👀 The scoreboard has spoken"),
-        .init(id: "warmup", text: "📈 Cute score. Was that a warm-up?"),
-        .init(id: "crown", text: "👑 The crown stays here"),
-        .init(id: "rentfree", text: "🏠 Top of the board — rent free"),
-        .init(id: "alarm", text: "⏰ Your daily puzzles miss you"),
+        .init(id: "hi", text: "Hey! Glad we're friends — game on."),
+        .init(id: "sweep", text: "Swept it. Your move."),
+        .init(id: "silver", text: "Silver looks good on you"),
+        .init(id: "slowpoke", text: "Still waiting on you today…"),
+        .init(id: "scoreboard", text: "The scoreboard has spoken"),
+        .init(id: "warmup", text: "Cute score. Was that a warm-up?"),
+        .init(id: "crown", text: "The crown stays here"),
+        .init(id: "rentfree", text: "Top of the board — rent free"),
+        .init(id: "alarm", text: "Your daily puzzles miss you"),
     ]
 }

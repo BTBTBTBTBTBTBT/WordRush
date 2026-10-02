@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { sendApns, isApnsConfigured, type ApnsMessage } from '@/lib/push/apns';
 import { sendFcm, isFcmConfigured, type FcmMessage } from '@/lib/push/fcm';
@@ -16,6 +17,8 @@ export const runtime = 'nodejs';
 // DAILY SWEEP!) so the nudge reads as Wordocious even though iOS/Android own
 // the banner chrome and won't let us style type or color.
 const MESSAGES = [
+  // FINISH_SPEC AE: the shared cast-voice "daily ready" line leads the rotation.
+  { title: PUSH_TITLE, body: pushCopy('dailyReady') },
   { title: 'DAILY CHALLENGE 🔥', body: "Today's puzzles are live. Keep the streak alive." },
   { title: 'NEW PUZZLES! 🧩', body: "A fresh set just dropped. Can you beat yesterday's score?" },
   { title: 'THE SWEEP AWAITS 🧹', body: 'Every daily, one run. Think you can clear them all?' },

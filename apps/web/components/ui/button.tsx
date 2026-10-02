@@ -4,28 +4,47 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
 
+// FINISH_SPEC A8: every action button is the glossy candy pill
+// (components/ui/candy-button.tsx; the look is globals.css `.candy*`). The
+// shadcn variants map onto it — default purple, destructive pink, secondary /
+// outline quiet peach; sizes default → md 40, sm → 32, lg → 52, icon → round.
+// `ghost` and `link` stay flat (text-like controls), and `plain` /
+// `plain-outline` keep the old flat shadcn look for anything that needs it
+// (admin-style tables, the calendar's day grid).
+const CANDY = ['default', 'destructive', 'secondary', 'outline'] as const;
+const FLAT = ['ghost', 'link', 'plain', 'plain-outline'] as const;
+const FLAT_BASE = 'rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline:
-          'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+        default: 'candy candy-purple',
+        destructive: 'candy candy-pink',
+        secondary: 'candy candy-peach',
+        outline: 'candy candy-peach',
+        ghost: `${FLAT_BASE} hover:bg-accent hover:text-accent-foreground`,
+        link: `${FLAT_BASE} text-primary underline-offset-4 hover:underline`,
+        plain: `${FLAT_BASE} bg-primary text-primary-foreground hover:bg-primary/90`,
+        'plain-outline': `${FLAT_BASE} border border-input bg-background hover:bg-accent hover:text-accent-foreground`,
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
-        icon: 'h-10 w-10',
+        default: '',
+        sm: '',
+        lg: '',
+        icon: '',
       },
     },
+    compoundVariants: [
+      { variant: [...CANDY], size: 'default', class: 'candy-md' },
+      { variant: [...CANDY], size: 'sm', class: 'candy-sm' },
+      { variant: [...CANDY], size: 'icon', class: 'candy-round' },
+      { variant: [...FLAT], size: 'default', class: 'h-10 px-4 py-2' },
+      { variant: [...FLAT], size: 'sm', class: 'h-9 rounded-md px-3' },
+      { variant: [...FLAT], size: 'lg', class: 'h-11 rounded-md px-8' },
+      { variant: [...FLAT], size: 'icon', class: 'h-10 w-10' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',

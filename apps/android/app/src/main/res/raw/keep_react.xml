@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC AM1: the reaction art (art_react_clap|fire|wow|grr|rematch|heart) is
+     looked up by name (ReactionArt.kt, getIdentifier) so it can ship later without code
+     changes; keep it through resource shrinking. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_react_*" />

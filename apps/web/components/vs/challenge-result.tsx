@@ -1,12 +1,16 @@
 'use client';
 
-import { Swords, X } from 'lucide-react';
+import { Swords } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
+import { HeaderGlyph } from '@/components/ui/header-glyph';
+import { CandyButton } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { PageBackground } from '@/components/ui/page-background';
 import { challengeHeadline, vsClock, vsMargin, type VsRun } from '@wordle-duel/core';
 import { challengeSentSub, h2hLine, modeColor, modeTitle, rowStates } from '@/lib/vs-lobby';
 import type { HeadToHeadRecord } from '@/lib/head-to-head';
-import { InitialAvatar, VsModeIcon } from './vs-ui';
+import { InitialAvatar, VS_LIGHT_VARS, VsCard, VsModeIcon } from './vs-ui';
 import { ResultHost } from '@/components/ui/mascot';
 import { vsResultHost } from '@/lib/mascots';
 import { MomentArt } from '@/components/ui/art-title';
@@ -96,14 +100,14 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
         {label}
       </span>
       <MiniBoard mode={mode} side={side} solutions={solutions} />
-      <span className="font-black" style={{ fontSize: 22, color: '#4c1d95', lineHeight: 1.1 }}>{vsClock(side.run.timeMs)}</span>
+      <SoftNum size={24} style={{ lineHeight: 1.1 }}>{vsClock(side.run.timeMs)}</SoftNum>
       <span className="text-[10px] font-black" style={{ color: '#6d28d9', letterSpacing: 0.6 }}>{solvedLine(side.run)}</span>
     </div>
   );
   const h2hText = h2h ? h2hLine(h2h.myWins, h2h.theirWins).text : null;
 
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ backgroundColor: '#f8f7ff' }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen overflow-y-auto" style={VS_LIGHT_VARS}>
       <div className="max-w-md mx-auto px-4 py-3 space-y-3.5">
         <TopBar onClose={onClose} />
 
@@ -120,10 +124,8 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
             <div className="flex items-center gap-1.5">
               <Swords className="w-[18px] h-[18px] shrink-0" style={{ color: '#7c3aed' }} />
               {/* YOU WIN! / YOU LOSE / DRAW lettering (docs/ART_SPEC.md §6), the race line under it. */}
-              <MomentArt moment={resultMoment(outcome)} as="div" widthPct={85} className="flex-1 min-w-0" />
-              <button type="button" onClick={onShare} aria-label="Share the result" className="shrink-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
-                <Icon3D name="share" size={24} />
-              </button>
+              <MomentArt moment={resultMoment(outcome)} as="div" level={3} widthPct={85} className="flex-1 min-w-0" />
+              <HeaderGlyph icon="share" label="Share the result" onClick={onShare} className="shrink-0" />
             </div>
             <span className="text-center font-black" style={{ fontSize: 12.5, letterSpacing: 0.4, lineHeight: 1.2, color: '#4c1d95' }}>{challengeHeadline(outcome, them.name)}</span>
             <div className="flex items-center gap-1.5">
@@ -144,27 +146,27 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
         )}
 
         {(h2hText || xp) && (
-          <div className="flex items-center gap-3 p-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: '0 2px 10px rgba(76,29,149,0.07)' }}>
-            <InitialAvatar name={them.name} url={them.avatarUrl} size={36} />
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black uppercase truncate" style={{ color: '#6b7280', letterSpacing: 0.8 }}>YOU AND @{them.name}</div>
-              {h2hText && <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{h2hText}</div>}
+          <VsCard accent="#7c3aed">
+            <div className="flex items-center gap-3 p-3">
+              <InitialAvatar name={them.name} url={them.avatarUrl} size={36} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-black uppercase truncate" style={{ color: '#6b7280', letterSpacing: 0.8 }}>YOU AND @{them.name}</div>
+                {h2hText && <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{h2hText}</div>}
+              </div>
+              {xp ? (
+                <span className="shrink-0 flex items-baseline gap-0.5 px-2.5 py-1 text-[11px] font-black rounded-full" style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', color: '#92400e' }}>+<SoftNum size={14}>{xp}</SoftNum> XP</span>
+              ) : null}
             </div>
-            {xp ? (
-              <span className="shrink-0 px-2.5 py-1 text-[11px] font-black rounded-full" style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>+{xp} XP</span>
-            ) : null}
-          </div>
+          </VsCard>
         )}
 
-        <button type="button" onClick={onChallengeBack} className="w-full flex flex-col items-center py-3 text-white transition-transform active:scale-[0.98]" style={{ background: '#7c3aed', borderRadius: 14 }}>
-          <span className="text-[15px] font-black" style={{ letterSpacing: 0.6 }}>CHALLENGE BACK</span>
-          <span className="text-[11px] font-bold opacity-85">new puzzle, {them.name} races you</span>
-        </button>
-        <button type="button" onClick={onHome} className="w-full py-3 text-[14px] font-black transition-transform active:scale-[0.98]" style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-          VS HOME
-        </button>
+        <div className="space-y-1">
+          <CandyButton color="purple" size="lg" block icon="replay" onClick={onChallengeBack}>CHALLENGE BACK</CandyButton>
+          <p className="text-center text-[11px] font-bold" style={{ color: '#6d28d9' }}>New puzzle, {them.name} races you</p>
+        </div>
+        <CandyButton color="peach" size="md" block onClick={onHome}>VS HOME</CandyButton>
       </div>
-    </div>
+    </PageBackground>
   );
 }
 
@@ -186,7 +188,7 @@ export function ChallengeSent({ mode, run, guessLog, solutions, code, link, erro
   onHome: () => void;
 }) {
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ backgroundColor: '#f8f7ff' }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen overflow-y-auto" style={VS_LIGHT_VARS}>
       <div className="max-w-md mx-auto px-4 py-3 space-y-3.5">
         <TopBar onClose={onHome} />
         <div className="relative overflow-hidden" style={{ borderRadius: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #ebd6fd, #e2e6ff)', boxShadow: '0 4px 14px rgba(76,29,149,0.08)' }}>
@@ -201,19 +203,15 @@ export function ChallengeSent({ mode, run, guessLog, solutions, code, link, erro
           </div>
           <div className="relative flex flex-col items-center gap-2" style={{ padding: '16px 12px' }}>
             <MiniBoard mode={mode} side={{ run, guessLog }} solutions={solutions} />
-            <span className="font-black" style={{ fontSize: 22, color: '#4c1d95' }}>{vsClock(run.timeMs)}</span>
-            {code && <span className="text-[11px] font-black" style={{ color: '#6d28d9', letterSpacing: 2 }}>CODE {code}</span>}
+            <SoftNum size={26}>{vsClock(run.timeMs)}</SoftNum>
+            {code && <span className="flex items-baseline gap-1.5 text-[11px] font-black" style={{ color: '#6d28d9', letterSpacing: 2 }}>CODE <SoftNum size={15} style={{ letterSpacing: 2 }}>{code}</SoftNum></span>}
           </div>
         </div>
         {link && code && !error && (
-          <button type="button" onClick={onShare} className="w-full py-3 text-[15px] font-black text-white transition-transform active:scale-[0.98]" style={{ background: '#7c3aed', borderRadius: 14 }}>
-            SHARE LINK
-          </button>
+          <CandyButton color="teal" size="lg" block icon="share" onClick={onShare}>SHARE LINK</CandyButton>
         )}
-        <button type="button" onClick={onHome} className="w-full py-3 text-[14px] font-black transition-transform active:scale-[0.98]" style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-          VS HOME
-        </button>
+        <CandyButton color="peach" size="md" block onClick={onHome}>VS HOME</CandyButton>
       </div>
-    </div>
+    </PageBackground>
   );
 }

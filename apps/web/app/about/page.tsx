@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ABOUT_SECTIONS } from '@/lib/content/static-content';
-import { InfoPageHeader } from '@/components/ui/info-page-header';
+import { CandyLink } from '@/components/ui/candy-button';
+import { InfoPageLayout, IntroCard, IntroText, SectionCard, infoAccent } from '@/components/ui/info-page';
 
 export const metadata: Metadata = {
   title: 'About Wordocious — Daily Word Games',
@@ -9,46 +9,37 @@ export const metadata: Metadata = {
     'Wordocious is a free online puzzle game with nineteen ways to play: Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, real-time VS Battles, and ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Play daily puzzles, climb leaderboards, and compete with friends.',
 };
 
-const CARD = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' } as const;
-
 export default function AboutPage() {
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <InfoPageHeader title="About Wordocious" />
-      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Daily Word Games &mdash; the same puzzles for everyone</p>
+    <InfoPageLayout title="About Wordocious">
+      <IntroCard title={<>Daily Word Games &mdash; the same puzzles for everyone</>} />
 
-        <div className="space-y-4">
-          {ABOUT_SECTIONS.map((section) => (
-            <div key={section.heading} style={CARD} className="p-5">
-              <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>{section.heading}</h2>
-              {section.paragraphs?.map((p, i) => (
-                <p key={i} className="text-xs leading-relaxed mb-3 last:mb-0" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
-              ))}
-              {section.items && (
-                <div className="space-y-3">
-                  {section.items.map((item) => (
-                    <div key={item.heading}>
-                      <h3 className="text-xs font-black" style={{ color: item.accent ?? '#7c3aed' }}>{item.heading}</h3>
-                      <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{item.body}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      {ABOUT_SECTIONS.map((section, si) => (
+        <SectionCard key={section.heading} heading={section.heading} accent={infoAccent(si)}>
+          {section.paragraphs?.map((p, i) => (
+            <p key={i} className="text-xs leading-relaxed mb-3 last:mb-0" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
           ))}
-
-          {/* More Information (static chrome — links to legal pages) */}
-          <div style={CARD} className="p-5">
-            <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>More Information</h2>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/how-to-play" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>How to Play</Link>
-              <Link href="/privacy" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>Privacy Policy</Link>
-              <Link href="/terms" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>Terms of Service</Link>
+          {section.items && (
+            <div className="space-y-3">
+              {section.items.map((item) => (
+                <div key={item.heading}>
+                  <h3 className="text-xs font-black" style={{ color: item.accent ?? '#7c3aed' }}>{item.heading}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{item.body}</p>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
+        </SectionCard>
+      ))}
+
+      {/* More Information (static chrome — links to the footer pages; A8 candy buttons) */}
+      <SectionCard heading="More Information" accent={infoAccent(ABOUT_SECTIONS.length)}>
+        <div className="flex flex-wrap gap-2 mt-1">
+          <CandyLink href="/how-to-play" color="purple" size="sm">How to Play</CandyLink>
+          <CandyLink href="/privacy" color="peach" size="sm">Privacy Policy</CandyLink>
+          <CandyLink href="/terms" color="peach" size="sm">Terms of Service</CandyLink>
         </div>
-      </div>
-    </div>
+      </SectionCard>
+    </InfoPageLayout>
   );
 }

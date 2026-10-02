@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Clock, Target, Zap, Medal, Sparkles, TrendingUp, Star, BookOpen, LayoutGrid } from 'lucide-react';
-import { Icon3D, Flame3D, Trophy3D } from '@/components/ui/icon3d';
+import { Clock, Target, Zap, Sparkles, TrendingUp, Star, BookOpen, LayoutGrid } from 'lucide-react';
+import { Icon3D, Flame3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { getUserSweepRank, getUserAllTimeSweepRank, type AllTimeRecord } from '@/lib/daily-service';
@@ -11,9 +11,14 @@ import { shareTrophyCaseCard } from '@/lib/leaderboard-share-flow';
 import { modeByKey } from '@/components/profile/mode-picker';
 import {
   fetchAllTimeRecordsShared, RECORD_LABELS, recordValue, recordLabel, formatRecordTime, SHIELD_EVERY,
-  MyStatCell, type UserStatRow,
+  type UserStatRow,
 } from '@/lib/records-ui';
-import { isGameArtIcon, onPageShadow } from '@/lib/art';
+import { isGameArtIcon } from '@/lib/art';
+import type { IconLike } from '@/components/ui/icon3d';
+import { SoftNum } from '@/components/ui/soft-number';
+import { HeaderGlyph } from '@/components/ui/header-glyph';
+import { alphaHex, cardBarStyle, softBorder, softCard, softPill } from '@/lib/soft-surface';
+import { MedalArt, TrophyMedal } from '@/components/stats/medal-art';
 
 // YOUR RECORDS, folded into the Stats tab (Stats + Friends redesign D2 step 3,
 // founder 2026-09-26: the Records tab goes "so long as the information
@@ -98,23 +103,40 @@ export function useYourRecords(userId: string | undefined, stats: UserStatRow[])
   return data.loading && cached ? cached : data;
 }
 
-const card: React.CSSProperties = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() };
+// A1: every records card takes its accent's wash (never plain white) and the 10 px top bar.
+const card = (accent: string): React.CSSProperties => softCard(accent, { radius: 18 });
+const Bar = ({ accent, gradient }: { accent: string; gradient?: string }) => (
+  <div aria-hidden="true" style={gradient ? { height: 10, background: gradient } : cardBarStyle(accent)} />
+);
+
+/** One record stat: icon, a soft number (A2), the label under it. */
+function MyStatCell({ icon: Icon, value, label, color, dim }: { icon: IconLike; value: string; label: string; color: string; dim?: boolean }) {
+  return (
+    <div className="flex items-start gap-2.5 p-2">
+      <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: dim ? 'var(--color-text-muted)' : color }} />
+      <div className="min-w-0 flex-1">
+        <SoftNum size={17} as="div" className="soft-num-auto leading-tight" style={dim ? { opacity: 0.55 } : undefined}>{value}</SoftNum>
+        <div className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{label}</div>
+      </div>
+    </div>
+  );
+}
 
 /** Next Up — the next streak shield and your three closest record chases. */
 export function NextUpCard({ dailyStreak, chases }: { dailyStreak: number; chases: Chase[] }) {
   const nextShield = (Math.floor(dailyStreak / SHIELD_EVERY) + 1) * SHIELD_EVERY;
   const top = chases.slice(0, 3);
   return (
-    <div className="overflow-hidden" style={card}>
-      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899)' }} />
+    <div className="overflow-hidden" style={card('#a855f7')}>
+      <Bar accent="#a855f7" gradient="linear-gradient(90deg, #a78bfa, #ec4899)" />
       <div className="px-4 pt-3 pb-4">
-        <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Next Up</div>
+        <div className="text-[10px] font-black uppercase tracking-wider mb-2 tint-ink" style={{ color: '#6d28d9' }}>Next Up</div>
         <div className="mb-3">
           <div className="flex items-center justify-between text-[11px] font-extrabold mb-1">
             <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Icon3D name="flame" size={14} />{nextShield}-day streak shield</span>
-            <span style={{ color: 'var(--color-text-muted)' }}>{dailyStreak}/{nextShield}</span>
+            <SoftNum size={13} className="soft-num-auto">{dailyStreak} / {nextShield}</SoftNum>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: alphaHex('#f97316', 0.16) }}>
             <div className="h-full rounded-full" style={{ width: `${Math.min(100, (dailyStreak / nextShield) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)' }} />
           </div>
         </div>
@@ -126,7 +148,7 @@ export function NextUpCard({ dailyStreak, chases }: { dailyStreak: number; chase
                   <TrendingUp className="w-3.5 h-3.5 shrink-0" style={{ color: '#7c3aed' }} />
                   <span className="flex-1 truncate">You&apos;re <b style={{ color: 'var(--color-text)' }}>{c.gap}</b> from the {c.label} record</span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: alphaHex('#7c3aed', 0.14) }}>
                   <div className="h-full rounded-full" style={{ width: `${Math.min(100, c.pct)}%`, background: 'linear-gradient(90deg, #a78bfa, #7c3aed)' }} />
                 </div>
               </div>
@@ -142,10 +164,10 @@ export function NextUpCard({ dailyStreak, chases }: { dailyStreak: number; chase
 export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pick<YourRecordsData, 'sweep' | 'sweepRankToday' | 'sweepRankAllTime'>) {
   const color = '#4f46e5';
   return (
-    <div className="overflow-hidden" style={card}>
-      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+    <div className="overflow-hidden" style={card(color)}>
+      <Bar accent={color} />
       <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={softPill(color, { radius: 10 })}>
           <Sparkles className="w-4 h-4" style={{ color }} />
         </div>
         <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Daily Sweeps</div>
@@ -154,12 +176,12 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
         <div className="px-4 pb-3">
           <div className="grid grid-cols-2 gap-1">
             <MyStatCell icon={Sparkles} value={`${sweep.sweepCount}`} label="Daily Sweeps" color="#7c3aed" />
-            <MyStatCell icon={Trophy3D} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
+            <MyStatCell icon={TrophyMedal} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
             <MyStatCell icon={Flame3D} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
             <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatRecordTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
           </div>
           {(sweepRankToday || sweepRankAllTime || sweep.currentFlawlessStreak > 0) && (
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: `1.5px dashed ${alphaHex(color, 0.25)}` }}>
               {sweepRankToday && (
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                   Today: <span className="font-black" style={{ color }}>#{sweepRankToday.rank}</span> of {sweepRankToday.totalPlayers}
@@ -172,7 +194,7 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
               )}
               {sweep.currentFlawlessStreak > 0 && (
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  <Icon3D name="trophy" size={12} inline /> Flawless: <span className="font-black" style={{ color: '#d97706' }}>×{sweep.currentFlawlessStreak}</span>
+                  <MedalArt medal="trophy" size={12} inline /> Flawless: <span className="font-black" style={{ color: '#d97706' }}>×{sweep.currentFlawlessStreak}</span>
                   {sweep.bestFlawlessStreak > sweep.currentFlawlessStreak ? ` · best ${sweep.bestFlawlessStreak}` : ''}
                 </span>
               )}
@@ -181,7 +203,7 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
         </div>
       ) : (
         <div className="py-5 text-center">
-          <Icon3D name="trophy" size={28} className="mx-auto mb-1.5" />
+          <MedalArt medal="trophy" size={28} className="mx-auto mb-1.5" />
           <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
         </div>
       )}
@@ -199,10 +221,10 @@ export interface PuzzleRecords { sweepDays: number; flawlessDays: number; bestSw
 export function PuzzleSweepRecordsCard({ rec }: { rec: PuzzleRecords | null }) {
   const color = '#db2777';
   return (
-    <div className="overflow-hidden" style={card}>
-      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+    <div className="overflow-hidden" style={card(color)}>
+      <Bar accent={color} />
       <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={softPill(color, { radius: 10 })}>
           <LayoutGrid className="w-4 h-4" style={{ color }} />
         </div>
         <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Puzzles Sweeps</div>
@@ -210,7 +232,7 @@ export function PuzzleSweepRecordsCard({ rec }: { rec: PuzzleRecords | null }) {
       {rec && (rec.sweepDays > 0 || rec.flawlessDays > 0) ? (
         <div className="px-4 pb-3 grid grid-cols-2 gap-1">
           <MyStatCell icon={Sparkles} value={`${rec.sweepDays}`} label="Puzzles Sweeps" color={color} />
-          <MyStatCell icon={Trophy3D} value={`${rec.flawlessDays}`} label="Puzzles Flawless" color="#d97706" />
+          <MyStatCell icon={TrophyMedal} value={`${rec.flawlessDays}`} label="Puzzles Flawless" color="#d97706" />
           <MyStatCell icon={TrendingUp} value={`${rec.bestSweep}`} label="Best Sweep Run" color="#2563eb" />
           <MyStatCell icon={Flame3D} value={`${rec.bestFlawless}`} label="Best Flawless Run" color="#f97316" />
         </div>
@@ -229,10 +251,10 @@ export function WordQuizRecordCard({ rec }: { rec: { streak: number; best: numbe
   if (!rec || rec.answered === 0) return null;
   const color = '#7c3aed';
   return (
-    <div className="overflow-hidden" style={card}>
-      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+    <div className="overflow-hidden" style={card(color)}>
+      <Bar accent={color} />
       <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={softPill(color, { radius: 10 })}>
           <BookOpen className="w-4 h-4" style={{ color }} />
         </div>
         <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Word of the Day</div>
@@ -254,12 +276,12 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
   const chase = chases.find((c) => c.gameMode === dbKey);
   const fmt = (rt: string, v: number | null | undefined) => (v == null || v === 0 ? '—' : recordValue(rt, v, dbKey));
   return (
-    <div className="overflow-hidden" style={card}>
-      <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+    <div className="overflow-hidden" style={card(color)}>
+      <Bar accent={color} />
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Your Records</div>
         {held.length > 0 && (
-          <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: 'var(--color-highlight-gold)', color: '#d97706' }}>
+          <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5" style={{ ...softPill('#f5a524', { bar: false }), color: '#b45309' }}>
             <Icon3D name="crown" size={14} /> {held.length} all-time record{held.length === 1 ? '' : 's'}
           </span>
         )}
@@ -268,17 +290,17 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
         <MyStatCell icon={Clock} value={fmt('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
         <MyStatCell icon={Target} value={fmt('fewest_guesses', my?.best_score)} label={recordLabel('fewest_guesses', dbKey)} color={color} dim={!my?.best_score} />
         <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
-        <MyStatCell icon={Trophy3D} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
+        <MyStatCell icon={TrophyMedal} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
       </div>
       {(held.length > 0 || chase) && (
-        <div className="px-4 pb-3 space-y-1.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+        <div className="px-4 pb-3 space-y-1.5" style={{ borderTop: `1.5px dashed ${alphaHex(color, 0.25)}` }}>
           {held.map((r) => {
             const cfg = RECORD_LABELS[r.record_type];
             return (
               <div key={`${r.record_type}-${r.play_type}`} className="flex items-center gap-2 pt-2 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 <Icon3D name="crown" size={14} className="shrink-0" />
                 <span className="flex-1 truncate">You hold the all-time <b style={{ color: 'var(--color-text)' }}>{cfg?.label ?? r.record_type}</b> record</span>
-                <span className="font-black" style={{ color: '#d97706' }}>{recordValue(r.record_type, r.record_value, dbKey)}</span>
+                <SoftNum size={14} className="soft-num-auto">{recordValue(r.record_type, r.record_value, dbKey)}</SoftNum>
               </div>
             );
           })}
@@ -288,7 +310,7 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
                 <TrendingUp className="w-3.5 h-3.5 shrink-0" style={{ color }} />
                 <span className="flex-1 truncate">You&apos;re <b style={{ color: 'var(--color-text)' }}>{chase.gap}</b> from the {chase.label} record</span>
               </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: alphaHex(color, 0.14) }}>
                 <div className="h-full rounded-full" style={{ width: `${Math.min(100, chase.pct)}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }} />
               </div>
             </div>
@@ -304,24 +326,24 @@ export function RecordsHeldRow({ recordsHeld }: { recordsHeld: AllTimeRecord[] }
   const { profile } = useAuth();
   return (
     <div className="grid grid-cols-2 gap-3">
-      <div className="overflow-hidden" style={card}>
+      <div className="overflow-hidden" style={card('#f5a524')}>
         <div className="px-4 py-3">
-          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Medals</div>
+          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5 tint-ink" style={{ color: '#a2560c' }}>Medals</div>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#d97706' }}><Icon3D name="crown" size={14} />{(profile as any)?.gold_medals ?? 0}</span>
-            <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#9ca3af' }}><Medal className="w-3.5 h-3.5" />{(profile as any)?.silver_medals ?? 0}</span>
-            <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#b45309' }}><Medal className="w-3.5 h-3.5" />{(profile as any)?.bronze_medals ?? 0}</span>
+            <span className="flex items-center gap-1"><MedalArt medal="gold" size={20} /><SoftNum size={15} className="soft-num-auto">{(profile as any)?.gold_medals ?? 0}</SoftNum></span>
+            <span className="flex items-center gap-1"><MedalArt medal="silver" size={20} /><SoftNum size={15} className="soft-num-auto">{(profile as any)?.silver_medals ?? 0}</SoftNum></span>
+            <span className="flex items-center gap-1"><MedalArt medal="bronze" size={20} /><SoftNum size={15} className="soft-num-auto">{(profile as any)?.bronze_medals ?? 0}</SoftNum></span>
           </div>
           <div className="text-[10px] font-bold mt-1.5" style={{ color: 'var(--color-text-muted)' }}>every medal is listed below</div>
         </div>
       </div>
-      <Link href="/records" className="overflow-hidden block" style={card}>
+      <Link href="/records" className="overflow-hidden block" style={card('#7c3aed')}>
         <div className="px-4 py-3">
-          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Global Records</div>
-          <div className="flex items-center gap-1.5 font-black text-2xl" style={{ color: recordsHeld.length ? '#d97706' : 'var(--color-text-muted)' }}>
-            <Star className="w-5 h-5" />{recordsHeld.length}
+          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5 tint-ink" style={{ color: '#6d28d9' }}>Global Records</div>
+          <div className="flex items-center gap-1.5">
+            <Star className="w-5 h-5" style={{ color: recordsHeld.length ? '#d97706' : 'var(--color-text-muted)' }} /><SoftNum size={24} className="soft-num-auto">{recordsHeld.length}</SoftNum>
           </div>
-          <div className="text-[10px] font-bold mt-0.5" style={{ color: '#7c3aed' }}>all-time record{recordsHeld.length !== 1 ? 's' : ''} held · Hall of Fame →</div>
+          <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>all-time record{recordsHeld.length !== 1 ? 's' : ''} held · Hall of Fame</div>
         </div>
       </Link>
     </div>
@@ -364,20 +386,13 @@ export function TrophyShelf({ recordsHeld }: { recordsHeld: AllTimeRecord[] }) {
     finally { setSharing(false); }
   };
   return (
-    <div className="overflow-hidden" style={card}>
-      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
-      <div className="px-4 pt-2 pb-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Your Trophy Shelf</div>
-          <button
-            onClick={shareShelf}
-            disabled={sharing}
-            aria-label="Share trophy shelf"
-            className="p-1 -my-1 active:scale-95 transition-transform"
-            style={{ color: 'var(--color-text-muted)', opacity: sharing ? 0.4 : 1 }}
-          >
-            <Icon3D name="share" size={17} />
-          </button>
+    <div className="overflow-hidden" style={card('#f5a524')}>
+      <Bar accent="#f5a524" gradient="linear-gradient(90deg, #fbbf24, #d97706)" />
+      <div className="px-4 pt-1 pb-3">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] font-black uppercase tracking-wider tint-ink" style={{ color: '#a2560c' }}>Your Trophy Shelf</div>
+          {/* A3: the bare 3D share icon. */}
+          <HeaderGlyph icon="share" label="Share trophy shelf" onClick={shareShelf} disabled={sharing} size={20} style={{ opacity: sharing ? 0.4 : 1, marginRight: -10 }} />
         </div>
         {marquee.length > 0 && (
           <div className="space-y-1.5 mb-2">
@@ -387,20 +402,20 @@ export function TrophyShelf({ recordsHeld }: { recordsHeld: AllTimeRecord[] }) {
               const accent = accentOf(r.game_mode);
               return (
                 <div key={`mq-${r.record_type}-${r.game_mode}`} className="flex items-center gap-3 p-3"
-                  style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', border: '1px solid #fde68a', borderRadius: '12px' }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${accent}18` }}>
+                  style={softPill('#f5a524', { radius: 14 })}>
+                  <div className="w-10 h-10 flex items-center justify-center shrink-0" style={softPill(accent, { radius: 12, bar: false })}>
                     {glyph(r.game_mode, 40)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-wider truncate" style={{ color: '#92400e' }}>
+                    <div className="text-[10px] font-black uppercase tracking-wider truncate tint-ink" style={{ color: '#92400e' }}>
                       {r.game_mode ? modeByKey(r.game_mode).title : 'Global'} · {cfg?.label ?? r.record_type}
                     </div>
-                    <div className="text-2xl font-black leading-tight" style={{ color: '#d97706' }}>
+                    <SoftNum size={24} as="div" className="soft-num-auto leading-tight">
                       {cfg ? recordValue(r.record_type, r.record_value, r.game_mode) : r.record_value}
-                    </div>
+                    </SoftNum>
                   </div>
                   {since && (
-                    <div className="text-[10px] font-bold shrink-0 text-right" style={{ color: '#b45309' }}>
+                    <div className="text-[10px] font-bold shrink-0 text-right tint-ink" style={{ color: '#b45309' }}>
                       held since<br />{since}
                     </div>
                   )}
@@ -419,13 +434,13 @@ export function TrophyShelf({ recordsHeld }: { recordsHeld: AllTimeRecord[] }) {
                   <GIcon className="w-3 h-3" style={{ color: '#d97706' }} />
                   {cfg?.label ?? g.type}
                 </div>
-                <div className="flex flex-wrap gap-1.5 pb-1.5" style={{ borderBottom: '1px solid #fde68a55' }}>
+                <div className="flex flex-wrap gap-1.5 pb-1.5" style={{ borderBottom: `1.5px dashed ${alphaHex('#f5a524', 0.25)}` }}>
                   {g.rows.map((r) => {
                     const accent = accentOf(r.game_mode);
                     return (
                       <div key={`${r.record_type}-${r.game_mode ?? 'g'}-${r.play_type ?? 'g'}`}
-                        className="flex items-center gap-1.5 pl-1.5 pr-2 py-1" style={{ background: 'var(--color-bg)', borderRadius: '9px' }}>
-                        <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ background: `${accent}18` }}>
+                        className="flex items-center gap-1.5 pl-1.5 pr-2 py-1" style={{ background: alphaHex(accent, 0.1), border: softBorder(accent, 0.1, 1), borderRadius: '9px' }}>
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ background: alphaHex(accent, 0.16) }}>
                           {glyph(r.game_mode, 20)}
                         </div>
                         <span className="text-[11px] font-black" style={{ color: accent }}>

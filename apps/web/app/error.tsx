@@ -3,7 +3,10 @@
 import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 import { ArtScene } from '@/components/ui/art-scene';
+import { CandyButton } from '@/components/ui/candy-button';
+import { BRAND_BAR, StateCard } from '@/components/ui/soft-popup';
 import { PAGE_SCENES } from '@/lib/art';
+import { softBackground } from '@/lib/soft-surface';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -13,22 +16,19 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="text-center">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: softBackground('#7c3aed', 0.06) }}>
+      {/* G5: a tinted card with the brand top bar and the candy Try Again. */}
+      <StateCard gradient={BRAND_BAR}>
         {/* R, unplugged, waits it out with you (docs/ART_SPEC.md §7). */}
         <div className="flex justify-center mb-3">
           <ArtScene scene={PAGE_SCENES.offline} priority />
         </div>
         <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--color-text)' }}>Something went wrong</h1>
-        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Don't worry, your streak is safe.</p>
-        <button
-          onClick={reset}
-          className="btn-3d px-6 py-2.5 rounded-xl text-white font-black text-sm"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
-        >
+        <p className="text-sm font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>Don't worry, your streak is safe.</p>
+        <CandyButton color="purple" size="md" icon="replay" onClick={reset}>
           Try Again
-        </button>
-      </div>
+        </CandyButton>
+      </StateCard>
     </div>
   );
 }

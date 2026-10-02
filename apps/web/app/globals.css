@@ -1083,11 +1083,12 @@
 /* ── A2 · Soft numbers: Nunito Black, dark purple, tabular, a soft white text shadow (never gradient digits) ── */
 .soft-num {
   font-weight: 900;
-  color: #3b1a78;
+  /* Theme-aware (the dark-mode ink vars at the end of this file): #3b1a78 on light, lilac on dark. */
+  color: var(--soft-ink, #3b1a78);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
   line-height: 1;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(76, 29, 149, 0.18);
+  text-shadow: var(--soft-num-shadow, 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(76, 29, 149, 0.18));
 }
 [data-theme="dark"] [data-page-scheme="auto"] .soft-num,
 [data-theme="dark"] .soft-num-auto { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
@@ -1237,3 +1238,454 @@
 [data-reduced-motion="true"] .intro-pop,
 [data-reduced-motion="true"] .intro-bounce { animation: none !important; }
 [data-reduced-motion="true"] .gt-cover { display: none; }
+
+/* ── C3 · Stats tab + profile tinted tiles (app/stats, components/stats, components/profile):
+   a tile's small tracked label is drawn in its accent's deep ink on the light wash; on
+   the dark theme's dark surfaces it falls back to the muted text so it stays readable. ── */
+[data-theme="dark"] .tint-ink { color: var(--color-text-muted) !important; }
+[data-theme="dark"] .tint-ink-strong { color: var(--color-text) !important; }
+
+/* ── G2 / G3 · Popups + celebrations (components/effects/sweep-celebration.tsx,
+   components/modals/streak-shield-modal.tsx, components/ui/soft-popup.tsx):
+   the big scene art springs in with a bounce over a soft pulsing glow; Reduce
+   Motion (OS or the in-app toggle) turns the spring into a plain fade and
+   stills the glow. Section labels inside windows read in the muted ink on the
+   dark theme. ── */
+.celebrate-spring { animation: celebrate-spring 760ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@keyframes celebrate-spring {
+  0% { opacity: 0; transform: scale(0.3) translateY(18%) rotate(-6deg); }
+  55% { opacity: 1; transform: scale(1.12) translateY(-4%) rotate(2deg); }
+  78% { transform: scale(0.96) rotate(-1deg); }
+  100% { opacity: 1; transform: none; }
+}
+.celebrate-glow { animation: celebrate-glow 2.4s ease-in-out infinite; }
+@keyframes celebrate-glow { 0%, 100% { transform: scale(0.94); opacity: 0.75; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes celebrate-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-spring { animation: celebrate-fade 200ms ease-out both !important; }
+  .celebrate-glow { animation: none !important; }
+}
+[data-reduced-motion="true"] .celebrate-spring { animation: celebrate-fade 200ms ease-out both !important; }
+[data-reduced-motion="true"] .celebrate-glow { animation: none !important; }
+[data-theme="dark"] .soft-section-label { color: var(--color-text-muted) !important; }
+
+/* ── Phase 2 · Dark-mode inks (one shared lever; lib/soft-surface.ts SOFT_INK + accentInk).
+   The light inks of the tinted cards (dark purple numbers, purple eyebrows, gray-purple
+   pill labels) sit on the DARK card base in the dark theme, so every ink is a theme var:
+   light = the mockups' dark inks, dark = light lilacs. Light-only pages
+   (data-page-scheme="light": Friends, VS — their cards stay light) keep the light inks.
+   `.soft-ink` is the any-accent version: the element carries --ink-l / --ink-d. ── */
+:root {
+  --soft-ink: #3b1a78;
+  --soft-num-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(76, 29, 149, 0.18);
+  --soft-title: #5b3c96;
+  --soft-value: #6d28d9;
+  --soft-label: #6f5f8f;
+  --soft-detail: #7a6a95;
+}
+[data-theme="dark"] {
+  --soft-ink: #e9ddff;
+  --soft-num-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  --soft-title: #c4b5fd;
+  --soft-value: #c4b5fd;
+  --soft-label: #bcaedb;
+  --soft-detail: #a99cc8;
+}
+[data-theme="dark"] [data-page-scheme="light"] {
+  --soft-ink: #3b1a78;
+  --soft-num-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(76, 29, 149, 0.18);
+  --soft-title: #5b3c96;
+  --soft-value: #6d28d9;
+  --soft-label: #6f5f8f;
+  --soft-detail: #7a6a95;
+}
+.soft-ink { color: var(--ink-l); }
+[data-theme="dark"] .soft-ink { color: var(--ink-d); }
+[data-theme="dark"] [data-page-scheme="light"] .soft-ink { color: var(--ink-l); }
+
+/* ── FINISH_SPEC I3 · Muddle scramble chips (components/scramble/muddle-board.tsx):
+   small glossy letter chips; a used letter sinks (scale .9, faded to 35%). ── */
+.gtile.mud-chip { cursor: pointer; transition: transform 200ms cubic-bezier(0.34, 1.45, 0.64, 1), opacity 200ms ease-out; }
+.gtile.mud-chip[data-used="true"] { transform: scale(0.9); opacity: 0.35; cursor: default; }
+.gtile.mud-chip:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .gtile.mud-chip { transition: none; } }
+[data-reduced-motion="true"] .gtile.mud-chip { transition: none; }
+
+/* ── FINISH_SPEC H · Starsweep candy board (components/regions/regions-board.tsx;
+   colors in lib/starsweep-look.ts, passed as inline --ss-*-l / --ss-*-d vars;
+   the board sits in the shared GameTray, its seams are the tray's traySeam).
+   Each cell = its region's bed (a slightly deeper pastel) holding a rounded
+   glossy tile (lighter top gloss, 1.5px darker bottom lip); regions are split
+   by a wider darker seam (the board's own background). The pieces are the
+   art-starsweep-* images at 78%. Motion: place = the type pop (gt-pop); play =
+   flip + purple glow, or red glow + a small shake; hint = flip + gold glow ×2.
+   All off with Reduce Motion. ── */
+.ss-board { background: var(--ss-seam); }
+.ss-cell {
+  --ss-face: var(--ss-face-l); --ss-top: var(--ss-top-l); --ss-lip: var(--ss-lip-l); --ss-bed: var(--ss-bed-l);
+  position: relative; display: block; min-width: 0; min-height: 0; padding: 1.5px; border: 0;
+  background: var(--ss-bed); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+[data-theme="dark"] .ss-cell { --ss-face: var(--ss-face-d); --ss-top: var(--ss-top-d); --ss-lip: var(--ss-lip-d); --ss-bed: var(--ss-bed-d); }
+.ss-cell:focus-visible { outline: 2.5px solid #7c3aed; outline-offset: -1px; z-index: 2; }
+.ss-tile {
+  position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+  border-radius: 7px; background: linear-gradient(var(--ss-top), var(--ss-face) 58%);
+  box-shadow: inset 0 -1.5px 0 var(--ss-lip), 0 1px 1.5px rgba(60, 30, 110, 0.12);
+}
+.ss-tile::before {
+  content: ''; position: absolute; left: 12%; right: 12%; top: 6%; height: 38%; border-radius: 6px 6px 50% 50%;
+  background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); pointer-events: none;
+}
+[data-theme="dark"] .ss-tile::before { opacity: 0.35; }
+[data-theme="dark"] .ss-tile { box-shadow: inset 0 -1.5px 0 var(--ss-lip), 0 1px 1.5px rgba(0, 0, 0, 0.3); }
+.ss-cell[data-focus="true"] .ss-tile { box-shadow: inset 0 0 0 2px #ca8a04, inset 0 -1.5px 0 var(--ss-lip); }
+.ss-glow { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.ss-piece { position: relative; width: 78%; height: 78%; object-fit: contain; pointer-events: none; user-select: none; -webkit-user-select: none; filter: drop-shadow(0 1px 1px rgba(40, 20, 80, 0.22)); }
+.ss-piece[data-muted="true"] { opacity: 0.42; filter: saturate(0.55); }
+.ss-tile[data-m] { z-index: 1; }
+.ss-tile[data-m="pop"] .ss-piece { animation: gt-pop 300ms cubic-bezier(0.34, 1.45, 0.64, 1); }
+.ss-tile[data-m="right"] .ss-piece, .ss-tile[data-m="wrong"] .ss-piece, .ss-tile[data-m="hint"] .ss-piece { animation: ss-flip 520ms cubic-bezier(0.3, 1.3, 0.5, 1) both; }
+.ss-tile[data-m="right"] .ss-glow { animation: ss-glow-right 900ms ease-out 360ms both; }
+.ss-tile[data-m="wrong"] .ss-glow { animation: ss-glow-wrong 1000ms ease-in-out 300ms both; }
+.ss-tile[data-m="wrong"] { animation: ss-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 380ms; }
+.ss-tile[data-m="hint"] .ss-glow { animation: ss-glow-hint 1.2s ease-in-out 360ms 2; }
+@keyframes ss-flip { 0% { transform: perspective(300px) rotateY(90deg) scale(0.85); opacity: 0.4; } 60% { transform: perspective(300px) rotateY(-12deg) scale(1.08); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes ss-glow-right { 0% { box-shadow: 0 0 0 0 rgba(150, 90, 255, 0); } 35% { box-shadow: inset 0 0 0 2px rgba(124, 58, 237, 0.55), 0 0 14px 3px rgba(150, 90, 255, 0.65); } 100% { box-shadow: 0 0 0 0 rgba(150, 90, 255, 0); } }
+@keyframes ss-glow-wrong { 0% { box-shadow: 0 0 0 0 rgba(240, 67, 95, 0); } 35% { box-shadow: inset 0 0 0 2.5px #f0435f, 0 0 16px 4px rgba(240, 67, 95, 0.6); } 70% { box-shadow: inset 0 0 0 2.5px #f0435f, 0 0 8px 2px rgba(240, 67, 95, 0.35); } 100% { box-shadow: 0 0 0 0 rgba(240, 67, 95, 0); } }
+@keyframes ss-glow-hint { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 197, 66, 0); } 50% { box-shadow: inset 0 0 0 2.5px #f5c542, 0 0 16px 4px rgba(245, 197, 66, 0.7); } }
+@keyframes ss-shake { 15%, 85% { transform: translateX(-1px); } 30%, 70% { transform: translateX(3px); } 45%, 55% { transform: translateX(-4px); } }
+@media (prefers-reduced-motion: reduce) { .ss-tile[data-m], .ss-tile[data-m] .ss-piece, .ss-tile[data-m] .ss-glow { animation: none !important; } }
+[data-reduced-motion="true"] .ss-tile[data-m],
+[data-reduced-motion="true"] .ss-tile[data-m] .ss-piece,
+[data-reduced-motion="true"] .ss-tile[data-m] .ss-glow { animation: none !important; }
+
+/* ── C6 · Footer / info pages (components/ui/info-page.tsx, app/word/[date]):
+   the brand-purple inline prose links / accents lighten on the dark theme so
+   they stay legible on the dark card surfaces (light theme unchanged). */
+[data-theme="dark"] .info-page a[style*="#7c3aed"],
+[data-theme="dark"] .info-page h3[style*="#7c3aed"],
+[data-theme="dark"] .info-page strong[style*="#4f46e5"] { color: #c4b5fd !important; }
+
+/* ── C2 · Leaderboard / Records (components/leaderboard/*): the warm gold ink
+   for the picker's date · reset row, the ALL-TIME → chip and the result card's
+   caps labels — deep amber on the light washes, light amber on the dark theme. */
+.lb-gold-ink { color: #8a4a12; }
+[data-theme="dark"] .lb-gold-ink { color: #fcd34d; }
+
+/* ── K1 · In-app notices (components/friends/activity-feed.tsx moments,
+   components/invites/pending-invites-banner.tsx): a notice card slides in
+   with a spring. Off with Reduce Motion (OS or the in-app toggle). */
+@keyframes notice-in {
+  0% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(2px) scale(1.02); }
+  100% { opacity: 1; transform: none; }
+}
+.notice-in { animation: notice-in 460ms cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+@media (prefers-reduced-motion: reduce) { .notice-in { animation: none !important; } }
+[data-reduced-motion="true"] .notice-in { animation: none !important; }
+
+/* ── J3 · Puzzle boards (Crosswordocious, Codebreaker / Cipher, Spyglass, Kindred;
+   components/crossword, cryptogram, wordsearch, groups; lib/puzzle-look.ts): the
+   cells are B1 `.gtile`s made tappable (`.pz-cell`). A revealed letter is the
+   hint violet with a thin gold rim; the active crossword entry wears a lilac
+   wash; the selected cell an accent ring (--pz-ring, light lilac on the dark
+   theme); a wrong letter red ink + a red rim; the crossword clue number a small
+   soft badge in the corner. Tinted chips dim their top gloss on the dark theme. ── */
+:root { --pz-gloss: 0.5; }
+[data-theme="dark"] { --pz-gloss: 0.12; }
+.gtile[data-s="hint"] { --gt-edge: #5b3fc4; --gt-face: linear-gradient(#cdb8ff, #a78bfa 70%, #9677f2); --gt-ring: inset 0 0 0 1.5px rgba(245, 197, 66, 0.8); --gt-shadow: rgba(60, 30, 140, 0.5); --gt-glow: rgba(245, 197, 66, 0.6); }
+.gtile.pz-cell { display: block; padding: 0; border: 0; cursor: pointer; }
+.gtile.pz-cell:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+.gtile.pz-cell[data-wash="true"][data-s="empty"],
+.gtile.pz-cell[data-wash="true"][data-s="typed"] { --gt-face: #efe4ff; --gt-edge: #c9b0f3; }
+[data-theme="dark"] .gtile.pz-cell[data-wash="true"][data-s="empty"],
+[data-theme="dark"] .gtile.pz-cell[data-wash="true"][data-s="typed"] { --gt-face: rgba(167, 139, 250, 0.34); --gt-edge: rgba(167, 139, 250, 0.55); --gt-glyph: #f3ecff; }
+.gtile.pz-cell[data-sel="true"] { z-index: 1; box-shadow: 0 0 0 2.5px var(--pz-ring, #475569), 0 0 12px var(--pz-glow, rgba(71, 85, 105, 0.35)); }
+[data-theme="dark"] .gtile.pz-cell[data-sel="true"] { box-shadow: 0 0 0 2.5px #e9ddff, 0 0 12px rgba(233, 221, 255, 0.35); }
+.gtile.pz-cell[data-wrong="true"] { --gt-glyph: #c2183a; --gt-ring: inset 0 0 0 2.5px #f0435f; }
+[data-theme="dark"] .gtile.pz-cell[data-wrong="true"] { --gt-glyph: #ff8a9b; --gt-ring: inset 0 0 0 2.5px #f0435f; }
+.pz-num {
+  position: absolute;
+  z-index: 4;
+  top: 5%;
+  left: 5%;
+  min-width: 1.45em;
+  height: 1.45em;
+  padding: 0 0.28em;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: var(--pz-num, 8px);
+  font-weight: 900;
+  line-height: 1;
+  color: #6d28d9;
+  background: rgba(240, 234, 255, 0.94);
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.22), 0 1px 0 rgba(76, 29, 149, 0.15);
+  pointer-events: none;
+}
+
+/* ── F2 fix · one cast row at a time (components/providers/cold-start-intro.tsx):
+   the real header row stays laid out but hidden while the intro runs; after
+   landing every character hops once (the W hop, 420 ms, 50 ms apart). ── */
+[data-intro-running] [data-cast-row] { opacity: 0 !important; }
+.castrow .cm.cast-flourish { animation: m-hop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--fl-d, 0ms) both; }
+@media (prefers-reduced-motion: reduce) { .castrow .cm.cast-flourish { animation: none !important; } }
+[data-reduced-motion="true"] .castrow .cm.cast-flourish { animation: none !important; }
+
+/* ── FINISH_SPEC M · the candy count badge (components/ui/candy-badge.tsx) on
+   the Friends tab and the waiting rows inside Friends. ── */
+.candy-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(#ff5fa2, #f0435f);
+  box-shadow: inset 0 0 0 1.5px #f5c542, 0 2px 0 #a8263b, 0 3px 6px rgba(240, 67, 95, 0.35);
+  color: #ffffff;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgba(110, 10, 40, 0.45);
+  white-space: nowrap;
+}
+.candy-badge::before {
+  content: '';
+  position: absolute;
+  left: 18%; right: 18%; top: 10%;
+  height: 40%;
+  border-radius: 999px;
+  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.candy-badge-pop { animation: candy-badge-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@keyframes candy-badge-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.candy-badge-pulse { animation: candy-badge-pulse 4s ease-in-out infinite; }
+.candy-badge-pop.candy-badge-pulse { animation: candy-badge-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both, candy-badge-pulse 4s ease-in-out 420ms infinite; }
+@keyframes candy-badge-pulse {
+  0%, 70%, 100% { box-shadow: inset 0 0 0 1.5px #f5c542, 0 2px 0 #a8263b, 0 3px 6px rgba(240, 67, 95, 0.35); }
+  85% { box-shadow: inset 0 0 0 1.5px #f5c542, 0 2px 0 #a8263b, 0 0 0 4px rgba(255, 95, 162, 0.28), 0 3px 12px rgba(240, 67, 95, 0.55); }
+}
+/* The Friends tab icon's happy wiggle when a new item arrives (±8°, two swings). */
+.tab-wiggle { animation: tab-wiggle 640ms ease-in-out; }
+@keyframes tab-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 45% { transform: rotate(8deg); } 70% { transform: rotate(-6deg); } 85% { transform: rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .candy-badge-pop, .candy-badge-pulse, .tab-wiggle { animation: none !important; } }
+[data-reduced-motion="true"] .candy-badge-pop,
+[data-reduced-motion="true"] .candy-badge-pulse,
+[data-reduced-motion="true"] .tab-wiggle { animation: none !important; }
+
+/* ── K1 · In-app notices (components/ui/announcements-banner.tsx,
+   play-store-banner.tsx): the notice card slides in with a spring — from above
+   for a top notice, from below for a bottom one. Reduce Motion: no slide. ── */
+.notice-in-top { animation: notice-in-top 560ms cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+.notice-in-bottom { animation: notice-in-bottom 560ms cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+@keyframes notice-in-top { 0% { opacity: 0; transform: translateY(-120%); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+@keyframes notice-in-bottom { 0% { opacity: 0; transform: translateY(120%); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .notice-in-top, .notice-in-bottom { animation: none !important; } }
+[data-reduced-motion="true"] .notice-in-top,
+[data-reduced-motion="true"] .notice-in-bottom { animation: none !important; }
+
+/* ── FINISH_SPEC N2 · calmer top: a very soft fade of the page tint under the
+   header area (55% at the top → 0 over ~170 px) so the cast sits on calm color.
+   Page wallpapers only (game screens keep theirs). ── */
+[data-page-tint]:not([data-page-tint="game"]) > .page-bg::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 170px;
+  background: linear-gradient(color-mix(in srgb, var(--page-bg-1) 55%, transparent), color-mix(in srgb, var(--page-bg-1) 0%, transparent));
+  pointer-events: none;
+}
+[data-theme="dark"] [data-page-scheme="auto"]:not([data-page-tint="game"]) > .page-bg::before {
+  background: linear-gradient(color-mix(in srgb, var(--page-bg-dark-1) 55%, transparent), color-mix(in srgb, var(--page-bg-dark-1) 0%, transparent));
+}
+
+/* ── FINISH_SPEC Q · Gauntlet finish: the champion scene springs in, then bobs
+   gently; the 5-star row pops in 90 ms apart (--star-d). Reduce Motion: no
+   bob, no spring, the stars appear at once. ── */
+.champ-in { animation: champ-in 620ms cubic-bezier(0.3, 1.45, 0.5, 1) both, champ-bob 3.2s ease-in-out 700ms infinite; transform-origin: 50% 80%; }
+@keyframes champ-in { 0% { opacity: 0; transform: scale(0.6) translateY(10%); } 65% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: none; } }
+@keyframes champ-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5%); } }
+.star-pop { animation: star-pop 420ms cubic-bezier(0.3, 1.6, 0.5, 1) var(--star-d, 0ms) both; }
+@keyframes star-pop { 0% { opacity: 0; transform: scale(0.2) rotate(-25deg); } 70% { opacity: 1; transform: scale(1.18); } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .champ-in, .star-pop { animation: none !important; } }
+[data-reduced-motion="true"] .champ-in,
+[data-reduced-motion="true"] .star-pop { animation: none !important; }
+
+/* ── FINISH_SPEC R3 · the Unlimited U loop art: a slow orbit wobble (off with Reduce Motion). ── */
+.loop-wobble { animation: loop-wobble 5.5s ease-in-out infinite; transform-origin: 50% 55%; }
+@keyframes loop-wobble { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-3%); } }
+@media (prefers-reduced-motion: reduce) { .loop-wobble { animation: none !important; } }
+[data-reduced-motion="true"] .loop-wobble { animation: none !important; }
+
+/* ── FINISH_SPEC R1 · the win / lose popup (components/effects/result-popup.tsx):
+   warm cream under the accent gradient (a deep accent tint in dark mode), the
+   host's stage (slow rays 24 s a turn, spring-in with a 1.06 overshoot, then
+   a bob), one gloss sweep across the lettering, the points sparkle. Reduce
+   Motion: no rays, bob, sweep or sparkle. ── */
+.result-pop { --popup-cream: #fffaf3; }
+[data-theme="dark"] .result-pop { --popup-cream: var(--color-card-base, #252542); }
+.rp-rays { animation: rp-rays 24s linear infinite; }
+@keyframes rp-rays { to { transform: rotate(360deg); } }
+.rp-spring { animation: rp-spring 640ms cubic-bezier(0.3, 1.5, 0.5, 1) both; transform-origin: 50% 100%; }
+@keyframes rp-spring { 0% { opacity: 0; transform: scale(0.3) translateY(30%); } 60% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
+.rp-bob { animation: rp-bob 2.6s ease-in-out 700ms infinite; }
+@keyframes rp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.rp-gloss { overflow: hidden; }
+.rp-gloss::after { content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0)); transform: skewX(-18deg); opacity: 0; animation: rp-gloss 700ms ease-out 900ms 1 both; pointer-events: none; }
+@keyframes rp-gloss { 0% { left: -40%; opacity: 1; } 100% { left: 120%; opacity: 1; } }
+.rp-sparkle { display: inline-block; margin-left: 2px; color: #f5a524; font-size: 0.7em; vertical-align: super; animation: rp-sparkle 600ms cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes rp-sparkle { 0% { opacity: 0; transform: scale(0) rotate(-45deg); } 70% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: none; } }
+.rp-pop { animation: candy-badge-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@media (prefers-reduced-motion: reduce) { .rp-rays, .rp-bob, .rp-spring, .rp-sparkle, .rp-pop, .rp-gloss::after { animation: none !important; } }
+[data-reduced-motion="true"] .rp-rays, [data-reduced-motion="true"] .rp-bob, [data-reduced-motion="true"] .rp-spring,
+[data-reduced-motion="true"] .rp-sparkle, [data-reduced-motion="true"] .rp-pop, [data-reduced-motion="true"] .rp-gloss::after { animation: none !important; }
+
+/* FINISH_SPEC Z (Daily ⇄ Unlimited never moves anything; components/home/*,
+   components/ui/play-mode-toggle.tsx): the quick crossfade of content inside the
+   fixed slots, and the switch's sliding thumb (the only thing that moves). */
+.mode-xfade { animation: fade-in 160ms ease-out both; }
+.mode-switch-thumb { transition: transform 220ms cubic-bezier(0.3, 1.2, 0.5, 1), width 220ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .mode-xfade { animation: none; }
+  .mode-switch-thumb { transition: none; }
+}
+
+/* ── FINISH_SPEC V2 / V3 · the badge celebration popup (components/badges/badge-celebration.tsx):
+   the R1 warm cream under the accent gradient (a deep tint in dark mode) and the
+   "ACHIEVEMENT UNLOCKED" headline as lettering-style ink — a gold candy gradient
+   with a white outline and a purple lip, like the moment lettering art. The
+   stage reuses the R1 `.rp-*` motion (off with Reduce Motion). ── */
+.badge-pop { --popup-cream: #fffaf3; }
+[data-theme="dark"] .badge-pop { --popup-cream: var(--color-card-base, #252542); }
+.badge-lettering {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  padding: 2px 6px 4px;
+  background: linear-gradient(#ffe08a, #f5a524 55%, #f97316);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff)
+    drop-shadow(0 3px 0 #5b21b6) drop-shadow(0 4px 6px rgba(59, 26, 120, 0.25));
+}
+
+/* FINISH_SPEC AK (squish, web): taps press at once (no double-tap-zoom wait)
+   while vertical scrolling still starts from a card. */
+a, button, [role="button"], [data-squish] { touch-action: manipulation; }
+
+/* ── FINISH_SPEC AF · the in-game "?" help card (components/help/game-help-card.tsx):
+   the R1 warm cream under the accent gradient (a deep tint in dark mode). The
+   host stage reuses the R1 `.rp-*` motion (off with Reduce Motion). ── */
+.help-pop { --popup-cream: #fffaf3; }
+[data-theme="dark"] .help-pop { --popup-cream: var(--color-card-base, #252542); }
+
+/* ── FINISH_SPEC AG · desktop web wide-screen layout (≥ 900 px). One lever for
+   every page; below 900 px none of these classes do anything, so phones are
+   untouched (lib/wide-layout.test.ts guards the numbers).
+   - .page-col: the 560 px centered column — every game screen (GameBackground,
+     the VS match), the header (cast row = 90% of it), banners and pickers.
+   - .page-wide: a page's content box, up to 1100 px, centered.
+   - .page-wide-pad: the same 1100 px box for a full-width scroller (Home), so
+     the scrollbar and the wheel stay at the window edge.
+   - .page-grid-2: a two-column grid of the tinted cards (or of two column
+     stacks); its children's own stack spacing (space-y) is reset so both
+     columns start level. .page-span spans both columns. .page-sticky keeps a
+     side column in view while the other scrolls.
+   - .page-pop: a popup / sheet capped at 440 px, centered.
+   The docked tab bar keeps its full-width surface; its four tabs center in
+   the 560 column. Game header title art measures the column (--game-col-w,
+   lib/art.ts gameHeaderArtHeight), not the window. ── */
+:root {
+  --page-col: 560px;
+  --page-wide: 1100px;
+  --page-grid-gap: 20px;
+  --page-pop: 440px;
+}
+@media (min-width: 900px) {
+  .page-col {
+    width: 100%;
+    max-width: var(--page-col);
+    margin-left: auto;
+    margin-right: auto;
+    --game-col-w: var(--page-col);
+  }
+  .page-wide {
+    width: 100%;
+    max-width: var(--page-wide);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .page-wide-pad {
+    padding-left: max(1rem, calc((100% - var(--page-wide)) / 2));
+    padding-right: max(1rem, calc((100% - var(--page-wide)) / 2));
+  }
+  .page-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--page-grid-gap);
+    align-items: start;
+  }
+  .page-grid-2 > * { margin-top: 0 !important; }
+  .page-grid-2 > .page-span { grid-column: 1 / -1; }
+  .page-pop {
+    max-width: var(--page-pop);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .tab-dock {
+    padding-left: max(6px, calc((100% - var(--page-col)) / 2));
+    padding-right: max(6px, calc((100% - var(--page-col)) / 2));
+  }
+}
+/* Only where the window is tall enough that the stuck column always fits. */
+@media (min-width: 900px) and (min-height: 760px) {
+  .page-sticky { position: sticky; top: 12px; }
+}
+
+/* ── FINISH_SPEC AB · Larger Text (browser text zoom up to 200%): a candy pill
+   keeps its approved height at normal size and grows with its label when the
+   text is zoomed (1.6em + 8 stays under every size's height at 100%), so the
+   label never spills out of the pill. Round icon buttons keep their circle. ── */
+.candy:not(.candy-round) { height: max(var(--candy-h), calc(1.6em + 8px)); }
+
+/* ── FINISH_SPEC AD · Dark-mode contrast on the STRONG washes (selected tiles /
+   chips: the accent at 24% over the dark card base). The dim inks cleared 4.5:1
+   on the 13% wash but not on the 24% wash of the bright accents (lime, amber,
+   cyan), so they lift a step (lib/dark-contrast.test.ts checks every game
+   accent). Light-only pages keep their light inks (the scheme="light" block
+   above is more specific). ── */
+[data-theme="dark"] {
+  --soft-label: #c0b3dd;
+  --soft-detail: #beb4d5;
+}
+[data-theme="dark"] .tint-ink,
+[data-theme="dark"] .soft-section-label { color: #b4b9c2 !important; }
+
+/* ── FINISH_SPEC AM1 · Reaction burst (components/friends/activity-feed.tsx):
+   six little sparks fly out of the reaction you just added, in its tint
+   (--burst). Off with Reduce Motion (system or the in-app toggle), like the
+   candy-badge-pop the reaction icon plays. ── */
+.react-burst { position: absolute; inset: 0; pointer-events: none; }
+.react-burst i {
+  position: absolute; left: 13px; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 999px; background: var(--burst, #ec4899); opacity: 0;
+  animation: react-burst 560ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+.react-burst i:nth-child(1) { --dx: 0px; --dy: -17px; }
+.react-burst i:nth-child(2) { --dx: 15px; --dy: -9px; }
+.react-burst i:nth-child(3) { --dx: 15px; --dy: 9px; }
+.react-burst i:nth-child(4) { --dx: 0px; --dy: 17px; }
+.react-burst i:nth-child(5) { --dx: -15px; --dy: 9px; }
+.react-burst i:nth-child(6) { --dx: -15px; --dy: -9px; }
+@keyframes react-burst {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .react-burst { display: none; } }
+[data-reduced-motion="true"] .react-burst { display: none; }
+[data-reduced-motion="true"] .candy-badge-pop { animation: none !important; }

@@ -66,6 +66,8 @@ import com.wordocious.app.data.ShareImage
 import com.wordocious.app.data.SoundManager
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.tintedPill
 import com.wordocious.app.ui.formatGuessStat
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -332,14 +334,8 @@ fun RegionsScreen(
 
     Box(Modifier.fillMaxSize().gameBackground { background(WTheme.bg) }.statusBarsPadding()) {
         if (session.isFinished) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                RegionsHeader(session)
-                RegionsBoard(session.state, focused = null, revealSolution = session.state.status == RegionsStatus.LOST) {}
-                RegionsResult(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
-            }
+            // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
+            RegionsFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 RegionsHeader(session)
@@ -358,8 +354,9 @@ fun RegionsScreen(
         }
         session.toast?.let {
             Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                Text(it, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 10.dp))
+                // G5 a toast is a tinted pill (no dark slab, no white).
+                Text(it, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.tintedPill(REGIONS_ACCENT, corner = 22.dp).padding(horizontal = 16.dp, vertical = 10.dp))
             }
         }
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
@@ -407,11 +404,13 @@ private fun SizePicker(current: Int, onPick: (Int) -> Unit) {
             Text(
                 REGIONS_SIZE_LABEL[n] ?: "$n", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
                 color = if (active) Color.White else REGIONS_ACCENT,
-                modifier = Modifier.clip(CircleShape)
-                    .background(if (active) REGIONS_ACCENT else Color.Transparent)
-                    .border(1.5.dp, REGIONS_ACCENT.copy(alpha = if (active) 1f else 0.35f), CircleShape)
-                    .clickableNoRipple { if (!active) onPick(n) }
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                modifier = Modifier
+                    .squishClickable(label = (REGIONS_SIZE_LABEL[n] ?: "$n") + if (active) ", selected" else "") { if (!active) onPick(n) }
+                    .then(
+                        if (active) Modifier.clip(CircleShape).background(REGIONS_ACCENT)
+                        else Modifier.tintedPill(REGIONS_ACCENT, corner = 20.dp),
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
     }
@@ -419,108 +418,40 @@ private fun SizePicker(current: Int, onPick: (Int) -> Unit) {
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** ONE continuous ruled board like the Sudoku board: heavy rules between
- *  regions, hairlines within a region, regions washed in soft tints (the heavy
- *  borders carry the shape, never color alone). Star in the dark text color,
- *  wrong star red, hint star violet, cross-out a small muted ×. The focused
- *  cell wears a thin accent inset ring. */
+/** FINISH_SPEC H + L: the Starsweep board — pastel candy region tiles, soft seams, the
+ *  star / cross art, inside the shared game tray (StarsweepBoard.kt). */
 @Composable
 fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, onTap: (Int) -> Unit) {
-    val n = state.n
-    val rule = Color(0xFF4C1D95).copy(alpha = 0.22f); val heavy = Color(0xFF4C1D95)
-    val hint = Color(0xFF8B5CF6); val wrong = Color(0xFFDC2626); val cross = Color(0xFF6B7280)
-
-    Box(
-        Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
-            .clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
-            .border(2.5.dp, heavy, RoundedCornerShape(14.dp)),
-    ) {
-        Column(Modifier.fillMaxSize()) {
-            for (r in 0 until n) {
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    for (c in 0 until n) {
-                        val i = r * n + c
-                        val g = state.regions[i] - '0'
-                        val mark = state.board[i]
-                        val isWrong = state.wrongMask[i] == '1'
-                        val hinted = state.hintMask[i] == '1'
-                        val missing = revealSolution && mark != '*' && (state.solution[r] - '0') == c
-                        val starColor = when { isWrong -> wrong; hinted -> hint; else -> Color(0xFF7C3AED) } // correct = Wordocious purple (founder, 2026-09-28)
-                        Box(
-                            Modifier.weight(1f).fillMaxSize().background(REGIONS_TINTS[g % REGIONS_TINTS.size])
-                                .then(if (i == focused) Modifier.padding(1.dp).border(2.dp, REGIONS_ACCENT) else Modifier)
-                                .clickableNoRipple { onTap(i) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            when {
-                                mark == '*' -> Icon(Icons.Filled.Star, null, tint = starColor, modifier = Modifier.fillMaxSize(0.62f))
-                                // Black star: placed, not yet played (double-tap judges it).
-                                mark == 'o' -> Icon(Icons.Filled.Star, null, tint = Color(0xFF1F2937), modifier = Modifier.fillMaxSize(0.62f))
-                                mark == 'x' -> Icon(Icons.Filled.Close, null, tint = cross, modifier = Modifier.fillMaxSize(0.42f))
-                                missing -> Icon(Icons.Filled.Star, null, tint = WTheme.textMuted, modifier = Modifier.fillMaxSize(0.62f).alpha(0.55f))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Rules — hairline within a region, heavy where the region changes.
-        Canvas(Modifier.fillMaxSize()) {
-            val side = size.width
-            val cell = side / n.toFloat()
-            val hairline = 1.dp.toPx(); val heavyW = 2.5.dp.toPx()
-            for (r in 0 until n) for (c in 0 until n) {
-                val i = r * n + c
-                if (c < n - 1) {
-                    val hv = state.regions[i + 1] != state.regions[i]
-                    val w = if (hv) heavyW else hairline
-                    drawRect(if (hv) heavy else rule, topLeft = Offset((c + 1) * cell - w / 2, r * cell), size = Size(w, cell))
-                }
-                if (r < n - 1) {
-                    val hv = state.regions[i + n] != state.regions[i]
-                    val w = if (hv) heavyW else hairline
-                    drawRect(if (hv) heavy else rule, topLeft = Offset(c * cell, (r + 1) * cell - w / 2), size = Size(cell, w))
-                }
-            }
-        }
+    val trayState = when (state.status) {
+        RegionsStatus.WON -> TrayState.WON
+        RegionsStatus.LOST -> TrayState.LOST
+        else -> TrayState.PLAYING
     }
+    StarsweepBoard(state, focused, revealSolution, trayState, onTap)
 }
 
 // ── Pad ─────────────────────────────────────────────────────────────────────
 
-/** Action row — Undo · Erase · Auto-cross · Hint, each with its icon (§19).
- *  Auto-cross is a toggle: fixed label, state shown by filling with the accent. */
+/** Action row — Undo · Erase · Auto-cross · Hint, each with its icon (§19), as small
+ *  candy buttons (A8). Auto-cross is a toggle: fixed label, state shown by the purple candy. */
 @Composable
 private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
     val s = session.state
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(horizontal = 2.dp)) {
-        Capsule("Undo", Icons.AutoMirrored.Filled.Undo, dim = s.history.isEmpty()) { session.undo(onFinished) }
-        Capsule("Erase", Icons.AutoMirrored.Filled.Backspace, dim = !session.canErase) { session.erase(onFinished) }
-        Capsule("Auto-cross", Icons.Filled.Close, active = s.autoCross) { session.toggleAutoCross(onFinished) }
-        Capsule(if (s.hintsUsed > 0) "Hint · ${s.hintsUsed}" else "Hint", Icons.Filled.Lightbulb) { session.hint(onFinished) }
-    }
-}
-
-@Composable
-private fun Capsule(label: String, icon: ImageVector, active: Boolean = false, dim: Boolean = false, onClick: () -> Unit) {
-    val fg = if (dim) WTheme.textMuted.copy(alpha = 0.5f) else if (active) Color.White else REGIONS_ACCENT
-    Row(
-        Modifier.clip(CircleShape)
-            .background(if (active) REGIONS_ACCENT else if (dim) Color.Transparent else REGIONS_ACCENT.copy(alpha = 0.05f))
-            .border(1.5.dp, if (dim) WTheme.border else if (active) REGIONS_ACCENT else REGIONS_ACCENT.copy(alpha = 0.4f), CircleShape)
-            .clickableNoRipple { if (!dim) onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(13.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = fg)
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(horizontal = 2.dp)) {
+        PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
+        PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, dim = !session.canErase)
+        PadAction("Auto-cross", Icons.Filled.Close, onClick = { session.toggleAutoCross(onFinished) }, active = s.autoCross)
+        PadAction(
+            if (s.hintsUsed > 0) "Hint · ${s.hintsUsed}" else "Hint", Icons.Filled.Lightbulb,
+            onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
+        )
     }
 }
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 
 @Composable
-private fun RegionsResult(
+private fun RegionsFinished(
     session: RegionsSession, isPro: Boolean, onBack: () -> Unit, onPlayAgain: ((Int) -> Unit)?,
     onOpenDaily: (GameMode) -> Unit, onOpenUnlimited: ((GameMode) -> Unit)?, onOpenLeaderboard: ((GameMode) -> Unit)?,
 ) {
@@ -529,36 +460,54 @@ private fun RegionsResult(
     val secs = session.elapsed
     val remaining = session.remaining
     val context = LocalContext.current
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 12.dp)) {
-        Text(if (won) "Board cleared" else "Out of mistakes", fontSize = 20.sp, fontWeight = FontWeight.Black,
-            color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444), fontFamily = Nunito)
-        Text(
-            if (won) "${formatGuessStat("mistakes", 1, s.mistakes + 1)} · ${timeText(secs)}" + (if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else "")
-            else "$remaining star${if (remaining == 1) "" else "s"} left · ${timeText(secs)}",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ResultAction(Icons.Filled.Home, "Home", REGIONS_ACCENT, onBack)
-            ResultAction(Icons.Filled.Share, "Share", REGIONS_ACCENT) {
-                val num = if (session.isDaily) session.dailyNumber else null
-                val meta = "${num?.let { "#$it · " } ?: ""}${session.sizeLabel} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · ${timeText(secs)}"
-                // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
-                val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
-                val text = "Wordocious Starsweep${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/starsweep"
-                val bmp = ShareImage.renderRegions(context, s.n, s.regions, s.board, s.hintMask, won, meta)
-                ShareImage.shareBitmap(context, bmp, text)
-            }
-            if (!session.isDaily && isPro && onPlayAgain != null) ResultAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706)) { onPlayAgain(s.n) }
+    val day = if (session.isDaily) todayLocalDate() else null
+    val points = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, null, null, day).total.toInt()
+    val share = {
+        val num = if (session.isDaily) session.dailyNumber else null
+        val meta = "${num?.let { "#$it · " } ?: ""}${session.sizeLabel} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · ${timeText(secs)}"
+        // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
+        val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
+        val text = "Wordocious Starsweep${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/starsweep"
+        val bmp = ShareImage.renderRegions(context, s.n, s.regions, s.board, s.hintMask, won, meta)
+        ShareImage.shareBitmap(context, bmp, text)
+    }
+    FinishedScreen(
+        header = { RegionsHeader(session) },
+        strip = {
+            ResultStrip(
+                won,
+                listOf(
+                    if (won) stripCount("${s.mistakes}", if (s.mistakes == 1) "mistake" else "mistakes", StripGlyph.CROWN)
+                    else stripCount("$remaining", if (remaining == 1) "star left" else "stars left"),
+                    stripTime(secs), stripPoints(points),
+                ),
+                srText = (if (won) "Board cleared" else "Out of mistakes") + ". " +
+                    (if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "$remaining star${if (remaining == 1) "" else "s"} left") +
+                    ", time ${timeText(secs)}, $points points",
+            )
+        },
+        dock = {
+            FinishedDock(
+                GameMode.REGIONS, isDaily = session.isDaily, accent = REGIONS_ACCENT, onShare = share,
+                onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
+                onNewPuzzle = if (!session.isDaily && isPro && onPlayAgain != null) { { onPlayAgain(s.n) } } else null,
+                onOtherGames = onBack,
+                more = {
+                    if (session.isDaily) DailyRankBadge(GameMode.REGIONS)
+                    if (won && s.hintsUsed > 0) {
+                        Text("${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    }
+                    ScoreBreakdownCard(GameMode.REGIONS, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, day = day)
+                },
+            )
+        },
+    ) { maxW, maxH ->
+        // R2: the finished board as big as the height left allows.
+        FinishedSquare(maxW, maxH) {
+            RegionsBoard(s, focused = null, revealSolution = s.status == RegionsStatus.LOST) {}
         }
-        if (session.isDaily) DailyRankBadge(GameMode.REGIONS)
-        ScoreBreakdownCard(GameMode.REGIONS, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)
-        if (session.isDaily) NextDailyRow(GameMode.REGIONS, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
     }
 }
-
-@Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
-    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 
@@ -567,42 +516,24 @@ private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}"
 private fun RegionsOverlay(session: RegionsSession, onPlayAgain: (() -> Unit)?, onDismiss: () -> Unit) {
     val won = session.state.status == RegionsStatus.WON
     val secs = session.elapsed
-    Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
-        com.wordocious.app.ui.ResultHostBox(won, "REGIONS") { hostInset ->
-            Column(
-                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Moment lettering (ART_SPEC §6).
-                    com.wordocious.app.ui.MomentTitle(if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE)
-                    val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, session.state.mistakes + 1, secs, if (won) 1 else 0, 1, session.state.hintsUsed).total.toInt()
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        StatBlock("${session.state.mistakes}", "MISTAKES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(pts), "POINTS")
-                    }
-                    onPlayAgain?.let {
-                        Text(
-                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            modifier = Modifier.clip(CircleShape)
-                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
-                        )
-                    }
-                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                }
-            }
-        }
-    }
+    // FINISH_SPEC R1: the shared win / lose popup (no word answers for Starsweep).
+    val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.REGIONS.name, won, session.state.mistakes + 1, secs, if (won) 1 else 0, 1, session.state.hintsUsed).total.toInt()
+    WinPopup(
+        won = won, hostKey = "REGIONS", accent = REGIONS_ACCENT, onContinue = onDismiss,
+        stats = listOf(
+            WinStat(WinStatKind.GUESSES, "${session.state.mistakes}", "Mistakes"),
+            WinStat(WinStatKind.TIME, timeText(secs), "Time"),
+            WinStat(WinStatKind.POINTS, "%,d".format(pts), "Points"),
+        ),
+        onPlayAgain = onPlayAgain,
+    )
 }
 
 @Composable
 private fun StatBlock(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp)
+        com.wordocious.app.ui.SoftNumber(value, 22.sp)
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.6.sp)
     }
 }
 

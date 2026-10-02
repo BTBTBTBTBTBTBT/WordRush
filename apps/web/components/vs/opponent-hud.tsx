@@ -3,7 +3,9 @@
 import { createContext, useContext } from 'react';
 import { VS } from '@/lib/vs-lobby';
 import { OpponentMiniBoard } from './opponent-mini-board';
-import { BotAvatar, InitialAvatar } from './vs-ui';
+import { SoftNum } from '@/components/ui/soft-number';
+import { alphaHex } from '@/lib/soft-surface';
+import { BotAvatar, BotPoseAvatar, GhostAvatar, InitialAvatar, VS_ACCENT, vsCard } from './vs-ui';
 
 /**
  * Set by vs-game during a challenge-send game (VS overhaul §3): there is no
@@ -21,6 +23,11 @@ export interface VsOpponentIdentity {
   /** Small tag after the name: "Bot", "Their run". */
   tag?: string;
   typing: boolean;
+  /** A cast bot (D1): its own character as the avatar, its color on the strip. */
+  botId?: string;
+  color?: string;
+  /** Your Ghost: a faded version of the player's own letter tile. */
+  ghost?: { name: string; emoji?: string | null; accent?: string | null };
 }
 
 export const VsOpponentContext = createContext<VsOpponentIdentity | null>(null);
@@ -53,7 +60,7 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
     return (
       <div
         className="w-full max-w-md mx-auto flex items-center gap-3 px-4 animate-fade-in-up"
-        style={{ height: STRIP_HEIGHT, background: VS.soft, borderRadius: 14 }}
+        style={{ height: STRIP_HEIGHT, ...vsCard(VS_ACCENT, { radius: 14, shadow: false }) }}
       >
         <span className="text-[11px] font-black uppercase shrink-0" style={{ color: VS.ink, letterSpacing: 1 }}>Your run</span>
         <div className="h-4 w-px shrink-0" style={{ background: 'rgba(15, 118, 110, 0.25)' }} />
@@ -63,6 +70,8 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
   }
 
   const name = who?.name || 'Opponent';
+  // A1: the strip takes the opponent's color (the bot's own, else the VS teal).
+  const accent = who?.color ?? VS_ACCENT;
   const total = Math.max(1, totalBoards);
   const progress = Math.min(1, boardsSolved / total);
   const single = totalBoards <= 1 && currentStage === undefined;
@@ -72,11 +81,15 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
   return (
     <div
       className="w-full max-w-md mx-auto flex items-center gap-2.5 px-3"
-      style={{ height: STRIP_HEIGHT, background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}
+      style={{ height: STRIP_HEIGHT, ...vsCard(accent, { radius: 14 }) }}
       aria-label={`${name}: ${attempts} ${attempts === 1 ? 'guess' : 'guesses'}${single ? '' : `, ${boardsSolved} of ${totalBoards} boards`}`}
     >
-      {who?.isBot && who.avatarUrl ? (
-        <BotAvatar src={who.avatarUrl} name={name} size={32} bg={VS.soft} />
+      {who?.ghost ? (
+        <GhostAvatar name={who.ghost.name} emoji={who.ghost.emoji} accent={who.ghost.accent} size={32} />
+      ) : who?.botId ? (
+        <BotPoseAvatar id={who.botId} pose="ready" accent={accent} size={34} />
+      ) : who?.isBot && who.avatarUrl ? (
+        <BotAvatar src={who.avatarUrl} size={32} accent={accent} />
       ) : (
         <InitialAvatar name={name} url={who?.avatarUrl ?? null} size={32} />
       )}
@@ -97,19 +110,19 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: VS.soft }}>
-            <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: VS.ink, transition: 'width 500ms ease' }} />
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: alphaHex(accent, 0.18) }}>
+            <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: accent === VS_ACCENT ? VS.ink : accent, transition: 'width 500ms ease' }} />
           </div>
-          <span className="text-[10.5px] font-bold shrink-0 tabular-nums" style={{ color: VS.label }}>
-            {attempts} {attempts === 1 ? 'guess' : 'guesses'}
+          <span className="flex items-baseline gap-0.5 text-[10.5px] font-bold shrink-0" style={{ color: VS.label }}>
+            <SoftNum size={13}>{attempts}</SoftNum> {attempts === 1 ? 'guess' : 'guesses'}
           </span>
         </div>
       </div>
       {single ? (
         <OpponentMiniBoard tiles={opponentTiles?.[0] || []} maxGuesses={maxGuesses} wordLength={wordLength} tileSize={miniTile} />
       ) : (
-        <span className="text-[11px] font-black shrink-0 tabular-nums text-right" style={{ color: VS.ink }}>
-          {currentStage !== undefined ? `Stage ${currentStage + 1}/5` : `${boardsSolved}/${totalBoards} boards`}
+        <span className="flex items-baseline gap-1 text-[11px] font-black shrink-0 text-right" style={{ color: VS.ink }}>
+          {currentStage !== undefined ? <>Stage <SoftNum size={14}>{currentStage + 1}/5</SoftNum></> : <><SoftNum size={14}>{boardsSolved}/{totalBoards}</SoftNum> boards</>}
         </span>
       )}
     </div>

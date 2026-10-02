@@ -45,6 +45,9 @@ object BotEngine {
         /** Never solve (a challenge ghost replaying an unsolved run). Wins over forceSolve. */
         val forceFail: Boolean = false,
         val adaptive: AdaptiveHint? = null,
+        /** A cast bot's own solve range (FINISH_SPEC D1): narrows the tier's
+         *  min/max guesses; the tier keeps its think time and miss chance. */
+        val guessRange: IntRange? = null,
     )
 
     data class Event(val atMs: Double, val typing: Boolean, val progress: VSOpponentProgress?)
@@ -170,7 +173,11 @@ object BotEngine {
     fun buildPlan(seed: String, mode: GameMode, difficulty: BotDifficulty, opts: BuildOpts = BuildOpts()): Plan {
         val state = createInitialState(seed, mode)
         val totalBoards = boardCount(mode)
-        val p = resolveParams(difficulty, opts.adaptive)
+        val p = resolveParams(difficulty, opts.adaptive).let { base ->
+            val g = opts.guessRange
+            if (g == null || difficulty == BotDifficulty.ADAPTIVE) base
+            else base.copy(minGuesses = g.first, maxGuesses = g.last)
+        }
         // Gauntlet's createInitialState boards hold only the current stage; the
         // full 21-board run comes from the seed directly (reducer parity).
         val solutions = when (mode) {

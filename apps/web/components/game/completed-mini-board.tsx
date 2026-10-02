@@ -69,7 +69,7 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
   const fontVar = { ['--gt-font' as string]: `${fontSize}px` } as React.CSSProperties;
   if (liveStates) {
     return (
-      <div className="relative p-0.5 rounded-lg border-2 transition-colors duration-300" style={{ ...miniBoardFrame(won ? 'WON' : 'PLAYING'), ...fontVar }}>
+      <div className="relative transition-colors duration-300" style={{ ...miniBoardFrame(won ? 'WON' : 'PLAYING', undefined, { padding: 2 }), ...fontVar }}>
         {won && (
           <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
             ✓
@@ -101,7 +101,7 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
     );
   }
   return (
-    <div className="relative p-0.5 rounded-lg border-2" style={{ ...miniBoardFrame(won ? 'WON' : 'LOST'), ...fontVar }}>
+    <div className="relative" style={{ ...miniBoardFrame(won ? 'WON' : 'LOST', undefined, { padding: 2 }), ...fontVar }}>
       {won && (
         <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
           ✓
@@ -171,8 +171,37 @@ export function toRecapBoards(boards: BoardState[]): RecapBoard[] {
  * rendered 2-column modes (QuadWord/Deliverance) huge while OctoWord's four
  * columns looked right.
  */
-export function CompletedBoardsRecap({ boards, rowCount }: { boards: RecapBoard[]; rowCount?: number }) {
+export function CompletedBoardsRecap({ boards, rowCount, tileSize, cols: colsProp }: {
+  boards: RecapBoard[];
+  rowCount?: number;
+  /**
+   * FINISH_SPEC R2 (the one-screen finished screen): a bigger natural tile in
+   * a fixed mini grid — 2 × 2 for up to four boards, 4 × 2 for eight — that
+   * the finished screen's FitBox then scales down to the room left. Omitted:
+   * the compact wrap layout (VS result, other callers) as before.
+   */
+  tileSize?: number;
+  /** Board columns with `tileSize` (FittedBoardsRecap picks the arrangement with the biggest tiles). */
+  cols?: number;
+}) {
   const totalBoards = boards.length;
+  if (tileSize) {
+    const cols = colsProp ?? (totalBoards > 4 ? 4 : totalBoards === 1 ? 1 : 2);
+    return (
+      <div className="mx-auto grid justify-center gap-2 pt-1 w-fit" style={{ gridTemplateColumns: `repeat(${cols}, max-content)` }}>
+        {boards.map((board, i) => (
+          <CompletedMiniBoard
+            key={i}
+            solution={board.solution}
+            guesses={board.guesses}
+            maxGuesses={rowCount ?? board.maxGuesses}
+            won={board.won}
+            tileSize={tileSize}
+          />
+        ))}
+      </div>
+    );
+  }
   return (
     <div
       className="mx-auto flex flex-wrap justify-center gap-2 pt-2"

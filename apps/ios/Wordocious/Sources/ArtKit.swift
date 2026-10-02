@@ -54,10 +54,9 @@ enum ArtAsset {
 /// `art-day-<weekday>`: the day's title lettering with that day's host, one graphic.
 enum DayTitleArt {
     /// Sunday first, matching core `LeaderboardTitle.weekdayTitles`.
-    private static let days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
-    /// The art's own words, for VoiceOver.
-    private static let labels = ["Sunday Superstars", "Monday Masters", "Tuesday Titans", "Wednesday Wizards",
-                                 "Thursday Thunder", "Friday\u{2019}s Finest", "Saturday Stars"]
+    private static let days = ArtTitleLabels.dayOrder
+    /// The art's own words, for VoiceOver (§AB: the Core registry, unit tested).
+    private static let labels = days.map { ArtTitleLabels.days[$0] ?? $0.capitalized }
 
     /// The art for a core `leaderboardTitle` string: a weekday title maps to its
     /// day's graphic; a holiday title ("<HOLIDAY> HEROES") or missing art → nil
@@ -98,28 +97,16 @@ enum ArtTitleName: String, CaseIterable {
     case welcome, leaderboard
     /// §12: the whole cast around WORDOCIOUS DAILIES (the Home daily games header).
     case dailies
+    /// FINISH_SPEC §C6: each footer / info page's own title (one shared height).
+    case guides, strategy, words, faq, privacy, terms
+    /// FINISH_SPEC §O1: the lettering-only VS BATTLE Home section title.
+    case vsbattle
 
     var assetName: String { "art-title-\(rawValue)" }
 
     /// The title text the art carries (its accessibility label, and the text
-    /// fallback when the art is missing).
-    var label: String {
-        switch self {
-        case .friends: return "Friends"
-        case .stats: return "Stats"
-        case .records: return "All-Time Records"
-        case .vs: return "VS Battle"
-        case .puzzles: return "Puzzles"
-        case .wotd: return "Word of the Day"
-        case .settings: return "Settings"
-        case .howto: return "How to Play"
-        case .gopro: return "Go Pro"
-        case .moregames: return "More Games"
-        case .welcome: return "Welcome"
-        case .leaderboard: return "Leaderboard"
-        case .dailies: return "Dailies"
-        }
-    }
+    /// fallback when the art is missing) — §AB: from the Core registry (unit tested).
+    var label: String { ArtTitleLabels.titles[rawValue] ?? rawValue.capitalized }
 }
 
 /// A page title as art: fills the offered width up to `maxWidth` (≈420 pt), the
@@ -161,14 +148,18 @@ struct ArtTitle: View {
 /// most 340 pt; the height follows the art's aspect ratio.
 struct SectionTitleArt: View {
     let name: ArtTitleName
-    static let fraction: CGFloat = 0.78
-    static let maxWidth: CGFloat = 340
+    /// FINISH_SPEC §N1: the Home section titles follow the page-title rule —
+    /// ≈62% of the content width, at most 300 pt wide and 64 pt tall.
+    static let fraction: CGFloat = 0.62
+    static let maxWidth: CGFloat = 300
+    static let maxHeight: CGFloat = 64
 
     init(_ name: ArtTitleName) { self.name = name }
 
     var body: some View {
         CenteredFractionLayout(fraction: Self.fraction, maxWidth: Self.maxWidth) {
             ArtTitle(name, maxWidth: Self.maxWidth)
+                .frame(maxHeight: Self.maxHeight)
         }
     }
 }
@@ -250,20 +241,8 @@ enum MomentArt: String, CaseIterable {
 
     var assetName: String { "art-moment-\(rawValue)" }
 
-    /// The words on the art (its accessibility label).
-    var label: String {
-        switch self {
-        case .victory: return "Victory!"
-        case .soclose: return "So close!"
-        case .sweep: return "Sweep!"
-        case .flawless: return "Flawless!"
-        case .youwin: return "You win!"
-        case .youlose: return "You lose"
-        case .draw: return "Draw"
-        case .newrecord: return "New record!"
-        case .streak: return "Streak!"
-        }
-    }
+    /// The words on the art (its accessibility label) — §AB: from the Core registry.
+    var label: String { ArtTitleLabels.moments[rawValue] ?? rawValue.capitalized }
 
     var isAvailable: Bool { ArtAsset.exists(assetName) }
 }
@@ -495,7 +474,7 @@ private struct TitleArtMotion: ViewModifier {
     func body(content: Content) -> some View {
         if still {
             content
-        } else if settled && float {
+        } else if settled && float && !Motion.calm(envReduceMotion) {   // §AD: no idle float in Low Power Mode
             TimelineView(.animation(minimumInterval: 1 / 20)) { ctx in
                 content.offset(y: Self.floatOffset(ctx.date.timeIntervalSince(start)))
             }
@@ -677,6 +656,7 @@ struct PageBackground: View {
                         .frame(width: geo.size.width, height: geo.size.height)
                         .clipped()
                         .overlay(overlay(dark: dark, a11y: a11y))
+                        .overlay(alignment: .top) { headerFade(dark: dark) }
                 }
                 .ignoresSafeArea()
             } else {
@@ -686,6 +666,20 @@ struct PageBackground: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    /// FINISH_SPEC §N2: a very soft fade under the header area — the page tint at
+    /// 55% → 0% over the top ~170 pt (plus the status bar) so the cast sits on calm
+    /// color. Menu pages only (game screens have no cast header).
+    @ViewBuilder private func headerFade(dark: Bool) -> some View {
+        if case .game = tint {
+            EmptyView()
+        } else {
+            let c = tint.stops(dark: dark)[0]
+            LinearGradient(colors: [c.opacity(dark ? 0.45 : 0.55), c.opacity(0)], startPoint: .top, endPoint: .bottom)
+                .frame(height: 230)
+                .allowsHitTesting(false)
+        }
     }
 
     private func overlay(dark: Bool, a11y: Bool) -> Color {

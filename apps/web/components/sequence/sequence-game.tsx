@@ -28,11 +28,12 @@ import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
-import { ResultLine, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
+import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
+import { FittedBoardsRecap } from '@/components/game/fitted-recap';
 import { REVEAL } from '@/lib/tile-motion';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { CompletedBoardsRecap, toRecapBoards } from '@/components/game/completed-mini-board';
+import { toRecapBoards } from '@/components/game/completed-mini-board';
 import { SequenceMiniBoard } from './sequence-mini-board';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
@@ -163,7 +164,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         setError('Word must be 5 letters');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setError(''), 1500);
         return;
       }
@@ -172,7 +173,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         setError('Not in word list');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setError(''), 1500);
         return;
       }
@@ -181,7 +182,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         setError('Already guessed');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setError(''), 1500);
         return;
       }
@@ -239,6 +240,9 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
   const guessesUsed = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
+  // R2: the strip's points — the same total the score card shows.
+  const finishedPoints = state.status === GameStatus.PLAYING ? null
+    : computeScoreBreakdown('SEQUENCE', state.status === GameStatus.WON, guessesUsed, elapsedTime, solvedCount, 4, 0, undefined, undefined, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total;
   // §255 (founder: "Succession needs to be formatted more like quadword, it
   // still looks bad"): this screen has its own mini board and never went
   // through MultiBoard, so it kept the stretched 2x2 grid — flat tiles on a
@@ -270,7 +274,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   return (
     <GameBackground
       mode="SEQUENCE"
-      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && <VictoryAnimation mode="SEQUENCE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
@@ -292,31 +296,11 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>}
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
-        {state.status !== 'PLAYING' && (
-          // FINISH_SPEC B6: two tinted result pills + the 3D share icon (no Home text link).
-          <ResultLine
-            className="mt-1.5"
-            won={state.status === 'WON'}
-            guesses={guessesUsed}
-            time={formatTime(elapsedTime)}
-            srText={state.status === 'WON' ? `All 4 solved in ${guessesUsed} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${solvedCount}/4`}
-            onShare={handleShare}
-            copied={copied}
-          >
-            {isDaily && <DailyRankBadge gameMode="SEQUENCE" />}
-            {!isDaily && isPro && <PlayAgainButton onClick={handleNextPuzzle} won={state.status === 'WON'} />}
-          </ResultLine>
-        )}
       </div>
 
-      {/* 2x2 Board Grid (scrolls post-game so the ScoreBreakdownCard fits). */}
-      <div ref={boardAreaRef} className={`flex-1 min-h-0 px-2 pb-2 ${state.status === GameStatus.PLAYING ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        {state.status !== GameStatus.PLAYING ? (
-          /* Finished: compact uniform recap (completed-daily-board sizing) —
-             the in-play 2x2 layout rendered zoomed huge post-game (iOS
-             build-87 parity: all multi-board modes share the clean recap). */
-          <CompletedBoardsRecap boards={toRecapBoards(state.boards)} />
-        ) : (
+      {/* The ref'd area stays mounted in both states (useSquareBoardFit measures it while playing). */}
+      <div ref={boardAreaRef} className={state.status === GameStatus.PLAYING ? 'flex-1 min-h-0 px-2 pb-2 overflow-hidden' : 'flex-1 min-h-0 flex flex-col'}>
+        {state.status === GameStatus.PLAYING ? (
         <div
           className={boardFit ? 'grid gap-2 w-full h-full justify-center content-center' : 'grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto h-full'}
           style={boardFit ? { gridTemplateColumns: `repeat(${boardFit.cols}, ${boardFit.boardW}px)` } : undefined}
@@ -349,19 +333,46 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
               );
             })}
           </div>
+        ) : (
+          // FINISH_SPEC R2: one screen — the result strip, the 4 boards in the
+          // mini grid with the biggest tiles that fit (2 × 2 vs 1 × 4 / 4 × 2 vs 2 × 4), the dock (share · Next daily /
+          // Leaderboard · the Unlimited card); the score breakdown under "More".
+          <FinishedScreen
+            fit="self"
+            strip={
+              <ResultStrip
+                won={state.status === 'WON'}
+                guesses={guessesUsed}
+                time={formatTime(elapsedTime)}
+                points={finishedPoints}
+                srText={state.status === 'WON' ? `All 4 solved in ${guessesUsed} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${solvedCount}/4`}
+              />
+            }
+            sub={isDaily ? <DailyRankBadge gameMode="SEQUENCE" /> : undefined}
+            board={<FittedBoardsRecap boards={toRecapBoards(state.boards)} />}
+            dock={
+              <FinishedDock
+                currentMode="SEQUENCE"
+                isDaily={!!isDaily}
+                onShare={handleShare}
+                copied={copied}
+                onNewPuzzle={!isDaily && isPro ? handleNextPuzzle : undefined}
+              />
+            }
+            moreLabel="Score breakdown"
+            more={
+              <ScoreBreakdownCard
+                gameMode="SEQUENCE"
+                completed={state.status === GameStatus.WON}
+                guessCount={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
+                timeSeconds={elapsedTime}
+                boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
+                totalBoards={4}
+                day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
+              />
+            }
+          />
         )}
-          {state.status !== GameStatus.PLAYING && (
-            <ScoreBreakdownCard
-              gameMode="SEQUENCE"
-              completed={state.status === GameStatus.WON}
-              guessCount={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
-              timeSeconds={elapsedTime}
-              boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
-              totalBoards={4}
-              day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
-            />
-          )}
-          {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="SEQUENCE" />}
       </div>
 
       {/* Keyboard — hidden when game is complete */}

@@ -27,8 +27,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.draw.drawBehind
 import com.wordocious.app.ui.squishClickable
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -84,23 +82,23 @@ fun KeyboardView(
      *  Check) fill in the mode accent so the remaining letters stand out. letter → color. */
     keyFills: Map<String, Color> = emptyMap(),
 ) {
-    // iOS parity (KeyboardView.swift): playKeyTap on EVERY key, and the SAME
-    // light `Haptics.tap()` on letters, ⌫ and ENTER alike.
-    val haptics = LocalHapticFeedback.current
+    // FINISH_SPEC U: key press = tap · light (pitch varied ±3 %), ⌫ = delete · light,
+    // through the shared sound/haptics services (Settings toggles gate both).
+    val view = androidx.compose.ui.platform.LocalView.current
     val layout = KeyboardLayoutPref.value
     // Michael Keyboard is a row taller — shorter keys keep total height close
     // to the 3-row layouts so tight boards (OctoWord) don't squeeze.
     val keyH = keyHeight ?: if (layout == "michael") 44.dp else 52.dp
     val enterTap = {
-        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        com.wordocious.app.data.SoundManager.playKeyTap()
+        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
         onEnter()
     }
     val deleteTap = {
-        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        com.wordocious.app.data.SoundManager.playKeyTap()
+        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.DELETE, view)
         onDelete()
     }
+    // The keys squish but stay quiet: the key sound is the sound (no press/release on top).
+    androidx.compose.runtime.CompositionLocalProvider(com.wordocious.app.ui.LocalSquishSound provides false) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp), // B2 row spacing (game-kit.html .kbd gap 6)
@@ -124,8 +122,7 @@ fun KeyboardView(
                 }
                 row.forEach { ch ->
                     val tap = {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        com.wordocious.app.data.SoundManager.playKeyTap()
+                        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
                         onKey(ch)
                     }
                     val fill = keyFills[ch.toString()]
@@ -154,12 +151,12 @@ fun KeyboardView(
             ) {
                 WideKey("ENTER", keyH, enterTap)
                 SpaceKey(keyH) {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    com.wordocious.app.data.SoundManager.playKeyTap()
+                    com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
                 }
                 WideKey("ENTER", keyH, enterTap)
             }
         }
+    }
     }
 }
 

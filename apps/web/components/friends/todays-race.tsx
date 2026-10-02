@@ -5,11 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Swords, Flag } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { CandyButton } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { FR_LOOK, raceChipColor, rowStripe } from '@/lib/friends-look';
+import { softMix } from '@/lib/soft-surface';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
 import { vsHrefForMode } from '@/lib/invite-service';
 import { rankToday, raceStatusLine } from '@/lib/todays-race';
 import { Avatar } from './friends-panel';
+import { FrCard } from './friends-ui';
 
 // TODAY'S RACE — the top of the Friends tab (Stats + Friends redesign D3,
 // founder 2026-09-26: "real ideas … real reasons to tap"). You and every
@@ -18,7 +23,9 @@ import { Avatar } from './friends-panel';
 // reason to tap: Challenge (a private Classic VS Battle, pushed to the friend,
 // free for friends) and the bell for a friend who hasn't played yet. Tapping
 // the row opens their profile. iOS TodaysRaceCard / Android TodaysRaceCard
-// are the twins; `lib/todays-race.ts` holds the shared ranking.
+// are the twins; `lib/todays-race.ts` holds the shared ranking. Finishing build
+// C4: a pink card with the banner's top bar, medal rank circles, soft numbers,
+// striped rows and candy Nudge / Challenge buttons.
 
 interface Props {
   friends: FriendProfile[];
@@ -46,7 +53,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
     try {
       const r = await challengeFriend(f.id, 'DUEL');
       if ('error' in r) { onNote(r.error); return; }
-      onNote(`Challenge sent to ${f.username} ⚔️`);
+      onNote(`Challenge sent to ${f.username}!`);
       // Into the private lobby with the code — the friend's push lands on /vs/join/<code>.
       router.push(`${vsHrefForMode('DUEL')}?inviteCode=${r.code}`);
     } finally {
@@ -55,40 +62,47 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
   };
 
   return (
-    <div className="overflow-hidden" style={{ background: '#ffffff', borderRadius: 14, boxShadow: '0 2px 10px rgba(76,29,149,0.07)' }}>
+    <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.bannerBar}>
       <div className="px-4 pt-3 pb-3">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
-            <Flag className="w-4 h-4" style={{ color: '#db2777' }} />
-            <span className="text-[11px] font-black uppercase" style={{ color: '#6b7280', letterSpacing: 1.2 }}>Today&apos;s Race</span>
+            <Flag className="w-4 h-4" style={{ color: '#db2777' }} aria-hidden="true" />
+            <h2 className="m-0 text-[11px] font-black uppercase" style={{ color: FR_LOOK.bannerClock, letterSpacing: 1.3 }}>Today&apos;s Race</h2>
           </div>
-          <span className="text-[10px] font-black" style={{ color: anyPoints ? '#9d174d' : '#6b7280' }}>{status}</span>
+          <span className="text-[10.5px] font-black text-right" style={{ color: anyPoints ? FR_LOOK.bannerInk : FR_LOOK.rowSub }}>{status}</span>
         </div>
-        <div className="space-y-1.5">
-          {rows.map((r) => {
+        <div className="space-y-1">
+          {rows.map((r, i) => {
             const f = r.me ? null : byId.get(r.id);
             const rowHref = r.me ? '/stats' : `/profile/${r.id}`;
-            const medal = anyPoints && r.points > 0 ? ['🥇', '🥈', '🥉'][r.rank - 1] : undefined;
+            const medal = raceChipColor(r, anyPoints);
             return (
               <div
                 key={r.id}
                 className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl"
-                style={{ background: r.me ? '#fce7f3' : 'transparent', boxShadow: r.me ? '0 0 0 2px #db2777' : undefined }}
+                style={{
+                  background: r.me ? softMix(FR_LOOK.lavender, 0.14) : rowStripe(i),
+                  boxShadow: r.me ? `0 0 0 2px ${FR_LOOK.lavender}` : undefined,
+                }}
               >
-                <span className="w-6 shrink-0 text-center text-[11px] font-black" style={{ color: '#6b7280' }}>
-                  {medal ?? `${r.rank}`}
+                <span
+                  className="shrink-0 flex items-center justify-center rounded-full text-[11px] font-black text-white"
+                  style={{ width: 22, height: 22, background: medal, textShadow: '0 1px 1px rgba(59,26,120,0.35)' }}
+                  aria-label={`Rank ${r.rank}`}
+                >
+                  {r.rank}
                 </span>
-                <Link href={rowHref} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                <Link href={rowHref} className="flex items-center gap-2 flex-1 min-w-0">
                   {f
                     ? <Avatar f={f} />
                     : <Avatar f={{ id: me.id, username: me.username, avatar_url: me.avatar_url, avatar_emoji: me.avatar_emoji, level: me.level }} />}
                   <span className="flex-1 min-w-0">
-                    <span className="block text-xs font-extrabold truncate" style={{ color: r.me ? '#831843' : '#1f2937' }}>
+                    <span className="block text-[12.5px] font-black truncate" style={{ color: FR_LOOK.ink }}>
                       {r.me ? 'You' : r.username}
                     </span>
-                    <span className="block text-[10px] font-bold truncate" style={{ color: '#6b7280' }}>
+                    <span className="block text-[10.5px] font-bold truncate" style={{ color: FR_LOOK.rowSub }}>
                       {r.points > 0
-                        ? `${r.points.toLocaleString()} pts · ${r.played}/${SWEEP_MODES.length} dailies`
+                        ? <><SoftNum size={11}>{r.points.toLocaleString()}</SoftNum> pts · {r.played}/{SWEEP_MODES.length} dailies</>
                         : "hasn't played today"}
                     </span>
                   </span>
@@ -96,34 +110,37 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                 {f && (
                   <>
                     {r.points === 0 && (
-                      <button
+                      <CandyButton
+                        size="sm"
+                        color="amber"
+                        icon={<Icon3D name="bell" size={16} />}
                         onClick={() => onTaunt(f)}
                         aria-label={`Nudge ${f.username}`}
-                        className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform shrink-0"
-                        style={{ background: '#fce7f3' }}
-                      >
-                        <Icon3D name="bell" size={17} />
-                      </button>
+                        className="shrink-0"
+                        style={{ width: 32, padding: 0 }}
+                      />
                     )}
-                    <button
+                    <CandyButton
+                      size="sm"
+                      color="pink"
+                      icon={<Swords className="w-3.5 h-3.5" aria-hidden="true" />}
                       onClick={() => challenge(f)}
                       disabled={challenging !== null}
                       aria-label={`Challenge ${f.username} to a VS Battle`}
-                      className="flex items-center gap-1 px-2.5 rounded-full text-[10.5px] font-black shrink-0 active:scale-95 transition-transform"
-                      style={{ height: 28, background: '#fce7f3', color: '#9d174d', opacity: challenging && challenging !== f.id ? 0.5 : 1 }}
+                      className="shrink-0"
                     >
-                      <Swords className="w-3 h-3" /> {challenging === f.id ? 'Sending…' : 'Challenge'}
-                    </button>
+                      {challenging === f.id ? 'Sending…' : 'Challenge'}
+                    </CandyButton>
                   </>
                 )}
               </div>
             );
           })}
         </div>
-        <p className="text-[9px] font-bold mt-2 text-center" style={{ color: '#6b7280' }}>
+        <p className="text-[9.5px] font-bold mt-2 text-center" style={{ color: FR_LOOK.rowSub }}>
           Today&apos;s points across every daily · Challenge = a private Classic battle, free for friends
         </p>
       </div>
-    </div>
+    </FrCard>
   );
 }

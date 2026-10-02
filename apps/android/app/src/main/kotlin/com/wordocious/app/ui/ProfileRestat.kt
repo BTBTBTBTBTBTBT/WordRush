@@ -36,6 +36,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.MatchStatsService
 import com.wordocious.app.data.StatsDeepService
@@ -51,9 +55,10 @@ import com.wordocious.app.ui.theme.WTheme
 
 // ── Snapshot hero ─────────────────────────────────────────────────────────────
 
-/** Merges the old 4-card summary row + "This Week" recap into ONE card:
- *  lifetime headline stats up top, the week strip underneath, and a Pro
- *  upsell link for free users. */
+/** All-time's head (finishing build C3): the "ALL-TIME" label over the four tiles, each in
+ *  its own color with its 3D icon and a soft count-up number — purple WINS, green WIN
+ *  RATE, gold WIN STREAK, pink DAILY STREAK — then the this-week strip (a tinted pill)
+ *  and, for free players, the amber Pro candy button. */
 @Composable
 fun SnapshotHero(
     totalWins: Int,
@@ -70,43 +75,51 @@ fun SnapshotHero(
 ) {
     val totalGames = totalWins + totalLosses
     val winRate = if (totalGames > 0) Math.round(totalWins.toFloat() / totalGames * 100) else 0
-    KitCard {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // F4: marquee numbers count up from 0 on first appear (Win Rate keeps "%").
-            StatCell(null, "Wins", "$totalWins", color = Color(0xFF7C3AED), modifier = Modifier.weight(1f), countUp = totalWins, icon3d = Icon3DName.TROPHY)
-            StatCell(Icons.Filled.TrackChanges, "Win Rate", "$winRate%", color = Color(0xFF2563EB), modifier = Modifier.weight(1f), countUp = winRate, countSuffix = "%")
-            // Glossary (StatLabels, §296): Win Streak = consecutive wins; Daily Streak = days with a daily.
-            StatCell(Icons.Filled.Bolt, StatLabels.winStreak, "$currentStreak", sub = "Best: $bestStreak", color = WTheme.primary, modifier = Modifier.weight(1f), countUp = currentStreak)
-            StatCell(null, StatLabels.dailyStreak, "$dailyStreak", sub = "Best: $bestDailyStreak", color = Color(0xFFF97316), modifier = Modifier.weight(1f), countUp = dailyStreak, icon3d = Icon3DName.FLAME)
-        }
-        Spacer(Modifier.height(12.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(Icons.Filled.AutoAwesome, null, tint = WTheme.primary, modifier = Modifier.size(13.dp))
-            Text("THIS WEEK", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = Color(0xFF6D28D9))
-            Text(
-                "$gamesThisWeek ${if (gamesThisWeek == 1) "game" else "games"}",
-                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1,
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        FinishLabel("ALL-TIME", Modifier.padding(horizontal = 4.dp).semantics { heading() })
+        // F4: marquee numbers count up from 0 on first appear (Win Rate keeps "%").
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatsTile(
+                StatsInk.LAVENDER, "Wins", "$totalWins", Modifier.weight(1f).fillMaxHeight(),
+                icon = Icon3DName.TROPHY, sub = "all games", countUp = totalWins,
             )
+            StatsTile(
+                StatsInk.GREEN, "Win Rate", "$winRate%", Modifier.weight(1f).fillMaxHeight(),
+                icon = Icon3DName.BADGE_W, sub = "$totalGames ${if (totalGames == 1) "game" else "games"}",
+                countUp = winRate, countSuffix = "%",
+            )
+        }
+        // Glossary (StatLabels, §296): Win Streak = consecutive wins; Daily Streak = days with a daily.
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatsTile(
+                StatsInk.GOLD, StatLabels.winStreak, "$currentStreak", Modifier.weight(1f).fillMaxHeight(),
+                icon = Icon3DName.CROWN, sub = "best $bestStreak", countUp = currentStreak,
+            )
+            StatsTile(
+                StatsInk.PINK, StatLabels.dailyStreak, "$dailyStreak", Modifier.weight(1f).fillMaxHeight(),
+                icon = Icon3DName.FLAME, sub = "best $bestDailyStreak", countUp = dailyStreak,
+            )
+        }
+        val purple = Color(0xFF7C3AED)
+        Row(
+            Modifier.fillMaxWidth().tintedPill(purple).padding(start = 12.dp, end = 12.dp, top = 11.dp, bottom = 8.dp)
+                .semantics(mergeDescendants = true) { },
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(Icons.Filled.AutoAwesome, null, tint = purple, modifier = Modifier.size(13.dp))
+            Text("THIS WEEK", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = if (WTheme.isDark) WTheme.textSecondary else Color(0xFF6D28D9))
+            SoftNumber("$gamesThisWeek", 15.sp)
+            Text(if (gamesThisWeek == 1) "game" else "games", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1)
             Spacer(Modifier.weight(1f))
-            Icon(Icons.Filled.TrendingUp, null, tint = Color(0xFF2563EB), modifier = Modifier.size(13.dp))
-            Row {
-                Text("$xpToNext XP ", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
-                Text("to Lvl ${level + 1}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, maxLines = 1)
-            }
+            SoftNumber(formatCount(xpToNext), 15.sp)
+            Text("XP to Lvl ${level + 1}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, maxLines = 1)
         }
         if (!isPro) {
-            Spacer(Modifier.height(10.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
-            Row(
-                Modifier.fillMaxWidth().clickableNoRipple(onGoPro).padding(top = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Unlock your full insights with Pro", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary)
-                Spacer(Modifier.weight(1f))
-                Text("→", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
-            }
+            CandyButton(
+                "Unlock your full insights with Pro", onGoPro, Modifier.fillMaxWidth(),
+                color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true, fontSize = 13.sp,
+                leading = { Icon3D(Icon3DName.CROWN, 18.dp) },
+            )
         }
     }
 }
@@ -124,10 +137,8 @@ fun DailyStandingStrip(reloadToken: Int = 0) {
     }
     val s = standing ?: return
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFF5F3FF), Color(0xFFFCE7F3))))
-            .border(1.5.dp, Color(0xFFE9D5FF), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().tintedPill(Color(0xFFF5A524), corner = 14.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(Icons.Filled.TrendingUp, null, tint = WTheme.primary, modifier = Modifier.size(14.dp))
@@ -168,15 +179,15 @@ fun OpenerLabCard(playType: String = "solo") {
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Opener Lab", accent = Color(0xFF06B6D4))
-        KitCard {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        KitCard(accent = Color(0xFF06B6D4)) {
+            Column(Modifier.clip(RoundedCornerShape(10.dp))) {
                 openers.forEachIndexed { i, o ->
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(8.dp),
+                        Modifier.fillMaxWidth().stripedRow(i, Color(0xFF06B6D4)).padding(horizontal = 8.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Text("${i + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.width(16.dp), textAlign = TextAlign.Center)
-                        Text(o.word, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = WTheme.text, modifier = Modifier.weight(1f))
+                        Text(o.word, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, modifier = Modifier.weight(1f))
                         Text("${o.count}×", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         // Width 56 + single line: "100% W" overflowed the old 48dp
                         // column and wrapped the W onto its own line (web w-14 +
@@ -230,7 +241,7 @@ fun WeekdayFormCard(playType: String = "solo") {
     val hint = best?.let { "Best: ${dayNames[it.dow]} (${Math.round(it.won * 100.0 / it.played)}%)" }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Weekday Form", accent = Color(0xFFF97316))
-        ChartCard(title = "Win rate by day", hint = hint) {
+        ChartCard(title = "Win rate by day", hint = hint, accent = Color(0xFFF97316)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                 days.forEach { d ->
                     val rate = if (d.played > 0) d.won.toFloat() / d.played else 0f
@@ -245,7 +256,7 @@ fun WeekdayFormCard(playType: String = "solo") {
                                 .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
                             val alpha = if (d.played == 0) 1f else 0.5f + 0.5f * d.played / maxPlayed
                             when {
-                                d.played == 0 -> Box(barMod.background(WTheme.border))
+                                d.played == 0 -> Box(barMod.background(Color(0xFF7C3AED).copy(alpha = 0.14f)))
                                 best?.dow == d.dow -> Box(barMod.background(Brush.verticalGradient(listOf(Color(0xFFFBBF24).copy(alpha = alpha), Color(0xFFF97316).copy(alpha = alpha)))))
                                 else -> Box(barMod.background(Brush.verticalGradient(listOf(Color(0xFFA78BFA).copy(alpha = alpha), Color(0xFF7C3AED).copy(alpha = alpha)))))
                             }
@@ -274,7 +285,7 @@ fun DailyPointsChartCard(points: List<MatchStatsService.DailyPointsPoint>) {
     val hasPuzzles = points.any { it.puzzlePoints > 0 }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Daily Points", accent = Color(0xFFEC4899))
-        ChartCard(title = "Points per day", hint = "Last 30 days · ● sweep · ● flawless") {
+        ChartCard(title = "Points per day", hint = "Last 30 days · ● sweep · ● flawless", accent = Color(0xFFEC4899)) {
             val maxV = maxOf(1, points.maxOf { maxOf(it.wordPoints, it.puzzlePoints) })
             Canvas(Modifier.fillMaxWidth().height(110.dp)) {
                 val w = size.width; val h = size.height

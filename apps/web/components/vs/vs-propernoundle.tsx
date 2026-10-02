@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { isTypingTarget } from '@/lib/keyboard';
+import { CandyButton } from '@/components/ui/candy-button';
+import { softPill } from '@/lib/soft-surface';
 import { playInvalid } from '@/lib/sounds';
 import { GameMode, pnGuessBlocked } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
-import { categoryLabel, CATEGORY_COLORS, CATEGORY_EMOJI } from '@/components/propernoundle/categories';
+import { categoryLabel, CATEGORY_COLORS } from '@/components/propernoundle/categories';
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import NoundleBoard from '@/components/propernoundle/noundle-board';
 import { Guess, TileState, type Puzzle } from '@/components/propernoundle/types';
@@ -232,7 +234,7 @@ export function VsProperNoundle({
               className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
               style={{ background: CATEGORY_COLORS[puzzleMetadata.themeCategory] || '#ef4444' }}
             >
-              {CATEGORY_EMOJI[puzzleMetadata.themeCategory] ? `${CATEGORY_EMOJI[puzzleMetadata.themeCategory]} ` : ''}{categoryLabel(puzzleMetadata.themeCategory)}
+              {categoryLabel(puzzleMetadata.themeCategory)}
             </span>
           )}
           <span className="text-gray-400 text-xs font-bold">{answerLength} letters</span>
@@ -260,8 +262,9 @@ export function VsProperNoundle({
 
       {/* Hint clue text (once fetched) */}
       {hints.hint && (
-        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-          <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+        // A1: the clue sits on ProperNoundle's red wash, never plain white.
+        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5" style={softPill('#dc2626', { radius: 12 })}>
+          <p className="text-xs italic leading-snug font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
         </div>
       )}
 
@@ -282,36 +285,17 @@ export function VsProperNoundle({
           unmounting it re-centered the flex-1 board for the frame between
           finishing and the 'waiting' screen swap — a visible board jump. */}
       <div className={`shrink-0 flex justify-center gap-2 px-4 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
-          <button
-            onClick={handleHintClue}
-            disabled={hints.hintUsed || hints.loadingHint}
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-              hints.hintUsed ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-purple-300 text-purple-600 bg-purple-50 hover:bg-purple-100'
-            }`}
-          >
-            {hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" /> : <Lightbulb className="w-3 h-3" />}
+          {/* A8: the solo screen's candy hint buttons. */}
+          <CandyButton size="sm" color="purple" onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+            icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
             Clue
-          </button>
-          <button
-            onClick={handleVowelReveal}
-            disabled={hints.vowelUsed}
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-              hints.vowelUsed ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100'
-            }`}
-          >
-            <Eye className="w-3 h-3" />
+          </CandyButton>
+          <CandyButton size="sm" color="teal" onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
             {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
-          </button>
-          <button
-            onClick={handleConsonantReveal}
-            disabled={hints.consonantUsed}
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-              hints.consonantUsed ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'
-            }`}
-          >
-            <Hash className="w-3 h-3" />
+          </CandyButton>
+          <CandyButton size="sm" color="pink" onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
             {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
-          </button>
+          </CandyButton>
         </div>
 
       {/* Keyboard */}

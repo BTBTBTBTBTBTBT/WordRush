@@ -284,6 +284,21 @@ object StoreManager {
     // MARK: Fulfillment
 
     private suspend fun handlePurchase(purchase: Purchase, isNewPurchase: Boolean) {
+        // FINISH_SPEC AP: a FRESH purchase (never a restore / launch reconcile) may earn the
+        // one-time "Welcome to Pro" — decided before the grant changes the profile, shown
+        // once the account reads Pro (ui/ProWelcome.kt).
+        val welcome = isNewPurchase &&
+            purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
+            purchase.products.any { it == PRO_MONTHLY || it == PRO_YEARLY || it == PRO_DAY } &&
+            com.wordocious.app.ui.ProWelcome.armForPurchase(isNewPurchase)
+        try {
+            fulfill(purchase, isNewPurchase)
+        } finally {
+            if (welcome) com.wordocious.app.ui.ProWelcome.settle()
+        }
+    }
+
+    private suspend fun fulfill(purchase: Purchase, isNewPurchase: Boolean) {
         if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) {
             // Play's PENDING state (slow card / cash payment / parental approval)
             // arrives on the OK branch — tell the user, same as iOS StoreKit's

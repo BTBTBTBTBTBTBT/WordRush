@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { softBackground } from '@/lib/soft-surface';
 
 // Signed-out-only screens load as their own chunks (founder, 2026-09-29): a
 // signed-in player never downloads them. Still server-rendered, so crawlers
@@ -99,15 +100,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <div
         className="fixed inset-0 flex flex-col"
-        style={{ backgroundColor: 'var(--color-bg)' }}
+        style={{ background: softBackground('#7c3aed', 0.06) }}
       >
         {/* Mimic AppHeader height so content doesn't shift (two rows since HEADER_SPEC §1) */}
         <div
           className="flex items-center justify-center px-4"
           style={{
             height: '98px',
-            borderBottom: '1.5px solid var(--color-border)',
-            background: 'var(--color-surface)',
+            borderBottom: '1.5px solid rgba(124, 58, 237, 0.18)',
+            background: softBackground('#7c3aed', 0.1),
           }}
         >
           <h1
@@ -124,13 +125,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         {/* Skeleton placeholders that match the home page layout */}
         <div className="px-4 pt-2 space-y-2 animate-pulse" style={{ opacity: 0.4 }}>
           {/* Hero banner skeleton */}
-          <div style={{ height: '68px', background: 'var(--color-border)', borderRadius: '14px' }} />
+          <div style={{ height: '68px', background: 'rgba(124, 58, 237, 0.16)', borderRadius: '14px' }} />
           {/* Section header skeleton */}
-          <div style={{ height: '14px', width: '100px', background: 'var(--color-border)', borderRadius: '6px', marginTop: '12px' }} />
+          <div style={{ height: '14px', width: '100px', background: 'rgba(124, 58, 237, 0.16)', borderRadius: '6px', marginTop: '12px' }} />
           {/* Game mode cards skeleton - 2x2 grid */}
           <div className="grid grid-cols-2 gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} style={{ height: '88px', background: 'var(--color-border)', borderRadius: '14px' }} />
+              <div key={i} style={{ height: '88px', background: 'rgba(124, 58, 237, 0.16)', borderRadius: '14px' }} />
             ))}
           </div>
         </div>

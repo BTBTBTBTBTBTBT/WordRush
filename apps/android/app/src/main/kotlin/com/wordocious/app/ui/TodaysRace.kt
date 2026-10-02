@@ -15,26 +15,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ModeGen
-import com.wordocious.app.R
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.theme.Nunito
-import com.wordocious.app.ui.theme.WTheme
 
 // TODAY'S RACE (§289, Friends D3.1) — the top of the FRIENDS card: you and
 // every friend ranked by TODAY's daily points (the digest's todayPoints —
@@ -99,6 +94,9 @@ internal fun racePts(n: Int): String = String.format(java.util.Locale.US, "%,d",
 
 private val PURPLE = Color(0xFF7C3AED)
 private val PINK = Color(0xFFEC4899)
+/** Fixed-light inks: the race lives on the Friends tab's pink sheet in every theme. */
+private val INK = Color(0xFF2A1650)
+private val INK_MUTED = Color(0xFF6F5F8F)
 
 /**
  * The card body. Renders nothing without a signed-in profile or friends.
@@ -129,41 +127,46 @@ fun TodaysRaceCard(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Filled.Flag, null, tint = PURPLE, modifier = Modifier.size(13.dp))
             Spacer(Modifier.width(4.dp))
-            Text(
-                "TODAY'S RACE", fontSize = 9.sp, fontWeight = FontWeight.Black,
-                letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito,
-            )
+            com.wordocious.app.ui.friends.FriendsLabel("TODAY'S RACE")
             Spacer(Modifier.weight(1f))
             Text(
-                status, fontSize = 10.sp, fontWeight = FontWeight.Black,
-                color = if (anyPoints) PURPLE else WTheme.textMuted, fontFamily = Nunito,
+                status, fontSize = 11.sp, fontWeight = FontWeight.Black,
+                color = if (anyPoints) PURPLE else INK_MUTED, fontFamily = Nunito,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
-        rows.forEach { r ->
+        rows.forEachIndexed { i, r ->
             val f = if (r.me) null else byId[r.id]
-            val medal = if (anyPoints && r.points > 0) listOf("🥇", "🥈", "🥉").getOrNull(r.rank - 1) else null
+            val medal = anyPoints && r.points > 0 && r.rank in 1..3
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (r.me) PURPLE.copy(alpha = 0.06f) else Color.Transparent)
-                    .border(1.dp, if (r.me) Color(0xFFC4B5FD) else Color.Transparent, RoundedCornerShape(12.dp))
+                    .then(
+                        if (r.me) Modifier.background(PURPLE.copy(alpha = 0.08f)).border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(12.dp))
+                        else Modifier.stripedRow(i, PINK, first = true)
+                    )
                     .padding(horizontal = 6.dp, vertical = 5.dp),
             ) {
-                Text(
-                    medal ?: "${r.rank}", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                    color = WTheme.textMuted, fontFamily = Nunito,
-                    textAlign = TextAlign.Center, modifier = Modifier.width(22.dp),
-                )
+                // C4: the rank on a medal-colored disc (gold / silver / bronze) or a soft number.
+                Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) {
+                    if (medal) {
+                        Box(
+                            Modifier.size(22.dp).clip(CircleShape).background(PodiumInk.medal(r.rank)),
+                            contentAlignment = Alignment.Center,
+                        ) { Text("${r.rank}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                    } else {
+                        Text("${r.rank}", style = softNumberStyle(13.sp, FinishInk.softNumber))
+                    }
+                }
                 // The row opens the friend's profile; your own row goes nowhere.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f).let { m ->
-                        if (f != null) m.clickableNoRipple { onOpenProfile(f.id) } else m
+                        if (f != null) m.squishClickable(label = null) { onOpenProfile(f.id) } else m
                     },
                 ) {
                     FriendAvatar(
@@ -177,60 +180,47 @@ fun TodaysRaceCard(
                         Text(
                             if (r.me) "You" else r.username, fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (r.me) PURPLE else WTheme.text,
+                            color = if (r.me) PURPLE else INK,
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            if (r.points > 0) "${racePts(r.points)} pts · ${r.played}/$sweepSize dailies"
-                            else "hasn't played today",
-                            fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                            color = WTheme.textMuted, fontFamily = Nunito,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
+                        if (r.points > 0) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(racePts(r.points), style = softNumberStyle(13.sp, FinishInk.softNumber), maxLines = 1)
+                                Text(
+                                    "pts · ${r.played}/$sweepSize dailies", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                                    color = INK_MUTED, fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        } else {
+                            Text(
+                                "hasn't played today", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                                color = INK_MUTED, fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
                 if (f != null) {
                     if (r.points == 0) {
-                        // The bell — the existing canned taunt picker.
-                        Box(
-                            Modifier.size(26.dp).clip(CircleShape).background(WTheme.surfaceHover)
-                                .border(1.5.dp, WTheme.border, CircleShape)
-                                .clickableNoRipple { onTaunt(f) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Outlined.Notifications, "Nudge ${f.username}",
-                                tint = PURPLE, modifier = Modifier.size(14.dp),
-                            )
-                        }
+                        // The bell — the existing canned taunt picker, as a small amber candy circle.
+                        CandyRoundButton(
+                            "Nudge ${f.username}", onClick = { onTaunt(f) },
+                            color = CandyColor.AMBER, diameter = 30.dp,
+                        ) { Icon3D(Icon3DName.BELL, 16.dp) }
                     }
                     val sending = challengingId == f.id
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(PINK.copy(alpha = 0.08f))
-                            .border(1.5.dp, PINK, RoundedCornerShape(8.dp))
-                            .alpha(if (challengingId != null && !sending) 0.5f else 1f)
-                            .clickableNoRipple { if (challengingId == null) onChallenge(f) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_swords), "Challenge ${f.username} to a VS Battle",
-                            tint = PINK, modifier = Modifier.size(11.dp),
-                        )
-                        Text(
-                            if (sending) "Sending…" else "Challenge", fontSize = 10.sp,
-                            fontWeight = FontWeight.Black, color = PINK, fontFamily = Nunito,
-                        )
-                    }
+                    CandyButton(
+                        if (sending) "Sending…" else "Challenge",
+                        onClick = { onChallenge(f) },
+                        color = CandyColor.PURPLE, size = CandySize.SMALL,
+                        enabled = challengingId == null,
+                        contentDescription = "Challenge ${f.username} to a VS Battle",
+                    )
                 }
             }
         }
         Text(
             "Today's points across every daily · Challenge = a private Classic battle, free for friends",
-            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, fontFamily = Nunito,
+            fontSize = 10.sp, fontWeight = FontWeight.Bold, color = INK_MUTED, fontFamily = Nunito,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
         )
     }

@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -64,9 +66,11 @@ fun SectionHeader(
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(4.dp).height(14.dp).clip(RoundedCornerShape(50)).background(accent))
         Spacer(Modifier.width(8.dp))
+        // Finishing build: the mockups' `.lbl` — 11 sp Black, .12em, in the section's ink.
         Text(
             label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black,
-            color = WTheme.textMuted, letterSpacing = 1.6.sp,
+            color = if (WTheme.isDark) WTheme.textSecondary else darkenInk(accent), letterSpacing = 1.3.sp,
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.weight(1f))
         right?.invoke()
@@ -74,8 +78,9 @@ fun SectionHeader(
 }
 
 /**
- * The standard card surface: 16dp radius, 1.5dp border, optional 3dp top
- * accent bar (mode color), like the leaderboard card.
+ * The standard Stats card surface (finishing build A1, C3): a tinted card — with an
+ * [accent], that accent's wash + line and the game-card top bar in it; without one, the
+ * mockup's lavender chart card (#f6f1ff / #e6dcfb, no bar). Never plain white.
  */
 @Composable
 fun KitCard(
@@ -83,13 +88,14 @@ fun KitCard(
     padded: Boolean = true,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-    ) {
-        if (accent != null) Box(Modifier.fillMaxWidth().height(3.dp).background(accent))
-        Column(Modifier.fillMaxWidth().padding(if (padded) 16.dp else 0.dp), content = content)
-    }
+    StatsCard(
+        swatch = if (accent != null) StatsInk.of(accent) else StatsInk.CHART,
+        bar = accent?.let { androidx.compose.ui.graphics.SolidColor(it) },
+        corner = 18.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(if (padded) 16.dp else 0.dp),
+        verticalArrangement = Arrangement.Top,
+        content = content,
+    )
 }
 
 /** One stat: icon, big value, small uppercase label, optional sub line. */
@@ -112,13 +118,12 @@ fun StatCell(
         if (icon3d != null) Icon3D(icon3d, 18.dp)
         else if (icon != null) Icon(icon, null, tint = color ?: WTheme.textMuted, modifier = Modifier.size(16.dp))
         val valueColor = if (icon == null && icon3d == null) (color ?: WTheme.text) else WTheme.text
+        // A2: every stat value is a soft number.
+        @Suppress("UNUSED_VARIABLE") val unusedColor = valueColor
         if (countUp != null) {
-            CountUpNumber(target = countUp, suffix = countSuffix, color = valueColor)
+            SoftCountUp(countUp, 18.sp, countSuffix)
         } else {
-            Text(
-                value, fontSize = 18.sp, fontWeight = FontWeight.Black,
-                color = valueColor, maxLines = 1,
-            )
+            SoftNumber(value, 18.sp)
         }
         Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.4.sp, maxLines = 1)
         // Always reserve the sub line so grids of cells stay equal-height.
@@ -163,7 +168,7 @@ fun ChartCard(
 ) {
     KitCard(accent = accent) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.heading)
             Spacer(Modifier.weight(1f))
             if (hint != null) Text(hint, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
@@ -191,23 +196,21 @@ fun ProLockOverlay(
     onGoPro: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    Box(Modifier.fillMaxWidth()) {
+    // A9: the whole locked card squishes on press (the scrim drives the shared interaction).
+    val interaction = remember { MutableInteractionSource() }
+    Box(Modifier.fillMaxWidth().pressSquish(interaction)) {
         Box(
             Modifier.fillMaxWidth().blur(3.dp).alpha(0.6f)
                 .clearAndSetSemantics { },
         ) { content() }
         // Transparent scrim eats taps on the blurred content underneath.
-        Box(Modifier.matchParentSize().clickableNoRipple(onGoPro))
-        Row(
-            Modifier.align(Alignment.Center).clip(RoundedCornerShape(50))
-                .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))))
-                .clickableNoRipple(onGoPro).padding(horizontal = 12.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon3D(Icon3DName.LOCK, 14.dp) // ART_SPEC §5
-            Text(label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White)
-        }
+        Box(Modifier.matchParentSize().clickable(interactionSource = interaction, indication = null, onClick = onGoPro))
+        // A8: the lock pill is a small pink candy button with the 3D lock (ART_SPEC §5).
+        CandyButton(
+            label, onGoPro, Modifier.align(Alignment.Center),
+            color = CandyColor.PINK, size = CandySize.SMALL,
+            leading = { Icon3D(Icon3DName.LOCK, 16.dp) },
+        )
     }
 }
 
@@ -273,10 +276,8 @@ fun CountUpNumber(target: Int, suffix: String = "", color: Color) {
         }
         shown = target
     }
-    Text(
-        "$shown$suffix", fontSize = 18.sp, fontWeight = FontWeight.Black,
-        color = color, maxLines = 1,
-    )
+    @Suppress("UNUSED_VARIABLE") val unusedColor = color
+    SoftNumber("$shown$suffix", 18.sp)
 }
 
 /**

@@ -1,6 +1,7 @@
 package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,14 +69,15 @@ object ProfileAccent {
  * the profile header (own + public). Mirrors the web/iOS profile-header.
  */
 @Composable
-fun ProfilePersonalizationRow(profile: Profile?, start: Boolean = false) {
+fun ProfilePersonalizationRow(profile: Profile?, start: Boolean = false, showFavorite: Boolean = true) {
     if (profile == null) return
-    ProfilePersonalizationRow(profile.accentColor, profile.bio, profile.featuredAchievement, profile.favoriteMode, start = start)
+    ProfilePersonalizationRow(profile.accentColor, profile.bio, profile.featuredAchievement, profile.favoriteMode, start = start, showFavorite = showFavorite)
 }
 
-/** [start] = left-aligned and compact (the Stats tab's identity strip, D2); default centered (public profile). */
+/** [start] = left-aligned and compact (the Stats tab's identity strip, D2); default centered (public profile).
+ *  [showFavorite] false = the Stats player card names the favorite in its "Playing since" line instead. */
 @Composable
-fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAchievement: String?, favoriteModeKey: String?, start: Boolean = false) {
+fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAchievement: String?, favoriteModeKey: String?, start: Boolean = false, showFavorite: Boolean = true) {
     val accent = ProfileAccent.color(accentColor)
     val catalog by produceState(AchievementCatalog.cached(), featuredAchievement) {
         value = AchievementCatalog.load()
@@ -83,15 +85,17 @@ fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAch
     val titleName = featuredAchievement?.let { key -> catalog.firstOrNull { it.key == key }?.name }
     val bio = bioRaw?.trim()?.takeIf { it.isNotEmpty() }
     // Search the whole catalog: a ProperNoundle favorite lives under the More tile now.
-    val favCard = modeCardForKey(favoriteModeKey)
+    val favCard = if (showFavorite) modeCardForKey(favoriteModeKey) else null
 
     Column(horizontalAlignment = if (start) Alignment.Start else Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (titleName != null) {
             Row(
-                Modifier.background(accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp),
+                Modifier.background(Wash.mix(accent, 0.13f).takeUnless { WTheme.isDark } ?: accent.copy(alpha = 0.16f), RoundedCornerShape(50))
+                    .border(1.dp, Wash.mix(accent, 0.32f).takeUnless { WTheme.isDark } ?: WTheme.border, RoundedCornerShape(50))
+                    .padding(horizontal = 9.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text("★", fontSize = 10.sp, color = accent)
+                GlyphArtImage(GlyphArt.STAR, 13.dp)
                 Text(titleName.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, color = accent, letterSpacing = 0.4.sp)
             }
         }
@@ -103,7 +107,9 @@ fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAch
         }
         if (favCard != null) {
             Row(
-                Modifier.background(favCard.accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp),
+                Modifier.background(Wash.mix(favCard.accent, 0.13f).takeUnless { WTheme.isDark } ?: favCard.accent.copy(alpha = 0.16f), RoundedCornerShape(50))
+                    .border(1.dp, Wash.mix(favCard.accent, 0.32f).takeUnless { WTheme.isDark } ?: WTheme.border, RoundedCornerShape(50))
+                    .padding(horizontal = 9.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 ModeGlyph(favCard, tint = favCard.accent, box = 28.dp)

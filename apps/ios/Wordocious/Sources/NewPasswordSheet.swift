@@ -20,49 +20,44 @@ struct NewPasswordSheet: View {
                 PageBackground(tint: .home)
                 VStack(spacing: 16) {
                     Wordmark(size: 26).padding(.top, 8)
-                    Text("Set a New Password").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                    // §G5: the form sits on a tinted card (§A1) with candy CTA (§A8).
+                    VStack(spacing: 16) {
+                        Text("Set a New Password").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
 
-                    if done {
-                        Text("Password updated — you're signed in!")
-                            .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x047857))
-                            .frame(maxWidth: .infinity)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xECFDF5)))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xA7F3D0), lineWidth: 1))
-                    } else {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Label("New Password", systemImage: "lock").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                            SecureField("••••••••", text: $password)
-                                .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
-                        }
-                        VStack(alignment: .leading, spacing: 5) {
-                            Label("Confirm Password", systemImage: "lock").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                            SecureField("••••••••", text: $confirm)
-                                .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
-                        }
+                        if done {
+                            G5Notice("Password updated — you're signed in!", tone: .success)
+                        } else {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Label("New Password", systemImage: "lock").font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
+                                SecureField("••••••••", text: $password)
+                                    .foregroundStyle(FinishInk.heading)
+                                    .g5Field()
+                            }
+                            VStack(alignment: .leading, spacing: 5) {
+                                Label("Confirm Password", systemImage: "lock").font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
+                                SecureField("••••••••", text: $confirm)
+                                    .foregroundStyle(FinishInk.heading)
+                                    .g5Field()
+                            }
 
-                        if let error {
-                            Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(12)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xFEE2E2)))
-                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFECACA), lineWidth: 1))
-                        }
+                            if let error {
+                                G5Notice(error, tone: .error)
+                            }
 
-                        Button(action: save) {
-                            HStack { if saving { ProgressView().tint(.white) }
-                                Text(saving ? "Saving…" : "Save New Password") }
-                            .font(Brand.font(15, .black)).foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 13)
-                            .background(RoundedRectangle(cornerRadius: 12)
-                                .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))
+                            Button(action: save) {
+                                CandyLabel(title: saving ? "Saving…" : "Save New Password") {
+                                    if saving { ProgressView().tint(.white) }
+                                }
+                            }
+                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                            .disabled(saving)
                         }
-                        .buttonStyle(.squish)
-                        .disabled(saving)
                     }
+                    .padding(18)
+                    .tintedCard(accent: G5Accent.purple, bar: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
+                                radius: 20, barHeight: 8)
+                    // §A7: a cast pose where there's room (no page host here) — D with notes.
+                    PoseImage(.d, done ? "cheer" : "notes", height: 96)
                     Spacer()
                 }
                 .padding(24)

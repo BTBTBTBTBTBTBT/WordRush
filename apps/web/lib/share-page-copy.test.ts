@@ -306,3 +306,15 @@ describe('boardDayStatus', () => {
     expect(boardDayStatus('Leaderboard', undefined, '2026-08-07')).toBe('final');
   });
 });
+
+describe('funShareTitle (FINISH_SPEC S4)', () => {
+  it('uses the shared fun caption for game results and the sweep', async () => {
+    const { funShareTitle } = await import('./share-page-copy');
+    const multi = funShareTitle({ m: 'QuadWord', won: '1', g: '9', mg: '9', t: '192', bs: '4', tb: '4' }, ['u', 'QuadWord-2026-10-02']);
+    expect(multi).toBe('All 4 QuadWord boards cleared in 9 guesses 🧠✨');
+    const lost = funShareTitle({ m: 'Six', won: '0', g: '6', mg: '6', t: '224' }, ['u', 'Six-2026-10-02']);
+    expect(['Classic Six got me today 😅 Can you crack it?', 'So close on Classic Six! Think you can do better?']).toContain(lost);
+    expect(funShareTitle({ m: 'DailySweep', sweep: 'sweep', won: '8', tot: '8', t: '600', pts: '9000' }, ['u', 'DailySweep-2026-10-02'])).toBe('Swept every Wordocious daily today 🧹✨');
+    expect(funShareTitle({ m: 'Profile', v: 'p1-2-3' }, ['u', 'Profile-2026-10-02'])).toContain('Player Profile');
+  });
+});

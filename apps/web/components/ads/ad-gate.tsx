@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-
-import Link from 'next/link';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { softBackground, softPill } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { AD_CONFIG } from '@/lib/ads/ad-config';
 import { AdInterstitial } from './ad-interstitial';
@@ -66,7 +67,7 @@ export function AdGate({ children }: AdGateProps) {
   return (
     <div
       className="fixed inset-0 z-[60] flex flex-col items-center justify-between animate-fade-in"
-      style={{ backgroundColor: 'var(--color-bg)' }}
+      style={{ background: softBackground('#7c3aed', 0.08) }}
     >
           {/* ── Top branding ── */}
           <div className="pt-10 text-center">
@@ -89,33 +90,26 @@ export function AdGate({ children }: AdGateProps) {
           {/* ── Bottom: countdown / continue / upsell ── */}
           <div className="pb-10 text-center space-y-3 w-full px-6">
             {canContinue ? (
-              <button
-                onClick={handleContinue}
-                className="btn-3d mx-auto px-8 py-3 rounded-xl text-white font-black text-sm"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  boxShadow: '0 4px 0 #4c1d95',
-                }}
-              >
+              <CandyButton color="purple" size="lg" icon="play" onClick={handleContinue}>
                 Continue to Game
-              </button>
+              </CandyButton>
             ) : (
               <div
-                className="inline-block px-5 py-2 rounded-full"
-                style={{ background: 'var(--color-border)' }}
+                className="inline-flex items-center gap-1.5 px-5 py-2"
+                style={softPill('#7c3aed', { bar: false })}
               >
-                <span className="text-xs font-extrabold" style={{ color: '#7c3aed' }}>
-                  Game starts in {countdown}s
+                <span className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>
+                  Game starts in
                 </span>
+                <SoftNum size={18} className="soft-num-auto">{countdown}s</SoftNum>
               </div>
             )}
 
-            <Link href="/pro" className="block">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold" style={{ color: '#d97706' }}>
-                <Icon3D name="crown" size={14} />
+            <div>
+              <CandyLink href="/pro" color="amber" size="sm" icon={<Icon3D name="crown" size={16} />}>
                 Go Pro for ad-free play
-              </span>
-            </Link>
+              </CandyLink>
+            </div>
       </div>
     </div>
   );

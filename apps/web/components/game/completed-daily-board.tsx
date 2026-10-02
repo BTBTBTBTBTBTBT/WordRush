@@ -6,6 +6,7 @@ import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from 
 import { replayRecordedGuesses } from '@/hooks/use-game-snapshot';
 import { supabase } from '@/lib/supabase-client';
 import { Board } from '@/components/game/board';
+import { modeTrayAccent } from '@/lib/tray-fit';
 import { LetterTile, type TileLook } from '@/components/game/letter-tile';
 import { CompletedMiniBoard, GauntletStageBreakdown } from '@/components/game/completed-mini-board';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
@@ -657,6 +658,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
           {/* Compact board */}
           <div className="mx-auto" style={{ maxWidth: '200px', ['--gt-font' as string]: `${Math.round((200 / (solution?.length || 5)) * 0.5)}px` } as React.CSSProperties}>
             <Board
+              trayAccent={modeTrayAccent(modeId)}
               guesses={singleDisplayGuesses}
               currentGuess=""
               maxGuesses={singleMaxGuesses}
@@ -677,7 +679,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
               <div
                 className="mt-2 mx-auto px-3 py-2 text-left"
                 style={{
-                  background: 'var(--color-bg)',
+                  background: 'var(--color-surface)', // A1: the lavender wash, not the near-white page bg
                   borderRadius: '10px',
                   border: '1px solid var(--color-border)',
                   maxWidth: '320px',

@@ -32,57 +32,62 @@ struct SweepCelebrationView: View {
     }
 
     @State private var burst = false
+    /// §G3: the big art springs in with a bounce (Reduce Motion: a plain fade).
+    @State private var artIn = false
+    @Environment(\.accessibilityReduceMotion) private var envReduce
 
-    private var titleColors: [Color] {
-        flawless ? [Color(hex: 0xFBBF24), Color(hex: 0xD97706), Color(hex: 0xB45309)]
-                 : [sweepA, sweepB]
+    /// FINISH_SPEC §G3: the moment's color — pink for Flawless (the pink O on her gem),
+    /// gold for the Daily Sweep (S racing the broom), indigo for the More Games Sweep.
+    private var accent: Color {
+        flawless ? Color(hex: 0xEC4899) : (more ? Color(hex: 0x6366F1) : Color(hex: 0xF59E0B))
     }
-    private var cardBG: [Color] {
-        flawless ? [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)]
-                 : (more ? [Color(hex: 0xEEF2FF), Color(hex: 0xE0E7FF)] : [Color(hex: 0xFAF5FF), Color(hex: 0xFCE7F3)])
+    private var accentText: Color {
+        flawless ? Color(hex: 0xA0336B) : (more ? Color(hex: 0x4338CA) : Color(hex: 0x8A4A12))
     }
-    private var borderC: Color { flawless ? Color(hex: 0xF59E0B) : (more ? Color(hex: 0xA5B4FC) : Color(hex: 0xC4B5FD)) }
-    private var accentText: Color { flawless ? Color(hex: 0xB45309) : (more ? Color(hex: 0x4338CA) : Color(hex: 0x6D28D9)) }
+    private var artName: String { flawless ? "art-scene-flawless-star" : "art-scene-sweep-broom" }
 
     var body: some View {
+        let still = envReduce || Theme.reduceMotion
+        let dark = Theme.isDark
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea().onTapGesture { onClose() }
+            // §G3: a full-screen tinted overlay in the moment's color.
+            LinearGradient(colors: dark ? [Color(hex: 0x17111F).opacity(0.94), accent.opacity(0.35)]
+                                        : [accent.wash(0.22).opacity(0.96), accent.wash(0.40).opacity(0.96)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+                .onTapGesture { onClose() }
 
             SweepParticleBurst(flawless: flawless, more: more).allowsHitTesting(false)
+            if !still { ConfettiView() }
 
-            VStack(spacing: 0) {
-                LinearGradient(colors: flawless
-                    ? [Color(hex: 0xFBBF24), Color(hex: 0xD97706), Color(hex: 0xFBBF24)]
-                    : [sweepA, sweepB, sweepA],
-                    startPoint: .leading, endPoint: .trailing)
-                    .frame(height: 6)
-
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 10) {
-                    // The whole cast jumps in a left-to-right wave, twice, over the
-                    // confetti (MASCOT_SPEC §3); Flawless crowns W.
-                    CastRow(size: 22, motion: .wave, hop: 14, stagger: 0.06, period: 1.0, repeats: 2, crownOnW: flawless)
-                        .padding(.top, flawless ? 8 : 0)
-                    // ART_SPEC §6: SWEEP! / FLAWLESS! lettering under the cast (the
-                    // sub line below names which sweep); the text title is the fallback.
+                    // ART_SPEC §6: SWEEP! / FLAWLESS! lettering above the art; the text title is the fallback.
                     MomentLettering(flawless ? .flawless : .sweep) {
-                        HStack(spacing: 8) {
-                            SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: 17, color: flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x4F46E5) : Color(hex: 0x7C3AED)))
-                            Text(title)
-                                .font(Brand.font(more ? 22 : 26, .black)).minimumScaleFactor(0.7).lineLimit(1)
-                                .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
-                            SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: 17, color: flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x6366F1) : Color(hex: 0xEC4899)))
-                        }
+                        Text(title)
+                            .font(Brand.font(more ? 24 : 28, .black)).minimumScaleFactor(0.7).lineLimit(1)
+                            .foregroundStyle(accentText)
+                    }
+                    // §G3: the big art springing in.
+                    if ArtAsset.exists(artName) {
+                        Image(artName).resizable().interpolation(.high).scaledToFit()
+                            .frame(maxWidth: 300, maxHeight: 210)
+                            .scaleEffect(artIn ? 1 : (still ? 1 : 0.6))
+                            .opacity(artIn ? 1 : 0)
+                            .accessibilityHidden(true)
                     }
                     Text(flawless ? "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") won today"
                                   : "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") completed today")
-                        .font(Brand.font(12, .heavy)).foregroundStyle(accentText)
+                        .font(Brand.font(13, .heavy)).foregroundStyle(dark ? Theme.textSecondary : accentText)
+                        .multilineTextAlignment(.center)
 
-                    HStack(spacing: 28) {
-                        stat("\(wonCount)/\(totalCount)", "Won")
-                        stat(fmt(Int(timeSum.rounded())), "Total Time")
-                        stat(formatScore(scoreSum), "Total Pts")
+                    // §G3: soft-number stat tiles (tinted, top bars).
+                    HStack(spacing: 8) {
+                        stat("\(wonCount)/\(totalCount)", "Won", Color(hex: 0x7C3AED))
+                        stat(fmt(Int(timeSum.rounded())), "Total Time", Color(hex: 0x2563EB))
+                        stat(formatScore(scoreSum), "Total Pts", Color(hex: 0xF5A524))
                     }
-                    .padding(.top, 4)
+                    .padding(.top, 2)
 
                     // Per-game list (3-column grid of badge + name + result)
                     let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -98,7 +103,7 @@ struct SweepCelebrationView: View {
                                         .frame(width: 22, height: 22)
                                         .background(RoundedRectangle(cornerRadius: 7).fill(r.accent))
                                 }
-                                Text(r.modeLabel).font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                Text(r.modeLabel).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.heading).lineLimit(1)
                                 .minimumScaleFactor(0.7)
                                 Spacer(minLength: 0)
                                 // ART_SPEC §4: the 3D W / L badge per daily.
@@ -106,54 +111,43 @@ struct SweepCelebrationView: View {
                             }
                         }
                     }
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xF5EEFF).opacity(0.6)))
+                    .padding(10)
+                    .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)], radius: 16, barHeight: 6)
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         Button {
                             ShareEvents.log(kind: "image", gameMode: "", surface: more ? "more_sweep_celebration" : "sweep_celebration")
                             if more { ShareService.shareMoreSweep(byMode: byMode) } else { ShareService.shareDailySweep(byMode: byMode) }
                         } label: {
-                            HStack(spacing: 6) { Icon3D(.share, size: 20); Text("Share") }
-                                .font(Brand.font(15, .black)).foregroundStyle(.white)
-                                .frame(maxWidth: .infinity).padding(.vertical, 11)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(
-                                    LinearGradient(colors: flawless
-                                        ? [Color(hex: 0xD97706), Color(hex: 0xB45309)]
-                                        : (more ? [Color(hex: 0x4F46E5), Color(hex: 0x6366F1)] : [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)]),
-                                        startPoint: .leading, endPoint: .trailing)))
+                            CandyLabel(title: "Share") { Icon3D(.share, size: 20) }
                         }
-                        Button { onClose() } label: {
-                            HStack(spacing: 5) { Image(systemName: "xmark"); Text("Close") }
-                                .font(Brand.font(15, .black)).foregroundStyle(accentText)
-                                .padding(.horizontal, 18).padding(.vertical, 11)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xF5EEFF).opacity(0.75)))
-                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                        }
+                        .buttonStyle(CandyButtonStyle(variant: flawless ? .pink : (more ? .purple : .amber), size: .large))
+                        Button { onClose() } label: { CandyLabel(title: "Close") }
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .large, fullWidth: false))
                     }
                     .padding(.top, 4)
                 }
-                .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 18)
+                .padding(.horizontal, 22).padding(.vertical, 40)
+                .frame(maxWidth: 440)
+                .frame(maxWidth: .infinity)
             }
-            .background(
-                ZStack {
-                    LinearGradient(colors: cardBG, startPoint: .top, endPoint: .bottom)
-                    FoilShimmer(strong: flawless)
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(borderC, lineWidth: 1.5))
-            .shadow(color: .black.opacity(0.25), radius: 20, y: 12)
-            .padding(.horizontal, 24)
         }
-        .onAppear { Haptics.success(); SoundManager.shared.playSuccess() }
+        .onAppear {
+            Feedback.celebrate()   // §U: celebrate · success+heavy
+            if still { artIn = true } else {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.55).delay(0.15)) { artIn = true }
+            }
+        }
     }
 
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 1) {
-            Text(value).softNumber(20)
-            Text(label.uppercased()).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+    private func stat(_ value: String, _ label: String, _ c: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(value).softNumber(20).lineLimit(1).minimumScaleFactor(0.6)
+            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(1).foregroundStyle(FinishInk.secondary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 12).padding(.bottom, 8).padding(.horizontal, 4)
+        .tintedPill(c, radius: 14)
     }
 
     private func fmt(_ s: Int) -> String { "\(s / 60):\(String(format: "%02d", s % 60))" }
@@ -165,9 +159,11 @@ private struct SweepParticleBurst: View {
     let flawless: Bool
     var more: Bool = false
     @State private var animate = false
+    /// §AD: Low Power Mode (or Reduce Motion) halves the burst and plays it once.
+    private let calm = Motion.calm()
 
     var body: some View {
-        let count = flawless ? 28 : 20
+        let count = Motion.particles(flawless ? 28 : 20, calm: calm)
         GeometryReader { geo in
             let cx = geo.size.width / 2, cy = geo.size.height / 2 - 60
             ZStack {
@@ -187,8 +183,10 @@ private struct SweepParticleBurst: View {
                     .frame(width: size, height: size)
                     .position(x: cx + (animate ? dx : 0), y: cy + (animate ? dy : 0))
                     .opacity(animate ? 0 : 1)
-                    .animation(Theme.animation(.easeOut(duration: flawless ? 1.6 : 1.9)
-                        .delay(Double(i % 7) * 0.12).repeatForever(autoreverses: false)), value: animate)
+                    .animation(Theme.animation(calm
+                        ? .easeOut(duration: flawless ? 1.6 : 1.9).delay(Double(i % 7) * 0.12)
+                        : .easeOut(duration: flawless ? 1.6 : 1.9).delay(Double(i % 7) * 0.12).repeatForever(autoreverses: false)),
+                               value: animate)
                 }
             }
         }
@@ -210,7 +208,9 @@ private struct FoilShimmer: View {
                 .rotationEffect(.degrees(-18))
                 .offset(x: phase * w * 1.6)
                 .onAppear {
-                    withAnimation(Theme.animation(.easeInOut(duration: 2.4).repeatForever(autoreverses: false))) {
+                    // §AD: no endless shimmer in Low Power Mode / Reduce Motion.
+                    guard !Motion.calm() else { return }
+                    withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: false)) {
                         phase = 1.2
                     }
                 }

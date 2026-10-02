@@ -371,13 +371,18 @@ export function chainPrecheck(s: ChainState, me: Side, word: string): string | n
 // ── Moments + reactions (spec §6) ───────────────────────────────────────────
 
 export type ReactionKey = 'clap' | 'fire' | 'wow' | 'grr' | 'rematch';
-export const REACTIONS: Array<{ key: Exclude<ReactionKey, 'rematch'>; glyph: string }> = [
-  { key: 'clap', glyph: '👏' },
-  { key: 'fire', glyph: '🔥' },
-  { key: 'wow', glyph: '😱' },
-  { key: 'grr', glyph: '😤' },
+/**
+ * The reaction tray (FINISH_SPEC AM1): the stored keys never change; each one renders as our 3D
+ * art (components/friends/reaction-icon.tsx, art-react-<key>) or, until that art ships, the
+ * flame / a tinted word pill — never a phone emoji. `label` is the pill text and the a11y name.
+ */
+export const REACTIONS: Array<{ key: Exclude<ReactionKey, 'rematch'>; label: string }> = [
+  { key: 'clap', label: 'Clap!' },
+  { key: 'fire', label: 'Fire!' },
+  { key: 'wow', label: 'Wow!' },
+  { key: 'grr', label: 'Grr!' },
 ];
-export const REACTION_GLYPH: Record<ReactionKey, string> = { clap: '👏', fire: '🔥', wow: '😱', grr: '😤', rematch: 'Rematch' };
+export const REACTION_LABEL: Record<ReactionKey, string> = { clap: 'Clap!', fire: 'Fire!', wow: 'Wow!', grr: 'Grr!', rematch: 'Rematch' };
 const REACTION_ORDER: ReactionKey[] = ['clap', 'fire', 'wow', 'grr', 'rematch'];
 
 export interface ReactionSlot { counts: Partial<Record<string, number>>; mine: string[] }

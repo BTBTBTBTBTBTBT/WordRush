@@ -1,11 +1,18 @@
 'use client';
 
-import { memo, type MouseEvent, type ReactNode } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { Lightbulb, Eye } from 'lucide-react';
 import { scrambleRemaining, scrambleTarget, scrambleTray, scrambleFinalOpen, SCRAMBLE_FINAL, type ScrambleState } from '@wordle-duel/core';
+import { CandyButton } from '@/components/ui/candy-button';
+import { Confetti } from '@/components/effects/confetti';
+import { muddleCoinSrc, type MuddleCoin } from '@/lib/art';
+import { COIN_LETTER, answerSlotLook, chipSize, coinInk, punchlineSlotLook, usedLetters } from '@/lib/muddle-look';
+import { REVEAL } from '@/lib/tile-motion';
+import { prefersReducedMotion } from '@/lib/motion';
+import { softBorder, softCard, softShadow } from '@/lib/soft-surface';
 
 export const MUDDLE_ACCENT = '#f97316';
-const PURPLE = '#7c3aed', LILAC = '#f5f3ff', LILAC_BORDER = '#c4b5fd', LILAC_TEXT = '#5b21b6', HINT = '#8b5cf6';
+const HINT = '#8b5cf6';
 const COLS = 6;
 
 // Compact rule (More Games §5, founder 2026-09-23): the whole puzzle fits one
@@ -16,14 +23,13 @@ export const TILE_GAP = 6;
 export const TILE_FONT = 18;
 export const RING_INSET = '16%';   // ring ≈ 60 % of the tile, drawn inside it
 export const SCRAMBLE_FONT = 17;   // bold scramble letters, light tracking
-export const ICON_BTN = 28;        // Letter · Solve round icon buttons
-export const FINAL_TILE = 32;      // lilac punchline tiles
+export const ICON_BTN = 32;        // Letter · Solve round candy buttons (FINISH_SPEC I4)
+export const FINAL_TILE = 32;      // gold punchline coins (FINISH_SPEC I2)
 export const FINAL_FONT = 16;
 /** Column width of the puzzle: the six-tile grid plus a scramble row with the two icon buttons — same on phone and desktop. */
 export const COLUMN_CLASS = 'w-full max-w-sm';
-// A 44px hit target around a 28px glyph: padding grows the box, the negative
-// margin gives the layout its 28px back, so rows stay compact.
-const HIT_28 = { padding: '8px 6px', margin: '-8px -6px' } as const;
+/** I3: the scrambled clue letters as small glossy chips, ~70% of an answer tile. */
+const CHIP = chipSize(TILE);
 
 /**
  * The cartoon panel (More Games §5/§8): a standard card in the cream paper
@@ -38,12 +44,13 @@ export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false
   // Finished: a plain 26vh card at the top of the scrolling results.
   const size = fixed ? { height: '26vh', flexShrink: 0 } : { flex: '1 1 0%', minHeight: 96, maxHeight: '26vh' };
   return (
-    <div className="rounded-2xl border overflow-hidden" style={{ background: '#fdf8ec', borderColor: 'var(--color-border)', aspectRatio: '4 / 3', maxWidth: '100%', ...size }} role="img" aria-label={alt}>
+    // I4: the cream paper card keeps its tone, with the A1 border + soft shadow.
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#fdf8ec', border: softBorder(MUDDLE_ACCENT), boxShadow: softShadow(MUDDLE_ACCENT, 0.14), aspectRatio: '4 / 3', maxWidth: '100%', ...size }} role="img" aria-label={alt}>
       {src ? (
         // While playing the cartoon is the screen's hero: load it eagerly at high
         // priority (founder, 2026-09-29). React 18 passes only the lowercase attribute.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/muddle/${src}`} alt={alt} className="w-full h-full object-cover" loading={fixed ? 'lazy' : 'eager'} {...(fixed ? {} : { fetchpriority: 'high' })} />
+        <img src={`/muddle/${src}`} alt={alt} width={400} height={300} className="w-full h-full object-cover" loading={fixed ? 'lazy' : 'eager'} {...(fixed ? {} : { fetchpriority: 'high' })} />
       ) : (
         <svg viewBox="0 0 400 300" className="w-full h-full" aria-hidden>
           <rect x="0" y="0" width="400" height="300" fill="#fdf8ec" />
@@ -63,13 +70,91 @@ export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false
   );
 });
 
-/** Round icon-only hint button (lightbulb / eye); the label lives in aria-label and the title tooltip. */
+/** I4: a small round candy hint button (bulb / eye); the label lives in aria-label and the title tooltip. */
 function IconButton({ label, onClick, children }: { label: string; onClick: (e: MouseEvent) => void; children: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center justify-center rounded-full border transition-opacity hover:opacity-80 shrink-0"
-      style={{ width: ICON_BTN, height: ICON_BTN, borderColor: `${MUDDLE_ACCENT}66`, color: MUDDLE_ACCENT, background: `${MUDDLE_ACCENT}0d`, boxSizing: 'content-box', ...HIT_28 }}
-      aria-label={label} title={label}>
-      {children}
+    <CandyButton
+      size="round"
+      color="amber"
+      icon={children}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="shrink-0"
+      style={{ ['--candy-h' as string]: `${ICON_BTN}px`, ['--candy-lip-h' as string]: '3px', ['--candy-ring' as string]: '1px', marginBottom: 3 } as CSSProperties}
+    />
+  );
+}
+
+/**
+ * A Muddle coin (FINISH_SPEC I1/I2): the glossy blank coin art with the letter
+ * drawn on top — white Nunito Black with the tile text-shadow, dark amber on
+ * the gold punchline coin — at ~52% of the coin. `frosted` lays the frosted
+ * empty cell under the gold ring. Same footprint as a square tile.
+ */
+function Coin({ coin, frosted, letter, size, className = '', style, label }: {
+  coin: MuddleCoin; frosted: boolean; letter: string; size: number; className?: string; style?: CSSProperties; label?: string;
+}) {
+  return (
+    <span className={`relative inline-block shrink-0 ${className}`} style={{ width: size, height: size, ...style }} aria-label={label}>
+      {frosted && <span className="gtile absolute inset-0" data-s="empty" style={{ width: size, height: size }} aria-hidden="true" />}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={muddleCoinSrc(coin)} alt="" aria-hidden="true" width={size} height={size} draggable={false} className="absolute inset-0 w-full h-full pointer-events-none select-none" style={{ filter: 'drop-shadow(0 2px 3px rgba(60, 30, 110, 0.22))' }} />
+      {letter && (
+        <b
+          className="absolute inset-0 flex items-center justify-center font-black"
+          style={{
+            fontSize: Math.round(size * COIN_LETTER), lineHeight: 1, color: coinInk(coin), zIndex: 1,
+            textShadow: coin === 'punchline' ? '0 1px 0 rgba(255, 255, 255, 0.55)' : '0 1px 1px rgba(0, 0, 0, 0.25), 0 2px 3px rgba(40, 10, 80, 0.25)',
+          }}
+        >
+          {letter}
+        </b>
+      )}
+    </span>
+  );
+}
+
+/**
+ * True for one reveal after `on` flips from false to true while mounted (a
+ * word / the punchline just solved) — never for rows that load solved.
+ */
+function useJustBecame(on: boolean, holdMs: number): boolean {
+  const prev = useRef(on);
+  const [just, setJust] = useState(false);
+  useEffect(() => {
+    if (on && !prev.current) {
+      setJust(true);
+      const t = setTimeout(() => setJust(false), holdMs);
+      prev.current = on;
+      return () => clearTimeout(t);
+    }
+    prev.current = on;
+  }, [on, holdMs]);
+  return just;
+}
+
+/** I3: a scrambled clue letter as a small glossy chip (light amber face, dark-purple letter); used letters sink. */
+function LetterChip({ ch, used, disabled, onClick, ink = '#3b1a78' }: { ch: string; used: boolean; disabled: boolean; onClick: (e: MouseEvent) => void; ink?: string }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      data-used={used ? 'true' : 'false'}
+      className="gtile mud-chip shrink-0 border-0 p-0"
+      data-s="typed"
+      style={{
+        width: CHIP, height: CHIP,
+        ['--gt-edge' as string]: '#e3a54c',
+        ['--gt-face' as string]: 'linear-gradient(#fff7e8, #ffe1ad)',
+        ['--gt-ring' as string]: 'inset 0 0 0 1.5px rgba(217, 119, 6, 0.32)',
+        ['--gt-glyph' as string]: ink,
+        ['--gt-font' as string]: `${Math.round(CHIP * 0.56)}px`,
+      } as CSSProperties}
+      aria-label={used ? `${ch}, used` : ch}
+    >
+      <b style={{ textShadow: '0 1px 0 rgba(255, 255, 255, 0.7)' }}>{ch}</b>
     </button>
   );
 }
@@ -88,40 +173,43 @@ interface WordRowProps {
 
 /**
  * One word (More Games §5, the classic newspaper layout) as ONE compact block:
- * the scrambled letters as bold spaced type on the left with the Letter · Solve
- * icon buttons on the right, then the answer boxes directly beneath on ONE fixed
- * six-column grid (the sixth slot simply empty for a five-letter word). A
- * circled letter is a ring drawn INSIDE its box — white on a filled tile,
- * purple on an empty one — never an outline around the tile. No card frame per
- * word; a light lilac tint marks the active row. Tapping a scrambled letter
- * places it; used letters dim.
+ * the scrambled letters as small glossy chips on the left (FINISH_SPEC I3)
+ * with the Letter · Solve round candy buttons on the right (I4), then the
+ * answer slots directly beneath on ONE fixed six-column grid (the sixth slot
+ * simply empty for a five-letter word). A circled slot is a round coin (I1);
+ * the others are the B1 square glossy tiles. The active row is a tinted card
+ * (A1). Tapping a chip places its letter (the type pop); used chips sink. A
+ * word just solved flips over and glows (B3).
  */
 export const WordRow = memo(function WordRow({ state, row, active, shaking, onSelect, onTapTile, onRevealLetter, onSolveWord, finished }: WordRowProps) {
   const w = state.words[row];
   const entry = state.entries[row];
   const solved = state.solved[row];
   const remaining = scrambleRemaining(w.scramble, entry);
-  const used = [...w.scramble];   // mark used letters left-to-right by multiset
-  const left = [...remaining];
-  const dimmed = used.map((ch) => { const k = left.indexOf(ch); if (k >= 0) { left.splice(k, 1); return false; } return true; });
+  const used = usedLetters(w.scramble, remaining);
   const circled = new Set(w.circled);
   const revealed = state.revealed[row];
   const isActive = active && !finished;
+  const justSolved = useJustBecame(solved, REVEAL.end(w.answer.length) + REVEAL.bloomMs);
   return (
-    <div className={`${COLUMN_CLASS} flex flex-col gap-1 rounded-lg px-2 py-1 ${shaking ? 'gt-nudge' : ''}`} style={{ background: isActive ? LILAC : undefined, border: `1px solid ${isActive ? LILAC_BORDER : 'transparent'}` }} onClick={() => !solved && !finished && onSelect(row)} role="group" aria-label={`Word ${row + 1}`}>
-      <div className="flex items-center justify-between" style={{ height: ICON_BTN }}>
-        <div className="flex items-center gap-0.5" aria-label={`Scrambled letters ${w.scramble.split('').join(' ')}`}>
+    <div
+      className={`${COLUMN_CLASS} flex flex-col gap-1 px-2 py-1 ${shaking ? 'gt-nudge' : ''}`}
+      style={isActive ? softCard(MUDDLE_ACCENT, { radius: 12, shadow: false }) : { border: '1.5px solid transparent', borderRadius: 12 }}
+      onClick={() => !solved && !finished && onSelect(row)}
+      role="group"
+      aria-label={`Word ${row + 1}`}
+    >
+      <div className="flex items-center justify-between" style={{ height: ICON_BTN + 4 }}>
+        <div className="flex items-center gap-1" aria-label={`Scrambled letters ${w.scramble.split('').join(' ')}`}>
           {[...w.scramble].map((ch, i) => (
-            <button key={i} type="button" disabled={solved || finished || dimmed[i]} onClick={(e) => { e.stopPropagation(); onSelect(row); onTapTile(row, ch); }}
-              className="font-black leading-none transition-opacity" style={{ fontSize: SCRAMBLE_FONT, height: ICON_BTN, padding: '8px 6px', margin: '-8px 0', boxSizing: 'content-box', lineHeight: `${ICON_BTN}px`, color: 'var(--color-text)', opacity: dimmed[i] || solved ? 0.25 : 1, letterSpacing: 0.5 }}>
-              {ch}
-            </button>
+            <LetterChip key={i} ch={ch} used={used[i] || solved} disabled={solved || finished || used[i]}
+              onClick={(e) => { e.stopPropagation(); onSelect(row); onTapTile(row, ch); }} />
           ))}
         </div>
         {!solved && !finished && (
-          <div className="flex items-center gap-3">
-            <IconButton label="Reveal a letter" onClick={(e) => { e.stopPropagation(); onRevealLetter(row); }}><Lightbulb className="w-3.5 h-3.5" /></IconButton>
-            <IconButton label="Solve this word" onClick={(e) => { e.stopPropagation(); onSolveWord(row); }}><Eye className="w-3.5 h-3.5" /></IconButton>
+          <div className="flex items-center gap-2.5">
+            <IconButton label="Reveal a letter" onClick={(e) => { e.stopPropagation(); onRevealLetter(row); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
+            <IconButton label="Solve this word" onClick={(e) => { e.stopPropagation(); onSolveWord(row); }}><Eye className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
           </div>
         )}
       </div>
@@ -132,12 +220,18 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
           const filled = ch !== '';
           const pinned = revealed[i] !== '_';
           const ring = circled.has(i);
+          const look = answerSlotLook({ circled: ring, filled, pinned, solved });
+          // B3: placing a letter = the type pop; a word just solved = the reveal flip + glow.
+          const motion = justSolved ? 'gt-flip' : filled && !solved ? 'gt-pop' : '';
+          const flipVar = justSolved ? { ['--gt-d' as string]: `${i * REVEAL.stagger}ms` } : null;
+          const label = ring ? `${ch || 'empty'}, circled` : ch || 'empty';
+          if (look.kind === 'coin') {
+            return <Coin key={i} coin={look.coin} frosted={look.frosted} letter={ch} size={TILE} className={motion} style={flipVar ?? undefined} label={label} />;
+          }
           // FINISH_SPEC B1: the shared glossy tile — purple once filled (a pinned hint letter in the hint violet), frosted when empty.
-          const hintTile = !solved && filled && pinned;
           return (
-            <span key={i} className={`gtile ${filled && !solved ? 'gt-pop' : ''}`} data-s={solved || filled ? 'correct' : 'empty'} style={{ width: TILE, height: TILE, ['--gt-font' as string]: `${TILE_FONT}px`, ...(hintTile ? { ['--gt-edge' as string]: '#5b21b6', ['--gt-face' as string]: `linear-gradient(#b197fc, ${HINT} 70%, #7c4ddb)` } : null) } as React.CSSProperties} aria-label={ring ? `${ch || 'empty'}, circled` : ch || 'empty'}>
+            <span key={i} className={`gtile ${motion}`} data-s={look.look === 'empty' ? 'empty' : 'correct'} style={{ width: TILE, height: TILE, ['--gt-font' as string]: `${TILE_FONT}px`, ...flipVar, ...(look.look === 'hint' ? { ['--gt-edge' as string]: '#5b21b6', ['--gt-face' as string]: `linear-gradient(#b197fc, ${HINT} 70%, #7c4ddb)` } : null) } as CSSProperties} aria-label={label}>
               <b>{ch}</b>
-              {ring && <span className="absolute rounded-full pointer-events-none" style={{ inset: RING_INSET, bottom: `calc(${RING_INSET} + 7%)`, zIndex: 3, border: `2px solid ${filled || solved ? '#fff' : PURPLE}`, opacity: 0.9 }} aria-hidden />}
             </span>
           );
         })}
@@ -148,7 +242,12 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
 
 interface FinalRowProps { state: ScrambleState; active: boolean; shaking: boolean; onSelect: () => void; onTapTile: (letter: string) => void; onRevealLetter: () => void; finished: boolean }
 
-/** The punchline under a divider, grouped by word, in the light lilac tint with purple text; its tray is the circled letters in word order. */
+/**
+ * The punchline under a divider, grouped by word; its letters are gold coins
+ * (FINISH_SPEC I2; empty = the gold ring on frosted) and its tray is the
+ * circled letters as glossy chips. Solving it = a hop wave across the coins +
+ * confetti (B3; off with Reduce Motion).
+ */
 export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelect, onTapTile, onRevealLetter, finished }: FinalRowProps) {
   const open = scrambleFinalOpen(state);
   const entry = state.entries[SCRAMBLE_FINAL];
@@ -156,23 +255,35 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
   const target = scrambleTarget(state, SCRAMBLE_FINAL);
   const tray = scrambleTray(state, SCRAMBLE_FINAL);
   const remaining = scrambleRemaining(tray, entry);
-  const left = [...remaining];
-  const dimmed = [...tray].map((ch) => { const k = left.indexOf(ch); if (k >= 0) { left.splice(k, 1); return false; } return true; });
+  const used = usedLetters(tray, remaining);
   const isActive = active && !finished;
   const showTray = open && !solved && !finished;
+  const total = state.final.pattern.reduce((a, b) => a + b, 0);
+  const justSolved = useJustBecame(solved, total * REVEAL.hopStagger + REVEAL.hopMs + 3200);
+  const confetti = justSolved && !prefersReducedMotion();
   let pos = 0;
   return (
-    <div className={`${COLUMN_CLASS} flex flex-col gap-1 rounded-lg px-2 pt-1.5 pb-1 mt-1 ${shaking ? 'gt-nudge' : ''}`} style={{ borderTop: '1.5px solid var(--color-border)', background: isActive ? LILAC : undefined, opacity: open || finished ? 1 : 0.55 }} onClick={() => open && !solved && !finished && onSelect()} role="group" aria-label="Punchline">
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1" style={{ minHeight: showTray ? ICON_BTN : undefined }}>
+    <div
+      className={`${COLUMN_CLASS} flex flex-col gap-1 px-2 pt-1.5 pb-1 mt-1 ${shaking ? 'gt-nudge' : ''}`}
+      style={{
+        ...(isActive ? softCard(MUDDLE_ACCENT, { radius: 12, shadow: false }) : { border: '1.5px solid transparent', borderRadius: 12, borderTop: '1.5px solid var(--color-border)' }),
+        opacity: open || finished ? 1 : 0.55,
+      }}
+      onClick={() => open && !solved && !finished && onSelect()}
+      role="group"
+      aria-label="Punchline"
+    >
+      {confetti && <Confetti />}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1" style={{ minHeight: showTray ? ICON_BTN + 4 : undefined }}>
         <span className="text-[10px] font-black tracking-widest uppercase leading-none" style={{ color: 'var(--color-text-muted)' }}>{open || finished ? 'The punchline' : 'Solve the four words to unlock the punchline'}</span>
         {showTray && (
           <div className="flex items-center justify-end gap-2 ml-auto min-w-0">
-            <div className="flex items-center justify-end gap-0.5 flex-wrap" aria-label="Circled letters">
+            <div className="flex items-center justify-end gap-1 flex-wrap" aria-label="Circled letters">
               {[...tray].map((ch, i) => (
-                <button key={i} type="button" disabled={dimmed[i]} onClick={(e) => { e.stopPropagation(); onSelect(); onTapTile(ch); }} className="font-black leading-none" style={{ fontSize: SCRAMBLE_FONT, height: ICON_BTN, padding: '8px 5px', margin: '-8px 0', boxSizing: 'content-box', lineHeight: `${ICON_BTN}px`, color: LILAC_TEXT, opacity: dimmed[i] ? 0.25 : 1, letterSpacing: 0.5 }}>{ch}</button>
+                <LetterChip key={i} ch={ch} used={used[i]} disabled={used[i]} onClick={(e) => { e.stopPropagation(); onSelect(); onTapTile(ch); }} />
               ))}
             </div>
-            <IconButton label="Reveal a letter of the punchline" onClick={(e) => { e.stopPropagation(); onRevealLetter(); }}><Lightbulb className="w-3.5 h-3.5" /></IconButton>
+            <IconButton label="Reveal a letter of the punchline" onClick={(e) => { e.stopPropagation(); onRevealLetter(); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
           </div>
         )}
       </div>
@@ -185,11 +296,19 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
                 const idx = start + k;
                 const ch = solved || finished ? target[idx] : entry[idx] ?? '';
                 const filled = ch !== '';
+                const look = punchlineSlotLook(filled);
+                const coin = look.kind === 'coin' ? look : { coin: 'empty' as const, frosted: true };
                 return (
-                  <span key={k} className="gtile" data-s={filled ? 'typed' : 'empty'} style={{ width: FINAL_TILE, height: FINAL_TILE, ['--gt-font' as string]: `${FINAL_FONT}px`, ['--gt-glyph' as string]: LILAC_TEXT } as React.CSSProperties}>
-                    <b>{ch}</b>
-                    <span className="absolute rounded-full pointer-events-none" style={{ inset: '3px 3px calc(3px + 7%) 3px', zIndex: 3, border: `2px solid ${PURPLE}`, opacity: filled ? 0.9 : 0.35 }} aria-hidden />
-                  </span>
+                  <Coin
+                    key={k}
+                    coin={coin.coin}
+                    frosted={coin.frosted}
+                    letter={ch}
+                    size={FINAL_TILE}
+                    className={justSolved ? 'gt-hop' : filled && !solved ? 'gt-pop' : ''}
+                    style={justSolved ? ({ ['--gt-hop-d' as string]: `${idx * REVEAL.hopStagger}ms` } as CSSProperties) : undefined}
+                    label={ch || 'empty'}
+                  />
                 );
               })}
             </div>

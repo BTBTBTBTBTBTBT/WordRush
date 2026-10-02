@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SQUISH_FRAMES, squishKind } from './squish';
+import { SQUISH_FRAMES, squishKind, squishTargetIsChild } from './squish';
 
 // FINISH_SPEC A9: ~.92 on touch-down (icons .86/.80), spring back past 1 (~1.05), ≈260 ms.
 
@@ -25,5 +25,18 @@ describe('the spongy press', () => {
     expect(squishKind('relative flex rounded-xl')).toBe('press');
     expect(squishKind('')).toBe('press');
     expect(squishKind('candyfloss')).toBe('press');
+  });
+
+  it('gives Home cards the card press (FINISH_SPEC AK)', () => {
+    expect(SQUISH_FRAMES.card).toMatchObject({ down: 'scale(0.95)', over: 'scale(1.02)', rest: 'scale(1)' });
+    expect(squishKind('relative overflow-hidden', 'DIV', 'card')).toBe('card');
+    expect(squishKind('squish-card x')).toBe('card');
+  });
+
+  it('squishes the child of an inline wrapper (a Link around a card)', () => {
+    expect(squishTargetIsChild('inline', true)).toBe(true);
+    expect(squishTargetIsChild('contents', true)).toBe(true);
+    expect(squishTargetIsChild('block', true)).toBe(false);
+    expect(squishTargetIsChild('inline', false)).toBe(false);
   });
 });

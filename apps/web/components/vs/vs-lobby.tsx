@@ -11,22 +11,30 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Loader2, Radio, Swords, Users } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { VS_MODE_ORDER } from '@wordle-duel/core';
+import { CandyButton } from '@/components/ui/candy-button';
+import { VS_MODE_ORDER, vsClock } from '@wordle-duel/core';
+import { SoftNum } from '@/components/ui/soft-number';
 import { useAuth } from '@/lib/auth-context';
 import { lookupInviteByCode, vsHrefForMode } from '@/lib/invite-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import {
-  VS, botsTileSub, h2hLine, hoursLeft, incomingLine, liveTileSub, loadVsMode, lobbyCount, modeColor,
+  VS, botsTileSub, h2hLine, hoursLeft, incomingLine, ladderNextKind, liveTileSub, loadVsMode, lobbyCount, modeColor,
   modeTitle, recentSent, saveVsMode, sentLabel, sentStatus,
 } from '@/lib/vs-lobby';
 import { fetchChallenge, fetchVsRivals, type Rival } from '@/lib/vs-challenges-client';
+import { botArt, botPersona } from '@/lib/bot/bot-personas';
+import { castBotForKind } from '@/lib/adapters/bot-match-service';
+import { poseSrc } from '@/lib/art';
+import { alphaHex, darken } from '@/lib/soft-surface';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { VsBanner } from './vs-banner';
+import { NoticeDot, VsNotice } from './vs-notice';
+import { NOTICE_COLORS, noticePoses, sentNoticeKind } from './vs-notice-art';
 import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
-import { InitialAvatar, SectionLabel, SoftPill, VsModeIcon, VsNav, vsCardStyle } from './vs-ui';
+import { CardBar, InitialAvatar, SectionLabel, SoftPill, TealButton, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsModeIcon, VsModeTile, VsNav, vsCard } from './vs-ui';
 import { GameSquare } from '@/components/ui/game-tile';
 import { CastLoader } from '@/components/ui/cast-loader';
 import { PageBackground } from '@/components/ui/page-background';
@@ -63,6 +71,14 @@ export function VsLobby() {
   const ladder = data.progression.ladderCleared;
   const dailyPlayed = data.battle.result !== 'open' || playedLocal;
   const latest = data.incoming[0] ?? null;
+  const sent = recentSent(data.sent).slice(0, 3);
+  // K1 / A7: each notice its own pose (a list never repeats an image).
+  const incomingPoses = noticePoses(data.incoming.slice(0, 3).map(() => 'challenge' as const));
+  const sentPoses = noticePoses(sent.map((x) => sentNoticeKind(x.results[0]?.outcome)));
+  // The BOTS tile shows the ladder's next bot in character (D1); when that is
+  // also today's Bot of the Day (pictured in the banner) it takes another pose (A7).
+  const nextBot = castBotForKind(ladderNextKind(ladder)) ?? 'webster';
+  const botsArt = botArt(nextBot, nextBot === data.botOfDay.botId ? 'waiting' : 'ready');
 
   const pickMode = (m: string) => {
     if (free && m !== 'DUEL') { router.push('/pro'); return; }
@@ -93,7 +109,7 @@ export function VsLobby() {
   const signedOut = isGuest && !profile;
 
   return (
-    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24">
+    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav
           title="VS BATTLE"
@@ -115,17 +131,15 @@ export function VsLobby() {
             <CastLoader />
           </div>
         ) : signedOut ? (
-          <div className="p-4" style={vsCardStyle}>
-            <div className="text-center space-y-3 py-2">
+          <VsCard>
+            <div className="text-center space-y-3 p-4">
               <div className="text-base font-black" style={{ color: VS.deep }}>Sign in to play VS</div>
               <p className="text-[13px] font-semibold" style={{ color: '#4b5563' }}>
                 VS Battle pits you against live opponents, bots and your friends&apos; runs, and records your results. It needs an account.
               </p>
-              <button onClick={exitGuest} className="w-full py-3 text-[15px] font-black text-white" style={{ background: VS.ink, borderRadius: 12 }}>
-                SIGN IN
-              </button>
+              <TealButton size="lg" block onClick={exitGuest}>SIGN IN</TealButton>
             </div>
-          </div>
+          </VsCard>
         ) : (
           <>
             <VsBanner
@@ -143,26 +157,28 @@ export function VsLobby() {
               onBotOfDay={playBotOfDay}
             />
 
-            {/* Incoming challenges, newest first. */}
-            {data.incoming.slice(0, 3).map((c) => (
-              <button
+            {/* Incoming challenges, newest first — K1 notices (teal, the sender's tile, a fitting pose). */}
+            {data.incoming.slice(0, 3).map((c, i) => (
+              <VsNotice
                 key={c.code}
-                type="button"
+                index={i}
+                accent={NOTICE_COLORS.challenge}
+                pose={incomingPoses[i]}
+                avatar={<InitialAvatar name={c.challenger.username} url={c.challenger.avatarUrl} size={38} />}
+                headline={<>Challenge from @{c.challenger.username}</>}
+                detail={(
+                  <>
+                    <span>{modeTitle(c.gameMode)}</span><NoticeDot />
+                    {c.run.solved ? (
+                      <><span>solved in</span> <SoftNum size={14}>{c.run.guesses}</SoftNum><NoticeDot /><SoftNum size={14}>{vsClock(c.run.timeMs)}</SoftNum></>
+                    ) : <span>not solved</span>}
+                    <NoticeDot /><span>{hoursLeft(c.expiresAt)}h left</span>
+                  </>
+                )}
+                action="RACE"
+                label={`Challenge from @${c.challenger.username}: ${incomingLine(c.gameMode, c.run, c.expiresAt)}. Race.`}
                 onClick={() => router.push(`/vs/challenge/${c.code}`)}
-                className="w-full flex items-center gap-3 p-3 text-left transition-transform active:scale-[0.99]"
-                style={vsCardStyle}
-              >
-                <InitialAvatar name={c.challenger.username} url={c.challenger.avatarUrl} size={36} />
-                <span className="flex-1 min-w-0">
-                  <span className="block text-[11px] font-black uppercase truncate" style={{ color: VS.ink, letterSpacing: 0.5 }}>
-                    Challenge from @{c.challenger.username}
-                  </span>
-                  <span className="block text-[11.5px] font-bold truncate" style={{ color: '#4b5563' }}>
-                    {incomingLine(c.gameMode, c.run, c.expiresAt)}
-                  </span>
-                </span>
-                <span className="shrink-0 px-3 flex items-center text-[11px] font-black text-white rounded-full" style={{ height: 28, background: VS.ink }}>RACE</span>
-              </button>
+              />
             ))}
 
             {/* PLAY */}
@@ -194,24 +210,25 @@ export function VsLobby() {
 
             <div className="grid grid-cols-3 gap-2">
               {isPro ? (
-                <PlayTile icon={Radio} title="LIVE" sub={liveTileSub(waitingInMode, mode)} onClick={() => router.push(`${vsHrefForMode(mode)}?live=1`)} />
+                <PlayTile art={poseSrc('c', 'telescope')} title="LIVE" sub={liveTileSub(waitingInMode, mode)} onClick={() => router.push(`${vsHrefForMode(mode)}?live=1`)} />
               ) : (
                 <PlayTile
-                  icon={Swords}
+                  art={poseSrc('o2', 'strut')}
                   title="DAILY"
                   sub={dailyPlayed ? 'Played today. Pro plays live any time.' : 'Today’s battle. A bot steps in if nobody is on.'}
                   onClick={playBattle}
                 />
               )}
               <PlayTile
-                icon={Users}
+                art={poseSrc('o1', 'hug')}
                 title="FRIEND"
                 locked={free}
                 sub={free ? 'Send with Pro. Answering is free.' : 'You play first. They race your run.'}
                 onClick={() => router.push(free ? '/pro' : `/vs/friend?mode=${mode}`)}
               />
               <PlayTile
-                icon={Bot}
+                art={botsArt}
+                accent={botPersona(nextBot).color}
                 title="BOTS"
                 sub={free ? 'Bot of the Day is free. Ladder is Pro.' : botsTileSub(ladder)}
                 onClick={() => router.push('/vs/bots')}
@@ -223,13 +240,13 @@ export function VsLobby() {
               rivals.length > 0 && (
                 <>
                   <SectionLabel right={
-                    <button type="button" onClick={() => router.push('/stats#vs-section')} className="text-[11px] font-black" style={{ color: VS.ink }}>See all</button>
+                    <CandyButton color="peach" size="sm" onClick={() => router.push('/stats#vs-section')}>See all</CandyButton>
                   }>Rivals</SectionLabel>
-                  <div style={vsCardStyle}>
+                  <VsCard>
                     {rivals.map((r, i) => {
                       const line = h2hLine(r.wins, r.losses, r.lastMode);
                       return (
-                        <div key={r.opponentId} className="flex items-center gap-3 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}>
+                        <div key={r.opponentId} className="flex items-center gap-3 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : `1px solid ${alphaHex(VS_ACCENT, 0.18)}` }}>
                           <InitialAvatar name={r.username} url={r.avatarUrl} size={34} />
                           <span className="flex-1 min-w-0">
                             <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{r.username}</span>
@@ -239,48 +256,52 @@ export function VsLobby() {
                         </div>
                       );
                     })}
-                  </div>
+                  </VsCard>
                 </>
               )
             ) : (
-              <div className="p-4" style={{ ...vsCardStyle, background: 'linear-gradient(135deg, #ede9fe, #ccfbf1)' }}>
-                <div className="text-[15px] font-black" style={{ color: '#4c1d95' }}>GO PRO FOR ALL OF VS</div>
+              <VsCard accent="#7c3aed">
+              <div className="p-4">
+                <div className="flex items-center gap-1.5 text-[15px] font-black" style={{ color: '#4c1d95' }}><Icon3D name="crown" size={20} /> GO PRO FOR ALL OF VS</div>
                 <p className="text-[12px] font-bold mt-1" style={{ color: '#4b5563' }}>
                   {/* The VS mode count comes from the catalog, never a literal (sweep-copy guard). */}
                   All {MODES.length} modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => router.push('/pro')}
-                  className="mt-3 px-4 text-[12px] font-black text-white rounded-full"
-                  style={{ height: 32, background: '#7c3aed' }}
-                >
-                  SEE PRO
-                </button>
+                <CandyButton color="purple" size="md" className="mt-3" onClick={() => router.push('/pro')}>SEE PRO</CandyButton>
               </div>
+              </VsCard>
             )}
 
-            {/* YOUR CHALLENGES (sent in the last 24 h). */}
-            {recentSent(data.sent).length > 0 && (
+            {/* YOUR CHALLENGES (sent in the last 24 h) — K1 notices: "@doug beat it" gasps, a held run cheers. */}
+            {sent.length > 0 && (
               <>
                 <SectionLabel>Your challenges</SectionLabel>
-                <div style={vsCardStyle}>
-                  {recentSent(data.sent).slice(0, 3).map((s, i) => {
+                <div className="space-y-2">
+                  {sent.map((s, i) => {
                     const status = sentStatus(s);
+                    const first = s.results[0];
+                    const kind = sentNoticeKind(first?.outcome);
                     return (
-                      <button
+                      <VsNotice
                         key={s.code}
-                        type="button"
+                        index={i}
+                        accent={NOTICE_COLORS[kind]}
+                        pose={sentPoses[i]}
+                        avatar={first ? <InitialAvatar name={first.username} size={38} /> : <VsModeTile mode={s.gameMode} size={38} icon={20} />}
+                        headline={status}
+                        detail={(
+                          <>
+                            <span>{sentLabel(s)}</span>
+                            {first?.solved && (
+                              <><NoticeDot /><span>solved in</span> <SoftNum size={14}>{first.guesses}</SoftNum><NoticeDot /><SoftNum size={14}>{vsClock(first.timeMs)}</SoftNum></>
+                            )}
+                          </>
+                        )}
+                        action="VIEW"
+                        actionColor={kind === 'waiting' ? 'peach' : kind === 'beaten' ? 'pink' : 'purple'}
+                        label={`${sentLabel(s)}: ${status}. View.`}
                         onClick={() => router.push(`/vs/challenge/${s.code}`)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
-                        style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}
-                      >
-                        <span className="flex items-center justify-center shrink-0" style={{ width: 26, height: 26, borderRadius: 7, background: `${modeColor(s.gameMode)}1f` }}>
-                          <VsModeIcon mode={s.gameMode} size={14} />
-                        </span>
-                        <span className="flex-1 min-w-0 text-[12.5px] font-extrabold truncate" style={{ color: '#1f2937' }}>{sentLabel(s)}</span>
-                        <span className="shrink-0 text-[11.5px] font-black" style={{ color: status === 'waiting' ? VS.label : VS.ink }}>{status}</span>
-                      </button>
+                      />
                     );
                   })}
                 </div>
@@ -289,8 +310,9 @@ export function VsLobby() {
 
             {/* HAVE A CODE? — a challenge code first, then a live private-match code. */}
             <SectionLabel>Have a code?</SectionLabel>
-            <div className="p-3" style={vsCardStyle}>
-              <div className="flex gap-2">
+            <VsCard>
+            <div className="p-3">
+              <div className="flex gap-2 items-center">
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
@@ -302,20 +324,16 @@ export function VsLobby() {
                   spellCheck={false}
                   maxLength={8}
                   className="flex-1 min-w-0 px-3 py-2 text-[15px] font-black outline-none"
-                  style={{ letterSpacing: 3, background: '#f8fafc', borderRadius: 10, color: VS.deep }}
+                  // A1: the input takes the teal wash too.
+                  style={{ letterSpacing: 3, background: `linear-gradient(${alphaHex(VS_ACCENT, 0.08)}, ${alphaHex(VS_ACCENT, 0.08)}), #ffffff`, border: `1.5px solid ${alphaHex(VS_ACCENT, 0.32)}`, borderRadius: 12, color: VS.deep }}
                 />
-                <button
-                  type="button"
-                  onClick={handleJoin}
-                  disabled={code.trim().length < 4 || joining}
-                  className="px-4 text-[12px] font-black rounded-full disabled:opacity-40"
-                  style={{ background: VS.soft, color: VS.ink }}
-                >
-                  {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'JOIN'}
-                </button>
+                <TealButton onClick={handleJoin} disabled={code.trim().length < 4 || joining}>
+                  {joining ? <Loader2 className="w-4 h-4 animate-spin" aria-label="Joining" /> : 'JOIN'}
+                </TealButton>
               </div>
               {codeError && <p className="text-xs font-bold mt-2" style={{ color: '#dc2626' }}>{codeError}</p>}
             </div>
+            </VsCard>
           </>
         )}
       </div>
@@ -324,22 +342,25 @@ export function VsLobby() {
   );
 }
 
-function PlayTile({ icon: Icon, title, sub, locked, onClick }: {
-  icon: typeof Radio; title: string; sub: string; locked?: boolean; onClick: () => void;
+function PlayTile({ art, accent = VS_ACCENT, title, sub, locked, onClick }: {
+  /** The tile's character (a cast pose; decorative). */
+  art: string; accent?: string; title: string; sub: string; locked?: boolean; onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="relative flex flex-col items-start gap-1.5 p-2.5 text-left transition-transform active:scale-[0.97]"
-      style={{ ...vsCardStyle, minHeight: 104 }}
+      className="relative flex flex-col text-left overflow-hidden"
+      style={{ ...vsCard(accent, { radius: 16 }), minHeight: 124 }}
     >
-      {locked && <Icon3D name="lock" size={16} className="absolute top-2 right-2" />}
-      <span className="flex items-center justify-center" style={{ width: 30, height: 30, borderRadius: 8, background: VS.soft }}>
-        <Icon style={{ width: 16, height: 16, color: VS.ink }} />
+      <CardBar accent={accent} />
+      {locked && <Icon3D name="lock" size={16} className="absolute top-3.5 right-2" />}
+      <span className="flex flex-col items-start gap-1 p-2.5 pt-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={art} alt="" aria-hidden="true" width={46} height={46} loading="lazy" draggable={false} style={{ width: 46, height: 46, objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(59,26,120,0.18))' }} />
+        <span className="text-[12px] font-black" style={{ color: accent === VS_ACCENT ? VS.deep : darken(accent, 0.45), letterSpacing: 0.5 }}>{title}</span>
+        <span className="font-bold" style={{ fontSize: 10.5, lineHeight: 1.3, color: '#4b5563' }}>{sub}</span>
       </span>
-      <span className="text-[12px] font-black" style={{ color: VS.deep, letterSpacing: 0.5 }}>{title}</span>
-      <span className="font-bold" style={{ fontSize: 10.5, lineHeight: 1.3, color: '#4b5563' }}>{sub}</span>
     </button>
   );
 }

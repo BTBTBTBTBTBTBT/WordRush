@@ -1,0 +1,1553 @@
+{
+  "colors": [
+    {
+      "id": "purple",
+      "hex": "#7c3aed"
+    },
+    {
+      "id": "violet",
+      "hex": "#8b5cf6"
+    },
+    {
+      "id": "pink",
+      "hex": "#ec4899"
+    },
+    {
+      "id": "red",
+      "hex": "#ef4444"
+    },
+    {
+      "id": "orange",
+      "hex": "#f97316"
+    },
+    {
+      "id": "amber",
+      "hex": "#f5a524"
+    },
+    {
+      "id": "yellow",
+      "hex": "#eab308"
+    },
+    {
+      "id": "green",
+      "hex": "#22c55e"
+    },
+    {
+      "id": "emerald",
+      "hex": "#10b981"
+    },
+    {
+      "id": "teal",
+      "hex": "#0d9488"
+    },
+    {
+      "id": "sky",
+      "hex": "#0ea5e9"
+    },
+    {
+      "id": "blue",
+      "hex": "#2563eb"
+    },
+    {
+      "id": "lilac",
+      "hex": "#c4b5fd"
+    },
+    {
+      "id": "peach",
+      "hex": "#fdba74"
+    },
+    {
+      "id": "mint",
+      "hex": "#86efac"
+    },
+    {
+      "id": "slate",
+      "hex": "#64748b"
+    }
+  ],
+  "backdrops": [
+    {
+      "id": "lilac",
+      "kind": "solid",
+      "colors": [
+        "#ede9fe"
+      ]
+    },
+    {
+      "id": "bubblegum",
+      "kind": "solid",
+      "colors": [
+        "#fce7f3"
+      ]
+    },
+    {
+      "id": "sky",
+      "kind": "solid",
+      "colors": [
+        "#e0f2fe"
+      ]
+    },
+    {
+      "id": "mint",
+      "kind": "solid",
+      "colors": [
+        "#dcfce7"
+      ]
+    },
+    {
+      "id": "lemon",
+      "kind": "solid",
+      "colors": [
+        "#fef9c3"
+      ]
+    },
+    {
+      "id": "peach",
+      "kind": "solid",
+      "colors": [
+        "#ffedd5"
+      ]
+    },
+    {
+      "id": "cloud",
+      "kind": "solid",
+      "colors": [
+        "#f1f5f9"
+      ]
+    },
+    {
+      "id": "night",
+      "kind": "solid",
+      "colors": [
+        "#1e1b4b"
+      ]
+    },
+    {
+      "id": "sunset",
+      "kind": "gradient",
+      "colors": [
+        "#fb923c",
+        "#ec4899"
+      ]
+    },
+    {
+      "id": "ocean",
+      "kind": "gradient",
+      "colors": [
+        "#0ea5e9",
+        "#1e40af"
+      ]
+    },
+    {
+      "id": "cottoncandy",
+      "kind": "gradient",
+      "colors": [
+        "#f9a8d4",
+        "#a5b4fc"
+      ]
+    },
+    {
+      "id": "aurora",
+      "kind": "gradient",
+      "colors": [
+        "#34d399",
+        "#8b5cf6",
+        "#0ea5e9"
+      ]
+    },
+    {
+      "id": "galaxy",
+      "kind": "pattern",
+      "colors": [
+        "#4c1d95",
+        "#fde68a"
+      ]
+    },
+    {
+      "id": "polka",
+      "kind": "pattern",
+      "colors": [
+        "#fce7f3",
+        "#f472b6"
+      ]
+    },
+    {
+      "id": "starry",
+      "kind": "pattern",
+      "colors": [
+        "#1e3a8a",
+        "#facc15"
+      ]
+    },
+    {
+      "id": "sunburst",
+      "kind": "pattern",
+      "colors": [
+        "#fde68a",
+        "#f59e0b"
+      ]
+    },
+    {
+      "id": "checkers",
+      "kind": "pattern",
+      "colors": [
+        "#ede9fe",
+        "#c4b5fd"
+      ]
+    },
+    {
+      "id": "confetti",
+      "kind": "pattern",
+      "colors": [
+        "#fff7ed",
+        "#ec4899",
+        "#22c55e",
+        "#2563eb",
+        "#f5a524"
+      ]
+    }
+  ],
+  "defaults": [
+    {
+      "seed": "",
+      "accent": null,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "",
+      "accent": "#7c3aed",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "",
+      "accent": "#ec4899",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "",
+      "accent": "#22c55e",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "",
+      "accent": "#f59e0b",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "",
+      "accent": "bogus",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": null,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": "#7c3aed",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": "#ec4899",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": "#22c55e",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": "#f59e0b",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": "bogus",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": null,
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": "#7c3aed",
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": "#ec4899",
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": "#22c55e",
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": "#f59e0b",
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": "bogus",
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": null,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": "#7c3aed",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": "#ec4899",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": "#22c55e",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": "#f59e0b",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": "bogus",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": null,
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": "#7c3aed",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": "#ec4899",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": "#22c55e",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": "#f59e0b",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": "bogus",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": null,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": "#7c3aed",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": "#ec4899",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": "#22c55e",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": "#f59e0b",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": "bogus",
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    }
+  ],
+  "withPhoto": [
+    {
+      "seed": "",
+      "accent": "#7c3aed",
+      "hasPhoto": true,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "photo"
+      }
+    },
+    {
+      "seed": "guest",
+      "accent": "#7c3aed",
+      "hasPhoto": true,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "photo"
+      }
+    },
+    {
+      "seed": "bmt",
+      "accent": "#7c3aed",
+      "hasPhoto": true,
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "tiny",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "photo"
+      }
+    },
+    {
+      "seed": "doug",
+      "accent": "#7c3aed",
+      "hasPhoto": true,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "photo"
+      }
+    },
+    {
+      "seed": "oliver_22",
+      "accent": "#7c3aed",
+      "hasPhoto": true,
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sparkly",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "photo"
+      }
+    },
+    {
+      "seed": "johnnyauer",
+      "accent": "#7c3aed",
+      "hasPhoto": true,
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "wink",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "photo"
+      }
+    }
+  ],
+  "display": [
+    {
+      "raw": {},
+      "hasPhoto": true,
+      "result": "photo"
+    },
+    {
+      "raw": {},
+      "hasPhoto": false,
+      "result": "mascot"
+    },
+    {
+      "raw": {
+        "display": "mascot"
+      },
+      "hasPhoto": true,
+      "result": "mascot"
+    },
+    {
+      "raw": {
+        "display": "mascot"
+      },
+      "hasPhoto": false,
+      "result": "mascot"
+    },
+    {
+      "raw": {
+        "display": "photo"
+      },
+      "hasPhoto": true,
+      "result": "photo"
+    },
+    {
+      "raw": {
+        "display": "photo"
+      },
+      "hasPhoto": false,
+      "result": "photo"
+    },
+    {
+      "raw": {
+        "display": "selfie"
+      },
+      "hasPhoto": true,
+      "result": "photo"
+    },
+    {
+      "raw": {
+        "display": "selfie"
+      },
+      "hasPhoto": false,
+      "result": "mascot"
+    }
+  ],
+  "nearest": [
+    {
+      "hex": "#7c3aed",
+      "id": "purple"
+    },
+    {
+      "hex": "#ec4899",
+      "id": "pink"
+    },
+    {
+      "hex": "#0ea5e9",
+      "id": "sky"
+    },
+    {
+      "hex": "#123456",
+      "id": "teal"
+    },
+    {
+      "hex": "#ffffff",
+      "id": "lilac"
+    },
+    {
+      "hex": "#000000",
+      "id": "teal"
+    },
+    {
+      "hex": "bogus",
+      "id": "purple"
+    }
+  ],
+  "fallback": {
+    "v": 1,
+    "body": "classic",
+    "color": "blue",
+    "pattern": "solid",
+    "patternColor": "blue",
+    "eyes": "happy",
+    "nose": "none",
+    "mouth": "grin",
+    "head": "none",
+    "face": "none",
+    "neck": "none",
+    "frame": "none",
+    "bg": "auto",
+    "display": "mascot"
+  },
+  "validate": [
+    {
+      "raw": null,
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": [
+        1
+      ],
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": "x",
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {},
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "body": "tall",
+        "color": "neon",
+        "eyes": "laser",
+        "head": "wizard",
+        "frame": "gold"
+      },
+      "result": {
+        "v": 1,
+        "body": "tall",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "wizard",
+        "face": "none",
+        "neck": "none",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "v": 1,
+        "body": "star",
+        "color": "mint",
+        "pattern": "dots",
+        "patternColor": "pink",
+        "eyes": "cyclops",
+        "nose": "freckles",
+        "mouth": "gasp",
+        "head": "crown",
+        "face": "mustache",
+        "neck": "cape",
+        "frame": "pro",
+        "bg": "galaxy"
+      },
+      "result": {
+        "v": 1,
+        "body": "star",
+        "color": "mint",
+        "pattern": "dots",
+        "patternColor": "pink",
+        "eyes": "cyclops",
+        "nose": "freckles",
+        "mouth": "gasp",
+        "head": "crown",
+        "face": "mustache",
+        "neck": "cape",
+        "frame": "pro",
+        "bg": "galaxy",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "bg": "lava",
+        "neck": "flower",
+        "head": "tiara"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "tiara",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    }
+  ],
+  "pro": [
+    {
+      "isPro": true,
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "frame": "diamond",
+        "bg": "aurora",
+        "display": "mascot"
+      }
+    },
+    {
+      "isPro": false,
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    }
+  ],
+  "presets": [
+    {
+      "castId": "w",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "o1",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "orange",
+        "pattern": "solid",
+        "patternColor": "orange",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "r",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "green",
+        "pattern": "solid",
+        "patternColor": "green",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "d",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "o2",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "pink",
+        "pattern": "solid",
+        "patternColor": "pink",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "c",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "sky",
+        "pattern": "solid",
+        "patternColor": "sky",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "i",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "emerald",
+        "pattern": "solid",
+        "patternColor": "emerald",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "o3",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "yellow",
+        "pattern": "solid",
+        "patternColor": "yellow",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "u",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "violet",
+        "pattern": "solid",
+        "patternColor": "violet",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "castId": "s",
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    }
+  ]
+}

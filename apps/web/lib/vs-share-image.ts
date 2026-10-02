@@ -1,35 +1,39 @@
 /**
- * VS result share image — same canvas + aesthetic as the daily share cards
- * (lib/share-image.ts): #f8f7ff bg, WORDOCIOUS gradient wordmark, accent
- * "VS <MODE>" label, Victory/Defeat/Draw pill, tinted+bordered color-only
- * board cards, wordocious.com footer — with a head-to-head center: each
- * player's name (winner crowned), final score (accent vs dimmed), solved
- * line, and up to 2 boards per side. Colors only = no daily-VS spoilers.
+ * VS result share image in the finishing look (docs/FINISH_SPEC.md E1, S2,
+ * S3): the VS wallpaper, the VS BATTLE title art, one compact info line
+ * (date · mode + W / L badge), the YOU WIN! / YOU LOSE / DRAW lettering, then
+ * the head-to-head — each player's name (winner crowned), their score in a
+ * tinted window (purple you, pink them) with a soft number, and up to 2 glossy
+ * color-only boards per side — and the cast wordmark (the ten heroes standing
+ * together) over "wordocious.com". The canvas is 1080 wide and as tall as that
+ * stack (4:5 … 9:16, lib/share-fit.ts). Colors only = no daily-VS spoilers.
+ * Every image is optional: a failed load draws the plain fallback in its spot.
  */
 import { evaluateGuess } from '@wordle-duel/core';
-import { WIN_FG, BOARD_WIN_TINT } from './tile-theme';
 import type { OpponentGuessLogEntry } from '@/lib/adapters/match-service';
+import { ART_SIZE, PAGE_TINTS, artSrc, pageWall, resultMoment, type ArtName } from './art';
+import { STAT_TONES, TILE_GLOSS, shareShortDate } from './share-look';
+import {
+  SHARE_SPACE, SHARE_W, TITLE_MAX_W, VS_BOARD_GAP, VS_NAME_H, VS_WINDOW_H,
+  planShareCard, titleBoxHeight, vsBoardGeometry, vsBodyGeometry,
+} from './share-fit';
+import {
+  canvasToPng, drawCastWordmark, drawGlossTile, drawImageContain, drawInfoLine, drawStatWindow,
+  drawWallpaper, loadCastImages, loadShareImage, resolveCanvasFontStack, roundRectPath, shareFont,
+} from './share-canvas';
 
-const BG = '#f8f7ff';
-const TEXT_MUTED = '#6b7280';
-const FOOT_COLOR = '#9ca3af';
-const WORDMARK = ['#a78bfa', '#ec4899'];
-const LOSS_FG = '#dc2626';
-const LOSS_BG = '#fee2e2';
-const WIN_BG_PILL = '#f5f3ff';
+const LOSS_FG = '#e11d48';
+const WIN_FG = '#7c3aed';
 const DRAW_FG = '#d97706';
-const DRAW_BG = '#fef3c7';
-const BOARD_LOSS_TINT = '#fef2f2';
 const ME_ACCENT = '#7c3aed';
-const OPP_ACCENT = '#ec4899';
-const SOLVED_FG = '#16a34a';
-const TILE: Record<string, string> = {
-  CORRECT: '#7c3aed',
-  PRESENT: '#f59e0b',
-  ABSENT: '#9ca3af',
-  HINT_USED: '#9ca3af',
-  EMPTY: '#e5e7eb',
-};
+const OPP_ACCENT = '#db2777';
+/** The opponent's window: the pink twin of the purple stat window. */
+const OPP_TONE = { tint: '#ffeef7', line: '#fbcfe8', bar: ['#ec4899', '#f9a8d4'] as const, label: '#be185d' };
+const VS_INK = '#0f766e';
+/** The YOU WIN! / YOU LOSE / DRAW lettering's slot (art) and the fallback pill's. */
+const MOMENT_MAX_W = 560;
+const MOMENT_MAX_H = 78;
+const MOMENT_PILL_H = 72;
 
 export interface VsShareSide {
   name: string;
@@ -69,57 +73,40 @@ export function logToGrids(guessLog: OpponentGuessLogEntry[], solutions: string[
   return Array.from(byBoard.keys()).sort((a, b) => a - b).map((k) => byBoard.get(k)!);
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.lineTo(x + w - rr, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-  ctx.lineTo(x + w, y + h - rr);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-  ctx.lineTo(x + rr, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-  ctx.lineTo(x, y + rr);
-  ctx.quadraticCurveTo(x, y, x + rr, y);
-  ctx.closePath();
-}
-
-function font(weight: number, px: number) {
-  return `${weight} ${px}px "Nunito", system-ui, -apple-system, sans-serif`;
-}
-
 /**
- * Board card: tinted rounded card + tile grid, matching drawBoardCard's look.
+ * Board: tinted panel (lilac won / rose lost) + glossy tile grid.
  * `rows`/`cols` are the SHARED dimensions across both players (short grids are
- * padded with empty tiles) so the two sides' cards are pixel-identical — a
+ * padded with frosted tiles) so the two sides' cards are pixel-identical — a
  * 3-guess win next to a 6-guess loss used to render two differently-sized
  * boards, which read as a layout bug.
  */
 function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, top: number, maxSide: number, won: boolean, rows: number, cols: number): number {
-  const gap = Math.max(3, maxSide * 0.012);
-  const pad = maxSide * 0.04;
-  const inner = maxSide - pad * 2;
-  const tile = Math.floor(Math.min((inner - gap * (cols - 1)) / cols, (inner - gap * (rows - 1)) / rows));
-  const gridW = tile * cols + gap * (cols - 1);
-  const gridH = tile * rows + gap * (rows - 1);
-  const cardW = gridW + pad * 2;
-  const cardH = gridH + pad * 2;
+  const { tile, gap, pad, cardW, cardH } = vsBoardGeometry(maxSide, rows, cols);
   const x = cx - cardW / 2;
 
-  roundRect(ctx, x, top, cardW, cardH, 18);
-  ctx.fillStyle = won ? BOARD_WIN_TINT : BOARD_LOSS_TINT;
+  ctx.save();
+  ctx.shadowColor = 'rgba(60, 30, 110, 0.14)';
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 8;
+  roundRectPath(ctx, x, top, cardW, cardH, 18);
+  ctx.fillStyle = won ? 'rgba(245, 238, 255, 0.88)' : 'rgba(255, 236, 241, 0.88)';
   ctx.fill();
-  ctx.strokeStyle = won ? WIN_FG : LOSS_FG;
-  ctx.lineWidth = 4;
+  ctx.restore();
+  roundRectPath(ctx, x, top, cardW, cardH, 18);
+  ctx.strokeStyle = won ? 'rgba(124, 58, 237, 0.55)' : 'rgba(225, 29, 72, 0.55)';
+  ctx.lineWidth = 3;
   ctx.stroke();
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const tx = x + pad + c * (tile + gap);
       const ty = top + pad + r * (tile + gap);
-      roundRect(ctx, tx, ty, tile, tile, Math.max(4, tile * 0.12));
-      ctx.fillStyle = TILE[grid[r]?.[c] ?? 'EMPTY'] || TILE.EMPTY;
-      ctx.fill();
+      const state = grid[r]?.[c] ?? 'EMPTY';
+      const pal = state === 'CORRECT' ? TILE_GLOSS.CORRECT
+        : state === 'PRESENT' ? TILE_GLOSS.PRESENT
+        : state === 'ABSENT' || state === 'HINT_USED' ? TILE_GLOSS.ABSENT
+        : null;
+      drawGlossTile(ctx, tx, ty, tile, tile, pal, { gloss: pal === TILE_GLOSS.ABSENT ? 0.3 : undefined });
     }
   }
   return cardH;
@@ -127,10 +114,49 @@ function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, 
 
 export async function generateVsShareImage(input: VsShareInput): Promise<Blob | null> {
   if (typeof document === 'undefined') return null;
-  try { await (document as any).fonts?.load('900 56px "Nunito"'); } catch { /* best effort */ }
+  resolveCanvasFontStack();
+  try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* best effort */ }
 
-  const W = 1080;
-  const H = 1080;
+  const W = SHARE_W;
+  const now = new Date();
+  const outcome = input.isDraw ? 'draw' : input.isWin ? 'win' : 'loss';
+  const momentName = `art-moment-${resultMoment(outcome)}` as ArtName;
+  const [wall, title, moment, castImgs, crownImg] = await Promise.all([
+    loadShareImage([artSrc(pageWall('vs'))]),
+    loadShareImage([artSrc('art-title-vs')]),
+    loadShareImage([artSrc(momentName)]),
+    loadCastImages(),
+    // The winner's crown is our 3D crown art, never a phone emoji (FINISH_SPEC AM3).
+    loadShareImage([artSrc('art-badge-crown')]),
+  ]);
+
+  // S2: the canvas is as tall as its content.
+  const titleNat: readonly [number, number] | null = title
+    ? (title.naturalWidth && title.naturalHeight ? [title.naturalWidth, title.naturalHeight] : ART_SIZE['art-title-vs'])
+    : null;
+  const titleH = titleBoxHeight(titleNat);
+  const momentNat: readonly [number, number] | null = moment
+    ? (moment.naturalWidth && moment.naturalHeight ? [moment.naturalWidth, moment.naturalHeight] : ART_SIZE[momentName])
+    : null;
+  const momentH = momentNat
+    ? Math.round(momentNat[1] * Math.min(MOMENT_MAX_W / momentNat[0], MOMENT_MAX_H / momentNat[1]))
+    : MOMENT_PILL_H;
+  const headH = SHARE_SPACE.info + 12 + momentH;
+
+  // Head-to-head columns — boards on BOTH sides share one grid size.
+  const allShown = [...input.me.grids.slice(0, 2), ...input.opponent.grids.slice(0, 2)];
+  const sharedRows = Math.max(1, ...allShown.map((g) => g.length));
+  const sharedCols = Math.max(1, ...allShown.map((g) => g[0]?.length ?? 5));
+  const shownN = Math.min(Math.max(input.me.grids.length, input.opponent.grids.length), 2);
+  const hasMore = input.me.grids.length > 2 || input.opponent.grids.length > 2;
+  const plan = planShareCard(
+    { titleH, headH, footH: 0 },
+    (maxH) => vsBodyGeometry(shownN, sharedRows, sharedCols, maxH, hasMore).h,
+  );
+  const H = plan.height;
+  const body = vsBodyGeometry(shownN, sharedRows, sharedCols, plan.boardH, hasMore);
+  const maxSideB = body.maxSide;
+
   const dpr = 2;
   const canvas = document.createElement('canvas');
   canvas.width = W * dpr;
@@ -139,122 +165,120 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   if (!ctx) return null;
   ctx.scale(dpr, dpr);
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
+  drawWallpaper(ctx, W, H, wall, PAGE_TINTS.vs.light);
 
-  // Hero wordmark — the brand is the headline of the share (native parity:
-  // 92px on the 1080 canvas; 56 read as an afterthought).
-  const wordmarkY = 128;
-  ctx.font = font(900, 92);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  const grad = ctx.createLinearGradient(W / 2 - 330, wordmarkY - 70, W / 2 + 330, wordmarkY + 8);
-  grad.addColorStop(0, WORDMARK[0]);
-  grad.addColorStop(1, WORDMARK[1]);
-  ctx.fillStyle = grad;
-  ctx.fillText('WORDOCIOUS', W / 2, wordmarkY);
-
-  // Mode label (VS gets the wordmark gradient accent look via mode label color —
-  // keep it simple: pink→purple midpoint reads as the VS brand)
-  const modeY = wordmarkY + 64;
-  ctx.font = font(900, 40);
-  ctx.fillStyle = '#0d9488';
-  ctx.fillText(input.modeLabel.toUpperCase(), W / 2, modeY);
-
-  // Stats line + result pill
-  const metaY = modeY + 52;
-  const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const statsText = `${input.me.score.toFixed(2)} vs ${input.opponent.score.toFixed(2)} · ${dateStr}`;
-  const pillLabel = input.isDraw ? 'Draw' : input.isWin ? 'Victory' : 'Defeat';
-  ctx.font = font(700, 24);
-  const statsW = ctx.measureText(statsText).width;
-  ctx.font = font(700, 22);
-  const pillW = ctx.measureText(pillLabel).width + 32;
-  const blockW = statsW + 12 + pillW;
-  const startX = W / 2 - blockW / 2;
-
-  ctx.font = font(700, 24);
-  ctx.fillStyle = TEXT_MUTED;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(statsText, startX, metaY);
-
-  const pillX = startX + statsW + 12;
-  roundRect(ctx, pillX, metaY - 19, pillW, 38, 10);
-  ctx.fillStyle = input.isDraw ? DRAW_BG : input.isWin ? WIN_BG_PILL : LOSS_BG;
-  ctx.fill();
-  ctx.font = font(700, 22);
-  ctx.fillStyle = input.isDraw ? DRAW_FG : input.isWin ? WIN_FG : LOSS_FG;
-  ctx.textAlign = 'center';
-  ctx.fillText(pillLabel, pillX + pillW / 2, metaY);
-
-  // Head-to-head columns — boards on BOTH sides share one grid size.
-  const sideCX = [W * 0.28, W * 0.72];
-  const allShown = [...input.me.grids.slice(0, 2), ...input.opponent.grids.slice(0, 2)];
-  const sharedRows = Math.max(1, ...allShown.map((g) => g.length));
-  const sharedCols = Math.max(1, ...allShown.map((g) => g[0]?.length ?? 5));
-  const multiBoard = input.me.grids.length > 1 || input.opponent.grids.length > 1;
-
-  // Deterministic block geometry (same math as drawBoard) so the head-to-head
-  // centers in the space under the header and the VS mark sits exactly
-  // between the two boards (native parity).
-  const maxSideB = multiBoard ? 250 : 380;
-  const gapB = Math.max(3, maxSideB * 0.012);
-  const padB = maxSideB * 0.04;
-  const innerB = maxSideB - padB * 2;
-  const tileB = Math.floor(Math.min((innerB - gapB * (sharedCols - 1)) / sharedCols, (innerB - gapB * (sharedRows - 1)) / sharedRows));
-  const cardH = tileB * sharedRows + gapB * (sharedRows - 1) + padB * 2;
-  const shownN = Math.min(Math.max(input.me.grids.length, input.opponent.grids.length), 2);
-  const boardsBlockH = cardH * shownN + 14 * (shownN - 1);
-  const headerBlockH = 158;          // name/score/solved block above the boards
-  const contentTop = metaY + 52;     // below the pill
-  const contentBottom = H - 90;      // above the footer
-  const blockH = headerBlockH + boardsBlockH;
-  const blockTop = contentTop + Math.max(0, (contentBottom - contentTop - blockH) / 2);
-  const topY = blockTop + 28;        // first baseline (player name)
-
-  const drawSide = (side: VsShareSide, accent: string, cx: number) => {
-    const highlighted = side.won || input.isDraw;
-    let y = topY;
+  // VS BATTLE title art (or the words lettered in teal with a white edge).
+  if (title && titleNat) {
+    drawImageContain(ctx, title, W / 2, plan.titleTop, TITLE_MAX_W, titleH, titleNat);
+  } else {
+    ctx.save();
+    ctx.font = shareFont(900, 76);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.font = font(900, 28);
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    const baseY = plan.titleTop + titleH / 2 + 27;
+    ctx.strokeText('VS BATTLE', W / 2, baseY);
+    ctx.fillStyle = VS_INK;
+    ctx.fillText('VS BATTLE', W / 2, baseY);
+    ctx.restore();
+  }
+
+  // "FRI, OCT 2 · VS CLASSIC" + W / L badge (no badge on a draw).
+  drawInfoLine(
+    ctx,
+    { text: `${shareShortDate(now)} · ${input.modeLabel}`.toUpperCase(), badge: input.isDraw ? null : input.isWin ? 'W' : 'L' },
+    W / 2, plan.headTop + SHARE_SPACE.info / 2, 952, VS_INK,
+  );
+
+  // YOU WIN! / YOU LOSE / DRAW lettering, or the old text pill.
+  const momentTop = plan.headTop + SHARE_SPACE.info + 12;
+  if (moment && momentNat) {
+    drawImageContain(ctx, moment, W / 2, momentTop, MOMENT_MAX_W, momentH, momentNat);
+  } else {
+    const label = input.isDraw ? 'Draw' : input.isWin ? 'Victory' : 'Defeat';
+    ctx.save();
+    ctx.font = shareFont(900, 30);
+    const pw = ctx.measureText(label).width + 48;
+    roundRectPath(ctx, W / 2 - pw / 2, momentTop + 10, pw, 52, 26);
+    ctx.fillStyle = input.isDraw ? '#fff5df' : input.isWin ? '#f5eeff' : '#ffe4ea';
+    ctx.fill();
+    ctx.fillStyle = input.isDraw ? DRAW_FG : input.isWin ? WIN_FG : LOSS_FG;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, W / 2, momentTop + 37);
+    ctx.restore();
+  }
+
+  const sideCX = [W * 0.27, W * 0.73];
+  const blockTop = plan.boardTop + Math.max(0, (plan.boardH - body.h) / 2);
+
+  const drawSide = (side: VsShareSide, accent: string, tone: typeof OPP_TONE | undefined, cx: number) => {
+    let sy = blockTop;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = shareFont(900, 30);
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    const crowned = side.won && !input.isDraw && crownImg != null;
+    const name = side.name.slice(0, crowned ? 19 : 22);
+    const CROWN = 38;
+    const nameX = crowned ? cx + (CROWN + 6) / 2 : cx;
+    ctx.strokeText(name, nameX, sy + VS_NAME_H / 2);
     ctx.fillStyle = accent;
-    const crown = side.won && !input.isDraw ? '👑 ' : '';
-    ctx.fillText(`${crown}${side.name}`.slice(0, 22), cx, y);
-    y += 56;
-    ctx.font = font(900, 52);
-    ctx.fillStyle = highlighted ? accent : TEXT_MUTED;
-    ctx.fillText(side.score.toFixed(2), cx, y);
-    y += 40;
-    ctx.font = font(700, 20);
-    ctx.fillStyle = side.solved ? SOLVED_FG : LOSS_FG;
-    ctx.fillText(side.solved ? '✓ Solved' : '✗ Not solved', cx, y);
-    y += 34;   // boards start at blockTop + headerBlockH (28+56+40+34 = 158)
+    ctx.fillText(name, nameX, sy + VS_NAME_H / 2);
+    if (crowned) {
+      const left = nameX - ctx.measureText(name).width / 2 - 6 - CROWN;
+      ctx.drawImage(crownImg, left, sy + VS_NAME_H / 2 - CROWN / 2 - 2, CROWN, CROWN);
+    }
+    ctx.restore();
+    sy += VS_NAME_H + 4;
+
+    const winW = 300;
+    drawStatWindow(
+      ctx,
+      { value: side.score.toFixed(2), label: side.solved ? 'SOLVED' : 'NOT SOLVED', tone: 'purple' },
+      cx - winW / 2, sy, winW, VS_WINDOW_H,
+      { tone: tone ?? STAT_TONES.purple, numberPx: 52 },
+    );
+    sy += VS_WINDOW_H + 18;
+
     const shown = side.grids.slice(0, 2);
     for (const grid of shown) {
-      const h = drawBoard(ctx, grid, cx, y, maxSideB, side.won, sharedRows, sharedCols);
-      y += h + 14;
+      const h = drawBoard(ctx, grid, cx, sy, maxSideB, side.won, sharedRows, sharedCols);
+      sy += h + VS_BOARD_GAP;
     }
     if (side.grids.length > 2) {
-      ctx.font = font(700, 18);
-      ctx.fillStyle = TEXT_MUTED;
-      ctx.fillText(`+${side.grids.length - 2} more`, cx, y + 8);
+      ctx.save();
+      ctx.font = shareFont(800, 22);
+      ctx.fillStyle = '#6f5f8f';
+      ctx.textAlign = 'center';
+      ctx.fillText(`+${side.grids.length - 2} more`, cx, sy + 10);
+      ctx.restore();
     }
   };
-  drawSide(input.me, ME_ACCENT, sideCX[0]);
-  drawSide(input.opponent, OPP_ACCENT, sideCX[1]);
+  drawSide(input.me, ME_ACCENT, undefined, sideCX[0]);
+  drawSide(input.opponent, OPP_ACCENT, OPP_TONE, sideCX[1]);
 
-  // Center VS — vertically centered between the two boards.
-  ctx.font = font(900, 44);
-  ctx.fillStyle = TEXT_MUTED;
+  // Center VS — level with the score windows.
+  ctx.save();
+  ctx.font = shareFont(900, 54);
   ctx.textAlign = 'center';
-  ctx.fillText('VS', W / 2, blockTop + headerBlockH + boardsBlockH / 2 + 15);
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+  const vsY = blockTop + VS_NAME_H + 4 + VS_WINDOW_H / 2;
+  ctx.strokeText('VS', W / 2, vsY);
+  ctx.fillStyle = VS_INK;
+  ctx.fillText('VS', W / 2, vsY);
+  ctx.restore();
 
-  // Footer
-  ctx.font = font(700, 22);
-  ctx.fillStyle = FOOT_COLOR;
-  ctx.fillText('wordocious.com', W / 2, H - 40);
+  // S3: the cast IS the wordmark — the ten heroes standing together over "wordocious.com".
+  drawCastWordmark(ctx, plan.cast, castImgs, W / 2, plan.castBase, plan.urlY);
 
-  return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
+  return canvasToPng(canvas);
 }

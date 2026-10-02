@@ -6,6 +6,7 @@ import { sweepModesFor } from '@/lib/modes.generated';
 import { settleWeek } from '@/lib/weekly-race';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { friendStreak } from '@wordle-duel/core';
+import { selectWithAvatarColumns, withOwnAvatarFields, type AvatarFields } from '@/lib/avatar-fields-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,14 +30,17 @@ export async function GET(req: NextRequest) {
   const wantDigest = DAY_RE.test(day) && DAY_RE.test(weekStart);
 
   const admin = getAdminSupabase();
-  const { data, error } = await admin
+  // FINISH_SPEC AH/AN3 (additive): every person also carries avatar_cast_id,
+  // avatar_frame, avatar_config and is_pro (active Pro). The avatar columns may
+  // not exist yet; selectWithAvatarColumns retries without them (null fields).
+  const { data, error } = await selectWithAvatarColumns((extra) => admin
     .from('friendships')
     .select(
       `requester_id, addressee_id, status, created_at, accepted_at, reminded_at,
-       requester:profiles!friendships_requester_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak, last_seen_at, last_activity),
-       addressee:profiles!friendships_addressee_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak, last_seen_at, last_activity)`,
+       requester:profiles!friendships_requester_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak, last_seen_at, last_activity${extra}),
+       addressee:profiles!friendships_addressee_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak, last_seen_at, last_activity${extra})`,
     )
-    .or(`requester_id.eq.${me},addressee_id.eq.${me}`);
+    .or(`requester_id.eq.${me},addressee_id.eq.${me}`));
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // avatar_emoji / streak are ADDITIVE (Aug 11): shipped decoders ignore
@@ -45,7 +49,7 @@ export async function GET(req: NextRequest) {
     id: string; username: string; avatar_url: string | null; avatar_emoji: string | null;
     level: number; daily_login_streak?: number | null;
     last_seen_at?: string | null; last_activity?: string | null;
-  };
+  } & Partial<AvatarFields>;
   const friends: Array<Prof & {
     since: string | null; streak: number;
     playedToday?: number; weekPoints?: number; todayPoints?: number; h2hW?: number; h2hL?: number;
@@ -62,7 +66,8 @@ export async function GET(req: NextRequest) {
   for (const row of (data ?? []) as any[]) {
     const other: Prof = row.requester_id === me ? row.addressee : row.requester;
     if (!other) continue; // profile vanished mid-join; FK cascade will clean up
-    const { daily_login_streak, last_seen_at, last_activity, ...prof } = other;
+    const { daily_login_streak, last_seen_at, last_activity, ...raw } = other;
+    const prof: Prof = withOwnAvatarFields(raw);
     const streak = daily_login_streak ?? 0;
     if (row.status === 'accepted') {
       // Friends overhaul (additive): the heartbeat for "On now" and the db key

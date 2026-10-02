@@ -4,23 +4,37 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { Camera } from 'lucide-react';
-import NextImage from 'next/image';
 import { toast } from '@/hooks/use-toast';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
-import { LetterTileAvatar, letterTileRadius } from '@/components/ui/letter-tile-avatar';
+import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { usePlayerAvatar } from '@/components/avatar/player-avatar';
+import { avatarRadiusPx } from '@/lib/avatar-render';
 
 interface AvatarUploadProps {
   size?: number;
   editable?: boolean;
   avatarUrl?: string | null;
   username?: string;
-  /** The shown player's emoji fallback (defaults to the signed-in player's when no username is passed). */
+  /** Retired (AM2): an emoji avatar is never drawn. */
   emoji?: string | null;
   /** The shown player's profile accent (defaults to the signed-in player's when no username is passed). */
   accent?: string | null;
+  /** FINISH_SPEC AA2: the shown player's Pro state when the page knows it (else the signed-in Pro player's own avatar is crowned). */
+  pro?: boolean | null;
+  /** FINISH_SPEC AH: the shown player's avatar_cast_id / avatar_frame / level when the page's row carries them (the signed-in player's own choice is always used). */
+  castId?: string | null;
+  frame?: string | null;
+  level?: number | null;
+  /** FINISH_SPEC AN3: the shown player's user id + avatar_config when the page's row carries them. */
+  userId?: string | null;
+  config?: unknown;
+  /** Draw the photo (when there is one) even if the player shows their mascot (Edit Profile's photo option). */
+  photoOnly?: boolean;
+  /** Called after a new photo was stored. */
+  onUploaded?: () => void;
 }
 
-export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, emoji, accent }: AvatarUploadProps) {
+export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, accent, pro, castId, frame, level, userId, config, photoOnly = false, onUploaded }: AvatarUploadProps) {
   const { profile, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,9 +43,10 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
   // signed-in player's own photo; omitted = show the signed-in player.
   const displayUrl = avatarUrl !== undefined ? avatarUrl : profile?.avatar_url;
   const displayName = username ?? profile?.username ?? '?';
-  const own = username === undefined ? (profile as { accent_color?: string | null; avatar_emoji?: string | null } | null) : null;
-  const tileAccent = accent !== undefined ? accent : own?.accent_color ?? null;
-  const tileEmoji = emoji !== undefined ? emoji : own?.avatar_emoji ?? null;
+  // AN5 / AN6: the photo (rounded square) or the mascot, in the player's frame, crowned when Pro.
+  const look = usePlayerAvatar({ name: displayName, userId: username === undefined ? profile?.id : userId, url: displayUrl ?? null, accent, config, castId, frame, level, pro });
+  const shownUrl = photoOnly ? displayUrl ?? null : look.url;
+  const radius = avatarRadiusPx(size);
 
   const resizeImage = (file: File, maxSize: number): Promise<Blob> =>
     new Promise((resolve, reject) => {
@@ -89,6 +104,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
         .eq('id', profile.id);
 
       await refreshProfile();
+      onUploaded?.();
     } catch (err) {
       console.error('Avatar upload failed:', err);
       handleSupabaseError(err, 'avatar-upload');
@@ -104,25 +120,20 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
       style={{ width: size, height: size }}
       onClick={() => editable && fileInputRef.current?.click()}
     >
-      {displayUrl ? (
-        <NextImage
-          src={displayUrl}
-          alt={displayName}
-          width={size}
-          height={size}
-          className="w-full h-full rounded-full object-cover border-3 border-white/30"
-          unoptimized
-        />
-      ) : (
-        // No photo: the letter tile (ART_SPEC §20). (The old circle's `border-3` was a no-op on
-        // Tailwind 3.3 — no width utility — so there is no visible ring to carry over.)
-        <LetterTileAvatar name={displayName} emoji={tileEmoji} accent={tileAccent} size={size} />
-      )}
+      <MascotAvatar
+        config={look.config}
+        initial={look.initial}
+        size={size}
+        photoUrl={shownUrl}
+        pro={look.pro}
+        level={look.level}
+        label={displayName}
+      />
 
       {editable && (
         <div
-          className={`absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center${displayUrl ? ' rounded-full' : ''}`}
-          style={displayUrl ? undefined : { borderRadius: letterTileRadius(size) }}
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+          style={{ background: 'rgba(59, 26, 120, 0.5)', borderRadius: radius }}
         >
           {uploading ? (
             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -130,6 +141,17 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
             <Camera className="w-6 h-6 text-white" />
           )}
         </div>
+      )}
+
+      {/* G5: a small candy camera badge says "tap to change" (decorative: the whole avatar is the target). */}
+      {editable && size >= 56 && (
+        <span
+          aria-hidden="true"
+          className="candy candy-purple candy-round absolute pointer-events-none"
+          style={{ ['--candy-h' as string]: '28px', ['--candy-lip-h' as string]: '3px', ['--candy-ring' as string]: '1px', right: -4, bottom: -1, marginBottom: 0 } as React.CSSProperties}
+        >
+          <Camera className="w-3.5 h-3.5" color="#ffffff" strokeWidth={2.6} />
+        </span>
       )}
 
       {editable && (

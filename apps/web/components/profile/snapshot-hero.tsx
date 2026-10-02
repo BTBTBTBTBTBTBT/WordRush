@@ -1,15 +1,17 @@
 'use client';
 
-import { Target, Zap, TrendingUp, Sparkles } from 'lucide-react';
-import { Trophy3D, Flame3D } from '@/components/ui/icon3d';
-import Link from 'next/link';
-import { WIN_FG } from '@/lib/tile-theme';
-import { KitCard, StatCell, CountUp } from './stat-kit';
+import { Icon3D } from '@/components/ui/icon3d';
+import { CandyLink } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { KitCard, TintTile, CountUp } from './stat-kit';
 import { STAT_LABELS } from '@/lib/stat-labels';
+import { MedalArt } from '@/components/stats/medal-art';
 
-// Snapshot hero — merges the old Global Summary Row + "This Week" recap into
-// ONE card: lifetime headline stats up top, the week strip underneath. Kills
-// the double-summary stutter the page used to open with.
+// Snapshot hero — the All-time page's lifetime headline (docs/FINISH_SPEC.md
+// C3 cont; mockup stats-friends-polish.html `.tiles4`): four tiles, each in its
+// own color with a 3D icon and a soft number — purple Wins, green Win Rate,
+// gold Win Streak, pink Daily Streak — then the this-week strip on a lavender
+// card (and the Pro door as a candy pill for free players).
 
 interface SnapshotHeroProps {
   totalWins: number;
@@ -32,35 +34,33 @@ export function SnapshotHero({
   const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
 
   return (
-    <KitCard>
-      <div className="grid grid-cols-4 gap-y-3 gap-x-2">
-        {/* F4: marquee numbers count up on mount. */}
-        <StatCell icon={Trophy3D} label="Wins" value={<CountUp target={totalWins} />} color={WIN_FG} />
-        <StatCell icon={Target} label="Win Rate" value={<CountUp target={winRate} suffix="%" />} color="#2563eb" />
-        <StatCell icon={Zap} label={STAT_LABELS.winStreak} value={<CountUp target={currentStreak} />} sub={`Best: ${bestStreak}`} color="#7c3aed" />
-        <StatCell icon={Flame3D} label={STAT_LABELS.dailyStreak} value={<CountUp target={dailyStreak} />} sub={`Best: ${bestDailyStreak}`} color="#f97316" />
+    <div className="space-y-2.5">
+      {/* F4: marquee numbers count up on mount (instant under Reduce Motion). */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <TintTile accent="#7c3aed" ink="#6d28d9" icon={<MedalArt medal="trophy" size={20} />} label="Wins" value={<CountUp target={totalWins} />} sub="all games" />
+        <TintTile accent="#16a34a" ink="#137a3d" icon={<Icon3D name="badge-check" size={20} />} label="Win Rate" value={<CountUp target={winRate} suffix="%" />} sub={`${totalGames.toLocaleString()} ${totalGames === 1 ? 'game' : 'games'}`} />
+        <TintTile accent="#f5a524" ink="#a2560c" icon={<Icon3D name="badge-w" size={20} />} label={STAT_LABELS.winStreak} value={<CountUp target={currentStreak} />} sub={`best ${bestStreak}`} />
+        <TintTile accent="#ec4899" ink="#a0336b" icon={<Icon3D name="flame" size={20} />} label={STAT_LABELS.dailyStreak} value={<CountUp target={dailyStreak} />} sub={`best ${bestDailyStreak}`} />
       </div>
-      <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: '#7c3aed' }} />
-          <span className="text-[10px] font-black uppercase tracking-wide shrink-0" style={{ color: '#6d28d9' }}>This Week</span>
-          <span className="text-[11px] font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
-            {gamesThisWeek} {gamesThisWeek === 1 ? 'game' : 'games'}
-          </span>
+      <KitCard>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-wide shrink-0 tint-ink" style={{ color: '#6d28d9' }}>This Week</span>
+            <SoftNum size={17} className="soft-num-auto">{gamesThisWeek}</SoftNum>
+            <span className="text-[11px] font-extrabold truncate" style={{ color: 'var(--color-text-muted)' }}>{gamesThisWeek === 1 ? 'game' : 'games'}</span>
+          </div>
+          <div className="flex items-baseline gap-1.5 shrink-0">
+            <SoftNum size={17} className="soft-num-auto">{xpToNext}</SoftNum>
+            <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>XP to Lvl {level + 1}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <TrendingUp className="w-3.5 h-3.5" style={{ color: '#2563eb' }} />
-          <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>
-            {xpToNext} XP <span style={{ color: 'var(--color-text-muted)' }}>to Lvl {level + 1}</span>
-          </span>
-        </div>
-      </div>
-      {!isPro && (
-        <Link href="/pro" className="flex items-center justify-between mt-2.5 pt-2.5 text-[11px] font-extrabold" style={{ borderTop: '1px solid var(--color-border)', color: '#7c3aed' }}>
-          <span>Unlock your full insights with Pro</span>
-          <span>→</span>
-        </Link>
-      )}
-    </KitCard>
+        {!isPro && (
+          <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: '1.5px dashed rgba(124, 58, 237, 0.25)' }}>
+            <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>Unlock your full insights with Pro</span>
+            <CandyLink href="/pro" color="amber" size="sm" className="shrink-0">Go Pro</CandyLink>
+          </div>
+        )}
+      </KitCard>
+    </div>
   );
 }

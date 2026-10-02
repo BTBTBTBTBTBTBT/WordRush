@@ -66,7 +66,7 @@ struct LetterKeyboard: View {
             switch key {
             case .letter(let l): onLetter(l)
             case .enter where showEnter: onEnter()
-            case .delete: onDelete()
+            case .delete: onDelete(); SoundManager.shared.playDelete(); return true
             default: return false
             }
             SoundManager.shared.playKeyTap()
@@ -79,7 +79,7 @@ struct LetterKeyboard: View {
     }
 
     private func deleteKey() -> some View {
-        actionKey("⌫") { onDelete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+        actionKey("⌫") { onDelete(); Haptics.tap(); SoundManager.shared.playDelete() }
     }
 
     private func spaceKey() -> some View {

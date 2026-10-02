@@ -54,6 +54,8 @@ object WidgetBridge {
         val wordFlawlessStreak: Int? = null,
         val puzzlesSweepStreak: Int? = null,
         val puzzlesFlawlessStreak: Int? = null,
+        /** FINISH_SPEC E2: today's Daily Sweep rank (the leaderboard's cached board), null when unknown. */
+        val rank: Int? = null,
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -113,8 +115,10 @@ object WidgetBridge {
             val streak = AuthService.headerStreak ?: 0
             val modes = ModeGen.sweep.map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
             val puzzles = puzzleModes().map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
-            // Same totals helper as the banner/celebration/share card, so the
-            // widget's time · points can never disagree with the home banner.
+            // Same totals helpers as the banner/celebration/share card, so the
+            // widget's points can never disagree with the app. FINISH_SPEC AL: the
+            // widget's "points today" chip is points + puzzlePoints (all dailies,
+            // WidgetStats.dayStats), the same combined sum iOS writes.
             val totals = DailyCompletionsService.totals(byMode)
             val rows = com.wordocious.app.data.HomeStreaksService.cachedRowStreaks()
             val snap = Snapshot(
@@ -126,6 +130,7 @@ object WidgetBridge {
                 username = AuthService.profile.value?.username,
                 wordSweepStreak = rows?.wordSweep, wordFlawlessStreak = rows?.wordFlawless,
                 puzzlesSweepStreak = rows?.puzzlesSweep, puzzlesFlawlessStreak = rows?.puzzlesFlawless,
+                rank = cachedRank(),
             )
             ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putString(SNAPSHOT_KEY, json.encodeToString(Snapshot.serializer(), snap))
@@ -133,6 +138,18 @@ object WidgetBridge {
             push(ctx)
         }
     }
+
+    /**
+     * Today's Daily Sweep rank from the leaderboard's own disk cache (no network: the
+     * widget shows what the Leaderboard page last saw). Signed out → null. The cache
+     * is keyed by day, so a stale yesterday's rank never shows.
+     */
+    private fun cachedRank(): Int? = runCatching {
+        if (AuthService.userId == null) return@runCatching null
+        com.wordocious.app.data.LeaderboardService.cachedSweep(
+            com.wordocious.app.data.LeaderboardService.sweepCacheKey(todayLocalDate()),
+        )?.rank?.rank
+    }.getOrNull()
 
     /** Re-render every placed widget from the stored snapshot (the Android
      *  WidgetCenter.reloadAllTimelines). */
@@ -161,12 +178,7 @@ object WidgetBridge {
         // A snapshot written before the Puzzles row existed has no `puzzles`: fill the
         // roster (all unplayed) so the widget's second row never renders empty.
         val withPuzzles = if (snap.puzzles.isNullOrEmpty()) snap.copy(puzzles = puzzleModes().map { entry(it, null) }) else snap
-        if (withPuzzles.day == todayLocalDate()) return withPuzzles
-        return withPuzzles.copy(
-            day = todayLocalDate(),
-            modes = withPuzzles.modes.map { it.copy(played = false, won = false) },
-            puzzles = withPuzzles.puzzles?.map { it.copy(played = false, won = false) },
-            points = 0, seconds = 0, puzzlePoints = 0,
-        )
+        // FINISH_SPEC AL: the day rollover lives in WidgetStats (unit tested).
+        return WidgetStats.rollover(withPuzzles, todayLocalDate())
     }
 }

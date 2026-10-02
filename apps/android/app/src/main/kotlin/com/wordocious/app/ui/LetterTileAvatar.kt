@@ -92,16 +92,20 @@ object LetterTileColors {
 
 private fun rgbColor(rgb: Int, alpha: Float = 1f): Color = Color(0xFF000000L or rgb.toLong()).copy(alpha = alpha)
 
-/** The tile's outline (radius 24% of size): use it for any ring / border / glow around a tile. */
-fun letterTileShape(size: Dp): Shape = RoundedCornerShape(size * 0.24f)
+/** The tile's outline (AN6: radius ≈ 22% of size): use it for any ring / border / glow around a tile. */
+fun letterTileShape(size: Dp): Shape = RoundedCornerShape(size * 0.22f)
 
-/** Avatar outline: circle for an uploaded photo, the tile's rounded square otherwise. */
-fun avatarShape(hasPhoto: Boolean, size: Dp): Shape = if (hasPhoto) CircleShape else letterTileShape(size)
+/** Avatar outline (AN6): photos and mascots are both rounded squares now — never a circle. */
+@Suppress("UNUSED_PARAMETER")
+fun avatarShape(hasPhoto: Boolean, size: Dp): Shape = avatarTileShape(size)
 
 /**
- * The §20 letter tile, filling a [size] box (scales 20–120 dp). [emoji] (the
- * player's chosen avatar emoji) replaces the initials when set. [accentHex] is
- * the player's profile accent when known. No animation; identical in dark mode.
+ * FINISH_SPEC AN5: every no-photo avatar is the player's MASCOT (MascotAvatar) with
+ * their initial as the white body letter — the saved config (MascotAvatars, by
+ * username), else a worn AH character's preset, else the deterministic default seeded
+ * by the username in the player's [accentHex]. Every caller (leaderboards, podium,
+ * Friends, VS, Records, profiles) switches with no call-site edits. [emoji] is ignored
+ * (AM2). [pro] adds the AA2 crown + the Pro gold frame when no frame is chosen.
  */
 @Composable
 fun LetterTileAvatar(
@@ -110,67 +114,29 @@ fun LetterTileAvatar(
     modifier: Modifier = Modifier,
     accentHex: String? = null,
     emoji: String? = null,
+    /** AA2: a Pro player's avatar wears the Pro gold frame + the tiny crown at its top-right. */
+    pro: Boolean = false,
+    /**
+     * FINISH_SPEC AH: the cast character worn as the avatar ("w", "o1", … AvatarCast.IDS) —
+     * drawn as that character's mascot PRESET (AN2). Null = the player's recorded choice
+     * when [lookup] (CastAvatars, by username).
+     */
+    castId: String? = null,
+    /** AH: the level-tier frame ("bronze" … "diamond"); null = the recorded one when [lookup]. */
+    frame: String? = null,
+    /** AH: false draws exactly what is passed (Edit Profile's live, unsaved choice). */
+    lookup: Boolean = true,
+    /** AN: an explicit mascot (e.g. the builder's live preview); null = resolved as above. */
+    config: com.wordocious.core.AvatarConfig? = null,
 ) {
-    val base = remember(username, accentHex) { LetterTileColors.baseRgb(username, accentHex) }
-    val edge = remember(base) { LetterTileColors.darken(base, 0.22f) }
-    val light = remember(base) { LetterTileColors.lighten(base, 0.18f) }
-    val bottom = remember(base) { LetterTileColors.darken(base, 0.06f) }
-    val density = LocalDensity.current
-    val sizePx = with(density) { size.toPx() }
-    val faceH = size * 0.93f
-    Box(modifier.size(size)) {
-        Canvas(Modifier.fillMaxSize()) {
-            val s = this.size.minDimension
-            val r = CornerRadius(s * 0.24f)
-            val fh = s * 0.93f
-            // Body = the tile's thickness, shown as the bottom lip.
-            drawRoundRect(rgbColor(edge), cornerRadius = r)
-            // Face.
-            drawRoundRect(
-                Brush.verticalGradient(
-                    0f to rgbColor(light), 0.7f to rgbColor(base), 1f to rgbColor(bottom),
-                    startY = 0f, endY = fh,
-                ),
-                size = Size(s, fh), cornerRadius = r,
-            )
-            // Gloss: starts 8% of size from the top, 0.42 × face height tall, inset 8% left/right (web/iOS parity).
-            val gTop = s * 0.08f
-            val gH = fh * 0.42f
-            drawRoundRect(
-                Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0f)),
-                    startY = gTop, endY = gTop + gH,
-                ),
-                topLeft = Offset(s * 0.08f, gTop),
-                size = Size(s - s * 0.16f, gH),
-                cornerRadius = CornerRadius(s * 0.18f),
-            )
-        }
-        val e = emoji?.trim().orEmpty()
-        val baseStyle = TextStyle(
-            fontFamily = Nunito,
-            fontWeight = FontWeight.Black,
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            platformStyle = PlatformTextStyle(includeFontPadding = false),
-            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
-        )
-        // Centered on the FACE, not the whole box.
-        Box(Modifier.fillMaxWidth().height(faceH), contentAlignment = Alignment.Center) {
-            if (e.isNotEmpty()) {
-                Text(e, maxLines = 1, softWrap = false, style = baseStyle.copy(fontSize = with(density) { (size * 0.5f).toSp() }))
-            } else {
-                val letters = LetterTileColors.initials(username)
-                val factor = if (letters.length == 1) 0.56f else 0.42f
-                Text(
-                    letters, maxLines = 1, softWrap = false,
-                    style = baseStyle.copy(
-                        fontSize = with(density) { (size * factor).toSp() },
-                        letterSpacing = (-0.02f).em,
-                        shadow = Shadow(rgbColor(edge, 0.45f), Offset(0f, sizePx * 0.03f), sizePx * 0.02f),
-                    ),
-                )
-            }
-        }
+    @Suppress("UNUSED_VARIABLE") val retiredEmoji = emoji
+    val look = if (lookup && (castId == null || frame == null)) com.wordocious.app.data.CastAvatars.lookFor(username) else null
+    val recorded = if (lookup && config == null && castId == null) com.wordocious.app.data.MascotAvatars.configFor(username) else null
+    val cast = com.wordocious.app.data.AvatarCast.normalize(castId ?: look?.castId)
+    val ring = com.wordocious.app.data.AvatarFrame.normalize(frame ?: look?.frame)
+    val resolved = remember(config, recorded, cast, ring, username, accentHex) {
+        config ?: com.wordocious.app.data.MascotConfigRules.forDisplay(recorded, cast, ring, username, accentHex)
     }
+    val initial = remember(username) { com.wordocious.app.data.MascotConfigRules.initialOf(username) }
+    MascotAvatar(resolved, initial, size, modifier, pro = pro)
 }

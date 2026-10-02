@@ -24,6 +24,15 @@ struct KindredTierStyle {
         4: KindredTierStyle(bg: Color(hex: 0x1A1A2E), fg: Color(hex: 0xFFFFFF)),
     ]
     static func of(_ tier: Int) -> KindredTierStyle { ramp[tier] ?? ramp[1]! }
+    /// §J3: the card / chip accent per tier (the ramp, deep enough to tint a card).
+    static func cardAccent(_ tier: Int) -> Color {
+        switch tier {
+        case 1: return Color(hex: 0xA78BFA)
+        case 2: return Color(hex: 0x8B5CF6)
+        case 3: return Color(hex: 0x7C3AED)
+        default: return Color(hex: 0x4C1D95)
+        }
+    }
 }
 
 /// The bundled bank (Resources/groups-puzzles.json — sha-guarded to match the web copy).
@@ -148,7 +157,7 @@ final class KindredVM: ObservableObject {
         state = groupsReduce(state, a, now: Date().timeIntervalSince1970 * 1000)
         if case .submit = a {
             switch state.lastResult {
-            case .correct: Haptics.tap(); SoundManager.shared.playSuccess()
+            case .correct: Haptics.tap(); SoundManager.shared.playFound()
             case .oneaway: flash("One away…"); wrongSubmit()
             case .wrong: flash("Not a group"); wrongSubmit()
             case .repeat: flash("Already tried that set")
@@ -161,7 +170,7 @@ final class KindredVM: ObservableObject {
     }
 
     private func wrongSubmit() {
-        SoundManager.shared.playInvalid(); Haptics.error()
+        SoundManager.shared.playInvalid(); Haptics.warning()
         withAnimation(Theme.animation(.linear(duration: 0.4))) { shakeCount += 1 }
     }
 
@@ -181,7 +190,7 @@ final class KindredVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = guessCount, used = state.hintsUsed, solved = boardsSolved
         let row = groupsMatchRow(state)
@@ -234,7 +243,8 @@ struct KindredView: View {
     /// 3 pt ring margin on every side, hence the −6.
     private static func tileHeight(band: CGFloat, tiles: Int, bars: Int, chips: Bool) -> CGFloat {
         let rows = CGFloat(max(1, (tiles + 3) / 4))
-        var reserved = railHeight + CGFloat(bars) * (barHeight + 6) + 8 * 3
+        // §L: the grid's tray (8-pt padding both sides + the 4-pt lip).
+        var reserved = railHeight + CGFloat(bars) * (barHeight + 6) + 8 * 3 + 8 * 2 + GameTray.lip
         if chips { reserved += chipRowHeight + 8 }
         let cell = ((band - reserved) / rows).rounded(.down) - 6
         return min(tileMax, max(tileMin, cell))
@@ -244,18 +254,28 @@ struct KindredView: View {
         ZStack {
             PageBackground(tint: .forGame(.groups))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        header
+                // FINISH_SPEC §R2: one screen — header + result strip, the four groups
+                // in the height left, the dock; the breakdown sits below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 6) { header; resultHeadline }
+                } board: { size in
+                    ScrollView(showsIndicators: false) {
                         VStack(spacing: 6) {
                             ForEach(vm.state.solved, id: \.tier) { g in KindredGroupBar(group: g) }
                             ForEach(vm.unsolved, id: \.tier) { g in KindredGroupBar(group: g, revealed: true) }
                         }
+                        // §L: the finished groups on the tray (won purple / lost slate).
+                        .gameTray(accent: kindredAccent, state: vm.state.status == .won ? .won : .lost, padding: 8)
                         .frame(maxWidth: 420)
-                        result
+                        .frame(maxWidth: .infinity, minHeight: size.height)
                     }
-                    .padding(.horizontal, 10)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "GROUPS", game: "Kindred", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
+                    result
                 }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
@@ -275,7 +295,9 @@ struct KindredView: View {
                                         ForEach(revealed, id: \.tier) { g in KindredCategoryChip(group: g) }
                                     }
                                 }
+                                // §L: the sixteen words sit on the shared game tray.
                                 KindredTileGrid(vm: vm, tileHeight: tileH)
+                                    .gameTray(accent: kindredAccent, padding: 8)
                                     .modifier(ShakeEffect(animatableData: vm.shakeCount))
                                 KindredProgressRail(solvedTiers: Set(vm.state.solved.map { $0.tier }), mistakes: vm.state.mistakes)
                                 if !vm.state.solved.isEmpty {
@@ -292,13 +314,13 @@ struct KindredView: View {
                     }
                     VStack(spacing: 8) {
                         HStack(spacing: 8) {
-                            capsule("Shuffle", "shuffle") { vm.shuffle() }
-                            capsule("Deselect", "xmark.circle", dim: vm.state.selected.isEmpty) { vm.deselect() }
-                            capsule("Submit", "checkmark.circle.fill", dim: vm.state.selected.count != 4, filled: true) { vm.submit() }
+                            capsule("Shuffle", "shuffle", variant: .teal) { vm.shuffle() }
+                            capsule("Deselect", "xmark.circle", variant: .peach, dim: vm.state.selected.isEmpty) { vm.deselect() }
+                            capsule("Submit", "checkmark.circle.fill", variant: .purple, dim: vm.state.selected.count != 4) { vm.submit() }
                         }
                         HStack(spacing: 8) {
-                            capsule("Name a category", "tag") { SoundManager.shared.playKeyTap(); vm.hintLabel() }
-                            capsule(vm.state.hintsUsed > 0 ? "Show a pair · \(vm.state.hintsUsed)" : "Show a pair", "link") { SoundManager.shared.playKeyTap(); vm.hintPair() }
+                            capsule("Name a category", "tag", variant: .amber) { SoundManager.shared.playKeyTap(); vm.hintLabel() }
+                            capsule(vm.state.hintsUsed > 0 ? "Show a pair · \(vm.state.hintsUsed)" : "Show a pair", "link", variant: .pink) { SoundManager.shared.playKeyTap(); vm.hintPair() }
                         }
                     }
                     .padding(.bottom, 10)
@@ -306,9 +328,8 @@ struct KindredView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -365,19 +386,12 @@ struct KindredView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    /// Accent-outlined capsule; `filled` (Submit) turns solid when live; `dim` disables.
-    private func capsule(_ label: String, _ symbol: String, dim: Bool = false, filled: Bool = false, action: @escaping () -> Void) -> some View {
-        let live = !dim && filled
-        return Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .foregroundStyle(dim ? Theme.textMuted.opacity(0.5) : live ? Color.white : kindredAccent)
-                .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(Capsule().fill(dim ? Color.clear : live ? kindredAccent : kindredAccent.opacity(0.05)))
-                .overlay(Capsule().stroke(dim ? Theme.border : live ? kindredAccent : kindredAccent.opacity(0.4), lineWidth: 1.5))
-        }
-        .buttonStyle(.squish)
-        .disabled(dim)
-        .accessibilityLabel(label)
+    /// §A8: small candy pills (purple Submit, teal Shuffle, peach Deselect, amber
+    /// category hint, pink pair hint); `dim` disables (the candy fades).
+    private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, dim: Bool = false,
+                         action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+            .disabled(dim)
     }
 
     private var header: some View {
@@ -402,32 +416,35 @@ struct KindredView: View {
         }
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.state.status == .won
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? (vm.state.mistakes == 0 ? "Flawless — all four groups" : "All four groups found") : "Out of mistakes",
+                                won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.mistakes)", vm.state.mistakes == 1 ? "mistake" : "mistakes"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: vm.points)
+        }
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let gc = vm.guessCount
         let hints = vm.state.hintsUsed
         return VStack(spacing: 10) {
-            Text(won ? (vm.state.mistakes == 0 ? "Flawless — all four groups" : "All four groups found") : "Out of mistakes")
-                .font(Brand.title(20)).foregroundStyle(won ? Theme.win : Theme.lossText)
-                .multilineTextAlignment(.center)
             Text("\(vm.state.solved.count)/\(GROUPS_TOTAL_BOARDS) groups · \(vm.mistakesLabel) · \(timeText(secs))\(hints > 0 ? " · \(hints) hint\(hints == 1 ? "" : "s")" : "")")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Theme.gold)
-                }
-            }
-            .foregroundStyle(kindredAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(kindredAccent)
             if vm.isDaily { DailyRankBadge(gameMode: .groups) }
             ScoreBreakdownView(gameMode: GameMode.groups.rawValue, completed: won,
                                guessCount: gc, timeSeconds: secs,
                                boardsSolved: vm.boardsSolved, totalBoards: GROUPS_TOTAL_BOARDS, hintsUsed: hints,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "GROUPS") }
         }
         .padding(.vertical, 12)
     }
@@ -471,21 +488,24 @@ struct KindredGroupBar: View {
     var revealed = false
 
     var body: some View {
+        // §J3: a solved group is a tinted card in its tier color with the tier's
+        // top bar (pips + label + the four words keep the color-free reading).
         let st = KindredTierStyle.of(group.tier)
+        let tint = KindredTierStyle.cardAccent(group.tier)
         VStack(spacing: 2) {
             HStack(spacing: 8) {
-                KindredPips(tier: group.tier, color: st.fg)
-                Text(group.label).font(Brand.font(14, .black))
+                KindredPips(tier: group.tier, color: tint)
+                Text(group.label).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
             }
             Text(group.words.joined(separator: ", ")).font(Brand.font(12, .bold)).tracking(0.4)
+                .foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center)
         }
-        .foregroundStyle(st.fg)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 12).fill(st.bg))
-        .overlay(revealed ? RoundedRectangle(cornerRadius: 12).strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6, 4])).foregroundStyle(Color.white.opacity(0.5)) : nil)
-        .opacity(revealed ? 0.85 : 1)
+        .padding(.horizontal, 12).padding(.vertical, 7)
+        .tintedCard(accent: tint, bar: [st.bg, tint], radius: 12, barHeight: 6, tint: 0.16, line: 0.38)
+        .overlay(revealed ? RoundedRectangle(cornerRadius: 12).strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6, 4])).foregroundStyle(tint.opacity(0.5)) : nil)
+        .opacity(revealed ? 0.8 : 1)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(revealed ? "Missed: " : "")\(group.label): \(group.words.joined(separator: ", "))")
     }
@@ -495,14 +515,13 @@ struct KindredGroupBar: View {
 struct KindredCategoryChip: View {
     let group: GroupsGroup
     var body: some View {
-        let st = KindredTierStyle.of(group.tier)
+        let tint = KindredTierStyle.cardAccent(group.tier)
         HStack(spacing: 6) {
-            KindredPips(tier: group.tier, size: 4, color: st.fg)
-            Text(group.label).font(Brand.font(11, .black))
+            KindredPips(tier: group.tier, size: 4, color: tint)
+            Text(group.label).font(Brand.font(11, .black)).foregroundStyle(FinishInk.heading)
         }
-        .foregroundStyle(st.fg)
         .padding(.horizontal, 10).padding(.vertical, 5)
-        .background(Capsule().fill(st.bg))
+        .tintedPill(tint)
         .accessibilityLabel("Category named: \(group.label)")
     }
 }
@@ -527,18 +546,24 @@ struct KindredTileGrid: View {
             ForEach(s.tiles, id: \.self) { w in
                 let sel = s.selected.contains(w)
                 let long = w.count > 8
-                Button { vm.toggle(w) } label: {
+                Button { Haptics.tap(); vm.toggle(w) } label: {
+                    // §J3: each word is a glossy chip (tinted face, lip, gloss);
+                    // selected fills with the tier ramp's purple.
                     Text(w).font(Brand.font(long ? fontLong : fontNormal, .black))
                         .lineLimit(1).minimumScaleFactor(0.55)
-                        .foregroundStyle(sel ? Color.white : Theme.textPrimary)
+                        .foregroundStyle(sel ? Color.white : PuzKit.ink)
+                        .shadow(color: sel ? Color(hex: 0x2E0C63).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                         .padding(.horizontal, 4)
-                        .frame(maxWidth: .infinity).frame(height: tileHeight)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(sel ? kindredAccent : Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(sel ? kindredAccent : Theme.border, lineWidth: 2))
-                        .overlay(ringed.contains(w) ? RoundedRectangle(cornerRadius: 11).stroke(kindredPairRing, lineWidth: 2).padding(-3) : nil)
+                        .frame(maxWidth: .infinity).frame(height: tileHeight - 4)
+                        .puzChip(sel ? Color(hex: 0x7C3AED) : PuzKit.face(kindredAccent, 0.10),
+                                 light: sel ? Color(hex: 0xA66BFF) : (Theme.isDark ? nil : Color.white.mixed(over: kindredAccent.wash(0.10), 0.6)),
+                                 edge: sel ? Color(hex: 0x4C1D95) : (Theme.isDark ? Color.black.opacity(0.35) : kindredAccent.wash(0.34)),
+                                 border: sel ? nil : PuzKit.line(kindredAccent, 0.28),
+                                 radius: 10, lip: 4)
+                        .overlay(ringed.contains(w) ? RoundedRectangle(cornerRadius: 13).stroke(kindredPairRing, lineWidth: 2).padding(-3) : nil)
                         .padding(3)
                 }
-                .buttonStyle(PressableStyle())
+                .buttonStyle(.squish)
                 .disabled(vm.isFinished)
                 .accessibilityLabel(w)
                 .accessibilityAddTraits(sel ? .isSelected : [])
@@ -559,8 +584,8 @@ struct KindredProgressRail: View {
     var body: some View {
         HStack {
             HStack(spacing: 6) {
-                Text("Groups").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-                Text("\(solvedTiers.count) of \(GROUPS_TOTAL_BOARDS)").font(Brand.font(11, .black)).foregroundStyle(Theme.textPrimary)
+                Text("Groups").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                Text("\(solvedTiers.count) of \(GROUPS_TOTAL_BOARDS)").softNumber(12)
                 ForEach(1...4, id: \.self) { tier in
                     let c = KindredTierStyle.of(tier).bg
                     Circle().fill(solvedTiers.contains(tier) ? c : Color.clear)
@@ -583,9 +608,9 @@ struct KindredMistakeDots: View {
     let max: Int
     var body: some View {
         HStack(spacing: 6) {
-            Text("Mistakes left").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            Text("Mistakes left").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             ForEach(0..<max, id: \.self) { i in
-                Circle().fill(i < max - mistakes ? kindredAccent : Theme.border).frame(width: 10, height: 10)
+                Circle().fill(i < max - mistakes ? kindredAccent : PuzKit.face(kindredAccent, 0.22)).frame(width: 10, height: 10)
             }
         }
         .accessibilityElement(children: .ignore)

@@ -74,14 +74,12 @@ struct HomeView: View {
         // celebration; the chrome onChange below presents it cleanly once the
         // game cover has fully dismissed.
         if chrome.bottomNavHidden { pendingSweepCeleb = celeb } else { sweepCeleb = celeb }
-        // A Flawless Victory is the app's peak moment — the only place we ask
-        // for an App Store rating (self-throttled in RatingPrompt; Apple caps
-        // the rest). Delayed so the celebration lands first.
-        if completions.flawless {
-            Task {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                RatingPrompt.maybeAsk()
-            }
+        // FINISH_SPEC §AI: a Daily Sweep or a Flawless is a happy moment for the App
+        // Store review prompt (core ReviewPromptPolicy throttles it). Delayed so the
+        // celebration lands first; no custom pre-prompt.
+        Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            RatingPrompt.maybeAsk()
         }
     }
 
@@ -239,8 +237,13 @@ struct HomeView: View {
 
     private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
 
+    /// §AJ: the footer Home tab pops this stack (token) and scrolls to the top.
+    @ObservedObject private var tabRouter = TabRouterModel.shared
+    private static let topAnchor = "home-top"
+
     var body: some View {
         NavigationStack {
+            Group {
             ZStack {
                 PageBackground(tint: .home)
 
@@ -249,6 +252,7 @@ struct HomeView: View {
                     ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 8) {
+                            Color.clear.frame(height: 0).id(Self.topAnchor)
                             AnnouncementsBanner()
                             pendingInvitesBanner
                             // The banner replaces the old Pro pill, the Daily Challenge /
@@ -274,6 +278,10 @@ struct HomeView: View {
                             }
                             WordOfTheDayView()
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
+                                // FINISH_SPEC §O1: VS BATTLE gets its own section title
+                                // (same rule + spacing as DAILIES / PUZZLES / WORD OF THE DAY).
+                                SectionTitleArt(.vsbattle)
+                                    .padding(.top, 2)
                                 VSLiveTile(mode: vs, vsDailyWon: vsDailyWon, playMode: effectiveMode,
                                            isPro: auth.isProActive, onInvite: { showInvite = true }) {
                                     // The VS lobby hosts today's Daily Battle (VS overhaul, 2026-10-01).
@@ -292,6 +300,10 @@ struct HomeView: View {
                         .padding(.bottom, 20)
                     }
                     // Anything that used to open the More Games sheet scrolls here instead.
+                    .onReceive(NotificationCenter.default.publisher(for: TabRouterModel.scrollToTop)) { note in
+                        guard note.object as? String == AppTab.home.rawValue else { return }
+                        withAnimation(Theme.animation(.easeOut(duration: 0.3))) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
+                    }
                     .onReceive(DeepLink.shared.$puzzlesRequest) { req in
                         guard req != nil else { return }
                         DeepLink.shared.puzzlesRequest = nil
@@ -303,6 +315,7 @@ struct HomeView: View {
                     }
                     }
                 }
+                .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
 
                 if let m = limitModal {
                     ModeLimitModal(mode: m,
@@ -548,7 +561,11 @@ struct HomeView: View {
                 Text("\(comingSoon ?? "This mode") is coming to the iOS app soon.")
             }
 
+                    }
+            // §AJ: this tab's root (a push over it is tracked) — a footer tap pops it.
+            .tabRootTracked(.home)
         }
+        .id(TabRouterModel.shared.token(.home))
     }
 
     // MARK: - First-game suggestion card (new accounts)
@@ -571,47 +588,42 @@ struct HomeView: View {
         let classic = homeModes.first { $0.id == "practice" }
         let accent = classic?.accent ?? Theme.primary
         return HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
-                .frame(width: 32, height: 32)
-                .background(RoundedRectangle(cornerRadius: 9).fill(accent.opacity(0.08)))
+            // §G5 / §A7: a cast pose where there's room — O1 waves you in (Home's
+            // host is W).
+            PoseImage(.o1, "jump", height: 58)
             VStack(alignment: .leading, spacing: 2) {
                 Text("New here? Start with Classic")
-                    .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                    .font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
                 Text("The original 5-letter challenge — a fresh puzzle every day.")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 14) {
+                HStack(spacing: 10) {
                     Button {
                         // Same route as the Classic mode card's daily launch.
                         if let gm = classic?.mode {
                             pendingGame = ActiveGame(seed: DailySeed.today(mode: gm), mode: gm, title: classic?.title ?? "Classic")
                         }
                     } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "play.fill").font(.system(size: 10))
-                            Text("Play").font(Brand.font(12, .black))
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14).padding(.vertical, 7)
-                        .background(Capsule().fill(accent))
-                        .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
-                    }.buttonStyle(.squish)
+                        CandyLabel(title: "Play", symbol: "play.fill")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
                     NavigationLink { HowToPlayView() } label: {
-                        Text("How to play").font(Brand.font(11, .bold)).foregroundStyle(Theme.primary).underline()
-                    }.buttonStyle(.squish)
+                        CandyLabel(title: "How to play")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                 }
                 .padding(.top, 8)
             }
             Spacer(minLength: 4)
             Button { firstGameCardDismissed = true } label: {
-                Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
+                Image(systemName: "xmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(FinishInk.secondary)
                     .frame(width: 26, height: 26).contentShape(Rectangle())
-            }.buttonStyle(.squish)
+            }
+            .buttonStyle(.squishIcon)
+            .accessibilityLabel("Dismiss")
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .tintedCard(accent: accent, bar: G5Accent.bar(accent), radius: 18, barHeight: 6)
     }
 
     // MARK: - Pro prompt (ports pro-prompt-modal)
@@ -640,24 +652,25 @@ struct HomeView: View {
         HStack(spacing: 12) {
             Icon3D(.crown, size: 32)
             VStack(alignment: .leading, spacing: 1) {
-                Text("You're on a streak!").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+                Text("You're on a streak!").font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
                 Text("Upgrade to Pro for ad-free play, stats, shields, and more.")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(2)
+                    .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2)
             }
             Spacer(minLength: 4)
             Button { dismissProPrompt(); showProSheet = true } label: {
-                Text("Go Pro").font(Brand.font(10, .black)).foregroundStyle(.white)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(
-                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }.buttonStyle(.squish)
+                CandyLabel(title: "Go Pro")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
             Button { dismissProPrompt() } label: {
-                Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
-            }.buttonStyle(.squish)
+                Image(systemName: "xmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(FinishInk.secondary)
+                    .frame(width: 26, height: 26).contentShape(Rectangle())
+            }
+            .buttonStyle(.squishIcon)
+            .accessibilityLabel("Dismiss")
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+        // §G5: a gold-tinted card with its top bar (§A1).
+        .tintedCard(accent: G5Accent.gold, bar: [Color(hex: 0xFFC56B), Color(hex: 0xF97316)], radius: 18, barHeight: 6)
         .shadow(color: .black.opacity(0.1), radius: 16, x: 0, y: 8)
     }
 
@@ -710,38 +723,43 @@ struct HomeView: View {
         if let top = pendingInvites.first {
             let name = inviterNames[top.inviter_id] ?? "A friend"
             let mode = GameMode(rawValue: top.game_mode) ?? .duel
-            HStack(spacing: 12) {
-                Image(systemName: "envelope.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(Color(hex: 0xEC4899)))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("@\(name) invited you to \(ModeStyle.title(mode).capitalized)")
-                        .font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    if pendingInvites.count > 1 {
-                        Text("+\(pendingInvites.count - 1) more pending").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xA21CAF))
+            // FINISH_SPEC §K1 / §T2: an invite received — a pink tinted card with its
+            // top bar, the inviter's letter-tile avatar, I's invite-sent art, the
+            // headline in Nunito Black, Accept (green / teal candy → the existing Play
+            // path) and Decline (soft peach candy).
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    LetterTileAvatar(username: name, size: 38)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("@\(name) invited you to \(ModeStyle.title(mode).capitalized)")
+                            .font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading).lineLimit(2)
+                            .minimumScaleFactor(0.7)
+                        if pendingInvites.count > 1 {
+                            Text("+\(pendingInvites.count - 1) more pending").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xA21CAF))
+                        }
                     }
+                    Spacer(minLength: 2)
+                    FriendsSceneArt(asset: "art-scene-invite-sent", height: 54, maxWidth: 54)
                 }
-                Spacer(minLength: 4)
-                Button { playInvite = .init(mode: mode, code: top.invite_code) } label: {
-                    Text("Play").font(Brand.font(12, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0xEC4899)))
-                }.buttonStyle(.squish)
-                Button {
-                    let id = top.id
-                    pendingInvites.removeAll { $0.id == id }
-                    Task { await InviteService.decline(inviteId: id) }
-                } label: {
-                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0xA21CAF))
-                        .frame(width: 28, height: 28)
-                        .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Color(hex: 0xF5D0FE), lineWidth: 1.5))
-                }.buttonStyle(.squish)
+                HStack(spacing: 8) {
+                    Button { playInvite = .init(mode: mode, code: top.invite_code) } label: {
+                        CandyLabel(title: "Accept", symbol: "play.fill")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .teal, size: .small))
+                    Button {
+                        let id = top.id
+                        pendingInvites.removeAll { $0.id == id }
+                        Task { await InviteService.decline(inviteId: id) }
+                    } label: {
+                        CandyLabel(title: "Decline")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small))
+                    .accessibilityLabel("Decline invite")
+                }
             }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 14).fill(
-                LinearGradient(colors: [Color(hex: 0xFDF4FF), Color(hex: 0xFCE7F3)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xF5D0FE), lineWidth: 1.5))
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .tintedCard(accent: G5Accent.pink, bar: [Color(hex: 0xF472B6), Color(hex: 0xA21CAF)], radius: 16, barHeight: 6)
+            .transition(G5Toast.transition)
         }
     }
 
@@ -749,10 +767,10 @@ struct HomeView: View {
 
     private var signOutButton: some View {
         Button { Task { await auth.signOut() } } label: {
-            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            CandyLabel(title: "Sign Out", symbol: "rectangle.portrait.and.arrow.right")
         }
-        .buttonStyle(.squish)
+        // §A8: a small quiet peach candy, not a text link.
+        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
     }
@@ -790,7 +808,8 @@ struct HomeView: View {
     /// the banner tiles and the widget's deep links take.
     private func card(_ mode: HomeMode) -> some View {
         Button { open(mode) } label: { cardBody(mode, locked: isLocked(mode)) }
-            .buttonStyle(.squish)
+            // FINISH_SPEC §AK: the card squish (0.95 → spring back past 1).
+            .buttonStyle(.squishCard)
     }
 
     /// A daily this user has already finished (in Daily mode). Revisiting it
@@ -902,54 +921,68 @@ struct ModeLimitModal: View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { onClose() }
             VStack(spacing: 0) {
-                // ART_SPEC §7: the played-today limit is U's all-done scene
-                // (the §5 lock is its fallback).
-                if ArtScene.allDone.isAvailable {
+                // FINISH_SPEC §R3: the Unlimited gate speaks the KEEP PLAYING card's
+                // language — U in her loop of candy tiles (then U's all-done scene,
+                // then the §5 lock as fallbacks).
+                if ArtAsset.exists("art-scene-unlimited-loop") {
+                    Image("art-scene-unlimited-loop").resizable().interpolation(.high).scaledToFit()
+                        .frame(height: 120)
+                        .accessibilityHidden(true)
+                        .padding(.bottom, 10)
+                } else if ArtScene.allDone.isAvailable {
                     SceneArt(.allDone, height: 120).padding(.bottom, 10)
                 } else {
                     Icon3D(.lock, size: 52).padding(.bottom, 12)
                 }
-                Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
                     .multilineTextAlignment(.center).padding(.bottom, 4)
                 Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).padding(.bottom, 16)
 
+                // §A2: the countdown is a soft number on a tinted pill.
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
-                    Text("Play again tomorrow in \(countdown())")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surfaceHover))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1))
-                .padding(.bottom, 16)
-
-                Button(action: onUpgrade) {
                     HStack(spacing: 6) {
-                        Icon3D(.crown, size: 18)
-                        Text("Upgrade to Pro").font(Brand.font(14, .black))
+                        Text("Play again in").font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
+                        Text(countdown()).softNumber(16)
                     }
-                    .foregroundStyle(.white).frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12)
-                        .fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 4))
-                }.buttonStyle(.squish).padding(.bottom, 12)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Play again tomorrow in \(countdown())")
+                }
+                .padding(.horizontal, 16).padding(.top, 9).padding(.bottom, 7)
+                .tintedPill(G5Accent.purple)
+                .padding(.bottom, 18)
+
+                // §G5 / §A8: amber "Go Pro" candy (the money CTA), then the solved
+                // review, then the quiet peach "Not now".
+                Button(action: onUpgrade) {
+                    CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }
+                }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                .accessibilityLabel("Upgrade to Pro")
+                .padding(.bottom, 6)
 
                 // Web parity: only show "View Solved Puzzle" when there IS a solved
-                // puzzle to review (VS has none) — otherwise a muted dismiss.
+                // puzzle to review (VS has none) — otherwise just the dismiss.
                 // Previously showViewSolved was never read, so the locked VS card
                 // dead-ended into an empty fullScreenCover.
                 if showViewSolved {
-                    Button("View Solved Puzzle", action: onViewSolved)
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
-                } else {
-                    Button("Come back tomorrow", action: onClose)
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    Button(action: onViewSolved) {
+                        CandyLabel(title: "View Solved Puzzle", symbol: "eye.fill")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium))
+                    .padding(.bottom, 6)
                 }
+                Button(action: onClose) { CandyLabel(title: "Not now") }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .accessibilityHint(showViewSolved ? "" : "Come back tomorrow")
             }
             .padding(24)
             .frame(maxWidth: 360)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+            // §G5 / §R3: the limit window is a peach-tinted card with its top bar
+            // (the Unlimited card's language, §A1 — no white).
+            .tintedCard(accent: Color(hex: 0xFB923C), bar: [Color(hex: 0xFFD6C2), Color(hex: 0xFB923C)], radius: 22, barHeight: 10,
+                        tint: 0.10, line: 0.30)
             .shadow(color: .black.opacity(0.15), radius: 30, x: 0, y: 20)
             .padding(.horizontal, 24)
         }

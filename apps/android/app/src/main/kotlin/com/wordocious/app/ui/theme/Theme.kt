@@ -159,6 +159,19 @@ object WTheme {
      */
     val reducedMotion: Boolean get() = reducedMotionPref || osReducedMotion
 
+    /**
+     * FINISH_SPEC AD: the OS Battery Saver (PowerManager.isPowerSaveMode), kept live by
+     * [PowerSaveWatcher] (ACTION_POWER_SAVE_MODE_CHANGED).
+     */
+    var powerSave by mutableStateOf(false)
+
+    /**
+     * FINISH_SPEC AD: Reduce Motion OR Battery Saver — turns off the ambient motion
+     * (light rays, continuous bobbing, the cast header's idle moves) and halves the
+     * confetti. One-shot springs stay (those follow [reducedMotion] alone).
+     */
+    val calmMotion: Boolean get() = CalmMotion.calm(reducedMotion, powerSave)
+
     /** Board-tile fill per letter state. EMPTY = transparent (border only). */
     fun tileColor(state: TileState): Color = when (state) {
         TileState.CORRECT -> if (colorblind) Color(0xFFF5793A) else correct

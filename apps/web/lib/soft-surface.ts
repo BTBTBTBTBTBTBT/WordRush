@@ -127,3 +127,40 @@ export function softPill(accent: string, { radius = 999, bar = true }: { radius?
 
 /** The brand purple every page card without a game falls back to. */
 export const BRAND_ACCENT = '#7c3aed';
+
+/**
+ * Theme-aware inks for the labels and numbers on tinted cards (the dark-mode
+ * lever in globals.css): each is a CSS var that is the mockups' dark ink in the
+ * light themes and a light lilac in the dark theme (light-only pages keep the
+ * dark ink). Use these instead of hard-coded #3b1a78 / #5b3c96 / #6f5f8f.
+ */
+export const SOFT_INK = {
+  /** Soft numbers (A2). */
+  num: 'var(--soft-ink, #3b1a78)',
+  /** Card eyebrows ("Score breakdown"). */
+  title: 'var(--soft-title, #5b3c96)',
+  /** Purple values ("+40", "PTS"). */
+  value: 'var(--soft-value, #6d28d9)',
+  /** Pill / tile labels ("guesses", "time"). */
+  label: 'var(--soft-label, #6f5f8f)',
+  /** Row details ("3 unused × 10"). */
+  detail: 'var(--soft-detail, #7a6a95)',
+} as const;
+
+/** The dark-theme ink of an accent: the accent at 45% over white (a light pastel). */
+export function accentInkDark(accent: string): string {
+  return softMix(accent, 0.45);
+}
+
+/**
+ * An accent-colored label that stays legible in both themes: spread the
+ * className onto the element (globals.css `.soft-ink`) and the style vars
+ * into its style. Light = `light` (default: the accent darkened 30%), dark =
+ * accentInkDark(accent).
+ */
+export function accentInk(accent: string, light: string = darken(accent, 0.3)): { className: string; style: CSSProperties } {
+  return {
+    className: 'soft-ink',
+    style: { ['--ink-l' as string]: light, ['--ink-d' as string]: accentInkDark(accent) } as CSSProperties,
+  };
+}

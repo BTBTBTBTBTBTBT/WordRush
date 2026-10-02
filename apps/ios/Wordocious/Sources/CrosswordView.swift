@@ -211,8 +211,8 @@ final class CrosswordVM: ObservableObject {
         state = crosswordReduce(state, a, now: Date().timeIntervalSince1970 * 1000)
         if case .check = a {
             let n = state.lastWrong.count
-            if n > 0 { flash("\(n) wrong letter\(n == 1 ? "" : "s") cleared"); Haptics.error(); SoundManager.shared.playInvalid() }
-            else { flash("Everything filled is right"); SoundManager.shared.playSuccess() }
+            if n > 0 { flash("\(n) wrong letter\(n == 1 ? "" : "s") cleared"); Haptics.warning(); SoundManager.shared.playInvalid() }
+            else { flash("Everything filled is right"); SoundManager.shared.playFound() }
             Task { try? await Task.sleep(nanoseconds: 700_000_000); if !state.lastWrong.isEmpty { state.lastWrong = [] } }
         }
         if state.status != .playing { finish() }
@@ -269,7 +269,7 @@ final class CrosswordVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let won = state.status == .won, secs = elapsed, gc = guessCount, used = state.hintsUsed
         let row = crosswordMatchRow(state)
@@ -316,32 +316,45 @@ struct CrosswordView: View {
         ZStack {
             PageBackground(tint: .forGame(.crossword))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.isFinished {
-                ScrollView {
+                // FINISH_SPEC §R2: one screen — header + result strip, the grid scaled
+                // to the height left, the dock; the clues (with their answers) and the
+                // breakdown sit below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 4) { header; resultHeadline }
+                } board: { size in
+                    CrosswordGridView(vm: vm, finished: true, width: size.width, tray: true, maxHeight: size.height)
+                        .frame(maxHeight: .infinity)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "CROSSWORD", game: "Crosswordocious", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() })
+                } extras: {
                     VStack(spacing: 12) {
-                        header
-                        CrosswordGridView(vm: vm, finished: true)
                         CrosswordClueColumns(vm: vm, finished: true)
                         result
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.top, 8)
                 }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
                     ScrollView {
                         VStack(spacing: 12) {
-                            CrosswordGridView(vm: vm, finished: false)
+                            CrosswordGridView(vm: vm, finished: false, tray: true)
                             CrosswordClueColumns(vm: vm, finished: false)
                         }
                         .padding(.vertical, 4)
                     }
                     VStack(spacing: 8) {
                         if let e = vm.activeEntry { CrosswordActiveClueBar(entry: e) { vm.toggleDirection() } }
-                        HStack(spacing: 6) {
-                            capsule(vm.state.checks > 0 ? "Check · \(vm.state.checks)" : "Check", "checkmark.circle") { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
-                            capsule("Letter", "lightbulb") { SoundManager.shared.playKeyTap(); vm.revealLetter() }
-                            capsule(vm.state.hintsUsed > 0 ? "Word · \(vm.state.hintsUsed)" : "Word", "eye") { SoundManager.shared.playKeyTap(); vm.revealWord() }
-                            capsule(vm.armReveal ? "Reveal all?" : "Reveal all", "flag", danger: vm.armReveal) { vm.revealPuzzle() }
+                        // §A8: candy pills — purple Check, amber Letter, pink Word, peach
+                        // Reveal all (pink once armed). One row when it fits, else two.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 6) { controlPills }
+                            VStack(spacing: 6) {
+                                HStack(spacing: 6) { checkPill; letterPill }
+                                HStack(spacing: 6) { wordPill; revealPill }
+                            }
                         }
                         // Hardware keys (founder, 2026-09-30): web crossword-game keydown —
                         // A–Z / Delete as the keys, arrows move the cursor, Return or
@@ -365,10 +378,7 @@ struct CrosswordView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.horizontal, 24)
                     .padding(.top, 110).frame(maxHeight: .infinity, alignment: .top)
             }
@@ -413,19 +423,23 @@ struct CrosswordView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    /// Accent-outlined capsule; `danger` (an armed Reveal all) turns red.
-    private func capsule(_ label: String, _ symbol: String, danger: Bool = false, action: @escaping () -> Void) -> some View {
-        let tint = danger ? cwWrong : crosswordAccent
-        return Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy))
-                .lineLimit(1).minimumScaleFactor(0.8)
-                .foregroundStyle(tint)
-                .padding(.horizontal, 9).padding(.vertical, 7)
-                .background(Capsule().fill(tint.opacity(0.05)))
-                .overlay(Capsule().stroke(tint.opacity(0.4), lineWidth: 1.5))
+    @ViewBuilder private var controlPills: some View { checkPill; letterPill; wordPill; revealPill }
+    private var checkPill: some View {
+        PuzCandyAction(title: vm.state.checks > 0 ? "Check · \(vm.state.checks)" : "Check", variant: .purple) {
+            Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check()
         }
-        .buttonStyle(.squish)
-        .accessibilityLabel(label)
+    }
+    private var letterPill: some View {
+        PuzCandyAction(title: "Letter", symbol: "lightbulb", variant: .amber) { SoundManager.shared.playKeyTap(); vm.revealLetter() }
+    }
+    private var wordPill: some View {
+        PuzCandyAction(title: vm.state.hintsUsed > 0 ? "Word · \(vm.state.hintsUsed)" : "Word", symbol: "eye", variant: .pink) {
+            SoundManager.shared.playKeyTap(); vm.revealWord()
+        }
+    }
+    /// An armed Reveal all (tap again to confirm) turns from quiet peach to pink.
+    private var revealPill: some View {
+        PuzCandyAction(title: vm.armReveal ? "Reveal all?" : "Reveal all", variant: vm.armReveal ? .pink : .peach) { vm.revealPuzzle() }
     }
 
     private var header: some View {
@@ -453,31 +467,33 @@ struct CrosswordView: View {
         }
     }
 
+    /// §R2: the headline + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.state.status == .won
+        return VStack(spacing: 6) {
+            PuzFinishedHeadline(text: won ? (vm.state.checks == 0 ? "Grid finished clean" : "Grid finished") : "Puzzle revealed", won: won)
+            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
+                                                  (puzClock(vm.elapsed), "time")],
+                                points: vm.points)
+        }
+    }
+
+    /// Below the dock (§R2): the full summary line, the daily rank and the breakdown.
     private var result: some View {
         let won = vm.state.status == .won
         let secs = vm.elapsed
         let gc = vm.guessCount
         let hints = vm.state.hintsUsed
         return VStack(spacing: 10) {
-            Text(won ? (vm.state.checks == 0 ? "Grid finished clean" : "Grid finished") : "Puzzle revealed")
-                .font(Brand.title(20)).foregroundStyle(won ? Theme.win : Theme.lossText)
             Text("\(vm.checksLabel) · \(timeText(secs))\(hints > 0 ? " · \(hints) hint\(hints == 1 ? "" : "s")" : "")")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                if let onPlayAgain, !vm.isDaily, isPro {
-                    Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Theme.gold)
-                }
-            }
-            .foregroundStyle(crosswordAccent).padding(.top, 2)
+                .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(cwPurple)
             if vm.isDaily { DailyRankBadge(gameMode: .crossword) }
             ScoreBreakdownView(gameMode: GameMode.crossword.rawValue, completed: won,
                                guessCount: gc, timeSeconds: secs,
                                boardsSolved: won ? 1 : 0, totalBoards: CROSSWORD_TOTAL_BOARDS, hintsUsed: hints,
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily { NextDailyCTA(currentMode: "CROSSWORD") }
         }
         .padding(.vertical, 12)
     }
@@ -514,17 +530,27 @@ struct CrosswordGridView: View {
     let finished: Bool
     /// The width to fit (a card narrower than the screen); nil = the phone less the page margins.
     var width: CGFloat? = nil
+    /// §L: sit the grid on the shared game tray (the live game; recaps tray at
+    /// their own call sites).
+    var tray = false
+    /// §R2: the height the grid may take (the finished screen scales it to fit).
+    var maxHeight: CGFloat? = nil
 
     private let gap: CGFloat = 3
 
     /// Cell side that fits `w` columns on the phone, capped like the web (42px) —
-    /// FINISH_SPEC §B5's shared sizing rule (fixed 3-pt gaps).
+    /// FINISH_SPEC §B5's shared sizing rule (fixed 3-pt gaps). The tray's padding
+    /// comes out of the width first.
     private var cell: CGFloat {
-        let available = width ?? UIScreen.main.bounds.width - 40
-        let w = max(1, vm.state.w)
-        return floor(CGFloat(BoardSizing.fitTile(widthUnits: Double(w), fixedWidth: Double(gap * CGFloat(w - 1)),
-                                                 heightUnits: 1, width: Double(available) / BoardSizing.widthFill,
-                                                 height: nil, maxTile: 42, minTile: 8)))
+        let available = (width ?? UIScreen.main.bounds.width - 40) - (tray ? GameTray.padding * 2 : 0)
+        let w = max(1, vm.state.w), h = max(1, vm.state.h)
+        let fitW = floor(CGFloat(BoardSizing.fitTile(widthUnits: Double(w), fixedWidth: Double(gap * CGFloat(w - 1)),
+                                                     heightUnits: 1, width: Double(available) / BoardSizing.widthFill,
+                                                     height: nil, maxTile: 42, minTile: 8)))
+        guard let maxHeight else { return fitW }
+        // Leave the tray's padding + lip (and the selection ring's room) out of the height.
+        let usable = maxHeight - (tray ? GameTray.padding * 2 + GameTray.lip : 0) - 6 - gap * CGFloat(h - 1)
+        return max(8, min(fitW, floor(usable / CGFloat(h))))
     }
 
     var body: some View {
@@ -550,33 +576,46 @@ struct CrosswordGridView: View {
                 }
             }
         }
+        .modifier(CrosswordTrayChrome(on: tray, state: finished ? (s.status == .won ? .won : .lost) : .normal))
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Crossword grid")
     }
 
     private func tile(_ i: Int, letter: String, number: Int?, locked: Bool, revealed: Bool, inActive: Bool, wrong: Bool, side: CGFloat) -> some View {
         let isSel = vm.selected == i && !finished
-        var bg = cwCellBG, border = cwCellBorder, ink = cwCellText
-        if revealed { bg = cwHint; border = cwHint; ink = .white }
-        else if locked { bg = cwLockedBG; border = cwPurple; ink = cwPurple }
-        if inActive && !revealed { bg = crosswordAccent.opacity(0.10) }
-        if wrong { border = cwWrong; ink = cwWrong }
-        if isSel { border = crosswordAccent }
-        let radius = max(4, side * 0.14)
+        // §J3: every cell is a B1 glossy tile — frosted when empty, the typed white
+        // face once a letter is in, purple when Check locked it, purple with the
+        // gold ring when revealed, red when a Check just cleared it.
+        let face: GlossyFace = wrong ? .bad : (revealed || locked) ? .correct : (letter.isEmpty ? .empty : .typed)
+        let radius = side * 0.22
+        let badge = max(8, side * 0.3)
         return Button { vm.selectCell(i) } label: {
             ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: radius).fill(bg)
-                RoundedRectangle(cornerRadius: radius).strokeBorder(border, lineWidth: 2)
-                Text(letter).font(Brand.font(side * 0.5, .black)).foregroundStyle(ink)
-                    .frame(width: side, height: side)
+                GlossyTile(face: face, letter: letter, width: side, letterScale: 0.5,
+                           glowAmount: revealed ? 0.85 : 0, goldRing: revealed)
+                    .modifier(TypePop(letter: (locked || revealed) ? "" : letter, size: CGSize(width: side, height: side)))
+                // The active entry wears a soft accent wash over its tiles.
+                if inActive && !revealed && !locked {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(cwPurple.opacity(0.10))
+                        .frame(width: side, height: side * 0.93)
+                        .allowsHitTesting(false)
+                }
                 if let number {
-                    Text("\(number)").font(Brand.font(max(7, side * 0.21), .black))
-                        .foregroundStyle(revealed ? Color.white : cwPurple)
-                        .padding(.top, 1.5).padding(.leading, 2.5)
+                    // The clue number as a small soft badge in the corner.
+                    Text("\(number)").font(Brand.fixedFont(max(6.5, side * 0.2), .black))
+                        .foregroundStyle(FinishInk.softNumber)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .frame(minWidth: badge, minHeight: badge * 0.86)
+                        .padding(.horizontal, 1)
+                        .background(Capsule().fill(Color(hex: 0xF5EEFF).opacity(0.94)))
+                        .overlay(Capsule().strokeBorder(Color(hex: 0xC4B5FD), lineWidth: 0.75))
+                        .offset(x: -side * 0.08, y: -side * 0.1)
+                        .accessibilityHidden(true)
                 }
             }
             .frame(width: side, height: side)
-            .overlay(isSel ? RoundedRectangle(cornerRadius: radius + 3).stroke(crosswordAccent, lineWidth: 2).padding(-3) : nil)
+            .overlay(isSel ? RoundedRectangle(cornerRadius: radius + 3, style: .continuous).stroke(cwPurple, lineWidth: 2).padding(-3) : nil)
         }
         .buttonStyle(.squish)
         .disabled(finished)
@@ -593,10 +632,13 @@ struct CrosswordClueColumns: View {
     let finished: Bool
 
     var body: some View {
+        // §A1: the clue list sits on a tinted card (purple top bar), not plain white.
         HStack(alignment: .top, spacing: 14) {
             column(.across, "Across")
             column(.down, "Down")
         }
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .tintedCard(accent: cwPurple, bar: [Color(hex: 0x8B5CF6), Color(hex: 0xC084FC)], radius: 18, barHeight: 6)
         .frame(maxWidth: 700)
         .padding(.horizontal, 4)
     }
@@ -605,16 +647,16 @@ struct CrosswordClueColumns: View {
         let s = vm.state
         let active = finished ? nil : vm.activeEntry
         return VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased()).font(Brand.font(10, .black)).tracking(1.5).foregroundStyle(Theme.textMuted)
+            Text(title.uppercased()).font(Brand.font(10, .black)).tracking(1.5).foregroundStyle(FinishInk.secondary)
             ForEach(s.entries.filter { $0.dir == dir }, id: \.n) { e in
                 let solved = crosswordEntrySolved(s, e)
                 let isActive = active?.n == e.n && active?.dir == e.dir
                 Button { vm.pickEntry(e) } label: {
                     HStack(alignment: .top, spacing: 6) {
-                        Text("\(e.n)").font(Brand.font(10, .black)).foregroundStyle(cwPurple)
+                        Text("\(e.n)").font(Brand.font(10, .black)).foregroundStyle(FinishInk.softNumber)
                             .frame(width: 20, height: 20)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(cwCellBG))
-                            .overlay(RoundedRectangle(cornerRadius: 4).stroke(cwCellBorder, lineWidth: 1))
+                            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(cwCellBG))
+                            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(cwCellBorder, lineWidth: 1))
                         (Text(e.clue).font(Brand.font(12, solved ? .semibold : .bold)).strikethrough(solved && !finished)
                          + (finished ? Text(" \(e.answer)").font(Brand.font(12, .black)).foregroundColor(cwPurple) : Text("")))
                             .foregroundStyle(Theme.textPrimary)
@@ -623,7 +665,7 @@ struct CrosswordClueColumns: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.horizontal, 4).padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(isActive ? crosswordAccent.opacity(0.08) : Color.clear))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(isActive ? cwPurple.opacity(0.12) : Color.clear))
                 }
                 .buttonStyle(.squish)
                 .disabled(finished)
@@ -642,21 +684,32 @@ struct CrosswordActiveClueBar: View {
     var body: some View {
         Button(action: onToggle) {
             HStack(spacing: 8) {
-                Text("\(entry.n)\(entry.dir.rawValue)").font(Brand.font(11, .black)).foregroundStyle(cwPurple)
-                    .frame(width: 24, height: 24)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(cwCellBG))
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(cwCellBorder, lineWidth: 1))
+                Text("\(entry.n)\(entry.dir.rawValue)").font(Brand.font(11, .black)).foregroundStyle(FinishInk.softNumber)
+                    .frame(width: 26, height: 24)
+                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(cwCellBG))
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(cwCellBorder, lineWidth: 1))
                 Text(entry.clue).font(Brand.font(15, .heavy)).foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.leading).lineLimit(2).minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "arrow.left.arrow.right").font(.system(size: 14, weight: .bold)).foregroundStyle(crosswordAccent)
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(crosswordAccent.opacity(0.07)))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(crosswordAccent.opacity(0.27), lineWidth: 1.5))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(PuzKit.face(cwPurple, 0.10)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(PuzKit.line(cwPurple, 0.32), lineWidth: 1.5))
         }
         .buttonStyle(.squish)
         .frame(maxWidth: 700)
         .accessibilityLabel("Active clue \(entry.n) \(entry.dir == .across ? "Across" : "Down"): \(entry.clue). Tap to switch direction")
+    }
+}
+
+/// §L: the crossword grid on the shared game tray (opt-in).
+private struct CrosswordTrayChrome: ViewModifier {
+    let on: Bool
+    let state: GameTrayState
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on { content.gameTray(accent: cwPurple, state: state) } else { content }
     }
 }

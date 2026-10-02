@@ -58,6 +58,8 @@ struct PublicProfileView: View {
             friendsVersion = FriendsService.version
         }
         .task(id: userId) { await loadAll() }
+        // FINISH_SPEC §AN3: their saved mascot (best effort; the column may not exist yet).
+        .task(id: "mascot-\(userId)") { await MascotLooks.shared.fetchConfig(userId: userId) }
         // Social sections load on their own task — non-blocking, and the page
         // stays fully usable if any (or all) of these fetches fail. Keyed on
         // deepAllowed so nothing fires until the privacy gate has opened.
@@ -142,7 +144,8 @@ struct PublicProfileView: View {
             Text("Player not found").font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
             Text("This profile doesn't exist or may have been removed.")
                 .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
-            Button("Back") { dismiss() }.buttonStyle(.borderedProminent).tint(Theme.primary)
+            Button { dismiss() } label: { CandyLabel(title: "Back", symbol: "chevron.left") }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
         }.padding(24)
     }
 
@@ -185,31 +188,22 @@ struct PublicProfileView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 5) {
-                    if friend {
-                        Image(systemName: "person.fill.checkmark").font(.system(size: 11, weight: .semibold))
-                        Text(confirmUnfriend ? "Remove friend?" : "Friends")
-                    } else if incoming {
-                        Icon3D(.addFriend, size: 15) // ART_SPEC §5
-                        Text("Accept request")
-                    } else if requested {
-                        Text("Requested")
-                    } else {
-                        Icon3D(.addFriend, size: 15) // ART_SPEC §5
-                        Text("Add Friend")
-                    }
+                // §A8: one small candy button per state — Add / Accept purple,
+                // Friends teal (pink while confirming the removal), Requested quiet peach.
+                if friend {
+                    CandyLabel(title: confirmUnfriend ? "Remove friend?" : "Friends",
+                               symbol: confirmUnfriend ? "person.fill.xmark" : "person.fill.checkmark")
+                } else if incoming {
+                    CandyLabel(title: "Accept request") { Icon3D(.addFriend, size: 16) } // ART_SPEC §5
+                } else if requested {
+                    CandyLabel(title: "Requested")
+                } else {
+                    CandyLabel(title: "Add Friend") { Icon3D(.addFriend, size: 16) } // ART_SPEC §5
                 }
-                .font(Brand.font(12, .heavy))
-                .foregroundStyle(friend
-                    ? (confirmUnfriend ? Theme.lossText : Color(hex: 0x16A34A))
-                    : (requested ? Theme.textMuted : .white))
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(Capsule().fill(friend
-                    ? (confirmUnfriend ? Theme.lossBG : Theme.surfaceAlt)
-                    : (requested ? Theme.surfaceAlt : Theme.primary)))
-                .overlay(Capsule().stroke(friend || requested ? Theme.border : Theme.primary, lineWidth: 1.5))
             }
-            .buttonStyle(.squish)
+            .buttonStyle(CandyButtonStyle(
+                variant: friend ? (confirmUnfriend ? .pink : .teal) : (requested ? .peach : .purple),
+                size: .small, fullWidth: false))
         }
     }
 
@@ -236,9 +230,9 @@ struct PublicProfileView: View {
     }
 
     private func moderationToastView(_ toast: String) -> some View {
-        Text(toast).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-            .padding(.horizontal, 12).padding(.vertical, 5)
-            .background(Capsule().fill(Theme.surface))
+        Text(toast).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)
+            .padding(.horizontal, 14).padding(.vertical, 7)
+            .tintedPill(Color(hex: 0x7C3AED))
             .task { try? await Task.sleep(nanoseconds: 2_500_000_000); moderationToast = nil }
     }
 
@@ -254,15 +248,6 @@ struct PublicProfileView: View {
 
     // MARK: Private-profile teaser (spec §3)
 
-    /// Same tier ladder as the own-profile page (Bronze <11 … Diamond 100+).
-    private func teaserTier(_ lvl: Int) -> (label: String, bg: Color, border: Color, color: Color) {
-        if lvl >= 100 { return ("Diamond", Color(hex: 0xEFF6FF), Color(hex: 0xBFDBFE), Color(hex: 0x1D4ED8)) }
-        if lvl >= 51 { return ("Platinum", Color(hex: 0xF5F3FF), Color(hex: 0xC4B5FD), Color(hex: 0x6D28D9)) }
-        if lvl >= 26 { return ("Gold", Color(hex: 0xFEF9EC), Color(hex: 0xFDE68A), Color(hex: 0x92400E)) }
-        if lvl >= 11 { return ("Silver", Color(hex: 0xF3F4F6), Color(hex: 0xD1D5DB), Color(hex: 0x374151)) }
-        return ("Bronze", Color(hex: 0xFEF2E8), Color(hex: 0xFED7AA), Color(hex: 0x9A3412))
-    }
-
     private func teaserMemberSince(_ p: Profile) -> String? {
         guard let c = p.createdAt, let d = parseTimestamp(c) else { return nil }
         let f = DateFormatter(); f.dateFormat = "MMM yyyy"; f.locale = Locale(identifier: "en_US")
@@ -274,8 +259,9 @@ struct PublicProfileView: View {
     /// words or strategy renders; the deep endpoints 403 anyway, this is the
     /// face on that rule. Ports the web teaser (app/profile/[id]/page.tsx).
     private func teaser(_ p: Profile) -> some View {
-        let tier = teaserTier(p.level)
-        let medals: [(String, Int)] = [("🥇", p.goldMedals), ("🥈", p.silverMedals), ("🥉", p.bronzeMedals)]
+        let tier = LevelTier.forLevel(p.level)
+        // §AM3: medal art kinds (art-medal-*), never the emoji.
+        let medals: [(String, Int)] = [("gold", p.goldMedals), ("silver", p.silverMedals), ("bronze", p.bronzeMedals)]
         let stats: [(String, Int)] = [("Wins", p.totalWins),
                                       ("Games", p.totalWins + p.totalLosses),
                                       ("Daily Streak", p.dailyLoginStreak)]
@@ -294,7 +280,7 @@ struct PublicProfileView: View {
 
                 VStack(spacing: 0) {
                     AvatarView(url: p.avatarUrl, username: p.username, size: 96,
-                               accentHex: p.accentColor, emoji: p.avatarEmoji)
+                               accentHex: p.accentColor, emoji: p.avatarEmoji, pro: Wordocious.isProActive(p))
                     usernameText(p).padding(.top, 12)
 
                     // Lock badge — the notation the founder asked for.
@@ -303,10 +289,9 @@ struct PublicProfileView: View {
                         Text("This profile is private")
                             .font(Brand.font(11, .black)).tracking(0.5).textCase(.uppercase)
                     }
-                    .foregroundStyle(Theme.textMuted)
-                    .padding(.horizontal, 12).padding(.vertical, 5)
-                    .background(Capsule().fill(Theme.surfaceHover))
-                    .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
+                    .foregroundStyle(FinishInk.secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .tintedPill(Color(hex: 0x8B5CF6))
                     .padding(.top, 8)
 
                     Text("\(p.username) keeps their words and strategies to themselves. You can still meet them on the daily leaderboards.")
@@ -315,17 +300,11 @@ struct PublicProfileView: View {
                         .padding(.top, 8)
 
                     // Level + tier chip, member since — same chips as the header.
-                    HStack(spacing: 5) {
-                        Image(systemName: "star.fill").font(.system(size: 11))
-                        Text("Level \(p.level)").font(Brand.font(12, .heavy))
-                        Text("·").opacity(0.7)
-                        Text(tier.label).font(Brand.font(12, .heavy))
-                    }
-                    .foregroundStyle(tier.color)
-                    .padding(.horizontal, 12).padding(.vertical, 5)
-                    .background(Capsule().fill(tier.bg))
-                    .overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
-                    .padding(.top, 16)
+                    // §V3: the tier badge + the level in soft numbers.
+                    LevelBadge(level: p.level, size: 30, showTier: true)
+                        .padding(.horizontal, 12).padding(.vertical, 4)
+                        .tintedPill(BadgeArt.tierAccent(tier))
+                        .padding(.top, 16)
 
                     if let since = teaserMemberSince(p) {
                         Text("Member since \(since)")
@@ -337,9 +316,11 @@ struct PublicProfileView: View {
                     HStack(spacing: 16) {
                         ForEach(medals, id: \.0) { m in
                             HStack(spacing: 4) {
-                                Text(m.0).font(.system(size: 17))
-                                Text("\(m.1)").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                                MedalArt(kind: m.0, size: 22)
+                                Text("\(m.1)").softNumber(16)
                             }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("\(m.1) \(m.0) \(m.1 == 1 ? "medal" : "medals")")
                         }
                     }
                     .padding(.top, 16)
@@ -348,27 +329,22 @@ struct PublicProfileView: View {
                     HStack(spacing: 12) {
                         ForEach(stats, id: \.0) { s in
                             VStack(spacing: 2) {
-                                Text("\(s.1)").font(Brand.font(17, .black)).foregroundStyle(Theme.textPrimary)
-                                Text(s.0.uppercased()).font(Brand.font(9, .bold)).tracking(0.6).foregroundStyle(Theme.textMuted)
+                                Text("\(s.1)").softNumber(20)
+                                Text(s.0.uppercased()).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
                             }.frame(maxWidth: .infinity)
                         }
                     }
                     .padding(.top, 12)
-                    .overlay(Rectangle().fill(Theme.border).frame(height: 1), alignment: .top)
+                    .overlay(Rectangle().fill(Color(hex: 0x7C3AED).opacity(0.14)).frame(height: 1), alignment: .top)
                     .padding(.top, 12)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(24)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                // §A1: the lavender card with its top bar.
+                .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0xA855F7), Color(hex: 0xEC4899)])
 
-                Button { dismiss() } label: {
-                    Label("Back", systemImage: "chevron.left")
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
-                        .padding(.horizontal, 18).padding(.vertical, 8)
-                        .background(Capsule().fill(Theme.surfaceHover))
-                        .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.squish)
+                Button { dismiss() } label: { CandyLabel(title: "Back", symbol: "chevron.left") }
+                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
             }
             .padding(.horizontal, 12).padding(.top, 8)
             .padding(.bottom, chrome.bottomInset)
@@ -420,10 +396,9 @@ struct PublicProfileView: View {
                     Text(isOwnProfile ? "Your profile is private" : "Private profile")
                         .font(Brand.font(10, .black)).tracking(0.4).textCase(.uppercase)
                 }
-                .foregroundStyle(Theme.textMuted)
-                .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Capsule().fill(Theme.surfaceHover))
-                .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
+                .foregroundStyle(FinishInk.secondary)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .tintedPill(Color(hex: 0x8B5CF6))
             }
             // Social redesign: presence line + level/archetype/percentile/opener
             // chips (the level badge moved into the chip row).
@@ -434,7 +409,7 @@ struct PublicProfileView: View {
             ProfileIdentityChips(profile: p, persona: social.persona)
             VStack(spacing: 2) {
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.border).frame(width: 160, height: 6)
+                    Capsule().fill(Color(hex: 0x7C3AED).opacity(Theme.isDark ? 0.25 : 0.14)).frame(width: 160, height: 6)
                     Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
                         .frame(width: 160 * progress / 100, height: 6)
                 }
@@ -456,11 +431,12 @@ struct PublicProfileView: View {
                     if let handle = links[key], let url = socialURL(key, handle) {
                         Link(destination: url) {
                             Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
-                                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
-                                .frame(width: 30, height: 30)
-                                .background(Circle().fill(Theme.surfaceHover))
-                                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                                .font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
+                                .frame(width: 32, height: 32)
+                                .tintedPill(Color(hex: 0x7C3AED))
                         }
+                        .buttonStyle(.squish)
+                        .accessibilityLabel(key == "website" ? "Website" : key.capitalized)   // §AB: icon-only
                     }
                 }
             }.padding(.top, 2)
@@ -510,47 +486,38 @@ struct PublicProfileView: View {
         }
     }
 
+    /// §A1 / §A2: each stat in its own tinted tile (its color's top bar) with a soft number.
     private func card(_ icon: String, _ color: Color, _ value: String, _ label: String, _ sub: String) -> some View {
         VStack(spacing: 2) {
-            SymbolGlyph(icon, size: 16, color: color)
-            Text(value).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
-            Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
-            Text(sub).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+            if let icon3d = Icon3DName.forSymbol(icon) {
+                Icon3D(icon3d, size: 20)
+            } else {
+                SymbolGlyph(icon, size: 16, color: color)
+            }
+            Text(value).softNumber(20).lineLimit(1).minimumScaleFactor(0.6)
+            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.4)
+                .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color.black.mixed(over: color, 0.3))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Text(sub).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
             .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+        .frame(maxWidth: .infinity).padding(.vertical, 10).padding(.horizontal, 2)
+        .tintedCard(accent: color, bar: [color], radius: 14, barHeight: 4, tint: 0.10, line: 0.28)
     }
 
     // MARK: Mode section (Solo/VS toggle + picker + stats card)
 
     private var modeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("GAME MODE STATISTICS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-            HStack(spacing: 8) {
-                tabButton("solo", "Solo", "person.fill")
-                tabButton("vs", "VS", "bolt.horizontal.fill")
-            }
+            FinishLabel("Game mode statistics")
+            // The Solo | VS toggle — the shared soft segmented control (§A9 squish).
+            SoftSegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
+                          selection: $tab, accessibilityLabel: "Play type")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) { ForEach(pickerModes) { m in modeChip(m) } }.padding(.horizontal, 4).padding(.vertical, 6)
             }
             modeStatsCard
         }
-    }
-
-    private func tabButton(_ value: String, _ label: String, _ icon: String) -> some View {
-        let active = tab == value
-        return Button { tab = value } label: {
-            HStack(spacing: 5) {
-                Image(systemName: icon).font(.system(size: 11))
-                Text(label).font(Brand.font(12, .heavy))
-            }
-            .foregroundStyle(active ? Theme.primary : Theme.textMuted)
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.squish)
     }
 
     private func modeChip(_ m: HomeMode) -> some View {
@@ -567,14 +534,13 @@ struct PublicProfileView: View {
         let stat = stats.first { $0.gameMode == selectedMode.rawValue && $0.playType == tab }
         let accent = homeModes.first { $0.mode == selectedMode }?.accent ?? Theme.primary
         return VStack(spacing: 0) {
-            Rectangle().fill(accent).frame(height: 3)
             HStack(spacing: 10) {
                 ModeIconView(icon: homeModes.first { $0.mode == selectedMode }?.icon ?? .roman("?"), accent: accent, box: 28)
-                Text(ModeStyle.title(selectedMode)).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                Text(ModeStyle.title(selectedMode)).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                 Spacer()
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
-            .overlay(Rectangle().fill(Theme.border).frame(height: 1), alignment: .bottom)
+            .overlay(Rectangle().fill(accent.opacity(0.16)).frame(height: 1), alignment: .bottom)
             if let s = stat {
                 let cells: [(String, String, Color)] = [
                     ("Wins", "\(s.wins)", Color(hex: 0x7C3AED)),
@@ -585,43 +551,40 @@ struct PublicProfileView: View {
                 HStack(spacing: 12) {
                     ForEach(cells, id: \.0) { c in
                         VStack(spacing: 1) {
-                            Text(c.1).font(Brand.font(17, .black)).foregroundStyle(Theme.textPrimary)
-                            Text(c.0.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
+                            Text(c.1).softNumber(19).lineLimit(1).minimumScaleFactor(0.6)
+                            Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
                         }.frame(maxWidth: .infinity)
                     }
                 }.padding(16)
             } else {
                 Text("No \(tab) games played in this mode yet")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     .frame(maxWidth: .infinity).padding(24)
             }
         }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        // ART_SPEC §11: the tinted lift sits outside the clip.
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
+        // §A1: tinted in the mode's accent with its top bar.
+        .tintedCard(accent: accent, bar: [accent], barHeight: 6)
     }
 
     // MARK: Top words
 
     private var topWordsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("TOP WORDS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-            VStack(spacing: 6) {
-                ForEach(topWords) { w in
+            FinishLabel("Top words")
+            VStack(spacing: 0) {
+                ForEach(Array(topWords.enumerated()), id: \.element.id) { i, w in
                     HStack {
-                        Text(w.word).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).tracking(1)
+                        Text(w.word).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading).tracking(1)
                         Spacer()
-                        Text("\(w.count)×").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        Text("\(w.count)").softNumber(14)
+                        Text("×").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+                    .stripedRow(i, accent: Color(hex: 0x7C3AED))
                 }
             }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .padding(.vertical, 6)
+            .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED)], barHeight: 6)
         }
     }
 
@@ -630,11 +593,11 @@ struct PublicProfileView: View {
     private func recentMatches(_ p: Profile) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Image(systemName: "clock").font(.system(size: 14)).foregroundStyle(Color(hex: 0x2563EB))
-                Text("Recent Matches").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                Image(systemName: "clock").font(.system(size: 14, weight: .bold)).foregroundStyle(Color(hex: 0x2563EB))
+                Text("Recent Matches").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
             }
             if matches.isEmpty {
-                Text("No matches played yet.").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                Text("No matches played yet.").font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                     .frame(maxWidth: .infinity).padding(.vertical, 24)
             } else {
                 // Show 5 collapsed; the toggle expands the rest in place (no
@@ -646,15 +609,16 @@ struct PublicProfileView: View {
                 }
                 if matches.count > 5 {
                     Button { showAllRecent.toggle() } label: {
-                        Text(showAllRecent ? "Show less" : "View all \(matches.count) ›")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.squish).padding(.top, 2)
+                        CandyLabel(title: showAllRecent ? "Show less" : "View all \(matches.count)")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .frame(maxWidth: .infinity).padding(.top, 2)
                 }
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        // §A1: the blue card with its top bar.
+        .tintedCard(accent: Color(hex: 0x2563EB), bar: [Color(hex: 0x2563EB), Color(hex: 0x60A5FA)], barHeight: 6, tint: 0.06)
     }
 
     private func fmtTime(_ s: Int) -> String {
@@ -727,8 +691,11 @@ struct RecentMatchRow: View {
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        // §A1: a soft wash of the mode's accent, never plain white.
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Theme.isDark ? Theme.surface : (mode?.accent ?? Color(hex: 0x7C3AED)).wash(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(Theme.isDark ? Theme.border : (mode?.accent ?? Color(hex: 0x7C3AED)).wash(0.28), lineWidth: 1.5))
     }
 
     private func durationStr(_ s: Int) -> String {

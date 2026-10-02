@@ -2,31 +2,22 @@ package com.wordocious.app.data
 
 import io.github.jan.supabase.postgrest.postgrest
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import android.graphics.Shader
-import android.graphics.Typeface
-import android.net.Uri
-import android.os.Build
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.core.content.res.ResourcesCompat
 import com.wordocious.app.ModeGen
 import com.wordocious.app.R
+import com.wordocious.app.data.ShareFinish.U
+import com.wordocious.app.ui.wallpaperRes
+import androidx.compose.ui.graphics.toArgb
 import com.wordocious.app.ui.lightArgb
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.yesterdayLocalDate
-import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
-import java.io.File
 import java.time.LocalDate
 import java.util.Calendar
 import kotlin.math.max
@@ -40,16 +31,10 @@ import kotlin.math.min
  *
  * Three variants of one card: today's solo board, today's VS battle board, and
  * yesterday's settled podium. Spoiler-free by construction — names, scores and
- * stats only, never words or tiles. The share itself is LINK-ONLY: the PNG is
- * uploaded to the share-images bucket and the /s/ URL is shared alone (its
- * unfurl IS the card — attaching the image too double-renders in Messages);
- * the PNG attachment is only the fallback when the upload can't happen.
+ * stats only, never words or tiles. FINISH_SPEC S1: the share is the IMAGE ONLY
+ * (no hosted /s/ link, no caption) — the card carries everything.
  */
 object LeaderboardShare {
-    private const val W = 1080
-    private const val H = 1080
-    private const val TEXT_DARK = 0xFF1A1A2E.toInt()
-    private const val TEXT_MUTED = 0xFF6B7280.toInt()
     private const val VS_ACCENT = 0xFF0D9488.toInt()
     private const val SURFACE = "leaderboard"
 
@@ -64,27 +49,6 @@ object LeaderboardShare {
     // me + friends ranked by the week's points, countdown on the date chip.
     // §244/§245: FLAWLESS_STREAK + TROPHY_CASE — the personal brag cards.
     enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM, SWEEP, SWEEP_PODIUM, WEEKLY_RACE, FLAWLESS_STREAK, TROPHY_CASE }
-
-    private data class Theme(val bg: Int, val label: Int, val panelBorder: Int, val footer: Int)
-
-    // Lavender for the daily board + podium, mint/teal for the VS battle board.
-    private fun theme(v: Variant): Theme = when (v) {
-        Variant.SOLO -> Theme(0xFFF5F3FF.toInt(), 0xFF7C3AED.toInt(), 0x55A78BFA, 0xFF7C3AED.toInt())
-        Variant.VS -> Theme(0xFFF0FDFA.toInt(), VS_ACCENT, 0x550D9488, VS_ACCENT)
-        Variant.PODIUM -> Theme(0xFFF5F3FF.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF7C3AED.toInt())
-        // Friends: indigo — the leaderboard tab's own accent family.
-        Variant.FRIENDS -> Theme(0xFFEEF2FF.toInt(), 0xFF4F46E5.toInt(), 0x556366F1, 0xFF4F46E5.toInt())
-        Variant.FRIENDS_PODIUM -> Theme(0xFFEEF2FF.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF4F46E5.toInt())
-        // Sweep: pink-washed violet — the all-nine brag's own identity (shared
-        // verbatim with the web/iOS cards).
-        Variant.SWEEP -> Theme(0xFFFDF2F8.toInt(), 0xFF7C3AED.toInt(), 0x55EC4899, 0xFF7C3AED.toInt())
-        Variant.SWEEP_PODIUM -> Theme(0xFFFDF2F8.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF7C3AED.toInt())
-        // Weekly race: the friends board's indigo — same circle, longer window.
-        Variant.WEEKLY_RACE -> Theme(0xFFEEF2FF.toInt(), 0xFF4F46E5.toInt(), 0x556366F1, 0xFF4F46E5.toInt())
-        // §244/§245: the gold family — pure brags wear the medal identity.
-        Variant.FLAWLESS_STREAK, Variant.TROPHY_CASE ->
-            Theme(0xFFFFFBEB.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFFD97706.toInt())
-    }
 
     /** §17 The card's header art: the page the board lives on. */
     private fun headerArt(v: Variant): Int = when (v) {
@@ -600,16 +564,7 @@ object LeaderboardShare {
         )
     }
 
-    // ── Renderer (web drawLeaderboardCard / drawLbRow) ─────────────────────────
-
-    private fun nunito(context: Context, weight: Int): Typeface {
-        val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        // Nunito.ttf is a variable font whose default instance is ExtraLight; the
-        // weighted create (API 28+) drives the real `wght` axis.
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            Typeface.create(base, weight, false)
-        else Typeface.create(base, if (weight >= 800) Typeface.BOLD else Typeface.NORMAL)
-    }
+    // ── Renderer (FINISH_SPEC E1: the leaderboard card in the finished look) ────
 
     /** Vertically-centered text (web textBaseline='middle'). */
     private fun Canvas.textV(text: String, x: Float, cy: Float, p: Paint) {
@@ -624,405 +579,339 @@ object LeaderboardShare {
         return t + "…"
     }
 
-    /** Draw a lucide stroke drawable (crown/medal/swords) tinted, centered at
-     *  (cx, cy) in a size×size box — same pattern as DailySweepShare's badges. */
-    private fun drawIcon(context: Context, c: Canvas, res: Int, cx: Float, cy: Float, size: Float, tint: Int) {
-        val d = ContextCompat.getDrawable(context, res)?.mutate() ?: return
-        d.setTint(tint)
-        val half = size / 2
-        d.setBounds((cx - half).toInt(), (cy - half).toInt(), (cx + half).toInt(), (cy + half).toInt())
-        d.draw(c)
+    /** The wallpaper behind each variant (the page it lives on). */
+    private fun wallpaper(v: Variant): Int = when (v) {
+        Variant.VS -> com.wordocious.app.ui.PageTint.VS.wallpaperRes()
+        Variant.FRIENDS, Variant.FRIENDS_PODIUM, Variant.WEEKLY_RACE -> com.wordocious.app.ui.PageTint.FRIENDS.wallpaperRes()
+        else -> com.wordocious.app.ui.PageTint.LEADERBOARD.wallpaperRes()
     }
 
-    // Rank iconography — same colors as the in-app RankIcon (crown gold, medal
-    // silver, medal bronze).
-    private val RANK_ICON_COLORS = intArrayOf(0xFFD97706.toInt(), 0xFF9CA3AF.toInt(), 0xFFB45309.toInt())
+    /** The page accent the rows panel is tinted in (A1: Leaderboard gold, VS teal, Friends pink). */
+    private fun pageAccent(v: Variant): Int = when (v) {
+        Variant.VS -> com.wordocious.app.ui.PageTint.VS.accent.toArgb()
+        Variant.FRIENDS, Variant.FRIENDS_PODIUM, Variant.WEEKLY_RACE -> com.wordocious.app.ui.PageTint.FRIENDS.accent.toArgb()
+        else -> com.wordocious.app.ui.PageTint.LEADERBOARD.accent.toArgb()
+    }
 
-    private fun drawRankGlyph(context: Context, c: Canvas, p: Paint, black: Typeface, rank: Int, cx: Float, cy: Float, forceNumber: Boolean = false) {
-        // §248: flawlessStreak rows are DAYS, not competitors — crown/medals
-        // read as ranking, so that card numbers every row instead.
-        if (forceNumber) {
-            p.typeface = black; p.textSize = 30f; p.color = TEXT_MUTED
-            p.textAlign = Paint.Align.CENTER
-            c.textV("$rank", cx, cy, p)
-            p.textAlign = Paint.Align.LEFT
-            return
-        }
-        when (rank) {
-            1 -> drawIcon(context, c, R.drawable.ic_crown, cx, cy, 40f, RANK_ICON_COLORS[0])
-            2 -> drawIcon(context, c, R.drawable.ic_medal, cx, cy, 40f, RANK_ICON_COLORS[1])
-            3 -> drawIcon(context, c, R.drawable.ic_medal, cx, cy, 40f, RANK_ICON_COLORS[2])
-            else -> {
-                p.typeface = black; p.textSize = 30f; p.color = TEXT_MUTED
-                p.textAlign = Paint.Align.CENTER
-                c.textV("$rank", cx, cy, p)
-                p.textAlign = Paint.Align.LEFT
+    /** Day boards head with that weekday's title art (A6); the brag cards keep their page art. */
+    private fun isDayBoard(v: Variant): Boolean = v != Variant.WEEKLY_RACE && v != Variant.FLAWLESS_STREAK && v != Variant.TROPHY_CASE
+
+    /** No podium on the brag cards: their rows are days / records, not competitors. */
+    private fun hasPodium(v: Variant): Boolean = v != Variant.FLAWLESS_STREAK && v != Variant.TROPHY_CASE
+
+    /** The medal step colors (FinishPages PodiumInk: gold / silver / bronze). */
+    private fun stepColors(place: Int): IntArray = when (place) {
+        1 -> intArrayOf(0xFFFFD66B.toInt(), 0xFFF5A524.toInt())
+        2 -> intArrayOf(0xFFE4E8F0.toInt(), 0xFFAAB3C5.toInt())
+        else -> intArrayOf(0xFFFFC9A0.toInt(), 0xFFD9844A.toInt())
+    }
+    private fun medal(place: Int): Int = when (place) { 1 -> 0xFFF5A524.toInt(); 2 -> 0xFFAAB3C5.toInt(); else -> 0xFFD9844A.toInt() }
+
+    /** A tinted chip (A1 `.pill`): the wash, a 1.5-unit line, the accent band across the top; dark ink text. */
+    private fun drawChip(c: Canvas, text: String, x: Float, y: Float, h: Float, accent: Int, p: Paint, ink: Int): Float {
+        val w = p.measureText(text) + 44f
+        val r = RectF(x, y, x + w, y + h)
+        ShareFinish.drawTintedCard(c, r, h / 2f, ShareFinish.wash(accent, 0.14f), ShareFinish.wash(accent, 0.32f),
+            intArrayOf(accent), 4f * U / 1.5f, shadow = 0x143C1E6E, shadowDy = 6f, shadowBlur = 14f)
+        p.color = ink
+        c.textV(text, x + 22f, r.centerY() + 2f, p)
+        return w
+    }
+
+    /** The darker readable ink for an accent (FinishPages darkenInk). */
+    private fun inkOf(accent: Int): Int = com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.45f, accent or (0xFF shl 24))
+
+    /** §249 nine-dot mode strip (violet win intensity, red loss, hollow unplayed), left edge [x0]. */
+    private fun drawDots(c: Canvas, dots: List<Double?>, x0: Float, cy: Float, r: Float, step: Float) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        dots.forEachIndexed { i, d ->
+            val cx = x0 + r + i * step
+            when {
+                d == null -> { p.style = Paint.Style.STROKE; p.strokeWidth = 2f; p.color = 0xFFD8C8F3.toInt(); c.drawCircle(cx, cy, r, p); p.style = Paint.Style.FILL }
+                d < 0 -> { p.color = 0xFFEF4444.toInt(); c.drawCircle(cx, cy, r, p) }
+                else -> { p.color = 0xFF7C3AED.toInt(); p.alpha = ((0.18 + 0.82 * d) * 255).toInt().coerceIn(0, 255); c.drawCircle(cx, cy, r, p); p.alpha = 255 }
             }
         }
     }
 
-    /** One leaderboard row — ports web drawLbRow: gold "you" treatment (full
-     *  bleed, soft amber glow, edge-aware corners), rank glyph, name (+ "· YOU"
-     *  + delta pill), right-aligned score with optional stats subline. */
+    /** The rank mark in a row: a glossy medal tile for 1–3, else the soft rank number. */
+    private fun drawRankMark(c: Canvas, fonts: ShareFinish.Fonts, rank: Int, cx: Float, cy: Float, size: Float, numeric: Boolean) {
+        if (!numeric && rank in 1..3) {
+            ShareFinish.drawTile(c, RectF(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2), ShareFinish.family(medal(rank)), "$rank", fonts.black, 0.5f)
+        } else {
+            val p = ShareFinish.softPaint(fonts, min(34f, size * 0.7f))
+            c.textV("$rank", cx, cy, p)
+        }
+    }
+
+    /**
+     * One leaderboard row in the rows panel: soft stripe (or the gold "you" wash),
+     * rank mark, name (+ · YOU, delta pill, dots), soft score with its subline.
+     */
     private fun drawRow(
-        context: Context, c: Canvas, row: RowInput,
+        c: Canvas, fonts: ShareFinish.Fonts, row: RowInput, index: Int, accent: Int,
         x: Float, y: Float, w: Float, h: Float,
-        black: Typeface, w800: Typeface, bold: Typeface,
-        rankLine: String? = null, delta: Delta? = null, separator: Boolean = false,
-        edgeTop: Boolean = false, edgeBottom: Boolean = false, bleed: Float = 16f,
-        // §248: number every row on the flawless-streak card (days, not ranks).
-        numericRank: Boolean = false,
+        rankLine: String? = null, delta: Delta? = null, numericRank: Boolean = false,
     ) {
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        // Gold "you" highlight — full-bleed across the panel with a soft amber
-        // glow instead of a hard border; flush to the panel edge (and matching
-        // its corner radius) when it sits at the first/last slot.
+        val rect = RectF(x + 8f, y + 3f, x + w - 8f, y + h - 3f)
         if (row.isYou) {
-            val hy = if (edgeTop) y - bleed + 2f else y + 4f
-            val hb = if (edgeBottom) y + h + bleed - 2f else y + h - 4f
-            val rTop = if (edgeTop) 26f else 16f
-            val rBot = if (edgeBottom) 26f else 16f
-            val gold = Path().apply {
-                addRoundRect(
-                    RectF(x + 2f, hy, x + w - 2f, hb),
-                    floatArrayOf(rTop, rTop, rTop, rTop, rBot, rBot, rBot, rBot),
-                    Path.Direction.CW,
-                )
-            }
-            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFFFEF3C7.toInt()
-                // rgba(245,158,11,0.5) blur 26 — the soft amber glow.
-                setShadowLayer(26f, 0f, 0f, 0x80F59E0B.toInt())
-            }
-            c.drawPath(gold, fill)
-            val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE; strokeWidth = 2f
-                // Top-lit gradient stroke instead of a hard border.
-                shader = LinearGradient(x, hy, x, hb, 0x8CFCD34D.toInt(), 0x40F59E0B, Shader.TileMode.CLAMP)
-            }
-            c.drawPath(gold, stroke)
+            ShareFinish.drawTintedCard(c, rect, 14f * U / 1.5f, 0xFFFFF5DF.toInt(), 0xFFF8E2B4.toInt(), intArrayOf(0xFFF5A524.toInt(), 0xFFFFD166.toInt()), 4f * U / 1.5f,
+                shadow = 0x40F59E0B, shadowDy = 4f, shadowBlur = 24f)
+        } else if (index % 2 == 0) {
+            p.color = (0x1A shl 24) or (accent and 0xFFFFFF)
+            c.drawRoundRect(rect, 12f * U / 1.5f, 12f * U / 1.5f, p)
         }
-
         val midY = y + h / 2
-        drawRankGlyph(context, c, p, black, row.rank, x + 56f, midY, forceNumber = numericRank)
+        drawRankMark(c, fonts, row.rank, x + 52f, midY, min(54f, h * 0.62f), numericRank)
 
-        // Right block: bold score, optional subline underneath.
+        // Right block: soft score, optional subline underneath.
         val rightX = x + w - 30f
-        p.textAlign = Paint.Align.RIGHT
-        p.typeface = black; p.textSize = 34f; p.color = TEXT_DARK
-        c.textV(row.scoreDisplay, rightX, if (row.subline != null) midY - 13f else midY, p)
-        var rightBlockW = p.measureText(row.scoreDisplay)
+        val score = ShareFinish.softPaint(fonts, min(36f, h * 0.42f), Paint.Align.RIGHT)
+        c.textV(row.scoreDisplay, rightX, if (row.subline != null) midY - h * 0.14f else midY, score)
+        var rightBlockW = score.measureText(row.scoreDisplay)
         if (row.subline != null) {
-            p.typeface = bold; p.textSize = 21f; p.color = TEXT_MUTED
-            c.textV(row.subline, rightX, midY + 16f, p)
+            p.typeface = fonts.bold; p.textSize = min(21f, h * 0.26f); p.color = ShareFinish.INK_LABEL; p.textAlign = Paint.Align.RIGHT
+            c.textV(row.subline, rightX, midY + h * 0.2f, p)
             rightBlockW = max(rightBlockW, p.measureText(row.subline))
         }
 
-        // Left block: name (+ YOU label + delta pill), optional "#R of TOTAL".
         val nameX = x + 96f
         val nameMaxW = w - 96f - 30f - rightBlockW - 24f
-        // §249: a dot strip claims the second line — name rides high.
         val hasDots = !row.dots.isNullOrEmpty()
-        val nameY = if (rankLine != null || hasDots) midY - 14f else midY
+        val nameY = if (rankLine != null || hasDots) midY - h * 0.16f else midY
         p.textAlign = Paint.Align.LEFT
         var reserved = 0f
-        if (row.isYou) {
-            p.typeface = black; p.textSize = 24f
-            reserved = p.measureText(" · YOU")
-        }
-        p.typeface = black; p.textSize = 30f; p.color = TEXT_DARK
+        if (row.isYou) { p.typeface = fonts.black; p.textSize = 24f; reserved = p.measureText(" · YOU") }
+        p.typeface = fonts.black; p.textSize = min(30f, h * 0.36f); p.color = ShareFinish.INK_HEADING
         val name = clampText(p, row.name, max(60f, nameMaxW - reserved))
         c.textV(name, nameX, nameY, p)
         var cursorX = nameX + p.measureText(name)
         if (row.isYou) {
-            p.textSize = 24f; p.color = 0xFFD97706.toInt()
+            p.textSize = 24f; p.color = 0xFFA2560C.toInt()
             c.textV(" · YOU", cursorX, nameY, p)
             cursorX += p.measureText(" · YOU")
         }
-
-        // §249: the nine-dot mode strip beneath the name — in-app
-        // SweepModeDots rules verbatim (violet win intensity, red loss,
-        // hollow unplayed).
         var dotsEndX = nameX
         if (hasDots) {
-            val cy = midY + 18f
             val r = 7f
-            row.dots!!.forEachIndexed { i, d ->
-                val cx = nameX + r + i * 20f
-                when {
-                    d == null -> {
-                        p.style = Paint.Style.STROKE; p.strokeWidth = 2f; p.color = 0xFFE5E7EB.toInt()
-                        c.drawCircle(cx, cy, r, p)
-                        p.style = Paint.Style.FILL
-                    }
-                    d < 0 -> { p.color = 0xFFEF4444.toInt(); c.drawCircle(cx, cy, r, p) }
-                    else -> {
-                        p.color = 0xFF7C3AED.toInt()
-                        p.alpha = ((0.18 + 0.82 * d) * 255).toInt().coerceIn(0, 255)
-                        c.drawCircle(cx, cy, r, p)
-                        p.alpha = 255
-                    }
-                }
-            }
+            drawDots(c, row.dots!!, nameX, midY + h * 0.2f, r, 20f)
             dotsEndX = nameX + r + (row.dots.size - 1) * 20f + r + 14f
         }
-
-        // Rank-delta pill on the sharer's row — under the name when the
-        // "#R of TOTAL" line isn't there, sharing the second line otherwise
-        // (after the dots, §249).
         if (row.isYou && (delta != null || rankLine != null)) {
-            val lineY = midY + 17f
+            val lineY = midY + h * 0.2f
             var lx = if (hasDots) dotsEndX else nameX
             if (rankLine != null) {
-                p.typeface = w800; p.textSize = 21f; p.color = 0xFFB45309.toInt()
+                p.typeface = fonts.heavy; p.textSize = 21f; p.color = 0xFFA2560C.toInt()
                 c.textV(rankLine, lx, lineY, p)
                 lx += p.measureText(rankLine) + 12f
             }
             if (delta != null) {
-                p.typeface = w800; p.textSize = 18f
-                val pillW = p.measureText(delta.text) + 20f
-                val pillH = 28f
-                // No rank line → pill rides the name line instead of a second one.
+                p.typeface = fonts.heavy; p.textSize = 18f
+                val pillH = 30f
                 val pillTop = if (rankLine != null) lineY - pillH / 2 else nameY - pillH / 2
                 val pillX = if (rankLine != null) lx else cursorX + 12f
-                val pillRect = RectF(pillX, pillTop, pillX + pillW, pillTop + pillH)
-                val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = (if (delta.improved) 0xFFDCFCE7 else 0xFFFEE2E2).toInt()
-                }
-                c.drawRoundRect(pillRect, 14f, 14f, fill)
-                p.color = (if (delta.improved) 0xFF16A34A else 0xFFDC2626).toInt()
-                c.textV(delta.text, pillX + 10f, pillRect.centerY(), p)
+                drawDeltaPill(c, p, delta, pillX, pillTop, pillH)
             }
-        }
-
-        if (separator && !row.isYou) {
-            val sep = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFFE5E7EB.toInt(); strokeWidth = 1.5f
-            }
-            c.drawLine(x + 26f, y + h, x + w - 26f, y + h, sep)
         }
     }
 
-    /** Render the 1080² card (web drawLeaderboardCard). */
-    fun render(context: Context, input: CardInput): Bitmap {
-        val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        val th = theme(input.variant)
-        // ART_SPEC §17: the page-tint background (+ tiles) — a single game's board takes
-        // that game's §15 tint, the VS board the VS tint, the rest the home tint.
-        when (input.variant) {
-            Variant.SOLO, Variant.PODIUM, Variant.FRIENDS, Variant.FRIENDS_PODIUM -> ShareArt.drawGameTint(context, c, input.accent)
-            Variant.VS -> ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), ShareArt.TILE_ALPHA_PAGE)
-            else -> ShareArt.drawHomeTint(context, c)
-        }
-
-        val black = nunito(context, 900)
-        val w800 = nunito(context, 800)
-        val bold = nunito(context, 700)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-        val cx = W / 2f
-
-        // §17 the page's whole-cast title art (LEADERBOARD / VS BATTLE / FRIENDS / ALL-TIME
-        // RECORDS) as the header; the two-tone wordmark stays as the fallback.
-        val wordmarkY = 96f
-        if (ShareArt.drawArt(context, c, headerArt(input.variant), cx, 22f, W - 200f, 104f) == null) {
-            p.typeface = black; p.textSize = 60f
-            p.shader = LinearGradient(cx - 220f, 0f, cx + 220f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
-            c.drawText("WORDOCIOUS", cx, wordmarkY, p)
-            p.shader = null
-        }
-        p.typeface = black
-
-        // Letterspaced variant label (web letterSpacing: 10px @ 36px ≈ 0.278em).
-        val labelY = wordmarkY + 74f
-        p.textSize = 36f; p.color = th.label
-        p.letterSpacing = 10f / 36f
-        c.drawText(label(input.variant), cx, labelY, p)
-        p.letterSpacing = 0f
-
-        // Chips: mode (accent bg; swords glyph on the VS variant) + white date chip.
-        val chipH = 56f
-        val chipY = labelY + 36f
-        p.typeface = w800; p.textSize = 27f
-        val swordsSize = if (input.variant == Variant.VS) 30f else 0f
-        val swordsGap = if (input.variant == Variant.VS) 10f else 0f
-        val modeTextW = p.measureText(input.modeChip)
-        val modeChipW = modeTextW + swordsSize + swordsGap + 48f
-        val dateTextW = p.measureText(input.dateChip)
-        val dateChipW = dateTextW + 44f
-        val chipGap = 16f
-        var chipX = (W - modeChipW - chipGap - dateChipW) / 2f
-
-        val modeAccent = if (input.variant == Variant.VS) VS_ACCENT else input.accent
-        val chipRect = RectF(chipX, chipY, chipX + modeChipW, chipY + chipH)
-        c.drawRoundRect(chipRect, chipH / 2, chipH / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = modeAccent })
-        var modeTextX = chipX + 24f
-        if (input.variant == Variant.VS) {
-            drawIcon(context, c, R.drawable.ic_swords, modeTextX + swordsSize / 2, chipY + chipH / 2, swordsSize, Color.WHITE)
-            modeTextX += swordsSize + swordsGap
-        }
-        p.textAlign = Paint.Align.LEFT
-        p.color = Color.WHITE
-        c.textV(input.modeChip, modeTextX, chipY + chipH / 2, p)
-
-        chipX += modeChipW + chipGap
-        val dateRect = RectF(chipX, chipY, chipX + dateChipW, chipY + chipH)
-        c.drawRoundRect(dateRect, chipH / 2, chipH / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
-        c.drawRoundRect(dateRect, chipH / 2, chipH / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE; strokeWidth = 2f; color = 0xFFE5E7EB.toInt()
-        })
-        p.color = TEXT_MUTED
-        c.textV(input.dateChip, chipX + 22f, chipY + chipH / 2, p)
-
-        // Rows panel — sized to its content, then centered between the chips and
-        // the footer, so short boards don't strand dead padding.
-        val panelX = 64f
-        val panelW = W - panelX * 2
-        val areaTop = chipY + chipH + 40f
-        val footerY = H - 52f
-        val areaBottom = footerY - 46f - ShareArt.STRIP_BAND
-        val pad = 16f
-        val dividerH = if (input.you != null) 46f else 0f
-        val nRows = input.rows.size + (if (input.you != null) 1 else 0)
-        if (nRows > 0) {
-            // Max row height — roomier for the 3-row podium than a 6-slot board.
-            // Podium carries the same top 5 (+ you-row) as the daily card now.
-            val band = 130f
-            val rowH = min(band, (areaBottom - areaTop - pad * 2 - dividerH) / nRows)
-            val contentH = rowH * nRows + dividerH + pad * 2
-            val panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
-            val panel = RectF(panelX, panelTop, panelX + panelW, panelTop + contentH)
-            c.drawRoundRect(panel, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
-            c.drawRoundRect(panel, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE; strokeWidth = 3f; color = th.panelBorder
-            })
-            var y = panelTop + pad
-
-            input.rows.forEachIndexed { i, row ->
-                drawRow(
-                    context, c, row, panelX, y, panelW, rowH, black, w800, bold,
-                    numericRank = input.variant == Variant.FLAWLESS_STREAK,
-                    delta = if (row.isYou) input.delta else null,
-                    separator = i < input.rows.size - 1 || input.you != null,
-                    edgeTop = i == 0,
-                    edgeBottom = i == input.rows.size - 1 && input.you == null,
-                    bleed = pad,
-                )
-                y += rowH
-            }
-
-            if (input.you != null) {
-                // "• • •" divider between the compressed top rows and the sharer.
-                p.typeface = black; p.textSize = 26f; p.color = TEXT_MUTED
-                p.textAlign = Paint.Align.CENTER
-                c.textV("• • •", W / 2f, y + dividerH / 2, p)
-                y += dividerH
-                drawRow(
-                    context, c, input.you, panelX, y, panelW, rowH, black, w800, bold,
-                    numericRank = input.variant == Variant.FLAWLESS_STREAK,
-                    rankLine = input.youRankLine, delta = input.delta,
-                    edgeBottom = true, bleed = pad,
-                )
-            }
-        }
-
-        // §17 the cast strip, then the footer hook.
-        ShareArt.drawCastStripAboveFooter(context, c, cx, footerY + 30f, footerTextSize = 29f)
-        p.typeface = w800; p.textSize = 29f; p.color = th.footer
-        p.textAlign = Paint.Align.CENTER
-        c.drawText(input.footer, cx, footerY + 30f, p)
-        return bmp
-    }
-
-    // ── Upload + link-only share (web shareResult linkOnly) ────────────────────
-
-    private fun kind(variant: Variant): String = when (variant) {
-        Variant.VS -> "VsLeaderboard"
-        Variant.PODIUM -> "Podium"
-        Variant.SOLO -> "Leaderboard"
-        Variant.FRIENDS -> "FriendsBoard"
-        Variant.FRIENDS_PODIUM -> "FriendsPodium"
-        Variant.SWEEP -> "SweepBoard"
-        Variant.SWEEP_PODIUM -> "SweepPodium"
-        Variant.WEEKLY_RACE -> "WeeklyRace"
-        Variant.FLAWLESS_STREAK -> "FlawlessStreak"
-        Variant.TROPHY_CASE -> "TrophyCase"
+    /** The rank-delta pill: tinted green / rose. Returns its width. */
+    private fun drawDeltaPill(c: Canvas, p: Paint, delta: Delta, x: Float, top: Float, h: Float): Float {
+        val w = p.measureText(delta.text) + 24f
+        val accent = if (delta.improved) 0xFF16A34A.toInt() else 0xFFE11D48.toInt()
+        ShareFinish.drawTintedCard(c, RectF(x, top, x + w, top + h), h / 2f, ShareFinish.wash(accent, 0.14f), ShareFinish.wash(accent, 0.34f), shadow = 0)
+        p.color = inkOf(accent)
+        c.textV(delta.text, x + 12f, top + h / 2f + 1f, p)
+        return w
     }
 
     /**
-     * Upload the PNG to `share-images/<uid>/<Kind>-<ShareMode>-<day>.png` and
-     * return the matching https://wordocious.com/s/<key>?… URL (consumed by
-     * app/s/[...key], whose unfurl IS this card). Null if signed out or the
-     * upload fails — caller then falls back to sharing the PNG.
+     * The podium (second · first · third on gold / silver / bronze steps, first tallest):
+     * a glossy letter-tile avatar per spot (the crown over first), the name and soft
+     * points (+ the sweep dots) above each step. [h] = the block's height.
      */
-    private suspend fun uploadAndBuildUrl(bitmap: Bitmap, input: CardInput): String? = runCatching {
-        // RLS keys the folder on auth.uid()::text, which is lowercase.
-        val uid = AuthService.userId?.lowercase() ?: return null
-        val key = "$uid/${kind(input.variant)}-${input.shareMode}-${input.day}"
-        val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
-        SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
-
-        // The Sweep card's /s/ key reads `SweepBoard-DailySweep-<day>` but its
-        // `lm` carries the DB-style board id (web/iOS parity, §231); the
-        // weekly-race card's `lm` is likewise its window, WEEKLY (§234).
-        val lm = when (input.shareMode) {
-            SWEEP_SHARE_MODE -> SWEEP_LM
-            WEEKLY_SHARE_MODE -> WEEKLY_LM
-            else -> input.shareMode
+    private fun drawPodium(context: Context, c: Canvas, fonts: ShareFinish.Fonts, spots: List<RowInput>, left: Float, right: Float, top: Float, h: Float) {
+        val gap = 8f * U
+        val colW = (right - left - gap * 2) / 3f
+        val k = (h / 380f).coerceIn(0.6f, 1.2f)
+        val stepH = mapOf(1 to 130f * k, 2 to 96f * k, 3 to 70f * k)
+        val bottom = top + h
+        listOf(2, 1, 3).forEachIndexed { colIdx, place ->
+            val s = spots.getOrNull(place - 1) ?: return@forEachIndexed
+            val x = left + colIdx * (colW + gap)
+            val cx = x + colW / 2f
+            val sh = stepH.getValue(place)
+            val step = RectF(x, bottom - sh, x + colW, bottom)
+            val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.LinearGradient(0f, step.top, 0f, step.bottom, stepColors(place), null, android.graphics.Shader.TileMode.CLAMP)
+                setShadowLayer(10f, 0f, 4f, 0x263C1E6E)
+            }
+            val rr = 12f * U / 1.5f
+            c.drawPath(Path().apply { addRoundRect(step, floatArrayOf(rr, rr, rr, rr, 0f, 0f, 0f, 0f), Path.Direction.CW) }, sp)
+            val num = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = min(56f, sh * 0.5f); color = Color.WHITE
+                setShadowLayer(0.01f, 0f, 4f, 0x26000000)
+            }
+            c.textV("${s.rank}", cx, step.centerY(), num)
+            // Name, soft points, dots — stacked up from the step.
+            var y = step.top - 10f
+            if (!s.dots.isNullOrEmpty()) {
+                val r = 6f * k; val stepX = 16f * k
+                val w = r * 2 + (s.dots.size - 1) * stepX
+                drawDots(c, s.dots, cx - w / 2f, y - r, r, stepX)
+                y -= r * 2 + 8f
+            }
+            val pts = ShareFinish.softPaint(fonts, 36f * k)
+            ShareFinish.fitText(pts, s.scoreDisplay, colW - 8f)
+            c.drawText(s.scoreDisplay, cx, y - 2f, pts)
+            y -= pts.textSize + 6f
+            val name = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = 28f * k
+                color = if (s.isYou) 0xFFA2560C.toInt() else ShareFinish.INK_HEADING
+                ShareFinish.softShadow(this)
+            }
+            val label = clampText(name, if (s.isYou) "${s.name} · YOU" else s.name, colW - 8f)
+            c.drawText(label, cx, y - 2f, name)
+            y -= name.textSize + 12f
+            // The letter-tile avatar (first bigger) with the crown on first.
+            val a = (if (place == 1) 112f else 92f) * k
+            val av = RectF(cx - a / 2f, y - a, cx + a / 2f, y)
+            if (s.isYou) {
+                val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 6f; color = 0xFFF5A524.toInt() }
+                c.drawRoundRect(RectF(av.left - 7f, av.top - 7f, av.right + 7f, av.bottom + 7f), a * 0.28f, a * 0.28f, ring)
+            }
+            // AN5: every podium player's mascot (the same composer as the on-screen avatars).
+            run {
+                val look = CastAvatars.lookFor(s.name)
+                val cfg = MascotConfigRules.forDisplay(MascotAvatars.configFor(s.name), look?.castId, look?.frame, s.name, null)
+                val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(s.name), 200f, a.toInt(), dark = false)
+                com.wordocious.app.ui.MascotComposer.draw(context, c, av.left, av.top, a, key)
+            }
+            if (place == 1) {
+                val cw = 64f * k
+                ShareFinish.drawArtInto(context, c, R.drawable.icon3d_crown, RectF(cx - cw / 2f, av.top - cw * 0.78f, cx + cw / 2f, av.top + cw * 0.22f))
+            }
         }
-        val q = linkedMapOf("m" to kind(input.variant), "lm" to lm)
-        input.shareRank?.let { q["r"] = "$it" }
-        input.sharePlayers?.let { q["tp"] = "$it" }
-        q["w"] = "1080"; q["h"] = "1080"
-        // Unlike a puzzle result, a board changes all day — a minute-granular
-        // buster makes a later re-share re-scrape the fresh standings.
-        q["v"] = "lb${input.shareRank ?: 0}-${System.currentTimeMillis() / 60000}"
-        "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${Uri.encode(it.value)}" }
-    }.getOrNull()
+    }
+
+    /** The brag cards keep their footer's facts ("12 straight days winning every daily · best 14") as a caption. */
+    private fun bragCaption(input: CardInput): String? =
+        if (input.variant == Variant.FLAWLESS_STREAK || input.variant == Variant.TROPHY_CASE) SharePicks.footerLines(input.footer).first else null
 
     /**
-     * Render → upload → share. LINK-ONLY when the upload succeeds: the /s/
-     * unfurl already carries the pixels, so image+link would render the card
-     * TWICE in the compose sheet. Falls back to sharing the PNG (with the bare
-     * site URL as caption) only when there is no hosted URL.
+     * Render the card — FINISH_SPEC E1 look, S2-fitted ([ShareCard]): the day's (or the
+     * page's) title art, the variant label as the info line, then the body — the mode /
+     * date chips, the podium, the rows panel (and a brag card's caption) — and the S3
+     * cast wordmark. Height follows the rows.
+     */
+    fun render(context: Context, input: CardInput): Bitmap {
+        val fonts = ShareFinish.Fonts(context)
+        val accent = pageAccent(input.variant)
+        val w = 950f
+        val cx = w / 2f
+
+        // A6 the day's title art (or the page's), no box.
+        val dayArt = if (isDayBoard(input.variant)) com.wordocious.app.ui.dayTitleArtRes(input.day, null) else null
+        val headerRes = dayArt ?: headerArt(input.variant)
+
+        val chipH = 52f
+        val podium = hasPodium(input.variant)
+        val podiumRows = if (podium) input.rows.take(3) else emptyList()
+        val listRows = if (podium) input.rows.drop(3) else input.rows
+        val dividerH = if (input.you != null) 34f else 0f
+        val nList = listRows.size + (if (input.you != null) 1 else 0)
+        val listRowH = if (podium) 92f else 110f
+        val listH = if (nList > 0) nList * listRowH + dividerH + 20f else 0f
+        val podiumH = if (podiumRows.isNotEmpty()) 400f else 0f
+        val caption = bragCaption(input)
+        val captionH = if (caption != null) 64f else 0f
+        var bodyH = chipH + 24f + podiumH + listH + captionH
+        if (podiumH > 0f && listH > 0f) bodyH += 16f
+
+        val body = ShareCard.Body(w, bodyH) { c ->
+            // Chips: the mode (its accent; swords on VS), the date, and — when the sharer is on
+            // the podium — their rank delta.
+            val chipP = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.heavy; textSize = 25f; textAlign = Paint.Align.LEFT }
+            val modeAccent = if (input.variant == Variant.VS) VS_ACCENT else input.accent
+            val youOnPodium = podium && input.you == null && input.rows.take(3).any { it.isYou }
+            val deltaOnChips = if (youOnPodium) input.delta else null
+            val deltaP = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.heavy; textSize = 22f }
+            fun chipsW() = chipP.measureText(input.modeChip) + 44f + chipP.measureText(input.dateChip) + 44f + 14f +
+                (deltaOnChips?.let { deltaP.measureText(it.text) + 24f + 14f } ?: 0f)
+            val widths = chipsW()
+            if (widths > w) chipP.textSize *= (w - 60f) / (widths - 60f)
+            var chipX = (w - chipsW()) / 2f
+            chipX += drawChip(c, input.modeChip, chipX, 0f, chipH, modeAccent, chipP, inkOf(modeAccent)) + 14f
+            chipX += drawChip(c, input.dateChip, chipX, 0f, chipH, 0xFF7C3AED.toInt(), chipP, ShareFinish.INK_LABEL) + 14f
+            deltaOnChips?.let { drawDeltaPill(c, deltaP, it, chipX, (chipH - 40f) / 2f, 40f) }
+
+            var y = chipH + 24f
+            if (podiumRows.isNotEmpty()) {
+                drawPodium(context, c, fonts, podiumRows, 20f, w - 20f, y, podiumH)
+                y += podiumH + (if (listH > 0f) 16f else 0f)
+            }
+            if (nList > 0) {
+                val panel = RectF(0f, y, w, y + listH)
+                ShareFinish.drawTintedCard(c, panel, 18f * U / 1.5f, ShareFinish.wash(accent, 0.12f), ShareFinish.wash(accent, 0.30f),
+                    intArrayOf(accent), 4f * U / 1.5f * 2f)
+                var ry = panel.top + 12f
+                listRows.forEachIndexed { i, row ->
+                    drawRow(c, fonts, row, i, accent, panel.left, ry, panel.width(), listRowH,
+                        delta = if (row.isYou) input.delta else null, numericRank = input.variant == Variant.FLAWLESS_STREAK)
+                    ry += listRowH
+                }
+                if (input.you != null) {
+                    val dp = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.black; textSize = 26f; color = ShareFinish.INK_LABEL; textAlign = Paint.Align.CENTER }
+                    c.textV("• • •", cx, ry + dividerH / 2, dp)
+                    ry += dividerH
+                    drawRow(c, fonts, input.you, 1, accent, panel.left, ry, panel.width(), listRowH,
+                        rankLine = input.youRankLine, delta = input.delta, numericRank = input.variant == Variant.FLAWLESS_STREAK)
+                }
+                y += listH
+            }
+            if (caption != null) {
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    typeface = fonts.black; textSize = 30f; color = ShareFinish.INK_HEADING; textAlign = Paint.Align.CENTER
+                    ShareFinish.softShadow(this)
+                }
+                ShareFinish.fitText(p, caption, w)
+                c.textV(caption, cx, y + captionH / 2f + 6f, p)
+            }
+        }
+        return ShareCard.render(context, ShareCard.Spec(
+            wallpaper = wallpaper(input.variant),
+            title = headerRes,
+            titleFallback = label(input.variant),
+            info = label(input.variant),
+            body = body,
+        ))
+    }
+
+    /** S4 the chooser title + file name for a variant ("Share your leaderboard"). */
+    private fun shareName(v: Variant): String = when (v) {
+        Variant.SOLO, Variant.VS, Variant.FRIENDS, Variant.SWEEP -> "leaderboard"
+        Variant.PODIUM, Variant.FRIENDS_PODIUM, Variant.SWEEP_PODIUM -> "podium"
+        Variant.WEEKLY_RACE -> "weekly race"
+        Variant.FLAWLESS_STREAK -> "flawless streak"
+        Variant.TROPHY_CASE -> "trophy case"
+    }
+
+    /**
+     * Render → share. S1: the IMAGE ONLY (FileProvider PNG + ClipData, no EXTRA_TEXT) —
+     * no hosted /s link is created anymore (old links keep resolving on the web).
      */
     suspend fun renderAndShare(context: Context, input: CardInput) {
-        val bitmap = render(context, input)
-        val url = withContext(Dispatchers.IO) { uploadAndBuildUrl(bitmap, input) }
+        val bitmap = withContext(Dispatchers.Default) { render(context, input) }
         withContext(Dispatchers.Main) {
-            if (url != null) {
-                ShareEvents.log("other", input.gameModeLower, SURFACE)
-                runCatching {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, url)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share leaderboard").apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
-                }.onFailure { ShareHelper.share(context, url) }
-                return@withContext
-            }
-            // Upload couldn't happen (signed out / network) → PNG fallback.
-            val uri = runCatching {
-                val dir = File(context.cacheDir, "share").apply { mkdirs() }
-                val file = File(dir, "wordocious-leaderboard.png")
-                file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
-                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            }.getOrNull()
-            ShareEvents.log(if (uri != null) "image" else "text", input.gameModeLower, SURFACE)
-            if (uri == null) { ShareHelper.share(context, "https://wordocious.com"); return@withContext }
-            runCatching {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "image/png"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    putExtra(Intent.EXTRA_TEXT, "https://wordocious.com")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(Intent.createChooser(intent, "Share leaderboard").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-            }.onFailure { ShareHelper.share(context, "https://wordocious.com") }
+            val name = shareName(input.variant)
+            val sent = ShareHelper.shareImages(
+                context,
+                listOf(bitmap to ShareHelper.fileName(name.split(" ").joinToString("") { it.replaceFirstChar { ch -> ch.titlecase() } })),
+                "Share your $name",
+                fallbackText = "wordocious.com",
+            )
+            ShareEvents.log(if (sent) "image" else "text", input.gameModeLower, SURFACE)
         }
     }
 

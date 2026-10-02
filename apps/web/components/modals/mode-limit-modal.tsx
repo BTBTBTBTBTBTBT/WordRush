@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
-import Link from 'next/link';
+import { CandyButton } from '@/components/ui/candy-button';
+import { openGoProPopup } from '@/lib/payment/go-pro-popup';
+import { SoftNum } from '@/components/ui/soft-number';
+import { POPUP_ACCENT, POPUP_DIM, PopupBar, popupCard } from '@/components/ui/soft-popup';
+import { softPill } from '@/lib/soft-surface';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
@@ -15,9 +18,11 @@ interface ModeLimitModalProps {
   onClose: () => void;
   modeName: string;
   onViewPuzzle?: () => void;
+  /** R3: the mode's Unlimited route; a purchase from the Go Pro popup lands there. */
+  unlimitedHref?: string;
 }
 
-export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLimitModalProps) {
+export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle, unlimitedHref }: ModeLimitModalProps) {
   const [countdown, setCountdown] = useState('');
   const focusRef = useRef<HTMLDivElement>(null);
   useFocusTrap(focusRef, open);
@@ -37,77 +42,68 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
+  // G5: the limit-reached window in the new look — a tinted card with the
+  // brand top bar, U all done for today, the countdown as a soft number on a
+  // tinted tile, Upgrade as the amber candy and the quiet action in peach.
   return (
     <>
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-modal-overlay"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          style={{ backgroundColor: POPUP_DIM }}
           onClick={onClose}
         >
           <div
             ref={focusRef}
-            className="w-full max-w-sm p-6 text-center animate-modal-content"
-            style={{
-              background: 'var(--color-surface)',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-            }}
+            className="w-full max-w-sm text-center animate-modal-content"
+            style={popupCard(POPUP_ACCENT.brand)}
             onClick={e => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label={`${modeName} daily limit reached`}
           >
-            {/* U, all done for today, new puzzles at midnight (docs/ART_SPEC.md §7). */}
-            <div className="flex justify-center mb-2">
-              <ArtScene scene={PAGE_SCENES.allDone} />
-            </div>
-            <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>
-              {modeName} — Played Today
-            </h2>
-            <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-              You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.
-            </p>
+            <PopupBar accent={POPUP_ACCENT.brand} gradient="linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)" />
+            <div className="px-6 pt-5 pb-5">
+              {/* U, all done for today, new puzzles at midnight (docs/ART_SPEC.md §7). */}
+              <div className="flex justify-center mb-2">
+                <ArtScene scene={PAGE_SCENES.allDone} className="art-pop" />
+              </div>
+              <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>
+                {modeName} — Played Today
+              </h2>
+              <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.
+              </p>
 
-            <div
-              className="inline-block px-4 py-2 rounded-lg mb-4"
-              style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border)' }}
-            >
-              <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>
-                Play again tomorrow in {countdown}
-              </span>
-            </div>
+              <div className="inline-flex flex-col items-center px-5 pt-2.5 pb-2 mb-4" style={softPill(POPUP_ACCENT.brand, { radius: 16 })}>
+                <span className="text-[10px] font-black uppercase" style={{ letterSpacing: 1, color: 'var(--color-text-muted)' }}>
+                  Play again tomorrow in
+                </span>
+                <SoftNum size={26} className="soft-num-auto mt-1">{countdown}</SoftNum>
+              </div>
 
-            <Link href="/pro" onClick={onClose}>
-              <button
-                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d mb-3"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  boxShadow: '0 4px 0 #92400e',
-                }}
+              {/* R3: the redesigned Go Pro popup (never a plain page); a purchase lands in Unlimited. */}
+              <CandyButton
+                color="amber"
+                size="lg"
+                block
+                className="mb-1"
+                icon={<Icon3D name="crown" size={24} />}
+                onClick={() => { onClose(); openGoProPopup({ afterPurchaseHref: unlimitedHref, reason: `Unlimited ${modeName}` }); }}
               >
-                <Icon3D name="crown" size={16} inline className="mr-1" />
                 Upgrade to Pro
-              </button>
-            </Link>
+              </CandyButton>
 
-            {onViewPuzzle ? (
-              <button
-                onClick={() => { onClose(); onViewPuzzle(); }}
-                className="text-xs font-bold"
-                style={{ color: '#7c3aed' }}
-              >
-                View Solved Puzzle
-              </button>
-            ) : (
-              <button
-                onClick={onClose}
-                className="text-xs font-bold"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Come back tomorrow
-              </button>
-            )}
+              {onViewPuzzle ? (
+                <CandyButton color="peach" size="md" block onClick={() => { onClose(); onViewPuzzle(); }}>
+                  View Solved Puzzle
+                </CandyButton>
+              ) : (
+                <CandyButton color="peach" size="md" block onClick={onClose}>
+                  Come back tomorrow
+                </CandyButton>
+              )}
+            </div>
           </div>
         </div>
       )}

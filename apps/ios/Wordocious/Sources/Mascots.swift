@@ -127,6 +127,7 @@ struct MascotView: View {
     @State private var popScale: CGFloat
     @State private var popAngle: Double
     @State private var start = Date()
+    @ObservedObject private var power = PowerMode.shared
 
     init(_ id: MascotID, size: CGFloat, motion: MascotMotion = .none) {
         self.id = id
@@ -147,9 +148,13 @@ struct MascotView: View {
             .frame(width: size, height: size)
     }
 
+    /// §AD: the endless idle loops (bob / wave) also stop in Low Power Mode; the
+    /// one-shot pop stays.
+    private var idleOff: Bool { (motion == .bob || motion == .wave) && Motion.calm(envReduceMotion) }
+
     var body: some View {
         Group {
-            if still || motion == .none {
+            if still || motion == .none || idleOff {
                 image
             } else {
                 switch motion {
@@ -248,7 +253,8 @@ struct CastRow: View {
         HStack(spacing: max(1, size * 0.1)) {
             ForEach(Array(Mascots.cast.enumerated()), id: \.element) { i, m in
                 ZStack(alignment: .top) {
-                    Image(m.assetName).resizable().interpolation(.high).scaledToFit()
+                    // FINISH_SPEC §X: the season's skins (Halloween) in the cast loader.
+                    Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
                         .frame(width: size, height: size)
                     if crownOnW && m == .w {
                         // Flawless: W wears the gold crown from the icon set (HEADER_SPEC §2).
@@ -338,7 +344,7 @@ struct MascotMessage: View {
     var size: CGFloat = 96
     var motion: MascotMotion = .bob
     var font: Font = Brand.font(12, .bold)
-    var color: Color = Theme.textMuted
+    var color: Color = FinishInk.secondary
     var scene: ArtScene? = nil
     var sceneHeight: CGFloat = 140
 
@@ -349,9 +355,15 @@ struct MascotMessage: View {
             } else {
                 MascotView(host, size: size, motion: motion)
             }
-            Text(line).font(font).foregroundStyle(color)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            if !line.isEmpty {
+                // FINISH_SPEC §G5: the voice line sits on a small tinted card (§A1 —
+                // lilac wash, border, top bar) instead of bare text on white.
+                Text(line).font(font).foregroundStyle(color)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 14).padding(.top, 11).padding(.bottom, 9)
+                    .tintedPill(Color(hex: 0x8B5CF6), radius: 14)
+            }
         }
     }
 }
@@ -359,7 +371,7 @@ struct MascotMessage: View {
 extension MascotMessage {
     /// ART_SPEC §7: a scene above the line (its character is the fallback host).
     init(scene: ArtScene, line: String, size: CGFloat = 96, motion: MascotMotion = .bob,
-         font: Font = Brand.font(12, .bold), color: Color = Theme.textMuted, sceneHeight: CGFloat = 140) {
+         font: Font = Brand.font(12, .bold), color: Color = FinishInk.secondary, sceneHeight: CGFloat = 140) {
         self.init(host: scene.host, line: line, size: size, motion: motion, font: font, color: color,
                   scene: scene, sceneHeight: sceneHeight)
     }

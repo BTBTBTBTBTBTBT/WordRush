@@ -1,18 +1,25 @@
 'use client';
 
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState, type CSSProperties } from 'react';
 import { wordsearchCells, wordsearchLine, type WordsearchState } from '@wordle-duel/core';
+import { GameTray } from '@/components/ui/game-tray';
+import { glossyChip, tintedChip } from '@/lib/puzzle-look';
+import { SOFT_INK, alphaHex, darken } from '@/lib/soft-surface';
 
-// The Spyglass grid (More Games §17): a 10 × 10 board of letters in the
-// Classic tile ink on the surface, inside the same rounded, ruled frame the
-// other More Games boards use. Found words get an accent capsule laid along
-// their line; the live selection shows as a lighter capsule while you drag.
-// Input is tap-start / tap-end (the accessible default) OR a drag — both end
-// in one SELECT. A hinted word pulses its first letter.
+// The Spyglass grid (More Games §17; FINISH_SPEC J3 + L): a 10 × 10 board of
+// crisp Nunito Black letters right on the shared game tray — no ruled frame,
+// no grid lines. (Small glossy tiles were the alternative; at ~30 px cells on
+// a phone a hundred opaque tiles crowd the board and would hide the found-word
+// capsules that run under the letters along rows, columns and diagonals, so
+// the letters sit on the tinted tray instead.) Found words get a glossy
+// capsule in the accent with a soft glow, the letters turning white; the live
+// selection shows as a lighter capsule while you drag. Input is tap-start /
+// tap-end (the accessible default) OR a drag — both end in one SELECT. A
+// hinted word pulses its first letter.
 
 export const WORDSEARCH_ACCENT = '#4d7c0f';
-const HEAVY = '#4c1d95';
-const RULE = 'rgba(76, 29, 149, 0.16)';
+/** Found letters: white on the glossy capsule, with a soft deep-green shadow. */
+const FOUND_SHADOW = `0 1px 1px ${alphaHex(darken(WORDSEARCH_ACCENT, 0.5), 0.6)}`;
 
 interface SpyglassGridProps {
   state: WordsearchState;
@@ -22,12 +29,20 @@ interface SpyglassGridProps {
   revealMissing?: boolean;
 }
 
+type CapsuleKind = 'found' | 'preview' | 'missing';
+
 /** A capsule from cell a to cell b, in grid units (0..n). */
-function Capsule({ n, a, b, color, opacity, dashed }: { n: number; a: number; b: number; color: string; opacity: number; dashed?: boolean }) {
+function Capsule({ n, a, b, kind }: { n: number; a: number; b: number; kind: CapsuleKind }) {
   const ax = (a % n) + 0.5, ay = Math.floor(a / n) + 0.5, bx = (b % n) + 0.5, by = Math.floor(b / n) + 0.5;
   const len = Math.hypot(bx - ax, by - ay);
   const angle = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
   const thick = 0.78;
+  const look: CSSProperties = kind === 'found'
+    // FINISH_SPEC J3: a glossy capsule in the accent with a soft glow (no lip: it runs at any angle).
+    ? glossyChip(WORDSEARCH_ACCENT, { lip: 0, glow: true })
+    : kind === 'preview'
+      ? { background: alphaHex(WORDSEARCH_ACCENT, 0.2), boxShadow: `inset 0 0 0 2px ${alphaHex(WORDSEARCH_ACCENT, 0.5)}` }
+      : { background: 'transparent', border: '2px dashed #dc2626', opacity: 0.6 };
   return (
     <div
       className="absolute pointer-events-none rounded-full"
@@ -36,8 +51,8 @@ function Capsule({ n, a, b, color, opacity, dashed }: { n: number; a: number; b:
         width: `${((len + thick) / n) * 100}%`, height: `${(thick / n) * 100}%`,
         transform: `translate(${-(thick / 2) / (len + thick) * 100}%, -50%) rotate(${angle}deg)`,
         transformOrigin: `${(thick / 2) / (len + thick) * 100}% 50%`,
-        background: dashed ? 'transparent' : color, opacity,
-        border: dashed ? `2px dashed ${color}` : undefined,
+        ...look,
+        color: undefined, textShadow: undefined,
       }}
     />
   );
@@ -80,60 +95,59 @@ export const SpyglassGrid = memo(function SpyglassGrid({ state, onSelect, disabl
   };
 
   const preview = anchor != null && hover != null && hover !== anchor ? wordsearchLine(n, anchor, hover) : null;
-  const previewCells = new Set(preview ?? []);
   const foundCells = new Set<number>();
   for (const p of state.words) if (state.found.includes(p.w)) wordsearchCells(n, p).forEach((i) => foundCells.add(i));
   const hintCells = new Set<number>();
   for (const p of state.words) if (state.hinted.includes(p.w) && !state.found.includes(p.w)) hintCells.add(wordsearchCells(n, p)[0]);
 
+  const trayState = state.status === 'won' ? 'won' : state.status === 'lost' ? 'lost' : 'playing';
   return (
-    <div className="w-full mx-auto select-none" style={{ maxWidth: 440, aspectRatio: '1 / 1' }}>
-      <div
-        ref={gridRef}
-        className="relative grid w-full h-full overflow-hidden touch-none"
-        style={{
-          gridTemplateColumns: `repeat(${n}, 1fr)`, gridTemplateRows: `repeat(${n}, 1fr)`,
-          border: `2.5px solid ${HEAVY}`, borderRadius: '14px', background: 'var(--color-surface)',
-        }}
-        role="grid" aria-label={`Spyglass grid: ${state.title}`}
-        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-      >
-        {/* Found-word capsules sit UNDER the letters. */}
-        {state.words.filter((p) => state.found.includes(p.w)).map((p) => {
-          const cells = wordsearchCells(n, p);
-          return <Capsule key={p.w} n={n} a={cells[0]} b={cells[cells.length - 1]} color={WORDSEARCH_ACCENT} opacity={0.28} />;
-        })}
-        {revealMissing && state.words.filter((p) => !state.found.includes(p.w)).map((p) => {
-          const cells = wordsearchCells(n, p);
-          return <Capsule key={`m-${p.w}`} n={n} a={cells[0]} b={cells[cells.length - 1]} color="#dc2626" opacity={0.6} dashed />;
-        })}
-        {preview && <Capsule n={n} a={anchor!} b={hover!} color={WORDSEARCH_ACCENT} opacity={0.18} />}
-        {Array.from({ length: n * n }, (_, i) => {
-          const r = Math.floor(i / n), c = i % n;
-          const isAnchor = i === anchor;
-          const inPreview = previewCells.has(i);
-          const found = foundCells.has(i);
-          const hinted = hintCells.has(i);
-          return (
-            <div
-              key={i}
-              className={`relative flex items-center justify-center font-black leading-none ${hinted ? 'animate-pulse' : ''}`}
-              style={{
-                color: found ? '#365314' : 'var(--color-text)',
-                borderRight: c === n - 1 ? 'none' : `1px solid ${RULE}`,
-                borderBottom: r === n - 1 ? 'none' : `1px solid ${RULE}`,
-                fontSize: 'clamp(13px, 4vw, 20px)',
-                background: isAnchor ? `${WORDSEARCH_ACCENT}33` : inPreview ? `${WORDSEARCH_ACCENT}14` : 'transparent',
-                boxShadow: hinted ? `inset 0 0 0 2px ${WORDSEARCH_ACCENT}` : undefined,
-              }}
-              role="gridcell"
-              aria-label={`Row ${r + 1} column ${c + 1}, ${state.grid[i]}${found ? ', found' : ''}`}
-            >
-              {state.grid[i]}
-            </div>
-          );
-        })}
-      </div>
+    <div className="w-full mx-auto select-none" style={{ maxWidth: 440 }}>
+      <GameTray accent={WORDSEARCH_ACCENT} state={trayState}>
+        <div
+          ref={gridRef}
+          className="relative grid w-full touch-none"
+          style={{ aspectRatio: '1 / 1', gridTemplateColumns: `repeat(${n}, 1fr)`, gridTemplateRows: `repeat(${n}, 1fr)` }}
+          role="grid" aria-label={`Spyglass grid: ${state.title}`}
+          onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+        >
+          {/* Found-word capsules sit UNDER the letters. */}
+          {state.words.filter((p) => state.found.includes(p.w)).map((p) => {
+            const cells = wordsearchCells(n, p);
+            return <Capsule key={p.w} n={n} a={cells[0]} b={cells[cells.length - 1]} kind="found" />;
+          })}
+          {revealMissing && state.words.filter((p) => !state.found.includes(p.w)).map((p) => {
+            const cells = wordsearchCells(n, p);
+            return <Capsule key={`m-${p.w}`} n={n} a={cells[0]} b={cells[cells.length - 1]} kind="missing" />;
+          })}
+          {preview && <Capsule n={n} a={anchor!} b={hover!} kind="preview" />}
+          {Array.from({ length: n * n }, (_, i) => {
+            const r = Math.floor(i / n), c = i % n;
+            const isAnchor = i === anchor;
+            const found = foundCells.has(i);
+            const hinted = hintCells.has(i);
+            return (
+              <div
+                key={i}
+                className={`relative flex items-center justify-center font-black leading-none rounded-full ${hinted ? 'motion-safe:animate-pulse' : ''}`}
+                style={{
+                  color: found ? '#ffffff' : SOFT_INK.num,
+                  textShadow: found ? FOUND_SHADOW : undefined,
+                  fontSize: 'clamp(13px, 4vw, 20px)',
+                  background: isAnchor ? alphaHex(WORDSEARCH_ACCENT, 0.28) : undefined,
+                  boxShadow: isAnchor
+                    ? `inset 0 0 0 2px ${alphaHex(WORDSEARCH_ACCENT, 0.6)}`
+                    : hinted ? `inset 0 0 0 2px ${WORDSEARCH_ACCENT}, 0 0 8px ${alphaHex(WORDSEARCH_ACCENT, 0.45)}` : undefined,
+                }}
+                role="gridcell"
+                aria-label={`Row ${r + 1} column ${c + 1}, ${state.grid[i]}${found ? ', found' : ''}`}
+              >
+                {state.grid[i]}
+              </div>
+            );
+          })}
+        </div>
+      </GameTray>
     </div>
   );
 });
@@ -147,11 +161,20 @@ export function SpyglassWordList({ state: s, done }: { state: WordsearchState; d
         const hinted = s.hinted.includes(p.w) && !found;
         // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
         const visible = found || !!s.wordsShown || done;
+        // FINISH_SPEC J3: a found word is a glossy capsule in the accent (white ink); the rest are
+        // tinted glossy chips (A1, no plain white); a hinted word wears an accent ring.
+        const chip = found ? glossyChip(WORDSEARCH_ACCENT, { lip: 3 }) : tintedChip(WORDSEARCH_ACCENT, { lip: 3 });
         return (
-          <span key={p.w} className={`text-sm font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${found ? 'line-through' : ''}`}
-            style={found
-              ? { background: `${WORDSEARCH_ACCENT}22`, borderColor: `${WORDSEARCH_ACCENT}55`, color: '#365314' }
-              : { background: 'var(--color-surface)', borderColor: hinted ? WORDSEARCH_ACCENT : 'var(--color-border)', color: visible ? 'var(--color-text)' : 'var(--color-text-muted)', letterSpacing: visible ? undefined : '0.2em' }}
+          <span key={p.w} className={`text-sm font-bold px-3 pt-1.5 rounded-full whitespace-nowrap ${found ? 'line-through' : ''}`}
+            style={{
+              ...chip,
+              paddingBottom: 'calc(0.375rem + 3px)',
+              ...(found ? null : {
+                color: visible ? 'var(--color-text)' : 'var(--color-text-muted)',
+                letterSpacing: visible ? undefined : '0.2em',
+                boxShadow: hinted ? `${chip.boxShadow}, 0 0 0 2px ${WORDSEARCH_ACCENT}` : chip.boxShadow,
+              }),
+            }}
             aria-label={visible ? p.w : `${p.w.length}-letter word`}>
             {visible ? p.w : '•'.repeat(p.w.length)}
           </span>

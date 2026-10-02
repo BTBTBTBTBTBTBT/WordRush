@@ -6,163 +6,36 @@ import UIKit
 #endif
 
 /// Renders the ShareCardView to a PNG and presents the native share sheet.
-/// Mirrors the web shareResult flow: the rendered image is shared directly
-/// (best for Messages / WhatsApp / Mail), AND a per-result URL is included so
-/// platforms that ignore attached image files — Facebook, X, LinkedIn — scrape
-/// its Open Graph image (which IS this same PNG, uploaded to the shared
-/// `share-images` bucket) and render the finished puzzle in the post.
+/// FINISH_SPEC §S1 (founder 10-02): a completed game shares the IMAGE ONLY — no
+/// URL, no caption — so Messages / WhatsApp show the picture with all of its
+/// information instead of a link-preview card. Nothing is uploaded and no hosted
+/// /s link is built for result shares any more (old links keep working on web).
 enum ShareService {
-    private static let bucket = "share-images"
-
-    /// GameMode → web ShareMode name (used in the /s URL + storage path so the
-    /// landing page maps the mode and the og:image resolves correctly).
-    private static func shareMode(_ mode: GameMode) -> String {
-        switch mode.rawValue {
-        case "DUEL": return "Classic"
-        case "QUORDLE": return "QuadWord"
-        case "OCTORDLE": return "OctoWord"
-        case "SEQUENCE": return "Succession"
-        case "RESCUE": return "Deliverance"
-        case "DUEL_6": return "Six"
-        case "DUEL_7": return "Seven"
-        case "GAUNTLET": return "Gauntlet"
-        case "PROPERNOUNDLE": return "ProperNoundle"
-        default: return mode.rawValue
-        }
-    }
-
     @MainActor
     static func share(
         kind: ShareCardView.Kind, mode: GameMode, modeLabel: String, accent: Color, won: Bool,
         guesses: Int, maxGuesses: Int, timeSeconds: Int,
         category: String? = nil, wordGroups: [Int]? = nil,
         reveal: Bool = false, letters: [[String]]? = nil, solutionDisplay: String? = nil,
-        /// Mistake-scored modes (§18d): the composite score + puzzle number ride
-        /// the hosted URL so the unfurl names score, time and mistakes.
+        /// The result's points (the gold POINTS window); the puzzle number rides
+        /// the card's date line via the kind.
         points: Int? = nil, puzzleNumber: Int? = nil,
-        /// Text-fallback caption (web buildShareCaption parity): rides the sheet
-        /// only when the hosted URL cannot be built, so the post still names the
-        /// result and the play route.
+        /// Kept for the call sites; §S1 shares no text.
         caption: String? = nil
     ) {
         #if canImport(UIKit)
-        let card = ShareCardView(
+        var card = ShareCardView(
             kind: kind, modeLabel: modeLabel, accent: accent, won: won, guesses: guesses,
             maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate(),
             category: category, wordGroups: wordGroups,
             reveal: reveal, letters: letters, solutionDisplay: solutionDisplay,
-            mode: mode
+            mode: mode, points: points
         )
-        let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(card.size)
-        renderer.scale = 1
-        guard let image = renderer.uiImage, let png = image.pngData() else { return }
-
-        // Upload the PNG + build the per-result URL, then present the sheet with
-        // [image, url]. If the upload can't happen (not signed in / failure) we
-        // fall back to image-only — the direct attachment still works for
-        // Messages et al., we just lose the social-site preview.
-        Task {
-            let url = await uploadAndBuildURL(png: png, kind: kind, mode: mode,
-                                              won: won, guesses: guesses, maxGuesses: maxGuesses,
-                                              timeSeconds: timeSeconds, reveal: reveal,
-                                              points: points, puzzleNumber: puzzleNumber)
-            await MainActor.run {
-                var items: [Any] = [image]
-                if let url { items.append(url) } else if let caption { items.append(caption) }
-                present(items: items)
-            }
-        }
+        // §S2: measure the board so the canvas fits the puzzle (no dead space).
+        card.boardNatural = naturalSize(card.boardBody)
+        guard let image = renderCard(card, size: card.size) else { return }
+        presentImages([image], game: modeLabel)
         #endif
-    }
-
-    /// Upload the PNG to `share-images/<uid>/<ShareMode>-<date>.png` and return
-    /// the matching https://wordocious.com/s/<uid>/<ShareMode>-<date> URL with
-    /// the result stats in its query (consumed by app/s/[...key]).
-    private static func uploadAndBuildURL(
-        png: Data, kind: ShareCardView.Kind, mode: GameMode,
-        won: Bool, guesses: Int, maxGuesses: Int, timeSeconds: Int,
-        reveal: Bool = false, points: Int? = nil, puzzleNumber: Int? = nil
-    ) async -> URL? {
-        let client = AuthService.shared.client
-        // RLS keys the folder on auth.uid()::text, which is lowercase.
-        guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
-
-        let sm = shareMode(mode)
-        // "Full results" gets its own object + URL so sharing both variants on
-        // the same day never overwrites the other's OG image. The `m` query
-        // param stays the plain mode — only the storage key carries -full.
-        let keyMode = reveal ? "\(sm)-full" : sm
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
-        f.calendar = Calendar(identifier: .gregorian)
-        f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
-        let dateStr = f.string(from: Date())
-        let key = "\(uid)/\(keyMode)-\(dateStr)"
-        let path = "\(key).png"
-
-        do {
-            try await client.storage.from(bucket).upload(
-                path, data: png,
-                options: FileOptions(contentType: "image/png", upsert: true))
-        } catch {
-            return nil
-        }
-
-        let isVertical = mode == .octordle || mode == .gauntlet
-        var q: [String: String] = [
-            "m": sm, "won": won ? "1" : "0",
-            "g": "\(guesses)", "mg": "\(maxGuesses)", "t": "\(timeSeconds)",
-            "w": "1080", "h": isVertical ? "1350" : "1080",
-            "v": "\(reveal ? "f" : "")\(won ? "w" : "x")\(guesses)-\(timeSeconds)",
-        ]
-        switch kind {
-        case let .multi(_, boardsSolved, totalBoards):
-            q["bs"] = "\(boardsSolved)"; q["tb"] = "\(totalBoards)"
-        case let .gauntlet(_, stagesCompleted, totalStages):
-            q["sc"] = "\(stagesCompleted)"; q["ts"] = "\(totalStages)"
-        case .sudoku, .regions:
-            // Mistake-scored modes: the unfurl names score, time and mistakes (§18d).
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-        case let .ladder(_, _, _, _, par, _, _):
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["par"] = "\(par)"
-        case let .wordsearch(_, words, found, _, _, _):
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["bs"] = "\(found.count)"; q["tb"] = "\(words.count)"
-        case let .hub(_, pct, wordsFound, wordCount, _, _):
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["pct"] = "\(pct)"; q["bs"] = "\(wordsFound)"; q["tb"] = "\(wordCount)"
-        case let .cryptogram(_, checks, _):
-            // Check-scored (§18d): the unfurl names score, time and checks.
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["ck"] = "\(checks)"
-        case let .groups(solvedTiers, mistakes, _, _):
-            // Mistake-scored (§18d): the unfurl names score, time, groups found and mistakes.
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["mk"] = "\(mistakes)"; q["bs"] = "\(solvedTiers.count)"; q["tb"] = "\(GROUPS_TOTAL_BOARDS)"
-        case let .crossword(_, _, _, checks, _):
-            // Check-scored (§18d): the unfurl names score, time and checks.
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["ck"] = "\(checks)"
-        case let .scramble(_, _, _, checks, solvedCount, _):
-            // Check-scored (§18d): the unfurl names score, time, checks and words solved of five.
-            if let points { q["pts"] = "\(points)" }
-            if let puzzleNumber { q["n"] = "\(puzzleNumber)" }
-            q["ck"] = "\(checks)"; q["bs"] = "\(solvedCount)"; q["tb"] = "\(SCRAMBLE_TOTAL_BOARDS)"
-        case .single:
-            break
-        }
-
-        var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
-        comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
-        return comps?.url
     }
 
     #if canImport(UIKit)

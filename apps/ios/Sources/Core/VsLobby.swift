@@ -55,7 +55,7 @@ public struct VsRun: Codable, Equatable {
 }
 
 public struct BotLadderState: Codable, Equatable {
-    /// Rungs cleared, 0–4.
+    /// Rungs cleared, 0–10 (the cast ladder, BotCast.ladderIds).
     public var cleared: Int
     /// Current wins in a row against the next bot (VsLobby.ladderBots[cleared]).
     public var run: Int
@@ -201,8 +201,8 @@ public enum VsLobby {
 
     // MARK: - The bot ladder
 
-    /// Ladder order: Rook (easy) → Lexi (medium) → Nova (hard) → Adapt (matches you).
-    public static let ladderBots = ["rook", "lexi", "nova", "adapt"]
+    /// Ladder order (FINISH_SPEC §D1): the ten cast bots, Rip (easy) → … → Webster (the boss).
+    public static let ladderBots = BotCast.ladderIds
     /// Wins in a row against the next bot that clear its rung.
     public static let ladderClearRun = 3
 
@@ -212,18 +212,20 @@ public enum VsLobby {
     /// leave the ladder alone.
     public static func ladderAfterGame(_ s: BotLadderState, botId: String, won: Bool) -> BotLadderState {
         if s.cleared >= ladderBots.count { return BotLadderState(cleared: ladderBots.count, run: 0) }
-        if s.cleared < 0 || botId != ladderBots[s.cleared] { return s }
+        // Old ids (rook / lexi / nova / adapt) count as their cast rung (core canonicalBotId).
+        if s.cleared < 0 || BotCast.canonicalId(botId) != ladderBots[s.cleared] { return s }
         if !won { return BotLadderState(cleared: s.cleared, run: 0) }
         let run = s.run + 1
         return run >= ladderClearRun ? BotLadderState(cleared: s.cleared + 1, run: 0) : BotLadderState(cleared: s.cleared, run: run)
     }
 
-    /// "rook" → "Rook".
+    /// "rip" → "Rip" (the cast name; any other id is capitalized).
     public static func botName(_ id: String) -> String {
-        id.prefix(1).uppercased() + id.dropFirst()
+        if let m = BotCast.members.first(where: { $0.id == id }) { return m.name }
+        return id.prefix(1).uppercased() + id.dropFirst()
     }
 
-    /// Each rung's state and its line ("Cleared", "Win 3 in a row to clear · 1 so far", "Clear Nova to unlock").
+    /// Each rung's state and its line ("Cleared", "Win 3 in a row to clear · 1 so far", "Clear Rip to unlock").
     public static func ladderRungs(_ s: BotLadderState) -> [LadderRung] {
         ladderBots.enumerated().map { i, id in
             if i < s.cleared { return LadderRung(id: id, state: .cleared, line: "Cleared") }

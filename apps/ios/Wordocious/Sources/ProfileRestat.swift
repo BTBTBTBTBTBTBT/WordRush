@@ -23,44 +23,46 @@ struct SnapshotHero: View {
         let totalGames = profile.totalWins + profile.totalLosses
         let winRate = totalGames > 0 ? Int((Double(profile.totalWins) / Double(totalGames) * 100).rounded()) : 0
         let xpToNext = 1000 - (profile.xp % 1000)
-        KitCard {
-            VStack(spacing: 0) {
-                HStack(spacing: 8) {
-                    StatCell(icon: "trophy.fill", label: "Wins", value: "\(profile.totalWins)", color: Color(hex: 0x7C3AED), countUp: profile.totalWins)
-                    StatCell(icon: "target", label: "Win Rate", value: "\(winRate)%", color: Color(hex: 0x2563EB), countUp: winRate, countSuffix: "%")
-                    StatCell(icon: "bolt.fill", label: StatLabels.winStreak, value: "\(profile.currentStreak)", sub: "Best: \(profile.bestStreak)", color: Theme.primary, countUp: profile.currentStreak)
-                    StatCell(icon: "flame.fill", label: StatLabels.dailyStreak, value: "\(profile.dailyLoginStreak)", sub: "Best: \(profile.bestDailyLoginStreak)", color: Color(hex: 0xF97316), countUp: profile.dailyLoginStreak)
+        // FINISH_SPEC §C3: the four all-time tiles, each a tinted card in its own color
+        // with a 3D icon and a soft number (purple wins, green win rate, gold win
+        // streak, pink daily streak), then the this-week strip and the Pro upsell.
+        VStack(alignment: .leading, spacing: 10) {
+            FinishLabel("All-time").padding(.horizontal, 4)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                StatsTile(label: "Wins", value: "\(profile.totalWins)", sub: "all games",
+                          accent: StatsTileColor.purple.accent, ink: StatsTileColor.purple.ink,
+                          countUp: profile.totalWins) { Icon3D(.trophy, size: 22) }
+                StatsTile(label: "Win Rate", value: "\(winRate)%", sub: "\(totalGames) \(totalGames == 1 ? "game" : "games")",
+                          accent: StatsTileColor.green.accent, ink: StatsTileColor.green.ink,
+                          countUp: winRate, countSuffix: "%") { Icon3D(.badgeCheck, size: 22) }
+                StatsTile(label: StatLabels.winStreak, value: "\(profile.currentStreak)", sub: "best \(profile.bestStreak)",
+                          accent: StatsTileColor.gold.accent, ink: StatsTileColor.gold.ink,
+                          countUp: profile.currentStreak) { Icon3D(.crown, size: 22) }
+                StatsTile(label: StatLabels.dailyStreak, value: "\(profile.dailyLoginStreak)", sub: "best \(profile.bestDailyLoginStreak)",
+                          accent: StatsTileColor.pink.accent, ink: StatsTileColor.pink.ink,
+                          countUp: profile.dailyLoginStreak) { Icon3D(.flame, size: 22) }
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Theme.primary)
+                FinishLabel("This week")
+                Text("\(gamesThisWeek) \(gamesThisWeek == 1 ? "game" : "games")")
+                    .font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading).lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer(minLength: 8)
+                Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 13)).foregroundStyle(Color(hex: 0x2563EB))
+                (Text("\(xpToNext) XP ").font(Brand.font(12, .heavy)).foregroundColor(FinishInk.heading)
+                 + Text("to Lvl \(profile.level + 1)").font(Brand.font(12, .heavy)).foregroundColor(FinishInk.secondary))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 11)
+            .statsCard()
+            if !isPro {
+                // §A8: the Pro upsell is an amber candy button.
+                Button { showPro = true } label: {
+                    CandyLabel(title: "Unlock your full insights with Pro")
                 }
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Theme.primary)
-                    Text("THIS WEEK").font(Brand.font(10, .black)).tracking(0.5).foregroundStyle(Color(hex: 0x6D28D9))
-                    Text("\(gamesThisWeek) \(gamesThisWeek == 1 ? "game" : "games")")
-                        .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Spacer(minLength: 8)
-                    Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 13)).foregroundStyle(Color(hex: 0x2563EB))
-                    (Text("\(xpToNext) XP ").font(Brand.font(11, .heavy)).foregroundColor(Theme.textPrimary)
-                     + Text("to Lvl \(profile.level + 1)").font(Brand.font(11, .heavy)).foregroundColor(Theme.textMuted))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                .padding(.top, 12)
-                .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
-                .padding(.top, 12)
-                if !isPro {
-                    Button { showPro = true } label: {
-                        HStack {
-                            Text("Unlock your full insights with Pro").font(Brand.font(11, .heavy))
-                            Spacer()
-                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold))
-                        }
-                        .foregroundStyle(Theme.primary)
-                        .padding(.top, 10)
-                        .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
-                    }
-                    .buttonStyle(.squish)
-                    .padding(.top, 10)
-                }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .small))
             }
         }
         .sheet(isPresented: $showPro) { ProView() }
@@ -129,7 +131,7 @@ struct OpenerLabCard: View {
             } else if !openers.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Opener Lab", accent: Color(hex: 0x06B6D4))
-                    KitCard {
+                    KitCard(accent: Color(hex: 0x06B6D4)) {
                         VStack(alignment: .leading, spacing: 8) {
                             VStack(spacing: 6) {
                                 ForEach(Array(openers.enumerated()), id: \.element.id) { i, o in
@@ -149,7 +151,7 @@ struct OpenerLabCard: View {
                                             .frame(width: 56, alignment: .trailing)
                                     }
                                     .padding(8)
-                                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+                                    .background(RoundedRectangle(cornerRadius: 10).fill(StatsInk.rowFill(Color(hex: 0x06B6D4))))
                                 }
                             }
                             Text("Win rate of games opened with each word")

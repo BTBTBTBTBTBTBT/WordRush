@@ -2,6 +2,7 @@
 
 import { Swords } from 'lucide-react';
 import { WIN_FG } from '@/lib/tile-theme';
+import { SoftNum } from '@/components/ui/soft-number';
 
 interface HeadToHeadCardProps {
   wins: number;
@@ -28,15 +29,15 @@ export function HeadToHeadCard({ wins, losses, total, winRate, accentColor }: He
     <div>
       <div className="flex items-center justify-between mb-2">
         <div className="text-center flex-1">
-          <div className="text-lg font-black" style={{ color: WIN_FG }}>{wins}</div>
+          <SoftNum size={18} as="div" className="soft-num-auto">{wins}</SoftNum>
           <div className="text-[9px] font-bold uppercase" style={{ color: 'var(--color-text-muted)' }}>Won</div>
         </div>
         <div className="text-center px-4">
-          <div className="text-2xl font-black" style={{ color: accentColor }}>{winRate}%</div>
+          <SoftNum size={24} as="div" className="soft-num-auto">{winRate}%</SoftNum>
           <div className="text-[9px] font-bold uppercase" style={{ color: 'var(--color-text-muted)' }}>Win Rate</div>
         </div>
         <div className="text-center flex-1">
-          <div className="text-lg font-black" style={{ color: '#dc2626' }}>{losses}</div>
+          <SoftNum size={18} as="div" className="soft-num-auto">{losses}</SoftNum>
           <div className="text-[9px] font-bold uppercase" style={{ color: 'var(--color-text-muted)' }}>Lost</div>
         </div>
       </div>

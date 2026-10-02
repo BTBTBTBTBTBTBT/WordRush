@@ -1,8 +1,7 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { FAQ_SECTIONS as SECTIONS } from '@/lib/content/static-content';
-import { InfoPageHeader } from '@/components/ui/info-page-header';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { CandyLink } from '@/components/ui/candy-button';
+import { InfoCard, InfoLabel, InfoPageLayout, IntroCard, IntroText, QuestionCard, infoAccent } from '@/components/ui/info-page';
 
 export const metadata: Metadata = {
   title: 'Wordocious FAQ & Strategy — Tips for Every Word Game Mode',
@@ -12,34 +11,28 @@ export const metadata: Metadata = {
 
 export default function FaqPage() {
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <InfoPageHeader title="FAQ & Strategy" host={PAGE_HOSTS.guides} />
-      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
-          Everything you need to start winning at Wordocious
-        </p>
+    <InfoPageLayout title="FAQ & Strategy" art="art-title-faq">
+      <IntroCard title="Everything you need to start winning at Wordocious">
+        <IntroText>Common questions first, then strategy for every mode.</IntroText>
+      </IntroCard>
 
-        <div className="space-y-4">
-          {SECTIONS.map((section) => (
-            <div key={section.heading} className="p-5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-              <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>{section.heading}</h2>
-              <div className="space-y-3">
-                {section.items.map((item) => (
-                  <div key={item.q}>
-                    <h3 className="text-xs font-black mb-0.5" style={{ color: '#7c3aed' }}>{item.q}</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{item.a}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+      {/* C6: each FAQ section is a tinted label, its questions are question cards in the section's color. */}
+      {SECTIONS.map((section, si) => {
+        const accent = infoAccent(si);
+        return (
+          <section key={section.heading} className="flex flex-col gap-2.5">
+            <InfoLabel accent={accent}>{section.heading}</InfoLabel>
+            {section.items.map((item) => (
+              <QuestionCard key={item.q} q={item.q} a={item.a} accent={accent} />
+            ))}
+          </section>
+        );
+      })}
 
-          <div className="p-5 text-center" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-text)' }}>Ready to play?</p>
-            <Link href="/" className="text-sm font-extrabold" style={{ color: '#7c3aed' }}>Start today&apos;s puzzles →</Link>
-          </div>
-        </div>
-      </div>
-    </div>
+      <InfoCard className="p-5 text-center flex flex-col items-center gap-3">
+        <p className="m-0 text-sm font-black" style={{ color: 'var(--color-text)' }}>Ready to play?</p>
+        <CandyLink href="/" color="purple" size="md" icon="play">Start today&apos;s puzzles</CandyLink>
+      </InfoCard>
+    </InfoPageLayout>
   );
 }

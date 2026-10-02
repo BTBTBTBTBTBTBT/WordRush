@@ -25,7 +25,7 @@ export function SignatureCard({ userId }: { userId: string }) {
   const { data: s } = useSWR<SignatureStats>(['signature-stats', userId], () => fetchSignatureStats(userId), { revalidateOnFocus: false });
   if (!s) return null;
   return (
-    <KitCard>
+    <KitCard tint="#f97316">
       <div className="grid grid-cols-4 gap-y-3 gap-x-2">
         <StatCell icon={CalendarDays} label="Best day" value={s.bestDay ? s.bestDay.wins : '—'} sub={s.bestDay ? `${fmtDay(s.bestDay.day)} · wins` : undefined} color="#7c3aed" />
         <StatCell icon={CalendarRange} label="Best week" value={s.bestWeek ? s.bestWeek.wins : '—'} sub={s.bestWeek ? `${fmtWeek(s.bestWeek.weekStart)} · wins` : undefined} color="#2563eb" />

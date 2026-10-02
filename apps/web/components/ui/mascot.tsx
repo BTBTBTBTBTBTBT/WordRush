@@ -22,6 +22,8 @@ interface MascotProps {
   style?: React.CSSProperties;
   /** The 3D crown on top (Flawless). */
   crown?: boolean;
+  /** Another image of this character in place of the hero (FINISH_SPEC X: a seasonal skin). */
+  src?: string;
 }
 
 /**
@@ -40,7 +42,7 @@ export function MascotCrown({ size }: { size: number }) {
   );
 }
 
-export function Mascot({ id, size, motion = 'none', priority = false, className = '', style, crown = false }: MascotProps) {
+export function Mascot({ id, size, motion = 'none', priority = false, className = '', style, crown = false, src }: MascotProps) {
   return (
     <span
       aria-hidden="true"
@@ -48,7 +50,7 @@ export function Mascot({ id, size, motion = 'none', priority = false, className 
       style={{ width: size, height: size, lineHeight: 0, ...style }}
     >
       <Image
-        src={mascotSrc(id)}
+        src={src ?? mascotSrc(id)}
         alt=""
         width={size}
         height={size}
@@ -79,12 +81,14 @@ interface CastRowProps {
   gap?: number;
   /** W wears the gold crown (Flawless). */
   crownW?: boolean;
+  /** Per-character image overrides (FINISH_SPEC X: the seasonal skins; lib/season.ts castArt). */
+  srcs?: Partial<Record<MascotId, string>>;
   className?: string;
 }
 
 /** The ten in order, spelling WORDOCIOUS. */
 export function CastRow({
-  size, motion = 'none', hop = 8, stagger = 70, duration = 1100, iterations = 'infinite', gap = 2, crownW = false, className = '',
+  size, motion = 'none', hop = 8, stagger = 70, duration = 1100, iterations = 'infinite', gap = 2, crownW = false, srcs, className = '',
 }: CastRowProps) {
   return (
     <span aria-hidden="true" className={`inline-flex items-end pointer-events-none ${className}`} style={{ gap }}>
@@ -95,6 +99,7 @@ export function CastRow({
           size={size}
           motion={motion}
           crown={crownW && id === 'w'}
+          src={srcs?.[id]}
           style={motion === 'wave' ? ({
             '--mascot-hop': `${hop}px`,
             '--mascot-delay': `${i * stagger}ms`,

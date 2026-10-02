@@ -32,6 +32,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.data.ProfileService
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
@@ -70,7 +75,8 @@ fun RecentMatchesList(
     }
     if (matches.isEmpty()) {
         if (emptyScene != null) {
-            SceneEmptyState(emptyScene, emptyText, Modifier.padding(vertical = 12.dp), color = WTheme.textMuted)
+            // A1 / A7: a tinted card with a cast pose (not D, the Stats host).
+            StatsEmptyState(StatsPoses.noGames, emptyText, swatch = StatsInk.BLUE)
             return
         }
         Text(
@@ -82,87 +88,106 @@ fun RecentMatchesList(
         return
     }
     val shown = if (showAll && onSeeAll == null) matches else matches.take(limit)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        shown.forEach { m ->
-            key(m.id) { RecentMatchRow(m, userId, opponentName = opponentOf(m, userId, opponentNames)) }
+    // A1 + C2: the rows sit in ONE tinted card (the page's blue, its top bar) as soft stripes.
+    MatchesCard {
+        shown.forEachIndexed { i, m ->
+            key(m.id) { RecentMatchRow(m, userId, opponentName = opponentOf(m, userId, opponentNames), index = i) }
         }
     }
     if (matches.size > limit) {
-        if (onSeeAll != null) {
-            Text(
-                "See all ${matches.size} in All-time →",
-                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().clickableNoRipple(onSeeAll).padding(top = 4.dp),
-            )
-        } else {
-            Text(
-                if (showAll) "Show less" else "View all ${matches.size} ›",
-                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().clickableNoRipple { showAll = !showAll }.padding(top = 4.dp),
-            )
+        Box(Modifier.fillMaxWidth().padding(top = 2.dp), contentAlignment = Alignment.Center) {
+            if (onSeeAll != null) {
+                CandyButton(
+                    "See all ${matches.size} in All-time", onSeeAll,
+                    color = CandyColor.PEACH, size = CandySize.SMALL, icon = CandyIcon.ARROW,
+                )
+            } else {
+                CandyButton(
+                    if (showAll) "Show less" else "View all ${matches.size}", { showAll = !showAll },
+                    color = CandyColor.PEACH, size = CandySize.SMALL,
+                )
+            }
         }
     }
 }
 
+/** The one tinted card the match rows stripe inside (no padding: the stripes run edge to edge). */
+@Composable
+private fun MatchesCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    StatsCard(
+        StatsInk.BLUE, bar = androidx.compose.ui.graphics.SolidColor(StatsInk.accent), barHeight = 8.dp, corner = 18.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        verticalArrangement = Arrangement.Top, content = content,
+    )
+}
+
 // ── Recent match row (web parity: icon box + Solo/VS pill + guesses·time + Win/Loss + date) ──
 @Composable
-internal fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, opponentName: String? = null) {
+internal fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, opponentName: String? = null, index: Int = 0) {
     val isPlayer1 = m.player1Id == userId
     val isVs = m.player2Id != null
     val won = m.winnerId == userId
     val score = ((if (isPlayer1) m.player1Score else m.player2Score) ?: 0.0).toInt()
     val timeSec = ((if (isPlayer1) m.player1Time else m.player2Time) ?: 0.0).toInt()
     val mode = remember(m.gameMode) { runCatching { GameMode.valueOf(m.gameMode) }.getOrNull() }
-    val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
+    val card = remember(m.gameMode) { modeCardForKey(m.gameMode) }
+    val accent = card?.accent ?: mode?.let { modeAccent(it) } ?: WTheme.primary
     val date = remember(m.createdAt) { fmtMatchDate(m.createdAt) }
+    val dark = WTheme.isDark
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxWidth().stripedRow(index, StatsInk.accent).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
-            mode?.let { ModeGlyph(it, accent, box = 36.dp) }
-        }
+        MatchIcon(card, mode, accent)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(modeLabel(m.gameMode), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
                 Text(
-                    if (isVs) "VS" else "Solo", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                    color = if (isVs) Color(0xFF7C3AED) else Color(0xFF2563EB),
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                        .background(if (isVs) Color(0xFFEDE9F6) else Color(0xFFEFF6FF)).padding(horizontal = 6.dp, vertical = 2.dp),
+                    modeLabel(m.gameMode), fontSize = 13.sp, fontWeight = FontWeight.Black,
+                    color = if (dark) WTheme.text else FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                val chip = if (isVs) Color(0xFF7C3AED) else Color(0xFF2563EB)
+                Text(
+                    if (isVs) "VS" else "Solo", fontSize = 9.sp, fontWeight = FontWeight.Black,
+                    color = if (dark) chip else darkenInk(chip),
+                    modifier = Modifier.clip(RoundedCornerShape(5.dp))
+                        .background(if (dark) chip.copy(alpha = 0.18f) else Wash.mix(chip, 0.16f)).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
                 // Web parity: amber "FORFEIT" chip when this row was a forfeit win.
                 if (m.forfeit == true) {
                     Text(
-                        "FORFEIT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFB45309),
-                        modifier = Modifier.clip(RoundedCornerShape(4.dp))
+                        "FORFEIT", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309),
+                        modifier = Modifier.clip(RoundedCornerShape(5.dp))
                             .background(Color(0xFFFEF3C7)).padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
-                }
-                // Web parity: "· vs <username>" inline on VS rows.
-                if (isVs && opponentName != null) {
-                    Text(
-                        "· vs $opponentName", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        color = WTheme.textMuted, maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
             // Through the mode's guess semantics (More Games §11): Sudoku reads "0 mistakes".
             val meta = com.wordocious.app.ModeGen.byDbKey(m.gameMode)
             Text(
-                "${formatGuessStat(meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, score)} · ${if (timeSec > 0) fmtMatchTime(timeSec) else "—"}",
-                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                "${formatGuessStat(meta?.guessSemantics ?: "guesses", meta?.guessBase ?: 1, score)} · ${if (timeSec > 0) fmtMatchTime(timeSec) else "—"}" +
+                    // Web parity: "· vs <username>" on VS rows.
+                    if (isVs && opponentName != null) " · vs $opponentName" else "",
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (dark) WTheme.textMuted else FinishInk.muted,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // ART_SPEC §4 / §13: the 3D W / L badge (~18) in place of the Win / Loss word.
-            ResultBadge(won, ROW_RESULT_BADGE_SIZE, contentDescription = if (won) "Win" else "Loss")
-            Text(date, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        }
+        // C2a: the W / L badge in its own column, left of the right-aligned date.
+        ResultBadgeColumn(won)
+        Text(
+            date, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (dark) WTheme.textMuted else FinishInk.muted,
+            textAlign = TextAlign.End, maxLines = 2, modifier = Modifier.width(64.dp),
+        )
+    }
+}
+
+/** A row's game icon as a mini game card (A1): the game art, else its glyph. */
+@Composable
+private fun MatchIcon(card: ModeCard?, mode: GameMode?, accent: Color) {
+    Box(Modifier.size(36.dp).miniGameCard(accent, 10.dp), Alignment.Center) {
+        val art = gameArtRes(card?.id)
+        if (art != null) Image(painterResource(art), null, Modifier.size(26.dp).padding(top = 2.dp))
+        else mode?.let { ModeGlyph(it, accent, box = 32.dp) }
     }
 }
 
@@ -235,7 +260,8 @@ fun TodayGamesList(
     }
     if (rows.isEmpty()) {
         if (emptyScene != null) {
-            SceneEmptyState(emptyScene, emptyText, Modifier.padding(vertical = 12.dp), color = WTheme.textMuted)
+            // A1 / A7: a tinted card with a cast pose (not D, the Stats host).
+            StatsEmptyState(StatsPoses.noGames, emptyText, swatch = StatsInk.BLUE)
             return
         }
         Text(
@@ -244,16 +270,16 @@ fun TodayGamesList(
         )
         return
     }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        rows.forEach { r ->
+    MatchesCard {
+        rows.forEachIndexed { i, r ->
             key(r.key) {
                 when (r) {
-                    is TodaySingle -> RecentMatchRow(r.m, userId, opponentName = opponentOf(r.m, userId, opponentNames))
+                    is TodaySingle -> RecentMatchRow(r.m, userId, opponentName = opponentOf(r.m, userId, opponentNames), index = i)
                     is TodayUnlimited -> {
                         val expanded = r.mode in open
-                        UnlimitedGroupRow(r, expanded) { open = if (expanded) open - r.mode else open + r.mode }
-                        if (expanded) Column(Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            r.games.forEach { m -> key(m.id) { RecentMatchRow(m, userId) } }
+                        UnlimitedGroupRow(r, expanded, i) { open = if (expanded) open - r.mode else open + r.mode }
+                        if (expanded) Column(Modifier.padding(start = 16.dp)) {
+                            r.games.forEachIndexed { j, m -> key(m.id) { RecentMatchRow(m, userId, index = i + 1 + j) } }
                         }
                     }
                 }
@@ -263,25 +289,26 @@ fun TodayGamesList(
 }
 
 @Composable
-private fun UnlimitedGroupRow(g: TodayUnlimited, expanded: Boolean, onToggle: () -> Unit) {
+private fun UnlimitedGroupRow(g: TodayUnlimited, expanded: Boolean, index: Int, onToggle: () -> Unit) {
     val mode = remember(g.mode) { runCatching { GameMode.valueOf(g.mode) }.getOrNull() }
-    val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
+    val card = remember(g.mode) { modeCardForKey(g.mode) }
+    val accent = card?.accent ?: mode?.let { modeAccent(it) } ?: WTheme.primary
     val line = "${g.games.size} played · ${g.wins} win${if (g.wins == 1) "" else "s"}" + (g.bestSeconds?.let { " · best ${it / 60}:${"%02d".format(it % 60)}" } ?: "")
+    val dark = WTheme.isDark
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).clickableNoRipple(onToggle).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxWidth()
+            .squishClickable("${modeLabel(g.mode)} Unlimited, $line. ${if (expanded) "Hide games" else "Show games"}", onClick = onToggle)
+            .stripedRow(index, StatsInk.accent).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
-            mode?.let { ModeGlyph(it, accent, box = 36.dp) }
-        }
+        MatchIcon(card, mode, accent)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("${modeLabel(g.mode)} Unlimited", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(line, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("${modeLabel(g.mode)} Unlimited", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (dark) WTheme.text else FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (dark) WTheme.textMuted else FinishInk.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Icon(
-            Icons.Filled.KeyboardArrowDown, if (expanded) "Hide games" else "Show games", tint = WTheme.textMuted,
-            modifier = Modifier.size(18.dp).rotate(if (expanded) 180f else 0f),
+            Icons.Filled.KeyboardArrowDown, null, tint = if (dark) WTheme.textMuted else darkenInk(StatsInk.accent),
+            modifier = Modifier.size(20.dp).rotate(if (expanded) 180f else 0f),
         )
     }
 }

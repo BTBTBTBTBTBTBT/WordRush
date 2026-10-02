@@ -1,7 +1,13 @@
 package com.wordocious.app.ui.game
 
-import com.wordocious.app.ui.cardShadow
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -44,7 +49,9 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.DefinitionService
 import com.wordocious.app.data.GamePersistence
 import com.wordocious.app.todayLocalSeed
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.em
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameAction
 import com.wordocious.core.GameMode
@@ -229,72 +236,114 @@ fun CompletedDailyBoard(modeId: String) {
 
     var expanded by remember { mutableStateOf(false) }
 
-    Column(
-        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface),
-    ) {
-        // Top accent bar (green won / gray attempted)
-        Box(
-            Modifier.fillMaxWidth().height(4.dp).background(
-                Brush.horizontalGradient(
-                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
-                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
-                ),
-            ),
-        )
-        // Header
-        Row(
-            Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
-                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
-                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(summary, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Spacer(Modifier.width(6.dp))
-            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp).rotate(if (expanded) 180f else 0f))
-        }
-        // Collapsible content
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                if (isMulti) {
-                    CompletedBoardsRecapGrid(boards)
-                    Spacer(Modifier.height(12.dp))
-                    StatsRow(listOf("$boardsSolved/$totalBoards" to "Boards", "$guesses" to "Guesses", fmt(timeSeconds) to "Time"))
-                } else {
+    CompletedCard(won = won, summary = summary, expanded = expanded, onToggle = { expanded = !expanded }) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (isMulti) {
+                CompletedBoardsRecapGrid(boards)
+                Spacer(Modifier.height(12.dp))
+                StatsRow(listOf("$boardsSolved/$totalBoards" to "Boards", "$guesses" to "Guesses", fmt(timeSeconds) to "Time"))
+            } else {
+                // FINISH_SPEC L: the finished board sits in the shared game tray (purple won / slate lost).
+                GameTray(
+                    COMPLETED_PURPLE, state = if (won) TrayState.WON else TrayState.LOST,
+                    padding = PaddingValues(10.dp),
+                ) {
                     Box(Modifier.width(180.dp).aspectRatio(boards[0].solution.length.toFloat() / boards[0].maxGuesses)) {
                         MiniBoardView(board = boards[0], animateLastRow = false)
                     }
-                    Spacer(Modifier.height(12.dp))
-                    val solution = boards[0].solution.uppercase()
-                    Text(solution, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.text)
-                    // Definition (Classic-style single-board modes only).
-                    if (mode != GameMode.PROPERNOUNDLE) DefinitionBlock(solution)
-                    Spacer(Modifier.height(12.dp))
-                    StatsRow(listOf("$guesses/$maxGuesses" to "Guesses", fmt(timeSeconds) to "Time"))
                 }
                 Spacer(Modifier.height(12.dp))
-                // Single-board near-miss credit from the reconstructed board (best
-                // green count, hint rows excluded). nil for multi-board (ignored).
-                val bestCorrect = if (totalBoards == 1) boards[0].guesses.fold(0) { best, gw ->
-                    if (boards[0].hintEvaluations?.containsKey(gw) == true) best
-                    else maxOf(best, com.wordocious.core.evaluateGuess(boards[0].solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
-                } else null
-                ScoreBreakdownCard(
-                    mode = mode, won = won, guessCount = guesses, elapsedSeconds = timeSeconds,
-                    boardsSolved = boardsSolved, totalBoards = totalBoards, hintsUsed = hints,
-                    bestCorrectLetters = bestCorrect,
-                    day = com.wordocious.app.todayLocalDate(),
-                )
+                val solution = boards[0].solution.uppercase()
+                Text(solution, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = completedInk())
+                // Definition (Classic-style single-board modes only).
+                if (mode != GameMode.PROPERNOUNDLE) DefinitionBlock(solution)
+                Spacer(Modifier.height(12.dp))
+                StatsRow(listOf("$guesses/$maxGuesses" to "Guesses", fmt(timeSeconds) to "Time"))
             }
+            Spacer(Modifier.height(12.dp))
+            // Single-board near-miss credit from the reconstructed board (best
+            // green count, hint rows excluded). nil for multi-board (ignored).
+            val bestCorrect = if (totalBoards == 1) boards[0].guesses.fold(0) { best, gw ->
+                if (boards[0].hintEvaluations?.containsKey(gw) == true) best
+                else maxOf(best, com.wordocious.core.evaluateGuess(boards[0].solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
+            } else null
+            ScoreBreakdownCard(
+                mode = mode, won = won, guessCount = guesses, elapsedSeconds = timeSeconds,
+                boardsSolved = boardsSolved, totalBoards = totalBoards, hintsUsed = hints,
+                bestCorrectLetters = bestCorrect,
+                day = com.wordocious.app.todayLocalDate(),
+            )
+        }
+    }
+}
+
+/** The completed card's won ink (purple) and the lost slate (FINISH_SPEC L tray tints). */
+private val COMPLETED_PURPLE = Color(0xFF7C3AED)
+private val COMPLETED_SLATE = Color(0xFF6B7891)
+
+@Composable
+private fun completedInk(): Color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading
+
+/**
+ * The "your board" card (FINISH_SPEC A1 / C2, Leaderboard + Records): a tinted card —
+ * purple when won, slate when missed — with its top bar; the header row (the W / L
+ * badge, COMPLETED / ATTEMPTED TODAY, the summary, the chevron) toggles the replay
+ * under it. The whole header squishes (A9); Reduce Motion opens it instantly.
+ */
+@Composable
+private fun CompletedCard(
+    won: Boolean,
+    summary: String,
+    expanded: Boolean,
+    onToggle: (() -> Unit)?,
+    content: @Composable () -> Unit = {},
+) {
+    val accent = if (won) COMPLETED_PURPLE else COMPLETED_SLATE
+    com.wordocious.app.ui.TintedCard(
+        accent,
+        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        bar = Brush.horizontalGradient(listOf(accent, com.wordocious.app.ui.Wash.mix(accent, 0.55f))),
+        barHeight = 6.dp,
+        contentPadding = PaddingValues(0.dp),
+        verticalArrangement = Arrangement.Top,
+    ) {
+        val label = if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY"
+        Row(
+            Modifier.fillMaxWidth()
+                .then(
+                    if (onToggle != null) Modifier.squishClickable(
+                        label = "${if (won) "Completed" else "Attempted"} today, $summary, " + if (expanded) "expanded" else "collapsed",
+                        onClick = onToggle,
+                    ) else Modifier.semantics(mergeDescendants = true) { },
+                )
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            com.wordocious.app.ui.ResultBadge(won, size = 20.dp)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                label, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.1.em,
+                color = if (WTheme.isDark) WTheme.textSecondary else com.wordocious.app.ui.darkenInk(accent),
+                maxLines = 1,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                summary, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                color = if (WTheme.isDark) WTheme.textMuted else com.wordocious.app.ui.FinishInk.muted, maxLines = 1,
+            )
+            Spacer(Modifier.width(6.dp))
+            Icon(
+                Icons.Filled.KeyboardArrowDown, null,
+                tint = if (WTheme.isDark) WTheme.textMuted else com.wordocious.app.ui.darkenInk(accent),
+                modifier = Modifier.size(18.dp).rotate(if (expanded) 180f else 0f),
+            )
+        }
+        if (onToggle != null) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = if (WTheme.reducedMotion) EnterTransition.None else expandVertically() + fadeIn(),
+                exit = if (WTheme.reducedMotion) ExitTransition.None else shrinkVertically() + fadeOut(),
+            ) { content() }
         }
     }
 }
@@ -324,15 +373,22 @@ internal fun CompletedBoardsRecapGrid(
         maxItemsInEachRow = cols,
     ) {
         boards.forEach { b ->
-            Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.padding(3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 // Aspect ratio (cols/rows) gives the weight-based MiniBoardView a
                 // concrete height so its rows don't collapse to ~0. Rows INCLUDE
                 // Deliverance's prefills — MiniBoardView renders them, so sizing
                 // by maxGuesses alone squashed its 9-row boards (§233).
                 val rows = (b.prefilledGuesses?.size ?: 0) + b.maxGuesses
-                Box(Modifier.width(if (boards.size > 4) 64.dp else 96.dp)
-                    .aspectRatio(b.solution.length.toFloat() / rows)) {
-                    MiniBoardView(board = b, animateLastRow = false)
+                // FINISH_SPEC L: every mini board its own game tray (purple solved / slate missed);
+                // the boards a touch narrower so the trays keep the 4-across / 2-across grid.
+                GameTray(
+                    COMPLETED_PURPLE, state = if (b.status == GameStatus.WON) TrayState.WON else TrayState.LOST,
+                    corner = 12.dp, padding = PaddingValues(4.dp),
+                ) {
+                    Box(Modifier.width(if (boards.size > 4) 56.dp else 92.dp)
+                        .aspectRatio(b.solution.length.toFloat() / rows)) {
+                        MiniBoardView(board = b, animateLastRow = false)
+                    }
                 }
                 // §233: a missed board's word never appears in its tiles — spell
                 // it out in loss red under the red-bordered board (the treatment
@@ -358,14 +414,18 @@ private fun DefinitionBlock(solution: String) {
     LaunchedEffect(solution) { def = DefinitionService.fetch(solution); loaded = true }
     if (!loaded) return
     Spacer(Modifier.height(8.dp))
+    // A1 / B6: the definition on a soft green card (never plain white).
+    val green = Color(0xFF16A34A)
     Column(
-        Modifier.widthIn(max = 320.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
-            .border(1.dp, WTheme.border, RoundedCornerShape(10.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
+        Modifier.widthIn(max = 320.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(com.wordocious.app.ui.accentWash(green, 0.12f))
+            .border(1.5.dp, com.wordocious.app.ui.accentLine(green, 0.30f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         val d = def
         if (d != null && d.definition.isNotBlank()) {
             if (d.partOfSpeech.isNotBlank()) {
-                Text(d.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+                Text(d.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) Color(0xFF4ADE80) else Color(0xFF15803D))
             }
             Text(d.definition, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, modifier = Modifier.padding(top = 2.dp))
         } else {
@@ -379,7 +439,7 @@ private fun StatsRow(stats: List<Pair<String, String>>) {
     Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
         stats.forEach { (value, label) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(value, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                com.wordocious.app.ui.SoftNumber(value, 18.sp)
                 Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = WTheme.textMuted, textAlign = TextAlign.Center)
             }
         }
@@ -398,38 +458,7 @@ private fun CompletedHeaderFallback(modeId: String, tick: Int) {
  *  a cross-device board reconstructs, so nothing below it moves. */
 @Composable
 internal fun CompletedHeaderOnlyCard(won: Boolean, summary: String) {
-    Column(
-        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface),
-    ) {
-        Box(
-            Modifier.fillMaxWidth().height(4.dp).background(
-                Brush.horizontalGradient(
-                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
-                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
-                ),
-            ),
-        )
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
-                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
-                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(summary, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Spacer(Modifier.width(6.dp))
-            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp))
-        }
-    }
+    CompletedCard(won = won, summary = summary, expanded = false, onToggle = null)
 }
 
 private fun formatHints(mode: GameMode, hints: Int): String? {
@@ -469,49 +498,20 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
 
     var expanded by remember { mutableStateOf(false) }
 
-    Column(
-        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface),
+    CompletedCard(
+        won = won, summary = "$cleared/${g.totalStages} · ${totalGuesses}g · ${fmtShort(totalSecs)}",
+        expanded = expanded, onToggle = { expanded = !expanded },
     ) {
-        Box(
-            Modifier.fillMaxWidth().height(4.dp).background(
-                Brush.horizontalGradient(
-                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
-                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
-                ),
-            ),
-        )
-        Row(
-            Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
-                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
-                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Summary stats + per-stage rows (shared with the VS result screen).
+            GauntletStageBreakdown(g = g, totalMs = totalMs)
+            // Score breakdown (cumulative run values — same as post-game).
+            ScoreBreakdownCard(
+                mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
+                boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
+                stagesCompleted = cleared,
+                day = com.wordocious.app.todayLocalDate(),
             )
-            Spacer(Modifier.weight(1f))
-            Text("$cleared/${g.totalStages} · ${totalGuesses}g · ${fmtShort(totalSecs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Spacer(Modifier.width(6.dp))
-            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp).rotate(if (expanded) 180f else 0f))
-        }
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Summary stats + per-stage rows (shared with the VS result screen).
-                GauntletStageBreakdown(g = g, totalMs = totalMs)
-                // Score breakdown (cumulative run values — same as post-game).
-                ScoreBreakdownCard(
-                    mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
-                    boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
-                    stagesCompleted = cleared,
-                    day = com.wordocious.app.todayLocalDate(),
-                )
-            }
         }
     }
 }
@@ -557,7 +557,7 @@ internal fun GauntletStageBreakdown(
                 Text(
                     "TAP A STAGE TO SEE RESULTS",
                     fontSize = 9.sp, fontWeight = FontWeight.Black,
-                    color = Color(0xFF7C3AED), letterSpacing = 0.6.sp,
+                    color = com.wordocious.app.ui.purpleTextInk, letterSpacing = 0.6.sp,
                 )
             }
         }
@@ -573,15 +573,13 @@ internal fun GauntletStageBreakdown(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
                             .background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEF2F2))
                             .border(1.dp, if (sWon) Color(0xFFDDD6FE) else Color(0xFFFECACA), RoundedCornerShape(10.dp))
-                            .then(if (hasBoards) Modifier.clickableNoRipple { expandedStage = if (isExpanded) null else stage.stageIndex } else Modifier)
+                            .then(if (hasBoards) Modifier.squishClickable(label = "${stage.name}, ${if (sWon) "won" else "lost"}, " + if (isExpanded) "expanded" else "collapsed") { expandedStage = if (isExpanded) null else stage.stageIndex } else Modifier)
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(Modifier.size(14.dp).clip(CircleShape).background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                            Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
-                        }
+                        com.wordocious.app.ui.ResultBadge(sWon, size = 16.dp)
                         Spacer(Modifier.width(6.dp))
-                        Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A2E), modifier = Modifier.weight(1f))
+                        Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (WTheme.isDark) WTheme.text else Color(0xFF1A1A2E), modifier = Modifier.weight(1f))
                         Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         if (hasBoards) {
                             Spacer(Modifier.width(6.dp))
@@ -621,54 +619,25 @@ private fun ProperNoundleCompletedDailyCard(
     val summary = "$guessCount/6 · ${fmt(timeSeconds)}"
     var expanded by remember { mutableStateOf(false) }
 
-    Column(
-        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface),
-    ) {
-        Box(
-            Modifier.fillMaxWidth().height(4.dp).background(
-                Brush.horizontalGradient(
-                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
-                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
-                ),
-            ),
-        )
-        Row(
-            Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
-                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
-                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(summary, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Spacer(Modifier.width(6.dp))
-            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp).rotate(if (expanded) 180f else 0f))
-        }
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    CompletedCard(won = won, summary = summary, expanded = expanded, onToggle = { expanded = !expanded }) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            // FINISH_SPEC L: the finished board in the shared game tray.
+            GameTray(COMPLETED_PURPLE, state = if (won) TrayState.WON else TrayState.LOST, padding = PaddingValues(10.dp)) {
                 ProperNoundleMiniBoard(guesses = guesses, puzzle = puzzle)
-                Spacer(Modifier.height(12.dp))
-                Text(puzzle.display.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.text)
-                Spacer(Modifier.height(12.dp))
-                StatsRow(listOf("$guessCount/6" to "Guesses", fmt(timeSeconds) to "Time"))
-                Spacer(Modifier.height(12.dp))
-                ScoreBreakdownCard(
-                    mode = GameMode.PROPERNOUNDLE, won = won, guessCount = guessCount, elapsedSeconds = timeSeconds,
-                    boardsSolved = if (won) 1 else 0, totalBoards = 1, hintsUsed = 0,
-                    bestCorrectLetters = guesses.fold(0) { best, gw ->
-                        maxOf(best, com.wordocious.core.ProperNoundle.evaluate(gw, puzzle.answer).count { it == com.wordocious.core.TileState.CORRECT })
-                    },
-                    day = com.wordocious.app.todayLocalDate(),
-                )
             }
+            Spacer(Modifier.height(12.dp))
+            Text(puzzle.display.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = completedInk())
+            Spacer(Modifier.height(12.dp))
+            StatsRow(listOf("$guessCount/6" to "Guesses", fmt(timeSeconds) to "Time"))
+            Spacer(Modifier.height(12.dp))
+            ScoreBreakdownCard(
+                mode = GameMode.PROPERNOUNDLE, won = won, guessCount = guessCount, elapsedSeconds = timeSeconds,
+                boardsSolved = if (won) 1 else 0, totalBoards = 1, hintsUsed = 0,
+                bestCorrectLetters = guesses.fold(0) { best, gw ->
+                    maxOf(best, com.wordocious.core.ProperNoundle.evaluate(gw, puzzle.answer).count { it == com.wordocious.core.TileState.CORRECT })
+                },
+                day = com.wordocious.app.todayLocalDate(),
+            )
         }
     }
 }

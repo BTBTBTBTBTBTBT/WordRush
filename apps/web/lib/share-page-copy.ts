@@ -6,6 +6,7 @@
 // Spoiler rule: titles and descriptions must never contain puzzle letters —
 // only mode names, guess counts, times, and scores (all colors-only safe).
 
+import { shareCaption } from '@wordle-duel/core';
 import { MODES } from './modes.generated';
 
 export const MODE_DISPLAY: Record<string, string> = {
@@ -511,4 +512,28 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     ? `I solved ${modeDisp} on Wordocious (${stats}). Can you beat it? ${PLAY_HOOK}`
     : `I played ${modeDisp} on Wordocious. Think you can solve it? ${PLAY_HOOK}`;
   return { mode, modeDisp, won, stats, title, description };
+}
+
+/**
+ * FINISH_SPEC S4: the fun headline for an old hosted share page (its <title>
+ * and og:title) — the shared caption bank (core shareCaption, the same pick
+ * on every platform). Game results and the Sweep get the fun line; other
+ * cards (leaderboards, profile) keep their descriptive title.
+ */
+export function funShareTitle(sp: SP, key: string[] = []): string {
+  const c = buildCopy(sp, key);
+  const date = parseShareKey(key).date ?? 'unknown';
+  const mode = str(sp.m) ?? c.mode;
+  if (mode === 'DailySweep' || mode === 'MoreSweep') {
+    return shareCaption(str(sp.sweep) === 'flawless' ? 'flawless' : 'sweep', { date, game: mode === 'MoreSweep' ? 'Puzzles' : 'Wordocious' });
+  }
+  const game = MODE_DISPLAY[mode] ?? LEGACY_SHARE_MODES[mode] ?? mode;
+  if (str(sp.won) === undefined || !MODES.some((m) => m.shareLabel === game)) return c.title;
+  const won = str(sp.won) === '1';
+  const g = Number(str(sp.g)) || 0;
+  const t = Number(str(sp.t)) || 0;
+  const tb = Number(str(sp.tb)) || 0;
+  if (!won) return shareCaption('lose', { date, game });
+  if (tb > 1 && str(sp.bs) !== undefined) return shareCaption('multiWin', { date, game, b: tb, n: g });
+  return shareCaption('win', { date, game, n: g, t: fmtTime(t) });
 }

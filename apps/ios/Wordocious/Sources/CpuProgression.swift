@@ -14,13 +14,18 @@ struct CpuProgression: Codable {
     var unlocked: [String] = []
     var botOfDayStreak = 0
     var botOfDayLastDay: String? = nil
-    /// Ladder rungs cleared, 0–4 (VsLobby.ladderAfterGame).
+    /// Ladder rungs cleared, 0–10 (VsLobby.ladderAfterGame over the cast ladder).
     var ladderCleared = 0
     /// Wins in a row against the next ladder bot.
     var ladderRun = 0
     /// The UTC day the Bot of the Day was last played, and how it went (won|lost|draw).
     var botOfDayPlayedDay: String? = nil
     var botOfDayResult: String? = nil
+    /// Which ladder `ladderCleared` counts: 1 = the old four bots (rook, lexi,
+    /// nova, adapt), 2 = the ten-bot cast ladder (FINISH_SPEC §D1).
+    var ladderVersion = CpuProgression.castLadderVersion
+
+    static let castLadderVersion = 2
 
     init() {}
 
@@ -39,13 +44,26 @@ struct CpuProgression: Codable {
         ladderRun = try c.decodeIfPresent(Int.self, forKey: .ladderRun) ?? 0
         botOfDayPlayedDay = try c.decodeIfPresent(String.self, forKey: .botOfDayPlayedDay)
         botOfDayResult = try c.decodeIfPresent(String.self, forKey: .botOfDayResult)
+        // A store saved before the cast ladder counts the old four rungs.
+        ladderVersion = try c.decodeIfPresent(Int.self, forKey: .ladderVersion) ?? 1
+    }
+
+    /// Carry old-ladder progress onto the cast ladder: N old rungs cleared →
+    /// BotCast.migratedLadderCleared(N) ([0, 2, 4, 7, 10]); the run restarts (it
+    /// counted wins against an old bot). Returns whether anything changed.
+    mutating func migrateLadderIfNeeded() -> Bool {
+        guard ladderVersion < Self.castLadderVersion else { return false }
+        ladderCleared = BotCast.migratedLadderCleared(ladderCleared)
+        ladderRun = 0
+        ladderVersion = Self.castLadderVersion
+        return true
     }
 
     var ladder: BotLadderState { BotLadderState(cleared: ladderCleared, run: ladderRun) }
 
-    /// The ladder's next bot id (Adapt once every rung is cleared).
+    /// The ladder's next bot id (Webster, the boss, once every rung is cleared).
     var nextLadderBot: String {
-        ladderCleared < VsLobby.ladderBots.count ? VsLobby.ladderBots[ladderCleared] : "adapt"
+        ladderCleared < VsLobby.ladderBots.count ? VsLobby.ladderBots[ladderCleared] : (VsLobby.ladderBots.last ?? "webster")
     }
 
     /// Today's Bot of the Day (UTC day): open until played, then its result.
@@ -69,9 +87,10 @@ enum CpuProgressionStore {
 
     static func load() -> CpuProgression {
         guard let data = UserDefaults.standard.data(forKey: key),
-              let p = try? JSONDecoder().decode(CpuProgression.self, from: data) else {
+              var p = try? JSONDecoder().decode(CpuProgression.self, from: data) else {
             return CpuProgression()
         }
+        if p.migrateLadderIfNeeded() { save(p) }
         return p
     }
 
@@ -109,7 +128,8 @@ enum CpuProgressionStore {
             if p.rung > 1 { p.rung -= 1 }
         }
         let before = p.ladderCleared
-        let after = VsLobby.ladderAfterGame(p.ladder, botId: botId, won: won)
+        // Old bot ids (rook / lexi / nova / adapt) count as their cast rung.
+        let after = VsLobby.ladderAfterGame(p.ladder, botId: BotCast.canonicalId(botId), won: won)
         p.ladderCleared = after.cleared
         p.ladderRun = after.run
         save(p)

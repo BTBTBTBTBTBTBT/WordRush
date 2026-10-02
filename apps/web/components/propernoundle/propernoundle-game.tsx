@@ -38,17 +38,19 @@ import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
+import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
+import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
 const PRACTICE_STORAGE_KEY = 'wordocious-propernoundle-practice';
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_EMOJI } from './categories';
+import { CATEGORY_LABELS, CATEGORY_COLORS } from './categories';
+import { GameArt } from '@/components/ui/game-art';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { ResultCard } from '@/components/game/result-line';
 import { CandyButton } from '@/components/ui/candy-button';
 import { REVEAL } from '@/lib/tile-motion';
 
@@ -695,9 +697,13 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
       reveal: variant === 'full',
       letters,
       solutionDisplay: puzzle.display,
+      // E1: the gold POINTS window shows the same total the score card does.
+      points: gameStatus === 'won'
+        ? computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total
+        : computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [puzzle, guesses, gameStatus, elapsedTime]);
+  }, [puzzle, guesses, gameStatus, elapsedTime, hintsUsed]);
 
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
@@ -706,6 +712,11 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
   };
 
   if (!puzzle) return null;
+
+  // R2: the strip's points — the same total the score card shows.
+  const bestCorrectLetters = guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0);
+  const finishedPoints = gameStatus === 'playing' ? null
+    : computeScoreBreakdown('PROPERNOUNDLE', gameStatus === 'won', guesses.length, elapsedTime, gameStatus === 'won' ? 1 : 0, 1, hintsUsed, undefined, bestCorrectLetters, mode === 'daily' ? getTodayLocal() : undefined).total;
 
   const categoryColor = puzzle.themeCategory ? CATEGORY_COLORS[puzzle.themeCategory] || '#7c3aed' : '#7c3aed';
   const categoryLabel = puzzle.themeCategory ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory : '';
@@ -728,14 +739,15 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
   ) : (
     <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0"
       style={{ backgroundColor: categoryColor + '22', border: `2px solid ${categoryColor}44` }}>
-      {(puzzle.themeCategory && CATEGORY_EMOJI[puzzle.themeCategory]) || '\u{2753}'}
+      {/* No category emoji (FINISH_SPEC AM3): the game's own 3D art stands in for a missing photo. */}
+      <GameArt id="propernoundle" size={48} fallback={<span className="text-2xl font-black" style={{ color: categoryColor }}>?</span>} />
     </div>
   );
 
   return (
     <GameBackground
       mode="PROPERNOUNDLE"
-      className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && <VictoryAnimation mode="PROPERNOUNDLE" onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
@@ -842,66 +854,84 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         </>
       ) : (
         <>
-          {/* Completed: scrollable area with hint + board + result */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            {/* Hint clue text */}
-            {hints.hint && (
-              <div className="mx-4 mb-1 px-3 py-1.5 rounded-lg" style={{ background: 'linear-gradient(#dc262614, #dc262614), var(--color-card-base, #ffffff)', border: '1.5px solid #f8c9c9' }}>
-                <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
+          {/* FINISH_SPEC R2: one screen — the result strip + the answer, the
+              board sized to the room left, the dock (share · Next daily /
+              Leaderboard · the Unlimited card); the clue, the answer's
+              picture + summary and the score breakdown under "More". */}
+          <FinishedScreen
+            fit="self"
+            strip={
+              <ResultStrip
+                won={gameStatus === 'won'}
+                guesses={guesses.length}
+                time={formatTime(elapsedTime)}
+                points={finishedPoints}
+                srText={gameStatus === 'won'
+                  ? `${puzzle.display} · Solved in ${guesses.length} ${guesses.length === 1 ? 'guess' : 'guesses'} · ${formatTime(elapsedTime)}`
+                  : `The answer was: ${puzzle.display}`}
+              />
+            }
+            sub={
+              <div className="flex items-center justify-center gap-x-2 gap-y-1 flex-wrap">
+                {/* The strip's screen-reader sentence already names the answer. */}
+                <span aria-hidden="true" className={`text-sm font-black ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
+                  {gameStatus === 'won' ? puzzle.display : `The answer: ${puzzle.display}`}
+                </span>
+                {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
               </div>
-            )}
-
-            {/* Board */}
-            <div className="flex items-center justify-center px-2 py-2">
+            }
+            board={
               <NoundleBoard
                 guesses={guesses}
-                currentGuess={currentGuess}
+                currentGuess=""
                 maxGuesses={MAX_GUESSES}
                 answerLength={answerLength}
                 answerDisplay={puzzle.display}
-                shouldShake={shouldShake}
               />
-            </div>
-
-            {/* Result panel */}
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={'#dc2626'}>
-                {resultImage}
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
-                    {gameStatus === 'won'
-                      ? `${puzzle.display}`
-                      : `The answer was: ${puzzle.display}`}
-                  </span>
-                  {gameStatus === 'won' && (
-                    <span className="text-xs text-gray-400">
-                      Solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} · {formatTime(elapsedTime)}
-                    </span>
-                  )}
-                  {resultClue && (
-                    <p className="text-xs text-gray-500 leading-snug mt-0.5">{resultClue}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={handlePlayAgain} won />}
+            }
+            dock={
+              <FinishedDock
+                currentMode="PROPERNOUNDLE"
+                isDaily={mode === 'daily'}
+                onShare={handleShare}
+                copied={copied}
+                onNewPuzzle={mode !== 'daily' && isPro ? handlePlayAgain : undefined}
+              />
+            }
+            moreLabel="About + score"
+            moreAccent="#dc2626"
+            more={
+              <div className="flex flex-col gap-2">
+                {hints.hint && (
+                  <div className="px-3 py-1.5 rounded-lg" style={{ background: 'linear-gradient(#dc262614, #dc262614), var(--color-card-base, #ffffff)', border: '1.5px solid #f8c9c9' }}>
+                    <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
                   </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard
-                gameMode="PROPERNOUNDLE"
-                completed={gameStatus === 'won'}
-                guessCount={guesses.length}
-                timeSeconds={elapsedTime}
-                boardsSolved={gameStatus === 'won' ? 1 : 0}
-                totalBoards={1}
-                hintsUsed={hintsUsed}
-                bestCorrectLetters={guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)}
-                day={mode === 'daily' ? getTodayLocal() : undefined}
-              />
-              {mode === 'daily' && <NextDailyCta currentMode="PROPERNOUNDLE" />}
-            </div>
-          </div>
+                )}
+                <ResultCard accent={'#dc2626'}>
+                  {resultImage}
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className={`text-sm font-bold ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
+                      {puzzle.display}
+                    </span>
+                    {resultClue && (
+                      <p className="text-xs text-gray-500 leading-snug mt-0.5">{resultClue}</p>
+                    )}
+                  </div>
+                </ResultCard>
+                <ScoreBreakdownCard
+                  gameMode="PROPERNOUNDLE"
+                  completed={gameStatus === 'won'}
+                  guessCount={guesses.length}
+                  timeSeconds={elapsedTime}
+                  boardsSolved={gameStatus === 'won' ? 1 : 0}
+                  totalBoards={1}
+                  hintsUsed={hintsUsed}
+                  bestCorrectLetters={bestCorrectLetters}
+                  day={mode === 'daily' ? getTodayLocal() : undefined}
+                />
+              </div>
+            }
+          />
 
           <BottomNav />
         </>

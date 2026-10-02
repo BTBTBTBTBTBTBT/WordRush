@@ -15,39 +15,56 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.wordocious.app.ui.theme.WTheme
 
 /**
- * Pulsing placeholder block — the Compose analogue of the web's `animate-pulse`
- * skeletons (gray rounded bars that breathe while loading). Used instead of
+ * Placeholder block — the Compose analogue of the web's `animate-pulse`
+ * skeletons (tinted rounded bars that shimmer while loading). Used instead of
  * spinners on data-heavy surfaces, matching the web.
  */
 @Composable
 fun SkeletonBlock(height: Dp, width: Dp? = null, cornerRadius: Dp = 8.dp) {
-    val alpha = if (WTheme.reducedMotion) {
-        1f
+    // FINISH_SPEC A1 / G5: a soft lavender wash (never gray-white) with a light band
+    // sweeping across it — the tinted shimmer. Reduce Motion: the still wash.
+    val still = WTheme.reducedMotion
+    val phase = if (still) {
+        -1f
     } else {
         val transition = rememberInfiniteTransition(label = "skeleton")
-        val a by transition.animateFloat(
-            initialValue = 1f, targetValue = 0.45f,
-            animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-            label = "skeletonAlpha",
+        val p by transition.animateFloat(
+            initialValue = -0.4f, targetValue = 1.4f,
+            animationSpec = infiniteRepeatable(tween(1300), RepeatMode.Restart),
+            label = "skeletonShimmer",
         )
-        a
+        p
     }
+    val wash = accentWash(SKELETON_ACCENT, 0.14f)
+    val band = if (WTheme.isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.55f)
     Spacer(
         Modifier
             .then(if (width != null) Modifier.width(width) else Modifier.fillMaxWidth())
             .height(height)
-            .alpha(alpha)
             .clip(RoundedCornerShape(cornerRadius))
-            .background(WTheme.surfaceAlt),
+            .background(wash)
+            .drawBehind {
+                if (phase > -1f) {
+                    val w = size.width * 0.35f
+                    val x = phase * size.width
+                    drawRect(
+                        Brush.horizontalGradient(listOf(Color.Transparent, band, Color.Transparent), startX = x - w / 2f, endX = x + w / 2f),
+                    )
+                }
+            },
     )
 }
+
+private val SKELETON_ACCENT = Color(0xFF7C3AED)
 
 /** N pulsing leaderboard-row placeholders (web LeaderboardSkeleton — 5 rows). */
 @Composable

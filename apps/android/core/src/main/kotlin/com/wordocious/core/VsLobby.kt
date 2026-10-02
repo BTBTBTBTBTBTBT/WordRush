@@ -19,8 +19,11 @@ object VsLobby {
     /** The nine VS modes in lobby-strip order (db keys). */
     val VS_MODE_ORDER = listOf("DUEL", "DUEL_6", "DUEL_7", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "GAUNTLET", "PROPERNOUNDLE")
 
-    /** Ladder order: Rook (easy) → Lexi (medium) → Nova (hard) → Adapt (matches you). */
-    val LADDER_BOTS = listOf("rook", "lexi", "nova", "adapt")
+    /**
+     * Ladder order (FINISH_SPEC D1, BotCast): Rip → Ivy → Ollie → Opal → Cosmo →
+     * Umi (adaptive) → Ozzy → Dewey → Scoot → Webster (the boss).
+     */
+    val LADDER_BOTS: List<String> = BotCast.IDS
 
     /** Wins in a row against the next bot that clear its rung. */
     const val LADDER_CLEAR_RUN = 3
@@ -178,7 +181,7 @@ fun challengeHeadline(outcome: VsOutcome, from: String): String {
 // ── The bot ladder ──────────────────────────────────────────────────────────
 
 data class BotLadderState(
-    /** Rungs cleared, 0–4. */
+    /** Rungs cleared, 0–10. */
     val cleared: Int,
     /** Current wins in a row against the next bot (LADDER_BOTS[cleared]). */
     val run: Int,
@@ -188,12 +191,13 @@ data class BotLadderState(
  * Fold one finished bot game into the ladder. Only games against the NEXT
  * bot count: a win adds to the run (three clear the rung), a loss resets the
  * run. Games against other bots (or the Bot of the Day / Beat your best)
- * leave the ladder alone.
+ * leave the ladder alone. Old ids (rook, lexi, nova, adapt) count as their
+ * cast replacement (BotCast.canonicalId).
  */
 fun ladderAfterGame(s: BotLadderState, botId: String, won: Boolean): BotLadderState {
     val bots = VsLobby.LADDER_BOTS
     if (s.cleared >= bots.size) return BotLadderState(bots.size, 0)
-    if (botId != bots[s.cleared]) return s.copy()
+    if (BotCast.canonicalId(botId) != bots[s.cleared]) return s.copy()
     if (!won) return BotLadderState(s.cleared, 0)
     val run = s.run + 1
     return if (run >= VsLobby.LADDER_CLEAR_RUN) BotLadderState(s.cleared + 1, 0) else BotLadderState(s.cleared, run)
@@ -203,9 +207,9 @@ enum class RungState(val raw: String) { CLEARED("cleared"), NEXT("next"), LOCKED
 
 data class LadderRung(val id: String, val state: RungState, val line: String)
 
-/** Each rung's state and its line ("Cleared", "Win 3 in a row to clear · 1 so far", "Clear Nova to unlock"). */
+/** Each rung's state and its line ("Cleared", "Win 3 in a row to clear · 1 so far", "Clear Rip to unlock"). */
 fun ladderRungs(s: BotLadderState): List<LadderRung> {
-    fun name(id: String) = id.replaceFirstChar { it.uppercaseChar() }
+    fun name(id: String) = BotCast.member(id)?.name ?: id
     return VsLobby.LADDER_BOTS.mapIndexed { i, id ->
         when {
             i < s.cleared -> LadderRung(id, RungState.CLEARED, "Cleared")

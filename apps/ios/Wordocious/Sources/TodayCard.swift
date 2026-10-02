@@ -53,6 +53,10 @@ struct TodayCard: View {
         s >= 60 ? "\(s / 60):\(String(format: "%02d", s % 60))" : "\(s)s"
     }
 
+    /// The Today card's soft blue (FINISH_SPEC §C3: tint ~#eaf2ff, bar #0a6cff → #60a5fa).
+    private static let blue = Color(hex: 0x0A6CFF)
+    private static let blueInk = Color(hex: 0x2456A8)
+
     var body: some View {
         let played = sweepModes.filter { $0.dbKey.map { byMode[$0] != nil } ?? false }
         let completed = played.count
@@ -63,28 +67,35 @@ struct TodayCard: View {
         let moreDaily = visibleMore.filter { $0.dailyEligible && $0.dbKey != nil }
         let morePlayed = moreDaily.filter { byMode[$0.dbKey!] != nil }.count
         let moment = Self.bestMomentToday(byMode)
+        // A full day keeps its banner treatment: gold card on Flawless, purple on a Sweep.
+        let cardAccent: Color = !allDone ? Self.blue : (flawless ? Color(hex: 0xF5A524) : Color(hex: 0x7C3AED))
+        let cardBar: [Color] = !allDone ? [Self.blue, Color(hex: 0x60A5FA)]
+            : (flawless ? [Color(hex: 0xF5A524), Color(hex: 0xFFD166)] : [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)])
 
         VStack(spacing: 12) {
-            VStack(spacing: 8) {
-                // Header: the date + N/8, or the Sweep / Flawless banner on a full day.
+            VStack(spacing: 10) {
+                // Header: the date + N / 8, or the Sweep / Flawless banner on a full day.
                 if allDone {
                     HStack(spacing: 8) {
                         SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
                         Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
                             .font(Brand.font(16, .black))
-                            .foregroundStyle(LinearGradient(colors: flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .foregroundStyle(Theme.isDark ? Theme.textPrimary : (flawless ? Color(hex: 0xA2560C) : Color(hex: 0x6D28D9)))
                         SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
                     }
                 } else {
                     HStack {
-                        Text("TODAY · \(dateLabel)").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                        FinishLabel("Today · \(dateLabel)", color: Self.blueInk)
                         Spacer()
-                        Text("\(completed)/\(total)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        Text("\(completed) / \(total)")
+                            .softNumber(15, color: Theme.isDark ? nil : Self.blueInk)
+                            .accessibilityLabel("\(completed) of \(total) dailies played")
                     }
                 }
 
-                // The eight sweep tiles, ONE row — tap plays (or reopens) that daily.
-                HStack(spacing: 4) {
+                // The eight sweep tiles as mini game cards with today's W / L — tap plays
+                // (or reopens) that daily.
+                PickerTileRow(gap: 5, maxSide: 44) {
                     ForEach(sweepModes) { m in sweepTile(m) }
                 }
 
@@ -94,22 +105,22 @@ struct TodayCard: View {
                         FlawlessBannerFooter(total: total)
                     } else {
                         Text("All \(total) dailies completed · +200 XP earned")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x6D28D9))
+                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x6D28D9))
                     }
                 }
 
-                // The rest of the day: Puzzles, VS, where you stand.
-                HStack(spacing: 8) {
+                // The rest of the day: Puzzles (magenta), VS (teal), where you stand (gold).
+                HStack(spacing: 6) {
                     pill(label: "Puzzles", value: moreDaily.isEmpty ? "—" : "\(morePlayed) of \(moreDaily.count)",
-                         color: Color(hex: 0x4F46E5), icon: .game("more", .symbol("square.grid.2x2"))) {
+                         color: Color(hex: 0xC026D3)) {
                         onJump(moreDaily.first?.dbKey ?? StatsRailKey.today)
                     }
                     pill(label: "VS Battle", value: vsDailyWon == nil ? "—" : (vsDailyWon! ? "W" : "L"),
-                         color: Color(hex: 0xEC4899), icon: .game("vs", .asset("swords")), won: vsDailyWon) { onJump(StatsRailKey.vs) }
+                         color: Color(hex: 0x0D9488), won: vsDailyWon) { onJump(StatsRailKey.vs) }
                     pill(label: "Standing", value: standing.map { "Top \($0.topPercent)%" } ?? "—",
-                         color: Color(hex: 0x7C3AED), icon: .symbol("chart.line.uptrend.xyaxis"), action: nil)
+                         color: Color(hex: 0xF5A524), action: nil)
                 }
-                .padding(.top, 4)
+                .padding(.top, 2)
 
                 // The ten Puzzles as tiny chips, so the day reads at a glance.
                 if !moreDaily.isEmpty {
@@ -119,83 +130,73 @@ struct TodayCard: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .padding(12).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(allDone
-                ? AnyShapeStyle(LinearGradient(colors: flawless ? [Color(hex: 0xFEF3C7), Color(hex: 0xFDE68A)] : [Color(hex: 0xF5F3FF), Color(hex: 0xFCE7F3)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                : AnyShapeStyle(Theme.surface)))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(allDone ? (flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD)) : Theme.border, lineWidth: 1.5))
+            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 14)
+            .frame(maxWidth: .infinity)
+            .tintedCard(accent: cardAccent, bar: cardBar, tint: 0.08, line: 0.22)
 
-            // Streaks + the best thing that happened today.
-            HStack(spacing: 8) {
-                infoCard(icon: "flame.fill", iconColor: Color(hex: 0xF97316), label: "Sweep streaks") {
-                    // Wordocious, then Puzzles: the same two runs the home banner shows.
-                    VStack(alignment: .leading, spacing: 1) {
-                        streakLine("Wordocious", run: sweepStreak, flawless: flawlessStreak)
-                        streakLine("Puzzles", run: puzzleStreaks.sweep, flawless: puzzleStreaks.flawless)
-                    }
+            // Streaks + the best thing that happened today: two tinted tiles with 3D icons.
+            HStack(spacing: 10) {
+                // Wordocious, then Puzzles: the same two runs the home banner shows.
+                StatsTile(label: "Sweep streak", value: "\(sweepStreak)",
+                          sub: streakLine(run: sweepStreak, flawless: flawlessStreak),
+                          sub2: "Puzzles " + streakLine(run: puzzleStreaks.sweep, flawless: puzzleStreaks.flawless),
+                          accent: StatsTileColor.gold.accent, ink: StatsTileColor.gold.ink) {
+                    if ArtAsset.exists("game-sweep") { GameArtImage(asset: "game-sweep", size: 22) }
+                    else { Icon3D(.flame, size: 22) }
                 }
+                let parts = Self.momentParts(moment?.text)
                 Button { if let k = moment?.key { onJump(k) } } label: {
-                    infoCard(icon: moment?.text.hasPrefix("Perfect") == true ? "star.fill" : "timer",
-                             iconColor: moment?.text.hasPrefix("Perfect") == true ? Theme.win : Color(hex: 0x2563EB),
-                             label: "Best moment") {
-                        Text(moment?.text ?? "Play a daily to start your day")
-                            .font(Brand.font(11, .black)).foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1).minimumScaleFactor(0.75)
+                    StatsTile(label: "Best moment", value: parts.value, sub: parts.sub,
+                              accent: StatsTileColor.pink.accent, ink: StatsTileColor.pink.ink) {
+                        Icon3D(moment?.text.hasPrefix("Perfect") == true ? .badgeCheck : .trophy, size: 22)
                     }
                 }
                 .buttonStyle(.squish)
             }
-            // The streak card holds two lines now: both cards take the taller height.
+            // Both tiles take the taller height.
             .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    /// "WORDOCIOUS 4 days · 3 flawless" — the flawless run shows from 2 days, as before.
-    private func streakLine(_ label: String, run: Int, flawless: Int) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text(label.uppercased()).font(Brand.font(8, .black)).foregroundStyle(Theme.textMuted)
-            Text("\(run) \(run == 1 ? "day" : "days")").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
-            if flawless >= 2 {
-                Text("· \(flawless) flawless").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xB45309))
-            }
+    /// Splits the best-moment line into the tile's big value + its small line:
+    /// "Perfect Classic in 3 guesses" → ("Perfect", "Classic in 3 guesses");
+    /// "Fastest win: Classic in 1:12" → ("1:12", "Fastest win · Classic").
+    static func momentParts(_ text: String?) -> (value: String, sub: String) {
+        guard let text else { return ("—", "Play a daily to start your day") }
+        if text.hasPrefix("Perfect ") { return ("Perfect", String(text.dropFirst("Perfect ".count))) }
+        if text.hasPrefix("Fastest win: "), let r = text.range(of: " in ", options: .backwards) {
+            let title = text[text.index(text.startIndex, offsetBy: "Fastest win: ".count)..<r.lowerBound]
+            return (String(text[r.upperBound...]), "Fastest win · \(title)")
         }
-        .lineLimit(1).minimumScaleFactor(0.6)
+        return (text, "")
+    }
+
+    /// "4 days · 3 flawless" — the flawless run shows from 2 days, as before.
+    private func streakLine(run: Int, flawless: Int) -> String {
+        "\(run) \(run == 1 ? "day" : "days")" + (flawless >= 2 ? " · \(flawless) flawless" : "")
     }
 
     private var dateLabel: String {
-        let f = DateFormatter(); f.dateFormat = "EEE, MMM d"; f.locale = Locale(identifier: "en_US")
+        let f = DateFormatter(); f.dateFormat = "MMM d"; f.locale = Locale(identifier: "en_US")
         return f.string(from: Date())
     }
 
-    /// One sweep tile — the old Today's Dailies badge: W/L filled when played,
-    /// the mode icon when not, 8pt label under it.
+    /// One sweep tile — a mini game card (§A1 picker tile) tinted by its game, with
+    /// today's W / L badge in the corner once played.
     private func sweepTile(_ m: HomeMode) -> some View {
         let result = m.dbKey.flatMap { byMode[$0] }
-        let played = result != nil
-        let won = result?.completed == true
-        let bg: Color = !played ? Theme.background : won ? Theme.win : lossRed
-        let border: Color = !played ? Theme.border : won ? Theme.win : lossRed
         return Button { onOpenDaily(m) } label: {
-            VStack(spacing: 3) {
-                ZStack {
-                    if played {
-                        // ART_SPEC §4: the 3D W / L badge is the result tile.
-                        ResultBadge(won: won, size: 38)
-                    } else {
-                        RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
-                        ModeIconView(icon: m.icon, accent: m.accent, box: 26)
-                    }
+            PickerTile(accent: m.accent, result: result.map { $0.completed }) { side in
+                if let art = m.icon.gameArt {
+                    GameArtImage(asset: art, size: side * 0.72)
+                } else {
+                    ModeIconView(icon: m.icon, accent: m.accent, box: side * 0.6)
                 }
-                .frame(width: 38, height: 38)
-                .opacity(played ? 1 : 0.7)
-                Text(ModeGen.byId(m.id)?.shortTitle ?? m.title).font(Brand.font(8, .bold))
-                    .foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
-                    .lineLimit(1).minimumScaleFactor(0.7)
             }
-            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.squish)
+        .accessibilityLabel(ModeGen.byId(m.id)?.shortTitle ?? m.title)
+        .accessibilityValue(result.map { $0.completed ? "Won today" : "Lost today" } ?? "Not played yet")
     }
 
     /// A 20pt Puzzles chip: solid accent + white glyph when won, red when
@@ -242,44 +243,29 @@ struct TodayCard: View {
         }
     }
 
-    private func pill(label: String, value: String, color: Color, icon: ModeIconKind, won: Bool? = nil, action: (() -> Void)?) -> some View {
-        Button { action?() } label: {
-            VStack(spacing: 2) {
-                HStack(spacing: 4) {
-                    glyph(icon, color: color, fallback: "")
-                    Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.6)
-                }
-                .foregroundStyle(color)
+    /// One of the three day pills (mockup `.pill`): a tinted pill in its color with
+    /// a soft number (or today's 3D W / L badge) over a small caps label.
+    @ViewBuilder
+    private func pill(label: String, value: String, color: Color, won: Bool? = nil, action: (() -> Void)?) -> some View {
+        let tile = VStack(spacing: 3) {
+            if let won {
+                Text(won ? "W" : "L").softNumber(18)
+            } else {
+                Text(value).softNumber(18).lineLimit(1).minimumScaleFactor(0.6)
+            }
+            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.7)
+                .foregroundStyle(Theme.isDark ? Theme.textSecondary : color.mixed(over: .black, 0.72))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                if let won {
-                    // ART_SPEC §4: a known daily result reads as the 3D W / L badge.
-                    ResultBadge(won: won, size: 20)
-                } else {
-                    Text(value).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                }
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 8).padding(.horizontal, 4)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
         }
-        // The Standing pill has no destination: keep it flat (no press scale).
-        .buttonStyle(PressableStyle(scale: action == nil ? 1 : 0.96))
-        .allowsHitTesting(action != nil)
-    }
-
-    private func infoCard<V: View>(icon: String, iconColor: Color, label: String, @ViewBuilder value: () -> V) -> some View {
-        HStack(spacing: 8) {
-            SymbolGlyph(icon, size: 14, color: iconColor)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
-                value()
-            }
-            Spacer(minLength: 0)
+        .frame(maxWidth: .infinity).padding(.top, 9).padding(.bottom, 7).padding(.horizontal, 4)
+        .tintedPill(color, radius: 12)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(won.map { $0 ? "won" : "lost" } ?? value)")
+        if let action {
+            Button { action() } label: { tile }.buttonStyle(.squish)
+        } else {
+            // The Standing pill has no destination: a plain tile, no press.
+            tile
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 }

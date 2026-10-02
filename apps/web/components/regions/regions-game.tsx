@@ -14,7 +14,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import { RegionsBoard } from './regions-board';
+import { RegionsBoard, STARSWEEP_BOARD_EXTRA } from './regions-board';
 import { RegionsPad } from './regions-pad';
 import { REGIONS_ACCENT, REGIONS_HEADER, REGIONS_TITLE, REGIONS_WIN_TITLE, REGIONS_LOSS_TITLE, REGIONS_SIZE_LABEL, REGIONS_TAP_HINT } from './copy';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
@@ -29,19 +29,20 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { regionsElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
+import { useBoardFit } from '@/hooks/use-board-fit';
+import { softPill, softBackground, softBorder } from '@/lib/soft-surface';
 
 // Starsweep (More Games §18b): place one star in every row, column and color
 // region, no two stars touching. Daily 7 × 7 Monday–Wednesday, 8 × 8
@@ -92,6 +93,16 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
   const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
   const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
+
+  // FINISH_SPEC B5: the playing board fills the space between the status line
+  // and the pad (the shared rule, lib/board-fit.ts), capped at the old 420 px.
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const boardN = state?.n ?? 8;
+  const boardFit = useBoardFit(
+    boardAreaRef,
+    { cols: boardN, rows: boardN, gap: 0, extraWidth: STARSWEEP_BOARD_EXTRA.width, vPad: STARSWEEP_BOARD_EXTRA.height + 8, maxTile: 60, maxWidth: 440 },
+    `${status}-${holdPlay}-${state ? state.seed : ''}`,
+  );
 
   const startPractice = useCallback((n: RegionsSize) => {
     // The trailing size segment is what regionsSizeForSeed() reads back.
@@ -292,6 +303,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   const finished = state.status !== 'playing';
   const won = state.status === 'won';
   const remaining = regionsRemaining(state);
+  const points = computeScoreBreakdown('REGIONS', won, state.mistakes + 1, elapsedSeconds, won ? 1 : 0, 1, state.hintsUsed).total;
   const mistakeDots = (
     <span className="inline-flex items-center gap-0.5 align-middle" aria-label={`${mistakes} of ${REGIONS_MAX_MISTAKES} mistakes`}>
       {Array.from({ length: REGIONS_MAX_MISTAKES }, (_, i) => (
@@ -301,13 +313,15 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   );
 
   const board = (
-    <RegionsBoard state={state} focused={finished ? null : focused} onTap={tapCell} revealSolution={state.status === 'lost'} />
+    <RegionsBoard state={state} focused={finished ? null : focused} onTap={tapCell} revealSolution={state.status === 'lost'}
+      maxSize={!finished && boardFit ? boardFit.w : undefined} trayState={state.status === 'won' ? 'won' : state.status === 'lost' ? 'lost' : 'playing'} />
   );
 
   return (
     <GameBackground
       mode="REGIONS"
-      className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
+      className="h-screen-stable flex flex-col relative"
+      style={finished || completion ? FINISHED_SHELL_PAD : undefined}
     >
       {showVictory && <VictoryAnimation mode="REGIONS" onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', true, state.mistakes + 1, elapsedSeconds, 1, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', false, state.mistakes + 1, elapsedSeconds, 0, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
@@ -336,10 +350,10 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // day's board from the matches row (a loss shows the missing stars muted), then the card.
-        <CompletedCustomDaily dbKey="REGIONS" completion={completion}
+        <PuzzleElsewhere dbKey="REGIONS" completion={completion}
           boardsSolved={elsewhere?.progress.boardsSolved} totalBoards={elsewhere?.progress.totalBoards} hintsUsed={elsewhere?.progress.hintsUsed}>
-          {elsewhere?.state && <RegionsBoard state={elsewhere.state} focused={null} onTap={() => {}} revealSolution={!completion.won} />}
-        </CompletedCustomDaily>
+          {elsewhere?.state && <RegionsBoard state={elsewhere.state} focused={null} onTap={() => {}} revealSolution={!completion.won} trayState={completion.won ? 'won' : 'lost'} />}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
@@ -356,8 +370,11 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
                     role="radio"
                     aria-checked={active}
                     onClick={() => { if (!active) startPractice(n); }}
-                    className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${active ? 'text-white' : ''}`}
-                    style={active ? { background: REGIONS_ACCENT, borderColor: REGIONS_ACCENT } : { borderColor: `${REGIONS_ACCENT}55`, color: REGIONS_ACCENT }}
+                    // A1: tinted segmented chips — the selected size takes the stronger wash + an accent ring.
+                    className="text-xs font-extrabold px-3 py-1"
+                    style={active
+                      ? { ...softPill(REGIONS_ACCENT, { bar: false }), background: softBackground(REGIONS_ACCENT, 0.28), border: softBorder(REGIONS_ACCENT, 0.28, 2), boxShadow: `0 0 0 2px ${REGIONS_ACCENT}`, color: 'var(--color-text)' }
+                      : { ...softPill(REGIONS_ACCENT, { bar: false }), color: REGIONS_ACCENT }}
                   >
                     {REGIONS_SIZE_LABEL[n]}
                   </button>
@@ -366,7 +383,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
             </div>
           )}
 
-          <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-3 pb-1">
+          <div ref={boardAreaRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center pb-1">
             {board}
           </div>
 
@@ -383,47 +400,38 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the board scaled to the
+        // room left (a lost board shows the missing stars muted, so nobody
+        // leaves without the answer), then the dock; the breakdown under More.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex items-center justify-center px-3 py-2">{board}</div>
-
-            {/* Result panel — a lost board shows the missing stars muted above,
-                so nobody leaves without the answer. */}
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={REGIONS_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-2xl font-black"
-                  style={{ backgroundColor: `${REGIONS_ACCENT}15`, border: `2px solid ${REGIONS_ACCENT}44`, color: REGIONS_ACCENT }}>
-                  {won ? '★' : remaining}
-                </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? REGIONS_WIN_TITLE : REGIONS_LOSS_TITLE}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {won
-                      ? `${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
-                      : `${remaining} star${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="REGIONS" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={() => startPractice(state.n as RegionsSize)} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard
-                gameMode="REGIONS"
-                completed={won}
-                guessCount={state.mistakes + 1}
-                timeSeconds={elapsedSeconds}
-                boardsSolved={won ? 1 : 0}
-                totalBoards={1}
-                hintsUsed={state.hintsUsed}
-                day={mode === 'daily' ? getTodayLocal() : undefined}
-              />
-              {mode === 'daily' && <NextDailyCta currentMode="REGIONS" />}
-            </div>
-          </div>
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.mistakes} guessLabel={state.mistakes === 1 ? 'mistake' : 'mistakes'} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? REGIONS_WIN_TITLE : REGIONS_LOSS_TITLE}. ${won
+                  ? `${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
+                  : `${remaining} star${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`}`} />
+            }
+            board={<div className="px-1 pb-1">{board}</div>}
+            dock={
+              <FinishedDock currentMode="REGIONS" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? () => startPractice(state.n as RegionsSize) : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="REGIONS" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure accent={REGIONS_ACCENT}>
+                <ScoreBreakdownCard
+                  gameMode="REGIONS"
+                  completed={won}
+                  guessCount={state.mistakes + 1}
+                  timeSeconds={elapsedSeconds}
+                  boardsSolved={won ? 1 : 0}
+                  totalBoards={1}
+                  hintsUsed={state.hintsUsed}
+                  day={mode === 'daily' ? getTodayLocal() : undefined}
+                />
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

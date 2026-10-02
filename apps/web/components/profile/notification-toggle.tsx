@@ -13,6 +13,7 @@ import {
   getExistingSubscription,
 } from '@/lib/push-notifications';
 import { toast } from '@/hooks/use-toast';
+import { alphaHex, softCard } from '@/lib/soft-surface';
 
 export function NotificationToggle() {
   const { profile, session } = useAuth();
@@ -70,12 +71,8 @@ export function NotificationToggle() {
     <button
       onClick={handleToggle}
       disabled={loading}
-      className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98] disabled:opacity-50"
-      style={{
-        background: 'var(--color-surface)',
-        border: `1.5px solid ${enabled ? '#c4b5fd' : 'var(--color-border)'}`,
-        borderRadius: '16px',
-      }}
+      className="w-full flex items-center gap-3 p-4 transition-colors disabled:opacity-50"
+      style={softCard('#7c3aed', { radius: 18, selected: enabled })}
     >
       {enabled ? (
         <Bell className="w-5 h-5" style={{ color: '#7c3aed' }} />
@@ -88,7 +85,7 @@ export function NotificationToggle() {
       <span
         className="text-[10px] font-black px-2 py-0.5 rounded-full"
         style={{
-          background: enabled ? '#f3f0ff' : 'var(--color-surface-hover)',
+          background: enabled ? alphaHex('#7c3aed', 0.18) : alphaHex('#64748b', 0.14),
           color: enabled ? '#7c3aed' : 'var(--color-text-muted)',
         }}
       >

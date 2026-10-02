@@ -18,15 +18,14 @@ struct SectionHeader<Right: View>: View {
     }
 
     var body: some View {
+        // FINISH_SPEC §C3: section headers are the small caps FinishLabel (mockup `.lbl`),
+        // right on the wallpaper, no tick.
         HStack {
-            HStack(spacing: 8) {
-                Capsule().fill(accent).frame(width: 4, height: 14)
-                Text(label.uppercased()).font(Brand.font(11, .black)).tracking(1.6)
-                    .foregroundStyle(Theme.textMuted)
-            }
+            FinishLabel(label)
             Spacer()
             right
         }
+        .padding(.horizontal, 4)
     }
 }
 
@@ -50,15 +49,107 @@ struct KitCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let accent { Rectangle().fill(accent).frame(height: 3) }
-            content.padding(padded ? 16 : 0).frame(maxWidth: .infinity, alignment: .leading)
+        content.padding(padded ? 16 : 0).frame(maxWidth: .infinity, alignment: .leading)
+            .statsCard(accent: accent)
+    }
+}
+
+/// The Stats page's card palette (FINISH_SPEC §A1 / §C3, mockup stats-friends-polish).
+enum StatsInk {
+    /// The lavender chart-card family (#f6f1ff).
+    static let lavender = Color(hex: 0x7C3AED)
+    /// Rows inside a tinted card: a slightly stronger wash of the card's accent
+    /// (never plain white); dark mode a faint light lift.
+    static func rowFill(_ accent: Color = Color(hex: 0x7C3AED)) -> Color {
+        Theme.isDark ? Color.white.opacity(0.05) : accent.wash(0.11)
+    }
+}
+
+extension View {
+    /// §A1 / §C3: a Stats card — the soft wash of its accent (lavender when none),
+    /// a 1.5-pt border and, when an accent is given, the accent top bar.
+    func statsCard(accent: Color? = nil, radius: CGFloat = 18) -> some View {
+        let a = accent ?? StatsInk.lavender
+        return tintedCard(accent: a, bar: accent.map { [$0, $0.mixed(over: .white, 0.6)] },
+                          radius: radius, barHeight: 6, tint: 0.07, line: 0.24)
+    }
+}
+
+/// FINISH_SPEC §C3: a stat tile in its own color (mockup `.mini`) — a tinted card
+/// in `accent`, a 3D icon + 10-pt caps label in `ink`, a 28-pt soft number and a
+/// small muted line (or two). Streak / best-moment tiles and the four all-time tiles.
+struct StatsTile<Icon: View>: View {
+    let label: String
+    let value: String
+    var sub: String? = nil
+    var sub2: String? = nil
+    let accent: Color
+    /// The caps label color (the accent darkened, mockup `--lc`).
+    var ink: Color
+    /// Count the value up from 0 on appear (F4); `value` stays the fallback.
+    var countUp: Int? = nil
+    var countSuffix: String = ""
+    @ViewBuilder var icon: () -> Icon
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                icon().frame(width: 22, height: 22)
+                Text(label.uppercased()).font(Brand.font(10, .black)).tracking(1.0)
+                    .foregroundStyle(Theme.isDark ? Theme.textSecondary : ink)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            Group {
+                if let n = countUp {
+                    CountUpNumber(value: n, suffix: countSuffix, font: Brand.font(28, .black),
+                                  color: FinishInk.number, soft: 28)
+                } else {
+                    Text(value).softNumber(28)
+                }
+            }
+            .lineLimit(1).minimumScaleFactor(0.5)
+            ForEach([sub, sub2].compactMap { $0 }, id: \.self) { line in
+                Text(line).font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.secondary)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
         }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        // ART_SPEC §11: the tinted lift sits outside the clip.
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .tintedCard(accent: accent, tint: 0.10, line: 0.28)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([label, value, sub, sub2].compactMap { $0 }.joined(separator: ", "))
+    }
+}
+
+/// The Stats tiles' palette (mockup `.mini` cards): accent + label ink.
+enum StatsTileColor {
+    static let purple = (accent: Color(hex: 0x7C3AED), ink: Color(hex: 0x6D28D9))
+    static let green = (accent: Color(hex: 0x22C55E), ink: Color(hex: 0x137A3D))
+    static let gold = (accent: Color(hex: 0xF5A524), ink: Color(hex: 0xA2560C))
+    static let pink = (accent: Color(hex: 0xEC4899), ink: Color(hex: 0xA0336B))
+    static let blue = (accent: Color(hex: 0x0A6CFF), ink: Color(hex: 0x2456A8))
+}
+
+/// The glossy medal art (`art-medal-gold|silver|bronze|trophy`) for medal counts and
+/// rows — decorative; falls back to the old SF symbol when the art is missing.
+struct MedalArt: View {
+    /// "gold" | "silver" | "bronze" | "trophy".
+    let kind: String
+    var size: CGFloat = 22
+    var fallbackSymbol: String = "medal.fill"
+    var fallbackColor: Color = Theme.textMuted
+
+    var body: some View {
+        let asset = "art-medal-\(kind)"
+        Group {
+            if ArtAsset.exists(asset) {
+                Image(asset).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: size, height: size)
+            } else {
+                SymbolGlyph(fallbackSymbol, size: size * 0.8, color: fallbackColor)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -79,17 +170,18 @@ struct StatCell: View {
             if let icon {
                 SymbolGlyph(icon, size: 16, color: color ?? Theme.textMuted)
             }
+            // §A2: every big number is a soft number.
             if let n = countUp {
                 CountUpNumber(value: n, suffix: countSuffix, font: Brand.font(18, .black),
-                              color: icon == nil ? (color ?? Theme.textPrimary) : Theme.textPrimary)
+                              color: FinishInk.number, soft: 18)
             } else {
-                Text(value).font(Brand.font(18, .black))
-                    .foregroundStyle(icon == nil ? (color ?? Theme.textPrimary) : Theme.textPrimary)
+                Text(value).softNumber(18)
+                    .lineLimit(1).minimumScaleFactor(0.6)
             }
-            Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4)
-                .foregroundStyle(Theme.textMuted)
+            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.6)
+                .foregroundStyle(FinishInk.secondary)
             // Always reserve the sub line so grids of cells stay equal-height.
-            Text(sub ?? " ").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+            Text(sub ?? " ").font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -132,10 +224,10 @@ struct ChartCard<Content: View>: View {
         KitCard(accent: accent) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(title).font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+                    Text(title).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
                     Spacer()
                     if let hint {
-                        Text(hint).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                        Text(hint).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
                     }
                 }
                 if let empty {
@@ -167,18 +259,12 @@ struct ProLockOverlay<Content: View>: View {
                 .blur(radius: 3).opacity(0.6)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
+            // §A8: the Pro upsell is an amber candy button.
             Button { showPro = true } label: {
-                HStack(spacing: 6) {
-                    Icon3D(.lock, size: 14) // ART_SPEC §5
-                    Text(label).font(Brand.font(11, .black))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Capsule().fill(LinearGradient(
-                    colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                    startPoint: .leading, endPoint: .trailing)))
+                CandyLabel(title: label) { Icon3D(.lock, size: 15) } // ART_SPEC §5
             }
-            .buttonStyle(.squish)
+            .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
+            .accessibilityLabel(label)
         }
         .sheet(isPresented: $showPro) { ProView() }
     }
@@ -206,12 +292,20 @@ struct CountUpNumber: View {
     var suffix: String = ""
     var font: Font
     var color: Color
+    /// §A2: draw as a soft number at this size (overrides `font` / `color`).
+    var soft: CGFloat? = nil
     @State private var shown = 0
 
+    @ViewBuilder private var label: some View {
+        if let soft {
+            Text("\(shown)\(suffix)").softNumber(soft)
+        } else {
+            Text("\(shown)\(suffix)").font(font).foregroundStyle(color).monospacedDigit()
+        }
+    }
+
     var body: some View {
-        Text("\(shown)\(suffix)")
-            .font(font).foregroundStyle(color)
-            .monospacedDigit()
+        label
             .onAppear {
                 guard !Theme.reduceMotion, value > 0 else { shown = value; return }
                 let steps = min(value, 24)

@@ -15,6 +15,13 @@ struct StreakShieldModal: View {
     /// Post-use confirmation beat — the shield's work was invisible before:
     /// tap, modal gone, nothing acknowledged the save.
     @State private var saved = false
+    /// The saved beat's soft glow pulse (off with Reduce Motion).
+    @State private var glow = false
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+
+    /// FINISH_SPEC §G2: the purple header (the shield popup family).
+    private static let header = LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
 
     private var shieldsAfter: Int { max(shields - 1, 0) }
     private func shieldWord(_ n: Int) -> String { n == 1 ? "shield" : "shields" }
@@ -33,14 +40,15 @@ struct StreakShieldModal: View {
                 if saved { savedBeat.transition(.opacity) } else { askCard }
             }
             .frame(maxWidth: 360)
-            // FINISH_SPEC §A1: a warm wash instead of plain white.
-            .background(Color(hex: 0xFFF6EA))
+            // FINISH_SPEC §A1: a soft lavender wash instead of plain white.
+            .background(Theme.isDark ? Theme.surface : Color(hex: 0xF5EFFF))
             .clipShape(shape)
             .overlay(alignment: .topTrailing) {
                 if !saved {
                     Button { onClose() } label: {
-                        Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color(hex: 0x92400E))
+                        Image(systemName: "xmark").font(.system(size: 16, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .shadow(color: Color(hex: 0x3B1A78).opacity(0.4), radius: 1, x: 0, y: 1)
                             .frame(width: 36, height: 36).contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)
@@ -54,33 +62,55 @@ struct StreakShieldModal: View {
         }
         .onAppear {
             Haptics.warning()
+            Feedback.whoosh()
             withAnimation(Theme.animation(.spring(response: 0.35, dampingFraction: 0.8))) { shown = true }
+        }
+    }
+
+    /// The shield-guard art (U shielding the streak flame), or the 3D shield.
+    @ViewBuilder private func guardArt(height: CGFloat) -> some View {
+        if ArtAsset.exists("art-scene-shield-guard") {
+            Image("art-scene-shield-guard").resizable().interpolation(.high).scaledToFit()
+                .frame(maxWidth: height * 1.5, maxHeight: height)
+                .accessibilityHidden(true)
+        } else {
+            Icon3D(.shield, size: height * 0.6)
         }
     }
 
     private var askCard: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 4) {
-                Icon3D(.flame, size: 60)
-                Text("\(streak)").softNumber(52)
-                Text("DAY STREAK").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xB45309))
+            // §G2: the purple header with U guarding the flame.
+            VStack(spacing: 2) {
+                guardArt(height: 128)
+                Text("STREAK AT RISK").font(Brand.font(12, .black)).tracking(1.4).foregroundStyle(.white.opacity(0.92))
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 32).padding(.bottom, 20).padding(.horizontal, 24)
-            .background(LinearGradient(colors: [Color(hex: 0xFFF3E0), Color(hex: 0xFDE7F0)], startPoint: .top, endPoint: .bottom))
+            .padding(.top, 22).padding(.bottom, 14).padding(.horizontal, 24)
+            .background(Self.header)
 
             VStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    Icon3D(.flame, size: 34)
+                    Text("\(streak)").softNumber(44)
+                    Text("DAY\nSTREAK").font(Brand.font(11, .black)).tracking(1.1)
+                        .foregroundStyle(A11yInk.on(Color(hex: 0x6D28D9))).multilineTextAlignment(.leading)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(streak) day streak")
                 Text("DON'T LOSE YOUR STREAK!").font(Brand.font(18, .black)).tracking(0.4)
-                    .foregroundStyle(Color(hex: 0x4C1D95))
+                    .foregroundStyle(FinishInk.heading)
                     .multilineTextAlignment(.center)
                 Text("Your \(streak)-day streak ends if you don't play today.")
-                    .font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x4B5563))
+                    .font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
-                    Icon3D(.shield, size: 16)
+                    Icon3D(.shield, size: 18)
                     Text("\(shields) \(shieldWord(shields))").font(Brand.font(12, .black))
                 }
-                .foregroundStyle(Color(hex: 0x6D28D9))
+                .foregroundStyle(A11yInk.on(Color(hex: 0x6D28D9)))
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .tintedPill(Color(hex: 0x7C3AED))
 
                 // Shields are the only way to save a streak. No shields: the Pro note.
                 if shields > 0 {
@@ -103,7 +133,7 @@ struct StreakShieldModal: View {
                     .padding(.top, 4)
                 } else {
                     Text("You're out of shields. Pro members get 4 every billing period.")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x6B7280))
+                        .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -111,11 +141,10 @@ struct StreakShieldModal: View {
                     loading = "decline"
                     Task { await onDecline(); loading = nil }
                 } label: {
-                    Text("Let it reset")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x6B7280))
-                        .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    // §G2: the quiet peach candy.
+                    CandyLabel(title: "Let it reset")
                 }
-                .buttonStyle(.squish).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
+                .buttonStyle(CandyButtonStyle(variant: .peach, size: .large)).disabled(loading != nil)
             }
             .padding(.vertical, 20).padding(.horizontal, 24)
         }
@@ -124,18 +153,36 @@ struct StreakShieldModal: View {
     /// Post-use confirmation beat — the shield's work was invisible before:
     /// tap, modal gone, nothing acknowledged the save.
     private var savedBeat: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                Icon3D(.shield, size: 70)
-                Text("STREAK SAVED!").font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(Color(hex: 0x4C1D95))
+        let still = envReduce || Theme.reduceMotion
+        return VStack(spacing: 0) {
+            ZStack {
+                // §G2: the art with a soft glow + confetti.
+                Circle().fill(Color(hex: 0xFDE68A).opacity(glow ? 0.65 : 0.35))
+                    .frame(width: 170, height: 170).blur(radius: 26)
+                guardArt(height: 140)
+                if !still { ConfettiView() }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 32).padding(.bottom, 24).padding(.horizontal, 24)
-            .background(LinearGradient(colors: [Color(hex: 0xEDE9FE), Color(hex: 0xE0E7FF)], startPoint: .top, endPoint: .bottom))
-            Text("Your \(streak)-day streak is safe · \(shieldsAfter) \(shieldWord(shieldsAfter)) left")
-                .font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x4B5563))
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                .padding(.vertical, 20).padding(.horizontal, 24)
+            .frame(maxWidth: .infinity).frame(height: 170)
+            .padding(.top, 22).padding(.horizontal, 24)
+            .background(Self.header)
+            .clipped()
+            VStack(spacing: 8) {
+                Text("STREAK SAVED!").font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(FinishInk.heading)
+                HStack(spacing: 8) {
+                    Icon3D(.flame, size: 26)
+                    Text("\(streak)").softNumber(30)
+                    Text("days safe").font(Brand.font(12, .black)).foregroundStyle(FinishInk.secondary)
+                }
+                Text("\(shieldsAfter) \(shieldWord(shieldsAfter)) left")
+                    .font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .padding(.vertical, 20).padding(.horizontal, 24)
+        }
+        .onAppear {
+            Feedback.streak()   // §U: shield saved — streak · medium
+            guard !still, !Motion.calm() else { return }   // §AD: no glow pulse in Low Power Mode
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { glow = true }
         }
     }
 }

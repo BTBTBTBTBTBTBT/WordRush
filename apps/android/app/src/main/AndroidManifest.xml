@@ -29,6 +29,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Wordocious">
 
+        <!-- FINISH_SPEC K2: system-drawn pushes (FCM notification payloads) use the white
+             W-mascot silhouette small icon and the brand purple accent. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_wordocious" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

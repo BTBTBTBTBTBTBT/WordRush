@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton } from '@/components/ui/candy-button';
-import { SOFT, cardBarStyle, softCard, softPill } from '@/lib/soft-surface';
+import { SOFT, SOFT_INK, cardBarStyle, softCard, softPill } from '@/lib/soft-surface';
 
 // The finished game screen's result line (docs/FINISH_SPEC.md B6; mockup
 // finishing-touches.html): no "Home" text link (the house at the top already
@@ -39,7 +39,7 @@ export function ResultPill({ accent, icon, value, label }: { accent: string; ico
     <span className="inline-flex items-center gap-1.5" style={{ ...softPill(accent), padding: '6px 12px 5px 6px' }}>
       <span className="inline-flex items-center justify-center" style={{ width: 24, height: 24 }}>{icon}</span>
       <SoftNum size={17}>{value}</SoftNum>
-      <small className="font-extrabold" style={{ fontSize: 11, color: '#6f5f8f' }}>{label}</small>
+      <small className="font-extrabold" style={{ fontSize: 11, color: SOFT_INK.label }}>{label}</small>
     </span>
   );
 }

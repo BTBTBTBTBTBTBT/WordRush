@@ -11,8 +11,12 @@ import WordociousCore
 /// action — taunts, Challenge, shield gifts, Unfriend, the weekly podium —
 /// lives on in the new sections.
 struct FriendsPanelView: View {
-    /// The header's add-friend icon: a fresh id focuses the username field.
+    /// A fresh id focuses the username field (the "Add a friend" button's jump).
     var focusAdd: UUID? = nil
+    /// FINISH_SPEC §C4b: the "Your friends" header's Add a friend candy button —
+    /// the screen scrolls to Add by username and focuses the field (what the old
+    /// header circle did). nil → focus the field in place.
+    var onAddFriend: (() -> Void)? = nil
 
     @State private var version = 0
     @State private var username = ""
@@ -59,6 +63,11 @@ struct FriendsPanelView: View {
     @State private var raceRunFriend: String?
     @State private var showPro = false
     @State private var gamesVersion = 0
+    // FINISH_SPEC §T1 / §T3: the invite-sent card (a request now pending) and the
+    // NEW FRIENDS card (a request accepted — yours, or theirs via mutual add).
+    @State private var sentRequestTo: String?
+    struct NewFriend: Equatable { let id: String?; let name: String; let avatar: String?; let emoji: String? }
+    @State private var newFriend: NewFriend?
 
     var body: some View {
         let _ = version
@@ -81,6 +90,18 @@ struct FriendsPanelView: View {
             }
             if !podium.isEmpty {
                 weeklyRaceSection
+            }
+            if let nf = newFriend {
+                FriendsNewFriendsCard(
+                    me: AuthService.shared.profile, friendName: nf.name, friendAvatar: nf.avatar, friendEmoji: nf.emoji,
+                    onChallenge: {
+                        // The existing challenge path (a private Classic VS race).
+                        let f = nf.id.flatMap(FriendsKit.friend)
+                            ?? FriendsService.friends.first { $0.username.caseInsensitiveCompare(nf.name) == .orderedSame }
+                        if let f { newFriend = nil; challenge(f) }
+                    },
+                    onSeeFriends: { newFriend = nil })
+                    .transition(.opacity)
             }
             yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)
             // §10 (founder, iOS 220): INVITES sits directly under YOUR FRIENDS.
@@ -194,16 +215,19 @@ struct FriendsPanelView: View {
                     PageHostTitle(text: "TODAY'S RACE", colors: FriendsKit.titleGradient, host: Mascots.friends)
                         .frame(maxWidth: .infinity)
                     if let p = AuthService.shared.profile {
+                        // §C4: the race on the pink banner card.
                         TodaysRaceCard(
                             friends: FriendsService.friends, me: p, meDigest: FriendsService.meDigest,
                             challenging: challenging,
                             onTaunt: { f in showRace = false; after { tauntTarget = f } },
                             onChallenge: { f in showRace = false; after { challenge(f) } })
-                            .padding(12).vsCard(radius: 14)
+                            .padding(12)
+                            .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.amber])
                     }
                 }
                 .padding(16)
             }
+            .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
             .pageBackground(.friends, lightOnly: true)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .toolbar {
@@ -222,29 +246,45 @@ struct FriendsPanelView: View {
         let mine = games.filter(\.yourTurn).count
         return VStack(alignment: .leading, spacing: 8) {
             FriendsSectionHeader(title: "YOUR TURN") {
+                // §M: the same candy badge as the Friends tab — games waiting on you.
                 if mine > 0 {
-                    Text("\(mine)").font(Brand.font(11, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 8).frame(height: 20)
-                        .background(Capsule().fill(FriendsKit.solid))
+                    CandyCountBadge(count: mine, size: 18)
+                        .accessibilityElement().accessibilityLabel("\(mine) waiting on you")
                 }
             }
             VStack(spacing: 8) {
                 ForEach(games) { g in
+                    let accent = FriendsKit.tileAccent(g.kind)
+                    // §C4: each game in play on a small card in ITS color with its top bar.
                     Button { openGame = OpenGame(id: g.id, initial: g) } label: {
                         HStack(spacing: 12) {
-                            FriendlyGameIcon(kind: g.kind, size: 40)
+                            pocketIcon(g.kind, size: 40)
+                                // §M: a waiting game wears the small candy badge.
+                                .overlay(alignment: .topTrailing) {
+                                    if g.yourTurn { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
+                                }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("\(g.title) vs @\(g.opponent.username)").font(Brand.font(13, .black))
-                                    .foregroundStyle(Color(hex: 0x111827)).lineLimit(1).minimumScaleFactor(0.8)
-                                Text(g.line).font(Brand.font(11, .heavy)).foregroundStyle(FriendsKit.solid).lineLimit(1)
+                                    .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.8)
+                                Text(g.line).font(Brand.font(11, .heavy))
+                                    .foregroundStyle(Color.black.mixed(over: accent, 0.3)).lineLimit(1)
                             }
                             Spacer(minLength: 6)
-                            if g.yourTurn { FriendsPill(title: "PLAY") } else { FriendsPill(title: "WAITING", solid: false) }
+                            if g.yourTurn {
+                                // §A8: the action is a candy button (same tap as the row).
+                                Button { openGame = OpenGame(id: g.id, initial: g) } label: {
+                                    CandyLabel(title: "Play", symbol: "play.fill")
+                                }
+                                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                                .accessibilityLabel("Play \(g.title) with \(g.opponent.username)")
+                            } else {
+                                FriendsStatusChip(title: "Waiting", accent: accent)
+                            }
                         }
                         .padding(12)
-                        .vsCard(radius: 14)
+                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 6, tint: 0.10, line: 0.28)
                     }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(.squish)
                 }
             }
         }
@@ -256,20 +296,30 @@ struct FriendsPanelView: View {
         VStack(alignment: .leading, spacing: 8) {
             FriendsSectionHeader(title: "PLAY WITH FRIENDS") {
                 Text("TAP A GAME, PICK A FRIEND").font(Brand.font(9.5, .black)).tracking(0.8)
-                    .foregroundStyle(FriendsKit.solid).lineLimit(1).minimumScaleFactor(0.7)
+                    .foregroundStyle(FriendsInk.section).lineLimit(1).minimumScaleFactor(0.7)
             }
-            // §9: six games, 3 across × 2 rows.
+            // §9: six games, 3 across × 2 rows. §C4: each a small card tinted in its
+            // OWN color with its own top bar (mockup `.gt`).
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
+                    let accent = FriendsKit.tileAccent(k)
                     Button { quickPlay = QuickPlay(friend: nil, kind: k) } label: {
-                        // The home mode card's tile (docs/GAME_TILE_STYLE.md): the game's
-                        // color as a soft background, the bar on top, the icon in the accent.
-                        GameTileCard(accent: FriendsKit.color(k), title: k.title, sub: FriendsKit.sub(k),
-                                     titleLines: 2, minHeight: 128, light: true) {
-                            FriendlyGameIcon(kind: k, size: 32, tinted: true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            pocketIcon(k, size: 34)
+                            Text(k.title).font(Brand.font(12, .black)).foregroundStyle(FriendsInk.heading)
+                                .lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(FriendsKit.sub(k)).font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
+                                .lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
                         }
+                        .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 10)
+                        .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
+                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 7, tint: 0.10, line: 0.28)
+                        .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(.squish)
                     .accessibilityLabel("\(k.title), \(FriendsKit.sub(k))")
                 }
             }
@@ -278,14 +328,20 @@ struct FriendsPanelView: View {
 
     // MARK: THIS WEEK'S RACE (§2.6 — the weekly podium, restyled)
 
+    /// The gold card's ink (light-only, like the rest of the Friends tab).
+    private var weekInk: Color { FriendsInk.gold }
+
     private var weeklyRaceSection: some View {
+        // §C4: this week's race on a warm gold card with the shared podium.
         VStack(alignment: .leading, spacing: 8) {
-            FriendsSectionHeader(title: "THIS WEEK'S RACE") {
+            HStack(spacing: 8) {
+                FriendsLabel("This week's race", color: weekInk)
+                Spacer(minLength: 6)
                 // §218: name the window and when it closes; §226 live clock.
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     Text(FriendsPanelView.weekEndsLabel(at: ctx.date).uppercased())
-                        .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(FriendsKit.label)
-                        .monospacedDigit().lineLimit(1)
+                        .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(weekInk)
+                        .monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
                 }
                 // §234: share the race once someone has actually scored this week.
                 if raceStarted {
@@ -298,13 +354,16 @@ struct FriendsPanelView: View {
                             username: AuthService.shared.profile?.username)
                         sharingRace = false
                     } label: {
-                        Icon3D(.share, size: 15)
+                        Icon3D(.share, size: 20)
+                            .frame(width: 32, height: 32)
+                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(.squishIcon)
                     .opacity(sharingRace ? 0.4 : 1)
                     .accessibilityLabel("Share weekly race")
                 }
             }
+            .padding(.horizontal, 14).padding(.top, 10)
             VStack(spacing: 6) {
                 // D3.3 (§294) — the Sunday finish, settled server-side.
                 if let r = FriendsService.lastWeek {
@@ -314,22 +373,26 @@ struct FriendsPanelView: View {
                 if let lw = lastWeekWinner {
                     let history = pastWeeks
                     Button {
-                        if history.count > 1 { withAnimation(.easeInOut(duration: 0.15)) { showPastWeeks.toggle() } }
+                        if history.count > 1 {
+                            if Theme.reduceMotion { showPastWeeks.toggle() }
+                            else { withAnimation(.easeInOut(duration: 0.15)) { showPastWeeks.toggle() } }
+                        }
                     } label: {
                         HStack(spacing: 3) {
                             Text("Last week:")
-                                .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                                .font(Brand.font(10, .bold)).foregroundStyle(weekInk)
                             Icon3D(.crown, size: 13, label: "Winner")
                             Text("\(lw.name) · \(lw.pts.formatted()) pts")
-                                .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                                .font(Brand.font(10, .heavy)).foregroundStyle(weekInk)
                             if history.count > 1 {
                                 Image(systemName: "chevron.down")
                                     .font(.system(size: 8, weight: .bold))
-                                    .foregroundStyle(FriendsKit.label)
+                                    .foregroundStyle(weekInk)
                                     .rotationEffect(.degrees(showPastWeeks ? 180 : 0))
                             }
                             Spacer(minLength: 0)
                         }
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)
                     if showPastWeeks {
@@ -339,68 +402,78 @@ struct FriendsPanelView: View {
                                 Icon3D(.crown, size: 13, label: "Winner")
                                 Text("\(wk.name) · \(wk.pts.formatted()) pts")
                             }
-                                .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                                .font(Brand.font(10, .bold)).foregroundStyle(weekInk)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.leading, 4)
                         }
                     }
                 }
-                HStack(alignment: .bottom, spacing: 22) {
-                    ForEach(podiumOrder, id: \.entry.id) { slot in
-                        // §225: podium columns open profiles too.
-                        NavigationLink(value: slot.entry.id) {
-                            VStack(spacing: 2) {
-                                Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
-                                    .font(.system(size: slot.rank == 0 ? 20 : 14))
-                                AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
-                                    .overlay(AvatarOutline(tile: AvatarView.showsTile(slot.entry.avatarUrl)).stroke(slot.entry.isMe ? FriendsKit.solid : .clear, lineWidth: 2))
-                                Text(slot.entry.username).font(Brand.font(9, .black)).lineLimit(1)
-                                    .minimumScaleFactor(0.75)
-                                    .foregroundStyle(slot.entry.isMe ? FriendsKit.solid : FriendsKit.ink)
-                                    .frame(maxWidth: 76)
-                                Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(FriendsKit.label)
+            }
+            .padding(.horizontal, 14)
+            // The podium (shared with the Leaderboard): gold / silver / bronze steps;
+            // §225: podium columns open profiles too.
+            PodiumView(entries: podium.map(podiumEntry), compact: true, lightOnly: true) { e in profileTarget = e.id }
+                .padding(.horizontal, 4)
+            // §238: everyone past the medals, ranked, on soft striped rows.
+            if standings.count > 3 {
+                VStack(spacing: 0) {
+                    ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
+                        NavigationLink(value: e.id) {
+                            HStack(spacing: 8) {
+                                Text(FriendsPanelView.ordinal(i + 4))
+                                    .font(Brand.font(11, .black)).foregroundStyle(weekInk)
+                                    .frame(width: 30, alignment: .trailing)
+                                Text(e.username)
+                                    .font(Brand.font(12, .black)).lineLimit(1)
+                                    .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsInk.heading)
+                                Spacer(minLength: 4)
+                                Text(e.pts.formatted()).softNumber(13, color: FinishInk.softNumber)
+                                    .fixedSize()
+                                Text("pts").font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
                             }
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.squish)
-                        .padding(.top, slot.rank == 0 ? 0 : 8)
+                        .friendsStripe(i, accent: FriendsInk.goldAccent)
                     }
-                }
-                .frame(maxWidth: .infinity)
-                // §238: everyone past the medals, ranked.
-                if standings.count > 3 {
-                    VStack(spacing: 4) {
-                        ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
-                            NavigationLink(value: e.id) {
-                                HStack(spacing: 8) {
-                                    Text(FriendsPanelView.ordinal(i + 4))
-                                        .font(Brand.font(10, .black)).foregroundStyle(FriendsKit.label)
-                                        .frame(width: 28, alignment: .trailing)
-                                    Text(e.username)
-                                        .font(Brand.font(10, .heavy)).lineLimit(1)
-                                        .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsKit.ink)
-                                    Spacer(minLength: 4)
-                                    Text("\(e.pts.formatted()) pts")
-                                        .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
-                                        .fixedSize()
-                                }
-                            }
-                            .buttonStyle(.squish)
-                        }
-                    }
-                    .padding(.top, 2)
-                    .padding(.horizontal, 8)
-                }
-                if !raceStarted {
-                    Text("Race resets Mondays — first daily takes the lead.")
-                        .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
                 }
             }
-            .padding(14)
-            .vsCard(radius: 14)
+            if !raceStarted {
+                Text("Race resets Mondays — first daily takes the lead.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(weekInk)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 14)
+            }
+            Color.clear.frame(height: 4)
+        }
+        .friendsCard(accent: FriendsInk.goldAccent, bar: [FriendsInk.goldAccent, Color(hex: 0xFFD166)],
+                     tint: 0.09, line: 0.28)
+    }
+
+    /// A race entry on the shared podium (letter-tile avatar, soft points).
+    private func podiumEntry(_ e: RaceEntry) -> PodiumEntry {
+        let me = AuthService.shared.profile
+        return PodiumEntry(id: e.id, name: e.username,
+                           username: e.isMe ? (me?.username ?? e.username) : e.username,
+                           accentHex: e.isMe ? me?.accentColor : nil, emoji: e.avatarEmoji,
+                           value: "\(e.pts.formatted()) pts")
+    }
+
+    /// The small game icon on the Friends cards: the glossy 3D pocket art when it
+    /// ships (ART_SPEC §9), else the outline chip.
+    @ViewBuilder private func pocketIcon(_ k: FriendlyKind, size: CGFloat) -> some View {
+        if let art = k.pocketArt {
+            GameArtImage(asset: art, size: size).frame(width: size, height: size).accessibilityHidden(true)
+        } else {
+            FriendlyGameIcon(kind: k, size: size, tinted: true)
         }
     }
 
     // MARK: YOUR FRIENDS (§2.7)
+
+    /// §C4: the friends list's lavender card.
+    private static let lavender = Color(hex: 0x7C3AED)
 
     @ViewBuilder
     private func yourFriendsSection(_ friends: [FriendsService.FriendProfile],
@@ -410,71 +483,87 @@ struct FriendsPanelView: View {
         // (server still enforces 1 taunt per friend per day).
         let slackers = friends.filter { $0.playedToday == 0 && !isNewFriend($0) }
         VStack(alignment: .leading, spacing: 8) {
+            // §C4b: "Add a friend" lives here now — a small candy button in the
+            // section header (the old circle beside the FRIENDS title is gone).
             FriendsSectionHeader(title: friends.isEmpty ? "YOUR FRIENDS" : "YOUR FRIENDS · \(friends.count)") {
-                if !slackers.isEmpty {
-                    Button {
-                        Task {
-                            var n = 0
-                            for f in slackers {
-                                let outcome = await FriendsService.taunt(
-                                    friendId: f.id, tauntId: "slowpoke",
-                                    day: LeaderboardService.todayLocal())
-                                if outcome == .sent { n += 1 }
+                Button {
+                    if let onAddFriend { onAddFriend() } else { fieldFocused = true }
+                } label: {
+                    CandyLabel(title: "Add a friend", symbol: "plus")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                .accessibilityLabel("Add a friend")
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                if friends.isEmpty {
+                    Group {
+                        if !FriendsService.loaded {
+                            // Roster not fetched yet (cold launch): hold the rows' place instead of
+                            // flashing the no-friends teaching copy (founder, 2026-09-29).
+                            VStack(spacing: 10) {
+                                ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
                             }
-                            note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s") 🔔" : "Everyone already nudged today"
+                        } else if incoming.isEmpty && outgoing.isEmpty {
+                            // Teaching empty state: explain the whole loop (Tier 1, Aug 11),
+                            // under I's invite scene and its one line (MASCOT_SPEC §6, ART_SPEC §7;
+                            // §A7: I, not the page host O1).
+                            VStack(alignment: .leading, spacing: 5) {
+                                MascotMessage(scene: .invite, line: Mascots.addFriendLine, size: 72,
+                                              font: Brand.font(13, .black), color: FriendsInk.heading)
+                                    .frame(maxWidth: .infinity).padding(.bottom, 6)
+                                Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
+                                Text("2. Requests you send and receive land in INVITES.")
+                                Text("3. Once a friend accepts, race them today, play pocket games and trade streaks.")
+                            }
+                            .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                        } else {
+                            Text("Your friends land here once they accept.")
+                                .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                         }
-                    } label: {
-                        Text("Nudge all who haven't played").font(Brand.font(10.5, .black))
-                            .foregroundStyle(FriendsKit.solid).lineLimit(1).minimumScaleFactor(0.8)
                     }
-                    .buttonStyle(.squish)
-                }
-            }
-            if friends.isEmpty {
-                Group {
-                    if !FriendsService.loaded {
-                        // Roster not fetched yet (cold launch): hold the rows' place instead of
-                        // flashing the no-friends teaching copy (founder, 2026-09-29).
-                        VStack(spacing: 10) {
-                            ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    if !slackers.isEmpty {
+                        HStack(spacing: 8) {
+                            Text(slackers.count == 1 ? "1 friend hasn't played today" : "\(slackers.count) haven't played today")
+                                .font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.rowSub)
+                                .lineLimit(1).minimumScaleFactor(0.8)
+                            Spacer(minLength: 6)
+                            Button {
+                                Task {
+                                    var n = 0
+                                    for f in slackers {
+                                        let outcome = await FriendsService.taunt(
+                                            friendId: f.id, tauntId: "slowpoke",
+                                            day: LeaderboardService.todayLocal())
+                                        if outcome == .sent { n += 1 }
+                                    }
+                                    note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s")!" : "Everyone already nudged today"
+                                }
+                            } label: {
+                                CandyLabel(title: "Nudge all", symbol: "bell.fill")
+                            }
+                            .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
+                            .accessibilityLabel("Nudge all who haven't played")
                         }
-                    } else if incoming.isEmpty && outgoing.isEmpty {
-                        // Teaching empty state: explain the whole loop (Tier 1, Aug 11),
-                        // under I's invite scene and its one line (MASCOT_SPEC §6, ART_SPEC §7).
-                        VStack(alignment: .leading, spacing: 5) {
-                            MascotMessage(scene: .invite, line: Mascots.addFriendLine, size: 72,
-                                          font: Brand.font(13, .black), color: FriendsKit.ink)
-                                .frame(maxWidth: .infinity).padding(.bottom, 6)
-                            Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
-                            Text("2. Requests you send and receive land in INVITES.")
-                            Text("3. Once a friend accepts, race them today, play pocket games and trade streaks.")
-                        }
-                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
-                    } else {
-                        Text("Your friends land here once they accept.")
-                            .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 6)
                     }
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .vsCard(radius: 14)
-            } else {
-                // On now first, then by the most recent presence.
-                let sorted = friends.sorted { a, b in
-                    let ao = a.isOnline(), bo = b.isOnline()
-                    if ao != bo { return ao }
-                    return (FriendsService.ms(a.lastSeenAt) ?? 0) > (FriendsService.ms(b.lastSeenAt) ?? 0)
-                }
-                VStack(spacing: 0) {
-                    ForEach(sorted) { f in
+                    // On now first, then by the most recent presence.
+                    let sorted = friends.sorted { a, b in
+                        let ao = a.isOnline(), bo = b.isOnline()
+                        if ao != bo { return ao }
+                        return (FriendsService.ms(a.lastSeenAt) ?? 0) > (FriendsService.ms(b.lastSeenAt) ?? 0)
+                    }
+                    ForEach(Array(sorted.enumerated()), id: \.element.id) { i, f in
                         friendRow(f)
-                        if f.id != sorted.last?.id { Divider().padding(.leading, 58) }
+                            .friendsStripe(i, accent: Self.lavender, divider: i > 0 || !slackers.isEmpty)
                     }
                 }
-                .vsCard(radius: 14)
             }
+            .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
             if let note {
-                Text(note).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.label)
+                Text(note).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
                     .padding(.horizontal, 2)
             }
         }
@@ -483,46 +572,55 @@ struct FriendsPanelView: View {
     private func friendRow(_ f: FriendsService.FriendProfile) -> some View {
         let online = f.isOnline()
         let line = f.presenceLine() ?? FriendsKit.todayLine(f)
-        // §225: the WHOLE row is the door to the profile; the pill Button nests
+        // §225: the WHOLE row is the door to the profile; the candy Button nests
         // inside the label and its tap wins over the link.
         return NavigationLink(value: f.id) {
             HStack(spacing: 10) {
-                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 36, online: online, ring: false)
+                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 38, online: online, ring: false)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 5) {
-                        Text("@\(f.username)").font(Brand.font(13, .black))
-                            .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
+                        Text("@\(f.username)").font(Brand.font(14, .black))
+                            .foregroundStyle(FriendsInk.heading).lineLimit(1)
+                        // §V3: the tier badge + level beside the name.
+                        if f.level > 0 { LevelBadge(level: f.level, size: 16) }
                         // §216: the week's leader wears the crown.
-                        if f.id == crownId { Icon3D(.crown, size: 14, label: "This week's leader") }
+                        if f.id == crownId { Icon3D(.crown, size: 15, label: "This week's leader") }
                         if isNewFriend(f) {
                             Text("NEW").font(Brand.font(8, .black))
                                 .foregroundStyle(FriendsKit.solid)
-                                .padding(.horizontal, 4).padding(.vertical, 2)
-                                .background(RoundedRectangle(cornerRadius: 4).fill(FriendsKit.soft))
+                                .padding(.horizontal, 5).padding(.vertical, 2)
+                                .friendsChip(FriendsKit.solid)
                         }
                         // §216: friendversary chip on milestone days.
                         if let days = friendversary(f) {
-                            Text("🎉 \(days) DAYS").font(Brand.font(8, .black))
+                            // §AM3: the gold star art, not the party emoji.
+                            HStack(spacing: 2) {
+                                if ArtAsset.exists("art-badge-icon-star-sprite") {
+                                    Image("art-badge-icon-star-sprite").resizable().interpolation(.high).scaledToFit()
+                                        .frame(width: 10, height: 10).accessibilityHidden(true)
+                                }
+                                Text("\(days) DAYS").font(Brand.font(8, .black))
+                            }
                                 .foregroundStyle(FriendsKit.solid)
-                                .padding(.horizontal, 4).padding(.vertical, 2)
-                                .background(RoundedRectangle(cornerRadius: 4).fill(FriendsKit.soft))
+                                .padding(.horizontal, 5).padding(.vertical, 2)
+                                .friendsChip(FriendsKit.solid)
                         }
                     }
-                    Text(line).font(Brand.font(11, .heavy))
-                        .foregroundStyle(online ? FriendsKit.green : FriendsKit.label).lineLimit(1)
+                    Text(line).font(Brand.font(11, .bold))
+                        .foregroundStyle(online ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
                 }
                 Spacer(minLength: 4)
                 if let n = f.friendStreak, n > 0 {
                     HStack(spacing: 2) {
-                        FlameMark(size: 11)
-                        Text("\(n)").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        FlameMark(size: 12)
+                        Text("\(n)").softNumber(14, color: Color(hex: 0xC2410C))
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(n)-day friend streak")
                 }
                 actionPill(f, online: online)
             }
-            .padding(.horizontal, 12).padding(.vertical, 10)
+            .padding(.horizontal, 12).padding(.vertical, 9)
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
@@ -539,13 +637,13 @@ struct FriendsPanelView: View {
             }
             // §289: a private Classic VS Battle, pushed to them.
             Button { challenge(f) } label: {
-                Label("Challenge ⚔️", image: "swords")
+                Label("Challenge", image: "swords")
             }
             .disabled(challenging != nil)
             // D3.4 (§294): gift one of your streak shields — only when you hold one.
             if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
                 Button { giftShield(f) } label: {
-                    Label("🛡️ Gift a shield", systemImage: "shield")
+                    Label("Gift a shield", systemImage: "shield")
                 }
                 .disabled(gifting != nil)
             }
@@ -557,22 +655,22 @@ struct FriendsPanelView: View {
 
     /// On now → Play (quick-play sheet); played today → Challenge (the free
     /// live VS challenge); hasn't played → Nudge (the taunt picker).
+    /// §C4 / §A8: chunky small candy buttons — Play / Challenge purple, Nudge amber.
     @ViewBuilder private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         if online {
-            Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: { FriendsPill(title: "Play") }
-                .buttonStyle(.squish)
+            Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: { CandyLabel(title: "Play") }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
                 .accessibilityLabel("Play with \(f.username)")
         } else if (f.playedToday ?? 0) > 0 {
             Button { challenge(f) } label: {
-                FriendsPill(title: challenging == f.id ? "Sending…" : "Challenge", solid: false)
+                CandyLabel(title: challenging == f.id ? "Sending…" : "Challenge")
             }
-            .buttonStyle(.squish)
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
             .disabled(challenging != nil)
-            .opacity(challenging != nil && challenging != f.id ? 0.5 : 1)
             .accessibilityLabel("Challenge \(f.username) to a VS Battle")
         } else {
-            Button { tauntTarget = f } label: { FriendsPill(title: "Nudge", solid: false) }
-                .buttonStyle(.squish)
+            Button { tauntTarget = f } label: { CandyLabel(title: "Nudge") }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
                 .accessibilityLabel("Nudge \(f.username)")
         }
     }
@@ -586,30 +684,26 @@ struct FriendsPanelView: View {
                 HStack(spacing: 8) {
                     TextField("Add by username", text: $username)
                         .font(Brand.font(13, .bold))
-                        .foregroundStyle(Color(hex: 0x111827))
+                        .foregroundStyle(FriendsInk.heading)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($fieldFocused)
                         .padding(.horizontal, 12).frame(height: 40)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.page))
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Self.lavender.wash(0.10)))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(fieldFocused ? Self.lavender.wash(0.6) : Self.lavender.wash(0.30), lineWidth: 1.5))
                         .onSubmit { add() }
                     Button(action: add) {
-                        HStack(spacing: 5) {
-                            Icon3D(.addFriend, size: 15) // ART_SPEC §5
-                            Text("ADD").font(Brand.font(12, .black)).tracking(0.5)
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14).frame(height: 40)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.solid))
+                        CandyLabel(title: "Add") { Icon3D(.addFriend, size: 16) } // ART_SPEC §5
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
                     .disabled(sending || username.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .opacity(sending || username.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
+                    .accessibilityLabel("Add friend")
                 }
                 // Typeahead results — tap sends to that exact account (by id).
                 if !suggestions.isEmpty {
-                    VStack(spacing: 6) {
-                        ForEach(suggestions) { u in
+                    VStack(spacing: 0) {
+                        ForEach(Array(suggestions.enumerated()), id: \.element.id) { i, u in
                             Button {
                                 guard !sending else { return }
                                 sending = true
@@ -617,8 +711,10 @@ struct FriendsPanelView: View {
                                 Task {
                                     let outcome = await FriendsService.request(addresseeId: u.id)
                                     switch outcome {
-                                    case .accepted: addNote = "You're now friends! 🎉"; username = ""
-                                    case .pending: addNote = "Request sent to \(u.username) 🤝"; username = ""
+                                    case .accepted:
+                                        username = ""
+                                        newFriend = NewFriend(id: u.id, name: u.username, avatar: u.avatar_url, emoji: u.avatar_emoji)
+                                    case .pending: sentRequestTo = u.username; username = ""
                                     case .failed(let msg): addNote = msg
                                     }
                                     sending = false
@@ -626,197 +722,227 @@ struct FriendsPanelView: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     AvatarView(url: u.avatar_url, username: u.username, size: 30, emoji: u.avatar_emoji)
-                                    Text(u.username).font(Brand.font(12, .heavy))
-                                        .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
+                                    Text(u.username).font(Brand.font(13, .black))
+                                        .foregroundStyle(FriendsInk.heading).lineLimit(1)
                                     Spacer()
-                                    Text("Lvl \(u.level)").font(Brand.font(10, .bold))
-                                        .foregroundStyle(FriendsKit.label)
-                                    Icon3D(.addFriend, size: 16) // ART_SPEC §5
+                                    LevelBadge(level: u.level, size: 18) // §V3
+                                    Icon3D(.addFriend, size: 18) // ART_SPEC §5
                                 }
-                                .padding(.horizontal, 10).padding(.vertical, 7)
-                                .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.page))
+                                .padding(.horizontal, 10).padding(.vertical, 8)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.squish)
+                            .friendsStripe(i, accent: Self.lavender)
                         }
                     }
+                    .friendsCard(accent: Self.lavender, radius: 14, tint: 0.05, line: 0.22)
                 }
                 // §225/§289: the invite link (a Pro player's open referral first).
                 if AuthService.shared.profile != nil {
                     Button { shareInviteLink() } label: {
-                        HStack(spacing: 5) {
-                            Icon3D(.share, size: 13)
-                            Text("Share invite link").font(Brand.font(11, .black))
-                        }
-                        .foregroundStyle(FriendsKit.solid)
+                        CandyLabel(title: "Share invite link") { Icon3D(.share, size: 16) }
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
                     .disabled(resolvingShare)
-                    .opacity(resolvingShare ? 0.5 : 1)
                 }
                 if let addNote {
-                    Text(addNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.label)
+                    Text(addNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
+                }
+                // §T1: the request is out — INVITE SENT! with the name on a glossy pill.
+                if let sent = sentRequestTo {
+                    FriendsInviteSentCard(
+                        name: sent, line: "It waits in INVITES until they accept.",
+                        onSendAnother: { sentRequestTo = nil; fieldFocused = true },
+                        onDone: { sentRequestTo = nil })
                 }
             }
             .padding(14)
-            .vsCard(radius: 14)
+            .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
         }
     }
 
     // MARK: INVITES (§2.3 — the existing card, restyled)
 
     /// Requests in flight (incoming + sent). Renders only when something is pending.
+    /// §C4: the same lavender card family, striped rows, candy actions.
     @ViewBuilder private var invitesCard: some View {
         let incoming = FriendsService.incoming
         let outgoing = FriendsService.outgoingProfiles
         VStack(alignment: .leading, spacing: 8) {
             FriendsSectionHeader(title: "INVITES") {
-                Text("\(incoming.count + outgoing.count)").font(Brand.font(11, .black)).foregroundStyle(.white)
-                    .padding(.horizontal, 8).frame(height: 20)
-                    .background(Capsule().fill(FriendsKit.solid))
+                // §M: incoming requests are what's waiting on you — the candy badge;
+                // with only sent requests, a quiet count.
+                if !incoming.isEmpty {
+                    CandyCountBadge(count: incoming.count, size: 18)
+                        .accessibilityElement().accessibilityLabel("\(incoming.count) new \(incoming.count == 1 ? "request" : "requests")")
+                } else {
+                    Text("\(outgoing.count)").font(Brand.font(11, .black)).monospacedDigit()
+                        .foregroundStyle(FriendsInk.section)
+                }
             }
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 // Incoming requests first — they're the actionable part.
                 if !incoming.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("FRIEND REQUESTS").font(Brand.font(9.5, .black)).tracking(0.8)
-                            .foregroundStyle(FriendsKit.label)
-                        ForEach(incoming) { r in
-                            HStack(spacing: 10) {
-                                AvatarView(url: r.avatar_url, username: r.username, size: 32, emoji: r.avatar_emoji)
-                                NavigationLink(value: r.id) {
-                                    Text("@\(r.username)").font(Brand.font(13, .black))
-                                        .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
-                                }.buttonStyle(.squish)
-                                Spacer()
-                                Button { Task { await FriendsService.accept(requesterId: r.id) } } label: {
-                                    FriendsPill(title: "Accept")
-                                }.buttonStyle(.squish)
-                                Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
-                                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(FriendsKit.label).frame(width: 28, height: 28)
-                                        .background(Circle().fill(Color(hex: 0xF3F4F6)))
+                    FriendsLabel("Friend requests", color: FriendsInk.lavender)
+                        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 6)
+                    ForEach(Array(incoming.enumerated()), id: \.element.id) { i, r in
+                        HStack(spacing: 10) {
+                            AvatarView(url: r.avatar_url, username: r.username, size: 34, emoji: r.avatar_emoji)
+                                // §M: each waiting request wears the small candy badge.
+                                .overlay(alignment: .topTrailing) { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
+                            NavigationLink(value: r.id) {
+                                Text("@\(r.username)").font(Brand.font(14, .black))
+                                    .foregroundStyle(FriendsInk.heading).lineLimit(1)
+                            }.buttonStyle(.squish)
+                            Spacer()
+                            // §T2: Accept is the green (teal) candy; §T3 a yes shows NEW FRIENDS!.
+                            Button {
+                                Task {
+                                    if await FriendsService.accept(requesterId: r.id) {
+                                        newFriend = NewFriend(id: r.id, name: r.username, avatar: r.avatar_url, emoji: r.avatar_emoji)
+                                    }
                                 }
-                                .buttonStyle(.squish)
-                                .accessibilityLabel("Decline \(r.username)")
+                            } label: {
+                                CandyLabel(title: "Accept", symbol: "checkmark")
                             }
+                            .buttonStyle(CandyButtonStyle(variant: .teal, size: .small, fullWidth: false))
+                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                Image(systemName: "xmark").font(.system(size: 12, weight: .black))
+                                    .foregroundStyle(FinishInk.softNumber)
+                            }
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false, circle: true))
+                            .accessibilityLabel("Decline \(r.username)")
                         }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .friendsStripe(i, accent: Self.lavender)
                     }
                 }
 
                 // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
                 if !outgoing.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("SENT — WAITING").font(Brand.font(9.5, .black)).tracking(0.8)
-                            .foregroundStyle(FriendsKit.label)
-                        ForEach(outgoing) { r in
-                            HStack(spacing: 10) {
-                                AvatarView(url: r.avatar_url, username: r.username, size: 32, emoji: r.avatar_emoji)
-                                NavigationLink(value: r.id) {
-                                    (Text("@\(r.username)").font(Brand.font(13, .black)).foregroundColor(Color(hex: 0x111827))
-                                        + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(FriendsKit.label))
-                                        .lineLimit(1)
-                                }.buttonStyle(.squish)
-                                Spacer()
-                                // §212: the invite usually died unseen — re-push, 1/24h.
-                                Button {
-                                    Task {
-                                        switch await FriendsService.remind(addresseeId: r.id) {
-                                        case .reminded: inviteNote = "Reminder sent to \(r.username) 🔔"
-                                        case .already: inviteNote = "Already reminded today"
-                                        case .failed: inviteNote = "Could not remind"
-                                        }
-                                    }
-                                } label: {
-                                    FriendsPill(title: withinDay(r.remindedAt) ? "Reminded" : "Remind", solid: false)
+                    FriendsLabel("Sent — waiting", color: FriendsInk.lavender)
+                        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 6)
+                    ForEach(Array(outgoing.enumerated()), id: \.element.id) { i, r in
+                        HStack(spacing: 8) {
+                            AvatarView(url: r.avatar_url, username: r.username, size: 34, emoji: r.avatar_emoji)
+                            NavigationLink(value: r.id) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    (Text("@\(r.username)").font(Brand.font(14, .black)).foregroundColor(FriendsInk.heading)
+                                        + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(FriendsInk.rowSub))
+                                        .lineLimit(1).minimumScaleFactor(0.8)
+                                    // §T1: a request-pending row wears a small glossy "Pending" pill.
+                                    FriendsGlossyPill(text: "Pending", accent: FriendsInk.amber, size: 9)
                                 }
-                                .buttonStyle(.squish)
-                                .disabled(withinDay(r.remindedAt))
-                                .opacity(withinDay(r.remindedAt) ? 0.55 : 1)
-                                Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
-                                    FriendsPill(title: "Cancel", solid: false, muted: true)
-                                }.buttonStyle(.squish)
+                            }.buttonStyle(.squish)
+                            Spacer(minLength: 4)
+                            // §212: the invite usually died unseen — re-push, 1/24h.
+                            Button {
+                                Task {
+                                    switch await FriendsService.remind(addresseeId: r.id) {
+                                    case .reminded: inviteNote = "Reminder sent to \(r.username)!"
+                                    case .already: inviteNote = "Already reminded today"
+                                    case .failed: inviteNote = "Could not remind"
+                                    }
+                                }
+                            } label: {
+                                CandyLabel(title: withinDay(r.remindedAt) ? "Reminded" : "Remind")
                             }
+                            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+                            .disabled(withinDay(r.remindedAt))
+                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                CandyLabel(title: "Cancel")
+                            }
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                         }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .friendsStripe(i, accent: Self.lavender)
                     }
                 }
 
                 if let inviteNote {
                     // Transient confirmation — clears itself after 2.5 s (tap dismisses).
-                    Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.label)
+                    Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
+                        .padding(.horizontal, 12).padding(.top, 6)
                         .onTapGesture { self.inviteNote = nil }
                         .task(id: inviteNote) {
                             try? await Task.sleep(nanoseconds: 2_500_000_000)
                             if !Task.isCancelled { self.inviteNote = nil }
                         }
                 }
+                Color.clear.frame(height: 6)
             }
-            .padding(14)
-            .vsCard(radius: 14)
+            .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
         }
     }
 
     /// Taunt picker — the leaderboard sheet's twin (§207 fixed phrases).
+    /// §A1 / §A8: tinted rows that squish, a quiet peach Cancel.
     private func tauntSheet(_ target: FriendsService.FriendProfile) -> some View {
         VStack(spacing: 0) {
-            Text("TAUNT \(target.username.uppercased())")
-                .font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16).padding(.vertical, 14)
-            Divider().overlay(Theme.border)
+            HStack(spacing: 10) {
+                FriendsLabel("Taunt \(target.username)", color: FriendsInk.section)
+                Spacer(minLength: 0)
+                // §A7: a secondary spot — R, not the page host O1.
+                PoseImage(.r, "wake", height: 44)
+            }
+            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
             if let status = tauntStatus {
-                Text(status).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                Text(status).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
                     .frame(maxWidth: .infinity).padding(.vertical, 32)
             } else {
-                ForEach(FriendTaunts.all) { taunt in
-                    Button {
-                        Task {
-                            let outcome = await FriendsService.taunt(
-                                friendId: target.id, tauntId: taunt.id,
-                                day: LeaderboardService.todayLocal())
-                            switch outcome {
-                            case .sent: tauntStatus = "Sent 😈"
-                            case .alreadySent: tauntStatus = "Already taunted them today"
-                            case .failed: tauntStatus = "Could not send"
+                VStack(spacing: 0) {
+                    ForEach(Array(FriendTaunts.all.enumerated()), id: \.element.id) { i, taunt in
+                        Button {
+                            Task {
+                                let outcome = await FriendsService.taunt(
+                                    friendId: target.id, tauntId: taunt.id,
+                                    day: LeaderboardService.todayLocal())
+                                switch outcome {
+                                case .sent: tauntStatus = "Sent!"
+                                case .alreadySent: tauntStatus = "Already taunted them today"
+                                case .failed: tauntStatus = "Could not send"
+                                }
+                                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                                tauntTarget = nil
+                                tauntStatus = nil
                             }
-                            try? await Task.sleep(nanoseconds: 1_400_000_000)
-                            tauntTarget = nil
-                            tauntStatus = nil
+                        } label: {
+                            Text(taunt.text).font(Brand.font(13, .heavy)).foregroundStyle(FriendsInk.heading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 14).padding(.vertical, 12)
+                                .contentShape(Rectangle())
                         }
-                    } label: {
-                        Text(taunt.text).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16).padding(.vertical, 13)
+                        .buttonStyle(.squish)
+                        .friendsStripe(i, accent: FriendsInk.pink)
                     }
-                    .buttonStyle(.squish)
-                    Divider().overlay(Theme.border)
                 }
-                Button { tauntTarget = nil } label: {
-                    Text("Cancel").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
-                }
-                .buttonStyle(.squish)
+                .friendsCard(accent: FriendsInk.pink, radius: 16)
+                .padding(.horizontal, 16)
+                Button { tauntTarget = nil } label: { CandyLabel(title: "Cancel") }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: true))
+                    .padding(.horizontal, 16).padding(.top, 12)
             }
             Spacer(minLength: 0)
         }
-        .background(Theme.surface)
+        .background(Color(hex: 0xFFF0F7).ignoresSafeArea())
         .presentationDetents([.medium])
     }
 
-    struct PodiumEntry {
+    struct RaceEntry {
         let id: String; let username: String; let avatarUrl: String?
         let avatarEmoji: String?; let pts: Int; let isMe: Bool
     }
 
     /// Me + friends by this week's daily points, best first (§212/§238).
-    private var standings: [PodiumEntry] {
+    private var standings: [RaceEntry] {
         let friends = FriendsService.friends
         guard !friends.isEmpty else { return [] }
         var entries = friends.map {
-            PodiumEntry(id: $0.id, username: $0.username, avatarUrl: $0.avatar_url,
+            RaceEntry(id: $0.id, username: $0.username, avatarUrl: $0.avatar_url,
                         avatarEmoji: $0.avatar_emoji, pts: $0.weekPoints ?? 0, isMe: false)
         }
         if let p = AuthService.shared.profile {
-            entries.append(PodiumEntry(id: p.id, username: "You", avatarUrl: p.avatarUrl,
+            entries.append(RaceEntry(id: p.id, username: "You", avatarUrl: p.avatarUrl,
                                        avatarEmoji: p.avatarEmoji,
                                        pts: FriendsService.meDigest?.weekPoints ?? 0, isMe: true))
         }
@@ -828,7 +954,7 @@ struct FriendsPanelView: View {
 
     /// §238 (founder: "see the rankings of 4th, 5th, 6th"): the podium keeps
     /// its three medals; everyone else gets a ranked row beneath it.
-    private var podium: [PodiumEntry] { Array(standings.prefix(3)) }
+    private var podium: [RaceEntry] { Array(standings.prefix(3)) }
 
     private var raceStarted: Bool { standings.contains { $0.pts > 0 } }
 
@@ -913,12 +1039,6 @@ struct FriendsPanelView: View {
         return [7, 30, 100, 365].contains(days) ? days : nil
     }
 
-    /// Silver–gold–bronze display order, tagged with the medal rank.
-    private var podiumOrder: [(rank: Int, entry: PodiumEntry)] {
-        let p = podium
-        return [1, 0, 2].compactMap { i in i < p.count ? (rank: i, entry: p[i]) : nil }
-    }
-
     /// "2d" / "5h" / "now" — how long a sent invite has been waiting (§212).
     private func agoShort(_ iso: String?) -> String {
         guard let iso, let date = parseISO(iso) else { return "" }
@@ -961,7 +1081,7 @@ struct FriendsPanelView: View {
             challenging = nil
             switch result {
             case .success(let inv):
-                note = "Challenge sent to \(f.username) ⚔️"
+                note = "Challenge sent to \(f.username)!"
                 challengeMatch = ChallengeMatch(mode: GameMode(rawValue: inv.gameMode) ?? .duel, code: inv.code)
             case .failure(let error):
                 note = error.localizedDescription
@@ -971,29 +1091,33 @@ struct FriendsPanelView: View {
         }
     }
 
-    /// D3.3 (§294): "🏁 Last week you finished 2nd of 6 · 1,240 pts · 👑 Doug
-    /// 1,900" — gold with a crown when you won. Same copy and colors as the
+    /// D3.3 (§294): "Last week you finished 2nd of 6 · 1,240 pts · Doug won
+    /// with 1,900" — gold with a crown when you won (§AM3: 3D art, no emoji). Same copy and colors as the
     /// web banner (friends-panel.tsx).
     private func lastWeekBanner(_ r: FriendsService.LastWeek) -> some View {
         let win = r.rank == 1
-        let ink = win ? Color(hex: 0x92400E) : Theme.textPrimary
+        let ink = win ? Color(hex: 0x92400E) : FriendsInk.heading
         var line = Text("Last week you finished ").font(Brand.font(11, .heavy)).foregroundColor(ink)
             + Text("\(WeeklyRace.ordinal(r.rank)) of \(r.circleSize)").font(Brand.font(11, .black)).foregroundColor(ink)
             + Text(" · \(r.points.formatted()) pts").font(Brand.font(11, .heavy)).foregroundColor(ink)
         if !win, let name = r.winnerName {
-            line = line + Text(" · 👑 \(name) \(r.winnerPoints.formatted())").font(Brand.font(11, .heavy)).foregroundColor(Theme.textMuted)
+            line = line + Text(" · \(name) won with \(r.winnerPoints.formatted())").font(Brand.font(11, .heavy)).foregroundColor(FriendsInk.muted)
         }
         return HStack(spacing: 8) {
-            if win { Icon3D(.crown, size: 20) } else { Text("🏁").font(.system(size: 16)) }
+            if win { Icon3D(.crown, size: 20) }
+            else if r.rank == 2 || r.rank == 3 { MedalArt(kind: r.rank == 2 ? "silver" : "bronze", size: 20) }
+            else { SymbolGlyph("flag.checkered", size: 15, weight: .bold, color: FriendsInk.goldAccent).accessibilityHidden(true) }
             line.frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
+        // §A1: tinted, never plain — gold when you won, a soft gold wash otherwise.
         .background(
-            RoundedRectangle(cornerRadius: 12).fill(
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(
                 win
                     ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xFEF3C7), Color(hex: 0xFDE68A)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    : AnyShapeStyle(Theme.background)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(win ? Color(hex: 0xF59E0B) : Theme.border, lineWidth: 1.5))
+                    : AnyShapeStyle(FriendsInk.goldAccent.wash(0.13))))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(win ? Color(hex: 0xF59E0B) : FriendsInk.goldAccent.wash(0.34), lineWidth: 1.5))
         .padding(.vertical, 2)
     }
 
@@ -1008,7 +1132,7 @@ struct FriendsPanelView: View {
             gifting = nil
             switch result {
             case .success(let left):
-                note = "🛡️ Shield sent to \(f.username) · \(left) left"
+                note = "Shield sent to \(f.username) · \(left) left"
                 await AuthService.shared.refreshProfile()
             case .failure(let error):
                 note = error.localizedDescription
@@ -1055,8 +1179,11 @@ struct FriendsPanelView: View {
         Task {
             let outcome = await FriendsService.request(username: name)
             switch outcome {
-            case .accepted: addNote = "You're now friends! 🎉"; username = ""
-            case .pending: addNote = "Request sent 🤝"; username = ""
+            case .accepted:
+                username = ""
+                let f = FriendsService.friends.first { $0.username.caseInsensitiveCompare(name) == .orderedSame }
+                newFriend = NewFriend(id: f?.id, name: f?.username ?? name, avatar: f?.avatar_url, emoji: f?.avatar_emoji)
+            case .pending: sentRequestTo = name; username = ""
             case .failed(let msg): addNote = msg
             }
             sending = false
@@ -1070,13 +1197,13 @@ struct FriendsPanelView: View {
 
 /// FRIENDS — the Friends tab (D1, 2026-09-26) and the dedicated friends
 /// screen pushed from the profile / presented from the empty Friends board.
-/// Friends overhaul §2.1: the bell (the notification prefs) and an add-friend
-/// icon that jumps to Add by username.
-/// Founder (2026-10-02): the TAB never loses the shared app header and drops the
-/// FRIENDS title — `asTab` pins AppHeaderView above the scroll exactly like Home,
-/// Leaderboard, Stats and Records, and the bell + add-friend circles move to a
-/// compact right-aligned row atop the content (its left side is the room kept
-/// for a future title graphic). Pushed / sheet copies keep the nav-bar title.
+/// Founder (2026-10-02): the TAB never loses the shared app header — `asTab` pins
+/// AppHeaderView above the scroll exactly like Home, Leaderboard, Stats and Records.
+/// FINISH_SPEC §C4b: nothing sits beside the FRIENDS title any more — the bell
+/// (notification prefs) moved to Settings → Notifications and "Add a friend" is a
+/// candy button in the "Your friends" header — so the title is a centered §A6
+/// headline, edge to edge on the wallpaper. Pushed / sheet copies show the same
+/// headline under their nav bar (back / swipe to close).
 struct FriendsScreenView: View {
     // §218: pushed views don't inherit the root's safeAreaInset, so pad by the
     // reported chrome height (the tab root needs it too — see RootTabView).
@@ -1084,6 +1211,9 @@ struct FriendsScreenView: View {
     var asTab = false
     @ObservedObject private var chrome = ChromeVisibility.shared
     @State private var focusAdd: UUID?
+
+    /// The scroll's horizontal padding (the headline bleeds past it to the edges).
+    private static let sidePadding: CGFloat = 16
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -1100,21 +1230,16 @@ struct FriendsScreenView: View {
                 scroll(proxy)
                     .pageBackground(.friends, lightOnly: true)
                     // navigationTitle stays for the next push's back label; the
-                    // principal item is what renders.
+                    // headline in the scroll is the visible title.
                     .navigationTitle("Friends")
                     .navigationBarTitleDisplayMode(.inline)
                     // §10 (founder, iOS 220): the pinned header is opaque page color —
-                    // the list never shows through the title and buttons.
+                    // the list never shows through it.
                     .toolbarBackground(PageTint.friends.barColor, for: .navigationBar)
                     .toolbarBackground(.visible, for: .navigationBar)
                     .toolbar {
                         ToolbarItem(placement: .principal) {
-                            // HEADER_SPEC §5: the Friends banner's O1 is the page's host, so
-                            // the title row doesn't repeat it.
-                            PageTitle("FRIENDS", colors: FriendsKit.titleGradient)
-                        }
-                        ToolbarItemGroup(placement: .navigationBarTrailing) {
-                            actions(proxy)
+                            Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
                         }
                     }
             }
@@ -1124,37 +1249,27 @@ struct FriendsScreenView: View {
     private func scroll(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             VStack(spacing: 18) {
-                if asTab {
-                    // ART_SPEC §2: the whole-cast FRIENDS title art in the old title
-                    // row's slot, the bell + add-friend circles stacked beside it.
-                    HStack(alignment: .center, spacing: 8) {
-                        ArtTitle(.friends, colors: FriendsKit.titleGradient)
-                            .frame(maxWidth: .infinity)
-                        VStack(spacing: 8) {
-                            actions(proxy)
-                        }
-                    }
-                }
-                FriendsPanelView(focusAdd: focusAdd)
+                // §A6 / §C4b: the whole-cast FRIENDS title art as a centered headline.
+                PageHeadline(.friends, bleed: Self.sidePadding)
+                FriendsPanelView(focusAdd: focusAdd, onAddFriend: { addFriend(proxy) })
                 // §212: recruiting and friending are the same motion — the
                 // gift-Pro panel lives here too.
                 InvitePanelView()
             }
-            .padding(.horizontal, 16).padding(.top, 6)
+            .padding(.horizontal, Self.sidePadding).padding(.top, 6)
             .padding(.bottom, 16 + (padsForChrome ? chrome.bottomInset : 0))
         }
     }
 
-    @ViewBuilder private func actions(_ proxy: ScrollViewProxy) -> some View {
-        NotificationPrefsButton()
-        Button {
+    /// What the old header add-friend circle did: scroll to Add by username and
+    /// focus the field.
+    private func addFriend(_ proxy: ScrollViewProxy) {
+        if Theme.reduceMotion {
+            proxy.scrollTo("add-friend", anchor: .center)
+        } else {
             withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("add-friend", anchor: .center) }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
-        } label: {
-            HeaderCircleLabel(glyph: .icon(.addFriend), size: 32)
         }
-        .buttonStyle(.squish)
-        .accessibilityLabel("Add a friend")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
     }
 }
 
@@ -1175,7 +1290,7 @@ struct FriendsRowLink: View {
                     .font(Brand.font(16, .black)).tracking(0.3)
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
                 if count > 0 {
-                    Text("\(count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
+                    Text("\(count)").softNumber(15)
                 }
                 if pending > 0 {
                     // Spelled out (web/Android parity) — a bare number here
@@ -1188,8 +1303,9 @@ struct FriendsRowLink: View {
                 Spacer()
             }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+            .contentShape(Rectangle())
+            // §A1: a tinted lavender card, never plain white.
+            .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], barHeight: 6)
         }
         .buttonStyle(.squish)
         .task { await FriendsService.load() }

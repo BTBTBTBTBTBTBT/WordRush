@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.ProAvatarCrown
+import com.wordocious.app.ui.proAvatarRing
 import com.wordocious.app.ui.PageTint
 import com.wordocious.app.ui.pageBackground
 import com.wordocious.app.ui.theme.Nunito
@@ -53,7 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.HeadToHeadService
 import com.wordocious.app.data.SoundManager
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.FinishInk
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -81,38 +89,36 @@ fun MatchIntro(
     onDone: () -> Unit,
 ) {
     LaunchedEffect(Unit) {
-        SoundManager.playVsStinger()
+        // Spec U: VS match found = vs · medium.
+        SoundManager.fire(com.wordocious.app.data.FeedbackEvent.VS)
         delay(INTRO_DURATION_MS)
         onDone()
     }
     val opp = opponent ?: IntroPlayer("Anonymous", null, null)
     val shape = RoundedCornerShape(18.dp)
 
+    // The whole screen skips on tap (no squish: a full-screen surface, A9).
+    val skip = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(
-        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).clickableNoRipple(onDone)
+        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)
+            .clickable(interactionSource = skip, indication = null, onClickLabel = "Skip", onClick = onDone)
             .statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Column(
-                Modifier.widthIn(max = 440.dp).fillMaxWidth()
-                    .shadow(8.dp, shape, ambientColor = Color(0x1A4C1D95), spotColor = Color(0x1A4C1D95))
-                    .clip(shape)
-                    .drawBehind {
-                        drawRect(Brush.verticalGradient(listOf(Color(0xFFD5F5EE), Color(0xFFE0F2FE))))
-                        drawRect(Brush.linearGradient(
-                            0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                            start = Offset.Zero, end = Offset(size.width, size.height),
-                        ))
-                    },
+            // FINISH_SPEC D3: the versus card — a tinted card (A1) with its top bar.
+            VsTintedCard(
+                Modifier.widthIn(max = 440.dp).fillMaxWidth(), corner = 20.dp, barHeight = 10.dp,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
                 Row(
-                    Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(horizontal = 14.dp, vertical = 10.dp),
+                    Modifier.fillMaxWidth().background(vsWash(VS_ACCENT, 0.20f)).padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     VsModeChip(mode)
                     Spacer(Modifier.weight(1f))
-                    Text("MATCH FOUND", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.ink)
+                    VsCapsLabel("MATCH FOUND", color = VsTeal.ink, fontSize = 11.sp, modifier = Modifier.semantics { heading() })
                 }
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 22.dp),
@@ -130,7 +136,7 @@ fun MatchIntro(
                     }
                 }
             }
-            Text("TAP TO SKIP", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.6.sp, color = VsTeal.grey)
+            VsCapsLabel("TAP TO SKIP", color = VsTeal.label)
         }
     }
 }
@@ -161,23 +167,38 @@ private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Lon
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val avatarShape = if (player.avatarUrl.isNullOrBlank()) com.wordocious.app.ui.letterTileShape(72.dp) else CircleShape
-        Box(Modifier.shadow(6.dp, avatarShape, ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))) {
-            VsAvatar(
-                player.username, player.avatarUrl, size = 72.dp, borderWidth = 3.dp, borderColor = Color.White,
-                emoji = player.avatarEmoji, accentHex = player.accentHex,
-            )
+        val botId = player.avatarUrl?.takeIf { it.startsWith("bot:") }?.removePrefix("bot:")
+        if (botId != null) {
+            // D3: a bot stands in as its character, "ready" to play (the ghost: your faded tile).
+            Box(Modifier.size(96.dp), Alignment.Center) { VsBotPose(botId, "ready", 96.dp) }
+        } else {
+            val avatarShape = if (player.avatarUrl.isNullOrBlank()) com.wordocious.app.ui.letterTileShape(72.dp) else CircleShape
+            Box(Modifier.padding(vertical = 12.dp).shadow(6.dp, avatarShape, ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))) {
+                VsAvatar(
+                    player.username, player.avatarUrl, size = 72.dp, borderWidth = 3.dp, borderColor = Color.White,
+                    emoji = player.avatarEmoji, accentHex = player.accentHex,
+                )
+            }
         }
         Text(
-            player.username.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep,
+            player.username.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = FinishInk.heading,
             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
         )
-        player.level?.takeIf { it > 0 }?.let { lv ->
+        if (botId != null && botId != com.wordocious.core.BotCast.GHOST_ID) {
             Text(
-                "LV $lv", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.ink,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(VsTeal.soft)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                com.wordocious.app.data.BotPersonas.tierLine(botId), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
+                color = VsTeal.ink, maxLines = 2, textAlign = TextAlign.Center,
             )
+        }
+        player.level?.takeIf { it > 0 }?.let { lv ->
+            Row(
+                Modifier.vsPill(VS_ACCENT, 50.dp).padding(start = 9.dp, end = 9.dp, top = 5.dp, bottom = 2.dp)
+                    .semantics(mergeDescendants = true) { contentDescription = "Level $lv" },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                VsCapsLabel("LV", color = VsTeal.ink, fontSize = 9.sp)
+                VsNumber("$lv", 13.sp)
+            }
         }
     }
 }
@@ -192,17 +213,30 @@ private fun VsPop() {
             scale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMedium))
         }
     }
+    // The candy disc (A8 look, not a button): teal gradient, gold ring, gloss, outlined label.
     Box(
-        Modifier.size(52.dp)
+        Modifier.size(56.dp)
             .graphicsLayer {
                 scaleX = scale.value; scaleY = scale.value
                 rotationZ = -8f
                 alpha = if (scale.value > 0.05f) 1f else 0f
             }
-            .clip(CircleShape).background(VsTeal.ink),
+            .shadow(6.dp, CircleShape, ambientColor = VS_ACCENT.copy(alpha = 0.4f), spotColor = VS_ACCENT.copy(alpha = 0.5f))
+            .clip(CircleShape)
+            .background(Brush.verticalGradient(listOf(Color(0xFF5EEAD4), VS_ACCENT)))
+            .drawWithContent {
+                drawOval(
+                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0f)), endY = size.height * 0.5f),
+                    topLeft = Offset(size.width * 0.16f, size.height * 0.06f),
+                    size = androidx.compose.ui.geometry.Size(size.width * 0.68f, size.height * 0.42f),
+                )
+                drawContent()
+            }
+            .border(2.dp, Color(0xFFF5C542), CircleShape)
+            .clearAndSetSemantics { },
         Alignment.Center,
     ) {
-        Text("VS", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+        com.wordocious.app.ui.CandyLabel("VS", 20.sp)
     }
 }
 
@@ -214,8 +248,8 @@ private fun H2HLine(text: String) {
         if (!WTheme.reducedMotion) { delay(850); progress.animateTo(1f, tween(450)) }
     }
     Text(
-        text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, textAlign = TextAlign.Center,
-        modifier = Modifier.graphicsLayer {
+        text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = FinishInk.heading, textAlign = TextAlign.Center,
+        modifier = Modifier.vsPill(VS_ACCENT, 12.dp).padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 5.dp).graphicsLayer {
             translationY = (1f - progress.value) * 10.dp.toPx()
             alpha = progress.value
         },
@@ -231,27 +265,35 @@ fun VsAvatar(
     username: String, avatarUrl: String?, size: Dp,
     borderWidth: Dp = 1.5.dp, borderColor: Color = Color.White.copy(alpha = 0.4f),
     emoji: String? = null, accentHex: String? = null,
+    /** AA2: the Pro ring + crown (match rows carry no Pro flag: the signed-in Pro player's own avatar). */
+    pro: Boolean = com.wordocious.app.ui.isOwnProAvatar(username),
 ) {
     // Bot art (VS overhaul §9): "bot:<id>" draws the picture in the circle.
     if (avatarUrl?.startsWith("bot:") == true) {
+        val id = avatarUrl.removePrefix("bot:")
+        // D1: Your Ghost is the player's own faded letter tile (no circle).
+        if (id == com.wordocious.core.BotCast.GHOST_ID) { VsGhostTile(size); return }
         Box(Modifier.size(size).border(borderWidth, borderColor, CircleShape).clip(CircleShape)) {
-            BotAvatar(avatarUrl.removePrefix("bot:"), size)
+            BotAvatar(id, size)
         }
         return
     }
-    if (avatarUrl.isNullOrBlank()) {
+    // AH/AN: a worn character or saved mascot beats the photo; no photo → the mascot (AN5).
+    val tile = com.wordocious.app.ui.avatarTileShape(size)
+    if (com.wordocious.app.data.MascotAvatars.wearsMascot(username) || avatarUrl.isNullOrBlank()) {
         Box(Modifier.size(size)) {
-            com.wordocious.app.ui.LetterTileAvatar(username.ifBlank { "?" }, size, accentHex = accentHex, emoji = emoji)
-            Box(Modifier.matchParentSize().border(borderWidth, borderColor, com.wordocious.app.ui.letterTileShape(size)))
+            com.wordocious.app.ui.LetterTileAvatar(username.ifBlank { "?" }, size, accentHex = accentHex, emoji = emoji, pro = pro)
+            Box(Modifier.matchParentSize().border(borderWidth, borderColor, tile))
         }
         return
     }
-    Box(Modifier.size(size).clip(CircleShape).border(borderWidth, borderColor, CircleShape)) {
-        coil.compose.AsyncImage(
-            model = avatarUrl, contentDescription = username,
-            modifier = Modifier.fillMaxSize().clip(CircleShape),
-            contentScale = ContentScale.Crop,
+    // AN6: the photo is a rounded square with the player's frame.
+    Box(Modifier.size(size)) {
+        com.wordocious.app.ui.PhotoAvatar(
+            avatarUrl, size, frame = com.wordocious.app.data.MascotAvatars.photoFrame(username),
+            pro = pro, contentDescription = username,
         )
+        Box(Modifier.matchParentSize().border(borderWidth, borderColor, tile))
     }
 }
 

@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { SoftNum } from '@/components/ui/soft-number';
+import { CandyButton, candyVars } from '@/components/ui/candy-button';
 import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
-import { BotAvatar, VsModeIcon } from './vs-ui';
+import { alphaHex } from '@/lib/soft-surface';
+import { BotFigure, VS_ACCENT, VsCard, VsModeTile, vsCard } from './vs-ui';
 import { CastLoader } from '@/components/ui/cast-loader';
 
 // Live search (VS overhaul §6) — never a dead end. A ring timer counts up
@@ -18,8 +21,8 @@ interface Props {
   modeName: string;
   /** Other players waiting in this mode (null until /vs/counts answers). */
   othersWaiting: number | null;
-  /** The bot that steps in, or null when none should (a private match). */
-  stepIn: { name: string; art: string } | null;
+  /** The bot that steps in (a cast bot, drawn in its 'waiting' pose), or null when none should (a private match). */
+  stepIn: { name: string; botId: string; color: string } | null;
   /** False once a match is found (the intro is up) — the timer and card stop. */
   searching: boolean;
   onPlayBot: () => void;
@@ -94,7 +97,7 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
       <div className="relative mx-auto" style={{ width: 132, height: 132 }}>
         <span className="absolute inset-3 rounded-full animate-ping" style={{ background: VS.soft, opacity: 0.6 }} />
         <svg width="132" height="132" viewBox="0 0 132 132" className="relative">
-          <circle cx="66" cy="66" r="52" fill="#ffffff" stroke={VS.soft} strokeWidth="10" />
+          <circle cx="66" cy="66" r="52" fill={alphaHex(VS_ACCENT, 0.1)} stroke={VS.soft} strokeWidth="10" />
           {/* strokeDashoffset is animated per frame through ringRef (a constant
               prop here, so React never overwrites the live value). */}
           <circle
@@ -104,7 +107,7 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
             transform="rotate(-90 66 66)"
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-[26px] font-black" style={{ color: VS.deep }}>{clock}</span>
+        <span className="absolute inset-0 flex items-center justify-center"><SoftNum size={28}>{clock}</SoftNum></span>
       </div>
 
       <div className="space-y-1">
@@ -116,56 +119,54 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
       {children}
 
       {stepIn && searching && (
-        <div className="p-4 space-y-3 text-left" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
-          <div className="flex items-center gap-3">
-            <BotAvatar src={stepIn.art} name={stepIn.name} size={44} bg={VS.soft} />
-            <div className="min-w-0">
-              <div className="text-[14px] font-black" style={{ color: VS.deep }}>
-                {keepWaiting ? 'We’ll keep looking' : `${stepIn.name} steps in at 0:${String(STEP_IN_SECONDS).padStart(2, '0')}`}
+        <VsCard accent={stepIn.color} className="text-left">
+          <div className="p-4 pt-2 space-y-3">
+            <div className="flex items-center gap-2">
+              {/* The bot who steps in, waiting in character (D3). */}
+              <BotFigure id={stepIn.botId} pose="waiting" size={64} />
+              <div className="min-w-0">
+                <div className="text-[14px] font-black" style={{ color: VS.deep }}>
+                  {keepWaiting ? 'We’ll keep looking' : `${stepIn.name} steps in at 0:${String(STEP_IN_SECONDS).padStart(2, '0')}`}
+                </div>
+                <div className="text-[11.5px] font-bold" style={{ color: '#4b5563' }}>If a person joins first, you get them.</div>
               </div>
-              <div className="text-[11.5px] font-bold" style={{ color: '#4b5563' }}>If a person joins first, you get them.</div>
             </div>
-          </div>
-          {!keepWaiting && (
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: VS.soft }}>
-              <div
-                ref={(el) => {
-                  barRef.current = el;
-                  // Mount at the live position (no jump from 0 on first paint).
-                  if (el) el.style.width = `${Math.min(1, elapsedMsRef.current / (STEP_IN_SECONDS * 1000)) * 100}%`;
-                }}
-                className="h-full rounded-full"
-                style={{ background: VS.ink }}
-              />
-            </div>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => { firedRef.current = true; onPlayBot(); }}
-              className="flex-1 py-2.5 text-[12px] font-black text-white uppercase"
-              style={{ background: VS.ink, borderRadius: 11, letterSpacing: 0.5 }}
-            >
-              Play {stepIn.name} now
-            </button>
             {!keepWaiting && (
-              <button
-                type="button"
-                onClick={() => {
-                  setKeepWaiting(true);
-                  looking?.ping().then((r) => setPingLine(keepWaitingPingLine(r))).catch(() => {});
-                }}
-                className="flex-1 py-2.5 text-[12px] font-black"
-                style={{ background: VS.soft, color: VS.ink, borderRadius: 11, letterSpacing: 0.5 }}
-              >
-                KEEP WAITING
-              </button>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: alphaHex(stepIn.color, 0.18) }}>
+                <div
+                  ref={(el) => {
+                    barRef.current = el;
+                    // Mount at the live position (no jump from 0 on first paint).
+                    if (el) el.style.width = `${Math.min(1, elapsedMsRef.current / (STEP_IN_SECONDS * 1000)) * 100}%`;
+                  }}
+                  className="h-full rounded-full"
+                  style={{ background: stepIn.color }}
+                />
+              </div>
+            )}
+            <div className="flex gap-2">
+              <CandyButton color="teal" size="md" className="flex-1" icon="play" onClick={() => { firedRef.current = true; onPlayBot(); }}>
+                Play {stepIn.name} now
+              </CandyButton>
+              {!keepWaiting && (
+                <CandyButton
+                  color="peach"
+                  size="md"
+                  className="flex-1"
+                  onClick={() => {
+                    setKeepWaiting(true);
+                    looking?.ping().then((r) => setPingLine(keepWaitingPingLine(r))).catch(() => {});
+                  }}
+                >
+                  Keep waiting
+                </CandyButton>
+              )}
+            </div>
+            {keepWaiting && pingLine && (
+              <div className="text-[11.5px] font-bold text-center" style={{ color: VS.deep }}>{pingLine}</div>
             )}
           </div>
-          {keepWaiting && pingLine && (
-            <div className="text-[11.5px] font-bold text-center" style={{ color: VS.deep }}>{pingLine}</div>
-          )}
-        </div>
+        </VsCard>
       )}
 
       {looking && searching && (
@@ -176,42 +177,38 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
           onClick={looking.onToggle}
           disabled={looking.saving}
           className="w-full flex items-center gap-3 px-4 py-3 text-left"
-          style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow, opacity: looking.saving ? 0.6 : 1 }}
+          style={{ ...vsCard(VS_ACCENT, { radius: 16, selected: looking.on }), opacity: looking.saving ? 0.6 : 1 }}
         >
           <Icon3D name="bell" size={20} />
           <span className="flex-1 min-w-0 text-[12.5px] font-extrabold" style={{ color: VS.deep }}>{looking.label}</span>
+          {/* The switch's track in the candy colors (teal on, peach off). */}
           <span
-            className="relative shrink-0 rounded-full transition-colors"
-            style={{ width: 36, height: 20, background: looking.on ? VS.ink : '#d1d5db' }}
+            className="candy candy-sm relative shrink-0"
+            style={{ ...candyVars(looking.on ? 'teal' : 'peach'), width: 44, minWidth: 44, height: 24, padding: 0, marginBottom: 3 }}
             aria-hidden="true"
           >
-            <span className="absolute rounded-full bg-white transition-all" style={{ top: 2, width: 16, height: 16, left: looking.on ? 18 : 2 }} />
+            <span className="absolute rounded-full transition-all" style={{ top: 3, width: 18, height: 18, left: looking.on ? 22 : 4, background: '#ffffff', boxShadow: '0 1px 3px rgba(59,26,120,0.35)' }} />
           </span>
         </button>
       )}
 
-      <button
-        type="button"
-        onClick={onCancel}
-        className="mx-auto flex items-center gap-1.5 px-5 py-2 text-[13px] font-black"
-        style={{ color: VS.label }}
-      >
-        <X className="w-4 h-4" /> Cancel
-      </button>
+      <div className="flex justify-center">
+        <CandyButton color="peach" size="sm" onClick={onCancel} icon={<X className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={3} />}>Cancel</CandyButton>
+      </div>
     </div>
   );
 }
 
 /** The short beat before a bot / race / challenge-send game starts (no live search). */
-export function VsStartingScreen({ title, sub, mode }: { title: string; sub?: string; mode?: string }) {
+export function VsStartingScreen({ title, sub, mode, figure }: {
+  title: string; sub?: string; mode?: string;
+  /** Who you are about to play (a bot in its pose, Your Ghost's faded tile) in place of the cast loader. */
+  figure?: React.ReactNode;
+}) {
   return (
     <div className="max-w-sm w-full mx-auto px-5 text-center flex flex-col items-center gap-3">
-      {mode && (
-        <span className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 14, background: '#ffffff', boxShadow: VS.cardShadow }}>
-          <VsModeIcon mode={mode} size={24} />
-        </span>
-      )}
-      <CastLoader />
+      {mode && <VsModeTile mode={mode} size={48} icon={24} />}
+      {figure ?? <CastLoader />}
       <h1 className="text-[20px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>{title}</h1>
       {sub && <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>{sub}</p>}
     </div>

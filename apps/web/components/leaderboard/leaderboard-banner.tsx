@@ -2,30 +2,30 @@
 
 import Link from 'next/link';
 import { holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
-import { MODE_CARDS, MORE_CARDS, type HomeCard } from '@/components/home/mode-chrome';
-import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
-import { BroomIcon } from '@/components/ui/broom-icon';
-import { useFlags } from '@/hooks/use-flags';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
-import { ArtTitle } from '@/components/ui/art-title';
-import { dayArtName, onPageShadow } from '@/lib/art';
+import { PageHeadline } from '@/components/ui/page-headline';
+import { DAY_HEADLINE } from '@/lib/headline';
+import { GamePicker } from '@/components/ui/game-picker';
+import { dayArtName } from '@/lib/art';
+import { softPill } from '@/lib/soft-surface';
+import { LB_GOLD } from './board-rows';
+import { useSeason, halloweenPropSrc } from '@/lib/season';
+import { SeasonArt } from '@/components/ui/season-art';
 
-// The Leaderboard banner (founder, 2026-10-01; docs/LEADERBOARD_REDESIGN_SPEC.md §1):
-// the home / VS / Friends one-window shape in gold-to-lilac. A frosted strip with
-// the day's title (core leaderboardTitle — "FRIDAY’S FINEST", "<HOLIDAY> HEROES")
-// and the date · reset clock, then the eight Wordocious games (home WORDOCIOUS
-// order, + the SWEEP chip) and the ten Puzzles (home PUZZLES order) as rows of
-// icon-only game squares. Exactly one selection across both rows and the chip.
-// The Records banner (docs/RECORDS_REDESIGN_SPEC.md §1) reuses the rows and clock.
+// The Leaderboard top (docs/FINISH_SPEC.md A6, C2, C2b; mockup
+// docs/design/brand/mockups/leaderboard-polish.html `.headline` + `.picker`):
+// the day's title art (core leaderboardTitle — "FRIDAY’S FINEST"; on a
+// holiday the whole cast around LEADERBOARD with "<HOLIDAY> HEROES" under it)
+// as a full-width headline right on the wallpaper, then the ONE game picker
+// card in gold, topped by the date · reset clock and the ALL-TIME → link. The
+// WORDOCIOUS row ends with the Sweep broom tile (no separate SWEEP pill). The
+// Records page (records-banner.tsx) reuses the clock and the headline rules.
 
-const INK = '#78350f';
-const MID = '#92400e';
-const GOLD = '#f59e0b';
-/** The day title art's height (ART_SPEC §1: ≈96–120 pt, centered). */
-const ART_HEIGHT = 108;
-const NBSP = ' ';
+/** The day headline's height cap (FINISH_SPEC N1: ≈58% width, ≤ 150 tall). */
+export const DAY_HEADLINE_MAX_HEIGHT = DAY_HEADLINE.maxHeight;
+const NBSP = ' ';
 
 function pad(n: number) {
   return n.toString().padStart(2, '0');
@@ -45,85 +45,41 @@ export function dayTitle(today: string): string {
   return leaderboardTitle(today, holidayTitle(holidayKeyForDay(today, HOLIDAY_TABLE)));
 }
 
-/**
- * The banner's two game rows — WORDOCIOUS (+ the SWEEP chip) over PUZZLES, in
- * the home order — shared by the Leaderboard and Records banners. `ink` colors
- * the row labels.
- */
-export function BannerGameRows({ selectedMode, onSelect, ink = MID }: {
-  selectedMode: string;
-  onSelect: (dbKey: string) => void;
-  ink?: string;
-}) {
-  const { isOn: flagOn } = useFlags();
-  // The home page's two lists, same filters (app/page.tsx).
-  const wordCards = MODE_CARDS.filter((c) => flagOn(c.flagKey) && !c.homeWide && c.dbKey);
-  const puzzleCards = MORE_CARDS.filter((c) => c.dailyEligible && c.dbKey && flagOn(c.flagKey));
-  const sweepOn = selectedMode === 'SWEEP';
+/** The picker card's header row text style (the gold ink, legible in dark mode). */
+export const PICKER_HEADER_CLASS = 'flex items-center gap-2 font-extrabold lb-gold-ink';
+export const PICKER_HEADER_STYLE: React.CSSProperties = { fontSize: 11, letterSpacing: 0.5 };
 
-  const row = (cards: HomeCard[], tile: number, gap: number, glyph: number) => (
-    // Tiles shrink toward 28 px on narrow screens and never wrap; past that the
-    // row scrolls ('safe center' keeps the first tile reachable). The padding
-    // gives the selected glow room inside the scroll box.
-    <div
-      className="flex overflow-x-auto"
-      style={{ gap, justifyContent: 'safe center', padding: '6px', margin: '-6px', scrollbarWidth: 'none' }}
+/** A small tinted chip link in the picker header (ALL-TIME →, ← TODAY). */
+export function HeaderChipLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="shrink-0 inline-flex items-center font-black lb-gold-ink"
+      style={{ ...softPill(LB_GOLD, { bar: false }), height: 'max(24px, 2.2em)', padding: '0 10px', fontSize: 10.5, letterSpacing: 0.8 }}
     >
-      {cards.map((c) => {
-        const key = c.dbKey as string;
-        const on = selectedMode === key;
-        return (
-          <div key={c.id} style={{ flex: `0 1 ${tile}px`, minWidth: 28 }}>
-            <GameSquare
-              accent={c.accentColor}
-              selected={on}
-              size={tile}
-              tone="light"
-              glyph={<GameTileGlyph accent={c.accentColor} icon={c.icon} romanNumeral={c.romanNumeral} size={glyph} />}
-              aria-label={c.title}
-              aria-pressed={on}
-              onClick={() => onSelect(key)}
-              style={{ width: '100%', height: 'auto', aspectRatio: '1 / 1' }}
-            />
-          </div>
-        );
-      })}
-    </div>
+      {children}
+    </Link>
   );
+}
 
-  const label = (text: string) => (
-    <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: ink }}>{text}</span>
-  );
-
+/**
+ * FINISH_SPEC X: during Halloween the day title wears small props (a pumpkin
+ * at its lower left, a bat at its upper right). The prop art isn't shipped
+ * yet: each slot renders nothing until its file exists.
+ */
+function HalloweenDayProps() {
   return (
     <>
-      <div className="relative flex flex-col gap-2" style={{ padding: '10px 12px 6px' }}>
-        <div className="flex items-center gap-1.5">
-          <span className="flex-1">{label('WORDOCIOUS')}</span>
-          {/* The cross-mode Sweep board. */}
-          <button
-            type="button"
-            onClick={() => onSelect('SWEEP')}
-            aria-pressed={sweepOn}
-            aria-label="Sweep leaderboard"
-            className="flex items-center gap-1 font-black transition-transform active:scale-95"
-            style={{
-              height: 22, padding: '0 9px', borderRadius: 999, fontSize: 10, letterSpacing: 0.8,
-              background: sweepOn ? GOLD : 'rgba(245,158,11,0.16)',
-              color: sweepOn ? '#ffffff' : MID,
-              boxShadow: sweepOn ? '0 0 8px rgba(245,158,11,0.5)' : undefined,
-            }}
-          >
-            <BroomIcon size={11} />
-            SWEEP
-          </button>
-        </div>
-        {row(wordCards, 38, 7, 16)}
-      </div>
-      <div className="relative flex flex-col gap-2" style={{ padding: '8px 12px 12px' }}>
-        {label('PUZZLES')}
-        {row(puzzleCards, 31, 4, 13)}
-      </div>
+      <SeasonArt
+        src={halloweenPropSrc('pumpkin')}
+        className="absolute art-pop"
+        style={{ left: '3%', bottom: 10, width: 'min(14%, 64px)', height: 'auto', filter: 'drop-shadow(0 3px 4px rgba(76, 29, 149, 0.2))' }}
+      />
+      <SeasonArt
+        src={halloweenPropSrc('bat')}
+        className="absolute art-pop"
+        style={{ right: '3%', top: 0, width: 'min(12%, 56px)', height: 'auto', filter: 'drop-shadow(0 3px 4px rgba(76, 29, 149, 0.2))' }}
+      />
     </>
   );
 }
@@ -136,6 +92,7 @@ interface Props {
 }
 
 export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
+  const season = useSeason();
   const title = today ? dayTitle(today) : NBSP;
   // The weekday's title art (docs/ART_SPEC.md §1). A holiday shows the whole
   // cast around LEADERBOARD with "<HOLIDAY> HEROES" as a small caps subtitle (§8).
@@ -145,45 +102,43 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
     ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
     : null;
 
-  const card = (
-    <div
-      className="relative shrink-0 overflow-hidden"
-      style={{
-        borderRadius: 16,
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #fef3c7, #ede9fe)',
-        boxShadow: onPageShadow('0 4px 14px rgba(146,64,14,0.10)'),
-      }}
-    >
-      {/* Frosted headline strip. */}
-      <div
-        className="relative flex flex-col gap-1"
-        style={{ padding: '10px 12px 10px', background: 'rgba(255,255,255,0.5)' }}
-      >
-        {art ? (
-          // One designed graphic per weekday, its host drawn in (so no banner host).
-          <ArtTitle name={art} label={title} height={ART_HEIGHT} />
-        ) : holiday ? (
-          // The whole cast carries the holiday too, so no banner host here either.
-          <h1 className="flex flex-col items-center gap-1 m-0">
-            <ArtTitle name="art-title-leaderboard" label="Leaderboard" as="div" className="w-full" />
-            <span className="font-black uppercase text-center" style={{ fontSize: 11, letterSpacing: 1.4, lineHeight: 1.2, color: INK }}>
-              {title}
-            </span>
-          </h1>
+  return (
+    <>
+      {art ? (
+        // One designed graphic per weekday, its host drawn in.
+        season === 'halloween' ? (
+          <div className="relative">
+            <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-3" />
+            <HalloweenDayProps />
+          </div>
         ) : (
-          // Until the local day is known, hold the art's slot so it doesn't jump.
-          <div aria-hidden="true" style={{ height: ART_HEIGHT }} />
-        )}
-        <div className="flex items-center gap-2 font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: MID }}>
-          <span className="flex-1 min-w-0 truncate"><ResetLine lead={date} /></span>
-          <Link href="/records" className="shrink-0 font-black active:opacity-60" style={{ color: MID }}>ALL-TIME →</Link>
-        </div>
-      </div>
+          <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-3" />
+        )
+      ) : holiday ? (
+        <h1 className="relative m-0 mb-3 flex flex-col items-center gap-1">
+          <PageHeadline name="art-title-leaderboard" label="Leaderboard" as="div" />
+          <span className="font-black uppercase text-center lb-gold-ink" style={{ fontSize: 13, letterSpacing: 1.6, lineHeight: 1.2 }}>
+            {title}
+          </span>
+          {season === 'halloween' && <HalloweenDayProps />}
+        </h1>
+      ) : (
+        // Until the local day is known, hold the headline's slot so it doesn't jump.
+        <div aria-hidden="true" className="mb-3" style={{ height: 'min(56vw, 150px)' }} />
+      )}
 
-      <BannerGameRows selectedMode={selectedMode} onSelect={onSelect} />
-    </div>
+      <GamePicker
+        selected={selectedMode}
+        onSelect={onSelect}
+        accent={LB_GOLD}
+        label="Pick a leaderboard"
+        header={
+          <div className={PICKER_HEADER_CLASS} style={PICKER_HEADER_STYLE}>
+            <span className="flex-1 min-w-0 truncate"><ResetLine lead={date} /></span>
+            <HeaderChipLink href="/records">ALL-TIME →</HeaderChipLink>
+          </div>
+        }
+      />
+    </>
   );
-
-  // Every title is art with its host(s) drawn in, so the banner host (O2) stays off.
-  return card;
 }

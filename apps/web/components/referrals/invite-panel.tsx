@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { Gift, Copy, Check, X as XIcon } from 'lucide-react';
+import { X as XIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { CandyButton } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { GiftProCard, InviteCodeTiles, InviteSentCard, PendingPill } from '@/components/friends/invite-screens';
+import { FR_LOOK, rowStripe } from '@/lib/friends-look';
+import { GIFT_SLOTS, giftShareText, giftsLeft } from '@/lib/invite-screens';
+import { softMix } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
@@ -21,12 +27,13 @@ interface ReferralRow {
   inviteeName?: string | null;
 }
 
+// The panel lives on the light-only Friends page: light inks in every theme.
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
-  pending: { text: 'Waiting', color: 'var(--color-text-muted)' },
-  redeemed: { text: 'Friend joined! +3 days', color: '#059669' },
-  converted: { text: 'Subscribed! Reward earned', color: '#d97706' },
-  expired: { text: 'Expired', color: 'var(--color-text-muted)' },
-  revoked: { text: 'Canceled', color: 'var(--color-text-muted)' },
+  pending: { text: 'Waiting', color: FR_LOOK.sub },
+  redeemed: { text: 'Friend joined! +3 days', color: '#047857' },
+  converted: { text: 'Subscribed! Reward earned', color: '#b45309' },
+  expired: { text: 'Expired', color: FR_LOOK.sub },
+  revoked: { text: 'Canceled', color: FR_LOOK.sub },
 };
 
 /** "29d left" / "12h left" for a pending invite's expiry. */
@@ -43,12 +50,19 @@ function timeLeft(expiresAt: string): string {
  * Mechanics borrowed from Viral Loops' best-converting templates
  * (milestones + leaderboard) rendered natively: create up to 3 open
  * invite links, watch their status, see the monthly Top Inviters.
+ * Finishing build T4 (docs/FINISH_SPEC.md): "GIFT A WEEK OF PRO" — O3 with
+ * the crowned gift box on the gold card, the soft-number 7 DAYS badge, the
+ * gifts-left counter, the gold candy "Send a gift"; open gifts show their code
+ * on glossy letter tiles with a "Pending" pill; after sending, the T1
+ * invite-sent screen.
  */
 export function InvitePanel() {
   const { user, session, isProActive } = useAuth();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  /** T1: the gift just sent (its invite-sent screen shows until Done). */
+  const [sentCode, setSentCode] = useState<string | null>(null);
 
   const { data: invites, mutate } = useSWR(
     user ? ['referrals-mine', user.id] : null,
@@ -95,7 +109,7 @@ export function InvitePanel() {
   const openInvites = (invites ?? []).filter(
     (i) => i.status === 'pending' && new Date(i.expires_at).getTime() > Date.now(),
   );
-  const slotsLeft = Math.max(0, 3 - openInvites.length);
+  const slotsLeft = giftsLeft(openInvites.length);
   const redemptions = (invites ?? []).filter((i) => i.status === 'redeemed' || i.status === 'converted').length;
   // Dead invites (canceled / expired) disappear entirely — a spent random
   // code is noise to the player. The rows live on in the DB for the admin
@@ -121,6 +135,7 @@ export function InvitePanel() {
         setError(data.error ?? 'Could not create an invite.');
       } else {
         await mutate();
+        setSentCode(data.code);
         await copyLink(data.code);
       }
     } catch {
@@ -148,7 +163,8 @@ export function InvitePanel() {
 
   const copyLink = async (code: string) => {
     const url = `https://wordocious.com/join/${code}`;
-    const text = `I'm gifting you 7 days of Wordocious Pro — eight daily word games, ten More Games, the works.`;
+    // FINISH_SPEC S4 / T4: the shared invite line (core shareCaption 'invite') plus the gift; the link rides separately.
+    const text = giftShareText(url);
     try {
       if (navigator.share) {
         // Pass url SEPARATELY from text: iOS then renders the share-sheet
@@ -163,41 +179,56 @@ export function InvitePanel() {
     } catch {}
   };
 
-  return (
-    <div
-      className="p-5 space-y-4"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
-    >
-      <div className="flex items-center gap-2">
-        <Gift className="w-5 h-5" style={{ color: '#7c3aed' }} />
-        <h3
-          className="text-base font-black tracking-tight text-transparent bg-clip-text"
-          style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-        >
-          GIFT PRO TO FRIENDS
-        </h3>
-      </div>
+  if (sentCode) {
+    return (
+      <InviteSentCard
+        code={sentCode}
+        note="7 days of Pro are waiting for them. Share the link again from the gift card anytime."
+        onSendAnother={slotsLeft > 0 ? () => { setSentCode(null); void handleCreate(); } : undefined}
+        onDone={() => setSentCode(null)}
+      />
+    );
+  }
 
-      <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-        Each friend gets <span style={{ color: '#d97706' }}>7 days of Pro</span> free. You get
-        +3 days when they join, a <span style={{ color: '#d97706' }}>free month</span> if they
-        subscribe — and <span style={{ color: '#d97706' }}>3 free months</span> if they go
+  return (
+    <GiftProCard
+      giftsLeft={slotsLeft}
+      slots={GIFT_SLOTS}
+      onSend={handleCreate}
+      sending={creating}
+      sendDisabled={slotsLeft === 0}
+      sendLabel={creating ? 'Sending…' : slotsLeft === 0 ? 'All 3 gifts out' : 'Send a gift'}
+      footer={(leaders ?? []).length > 0 ? (
+        <div className="pt-2" style={{ borderTop: `1px dashed ${softMix(FR_LOOK.gold, 0.4)}` }}>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Icon3D name="trophy" size={14} />
+            <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: FR_LOOK.goldInk }}>
+              Top Inviters this month
+            </span>
+          </div>
+          {(leaders ?? []).map((l, i) => (
+            <div key={l.username} className="flex items-center justify-between text-xs font-bold py-1 px-2 rounded-lg" style={{ background: rowStripe(i + 1) }}>
+              <span style={{ color: FR_LOOK.ink }}><SoftNum size={12}>{i + 1}</SoftNum>. {l.username}</span>
+              <span style={{ color: FR_LOOK.sub }}><SoftNum size={12}>{l.count}</SoftNum> joined</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    >
+      <p className="m-0 text-xs font-bold" style={{ color: FR_LOOK.sub }}>
+        Each friend gets <span style={{ color: '#b45309' }}>7 days of Pro</span> free. You get
+        +3 days when they join, a <span style={{ color: '#b45309' }}>free month</span> if they
+        subscribe, and <span style={{ color: '#b45309' }}>3 free months</span> if they go
         annual. {redemptions >= 3 ? null : <>3 friends = +4 streak shields.</>}
       </p>
-
-      <button
-        onClick={handleCreate}
-        disabled={creating || slotsLeft === 0}
-        className="w-full py-2.5 rounded-xl text-sm font-black text-white btn-3d disabled:opacity-50"
-        style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
-      >
-        {creating ? 'Creating…' : slotsLeft === 0 ? 'All 3 invites out — slots free when friends join' : `Create invite link (${slotsLeft} left)`}
-      </button>
-      {error && <p className="text-xs font-bold" style={{ color: '#dc2626' }}>{error}</p>}
+      {slotsLeft === 0 && !creating && (
+        <p className="m-0 text-[11px] font-bold text-center" style={{ color: FR_LOOK.sub }}>Slots free up when friends join.</p>
+      )}
+      {error && <p className="m-0 text-xs font-bold" style={{ color: '#dc2626' }} role="alert">{error}</p>}
 
       {visibleInvites.length > 0 && (
-        <div className="space-y-1.5">
-          {visibleInvites.slice(0, 6).map((inv) => {
+        <div className="overflow-hidden" style={{ borderRadius: 12, border: `1.5px solid ${softMix(FR_LOOK.gold, 0.3)}` }}>
+          {visibleInvites.slice(0, 6).map((inv, i) => {
             const label = STATUS_LABEL[inv.status] ?? STATUS_LABEL.pending;
             const open = inv.status === 'pending';
             // §251: settled rows lead with WHO — the code is noise once spent.
@@ -208,28 +239,41 @@ export function InvitePanel() {
                 ? `${name ?? 'A friend'} joined! +3 days`
                 : null;
             return (
-              <div key={inv.id} className="flex items-center gap-2 text-xs font-bold">
-                {open && <span className="font-mono tracking-widest" style={{ color: 'var(--color-text)' }}>{inv.code}</span>}
-                <span className="flex-1" style={{ color: label.color }}>
-                  {settledText ?? label.text}
-                  {open && (
-                    <span style={{ color: 'var(--color-text-muted)' }}> · {timeLeft(inv.expires_at)}</span>
-                  )}
-                </span>
+              <div
+                key={inv.id}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-bold"
+                style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(FR_LOOK.gold, 0.2)}`, minHeight: 44 }}
+              >
+                {open ? (
+                  <span className="flex-1 min-w-0 flex flex-col items-start gap-1">
+                    {/* T1: the open gift's code on glossy letter tiles, a Pending pill and its time left. */}
+                    <InviteCodeTiles code={inv.code} tile={19} />
+                    <span className="flex items-center gap-1.5">
+                      <PendingPill />
+                      <span style={{ color: FR_LOOK.sub }}>{timeLeft(inv.expires_at)}</span>
+                    </span>
+                  </span>
+                ) : (
+                  <span className="flex-1" style={{ color: label.color }}>{settledText ?? label.text}</span>
+                )}
                 {open && (
                   <>
-                    <button onClick={() => copyLink(inv.code)} aria-label="Share invite link" className="p-1">
-                      {copiedCode === inv.code
-                        ? <Check className="w-3.5 h-3.5" style={{ color: '#059669' }} />
-                        : <Copy className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}
-                    </button>
-                    <button
+                    <CandyButton
+                      size="sm"
+                      color={copiedCode === inv.code ? 'teal' : 'peach'}
+                      icon={copiedCode === inv.code ? 'check' : 'share'}
+                      onClick={() => copyLink(inv.code)}
+                      aria-label="Share invite link"
+                      style={{ width: 32, padding: 0 }}
+                    />
+                    <CandyButton
+                      size="sm"
+                      color="peach"
+                      icon={<XIcon className="w-3.5 h-3.5" aria-hidden="true" />}
                       onClick={() => cancelInvite(inv.id, inv.code)}
                       aria-label="Cancel invite"
-                      className="p-1"
-                    >
-                      <XIcon className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                    </button>
+                      style={{ width: 32, padding: 0 }}
+                    />
                   </>
                 )}
                 {inv.status === 'converted' && <Icon3D name="crown" size={14} />}
@@ -238,23 +282,6 @@ export function InvitePanel() {
           })}
         </div>
       )}
-
-      {(leaders ?? []).length > 0 && (
-        <div className="pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Icon3D name="trophy" size={14} />
-            <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-              Top Inviters this month
-            </span>
-          </div>
-          {(leaders ?? []).map((l, i) => (
-            <div key={l.username} className="flex items-center justify-between text-xs font-bold py-0.5">
-              <span style={{ color: 'var(--color-text)' }}>{i + 1}. {l.username}</span>
-              <span style={{ color: 'var(--color-text-muted)' }}>{l.count} joined</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </GiftProCard>
   );
 }

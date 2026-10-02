@@ -170,10 +170,8 @@ fun MultiBoardLayout(
                         scaleX = 0.95f + 0.05f * zoomT
                         scaleY = 0.95f + 0.05f * zoomT
                     }
-                    // FINISH_SPEC A1: the zoom card is the lavender page card, not white.
-                    .background(com.wordocious.app.ui.accentWash(Color(0xFF7C3AED), 0.08f), RoundedCornerShape(12.dp))
-                    .clickableNoRipple { expandedIndex = null }
-                    .padding(6.dp),
+                    // FINISH_SPEC L: the zoomed board is its own tray (MiniBoardView, the active tint + ring).
+                    .clickableNoRipple { expandedIndex = null },
             ) {
                 MiniBoardView(
                     board = boards[expandedIndex!!],

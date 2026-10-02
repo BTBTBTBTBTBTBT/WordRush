@@ -26,6 +26,7 @@ struct WordociousApp: App {
         // Sized before any request so AsyncImage (avatars, Muddle cartoons, PN
         // photos) and Net's sessions share a real disk cache (founder, 2026-09-29).
         URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 200 * 1024 * 1024)
+        SoundManager.shared.preload()   // §U: decode the 16 sounds before the first key press
         // Cold starts always land on the DAILY surface (founder-approved UX):
         // the Pro Daily⇄Unlimited toggle choice is deliberately NOT restored
         // across launches — the founder's sister reopened the app, tapped
@@ -57,7 +58,11 @@ struct WordociousApp: App {
                 .id(themeManager.theme)
                 // FINISH_SPEC §F2: the cold-start intro picks up from the static
                 // launch screen (cold start only; outside the theme rebuild).
+                // FINISH_SPEC §K1: in-app notices (pushes that arrive while the app is open).
+                .overlay(alignment: .top) { InAppNoticeOverlay() }
                 .overlay { ColdStartIntroHost() }
+                .background { AchievementUnlockHost() } // FINISH_SPEC §V2: arms the unlock popups (own window).
+                .background { ProWelcomeHost() } // FINISH_SPEC §AP: arms Welcome to Pro (own window).
                 .task {
                     // Utility-thread warm-up ~2 s in: Unlimited save sweep, puzzle banks, definitions.
                     AppWarmup.start()

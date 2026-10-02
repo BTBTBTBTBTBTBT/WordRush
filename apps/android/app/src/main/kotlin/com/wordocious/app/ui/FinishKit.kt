@@ -221,6 +221,9 @@ object Squish {
     const val ICON_DOWN_X = 0.86f
     const val ICON_DOWN_Y = 0.80f
     const val OVERSHOOT = 1.05f
+    /** AK a game card / tile: press to 0.95, spring back through 1.02 (full depth at any size). */
+    const val CARD_DOWN = 0.95f
+    const val CARD_OVERSHOOT = 1.02f
     const val ICON_OVERSHOOT = 1.08f
     const val DOWN_MS = 90
     const val RELEASE_MS = 260
@@ -262,11 +265,14 @@ private suspend fun Animatable<Float, *>.squishRelease(down: Float, overshoot: F
  * Off with Reduce Motion. It scales what comes after it in the modifier chain, so
  * put it (or [squishClickable]) first to press the whole element.
  */
-fun Modifier.pressSquish(interaction: InteractionSource, icon: Boolean = false): Modifier = composed {
-    if (WTheme.reducedMotion) return@composed this
-    val downX = if (icon) Squish.ICON_DOWN_X else Squish.DOWN
-    val downY = if (icon) Squish.ICON_DOWN_Y else Squish.DOWN
-    val over = if (icon) Squish.ICON_OVERSHOOT else Squish.OVERSHOOT
+fun Modifier.pressSquish(interaction: InteractionSource, icon: Boolean = false, card: Boolean = false): Modifier = composed {
+    // Spec U: press · soft / release (sound stays on under Reduce Motion).
+    if (WTheme.reducedMotion) return@composed this.squishFeedback(interaction)
+    // AK: a game card / tile presses to 0.95 and springs back through 1.02 at full depth
+    // (no size attenuation), with a slight darken while held.
+    val downX = if (icon) Squish.ICON_DOWN_X else if (card) Squish.CARD_DOWN else Squish.DOWN
+    val downY = if (icon) Squish.ICON_DOWN_Y else if (card) Squish.CARD_DOWN else Squish.DOWN
+    val over = if (icon) Squish.ICON_OVERSHOOT else if (card) Squish.CARD_OVERSHOOT else Squish.OVERSHOOT
     val sx = remember { Animatable(1f) }
     val sy = remember { Animatable(1f) }
     LaunchedEffect(interaction) {
@@ -290,15 +296,22 @@ fun Modifier.pressSquish(interaction: InteractionSource, icon: Boolean = false):
             }
         }
     }
-    this.graphicsLayer {
+    this.squishFeedback(interaction).graphicsLayer {
         val x = sx.value
         val y = sy.value
         if (x != 1f || y != 1f) {
-            val a = Squish.attenuation(size.width / density, size.height / density)
+            val a = if (card) 1f else Squish.attenuation(size.width / density, size.height / density)
             scaleX = Squish.applied(x, a)
             scaleY = Squish.applied(y, a)
         }
-    }
+    }.then(
+        if (card) Modifier.drawWithContent {
+            drawContent()
+            // The lip-compress darken: up to 6% while the card is sunk.
+            val depth = ((1f - sy.value) / (1f - Squish.CARD_DOWN)).coerceIn(0f, 1f)
+            if (depth > 0.01f) drawRect(Color.Black.copy(alpha = 0.06f * depth))
+        } else Modifier,
+    )
 }
 
 /** Back-compat name for [pressSquish] (A3 header controls). */
@@ -314,11 +327,12 @@ fun Modifier.squishClickable(
     role: Role = Role.Button,
     enabled: Boolean = true,
     icon: Boolean = false,
+    card: Boolean = false,
     onClick: () -> Unit,
 ): Modifier = composed {
     val interaction = remember { MutableInteractionSource() }
     this
-        .pressSquish(interaction, icon)
+        .pressSquish(interaction, icon, card)
         .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
         .then(
             if (label != null) Modifier.semantics(mergeDescendants = true) {
@@ -536,6 +550,7 @@ fun CandyButton(
                 scaleX = s; scaleY = s
                 alpha = if (enabled) 1f else 0.55f
             }
+            .squishFeedback(interaction)
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
@@ -616,6 +631,7 @@ fun CandyRoundButton(
     Box(
         modifier.size(diameter, diameter + lip)
             .graphicsLayer { val s = 1f - 0.08f * press; scaleX = s; scaleY = s }
+            .squishFeedback(interaction)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .semantics(mergeDescendants = true) { role = Role.Button; this.contentDescription = contentDescription },
     ) {

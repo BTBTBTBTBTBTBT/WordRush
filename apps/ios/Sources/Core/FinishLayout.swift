@@ -235,6 +235,27 @@ public enum CastMoves {
         minInterval + (maxInterval - minInterval) * min(1, max(0, unit))
     }
 
+    // MARK: F2 fix — the landing flourish
+
+    /// FINISH_SPEC §F2 fix step 4: once the cold-start intro lands, every character
+    /// hops once — the W hop keyframes compressed to 420 ms, 50 ms apart, left to
+    /// right — before the one-at-a-time moves resume.
+    public static let flourishHop: Double = 0.42
+    public static let flourishStagger: Double = 0.05
+
+    /// The whole flourish's length for `count` characters.
+    public static func flourishDuration(count: Int = ids.count) -> Double {
+        flourishHop + Double(max(0, count - 1)) * flourishStagger
+    }
+
+    /// Character `index`'s pose `elapsed` seconds after the flourish started.
+    public static func flourishPose(index: Int, elapsed: Double) -> CastPose {
+        guard let hop = moves["w"] else { return .identity }
+        let local = elapsed - Double(index) * flourishStagger
+        guard local > 0, local < flourishHop else { return .identity }
+        return Keyframes.sample(hop.frames, at: local / flourishHop, easing: hop.easing)
+    }
+
     /// The pose of `id` at `elapsed` seconds into its move (identity outside it).
     /// Each keyframe segment is eased with the move's timing function, as CSS does.
     public static func pose(_ id: String, elapsed: Double) -> CastPose {

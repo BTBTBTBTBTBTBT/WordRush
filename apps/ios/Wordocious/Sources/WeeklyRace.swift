@@ -74,34 +74,27 @@ struct WeeklyFinishesCard: View {
     var body: some View {
         Group {
             if let rows, let last = rows.first {
-                VStack(spacing: 0) {
-                    LinearGradient(colors: [Self.purple, Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing)
-                        .frame(height: 3)
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "flag.fill").font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Self.purple)
-                            Text("Weekly Race Finishes").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                            Spacer()
-                            Text("\(rows.count) \(rows.count == 1 ? "week" : "weeks")")
-                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                        }
-                        HStack {
-                            tally("🥇", count(rows, 1))
-                            tally("🥈", count(rows, 2))
-                            tally("🥉", count(rows, 3))
-                        }
-                        Text("\(WeeklyRace.weekLabel(last.weekStart)): finished \(WeeklyRace.ordinal(last.rank)) of \(last.circleSize) · \(last.points.formatted()) pts")
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                // FINISH_SPEC §A1 / §A2: a tinted gold card with its top bar, the
+                // medal tallies as tinted tiles with soft numbers.
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Icon3D(.trophy, size: 22)
+                        Text("Weekly Race Finishes").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                        Spacer()
+                        Text("\(rows.count) \(rows.count == 1 ? "week" : "weeks")")
+                            .font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.secondary)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    HStack(spacing: 8) {
+                        tally("gold", count(rows, 1), Color(hex: 0xF5A524), "first")
+                        tally("silver", count(rows, 2), Color(hex: 0xAAB3C5), "second")
+                        tally("bronze", count(rows, 3), Color(hex: 0xD9844A), "third")
+                    }
+                    Text("\(WeeklyRace.weekLabel(last.weekStart)): finished \(WeeklyRace.ordinal(last.rank)) of \(last.circleSize) · \(last.points.formatted()) pts")
+                        .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+                        .frame(maxWidth: .infinity).multilineTextAlignment(.center)
                 }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                // ART_SPEC §11: the tinted lift sits outside the clip.
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
+                .padding(.horizontal, 16).padding(.vertical, 12)
+                .tintedCard(accent: Color(hex: 0xF5A524), bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)], barHeight: 6)
             }
         }
         .task(id: userId) {
@@ -113,11 +106,15 @@ struct WeeklyFinishesCard: View {
 
     private func count(_ rows: [WeeklyRace.Row], _ rank: Int) -> Int { rows.filter { $0.rank == rank }.count }
 
-    private func tally(_ medal: String, _ n: Int) -> some View {
+    private func tally(_ medal: String, _ n: Int, _ accent: Color, _ place: String) -> some View {
         VStack(spacing: 2) {
-            Text(medal).font(.system(size: 18))
-            Text("\(n)").font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+            // §AM3: the glossy medal art, never the emoji.
+            MedalArt(kind: medal, size: 24, fallbackColor: accent)
+            Text("\(n)").softNumber(20)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity).padding(.vertical, 8)
+        .tintedPill(accent, radius: 14)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Finished \(place) \(n) \(n == 1 ? "time" : "times")")
     }
 }

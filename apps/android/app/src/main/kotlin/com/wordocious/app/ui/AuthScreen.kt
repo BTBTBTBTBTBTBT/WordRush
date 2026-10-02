@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -29,7 +27,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +48,8 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.launch
 
+private val AUTH_PURPLE = Color(0xFF7C3AED)
+
 /**
  * Auth screen — ported from web components/auth/login-screen.tsx and iOS AuthView.swift.
  * Source of truth: the web. Shows WORDOCIOUS wordmark, "Welcome Back!"/"Join the Fun!",
@@ -66,6 +65,8 @@ fun AuthScreen(
      * Null = the root sign-in gate, which has nothing to go back to.
      */
     onDismiss: (() -> Unit)? = null,
+    /** The mode it opens in: "signin" (default) or "signup" (FINISH_SPEC AO step 3). */
+    initialMode: String = "signin",
 ) {
     // Pre-auth Privacy/Terms overlay (web parity: the footer links work).
     var infoRoute by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
@@ -77,7 +78,7 @@ fun AuthScreen(
     if (onDismiss != null) androidx.activity.compose.BackHandler { onDismiss() }
     // "signin" | "signup" | "reset" — reset emails a recovery link that finishes
     // on the web reset page (wordocious.com/auth/reset), web/iOS parity.
-    var mode by remember { mutableStateOf("signin") }
+    var mode by remember { mutableStateOf(if (initialMode == "signup") "signup" else "signin") }
     val isSignIn = mode == "signin"
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -108,8 +109,10 @@ fun AuthScreen(
                 HeaderBackButton(onDismiss, close = true)
             }
         }
-        // The whole cast around WELCOME! heads sign-in (ART_SPEC §8).
-        PageTitleArt(TitleArt.WELCOME, Modifier.padding(bottom = 12.dp))
+        // WELCOME! heads sign-in (ART_SPEC §8) — the shared headline (N1 sizing).
+        // G5: a cast pose over the lettering-only title (FINISH_SPEC N1 — the title has no cast now).
+        CastPose(MascotId.W, "wave", 92.dp)
+        PageHeadline(TitleArt.WELCOME, Modifier.padding(bottom = 12.dp))
         // Wordmark
         Text(
             "WORDOCIOUS",
@@ -128,12 +131,12 @@ fun AuthScreen(
         // Card — iOS AuthView: 20pt radius, 18pt padding, 16pt stack spacing, and
         // a violet-300 stroke (NOT the neutral --color-border used elsewhere).
         // The purple edge is what makes the sign-in card feel on-brand.
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(WTheme.surface, RoundedCornerShape(20.dp))
-                .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
-                .padding(18.dp),
+        // FINISH_SPEC A1 / G5: the card is a lavender tinted card with the purple → pink bar.
+        TintedCard(
+            AUTH_PURPLE, Modifier.fillMaxWidth(),
+            bar = Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
+            line = accentLine(AUTH_PURPLE, 0.40f),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // iOS's card is a VStack, which centers its children by default;
@@ -145,7 +148,7 @@ fun AuthScreen(
                 when (mode) { "signin" -> "WELCOME BACK!"; "signup" -> "JOIN THE FUN!"; else -> "RESET PASSWORD" },
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
-                color = WTheme.text,
+                color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -165,11 +168,11 @@ fun AuthScreen(
                 // Divider
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     androidx.compose.foundation.layout.Box(
-                        Modifier.weight(1f).height(1.dp).background(WTheme.border)
+                        Modifier.weight(1f).height(1.5.dp).background(accentLine(AUTH_PURPLE))
                     )
-                    Text("or", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    Text("or", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted)
                     androidx.compose.foundation.layout.Box(
-                        Modifier.weight(1f).height(1.dp).background(WTheme.border)
+                        Modifier.weight(1f).height(1.5.dp).background(accentLine(AUTH_PURPLE))
                     )
                 }
             }
@@ -194,12 +197,11 @@ fun AuthScreen(
                 )
             }
             if (mode == "signin") {
-                Text(
-                    "Forgot password?",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clickableNoRipple { mode = "reset"; error = null; resetSent = false },
+                // A8: a small soft peach candy button (was a text link).
+                CandyButton(
+                    "Forgot password?", onClick = { mode = "reset"; error = null; resetSent = false },
+                    color = CandyColor.PEACH, size = CandySize.SMALL,
+                    modifier = Modifier.align(Alignment.End),
                 )
             }
 
@@ -277,63 +279,56 @@ fun AuthScreen(
                     }
                 }
             }
-            Button3D(
+            // A8: the large purple candy CTA (a spinner leads the label while working).
+            val submitLabel = when (mode) { "signin" -> "Sign In"; "signup" -> "Create Account"; else -> "Send Reset Link" }
+            CandyButton(
+                if (working) "Please wait\u2026" else submitLabel,
                 onClick = { if (!working && !(mode == "reset" && resetSent)) submit() },
-                face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
-                shadow = Color(0xFF4C1D95),
-                modifier = Modifier.fillMaxWidth(),
+                color = CandyColor.PURPLE, size = CandySize.LARGE, fill = true,
                 enabled = !working && !(mode == "reset" && resetSent),
-            ) {
-                if (working) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.height(20.dp))
-                } else {
-                    Text(
-                        when (mode) { "signin" -> "Sign In"; "signup" -> "Create Account"; else -> "Send Reset Link" },
-                        color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp,
-                    )
-                }
-            }
+                contentDescription = submitLabel,
+                leading = if (working) {
+                    { CircularProgressIndicator(color = Color.White, strokeWidth = 2.5.dp, modifier = Modifier.size(18.dp)) }
+                } else null,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         Spacer(Modifier.height(16.dp))
 
         // Toggle sign in / sign up
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 when (mode) { "signin" -> "Don't have an account?"; "signup" -> "Already have an account?"; else -> "Remembered it?" },
-                fontSize = 13.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
+                fontSize = 13.sp, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, fontWeight = FontWeight.Bold,
             )
-            TextButton(onClick = {
-                mode = if (mode == "signin") "signup" else "signin"
-                error = null; resetSent = false
-            }) {
-                Text(
-                    if (isSignIn) "Sign Up" else "Sign In",
-                    fontSize = 13.sp, color = WTheme.primary, fontWeight = FontWeight.Black,
-                )
-            }
+            // A8: the mode switch is a small pink candy button (was a TextButton).
+            CandyButton(
+                if (isSignIn) "Sign Up" else "Sign In",
+                onClick = {
+                    mode = if (mode == "signin") "signup" else "signin"
+                    error = null; resetSent = false
+                },
+                color = CandyColor.PINK, size = CandySize.SMALL,
+            )
         }
 
+        Spacer(Modifier.height(14.dp))
         // Apple 5.1.1(v) / Google Play: a signed-out visitor must be able to play
-        // the single-player daily without registering.
-        TextButton(onClick = { AuthService.enterGuest() }) {
-            Text(
-                "Play without an account",
-                fontSize = 13.sp, color = WTheme.textMuted, fontWeight = FontWeight.Black,
-                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
-            )
-        }
+        // the single-player daily without registering. A8: a soft peach candy button.
+        CandyButton(
+            "Play without an account", onClick = { AuthService.enterGuest() },
+            color = CandyColor.PEACH, size = CandySize.MEDIUM, icon = CandyIcon.PLAY,
+        )
 
         Spacer(Modifier.height(24.dp))
 
         // Footer — functional legal links (App Review expects these to work),
         // opening the in-app Privacy/Terms pages like the web's <Link> footer.
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Navigation links as tinted chips that squish (A1 / A9).
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Privacy Policy" to "privacy", "Terms of Service" to "terms").forEach { (label, route) ->
-                Text(
-                    label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    modifier = Modifier.clickableNoRipple { infoRoute = route },
-                )
+                InfoLinkChip(label, AUTH_PURPLE) { infoRoute = route }
             }
         }
     }
@@ -371,19 +366,32 @@ private fun AuthField(
             else androidx.compose.ui.text.input.VisualTransformation.None,
         trailingIcon = if (isPassword && onToggleReveal != null) {
             {
-                Icon(
-                    if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                    contentDescription = if (revealed) "Hide password" else "Show password",
-                    tint = WTheme.textMuted,
-                    modifier = Modifier.size(20.dp).clickableNoRipple(onToggleReveal),
-                )
+                androidx.compose.foundation.layout.Box(
+                    Modifier.size(40.dp).squishClickable(if (revealed) "Hide password" else "Show password", icon = true, onClick = onToggleReveal),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = null,
+                        tint = if (WTheme.isDark) WTheme.textMuted else FinishInk.label,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
         } else null,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
+        // FINISH_SPEC A1 / G5: tinted inputs — the purple wash with its line, never a white field.
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = WTheme.primary,
-            unfocusedBorderColor = WTheme.border,
-            focusedLabelColor = WTheme.primary,
+            focusedContainerColor = accentWash(AUTH_PURPLE, 0.10f),
+            unfocusedContainerColor = accentWash(AUTH_PURPLE, 0.10f),
+            errorContainerColor = accentWash(Color(0xFFDC2626), 0.08f),
+            focusedBorderColor = AUTH_PURPLE,
+            unfocusedBorderColor = accentLine(AUTH_PURPLE),
+            focusedLabelColor = AUTH_PURPLE,
+            unfocusedLabelColor = if (WTheme.isDark) WTheme.textMuted else FinishInk.label,
+            focusedTextColor = if (WTheme.isDark) WTheme.text else FinishInk.heading,
+            unfocusedTextColor = if (WTheme.isDark) WTheme.text else FinishInk.heading,
+            cursorColor = AUTH_PURPLE,
         ),
     )
 }
@@ -396,12 +404,8 @@ private fun GoogleSignInButton(onError: (String) -> Unit) {
     var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            // iOS fills with Theme.background, not hard white — a hardcoded
-            // white button with dark-gray text was unreadable in the dark theme.
-            .background(WTheme.bg)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
-            .clickableNoRipple {
+            // A9: the squish; the button keeps Google's required look (light fill, the G mark).
+            .squishClickable(if (busy) "Signing in" else "Continue with Google") {
                 if (!busy) {
                     busy = true
                     scope.launch {
@@ -411,6 +415,11 @@ private fun GoogleSignInButton(onError: (String) -> Unit) {
                     }
                 }
             }
+            .clip(RoundedCornerShape(12.dp))
+            // iOS fills with Theme.background, not hard white — a hardcoded
+            // white button with dark-gray text was unreadable in the dark theme.
+            .background(WTheme.bg)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
@@ -52,14 +54,18 @@ object CastHeaderAnchor {
     var bounds by mutableStateOf<Rect?>(null)
 }
 
-/** A cast hero trimmed to its figure (CastCrops), as a painter. */
+/**
+ * A cast hero trimmed to its figure (CastCrops), as a painter. X: [season] =
+ * "halloween" draws the costume (`art_halloween_<id>`, its own 320-px crops).
+ */
 @Composable
-fun rememberCastPainter(id: MascotId): BitmapPainter {
-    val bitmap: ImageBitmap = ImageBitmap.imageResource(id.res)
-    val crop = CastCrops.crops.getValue(id)
+fun rememberCastPainter(id: MascotId, season: String? = null): BitmapPainter {
+    val frame = SeasonSkins.frame(id, season)
+    val bitmap: ImageBitmap = ImageBitmap.imageResource(frame.res)
+    val crop = frame.crop
     return remember(bitmap, crop) {
-        // Clamp to the decoded bitmap (the crops are in 512-px source coordinates).
-        val k = bitmap.width / 512f
+        // Clamp to the decoded bitmap (the crops are in the skin's source coordinates).
+        val k = bitmap.width / frame.source.toFloat()
         BitmapPainter(
             bitmap,
             IntOffset((crop.left * k).roundToInt(), (crop.top * k).roundToInt()),
@@ -75,8 +81,8 @@ fun rememberCastPainter(id: MascotId): BitmapPainter {
 /**
  * A5 The living cast header: the ten trimmed figures at one shared height across the
  * full width given (2.2% overlap, every second figure a step higher), with one
- * character at a time playing its move. [crown] puts the 3D crown on W (the Pro
- * header marker). [live] = false keeps it still (the cold-start intro's static copy).
+ * character at a time playing its move. [crown] puts the gold crown sprite on W (AA1,
+ * the Pro identifier; tapping it opens the "You're Pro" sheet). [live] = false keeps it still (the cold-start intro's static copy).
  * Decorative row, announced once as "Wordocious".
  */
 @Composable
@@ -88,12 +94,30 @@ fun LivingCastHeader(
 ) {
     val hidden by LocalTabHidden.current
     val still = WTheme.reducedMotion || !live
+    // FINISH_SPEC AD: the idle moves + crown twinkle are ambient — Battery Saver stops them too
+    // (the one-shot intro flourish follows Reduce Motion alone).
+    val calm = still || WTheme.calmMotion
     var acting by remember { mutableStateOf<MascotId?>(null) }
     val progress = remember { Animatable(0f) }
-    LaunchedEffect(still, hidden) {
+    // F2 fix step 4: after the cold-start intro lands, an all-cast hop wave on the real row.
+    val wave = remember { Animatable(-1f) }
+    val flourishKey = ColdStart.flourish
+    LaunchedEffect(flourishKey) {
+        // Spec U: the intro flourish's cast hop = one quiet `hop` (never the idle moves).
+        if (flourishKey != 0 && reportAnchor && live) {
+            com.wordocious.app.data.SoundManager.play(com.wordocious.app.data.Sfx.HOP, volume = 0.6f)
+        }
+        if (flourishKey == 0 || still || !reportAnchor) return@LaunchedEffect
+        wave.snapTo(0f)
+        wave.animateTo(IntroFlourish.TOTAL_MS.toFloat(), tween(IntroFlourish.TOTAL_MS, easing = LinearEasing))
+        wave.snapTo(-1f)
+    }
+    LaunchedEffect(calm, hidden, flourishKey) {
         acting = null
-        if (still || hidden) return@LaunchedEffect
+        if (calm || hidden) return@LaunchedEffect
         val random = Random(System.nanoTime())
+        // The personality moves resume after the flourish.
+        if (flourishKey > 0 && reportAnchor) delay(IntroFlourish.TOTAL_MS.toLong())
         delay(CastMoves.FIRST_DELAY_MS)
         var last: MascotId? = null
         while (true) {
@@ -108,9 +132,18 @@ fun LivingCastHeader(
         }
     }
 
-    val painters = MascotId.entries.map { rememberCastPainter(it) }
+    // X: Halloween (or the admin preview) dresses the row in costume.
+    val season = rememberSeason()
+    val painters = MascotId.entries.map { rememberCastPainter(it, season) }
+    // F2 fix step 1: hidden (still laid out, still measured) while the intro's row is up.
+    val hideForIntro = reportAnchor && ColdStart.hidingHeader
+    // AA1: the crown's tap target (an invisible box over the crown) squishes the crown itself.
+    val crownTap = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    var proSheet by remember { mutableStateOf(false) }
+    if (proSheet) YoureProSheet(onDismiss = { proSheet = false })
     Layout(
         modifier = modifier
+            .graphicsLayer { alpha = if (hideForIntro) 0f else 1f }
             .semantics { contentDescription = "Wordocious" }
             .then(
                 if (reportAnchor) Modifier.onGloballyPositioned { CastHeaderAnchor.bounds = it.boundsInWindow() }
@@ -121,12 +154,14 @@ fun LivingCastHeader(
                 Box(
                     Modifier.drawWithContent {
                         val who = acting
-                        if (who != id) {
+                        // The flourish: every character plays the W hop in a left-to-right wave.
+                        val hop = if (wave.value >= 0f) IntroFlourish.local(i, wave.value) else null
+                        if (who != id && hop == null) {
                             drawContent()
                             return@drawWithContent
                         }
-                        val move = CastMoves.moves.getValue(id)
-                        val xf = CastMoves.sample(move, progress.value)
+                        val move = if (hop != null) CastMoves.moves.getValue(MascotId.W) else CastMoves.moves.getValue(id)
+                        val xf = CastMoves.sample(move, hop ?: progress.value)
                         val w = size.width
                         val h = size.height
                         val px = w * move.originX
@@ -144,22 +179,38 @@ fun LivingCastHeader(
                 ) {
                     Image(painters[i], contentDescription = null, contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
                     if (crown && id == MascotId.W) {
-                        CrownOnW()
+                        CrownOnW(crownTap, twinkle = !calm && !hidden)
                     }
                 }
+            }
+            // AA1 the crown's tap target, placed over the crown (after the ten figures).
+            if (crown && live) {
+                Box(
+                    Modifier
+                        .clickable(
+                            interactionSource = crownTap, indication = null,
+                            role = androidx.compose.ui.semantics.Role.Button,
+                        ) { proSheet = true }
+                        .semantics { contentDescription = "You're Pro: membership details" },
+                )
             }
         },
     ) { measurables, constraints ->
         val width = if (constraints.hasBoundedWidth) constraints.maxWidth else (360.dp.roundToPx())
-        val h = CastCrops.figureHeight(width.toFloat())
+        val h = SeasonSkins.figureHeight(width.toFloat(), season)
         val lift = CastCrops.STAGGER * h
         val crownSpace = if (crown) h * CROWN_SPACE else 0f
         val total = (h + lift + crownSpace).roundToInt()
         val overlap = CastCrops.OVERLAP * width
-        val placeables = measurables.mapIndexed { i, m ->
+        val placeables = measurables.take(MascotId.entries.size).mapIndexed { i, m ->
             val id = MascotId.entries[i]
-            val w = (CastCrops.crops.getValue(id).aspect * h).roundToInt().coerceAtLeast(1)
+            val w = (SeasonSkins.frame(id, season).crop.aspect * h).roundToInt().coerceAtLeast(1)
             m.measure(Constraints.fixed(w, h.roundToInt().coerceAtLeast(1)))
+        }
+        // AA1: the crown tap target covers W's headroom + the top of his head.
+        val crownTarget = measurables.getOrNull(MascotId.entries.size)?.let { m ->
+            val wW = placeables[MascotId.entries.indexOf(MascotId.W)].width
+            m.measure(Constraints.fixed(wW, (crownSpace + h * 0.4f).roundToInt().coerceAtLeast(1)))
         }
         layout(width, total) {
             var x = 0f
@@ -168,6 +219,7 @@ fun LivingCastHeader(
                 p.place(x.roundToInt(), y.roundToInt())
                 x += p.width - overlap
             }
+            crownTarget?.place(0, 0)
         }
     }
 }
@@ -175,14 +227,25 @@ fun LivingCastHeader(
 /** How much headroom the Pro crown takes above the row (fraction of the figure height). */
 private const val CROWN_SPACE = 0.32f
 
-/** The Pro crown on W's top edge (~45% of W's width), riding W's moves. */
+/**
+ * AA1 the gold crown sprite (`art_badge_pro_crown_sprite`) sitting on W's head (~45% of
+ * W's width), tilted -8°, riding W's moves (it is inside his transformed box, so it
+ * bounces with the hop). A tiny sparkle twinkles every ~8 s ([twinkle]; never with
+ * Reduce Motion); it squishes when its tap target ([tap]) is pressed.
+ */
 @Composable
-private fun androidx.compose.foundation.layout.BoxScope.CrownOnW() {
+private fun androidx.compose.foundation.layout.BoxScope.CrownOnW(
+    tap: androidx.compose.foundation.interaction.InteractionSource,
+    twinkle: Boolean,
+) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.matchParentSize()) {
         val size = maxWidth * 0.45f
-        Icon3D(
-            Icon3DName.CROWN, size,
-            Modifier.align(Alignment.TopCenter).offset(y = -size * 0.62f).requiredSize(size),
+        ProCrownSprite(
+            size,
+            Modifier.align(Alignment.TopCenter).offset(x = -size * 0.04f, y = -size * 0.6f).pressSquish(tap, icon = true)
+                // AP: after "Welcome to Pro" the crown drops onto W with a sparkle (ui/ProWelcome.kt).
+                .proCrownDrop(),
+            tilt = -8f, twinkle = twinkle,
         )
     }
 }

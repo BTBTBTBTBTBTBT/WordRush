@@ -1,34 +1,70 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail, Bot, Gift } from 'lucide-react';
-import { Icon3D, Shield3D } from '@/components/ui/icon3d';
-import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import Image from 'next/image';
+import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
+import { GameArt } from '@/components/ui/game-art';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { PageBackground } from '@/components/ui/page-background';
-import { onPageShadow } from '@/lib/art';
+import { CandyButton } from '@/components/ui/candy-button';
+import { SoftNum } from '@/components/ui/soft-number';
+import { PopupBar, SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
+import { ART_SIZE, artSrc, badgeSrc, onPageShadow } from '@/lib/art';
+import { GiftProCard } from '@/components/friends/invite-screens';
+import { softBackground, softBorder, softIconTile, softShadow } from '@/lib/soft-surface';
 
-const benefits = [
-  { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
-  { icon: WordleGridIcon, text: 'Unlimited replays of every game mode, any time' },
-  { icon: Swords, text: 'VS mode on every game — challenge friends in every mode' },
-  { icon: Bot, text: 'Practice against the CPU — Easy, Medium & Hard bots, anytime' },
-  { icon: Mail, text: 'Invite friends to private matches by link or username' },
-  { icon: Shield3D, text: '4 streak shields credited each billing period' },
-  { icon: Gift, text: 'Gift 7 days of Pro to 3 friends — and earn rewards when they join' },
-  { icon: Sparkles, text: 'Pro badge on profile & leaderboards' },
-  { icon: BarChart3, text: 'Extended stats — win rate trends & avg speed per mode' },
-  { icon: Zap, text: 'Early access to new game modes' },
+// The Pro page (docs/FINISH_SPEC.md G1): the gold card family — gold-tinted
+// cards with the gold top bar, W crowned with the golden star
+// (art-scene-pro-crown) large at the top, the plans as tinted option cards
+// (selected = a stronger wash + a gold ring), ONE large amber candy CTA for the
+// selected plan, and feature rows with 3D icons. No plain white. Checkout is
+// unchanged: the CTA calls the same handleSubscribe(plan id).
+
+const GOLD = '#f5a524';
+const GOLD_BAR = 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)';
+const CROWN = 'art-scene-pro-crown' as const;
+
+/** A feature row's 3D icon: a 3D UI icon or a game's 3D icon. */
+type FeatureIcon = { icon: Icon3DName } | { game: string };
+
+const benefits: { art: FeatureIcon; accent: string; text: string }[] = [
+  { art: { icon: 'badge-check' }, accent: '#10b981', text: 'Ad-free experience — no interruptions, ever' },
+  { art: { game: 'practice' }, accent: '#7c3aed', text: 'Unlimited replays of every game mode, any time' },
+  { art: { game: 'vs' }, accent: '#0d9488', text: 'VS mode on every game — challenge friends in every mode' },
+  { art: { game: 'gauntlet' }, accent: '#f97316', text: 'Battle all ten of the cast, anytime' },
+  { art: { icon: 'add-friend' }, accent: '#ec4899', text: 'Invite friends to private matches by link or username' },
+  { art: { icon: 'shield' }, accent: '#7c3aed', text: '4 streak shields credited each billing period' },
+  { art: { icon: 'share' }, accent: '#ec4899', text: 'Gift 7 days of Pro to 3 friends — and earn rewards when they join' },
+  { art: { icon: 'crown' }, accent: GOLD, text: 'Pro badge on profile & leaderboards' },
+  { art: { icon: 'tab-stats' }, accent: '#3b82f6', text: 'Extended stats — win rate trends & avg speed per mode' },
+  { art: { icon: 'bell' }, accent: '#f97316', text: 'Early access to new game modes' },
 ];
+
+function FeatureArt({ art }: { art: FeatureIcon }) {
+  return 'icon' in art ? <Icon3D name={art.icon} size={26} /> : <GameArt id={art.game} size={26} />;
+}
+
+/** A gold card (A1): the gold wash, its soft border and the gold top bar. */
+const goldCard: React.CSSProperties = {
+  background: softBackground(GOLD, 0.14),
+  border: softBorder(GOLD, 0.14),
+  borderRadius: 22,
+  overflow: 'hidden',
+  boxShadow: onPageShadow(softShadow(GOLD, 0.16)),
+};
+
+type PlanKey = 'yearly' | 'monthly';
 
 export default function ProPage() {
   const { user, session, refreshProfile, isProActive } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
+  // The plan the big CTA buys (yearly preselected: the best value).
+  const [plan, setPlan] = useState<PlanKey>('yearly');
   // Real payments are wired only when Stripe is configured. Until then the buy
   // buttons are disabled with "Coming soon" — NEVER a free grant, and never a
   // dead 503. (Server truth is paymentsConfigured(); this is the UI mirror.)
@@ -77,6 +113,13 @@ export default function ProPage() {
     }
   };
 
+  const plans: { key: PlanKey; title: string; price: string; per: string; note: string; badge?: string }[] = [
+    { key: 'yearly', title: 'Yearly', price: `$${PRO_PLANS.yearly.price}`, per: '/yr', note: '$5/mo billed annually', badge: 'BEST VALUE' },
+    { key: 'monthly', title: 'Monthly', price: `$${PRO_PLANS.monthly.price}`, per: '/mo', note: 'Cancel anytime' },
+  ];
+  const selected = PRO_PLANS[plan];
+  const [cw, ch] = ART_SIZE[CROWN];
+
   return (
     <PageBackground tint="home" className="min-h-screen pb-20">
       <AppHeader />
@@ -84,7 +127,7 @@ export default function ProPage() {
       <div className="max-w-lg mx-auto px-4">
         {/* The whole-cast GO PRO title art (docs/ART_SPEC.md §2) in the shared page header. */}
         <PageHeader
-          className="mb-6"
+          className="mb-4"
           title="GO PRO"
           art="art-title-gopro"
           artLabel="Go Pro"
@@ -95,155 +138,175 @@ export default function ProPage() {
           )}
         />
 
-        {isProActive ? (
+        {/* G1: W crowned with the golden star, large, over a soft gold glow. */}
+        <div className="relative flex justify-center mb-4" aria-hidden="true">
           <div
-            className="text-center p-8"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1.5px solid #fde68a',
-              borderRadius: '16px',
-              boxShadow: onPageShadow(),
-            }}
-          >
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
-            >
-              <Icon3D name="crown" size={16} />
-              <span className="text-white font-black text-sm">ACTIVE PRO</span>
+            className="absolute celebrate-glow"
+            style={{ width: 230, height: 230, top: '50%', left: '50%', marginTop: -115, marginLeft: -115, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255, 209, 102, 0.55), rgba(245, 165, 36, 0) 68%)' }}
+          />
+          <Image
+            src={artSrc(CROWN)}
+            alt=""
+            width={cw}
+            height={ch}
+            priority
+            draggable={false}
+            sizes="170px"
+            className="relative select-none pointer-events-none art-pop"
+            style={{ height: 210, width: 'auto', filter: 'drop-shadow(0 8px 14px rgba(180, 83, 9, 0.25))' }}
+          />
+        </div>
+
+        {isProActive ? (
+          <>
+          <div className="text-center" style={goldCard}>
+            <PopupBar accent={GOLD} gradient={GOLD_BAR} />
+            <div className="p-7">
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3"
+                style={{ background: 'linear-gradient(#ffc56b, #f97316)', boxShadow: 'inset 0 0 0 1.5px #f5c542, 0 3px 0 #a24b0e' }}
+              >
+                {/* AA4: Pro members see the crown, never a PRO pill. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={badgeSrc('pro-crown-sprite')} alt="" aria-hidden="true" width={22} height={22} style={{ width: 22, height: 22, transform: 'rotate(-8deg)' }} />
+                <span className="text-white font-black text-sm" style={{ textShadow: '0 1px 2px rgba(59, 26, 120, 0.5)' }}>You&apos;re Pro</span>
+              </div>
+              <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                You&apos;re enjoying all Pro benefits!
+              </p>
             </div>
-            <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              You're enjoying all Pro benefits!
-            </p>
           </div>
+          {/* T4 (docs/FINISH_SPEC.md): Pro players gift a week of Pro from the Friends tab (the InvitePanel there). */}
+          <GiftProCard className="mt-4" sendHref="/friends">
+            <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              Each friend gets 7 days of Pro free, and you earn rewards when they join.
+            </p>
+          </GiftProCard>
+          </>
         ) : (
           <>
-            {/* Benefits */}
-            <div className="section-header mb-3">BENEFITS</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-              {benefits.map((b, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-3.5"
-                  style={{
-                    background: 'var(--color-surface)',
-                    border: '1.5px solid var(--color-border)',
-                    borderRadius: '16px',
-                    boxShadow: onPageShadow(),
-                  }}
-                >
-                  <b.icon className="w-5 h-5 flex-shrink-0" style={{ color: '#d97706' }} />
-                  <span className="text-xs font-bold" style={{ color: 'var(--color-text)' }}>{b.text}</span>
+            {/* Benefits: feature rows with 3D icons on the gold card. */}
+            <div className="mb-6" style={goldCard}>
+              <PopupBar accent={GOLD} gradient={GOLD_BAR} />
+              <div className="p-3.5">
+                <SoftSectionLabel ink="#b45309" className="mb-2.5 px-1">Benefits</SoftSectionLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {benefits.map((b, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2.5" style={softRow(b.accent, { radius: 14 })}>
+                      <span className="grid place-items-center shrink-0" style={{ width: 38, height: 38, ...softIconTile(b.accent, { radius: 11 }) }}>
+                        <FeatureArt art={b.art} />
+                      </span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--color-text)' }}>{b.text}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
 
-            {/* Pricing Cards */}
-            <div className="section-header mb-3">CHOOSE YOUR PLAN</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Monthly */}
-              <div
-                className="p-5"
-                style={{
-                  background: 'var(--color-surface)',
-                  border: '1.5px solid var(--color-border)',
-                  borderRadius: '16px',
-                  boxShadow: onPageShadow(),
-                }}
-              >
-                <h3 className="text-sm font-extrabold mb-1" style={{ color: 'var(--color-text)' }}>Monthly</h3>
-                <div className="text-3xl font-black mb-0.5" style={{ color: 'var(--color-text)' }}>
-                  ${PRO_PLANS.monthly.price}<span className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>/mo</span>
+            {/* Plans: tinted option cards (selected = stronger wash + gold ring) and ONE amber CTA. */}
+            <div style={goldCard}>
+              <PopupBar accent={GOLD} gradient={GOLD_BAR} />
+              <div className="p-3.5">
+                <SoftSectionLabel ink="#b45309" className="mb-2.5 px-1">Choose your plan</SoftSectionLabel>
+                <div role="radiogroup" aria-label="Choose your plan" className="grid grid-cols-2 gap-3 pt-1.5">
+                  {plans.map((p) => {
+                    const on = plan === p.key;
+                    return (
+                      <button
+                        key={p.key}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setPlan(p.key)}
+                        className="relative text-left p-3.5"
+                        style={{
+                          ...softRow(GOLD, { selected: on, radius: 18 }),
+                          ...(on ? { boxShadow: `0 0 0 3px rgba(245, 165, 36, 0.3), ${softShadow(GOLD, 0.2)}` } : null),
+                        }}
+                      >
+                        {p.badge && (
+                          <span
+                            className="absolute -top-2.5 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-black text-white"
+                            style={{ background: 'linear-gradient(#ffc56b, #f97316)', boxShadow: '0 2px 0 #a24b0e', textShadow: '0 1px 1px rgba(59, 26, 120, 0.45)' }}
+                          >
+                            {p.badge}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            aria-hidden="true"
+                            className="grid place-items-center shrink-0 rounded-full"
+                            style={{ width: 18, height: 18, border: `2px solid ${on ? GOLD : 'rgba(245, 165, 36, 0.45)'}`, background: on ? GOLD : 'transparent' }}
+                          >
+                            {on && <span className="rounded-full" style={{ width: 6, height: 6, background: '#fff' }} />}
+                          </span>
+                          <span className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>{p.title}</span>
+                        </span>
+                        <span className="block mt-1.5">
+                          <SoftNum size={28} className="soft-num-auto">{p.price}</SoftNum>
+                          <span className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>{p.per}</span>
+                        </span>
+                        <span className="block text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>{p.note}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>Cancel anytime</p>
-                <button
-                  onClick={() => handleSubscribe(PRO_PLANS.monthly.id)}
-                  disabled={loading !== null || !paymentsEnabled}
-                  className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-                  style={{
-                    background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                    boxShadow: '0 4px 0 #4c1d95',
-                  }}
-                >
-                  {!paymentsEnabled ? 'Coming soon' : loading === PRO_PLANS.monthly.id ? 'Processing...' : 'Subscribe Monthly'}
-                </button>
-              </div>
 
-              {/* Yearly */}
-              <div
-                className="p-5 relative"
-                style={{
-                  background: 'var(--color-surface)',
-                  border: '1.5px solid #fde68a',
-                  borderRadius: '16px',
-                  boxShadow: onPageShadow(),
-                }}
-              >
-                <div
-                  className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black text-white"
-                  style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
-                >
-                  BEST VALUE
-                </div>
-                <h3 className="text-sm font-extrabold mb-1" style={{ color: 'var(--color-text)' }}>Yearly</h3>
-                <div className="text-3xl font-black mb-0.5" style={{ color: 'var(--color-text)' }}>
-                  ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>/yr</span>
-                </div>
-                <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>$5/mo billed annually</p>
-                <button
-                  onClick={() => handleSubscribe(PRO_PLANS.yearly.id)}
+                <CandyButton
+                  color="amber"
+                  size="lg"
+                  block
+                  className="mt-4"
+                  icon={<Icon3D name="crown" size={24} />}
+                  onClick={() => handleSubscribe(selected.id)}
                   disabled={loading !== null || !paymentsEnabled}
-                  className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-                  style={{
-                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                    boxShadow: '0 4px 0 #92400e',
-                  }}
                 >
-                  {!paymentsEnabled ? 'Coming soon' : loading === PRO_PLANS.yearly.id ? 'Processing...' : 'Subscribe Yearly'}
-                </button>
+                  {!paymentsEnabled ? 'Coming soon' : loading === selected.id ? 'Processing...' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
+                </CandyButton>
               </div>
             </div>
 
             {/* Day pass — secondary CTA for impulse buyers. Rendered below
-                the monthly/yearly grid so it doesn't compete with the main
+                the monthly/yearly plans so it doesn't compete with the main
                 plans for attention (and cannibalize monthly conversions). */}
             <div className="mt-6 mb-2">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <div className="flex-1 h-px" style={{ background: 'rgba(245, 165, 36, 0.35)' }} />
                 <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   or try it first
                 </span>
-                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <div className="flex-1 h-px" style={{ background: 'rgba(245, 165, 36, 0.35)' }} />
               </div>
-              <button
+              <CandyButton
+                color="peach"
+                size="md"
+                block
                 onClick={() => handleSubscribe(PRO_PLANS.day.id)}
                 disabled={loading !== null || !paymentsEnabled}
-                className="w-full py-3 rounded-xl font-black text-sm transition-opacity disabled:opacity-50"
-                style={{
-                  background: 'var(--color-surface)',
-                  border: '1.5px solid var(--color-border)',
-                  color: '#7c3aed',
-                }}
+                style={{ textTransform: 'none' }}
               >
                 {!paymentsEnabled
                   ? 'Coming soon'
                   : loading === PRO_PLANS.day.id
                   ? 'Processing...'
                   : `Just today — $${PRO_PLANS.day.price.toFixed(0)} for 24 hours of Pro →`}
-              </button>
+              </CandyButton>
               <p className="mt-2 text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 {paymentsEnabled
                   ? 'Eight day passes cost more than a month of Pro.'
                   : 'Payments are being set up — Pro will be purchasable here shortly.'}
               </p>
               {payError && (
-                <p className="mt-2 text-center text-xs font-bold" style={{ color: '#dc2626' }}>{payError}</p>
+                <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--color-loss-text)' }}>{payError}</p>
               )}
-              <p className="mt-4 text-center text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Invited by a friend? Open their invite link to claim 7 free days. Once you&apos;re
-                Pro you can gift 7 days to 3 friends from your{' '}
-                <a href="/profile" style={{ color: '#7c3aed' }}>profile</a>.
-              </p>
+              {/* T4 (docs/FINISH_SPEC.md): the gift area — O3 with the crowned gift box on the gold card. */}
+              <GiftProCard className="mt-5">
+                <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  Invited by a friend? Open their invite link to claim 7 free days. Once you&apos;re
+                  Pro you can gift 7 days to 3 friends from the{' '}
+                  <a href="/friends" style={{ color: '#7c3aed' }}>Friends tab</a>.
+                </p>
+              </GiftProCard>
             </div>
           </>
         )}
@@ -251,7 +314,9 @@ export default function ProPage() {
         {/* Static explainer — renders for every visitor (including signed-out
             crawlers), so the pricing page carries real information rather than
             just buttons. */}
-        <section className="mt-10 space-y-5">
+        <section className="mt-8 overflow-hidden" style={{ ...goldCard, background: softBackground('#7c3aed', 0.08), border: softBorder('#7c3aed', 0.08) }}>
+          <PopupBar accent="#7c3aed" gradient="linear-gradient(90deg, #a78bfa, #ec4899)" />
+          <div className="p-5 space-y-5">
           <div>
             <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
               What Pro actually changes
@@ -263,8 +328,8 @@ export default function ProPage() {
               once a day at no cost, with the full daily leaderboard and your complete stats
               history included. Pro is for players who finish the daily slate and want to keep going.
               It removes the interstitial ads, unlocks unlimited replays of every mode, opens VS head-to-head
-              on every mode rather than the daily rotation, and adds CPU practice opponents at three
-              difficulty levels so you can drill a weak mode without burning your daily attempt.
+              on every mode rather than the daily rotation, and lets you battle all ten of the cast as bot
+              opponents so you can drill a weak mode without burning your daily attempt.
             </p>
           </div>
 
@@ -322,6 +387,7 @@ export default function ProPage() {
               browse the <a href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</a>{' '}
               to find your favorite, and try Pro once the daily slate stops being enough.
             </p>
+          </div>
           </div>
         </section>
       </div>

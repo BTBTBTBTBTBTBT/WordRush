@@ -44,7 +44,7 @@ export function nextCastDelay(rand: () => number = Math.random): number {
  * edge at one height (the mockups' trimmed images with flex = aspect ratio).
  */
 export const MASCOT_ART_SIZE = 512;
-export const MASCOT_TRIM: Record<MascotId, readonly [number, number, number, number]> = {
+export const MASCOT_TRIM: Record<MascotId, TrimBox> = {
   w: [20, 59, 491, 492],
   o1: [20, 29, 491, 492],
   r: [52, 21, 460, 492],
@@ -57,10 +57,32 @@ export const MASCOT_TRIM: Record<MascotId, readonly [number, number, number, num
   s: [20, 23, 491, 492],
 };
 
+/** An art box [x0, y0, x1, y1] inside a square image. */
+export type TrimBox = readonly [number, number, number, number];
+
+/** A box's aspect ratio (width / height). */
+export function boxAspect([x0, y0, x1, y1]: TrimBox): number {
+  return (x1 - x0) / (y1 - y0);
+}
+
+/**
+ * How to draw a square image of `artSize` px so only `box` shows in a box of
+ * the trimmed aspect: the image's size and offset as percentages of that box.
+ */
+export function boxTrimLayout([x0, y0, x1, y1]: TrimBox, artSize: number): { width: string; left: string; top: string } {
+  const bw = x1 - x0;
+  const bh = y1 - y0;
+  const pct = (n: number) => `${Number(n.toFixed(3))}%`;
+  return {
+    width: pct((artSize / bw) * 100),
+    left: pct((-x0 / bw) * 100),
+    top: pct((-y0 / bh) * 100),
+  };
+}
+
 /** A trimmed character's aspect ratio (width / height of its art box). */
 export function castAspect(id: MascotId): number {
-  const [x0, y0, x1, y1] = MASCOT_TRIM[id];
-  return (x1 - x0) / (y1 - y0);
+  return boxAspect(MASCOT_TRIM[id]);
 }
 
 /**
@@ -68,13 +90,5 @@ export function castAspect(id: MascotId): number {
  * aspect: the image's size and offset as percentages of that box.
  */
 export function castTrimLayout(id: MascotId): { width: string; left: string; top: string } {
-  const [x0, y0, x1, y1] = MASCOT_TRIM[id];
-  const bw = x1 - x0;
-  const bh = y1 - y0;
-  const pct = (n: number) => `${Number(n.toFixed(3))}%`;
-  return {
-    width: pct((MASCOT_ART_SIZE / bw) * 100),
-    left: pct((-x0 / bw) * 100),
-    top: pct((-y0 / bh) * 100),
-  };
+  return boxTrimLayout(MASCOT_TRIM[id], MASCOT_ART_SIZE);
 }

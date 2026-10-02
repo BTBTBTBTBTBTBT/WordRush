@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
+import { barCard } from '@/components/ui/soft-popup';
+import { softBackground } from '@/lib/soft-surface';
 
 export const metadata: Metadata = {
   title: 'Delete your Wordocious account',
@@ -40,12 +42,12 @@ const DELETED = [
 
 export default function DeleteAccountPage() {
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="min-h-screen pb-12" style={{ background: softBackground('#7c3aed', 0.06) }}>
       <InfoPageHeader title="Delete Account" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6 space-y-4">
         <div
           className="p-5"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
         >
           <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>
             Deleting your Wordocious account
@@ -59,7 +61,7 @@ export default function DeleteAccountPage() {
 
         <div
           className="p-5"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
         >
           <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>How to delete your account</h2>
           <ol className="text-xs leading-relaxed space-y-2.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -89,7 +91,7 @@ export default function DeleteAccountPage() {
 
         <div
           className="p-5"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
         >
           <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>What is deleted</h2>
           <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -104,7 +106,7 @@ export default function DeleteAccountPage() {
 
         <div
           className="p-5"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
         >
           <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>What is kept, and for how long</h2>
           <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -129,9 +131,9 @@ export default function DeleteAccountPage() {
 
         <div
           className="p-5"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid #fecaca', borderRadius: '16px' }}
+          style={barCard('#e11d48', { radius: 18, share: 0.09, bar: 6 })}
         >
-          <h2 className="text-sm font-black mb-2" style={{ color: '#dc2626' }}>Cancel your subscription first</h2>
+          <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-loss-text)' }}>Cancel your subscription first</h2>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
             Deleting your Wordocious account does <strong>not</strong> cancel an active Pro
             subscription, because the subscription is held by the app store, not by us.

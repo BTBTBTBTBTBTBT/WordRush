@@ -1,5 +1,6 @@
 'use client';
 
+import { REVEAL } from '@/lib/tile-motion';
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
@@ -95,7 +96,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
       setError(msg);
       playInvalid();
       setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
       setTimeout(() => setError(''), 1500);
     };
 

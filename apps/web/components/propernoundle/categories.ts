@@ -1,5 +1,6 @@
 /**
- * ProperNoundle theme-category display metadata — labels, accents, and emoji
+ * ProperNoundle theme-category display metadata — labels and accents (no
+ * emoji: FINISH_SPEC AM3 — the words carry the category)
  * keyed by the raw themeCategory slug ('currentevents' → 'Current Events').
  * Shared by the solo game, the VS match header pill, and the recap so no
  * surface ever shows the raw slug.
@@ -22,16 +23,6 @@ export const CATEGORY_COLORS: Record<string, string> = {
   history: '#6366f1',
   science: '#06b6d4',
   currentevents: '#ef4444',
-};
-
-export const CATEGORY_EMOJI: Record<string, string> = {
-  music: '\u{1F3B5}',
-  videogames: '\u{1F3AE}',
-  movies: '\u{1F3AC}',
-  sports: '\u{26BD}',
-  history: '\u{1F3DB}',
-  science: '\u{1F52C}',
-  currentevents: '\u{1F4F0}',
 };
 
 /** Pretty label for a slug — falls back to the slug so unknown categories degrade visibly, not blank. */

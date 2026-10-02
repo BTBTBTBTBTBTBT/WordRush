@@ -7,6 +7,7 @@ import { DAILY_MODES, MORE_CATEGORIES } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { useFlags } from '@/hooks/use-flags';
 import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
+import { softCard } from '@/lib/soft-surface';
 
 export interface ModeConfig {
   id: string;
@@ -182,7 +183,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
         {moreOpen && morePicker.length > 0 && (
           <div
             className="p-3 space-y-2 animate-fade-in-up"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}
+            style={softCard('#4f46e5', { radius: 14 })}
             role="group"
             aria-label="Puzzles"
           >

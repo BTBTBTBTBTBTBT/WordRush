@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CORRECT_GRADIENT, PRESENT_GRADIENT } from '@/lib/tile-theme';
+import { softCard } from '@/lib/soft-surface';
 
 interface GuessDistributionProps {
   data: Array<{ guesses: number; count: number }>;
@@ -27,7 +28,7 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit =
     return (
       <div
         className="p-4 text-center"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+        style={softCard(accentColor ?? '#2563eb', { radius: 18 })}
       >
         <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {unit === 'games' ? 'Play a game' : 'Win a game'} to see your {title}
@@ -53,7 +54,7 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit =
   return (
     <div
       className="p-4"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+      style={softCard(accentColor ?? '#2563eb', { radius: 18 })}
     >
       {/* Only a non-default unit needs naming — the word modes' card is unchanged. */}
       {noun !== GUESS_NOUN && (

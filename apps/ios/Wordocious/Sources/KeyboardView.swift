@@ -87,7 +87,7 @@ struct KeyboardView: View {
         .hardwareKeyboard(enabled: !vm.isFinished) { key in
             switch key {
             case .enter: vm.submit()
-            case .delete: vm.delete()
+            case .delete: vm.delete(); SoundManager.shared.playDelete(); return true
             case .letter(let l): vm.type(l)
             default: return false
             }
@@ -101,7 +101,7 @@ struct KeyboardView: View {
     }
 
     private func deleteKey() -> some View {
-        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playDelete() }
     }
 
     /// Decorative space bar (§213): reacts like a key, does nothing.
@@ -165,6 +165,7 @@ struct KeyboardView: View {
                     }
                 }
                 Text(letter).font(Brand.font(18, .black)).foregroundStyle(fg)
+                    .lineLimit(1).minimumScaleFactor(0.5)   // §AB: fits its key at 200% text
                     .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
             }
             .frame(maxWidth: .infinity).frame(height: keyHeight - 3)
@@ -217,29 +218,4 @@ struct KeyboardView: View {
     }
 }
 
-/// Native haptics — no-ops cleanly off-device.
-enum Haptics {
-    static func tap() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
-    }
-
-    static func success() {
-        #if canImport(UIKit)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        #endif
-    }
-
-    static func error() {
-        #if canImport(UIKit)
-        UINotificationFeedbackGenerator().notificationOccurred(.error)
-        #endif
-    }
-
-    static func warning() {
-        #if canImport(UIKit)
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-        #endif
-    }
-}
+// `Haptics` lives in SoundManager.swift (FINISH_SPEC §U: gated by the Haptics toggle).

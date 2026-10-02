@@ -212,7 +212,7 @@ fun rememberYourRecords(userId: String?, statsRows: List<ProfileService.UserStat
 fun NextUpCard(dailyStreak: Int, chases: List<RecordChase>) {
     val nextShield = (dailyStreak / SHIELD_EVERY + 1) * SHIELD_EVERY
     val top = chases.take(3)
-    CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))) {
+    CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), accent = Color(0xFF8B5CF6)) {
         Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -220,10 +220,10 @@ fun NextUpCard(dailyStreak: Int, chases: List<RecordChase>) {
             Spacer(Modifier.size(4.dp))
             Text("$nextShield-day streak shield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
             Spacer(Modifier.weight(1f))
-            Text("$dailyStreak/$nextShield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+            SoftNumber("$dailyStreak/$nextShield", 13.sp)
         }
         Spacer(Modifier.height(4.dp))
-        Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
+        Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(accentLine(Color(0xFFF97316), 0.25f))) {
             Box(
                 Modifier.fillMaxWidth((dailyStreak.toFloat() / nextShield).coerceIn(0f, 1f)).height(8.dp)
                     .clip(RoundedCornerShape(50))
@@ -252,7 +252,7 @@ private fun ChaseLine(c: RecordChase, iconTint: Color, barBrush: Brush) {
         }
     }
     Spacer(Modifier.height(2.dp))
-    Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
+    Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(accentLine(iconTint, 0.22f))) {
         Box(
             Modifier.fillMaxWidth((c.pct / 100f).coerceIn(0f, 1f)).height(6.dp)
                 .clip(RoundedCornerShape(50)).background(barBrush),
@@ -267,7 +267,7 @@ fun SweepRecordsCard(
     sweepRankToday: LeaderboardService.RankInfo?,
     sweepRankAllTime: LeaderboardService.RankInfo?,
 ) {
-    CardShell(Brush.horizontalGradient(listOf(SWEEP_ACCENT, SWEEP_ACCENT.copy(alpha = 0.53f)))) {
+    CardShell(Brush.horizontalGradient(listOf(SWEEP_ACCENT, SWEEP_ACCENT.copy(alpha = 0.53f))), accent = SWEEP_ACCENT) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ModeIconBox(SWEEP_ID, SWEEP_ACCENT)
             Text("Daily Sweeps", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -291,14 +291,14 @@ fun SweepRecordsCard(
                     sweepRankToday?.let { r ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text("Today", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                            Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GOLD)
+                            SoftNumber("#${r.rank}", 15.sp)
                             Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         }
                     }
                     sweepRankAllTime?.let { r ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text("All-Time", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                            Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GOLD)
+                            SoftNumber("#${r.rank}", 15.sp)
                             Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         }
                     }
@@ -307,7 +307,7 @@ fun SweepRecordsCard(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             Icon3D(Icon3DName.TROPHY, 14.dp)
                             Text("Flawless", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                            Text("×${sweep.currentFlawlessStreak}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GOLD)
+                            SoftNumber("×${sweep.currentFlawlessStreak}", 15.sp)
                             if (sweep.bestFlawlessStreak > sweep.currentFlawlessStreak) {
                                 Text("· best ${sweep.bestFlawlessStreak}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                             }
@@ -336,12 +336,12 @@ private val PUZZLES_ACCENT = Color(0xFFDB2777)
 @Composable
 fun PuzzleSweepsCard(records: com.wordocious.app.data.HomeStreaksService.PuzzleRecords?) {
     val t = records?.totals
-    CardShell(Brush.horizontalGradient(listOf(PUZZLES_ACCENT, PUZZLES_ACCENT.copy(alpha = 0.53f)))) {
+    CardShell(Brush.horizontalGradient(listOf(PUZZLES_ACCENT, PUZZLES_ACCENT.copy(alpha = 0.53f))), accent = PUZZLES_ACCENT) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(PUZZLES_ACCENT.copy(alpha = 0.15f)),
+                Modifier.size(30.dp).miniGameCard(PUZZLES_ACCENT, 8.dp),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.GridView, null, tint = PUZZLES_ACCENT, modifier = Modifier.size(16.dp)) }
+            ) { Icon(Icons.Filled.GridView, null, tint = PUZZLES_ACCENT, modifier = Modifier.size(16.dp).padding(top = 2.dp)) }
             Text("Puzzles Sweeps", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         }
         Spacer(Modifier.height(2.dp))
@@ -373,12 +373,12 @@ fun PuzzleSweepsCard(records: com.wordocious.app.data.HomeStreaksService.PuzzleR
 fun WordOfTheDayRecordCard(record: com.wordocious.app.data.HomeStreaksService.QuizRecord) {
     val accent = Color(0xFF7C3AED)
     val pct = if (record.answered > 0) Math.round(record.right * 100.0 / record.answered).toInt() else 0
-    CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))) {
+    CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f))), accent = accent) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.15f)),
+                Modifier.size(30.dp).miniGameCard(accent, 8.dp),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp)) }
+            ) { Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp).padding(top = 2.dp)) }
             Text("Word of the Day", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         }
         Spacer(Modifier.height(2.dp))
@@ -402,20 +402,21 @@ fun GameRecordsCard(
     recordsHeld: List<LeaderboardService.AllTimeRecord>,
     chases: List<RecordChase>,
 ) {
-    val accent = pickerGameModeOrNull(dbKey)?.let { modeAccent(it) } ?: WTheme.primary
+    val accent = pickerGameModeOrNull(dbKey)?.let { modeAccent(it) } ?: modeCardForKey(dbKey)?.accent ?: Color(0xFF7C3AED)
     val held = recordsHeld.filter { it.gameMode == dbKey }
     val chase = chases.firstOrNull { it.gameMode == dbKey }
-    CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))) {
+    CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f))), accent = accent) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Your Records", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Spacer(Modifier.weight(1f))
             if (held.isNotEmpty()) {
                 Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(WTheme.highlightGold).padding(horizontal = 8.dp, vertical = 2.dp),
+                    Modifier.clip(RoundedCornerShape(50)).background(accentWash(GOLD, 0.16f))
+                        .border(1.dp, accentLine(GOLD, 0.35f), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Icon3D(Icon3DName.CROWN, 13.dp)
-                    Text("${held.size} all-time record${if (held.size == 1) "" else "s"}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = GOLD)
+                    Text("${held.size} all-time record${if (held.size == 1) "" else "s"}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) GOLD else darkenInk(GOLD))
                 }
             }
         }
@@ -432,7 +433,7 @@ fun GameRecordsCard(
         }
         if (held.isNotEmpty() || chase != null) {
             Spacer(Modifier.height(6.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(accentLine(accent, 0.3f)))
             held.forEach { r ->
                 val cfg = recordCfgFor(r.recordType, dbKey)
                 Spacer(Modifier.height(8.dp))
@@ -443,10 +444,7 @@ fun GameRecordsCard(
                         Text(cfg?.label ?: r.recordType, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
                         Text(" record", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Text(
-                        cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
-                        fontSize = 11.sp, fontWeight = FontWeight.Black, color = GOLD,
-                    )
+                    SoftNumber(cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}", 13.sp)
                 }
             }
             chase?.let { c ->
@@ -462,8 +460,10 @@ fun GameRecordsCard(
 fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRecords: () -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(
-            Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+        // A1: both tiles tinted (gold medals, purple records); the records tile squishes (A9).
+        TintedCard(
+            GOLD, Modifier.weight(1f), corner = 16.dp, bar = null,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp), verticalArrangement = Arrangement.Top,
         ) {
             Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(6.dp))
@@ -475,9 +475,11 @@ fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRe
             Spacer(Modifier.height(4.dp))
             Text("Daily top-3 finishes", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
-        Column(
-            Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-                .clickableNoRipple(onOpenRecords).padding(14.dp),
+        TintedCard(
+            Color(0xFF7C3AED),
+            Modifier.weight(1f).squishClickable(label = "Global records: ${recordsHeld.size} held. Open the Hall of Fame", onClick = onOpenRecords),
+            corner = 16.dp, bar = null,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp), verticalArrangement = Arrangement.Top,
         ) {
             Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(2.dp))
@@ -486,11 +488,11 @@ fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRe
             val starTint = if (recordsHeld.isEmpty()) WTheme.textMuted else GOLD
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 Icon(Icons.Filled.Star, null, tint = starTint, modifier = Modifier.size(14.dp))
-                Text("${recordsHeld.size}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = starTint)
+                SoftNumber("${recordsHeld.size}", 15.sp)
             }
             Text("all-time record${if (recordsHeld.size == 1) "" else "s"} held", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             // The door to the global Hall of Fame (RecordsScreen) now that the RECORDS row is gone.
-            Text("Hall of Fame →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+            Text("Hall of Fame →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = purpleTextInk)
         }
     }
 }
@@ -520,11 +522,14 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var sharingShelf by remember { mutableStateOf(false) }
-    CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), GOLD))) {
+    CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), GOLD)), accent = GOLD) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.weight(1f))
-            Icon3D(Icon3DName.SHARE, 18.dp, contentDescription = "Share trophy shelf", alpha = if (sharingShelf) 0.4f else 1f, modifier = Modifier.clickableNoRipple {
+            // A3: the bare 3D share icon with the squish.
+            SoftControl(
+                Icon3DName.SHARE, "Share trophy shelf",
+                onClick = {
                     if (!sharingShelf) {
                         sharingShelf = true
                         scope.launch {
@@ -534,6 +539,8 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
                         }
                     }
                 },
+                iconSize = 20.dp,
+                alpha = if (sharingShelf) 0.4f else 1f,
             )
         }
         Spacer(Modifier.height(6.dp))
@@ -554,10 +561,7 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
                         fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E),
                         letterSpacing = 0.6.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
-                        cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
-                        fontSize = 22.sp, fontWeight = FontWeight.Black, color = GOLD,
-                    )
+                    SoftNumber(cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}", 22.sp)
                 }
                 heldSince(r.achievedAt)?.let { since ->
                     Column(horizontalAlignment = Alignment.End) {
@@ -590,14 +594,15 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
                 rows.forEach { r ->
                     val accent = r.gameMode?.let { gm -> pickerGameModeOrNull(gm)?.let { modeAccent(it) } } ?: GOLD
                     Row(
-                        Modifier.clip(RoundedCornerShape(9.dp)).background(WTheme.bg)
+                        Modifier.clip(RoundedCornerShape(9.dp)).background(accentWash(accent, 0.12f))
+                            .border(1.dp, accentLine(accent, 0.30f), RoundedCornerShape(9.dp))
                             .padding(horizontal = 6.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         TrophyGlyphBox(r.gameMode, 20.dp)
                         Text(
                             recordCfgFor(type, r.gameMode)?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
-                            fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent,
+                            fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) accent else darkenInk(accent),
                         )
                     }
                 }
@@ -615,13 +620,13 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
 @Composable
 internal fun TrophyGlyphBox(gameMode: String?, box: Dp) {
     val engine = gameMode?.let { pickerGameModeOrNull(it) }
-    val accent = engine?.let { modeAccent(it) } ?: GOLD
-    Box(
-        Modifier.size(box).clip(RoundedCornerShape(box * 0.27f)).background(accent.copy(alpha = 0.08f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (engine != null) ModeGlyph(engine, accent, box = box)
-        else Icon(Icons.Filled.Star, null, tint = accent, modifier = Modifier.size(box * 0.5f))
+    val accent = engine?.let { modeAccent(it) } ?: gameMode?.let { modeCardForKey(it)?.accent } ?: GOLD
+    if (gameMode != null && (engine != null || modeCardForKey(gameMode) != null)) {
+        ModeIconBox(gameMode, accent, box)
+        return
+    }
+    Box(Modifier.size(box).miniGameCard(accent, box * 0.27f), contentAlignment = Alignment.Center) {
+        Icon(Icons.Filled.Star, null, tint = accent, modifier = Modifier.size(box * 0.5f).padding(top = 1.dp))
     }
 }
 
@@ -636,13 +641,19 @@ internal fun heldSince(iso: String?): String? {
     }.getOrNull()
 }
 
-/** Bordered surface card with a 3dp gradient bar on top and 14dp inner padding. */
+/**
+ * A1 the records card: a tinted card in [accent] (wash + 1.5 dp line, never plain
+ * white; dark mode keeps its surface) with the [barBrush] top bar and 14 dp padding.
+ */
 @Composable
-internal fun CardShell(barBrush: Brush, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))) {
-        Box(Modifier.fillMaxWidth().height(3.dp).background(barBrush))
-        Column(Modifier.padding(14.dp), content = content)
-    }
+internal fun CardShell(barBrush: Brush, accent: Color = Color(0xFF7C3AED), content: @Composable ColumnScope.() -> Unit) {
+    TintedCard(
+        accent, Modifier.fillMaxWidth(),
+        bar = barBrush, barHeight = 8.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
+        verticalArrangement = Arrangement.Top,
+        content = content,
+    )
 }
 
 /** Centered icon-over-value-over-label tile (iOS `meCell`) — dimmed when there is none yet. */
@@ -661,7 +672,7 @@ internal fun MeCell(
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon3D(icon, 18.dp, alpha = if (dim) 0.45f else 1f, colorFilter = if (dim) Icon3DMuted else null)
-        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (dim) WTheme.textMuted else WTheme.text, maxLines = 1)
+        SoftNumber(value, 17.sp, color = if (dim) WTheme.textMuted else null)
         Text(
             label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             textAlign = TextAlign.Center, maxLines = 2,
@@ -683,7 +694,7 @@ internal fun MeCell(
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon(icon, null, tint = if (dim) WTheme.textMuted else color, modifier = Modifier.size(16.dp))
-        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (dim) WTheme.textMuted else WTheme.text, maxLines = 1)
+        SoftNumber(value, 17.sp, color = if (dim) WTheme.textMuted else null)
         Text(
             label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             textAlign = TextAlign.Center, maxLines = 2,
@@ -695,7 +706,7 @@ internal fun MeCell(
 internal fun MedalCount(res: Int, tint: Color, n: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         Icon(painterResource(res), null, tint = tint, modifier = Modifier.size(14.dp))
-        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
+        SoftNumber("$n", 15.sp)
     }
 }
 
@@ -704,7 +715,7 @@ internal fun MedalCount(res: Int, tint: Color, n: Int) {
 internal fun MedalCount(icon: Icon3DName, tint: Color, n: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         Icon3D(icon, 16.dp)
-        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
+        SoftNumber("$n", 15.sp)
     }
 }
 
@@ -713,6 +724,6 @@ internal fun MedalCount(icon: Icon3DName, tint: Color, n: Int) {
 internal fun MedalCount(icon: ImageVector, tint: Color, n: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
-        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
+        SoftNumber("$n", 15.sp)
     }
 }

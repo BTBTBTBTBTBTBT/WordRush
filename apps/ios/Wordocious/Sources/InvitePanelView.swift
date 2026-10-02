@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// "GIFT PRO TO FRIENDS" — native port of the web invite panel
 /// (components/referrals/invite-panel.tsx). Reads the caller's own referral
@@ -75,38 +76,62 @@ struct InvitePanelView: View {
 
     private var panel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "gift.fill").foregroundStyle(Color(hex: 0x7C3AED))
-                Text("GIFT PRO TO FRIENDS")
-                    .font(Brand.font(15, .black))
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+            // FINISH_SPEC §T4: O3 with the crowned gift box, the headline, the
+            // soft-number 7 DAYS badge and the gifts-left counter.
+            HStack(alignment: .center, spacing: 10) {
+                FriendsSceneArt(asset: "art-scene-gift-pro", height: 104, maxWidth: 110)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("GIFT A WEEK OF PRO")
+                        .font(Brand.font(19, .black)).tracking(0.3)
+                        .foregroundStyle(Theme.isDark ? Color(hex: 0xFCD34D) : Color(hex: 0x8A4A12))
+                        .lineLimit(2).minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    HStack(spacing: 8) {
+                        HStack(spacing: 4) {
+                            Text("7").softNumber(18)
+                            Text("DAYS").font(Brand.font(11, .black)).tracking(0.8).foregroundStyle(FinishInk.secondary)
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .tintedPill(G5Accent.gold)
+                        .accessibilityElement(children: .ignore).accessibilityLabel("7 days of Pro")
+                        HStack(spacing: 4) {
+                            Text("\(slotsLeft)").softNumber(18)
+                            Text(slotsLeft == 1 ? "gift left" : "gifts left").font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.secondary)
+                        }
+                        .accessibilityElement(children: .ignore).accessibilityLabel("\(slotsLeft) \(slotsLeft == 1 ? "gift" : "gifts") left")
+                    }
+                }
+                Spacer(minLength: 0)
             }
 
-            (Text("Each friend gets ").foregroundColor(Theme.textMuted)
+            (Text("Each friend gets ").foregroundColor(FinishInk.secondary)
                 + Text("7 days of Pro").foregroundColor(Color(hex: 0xD97706))
-                + Text(" free. You get +3 days when they join, a ").foregroundColor(Theme.textMuted)
+                + Text(" free. You get +3 days when they join, a ").foregroundColor(FinishInk.secondary)
                 + Text("free month").foregroundColor(Color(hex: 0xD97706))
-                + Text(" if they subscribe — and ").foregroundColor(Theme.textMuted)
+                + Text(" if they subscribe — and ").foregroundColor(FinishInk.secondary)
                 + Text("3 free months").foregroundColor(Color(hex: 0xD97706))
-                + Text(" if they go annual. 3 friends = +4 streak shields.").foregroundColor(Theme.textMuted))
+                + Text(" if they go annual. 3 friends = +4 streak shields.").foregroundColor(FinishInk.secondary))
                 .font(Brand.font(12, .bold))
 
+            // §A8 / §T4: the gold candy "Send a gift" (creates the invite link, then shares it).
             Button(action: createInvite) {
-                HStack { if creating { ProgressView().tint(.white).controlSize(.small) }
-                    Text(creating ? "Creating…"
-                         : slotsLeft == 0 ? "All 3 invites out — slots free when friends join"
-                         : "Create invite link (\(slotsLeft) left)") }
-                .font(Brand.font(14, .black)).foregroundStyle(.white)
-                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12)
-                    .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))
+                CandyLabel(title: creating ? "Creating…"
+                           : slotsLeft == 0 ? "All 3 gifts out"
+                           : "Send a gift", symbol: creating || slotsLeft == 0 ? nil : "gift.fill") {
+                    if creating { ProgressView().tint(.white).controlSize(.small) }
+                }
             }
-            .buttonStyle(.squish)
+            .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
             .disabled(creating || slotsLeft == 0)
+            if slotsLeft == 0 && !creating {
+                Text("Slots free up when friends join.")
+                    .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
 
             if let error {
-                Text(error).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xDC2626))
+                G5Notice(error, tone: .error)
             }
 
             ForEach(visibleInvites.prefix(6)) { inv in
@@ -114,8 +139,8 @@ struct InvitePanelView: View {
                 let name = inv.invitee_id.flatMap { inviteeNames[$0] } ?? "A friend"
                 HStack(spacing: 8) {
                     if inv.status == "pending" {
-                        Text(inv.code).font(.system(size: 12, weight: .bold, design: .monospaced)).tracking(2)
-                            .foregroundStyle(Theme.textPrimary)
+                        // §T1: the code on small glossy letter tiles.
+                        FriendsCodeTiles(code: inv.code, tile: inv.code.count > 8 ? 15 : 18)
                     }
                     Group {
                         switch inv.status {
@@ -123,7 +148,7 @@ struct InvitePanelView: View {
                         case "converted":
                             Text("\(name) subscribed! \(inv.converted_plan == "annual" ? "+3 free months" : inv.converted_plan == "monthly" ? "+1 free month" : "Reward earned")")
                                 .foregroundStyle(Color(hex: 0xD97706))
-                        default: Text("Waiting · \(timeLeft(inv))").foregroundStyle(Theme.textMuted)
+                        default: Text("Waiting · \(timeLeft(inv))").foregroundStyle(FinishInk.secondary)
                         }
                     }
                     .font(Brand.font(11, .bold))
@@ -131,42 +156,58 @@ struct InvitePanelView: View {
                     Spacer()
                     if inv.status == "pending" {
                         Button { share(code: inv.code) } label: {
-                            Icon3D(.share, size: 16)
-                        }.buttonStyle(.squish)
+                            Icon3D(.share, size: 18)
+                        }
+                        .buttonStyle(.squishIcon)
+                        .accessibilityLabel("Share invite \(inv.code)")
                         Button { cancelTarget = inv } label: {
-                            Image(systemName: "xmark").font(.system(size: 12))
-                                .foregroundStyle(Theme.textMuted)
-                        }.buttonStyle(.squish)
+                            Image(systemName: "xmark").font(.system(size: 12, weight: .heavy))
+                                .foregroundStyle(FinishInk.secondary)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.squishIcon)
+                        .accessibilityLabel("Cancel invite \(inv.code)")
                     }
                     if inv.status == "converted" {
                         Icon3D(.crown, size: 15)
                     }
                 }
+                // §A1: each invite is a mini tinted row in its status color.
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .tintedPill(inv.status == "redeemed" ? G5Accent.green
+                            : inv.status == "converted" ? G5Accent.gold : G5Accent.purple, radius: 12)
             }
 
             if !leaders.isEmpty {
-                Divider()
+                G5Divider(accent: G5Accent.gold)
                 HStack(spacing: 5) {
                     Icon3D(.trophy, size: 14)
-                    Text("TOP INVITERS THIS MONTH").font(Brand.font(10, .black)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
+                    FinishLabel("Top inviters this month")
                 }
-                ForEach(Array(leaders.enumerated()), id: \.element.id) { i, l in
-                    HStack {
-                        Text("\(i + 1). \(l.username)").font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary)
-                        Spacer()
-                        Text("\(l.count) joined").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                VStack(spacing: 0) {
+                    ForEach(Array(leaders.enumerated()), id: \.element.id) { i, l in
+                        HStack {
+                            Text("\(i + 1). \(l.username)").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.heading)
+                            Spacer()
+                            Text("\(l.count)").softNumber(13)
+                            Text("joined").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 6)
+                        .stripedRow(i, accent: G5Accent.gold)
                     }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+        // §T4: the gold-tinted gift card with its gold top bar.
+        .tintedCard(accent: G5Accent.gold, bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)],
+                    radius: 20, barHeight: 8, tint: 0.09, line: 0.28)
         .task { await load() }
         .sheet(item: Binding(get: { shareURL.map { ShareURLItem(url: $0) } }, set: { _ in shareURL = nil })) { item in
-            ActivityShareSheet(text: "I'm gifting you 7 days of Wordocious Pro — daily word puzzles, battles, the works.", url: item.url)
+            ActivityShareSheet(text: ShareCopy.invite(url: "").trimmingCharacters(in: .whitespaces), url: item.url)
                 .presentationDetents([.medium])
         }
         .alert("Cancel invite \(cancelTarget?.code ?? "")?", isPresented: Binding(get: { cancelTarget != nil }, set: { if !$0 { cancelTarget = nil } })) {

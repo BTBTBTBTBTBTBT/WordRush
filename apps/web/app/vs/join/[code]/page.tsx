@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Swords, X as XIcon } from 'lucide-react';
+import { X as XIcon } from 'lucide-react';
+import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { cardBarStyle, softCard } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import {
   lookupInviteByCode,
@@ -14,7 +15,14 @@ import {
 } from '@/lib/invite-service';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
+import { PAGE_SCENES, poseSrc } from '@/lib/art';
+
+// The invite's characters (decorative): W pointing you to the match; Ozzy
+// sneaks into the sign-in card (FINISH_SPEC K1 / A7).
+function InviteArt({ who }: { who: 'w' | 'o3' }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={who === 'w' ? poseSrc('w', 'point') : poseSrc('o3', 'sneak')} alt="" aria-hidden="true" width={76} height={76} draggable={false} className="mx-auto mb-2" style={{ width: 76, height: 76, objectFit: 'contain' }} />;
+}
 import { PageBackground } from '@/components/ui/page-background';
 
 export default function JoinInvitePage() {
@@ -55,8 +63,10 @@ export default function JoinInvitePage() {
 
   const centered = (node: React.ReactNode) => (
     <PageBackground tint="vs" className="min-h-screen-stable flex items-center justify-center px-5">
-      <div className="w-full max-w-sm text-center p-6" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}>
-        {node}
+      {/* A1: a tinted VS-teal card with the game-card top bar (dark mode keeps its dark surface). */}
+      <div className="w-full max-w-sm text-center overflow-hidden" style={softCard('#0d9488', { radius: 20 })}>
+        <div aria-hidden="true" style={cardBarStyle('#0d9488')} />
+        <div className="p-6 pt-5">{node}</div>
       </div>
     </PageBackground>
   );
@@ -68,16 +78,12 @@ export default function JoinInvitePage() {
   if (!user) {
     return centered(
       <>
-        <Swords className="w-8 h-8 mx-auto mb-2" style={{ color: '#7c3aed' }} />
+        <InviteArt who="o3" />
         <h1 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>Sign in to accept</h1>
         <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           A friend invited you to a Wordocious match. Sign in (or create a free account) to join.
         </p>
-        <Link href={`/?returnTo=${encodeURIComponent(`/vs/join/${code}`)}`}>
-          <button className="w-full py-2.5 rounded-xl text-sm font-black text-white" style={{ background: '#7c3aed' }}>
-            Sign in
-          </button>
-        </Link>
+        <CandyLink href={`/?returnTo=${encodeURIComponent(`/vs/join/${code}`)}`} color="teal" size="lg" block>Sign in</CandyLink>
       </>,
     );
   }
@@ -88,28 +94,19 @@ export default function JoinInvitePage() {
 
   return centered(
     <>
-      <Swords className="w-10 h-10 mx-auto mb-2" style={{ color: '#7c3aed' }} />
+      <InviteArt who="w" />
       <h1 className="text-lg font-black" style={{ color: 'var(--color-text)' }}>You're invited!</h1>
       <p className="text-xs font-bold mt-1 mb-4" style={{ color: 'var(--color-text-muted)' }}>
         {inviterName ? <>@{inviterName} </> : <>Someone </>}
         wants to play <span style={{ color: 'var(--color-text)' }}>{(invite && MODE_BY_DBKEY[invite.game_mode]?.title) ?? invite?.game_mode}</span> against you.
       </p>
       <div className="flex gap-2">
-        <button
-          onClick={handleDecline}
-          className="flex-1 py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-1"
-          style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-        >
-          <XIcon className="w-4 h-4" />
+        <CandyButton color="peach" size="md" className="flex-1" onClick={handleDecline} icon={<XIcon className="w-4 h-4" aria-hidden="true" strokeWidth={3} />}>
           Decline
-        </button>
-        <button
-          onClick={handleAccept}
-          className="flex-1 py-2.5 rounded-xl text-sm font-black text-white"
-          style={{ background: '#7c3aed' }}
-        >
+        </CandyButton>
+        <CandyButton color="teal" size="md" className="flex-1" icon="play" onClick={handleAccept}>
           Play now
-        </button>
+        </CandyButton>
       </div>
     </>,
   );

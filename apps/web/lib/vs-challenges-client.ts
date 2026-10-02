@@ -7,6 +7,7 @@ import type { VsRun } from '@wordle-duel/core';
 import { supabase } from './supabase-client';
 import { profileApiHeaders } from './profile-social';
 import { aggregateRivals, type RivalRow, type SentChallenge } from './vs-lobby';
+import { avatarFieldsOf, selectWithAvatarColumns, type AvatarFields } from './avatar-fields-server';
 
 export interface ChallengeRun extends VsRun {
   totalBoards: number;
@@ -18,7 +19,8 @@ export interface ChallengeView {
   code: string;
   gameMode: string;
   seed: string;
-  challenger: { id: string; username: string; avatarUrl: string | null };
+  /** + FINISH_SPEC AH/AN3 (additive, from the API): avatar_cast_id, avatar_frame, avatar_config, is_pro. */
+  challenger: { id: string; username: string; avatarUrl: string | null } & Partial<AvatarFields>;
   run: ChallengeRun;
   createdAt: string;
   expiresAt: string;
@@ -164,7 +166,7 @@ export async function fetchDailyBattleOpponent(userId: string, seed: string): Pr
   }
 }
 
-export interface Rival extends RivalRow { username: string; avatarUrl: string | null }
+export interface Rival extends RivalRow, Partial<AvatarFields> { username: string; avatarUrl: string | null }
 
 /** The top rivals by games played, from the shared matches rows (banned players drop out). */
 export async function fetchVsRivals(userId: string, limit = 3): Promise<Rival[]> {
@@ -178,15 +180,16 @@ export async function fetchVsRivals(userId: string, limit = 3): Promise<Rival[]>
       .limit(1000);
     const top = aggregateRivals(data ?? [], userId, limit + 3);
     if (top.length === 0) return [];
-    const { data: profs } = await (supabase as any)
-      .from('profiles').select('id, username, avatar_url, is_banned').in('id', top.map((t) => t.opponentId));
+    // + is_pro / avatar columns (FINISH_SPEC AH/AN3; retried without them while they don't exist).
+    const { data: profs } = await selectWithAvatarColumns<any[]>((extra) => (supabase as any)
+      .from('profiles').select(`id, username, avatar_url, is_banned${extra}`).in('id', top.map((t) => t.opponentId)));
     const byId = new Map<string, { username: string; avatar_url: string | null; is_banned?: boolean }>(
       (profs ?? []).map((p: any) => [p.id, p]),
     );
     return top
       .filter((t) => byId.has(t.opponentId) && !byId.get(t.opponentId)!.is_banned)
       .slice(0, limit)
-      .map((t) => ({ ...t, username: byId.get(t.opponentId)!.username, avatarUrl: byId.get(t.opponentId)!.avatar_url ?? null }));
+      .map((t) => ({ ...t, username: byId.get(t.opponentId)!.username, avatarUrl: byId.get(t.opponentId)!.avatar_url ?? null, ...avatarFieldsOf(byId.get(t.opponentId)) }));
   } catch {
     return [];
   }

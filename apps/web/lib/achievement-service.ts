@@ -2,6 +2,7 @@ import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
 import { sweepModesFor, DAILY_MODES } from './daily-modes';
 import { MODE_BY_DBKEY } from './modes.generated';
+import { achievementBadge, CATEGORY_ACCENT, queueCelebrations } from './badges';
 
 // ============================================================
 // Achievement Definitions
@@ -960,7 +961,30 @@ export async function checkAchievements(
     }
   }
 
+  announceAchievementUnlocks(unlocked);
   return unlocked;
+}
+
+/**
+ * FINISH_SPEC V2 (presentation hook): hands newly unlocked achievements to the
+ * unlock popup queue (lib/badges.ts → components/badges/achievement-unlock-host.tsx),
+ * which plays them one after another. Unknown keys are skipped. Also fires
+ * the window event BADGE_CELEBRATION_EVENT for anything else that listens.
+ */
+export function announceAchievementUnlocks(keys: string[]): void {
+  if (keys.length === 0) return;
+  const items = keys
+    .map((k) => ACHIEVEMENTS.find((a) => a.key === k))
+    .filter((a): a is AchievementDef => !!a)
+    .map((a) => ({
+      kind: 'achievement' as const,
+      key: a.key,
+      name: a.name,
+      description: a.description,
+      badge: achievementBadge(a.icon),
+      accent: CATEGORY_ACCENT[a.category] ?? '#7c3aed',
+    }));
+  queueCelebrations(items);
 }
 
 /**

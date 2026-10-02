@@ -11,13 +11,17 @@ import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
 import { startGame } from '@/lib/friendly-games-client';
 import { vsHrefForMode } from '@/lib/invite-service';
 import { FR, KIND_COLOR, KIND_SHORT, friendOnline, lastSeenMs, rivalryLine, sortForPicker } from '@/lib/friends-play';
-import { FriendAvatar, GameGlyph, GameIconSquare, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { FriendAvatar, GameGlyph, GameIconSquare, SectionLabel, Sheet } from './friends-ui';
 import { GameSquare } from '@/components/ui/game-tile';
+import { CandyButton, candyClass } from '@/components/ui/candy-button';
+import { FR_LOOK, frBar, frSurface, rowStripe } from '@/lib/friends-look';
+import { softMix } from '@/lib/soft-surface';
 
 // The quick-play sheet (Friends overhaul §3): pick a pocket game (and a stake
 // for Call It) or one of the two Wordocious ways to play, then INVITE. Opened
 // from an ON NOW face, a Play pill, a game tile (with a friend picker) or a
-// Rematch reaction.
+// Rematch reaction. Finishing build (C4 / A1 / A8): tinted rows, chips and
+// cards, candy Pick / Invite.
 
 interface Props {
   friends: FriendProfile[];
@@ -49,7 +53,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
             <div className="text-[11.5px] font-bold" style={{ color: FR.label }}>Pick a friend to play</div>
           </div>
         </div>
-        <div style={cardStyle}>
+        <div className="overflow-hidden" style={frSurface(FR_LOOK.lavender, { radius: 16 })}>
           {ordered.map((f, i) => {
             const on = friendOnline(f, now);
             const line = presenceLine(lastSeenMs(f), f.activity ?? null, now);
@@ -59,15 +63,15 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
                 type="button"
                 onClick={() => setFriend(f)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
-                style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}
+                style={{ background: rowStripe(i), borderTop: i === 0 ? undefined : `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}
               >
                 <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={34} online={on} />
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{f.username}</span>
-                  {line && <span className="block text-[11px] font-bold truncate" style={{ color: on ? FR.online : FR.label }}>{line}</span>}
+                  <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{f.username}</span>
+                  {line && <span className="block text-[11px] font-bold truncate" style={{ color: on ? '#047857' : FR_LOOK.rowSub }}>{line}</span>}
                 </span>
-                <span className="shrink-0 px-3 flex items-center text-[11px] font-black rounded-full" style={{ height: 28, background: on ? FR.solid : FR.soft, color: on ? '#ffffff' : FR.mid }}>
-                  Pick
+                <span className={candyClass({ color: on ? 'pink' : 'peach', size: 'sm', extra: 'shrink-0' })}>
+                  <span className="candy-label">Pick</span>
                 </span>
               </button>
             );
@@ -95,7 +99,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
     setBusy('vs');
     const r = await challengeFriend(friend.id, 'DUEL');
     if ('error' in r) { setError(r.error); setBusy(null); return; }
-    onNote(`Challenge sent to ${friend.username} ⚔️`);
+    onNote(`Challenge sent to ${friend.username}!`);
     router.push(`${vsHrefForMode('DUEL')}?inviteCode=${r.code}`);
   };
 
@@ -144,7 +148,13 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
                 onClick={() => setStake(s)}
                 aria-pressed={sel}
                 className="px-3 text-[11px] font-black rounded-full"
-                style={{ height: 28, background: '#ffffff', color: sel ? FR.ink : FR.label, boxShadow: sel ? `0 0 0 2px ${FR.solid}` : FR.cardShadow }}
+                style={{
+                  height: 30,
+                  background: softMix(KIND_COLOR.coin, sel ? 0.24 : 0.12),
+                  border: sel ? `2px solid ${KIND_COLOR.coin}` : `1.5px solid ${softMix(KIND_COLOR.coin, 0.32)}`,
+                  boxShadow: sel ? `0 0 0 3px ${softMix(KIND_COLOR.coin, 0.22)}` : undefined,
+                  color: sel ? '#713f12' : FR_LOOK.ink,
+                }}
               >
                 {s}
               </button>
@@ -159,41 +169,43 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
           type="button"
           onClick={vsLive}
           disabled={busy !== null}
-          className="flex flex-col items-start gap-1 p-3 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
-          style={{ ...cardStyle, background: FR.teal }}
+          className="relative overflow-hidden flex flex-col items-start gap-1 text-left disabled:opacity-60"
+          style={{ ...frSurface(FR_LOOK.teal, { radius: 16, share: 0.16 }), padding: '16px 12px 12px' }}
         >
-          <span className="flex items-center gap-1.5 text-[12.5px] font-black text-white">
+          <span aria-hidden="true" className="absolute top-0 left-0 right-0" style={frBar(FR_LOOK.teal, 6)} />
+          <span className="flex items-center gap-1.5 text-[12.5px] font-black" style={{ color: FR.teal }}>
             {busy === 'vs' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />} VS Battle, live
           </span>
-          <span className="text-[10.5px] font-bold" style={{ color: '#ccfbf1' }}>A private Classic match. Free for friends.</span>
+          <span className="text-[10.5px] font-bold" style={{ color: '#134e4a' }}>A private Classic match. Free for friends.</span>
         </button>
         <button
           type="button"
           onClick={raceMyRun}
-          className="relative flex flex-col items-start gap-1 p-3 text-left transition-transform active:scale-[0.98]"
-          style={{ ...cardStyle, background: FR.tealSoft }}
+          className="relative overflow-hidden flex flex-col items-start gap-1 text-left"
+          style={{ ...frSurface(FR_LOOK.lavender, { radius: 16 }), padding: '16px 12px 12px' }}
         >
-          {!isProActive && <Icon3D name="crown" size={14} className="absolute top-2.5 right-2.5" />}
-          <span className="flex items-center gap-1.5 text-[12.5px] font-black" style={{ color: FR.teal }}>
+          <span aria-hidden="true" className="absolute top-0 left-0 right-0" style={frBar(FR_LOOK.lavender, 6)} />
+          {!isProActive && <Icon3D name="crown" size={14} className="absolute top-3.5 right-2.5" />}
+          <span className="flex items-center gap-1.5 text-[12.5px] font-black" style={{ color: '#6d28d9' }}>
             <Swords className="w-4 h-4" /> Race my run
           </span>
-          <span className="text-[10.5px] font-bold" style={{ color: '#134e4a' }}>You play first. They race your run. Pro.</span>
+          <span className="text-[10.5px] font-bold" style={{ color: FR_LOOK.ink }}>You play first. They race your run. Pro.</span>
         </button>
       </div>
 
       {error && <p className="mt-3 text-[12px] font-bold text-center" style={{ color: '#dc2626' }}>{error}</p>}
 
-      <button
-        type="button"
+      <CandyButton
+        color="pink"
+        block
         onClick={invite}
         disabled={busy !== null}
-        className="w-full mt-4 py-3 flex items-center justify-center gap-2 text-[15px] font-black text-white uppercase transition-transform active:scale-[0.98] disabled:opacity-60"
-        style={{ background: FR.solid, borderRadius: 14, letterSpacing: 0.6 }}
+        icon={busy === 'invite' ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : 'play'}
+        className="mt-4"
       >
-        {busy === 'invite' && <Loader2 className="w-4 h-4 animate-spin" />}
         Invite to {FRIENDLY_TITLES[kind]}
-      </button>
-      <p className="mt-2 text-center text-[11px] font-bold" style={{ color: FR.label }}>
+      </CandyButton>
+      <p className="mt-1 text-center text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
         {friend.username} gets a ping. If they&apos;re busy, it waits as your turn.
       </p>
     </Sheet>

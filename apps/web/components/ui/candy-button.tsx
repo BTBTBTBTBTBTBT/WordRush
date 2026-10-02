@@ -12,7 +12,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'reac
 export type CandyColor = 'purple' | 'pink' | 'amber' | 'teal' | 'peach';
 /** lg 52 (primary CTAs) · md 40 · sm 32 · round 40 (icon only). */
 export type CandySize = 'lg' | 'md' | 'sm' | 'round';
-export type CandyIconName = 'play' | 'eye' | 'arrow' | 'share' | 'check' | 'trophy' | 'infinity' | 'plus' | 'replay';
+export type CandyIconName = 'play' | 'eye' | 'arrow' | 'share' | 'check' | 'trophy' | 'plus' | 'replay';
 
 const ICON_PATHS: Record<CandyIconName, ReactNode> = {
   play: <path d="M7 4.6c0-1.2 1.3-1.9 2.3-1.3l11.2 7.2c.9.6.9 2 0 2.6L9.3 20.3c-1 .6-2.3-.1-2.3-1.3z" fill="#fff" />,
@@ -32,7 +32,6 @@ const ICON_PATHS: Record<CandyIconName, ReactNode> = {
   ),
   check: <path d="M3.5 12.6l2.6-2.6 4 4 8-8.1 2.6 2.6L10.1 19.2z" fill="#fff" />,
   trophy: <path d="M7 3h10v2h3.5v2.5a4.5 4.5 0 0 1-4.1 4.5A5 5 0 0 1 13.5 15v2.5H17V21H7v-3.5h3.5V15a5 5 0 0 1-2.9-3A4.5 4.5 0 0 1 3.5 7.5V5H7zM5.5 7v.5a2.5 2.5 0 0 0 1.6 2.3A7 7 0 0 1 7 8.6V7zm13 0H17v1.6c0 .4 0 .8-.1 1.2a2.5 2.5 0 0 0 1.6-2.3z" fill="#fff" />,
-  infinity: <path d="M7 7.5c2.2 0 3.6 1.6 5 3.3 1.4-1.7 2.8-3.3 5-3.3a4.5 4.5 0 0 1 0 9c-2.2 0-3.6-1.6-5-3.3-1.4 1.7-2.8 3.3-5 3.3a4.5 4.5 0 0 1 0-9zm0 2.6a1.9 1.9 0 0 0 0 3.8c1 0 1.9-.9 3.2-1.9-1.3-1-2.2-1.9-3.2-1.9zm10 0c-1 0-1.9.9-3.2 1.9 1.3 1 2.2 1.9 3.2 1.9a1.9 1.9 0 0 0 0-3.8z" fill="#fff" />,
   plus: <path d="M10.2 3.5h3.6v6.7h6.7v3.6h-6.7v6.7h-3.6v-6.7H3.5v-3.6h6.7z" fill="#fff" />,
   replay: <path d="M12 4a8 8 0 1 1-7.6 10.5l3.3-1A4.6 4.6 0 1 0 12 7.4V10L6.8 6.2 12 2.4z" fill="#fff" />,
 };

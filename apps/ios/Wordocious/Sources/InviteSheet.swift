@@ -33,7 +33,7 @@ struct InviteSheet: View {
     @State private var copied = false
 
     private var modeLabel: String { selectedHome.title }
-    private let pink = Color(hex: 0xEC4899), pinkDark = Color(hex: 0xDB2777)
+    private let pink = Color(hex: 0xEC4899)
 
     var body: some View {
         ScrollView {
@@ -47,7 +47,7 @@ struct InviteSheet: View {
                             .font(Brand.font(24, .black))
                             .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
                         Text("Pick a mode, then send a link or a username invite.")
-                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                            .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     }
                     Spacer()
                     HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
@@ -58,7 +58,7 @@ struct InviteSheet: View {
                     // content down, instead of a floating menu that overlapped and
                     // hid the buttons underneath.
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("GAME MODE").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
+                        FinishLabel("Game mode")
                         VStack(spacing: 0) {
                             // Trigger row (shows the selected mode).
                             Button {
@@ -66,7 +66,7 @@ struct InviteSheet: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     ModeIconView(icon: selectedHome.icon, accent: selectedHome.accent, box: 30)
-                                    Text(modeLabel).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+                                    Text(modeLabel).font(Brand.font(16, .black)).foregroundStyle(FinishInk.heading)
                                     Spacer()
                                     Image(systemName: "chevron.down")
                                         .font(.system(size: 12, weight: .bold)).foregroundStyle(selectedHome.accent)
@@ -78,33 +78,32 @@ struct InviteSheet: View {
 
                             // Expanded list — one styled row per mode.
                             if modeOpen {
-                                Divider().overlay(Theme.border).padding(.horizontal, 8)
+                                G5Divider(accent: selectedHome.accent).padding(.horizontal, 8)
                                 VStack(spacing: 2) {
                                     ForEach(inviteModes) { hm in modeRow(hm) }
                                 }
                                 .padding(.horizontal, 6).padding(.top, 4).padding(.bottom, 6)
                             }
                         }
-                        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.background))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(modeOpen ? selectedHome.accent : Theme.border, lineWidth: 1.5))
+                        // §A1: the picker is a tinted tile in the mode's accent.
+                        .g5Option(active: modeOpen, accent: selectedHome.accent, radius: 14)
                     }
 
-                    // Tabs
-                    HStack(spacing: 0) {
-                        tabButton("Share link", .link)
-                        tabButton("Username", .username)
-                    }
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1))
+                    // Tabs — the shared soft segmented toggle (§A9 squish).
+                    SoftSegmented(options: [(key: Tab.link, label: "Share link"), (key: Tab.username, label: "Username")],
+                                  selection: Binding(get: { tab }, set: { tab = $0; error = nil }),
+                                  accent: pink, accessibilityLabel: "Invite by")
 
                     if tab == .link { linkTab } else { usernameTab }
 
                     if let error {
-                        Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
+                        G5Notice(error, tone: .error)
                     }
                 }
                 .padding(18)
             }
+            // §A1: the sheet sits on a soft pink wash, never plain white.
+            .background(G5SheetBackground(accent: pink))
     }
 
     // MARK: Mode picker row
@@ -117,7 +116,7 @@ struct InviteSheet: View {
         } label: {
             HStack(spacing: 10) {
                 ModeIconView(icon: hm.icon, accent: hm.accent, box: 28)
-                Text(hm.title).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                Text(hm.title).font(Brand.font(14, .heavy)).foregroundStyle(FinishInk.heading)
                 Spacer()
                 if selected {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .black)).foregroundStyle(hm.accent)
@@ -125,81 +124,70 @@ struct InviteSheet: View {
             }
             .padding(.horizontal, 8).padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 10).fill(selected ? hm.accent.opacity(0.10) : Color.clear))
+            .background(RoundedRectangle(cornerRadius: 10).fill(selected ? hm.accent.opacity(0.14) : Color.clear))
             .contentShape(Rectangle())
         }.buttonStyle(.squish)
     }
 
     // MARK: Tabs
 
-    private func tabButton(_ title: String, _ t: Tab) -> some View {
-        let active = tab == t
-        return Button { tab = t; error = nil } label: {
-            Text(title).font(Brand.font(13, .black))
-                .foregroundStyle(active ? .white : Theme.textMuted)
-                .frame(maxWidth: .infinity).padding(.vertical, 9)
-                .background(RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary : .clear))
-        }
-        .buttonStyle(.squish).padding(2)
-    }
-
     @ViewBuilder private var linkTab: some View {
         if let url = inviteURL {
             VStack(alignment: .leading, spacing: 10) {
-                Text(url).font(Brand.font(13, .semibold)).foregroundStyle(Theme.textSecondary)
+                // §T1: the invite code on the game kit's glossy letter tiles.
+                if let code = url.split(separator: "/").last.map(String.init), !code.isEmpty {
+                    VStack(spacing: 6) {
+                        FinishLabel("Invite code")
+                        FriendsCodeTiles(code: code, tile: code.count > 8 ? 26 : 32)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                Text(url).font(Brand.font(13, .semibold)).foregroundStyle(FinishInk.heading)
                     .lineLimit(2).truncationMode(.middle)
-                    .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .g5Field(pink)
+                // §A8: candy buttons — quiet peach Copy, pink Share.
                 HStack(spacing: 10) {
                     Button { copy(url) } label: {
-                        Label(copied ? "Copied!" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
-                            .font(Brand.font(13, .black)).frame(maxWidth: .infinity).padding(.vertical, 11)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surfaceHover)).foregroundStyle(Theme.textPrimary)
-                    }.buttonStyle(.squish)
+                        CandyLabel(title: copied ? "Copied!" : "Copy", symbol: copied ? "checkmark" : "doc.on.doc")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: copied ? .teal : .peach, size: .medium))
                     Button { share(url) } label: {
-                        Label { Text("Share") } icon: { Icon3D(.share, size: 17) }
-                            .font(Brand.font(13, .black)).frame(maxWidth: .infinity).padding(.vertical, 11)
-                            .foregroundStyle(.white)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    }.buttonStyle(.squish)
+                        CandyLabel(title: "Share") { Icon3D(.share, size: 18) }
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
                 }
                 Text("Link expires in 24 hours.")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
         } else {
             Button { createLink() } label: {
-                Text(busy ? "Creating…" : "Create Invite Link")
-                    .font(Brand.font(14, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }.buttonStyle(.squish).disabled(busy)
+                CandyLabel(title: busy ? "Creating…" : "Create Invite Link", symbol: "link")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
+            .disabled(busy)
         }
     }
 
     @ViewBuilder private var usernameTab: some View {
         if let sent = sentTo {
-            VStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill").font(.system(size: 32)).foregroundStyle(Color(hex: 0x22C55E))
-                Text("Invite sent to @\(sent)").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                Text("They'll see it the next time they open Wordocious.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
-                Button("Send another") { reset() }.font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).padding(.top, 4)
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 8)
+            // §T1: INVITE SENT! — I tossing the star envelope, the name on a glossy pill,
+            // candy Send another / Done.
+            FriendsInviteSentCard(name: sent, line: "They'll see it the next time they open Wordocious.",
+                                  onSendAnother: { reset() }, onDone: { dismiss() })
         } else {
             VStack(alignment: .leading, spacing: 10) {
-                Text("USERNAME").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
+                FinishLabel("Username")
                 TextField("e.g. wordmaster", text: $username)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    .padding(12).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1))
+                    .foregroundStyle(FinishInk.heading)
+                    .g5Field(pink)
                 Button { sendToUsername() } label: {
-                    Text(busy ? "Sending…" : "Send Invite")
-                        .font(Brand.font(14, .black)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }.buttonStyle(.squish).disabled(busy)
+                    CandyLabel(title: busy ? "Sending…" : "Send Invite", symbol: "paperplane.fill")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
+                .disabled(busy)
             }
         }
     }
@@ -239,7 +227,8 @@ struct InviteSheet: View {
     private func share(_ url: String) {
         ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "invite_sheet")
         #if canImport(UIKit)
-        let text = "Come play me on Wordocious — \(modeLabel)."
+        // FINISH_SPEC §S4: the shared invite copy; the link rides as its own item.
+        let text = ShareCopy.vsInvite(game: modeLabel, url: "").trimmingCharacters(in: .whitespaces)
         let items: [Any] = [text, URL(string: url) ?? url]
         let av = UIActivityViewController(activityItems: items, applicationActivities: nil)
         guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,

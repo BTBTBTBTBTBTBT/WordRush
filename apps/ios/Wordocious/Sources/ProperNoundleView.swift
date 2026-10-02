@@ -299,7 +299,7 @@ final class ProperNoundleVM: ObservableObject {
     private func finish() {
         finalTimeSeconds = elapsed
         if status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-        else { Haptics.error(); SoundManager.shared.playGameOver() }
+        else { Haptics.soft(); SoundManager.shared.playGameOver() }
         // VS: relay completion to the match; the VS view model records the
         // vs result, so skip the solo recording below.
         if isVersus { onCompleted?(status, guesses.count); return }
@@ -363,15 +363,42 @@ struct ProperNoundleView: View {
         ZStack {
             PageBackground(tint: .forGame(.propernoundle))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.puzzle == nil {
-                Text("No puzzle available").foregroundStyle(Theme.textMuted)
+                // §A7: the empty state gets its own character (O3 searching), not the host.
+                VStack(spacing: 10) {
+                    SceneArt(.notFound, height: 130)
+                    Text("No puzzle available").font(Brand.font(15, .black)).foregroundStyle(FinishInk.secondary)
+                }
+                .padding(.horizontal, 24).padding(.vertical, 18)
+                .tintedCard(accent: pnAccent, bar: [pnAccent, Color(hex: 0xFB923C)], radius: 20, barHeight: 8)
+                .padding(.horizontal, 32)
             } else if vm.isFinished {
-                ScrollView { VStack(spacing: 8) { header; NoundleBoard(vm: vm); result }.padding(.horizontal, 10) }
+                // FINISH_SPEC §R2: one screen — header + the answer + result strip, the
+                // board scaled to the height left, the dock; the photo, the full clue
+                // and the breakdown sit below the dock.
+                FinishedScreenLayout {
+                    VStack(spacing: 4) { header; resultHeadline }
+                } board: { size in
+                    NoundleBoard(vm: vm, width: size.width, height: size.height, tray: true)
+                } dock: {
+                    PuzFinishedDock(isDaily: vm.isDaily, currentMode: "PROPERNOUNDLE", game: "ProperNoundle",
+                                    onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && !vm.isVersus && AuthService.shared.isProActive)
+                                        ? { onPlayAgain?() } : nil,
+                                    onOtherGames: { dismiss() },
+                                    showNextDaily: !vm.isVersus)
+                        .sheet(isPresented: $showShareOptions,
+                               onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
+                            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
+                        }
+                } extras: {
+                    result
+                }
+                .padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
                     header
                     // §B5: the board fills the space between the header and the hints.
                     GeometryReader { g in
-                        NoundleBoard(vm: vm, width: g.size.width, height: g.size.height)
+                        NoundleBoard(vm: vm, width: g.size.width, height: g.size.height, tray: true)
                             .frame(width: g.size.width, height: g.size.height)
                     }
                     .padding(.vertical, 4)
@@ -380,9 +407,8 @@ struct ProperNoundleView: View {
                 .padding(.horizontal, 10)
             }
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             // Post-game XP toast (web parity — ProperNoundle was the one mode
@@ -471,7 +497,13 @@ struct ProperNoundleView: View {
                     }
                 }
             }
-            if vm.isDaily, let holiday = HolidayTitles.title(ProperNoundle.dailyHolidayKey()) { Text(holiday).font(Brand.caption(12)).foregroundStyle(pnAccent) }
+            // FINISH_SPEC §Z: today's holiday line keeps its slot in Unlimited too
+            // (empty there), so the board never shifts between the modes.
+            if !vm.isVersus, let holiday = HolidayTitles.title(ProperNoundle.dailyHolidayKey()) {
+                let shows = GameHeaderLayout.slots(mode: vm.isDaily ? .daily : .unlimited, offersPicker: false).showsHolidayLine
+                Text(holiday).font(Brand.caption(12)).foregroundStyle(pnAccent)
+                    .opacity(shows ? 1 : 0).accessibilityHidden(!shows)
+            }
             if let clue = vm.clue {
                 Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
                     .multilineTextAlignment(.center).padding(.horizontal, 20)
@@ -481,6 +513,28 @@ struct ProperNoundleView: View {
 
     private var hints: some View { NoundleHints(vm: vm) }
 
+    /// §R2: the answer + the compact one-line result strip.
+    private var resultHeadline: some View {
+        let won = vm.status == .won
+        let secs = vm.finalTimeSeconds ?? vm.elapsed
+        return VStack(spacing: 6) {
+            if let p = vm.puzzle {
+                PuzFinishedHeadline(text: won ? p.display : "The answer was: \(p.display)", won: won)
+            }
+            PuzResultLine(onShare: { showShareOptions = true }, won: won, items: [("\(vm.guesses.count)/\(vm.maxGuesses)", "guesses"), (puzClock(secs), "time")],
+                                points: points)
+        }
+    }
+
+    private var points: Int {
+        Int(DailyScoring.breakdown(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
+                                   guessCount: vm.guesses.count, timeSeconds: vm.finalTimeSeconds ?? vm.elapsed,
+                                   boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
+                                   bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) },
+                                   dateKey: vm.isDaily ? LeaderboardService.todayLocal() : nil).total)
+    }
+
+    /// Below the dock (§R2): the photo, the full clue, the daily rank and the breakdown.
     private var result: some View {
         let secs = vm.finalTimeSeconds ?? vm.elapsed
         return VStack(spacing: 10) {
@@ -489,52 +543,35 @@ struct ProperNoundleView: View {
             // engravings — fit within 160pt so the full picture shows.
             if let urlStr = vm.wikiImageURL, let url = URL(string: urlStr) {
                 AsyncImage(url: url) { img in img.resizable().scaledToFit() }
-                    placeholder: { Color(hex: 0xE5E7EB).frame(width: 96, height: 96) }
+                    placeholder: { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(PuzKit.face(pnAccent, 0.12)).frame(width: 96, height: 96) }
                     .frame(maxWidth: 160, maxHeight: 160)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.status == .won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626), lineWidth: 2))
             }
-            // Web parity: win → name in green + "Solved in N guesses · time" subtitle;
-            // loss → "The answer was: {name}" in red.
-            if let p = vm.puzzle {
-                Text(vm.status == .won ? p.display : "The answer was: \(p.display)")
-                    .font(Brand.title(20))
-                    .foregroundStyle(vm.status == .won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
-                    .multilineTextAlignment(.center)
-            }
+            // Web parity: win → "Solved in N guesses · time" (the name sits in the header).
             if vm.status == .won {
                 Text("Solved in \(vm.guesses.count) \(vm.guesses.count == 1 ? "guess" : "guesses") · \(pnTime(secs))")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .tintedPill(pnAccent)
             }
             // Full Wikipedia clue (un-redacted) — doubles as the definition.
             if let clue = vm.resultClue {
+                // §A1: the definition stand-in on a tinted card.
                 Text(clue)
                     .font(Brand.font(12, .medium)).foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24).padding(.top, 2)
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .tintedCard(accent: pnAccent, bar: [pnAccent, Color(hex: 0xFB923C)], radius: 16, barHeight: 6)
+                    .padding(.horizontal, 10).padding(.top, 2)
             }
-            // Home / Share row (web parity).
-            HStack(spacing: 18) {
-                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { showShareOptions = true } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                    .sheet(isPresented: $showShareOptions,
-                           onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
-                        ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
-                    }
-                // Pro Unlimited only (web: Play Again on non-daily ProperNoundle).
-                if let onPlayAgain, !vm.isDaily, !vm.isVersus, AuthService.shared.isProActive {
-                    Button(action: onPlayAgain) { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
-                        .foregroundStyle(Color(hex: 0xD97706))
-                }
-            }
-            .foregroundStyle(pnAccent).padding(.top, 2)
             DailyRankBadge(gameMode: .propernoundle)
             ScoreBreakdownView(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
                                guessCount: vm.guesses.count, timeSeconds: secs,
                                boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
                                bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) },
                                day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-            if vm.isDaily && !vm.isVersus { NextDailyCTA(currentMode: "PROPERNOUNDLE") }
         }
         .padding(.vertical, 12)
         .task { await vm.loadWikiImage(); await vm.loadResultClue() }
@@ -570,25 +607,21 @@ struct NoundleHints: View {
     var body: some View {
         HStack(spacing: 8) {
             hintButton("Clue", systemImage: vm.loadingClue ? "hourglass" : "lightbulb", used: vm.clue != nil || vm.loadingClue,
-                       text: Color(hex: 0x9333EA), border: Color(hex: 0xD8B4FE), bg: Color(hex: 0xFAF5FF)) { vm.revealClue() }
+                       variant: .amber) { vm.revealClue() }
             hintButton(vm.revealedVowel.map { $0 } ?? "Vowel", systemImage: "eye", used: vm.revealedVowel != nil,
-                       text: Color(hex: 0x2563EB), border: Color(hex: 0x93C5FD), bg: Color(hex: 0xEFF6FF)) { vm.revealVowel() }
+                       variant: .pink) { vm.revealVowel() }
             hintButton(vm.revealedConsonant.map { $0 } ?? "Consonant", systemImage: "number", used: vm.revealedConsonant != nil,
-                       text: Color(hex: 0x0D9488), border: Color(hex: 0x5EEAD4), bg: Color(hex: 0xF0FDFA)) { vm.revealConsonant() }
+                       variant: .teal) { vm.revealConsonant() }
         }
         .padding(.bottom, 4)
     }
 
+    /// §A8: small candy pills (amber Clue, pink Vowel, teal Consonant); a used
+    /// hint disables (the candy fades) and shows the revealed letter.
     private func hintButton(_ label: String, systemImage: String, used: Bool,
-                            text: Color, border: Color, bg: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: systemImage).font(Brand.font(11, .heavy))
-                .foregroundStyle(used ? Color(hex: 0xD1D5DB) : text)
-                .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(Capsule().fill(used ? Color.clear : bg))
-                .overlay(Capsule().stroke(used ? Color(hex: 0xE5E7EB) : border, lineWidth: 1.5))
-        }
-        .buttonStyle(.squish).disabled(used)
+                            variant: CandyButtonStyle.Variant, action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: systemImage, variant: variant, action: action)
+            .disabled(used)
     }
 }
 
@@ -600,8 +633,15 @@ struct NoundleBoard: View {
     /// left between the header and the hints / keyboard.
     var width: CGFloat = UIScreen.main.bounds.width - 20
     var height: CGFloat? = nil
+    /// §L: sit the rows on the shared game tray (its padding + lip come out of
+    /// the area first).
+    var tray = false
 
     var body: some View {
+        let pad: CGFloat = tray ? GameTray.padding * 2 : 0
+        let lip: CGFloat = tray ? GameTray.lip : 0
+        let width = self.width - pad / CGFloat(BoardSizing.widthFill)
+        let height = self.height.map { $0 - (pad + lip) / CGFloat(BoardSizing.heightFill) }
         let groups = vm.puzzle.map { ProperNoundle.wordGroups($0.display) } ?? [vm.answerLen]
         let total = groups.reduce(0, +)
         let gap: CGFloat = 4, groupGap: CGFloat = 14
@@ -616,6 +656,7 @@ struct NoundleBoard: View {
                 rowView(row, groups: groups, tile: tile, gap: gap, groupGap: groupGap)
             }
         }
+        .modifier(NoundleTrayChrome(on: tray, state: vm.isFinished ? (vm.status == .won ? .won : .lost) : .normal))
     }
 
     @ViewBuilder
@@ -698,7 +739,7 @@ struct NoundleKeyboard: View {
         .hardwareKeyboard(enabled: !vm.isFinished) { key in
             switch key {
             case .enter: vm.submit()
-            case .delete: vm.delete()
+            case .delete: vm.delete(); SoundManager.shared.playDelete(); return true
             case .letter(let l): vm.type(l)
             default: return false
             }
@@ -712,7 +753,7 @@ struct NoundleKeyboard: View {
     }
 
     private func deleteKey() -> some View {
-        iconAction("delete.left") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+        iconAction("delete.left") { vm.delete(); Haptics.tap(); SoundManager.shared.playDelete() }
     }
 
     private func spaceKey() -> some View {
@@ -785,7 +826,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             }
             strip()
             GeometryReader { g in
-                NoundleBoard(vm: vm, width: g.size.width, height: g.size.height)
+                NoundleBoard(vm: vm, width: g.size.width, height: g.size.height, tray: true)
                     .frame(width: g.size.width, height: g.size.height)
             }
             .padding(.vertical, 4)
@@ -830,5 +871,16 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             }
         }
         .padding(.top, 6)
+    }
+}
+
+/// §L: the ProperNoundle rows on the shared game tray (opt-in).
+private struct NoundleTrayChrome: ViewModifier {
+    let on: Bool
+    let state: GameTrayState
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on { content.gameTray(accent: pnAccent, state: state) } else { content }
     }
 }

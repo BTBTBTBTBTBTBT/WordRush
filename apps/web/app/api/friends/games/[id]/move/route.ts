@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto';
+import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
 import { NextRequest, NextResponse } from 'next/server';
 import { FRIENDLY_TITLES, applyFriendlyMove, containsBlockedTerm, friendlyCardLine, type FriendlyMove } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
@@ -77,7 +78,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const title = FRIENDLY_TITLES[row.kind];
     const line = friendlyCardLine({ kind: row.kind, state: next.state, me: side === 'a' ? 'b' : 'a', them: who, minutesAgo: 0 });
     void broadcastPush(
-      { title: result.done ? `${title} with ${who} is over` : `Your move in ${title}`, body: line, url: `/friends/games/${row.id}` },
+      // FINISH_SPEC AE: "{name} played. Your turn! 🎯" (shared copy) when it's their move.
+      { title: result.done ? `${title} with ${who} is over` : pushCopy('yourTurn', { name: who }), body: line, url: `/friends/games/${row.id}` },
       new Set([oppId]),
       'challenge',
     ).catch(() => {});

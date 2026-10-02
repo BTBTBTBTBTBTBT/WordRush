@@ -1,24 +1,50 @@
 import SwiftUI
 import Supabase
+import WordociousCore
 #if canImport(UIKit)
 import UIKit
 #endif
 
-/// Player avatar — shows the uploaded photo (`avatar_url`) in a circle if
-/// present, else the §20 letter tile (rounded square, initials or the chosen
-/// emoji). Used on the profile, public profiles, boards, Friends and VS.
+/// Player avatar — FINISH_SPEC §AN: the uploaded photo (`avatar_url`) as a rounded
+/// square (§AN6: never a circle) with the player's frame, or their build-your-own
+/// MASCOT (LetterTileAvatar → MascotAvatar: the saved config, an AH cast preset, or
+/// the deterministic default, with their initial as the body letter). For a player
+/// with both, avatar_config.display decides ("photo" | "mascot"); a worn AH hero
+/// without a saved mascot still beats the photo. Never an emoji (§AM2). Used on the
+/// profile, public profiles, boards, Friends and VS.
 struct AvatarView: View {
     let url: String?
     let username: String
     var size: CGFloat = 96
-    /// Personalization (optional): when there's no photo, tint the tile with
-    /// the player's accent and show their chosen emoji instead of the initials.
+    /// Personalization (optional): when there's no photo, the default mascot takes
+    /// the player's accent. (`emoji` is retired, §AM2: passed through, never drawn.)
     var accentHex: String? = nil
     var emoji: String? = nil
+    /// FINISH_SPEC §AA2: a Pro player's avatar wears the gold frame + the tiny
+    /// crown on its top-right corner. Pass it only where the data says so.
+    var pro: Bool = false
+    /// FINISH_SPEC §AH: the worn cast hero ("w" … "s") and level-tier frame
+    /// ("bronze" … "diamond"). nil = the player's recorded look (CastAvatars, by
+    /// username) when `lookup`.
+    var castId: String? = nil
+    var frame: String? = nil
+    /// false draws exactly what is passed (Edit Profile's live, unsaved choice).
+    var lookup: Bool = true
+    /// FINISH_SPEC §AN: an explicit mascot (Edit Profile's live preview); nil =
+    /// the player's saved one (MascotLooks, by username) when `lookup`.
+    var mascot: AvatarConfig? = nil
 
-    /// True when this avatar draws the letter tile (no usable photo URL), so
-    /// wrappers can switch their ring / border to `AvatarOutline(tile:)`.
-    static func showsTile(_ url: String?) -> Bool { photoURL(url) == nil }
+    @ObservedObject private var looks = CastAvatars.shared
+    @ObservedObject private var mascots = MascotLooks.shared
+
+    /// Whether wrappers should follow the rounded-square outline
+    /// (`AvatarOutline(tile:)`). FINISH_SPEC §AN6: photos, mascots and worn
+    /// heroes are ALL rounded squares now, so this is always true (kept so the
+    /// call sites keep compiling).
+    static func showsTile(_ url: String?) -> Bool { true }
+
+    /// §AH: kept for call sites that pass the username (always true, §AN6).
+    static func showsTile(_ url: String?, username: String?) -> Bool { true }
 
     private static func photoURL(_ url: String?) -> URL? {
         guard let url, !url.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
@@ -26,29 +52,54 @@ struct AvatarView: View {
     }
 
     var body: some View {
-        if let u = Self.photoURL(url) {
-            // Photos stay circles (§20); the tile stands in while it loads.
-            Group {
-                #if canImport(UIKit)
-                CachedAvatarImage(url: u) { fallback }
-                #else
-                AsyncImage(url: u) { phase in
-                    switch phase {
-                    case .success(let img): img.resizable().scaledToFill()
-                    default: fallback
+        let look = lookup ? looks.lookFor(username) : nil
+        let cast = AvatarCastRules.normalize(castId ?? look?.castId)
+        let saved = mascot ?? (lookup ? mascots.configFor(username) : nil)
+        let photo = Self.photoURL(url)
+        // §AN: display decides when a mascot is saved; a worn AH hero alone beats the photo.
+        let showPhoto: Bool = {
+            guard photo != nil else { return false }
+            if let saved { return AvatarCatalog.showsPhoto(display: saved.display, hasPhoto: true) }
+            return cast == nil
+        }()
+        if showPhoto, let u = photo {
+            // §AN6: photos are rounded squares (the tile's radius), never circles;
+            // the mascot stands in while it loads. The frame (the mascot's, else
+            // AH's tier frame) insets the photo by its width.
+            let mascotFrame = saved.map(\.frame).flatMap { $0 == "none" ? nil : $0 }
+            let ring = mascotFrame ?? AvatarFrameRules.normalize(frame ?? look?.frame)
+            let inner = ring != nil ? size - AvatarCastArt.frameWidth(size) * 2 : size
+            ZStack {
+                Group {
+                    #if canImport(UIKit)
+                    CachedAvatarImage(url: u) { fallback(saved, cast) }
+                    #else
+                    AsyncImage(url: u) { phase in
+                        switch phase {
+                        case .success(let img): img.resizable().scaledToFill()
+                        default: fallback(saved, cast)
+                        }
                     }
+                    #endif
                 }
-                #endif
+                .frame(width: inner, height: inner)
+                .clipShape(AvatarOutline(tile: true))
+                if let ring { MascotFrame(frame: ring, size: size) }
             }
             .frame(width: size, height: size)
-            .clipShape(Circle())
+            .proAvatarMark(pro && ring != "pro", size: size, tile: true)
         } else {
-            fallback
+            LetterTileAvatar(username: username, size: size, accentHex: accentHex, emoji: emoji, pro: pro,
+                             castId: cast, frame: AvatarFrameRules.normalize(frame ?? look?.frame), lookup: false,
+                             config: saved)
         }
     }
 
-    private var fallback: some View {
-        LetterTileAvatar(username: username, size: size, accentHex: accentHex, emoji: emoji)
+    private func fallback(_ saved: AvatarConfig?, _ cast: String?) -> some View {
+        var bare = saved
+        bare?.frame = "none"
+        return LetterTileAvatar(username: username, size: size, accentHex: accentHex, emoji: emoji, castId: cast,
+                                lookup: false, config: bare)
     }
 }
 

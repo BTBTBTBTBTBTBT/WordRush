@@ -34,13 +34,18 @@ export const REVEAL = {
   /** Not a word: the row nudge. */
   nudgeMs: 520,
   /**
-   * Not a word: the red glow, then the letters clear right to left. The games
-   * clear the row after 600 ms (their own logic, unchanged), so the glow and
-   * the right-to-left clear are fitted inside that window.
+   * Not a word (iOS parity): the rejected letters hold ~1 s in red with the
+   * red glow, then clear right to left, 90 ms apart, each letter shrinking
+   * out in `outMs`. The games block input for the whole thing (rejectMs).
    */
-  badMs: 600,
-  outStart: 240,
-  outStagger: 60,
+  badMs: 1000,
+  outStart: 1000,
+  outStagger: 90,
+  outMs: 220,
+  /** How long a not-a-word reject holds input for a row of `tiles` letters: glow + the right-to-left clear. */
+  rejectMs(tiles: number): number {
+    return this.outStart + Math.max(0, tiles - 1) * this.outStagger + this.outMs;
+  },
   /** When a row's reveal has finished: the last tile lands. */
   end(tiles: number): number {
     return Math.max(0, tiles - 1) * this.stagger + this.flipMs;

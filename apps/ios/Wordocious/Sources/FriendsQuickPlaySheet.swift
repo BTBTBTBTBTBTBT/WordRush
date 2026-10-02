@@ -37,7 +37,7 @@ struct FriendsQuickPlaySheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Capsule().fill(Color(hex: 0xD1D5DB)).frame(width: 40, height: 5)
+                Capsule().fill(FriendsInk.pink.wash(0.35)).frame(width: 40, height: 5)
                     .frame(maxWidth: .infinity).padding(.top, 8)
                 if let f = friend {
                     header(f)
@@ -64,37 +64,47 @@ struct FriendsQuickPlaySheet: View {
         }
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                FriendlyGameIcon(kind: kind, size: 40)
+                gameIcon(kind, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(kind.title.uppercased()).font(Brand.font(17, .black)).tracking(0.3).foregroundStyle(FriendsKit.ink)
-                    Text(FriendsKit.sub(kind)).font(Brand.font(11, .bold)).foregroundStyle(FriendsKit.label)
+                    Text(kind.title.uppercased()).font(Brand.font(17, .black)).tracking(0.3).foregroundStyle(FriendsInk.heading)
+                    Text(FriendsKit.sub(kind)).font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
                 }
             }
             FriendsSectionHeader(title: "PICK A FRIEND")
             if friends.isEmpty {
-                Text("Add a friend first — then pick a game and play.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
-            }
-            VStack(spacing: 0) {
-                ForEach(friends) { f in
-                    Button { withAnimation(.easeOut(duration: 0.15)) { friend = f } } label: {
-                        HStack(spacing: 10) {
-                            FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 34, online: f.isOnline(), ring: false)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("@\(f.username)").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
-                                Text(f.presenceLine() ?? FriendsKit.todayLine(f)).font(Brand.font(11, .bold))
-                                    .foregroundStyle(f.isOnline() ? FriendsKit.green : FriendsKit.label).lineLimit(1)
+                // §A7 empty state: I with the invite scene (not the page host O1).
+                MascotMessage(scene: .invite, line: "Add a friend first — then pick a game and play.",
+                              font: Brand.font(12, .heavy), color: FriendsInk.muted, sceneHeight: 110)
+                    .frame(maxWidth: .infinity)
+            } else {
+                // §C4: the friends list's lavender card with soft striped rows.
+                VStack(spacing: 0) {
+                    ForEach(Array(friends.enumerated()), id: \.element.id) { i, f in
+                        Button {
+                            if Theme.reduceMotion { friend = f }
+                            else { withAnimation(.easeOut(duration: 0.15)) { friend = f } }
+                        } label: {
+                            HStack(spacing: 10) {
+                                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 38, online: f.isOnline(), ring: false)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("@\(f.username)").font(Brand.font(14, .black)).foregroundStyle(FriendsInk.heading).lineLimit(1)
+                                    Text(f.presenceLine() ?? FriendsKit.todayLine(f)).font(Brand.font(11, .bold))
+                                        .foregroundStyle(f.isOnline() ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").font(.system(size: 12, weight: .black))
+                                    .foregroundStyle(FriendsInk.purple.wash(0.55))
+                                    .accessibilityHidden(true)
                             }
-                            Spacer(minLength: 4)
+                            .padding(.horizontal, 12).padding(.vertical, 9)
+                            .contentShape(Rectangle())
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 9)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.squish)
+                        .friendsStripe(i, accent: FriendsInk.purple)
                     }
-                    .buttonStyle(.squish)
-                    if f.id != friends.last?.id { Divider().padding(.leading, 56) }
                 }
+                .friendsCard(accent: FriendsInk.purple, radius: 18, tint: 0.075, line: 0.21)
             }
-            .vsCard(radius: 14)
         }
     }
 
@@ -104,19 +114,21 @@ struct FriendsQuickPlaySheet: View {
         let online = f.isOnline()
         let facts = [FriendsKit.rivalry(f), FriendsKit.streakText(f.friendStreak)].compactMap { $0 }
         return HStack(spacing: 12) {
-            FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 48, online: online)
+            FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 48, online: online, ring: false)
             VStack(alignment: .leading, spacing: 2) {
                 Text("PLAY WITH @\(f.username.uppercased())").font(Brand.font(17, .black)).tracking(0.3)
-                    .foregroundStyle(FriendsKit.ink).lineLimit(1).minimumScaleFactor(0.7)
+                    .foregroundStyle(FriendsInk.bannerHead).lineLimit(1).minimumScaleFactor(0.7)
                 if let p = f.presenceLine() {
-                    Text(p).font(Brand.font(12, .heavy)).foregroundStyle(online ? FriendsKit.green : FriendsKit.label).lineLimit(1)
+                    Text(p).font(Brand.font(12, .heavy)).foregroundStyle(online ? FriendsKit.green : FriendsInk.muted).lineLimit(1)
                 }
                 if !facts.isEmpty {
-                    Text(facts.joined(separator: " · ")).font(Brand.font(11, .bold)).foregroundStyle(FriendsKit.label).lineLimit(1)
+                    Text(facts.joined(separator: " · ")).font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted).lineLimit(1)
                 }
             }
             Spacer(minLength: 0)
         }
+        .padding(12)
+        .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.amber], radius: 18, barHeight: 6)
     }
 
     // MARK: Quick games
@@ -127,31 +139,35 @@ struct FriendsQuickPlaySheet: View {
             // §9: six tiles, 3 across × 2 rows.
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
-                    Button { withAnimation(.easeOut(duration: 0.12)) { kind = k; error = nil } } label: {
-                        // The square game tile (docs/GAME_TILE_STYLE.md); the picked game is selected.
-                        GameTileSquare(accent: FriendsKit.color(k), label: k.title, selected: kind == k,
+                    Button {
+                        if Theme.reduceMotion { kind = k; error = nil }
+                        else { withAnimation(.easeOut(duration: 0.12)) { kind = k; error = nil } }
+                    } label: {
+                        // The square game tile (docs/GAME_TILE_STYLE.md) in the game's §C4
+                        // card color; the picked game is selected (stronger tint + ring).
+                        GameTileSquare(accent: FriendsKit.tileAccent(k), label: k.title, selected: kind == k,
                                        light: true) { chip in
-                            FriendlyGameIcon(kind: k, size: chip, tinted: true)
+                            gameIcon(k, size: chip)
                         }
                     }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(.squish)
                     .accessibilityLabel("\(k.title), \(FriendsKit.sub(k))")
                     .accessibilityAddTraits(kind == k ? .isSelected : [])
                 }
             }
-            Text(FriendsKit.sub(kind)).font(Brand.font(11, .bold)).foregroundStyle(FriendsKit.label)
+            Text(FriendsKit.sub(kind)).font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
                 .frame(maxWidth: .infinity, alignment: .center)
             if kind == .coin {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("WHAT'S ON THE LINE").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsKit.label)
+                    FriendsLabel("What's on the line")
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
                             ForEach(FriendlyGames.coinStakes, id: \.self) { s in
                                 Button { stake = s } label: {
-                                    Text(s).font(Brand.font(11, .heavy)).foregroundStyle(FriendsKit.ink)
-                                        .padding(.horizontal, 12).frame(height: 30)
-                                        .background(Capsule().fill(Color.white))
-                                        .overlay(Capsule().stroke(stake == s ? FriendsKit.solid : Color(hex: 0xF3E8FF), lineWidth: stake == s ? 2 : 1))
+                                    // §A1 chips: tinted, the picked stake stronger + ringed.
+                                    Text(s).font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.chip)
+                                        .padding(.horizontal, 12).frame(minHeight: 30)
+                                        .friendsChip(FriendsKit.tileAccent(.coin), strong: stake == s)
                                 }
                                 .buttonStyle(.squish)
                                 .accessibilityAddTraits(stake == s ? .isSelected : [])
@@ -180,32 +196,36 @@ struct FriendsQuickPlaySheet: View {
         }
     }
 
+    /// The two Wordocious ways to play (§3): tinted teal cards (the VS accent) that
+    /// squish; the live battle carries the stronger tint.
     private func wordociousCard(title: String, sub: String, solid: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let teal = Color(hex: 0x0D9488)
+        return Button(action: action) {
             HStack(spacing: 8) {
                 Group {
                     if ArtAsset.exists("game-vs") {
                         // ART_SPEC §3: the VS game's 3D icon.
-                        GameArtImage(asset: "game-vs", size: 26)
+                        GameArtImage(asset: "game-vs", size: 30)
                     } else {
                         Image("swords").renderingMode(.template).resizable().scaledToFit()
-                            .frame(width: 15, height: 15).foregroundStyle(solid ? .white : VsLobbyKit.ink)
+                            .frame(width: 15, height: 15).foregroundStyle(VsLobbyKit.ink)
                     }
                 }
-                    .frame(width: 30, height: 30)
-                    .background(RoundedRectangle(cornerRadius: 9).fill(solid ? Color.white.opacity(0.2) : Color.white))
+                .frame(width: 32, height: 32)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(Brand.font(12, .black)).foregroundStyle(solid ? .white : VsLobbyKit.deep)
+                    Text(title).font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.deep)
                         .lineLimit(1).minimumScaleFactor(0.75)
-                    Text(sub).font(Brand.font(9.5, .bold)).foregroundStyle(solid ? Color.white.opacity(0.9) : VsLobbyKit.ink)
+                    Text(sub).font(Brand.font(9.5, .bold)).foregroundStyle(VsLobbyKit.ink)
                         .lineLimit(1).minimumScaleFactor(0.75)
                 }
                 Spacer(minLength: 0)
             }
             .padding(10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(solid ? VsLobbyKit.ink : VsLobbyKit.soft))
+            .friendsCard(accent: teal, bar: [teal], radius: 14, barHeight: 4,
+                         tint: solid ? 0.16 : 0.08, line: solid ? 0.45 : 0.26)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(.squish)
     }
 
     // MARK: CTA
@@ -216,23 +236,27 @@ struct FriendsQuickPlaySheet: View {
                 Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
                     .multilineTextAlignment(.center).frame(maxWidth: .infinity)
             }
+            // §A8: the large purple candy CTA.
             Button { start(f) } label: {
-                Group {
-                    if starting { ProgressView().tint(.white) }
-                    else { Text("INVITE TO \(kind.title.uppercased())").font(Brand.font(14, .black)).tracking(0.6) }
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity).frame(height: 50)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(FriendsKit.solid)
-                    .shadow(color: FriendsKit.solid.opacity(0.35), radius: 6, y: 3))
+                if starting { ProgressView().tint(.white) }
+                else { CandyLabel(title: "Invite to \(kind.title)", symbol: "paperplane.fill") }
             }
-            .buttonStyle(PressableStyle())
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
             .disabled(starting)
             Text("\(f.username) gets a ping. If they're busy, it waits as your turn.")
-                .font(Brand.font(11, .bold)).foregroundStyle(FriendsKit.label)
+                .font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
                 .multilineTextAlignment(.center).frame(maxWidth: .infinity)
         }
         .padding(.top, 4)
+    }
+
+    /// The pocket game's icon: the glossy 3D art when it ships, else the outline chip.
+    @ViewBuilder private func gameIcon(_ k: FriendlyKind, size: CGFloat) -> some View {
+        if let art = k.pocketArt {
+            GameArtImage(asset: art, size: size).frame(width: size, height: size).accessibilityHidden(true)
+        } else {
+            FriendlyGameIcon(kind: k, size: size, tinted: true)
+        }
     }
 
     private func start(_ f: FriendsService.FriendProfile) {

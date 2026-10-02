@@ -4,6 +4,8 @@ import { TileState, GuessResult } from '@wordle-duel/core';
 import { cn } from '@/lib/utils';
 import { LetterTile, tileLook } from '@/components/game/letter-tile';
 import { tileFontPx } from '@/lib/board-fit';
+import { GameTray } from '@/components/ui/game-tray';
+import { fitGridInTray } from '@/lib/tray-fit';
 
 // The word board (docs/FINISH_SPEC.md B1 + B3): every tile is the shared glossy
 // LetterTile — frosted empty rows, typed tiles that swell in, a reveal that
@@ -32,9 +34,13 @@ interface BoardProps {
   gap?: number;
   /** Rows that are hint rows (Six / Seven): their revealed letter flips in with the gold hint glow (B3). */
   hintRows?: readonly number[];
+  /** FINISH_SPEC L: draw the board on the shared game tray in this accent
+   *  (purple once won, slate once lost). With `sizePx` the tray fits INSIDE
+   *  that box (lib/tray-fit.ts) and the tiles stay square. */
+  trayAccent?: string;
 }
 
-export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, isInvalidWord, isShaking, wordLength = 5, sizePx, gap = 5, hintRows }: BoardProps) {
+export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, isInvalidWord, isShaking, wordLength = 5, sizePx, gap = 5, hintRows, trayAccent }: BoardProps) {
   const emptyRows = Math.max(0, maxGuesses - guesses.length - 1);
 
   const lastEval = evaluations[evaluations.length - 1];
@@ -47,16 +53,20 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
   const won = !!lastEval?.isCorrect;
   const lost = !won && guesses.length >= maxGuesses && evaluations.length >= maxGuesses;
 
+  // On the tray (L) the grid re-fits inside the tray's chrome so the whole
+  // tray keeps to the measured box.
+  const inTray = trayAccent && sizePx ? fitGridInTray(sizePx, wordLength, maxGuesses, gap) : null;
+  const gridPx = inTray ? { w: inTray.w, h: inTray.h } : sizePx;
   // Sized: square tiles of an exact px edge, so the glyph can follow the tile.
-  const tile = sizePx ? Math.max(1, (sizePx.w - gap * (wordLength - 1)) / wordLength) : null;
+  const tile = gridPx ? Math.max(1, (gridPx.w - gap * (wordLength - 1)) / wordLength) : null;
   const sizedStyle = tile != null
-    ? { width: sizePx!.w, height: sizePx!.h, ['--gt-font' as string]: `${tileFontPx(tile)}px` }
+    ? { width: gridPx!.w, height: gridPx!.h, ['--gt-font' as string]: `${tileFontPx(tile)}px` }
     : { aspectRatio: `${wordLength} / ${maxGuesses}` };
   const rowGap = tile != null ? gap : 4;
 
-  return (
+  const grid = (
     <div
-      className={sizePx ? 'mx-auto' : 'w-full max-w-[400px] mx-auto max-h-full'}
+      className={gridPx ? 'mx-auto' : 'w-full max-w-[400px] mx-auto max-h-full'}
       style={sizedStyle as React.CSSProperties}
       role="grid"
       aria-label="Game board"
@@ -86,11 +96,29 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
           <Row key={`empty-${i}`} guess="" wordLength={wordLength} gap={rowGap} />
         ))}
       </div>
-      {showSolution && solution && (
-        <div className="mt-1 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          Solution: <span className="font-black" style={{ color: 'var(--color-text)' }}>{solution}</span>
-        </div>
-      )}
+      {showSolution && solution && !trayAccent && <SolutionLine solution={solution} />}
+    </div>
+  );
+
+  if (!trayAccent) return grid;
+  return (
+    <>
+      <GameTray
+        accent={trayAccent}
+        state={won ? 'won' : lost ? 'lost' : 'playing'}
+        className={gridPx ? 'mx-auto w-fit' : 'w-full max-w-[400px] mx-auto'}
+      >
+        {grid}
+      </GameTray>
+      {showSolution && solution && <SolutionLine solution={solution} />}
+    </>
+  );
+}
+
+function SolutionLine({ solution }: { solution: string }) {
+  return (
+    <div className="mt-1 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+      Solution: <span className="font-black" style={{ color: 'var(--color-text)' }}>{solution}</span>
     </div>
   );
 }

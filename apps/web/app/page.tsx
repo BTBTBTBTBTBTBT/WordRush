@@ -289,6 +289,7 @@ export default function HomePage() {
           <Link
             key={card.id}
             href={href}
+            className="block"
             onClick={(e) => {
               if (state.isLocked) {
                 e.preventDefault();
@@ -308,7 +309,12 @@ export default function HomePage() {
     <PageBackground tint="home" className="fixed inset-0 flex flex-col">
       <AppHeader />
 
-      <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-tab-clear" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): the
+          scroller stays full width, its content centers at up to 1100 px; the
+          banner keeps the 560 column; DAILIES | PUZZLES and WORD OF THE DAY |
+          VS BATTLE sit side by side as two-column grids (globals.css .page-*). */}
+      <div className="px-4 page-wide-pad flex-1 min-h-0 overflow-y-auto pb-tab-clear" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="page-col flex flex-col gap-2">
         <PendingInvitesBanner userId={user?.id} />
         <FirstGameCard />
 
@@ -329,20 +335,30 @@ export default function HomePage() {
             shareTodayProgress(todayDailies, headline);
           }}
         />
+        </div>
 
         {/* DAILIES and PUZZLES: the whole-cast title art (docs/ART_SPEC.md §2,
             §12, §19.2), one header style, ~78% width, centered. */}
+        <div className="page-grid-2 flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
         <HomeSectionTitle name="art-title-dailies" label="Dailies" />
         {grid(wordCards)}
+        </div>
 
+        <div className="flex flex-col gap-2">
         <HomeSectionTitle id="puzzles" name="art-title-puzzles" label="Puzzles" />
         {grid(puzzleCards)}
+        </div>
+        </div>
 
+        <div className="page-grid-2 flex flex-col gap-2">
         {/* Word of the Day, now a quick quiz under its own section header
             (§12; see components/home/word-of-the-day.tsx). */}
+        <div className="flex flex-col gap-2">
         <WordOfTheDay />
+        </div>
 
-        {/* VS Battle — the VS card and the LIVE strip as one full-width tile, last. */}
+        {/* VS BATTLE — its section title, then the VS card + LIVE strip as one full-width tile, last. */}
         {(() => {
           const vs = visibleCards.find((c) => c.id === 'vs');
           if (!vs) return null;
@@ -350,6 +366,9 @@ export default function HomePage() {
           // Daily Battle and Bot of the Day now live in its banner.
           const href = '/vs';
           return (
+            <div className="flex flex-col gap-2">
+            {/* FINISH_SPEC O1: VS BATTLE gets its own section title (lettering only, the N1 size rule). */}
+            <HomeSectionTitle name="art-title-vsbattle" label="VS Battle" />
             <VSLiveTile
               card={vs}
               livePlayerCount={livePlayerCount}
@@ -359,8 +378,10 @@ export default function HomePage() {
               onOpen={() => handleVsClick(href)}
               onInvite={() => setInviteOpen(true)}
             />
+            </div>
           );
         })()}
+        </div>
 
         {/* Sign out — only with a real session; a guest has nothing to sign
             out of (the header shows "Sign In"). */}
@@ -389,6 +410,7 @@ export default function HomePage() {
         open={limitModal.open}
         onClose={() => setLimitModal({ open: false, modeName: '', modeHref: '' })}
         modeName={limitModal.modeName}
+        unlimitedHref={limitModal.modeHref ? limitModal.modeHref.split('?')[0] : undefined}
         onViewPuzzle={() => router.push(limitModal.modeHref.includes('daily=true') ? limitModal.modeHref : `${limitModal.modeHref}?daily=true`)}
       />
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />

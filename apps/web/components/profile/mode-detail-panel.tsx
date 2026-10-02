@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { User, Swords, Share2, Copy, Check } from 'lucide-react';
+import { User, Swords, Share2, Copy } from 'lucide-react';
 import { PROFILE_MODES, type ModeConfig } from './mode-picker';
 import { ModeStatsCard } from './mode-stats-card';
 import { ProInsightsCard } from './pro-insights-card';
@@ -17,6 +17,8 @@ import { fetchModeDetail } from '@/lib/stats-service';
 import { statPanels, modeAggregates, guessNoun, distributionSpec, avg1, type MatchRow } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { isGameArtIcon } from '@/lib/art';
+import { CandyButton } from '@/components/ui/candy-button';
+import { softCard, softIconTile, softPill } from '@/lib/soft-surface';
 
 interface ModeData {
   guessDist: Array<{ guesses: number; count: number }>;
@@ -112,8 +114,8 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: `${accentColor}15` }}
+            className="w-8 h-8 flex items-center justify-center"
+            style={softIconTile(accentColor, { radius: 10 })}
           >
             {!(Icon && isGameArtIcon(Icon)) && mode?.romanNumeral ? (
               <span className="text-[11px] font-black leading-none" style={{ color: accentColor }}>{mode.romanNumeral}</span>
@@ -127,29 +129,21 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
         <div className="flex items-center gap-2">
           {/* Challenge button (Pro only, own profile only) */}
           {isPro && isOwnProfile && (
-            <button
+            <CandyButton
               onClick={handleChallenge}
               disabled={inviteLoading}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold transition-all"
-              style={{
-                background: `${accentColor}15`,
-                border: `1.5px solid ${accentColor}`,
-                color: accentColor,
-                opacity: inviteLoading ? 0.6 : 1,
-              }}
+              color="pink"
+              size="sm"
+              icon={inviteCopied ? 'check' : <Swords className="w-3.5 h-3.5" color="#fff" strokeWidth={3} aria-hidden="true" />}
             >
-              {inviteCopied ? (
-                <><Check className="w-3 h-3" /> Copied!</>
-              ) : (
-                <><Swords className="w-3 h-3" /> Challenge</>
-              )}
-            </button>
+              {inviteCopied ? 'Copied!' : 'Challenge'}
+            </CandyButton>
           )}
 
           {/* Play-type chip — reflects the page-level toggle (no inner toggle). */}
           <span
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold"
-            style={{ background: `${accentColor}15`, color: accentColor }}
+            style={{ ...softPill(accentColor, { radius: 10, bar: false }), color: accentColor }}
           >
             {tab === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
             {tab === 'solo' ? 'Solo' : tab === 'vs' ? 'VS People' : 'VS Bots'}
@@ -161,7 +155,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
       {loading && (
         <div className="space-y-3 animate-pulse">
           {/* Stats card skeleton — 4×2 grid */}
-          <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="p-4" style={softCard(accentColor, { radius: 18 })}>
             <div className="grid grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="flex flex-col items-center gap-1">
@@ -172,7 +166,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             </div>
           </div>
           {/* Guess distribution skeleton — bars */}
-          <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="p-4" style={softCard(accentColor, { radius: 18 })}>
             <div className="h-2.5 w-24 rounded mb-3" style={{ background: 'var(--color-border)' }} />
             <div className="space-y-2">
               {[75, 100, 55, 30, 15, 8].map((w, i) => (
@@ -184,7 +178,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             </div>
           </div>
           {/* Chart skeleton */}
-          <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="p-4" style={softCard(accentColor, { radius: 18 })}>
             <div className="h-2.5 w-28 rounded mb-3" style={{ background: 'var(--color-border)' }} />
             <div className="h-[80px] rounded" style={{ background: 'var(--color-border)', opacity: 0.5 }} />
           </div>
@@ -209,7 +203,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
           {/* Hints line (founder, 2026-10-01 stats audit): every Puzzles game has hints;
               how often the player leans on them, and how many wins needed none. */}
           {agg && meta?.group === 'more' && agg.games > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 12 }}>
+            <div className="flex items-center gap-2 px-3 py-2" style={softPill(accentColor, { radius: 12 })}>
               <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>Hints</span>
               <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>
                 {avg1(agg.hintsTotal, agg.games)} per game · {agg.noHintWins} no-hint {agg.noHintWins === 1 ? 'win' : 'wins'}
@@ -275,7 +269,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
       {!loading && !stats && (
         <div
           className="p-6 text-center"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+          style={softCard(accentColor, { radius: 18 })}
         >
           <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
             No {tab === 'solo' ? 'solo' : tab === 'vs' ? 'VS People' : 'VS Bots'} games played in this mode yet

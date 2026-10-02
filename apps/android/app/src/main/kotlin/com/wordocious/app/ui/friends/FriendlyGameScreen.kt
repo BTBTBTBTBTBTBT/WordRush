@@ -30,7 +30,6 @@ import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +71,19 @@ import com.wordocious.app.data.FriendlyGamesService
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.bannerShimmer
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.CandyButton
+import com.wordocious.app.ui.CandyColor
+import com.wordocious.app.ui.CandySize
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.pageBackground
+import com.wordocious.app.ui.game.GameTray
+import com.wordocious.app.ui.game.TrayState
+import com.wordocious.app.ui.game.TileMotion
+import com.wordocious.app.R
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.wordocious.app.ui.dashedBorder
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -106,7 +118,8 @@ private val THEM_TINT = Color(0xFFFEF3C7)
 private val YOU_WON = Color(0xFFDDD6FE)
 private val THEM_WON = Color(0xFFFDE68A)
 private val DEEP = Color(0xFF4C1D95)
-private val GHOST_RED = Color(0xFF9F1239)
+/** A1 the leave dialog's soft pink wash. */
+private val DIALOG_TINT = Color(0xFFFFF3F9)
 
 /**
  * A pocket game's screen (Friends overhaul §4, board AE): close + the game's
@@ -187,7 +200,8 @@ fun FriendlyGameScreen(
     androidx.activity.compose.BackHandler { requestClose() }
 
     val kind = game?.kind ?: FriendlyKind.RPS
-    Column(Modifier.fillMaxSize().background(FriendsPink.page)) {
+    // A1: the Friends wallpaper (fixed light), never a flat white page.
+    Column(Modifier.fillMaxSize().pageBackground(com.wordocious.app.ui.PageTint.FRIENDS, alwaysLight = true)) {
         // Top bar: close (pink) + centered title in the game's gradient.
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             // The shared white close circle (HEADER_SPEC §4).
@@ -220,13 +234,17 @@ fun FriendlyGameScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ScoreWindow(g, theyOn)
-            when (val s = g.state) {
-                is RpsState -> RpsBoard(s, g.me, them, enabled = myTurn && !busy) { send(FriendlyMove.Rps(it)) }
-                is TttState -> TttBoard(s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Ttt(it)) }
-                is CoinState -> CoinBoard(gameId, s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Coin(it)) }
-                is PassState -> PassBoard(gameId, s, g.me, g.opponent, myTurn = myTurn, busy = busy, answer = g.answer) { send(FriendlyMove.Pass(it)) }
-                is GhostState -> GhostBoard(s, g.me, them, myTurn = myTurn, busy = busy) { send(FriendlyMove.Ghost(it.toString())) }
-                is ChainState -> ChainBoard(gameId, s, g.me, them, myTurn = myTurn, busy = busy, onError = { error = it }) { send(FriendlyMove.Chain(it)) }
+            // L: every pocket board sits in the shared game tray in the game's color (won = purple, lost = slate).
+            val tray = when (g.result) { "win" -> TrayState.WON; "loss" -> TrayState.LOST; else -> TrayState.PLAYING }
+            GameTray(g.kind.color, Modifier.fillMaxWidth(), state = tray) {
+                when (val s = g.state) {
+                    is RpsState -> RpsBoard(s, g.me, them, enabled = myTurn && !busy) { send(FriendlyMove.Rps(it)) }
+                    is TttState -> TttBoard(s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Ttt(it)) }
+                    is CoinState -> CoinBoard(gameId, s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Coin(it)) }
+                    is PassState -> PassBoard(gameId, s, g.me, g.opponent, myTurn = myTurn, busy = busy, answer = g.answer) { send(FriendlyMove.Pass(it)) }
+                    is GhostState -> GhostBoard(s, g.me, them, myTurn = myTurn, busy = busy) { send(FriendlyMove.Ghost(it.toString())) }
+                    is ChainState -> ChainBoard(gameId, s, g.me, them, myTurn = myTurn, busy = busy, onError = { error = it }) { send(FriendlyMove.Chain(it)) }
+                }
             }
             error?.let {
                 Text(it, fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
@@ -240,25 +258,37 @@ fun FriendlyGameScreen(
     }
 
     if (confirmClose) {
+        // A1 / A8: a pink-tinted dialog with the three choices as candy buttons.
         AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { confirmClose = false },
-            containerColor = Color.White,
-            title = { Text("Leave the game?", fontWeight = FontWeight.Black, color = FriendsPink.ink) },
-            text = { Text("It waits right here — come back any time. Or resign to end it now.", fontWeight = FontWeight.Bold, color = FriendsPink.sub) },
-            confirmButton = {
-                Row {
-                    TextButton(onClick = {
-                        confirmClose = false
-                        scope.launch { FriendlyGamesService.resign(gameId)?.let { game = it } }
-                    }) { Text("RESIGN", fontWeight = FontWeight.Black, color = Color(0xFFDC2626)) }
-                    TextButton(onClick = { confirmClose = false; onClose() }) {
-                        Text("LEAVE", fontWeight = FontWeight.Black, color = FriendsPink.solid)
-                    }
+            containerColor = DIALOG_TINT,
+            title = { Text("Leave the game?", fontWeight = FontWeight.Black, color = FriendsPink.heading) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("It waits right here — come back any time. Or resign to end it now.", fontWeight = FontWeight.Bold, color = FriendsPink.muted)
+                    Spacer(Modifier.height(2.dp))
+                    com.wordocious.app.ui.CandyButton(
+                        "KEEP PLAYING", onClick = { confirmClose = false },
+                        color = com.wordocious.app.ui.CandyColor.PURPLE, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                        modifier = Modifier.fillMaxWidth(), fill = true,
+                    )
+                    com.wordocious.app.ui.CandyButton(
+                        "LEAVE", onClick = { confirmClose = false; onClose() },
+                        color = com.wordocious.app.ui.CandyColor.PEACH, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                        modifier = Modifier.fillMaxWidth(), fill = true,
+                    )
+                    com.wordocious.app.ui.CandyButton(
+                        "RESIGN", onClick = {
+                            confirmClose = false
+                            scope.launch { FriendlyGamesService.resign(gameId)?.let { game = it } }
+                        },
+                        color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                        modifier = Modifier.fillMaxWidth(), fill = true,
+                    )
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { confirmClose = false }) { Text("KEEP PLAYING", fontWeight = FontWeight.Black, color = FriendsPink.label) }
-            },
+            confirmButton = {},
         )
     }
 }
@@ -315,6 +345,7 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
     val lost = g.result == "loss"
     val leftBg = if (won) YOU_WON else YOU_TINT
     val rightBg = if (lost) THEM_WON else THEM_TINT
+    val line = friendsLine(g.kind.color)
     val score = scoreOf(g.state)
     val me = AuthService.profile.value
     // The result's host (MASCOT_SPEC §3): O3, the prankster, pops on a win; R on a loss.
@@ -332,10 +363,13 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
                         start = Offset.Zero, end = Offset(size.width, size.height),
                     ))
                 }
-                .then(if (won && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
+                .then(if (won && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier)
+                .border(1.5.dp, line, RoundedCornerShape(16.dp)),
         ) {
+            // A1: the game's color as the top bar; the headline strip in its wash (no white frost).
+            Box(Modifier.fillMaxWidth().height(8.dp).background(g.kind.color))
             Column(
-                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+                Modifier.fillMaxWidth().background(friendsWash(g.kind.color, 0.10f)).padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(Modifier.padding(end = if (host != null) com.wordocious.app.ui.BANNER_HOST_CLEAR else 0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -369,7 +403,8 @@ private fun ScoreSide(label: String, name: String, url: String?, emoji: String?,
         )
         FriendFace(name, url, emoji, 44.dp, online = online, accentHex = accentHex)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = DEEP, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (score != null) Text("$score", fontSize = 30.sp, fontWeight = FontWeight.Black, color = DEEP)
+        // A2: the score as a soft number.
+        if (score != null) com.wordocious.app.ui.SoftNumber("$score", 30.sp, color = com.wordocious.app.ui.FinishInk.softNumber)
     }
 }
 
@@ -388,7 +423,10 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
             Alignment.Center,
         ) { Text("?", fontSize = 48.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid.copy(alpha = 0.7f)) }
         if (theirs == RpsPick.HIDDEN) {
-            Text("✓ ${them.uppercase()} PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.green)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp)
+                Text("${them.uppercase()} PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.green)
+            }
         } else {
             Text("${them.uppercase()} HASN'T PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label)
         }
@@ -419,7 +457,7 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
                     Modifier.weight(1f).height(118.dp)
                         .then(
                             if (selected) Modifier.shadow(10.dp, shape, ambientColor = FriendsTiles.purple.copy(alpha = 0.7f), spotColor = FriendsTiles.purple.copy(alpha = 0.7f)).clip(shape).background(FriendsTiles.purple)
-                            else Modifier.friendsCard(16.dp),
+                            else Modifier.friendsCard(16.dp, accent = FriendlyKind.RPS.color),
                         )
                         .alpha(if (enabled || selected) 1f else 0.55f)
                         .clickableNoRipple { if (enabled && mine == null) onPick(p) }
@@ -443,7 +481,7 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean) {
             Modifier.size(72.dp)
                 .then(
                     if (glow) Modifier.shadow(10.dp, shape, ambientColor = FriendsTiles.purple.copy(alpha = 0.8f), spotColor = FriendsTiles.purple.copy(alpha = 0.8f)).clip(shape).background(FriendsTiles.purple)
-                    else Modifier.clip(shape).background(FriendsPink.page),
+                    else Modifier.clip(shape).background(friendsWash(FriendsTiles.purple, 0.10f)),
                 ),
             Alignment.Center,
         ) { Image(painterResource(rpsArt(pick)), pick.raw, contentScale = ContentScale.Fit, modifier = Modifier.size(56.dp)) }
@@ -460,15 +498,24 @@ private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCel
             s.board[i] == null && tttLine(s.board.toMutableList().also { it[i] = me })?.side == me
         }.toSet()
     }
+    // J2: the winning three glow once a board is won.
+    val won = remember(s.board) { tttLine(s.board)?.cells?.toSet() ?: emptySet() }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // L: no grid lines — the cells sit apart on the tray.
             val tile: Dp = min(98.dp, (maxWidth - 20.dp) / 3)
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 (0 until 3).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         (0 until 3).forEach { col ->
                             val i = row * 3 + col
-                            TttTile(s.board[i], me, tile, hint = i in winning, enabled = myTurn && s.board[i] == null) { onCell(i) }
+                            TttTile(
+                                s.board[i], me, tile, hint = i in winning, win = i in won,
+                                label = "Row ${row + 1}, column ${col + 1}, " + when (s.board[i]) {
+                                    null -> "empty"; me -> "your X"; else -> "${them}'s O"
+                                },
+                                enabled = myTurn && s.board[i] == null,
+                            ) { onCell(i) }
                         }
                     }
                 }
@@ -476,40 +523,71 @@ private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCel
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
             LegendDot(FriendsTiles.purple, "YOU · X")
-            LegendDot(FriendsTiles.amber, "${them.uppercase()} · O")
+            LegendDot(TTT_PINK, "${them.uppercase()} · O")
         }
     }
 }
 
+/**
+ * A Tic-Tac-Tile cell (J2): an empty cell is frosted glass on the tray; a placed piece
+ * is the glossy art (`art_piece_ttt_x` purple for you, `art_piece_ttt_o` pink for them)
+ * dropping in with the type pop (swell 1.07 over [TileMotion.TYPE_MS]); the winning
+ * three glow. Reduce Motion: no pop. TalkBack reads [label].
+ */
 @Composable
-private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, enabled: Boolean, onClick: () -> Unit) {
+private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, win: Boolean, label: String, enabled: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
-    val bg = when (mark) { null -> Color.White; me -> FriendsTiles.purple; else -> FriendsTiles.amber }
+    val tone = when (mark) { null -> FriendsTiles.purple; me -> FriendsTiles.purple; else -> TTT_PINK }
     val glow = when {
-        mark == me -> FriendsTiles.purple.copy(alpha = 0.5f)
-        mark != null -> FriendsTiles.amber.copy(alpha = 0.5f)
+        win -> tone.copy(alpha = 0.9f)
+        mark != null -> tone.copy(alpha = 0.35f)
         hint -> FriendsTiles.purple.copy(alpha = 0.55f)
         else -> Color(0x184C1D95)
     }
+    // The type pop when a piece lands (not on first show of an already-placed piece).
+    val pop = remember { Animatable(1f) }
+    var seen by remember { mutableStateOf(mark) }
+    LaunchedEffect(mark) {
+        if (mark != null && seen == null && !WTheme.reducedMotion) {
+            pop.snapTo(0.6f)
+            pop.animateTo(1.07f, tween(TileMotion.TYPE_MS * 2 / 3, easing = FastOutSlowInEasing))
+            pop.animateTo(1f, tween(TileMotion.TYPE_MS / 3))
+        }
+        seen = mark
+    }
     Box(
-        Modifier.size(size).shadow(if (hint) 10.dp else 4.dp, shape, ambientColor = glow, spotColor = glow).clip(shape).background(bg)
-            .then(if (hint) Modifier.dashedBorder(2.dp, FriendsTiles.purple, 16.dp) else Modifier)
-            .clickableNoRipple { if (enabled) onClick() },
+        Modifier.size(size)
+            .then(if (enabled) Modifier.squishClickable(label = label, onClick = onClick) else Modifier.semantics { contentDescription = label })
+            .shadow(if (win || hint) 12.dp else 4.dp, shape, ambientColor = glow, spotColor = glow)
+            .clip(shape)
+            .background(
+                when {
+                    win -> friendsWash(tone, 0.3f)
+                    mark != null -> friendsWash(tone, 0.14f)
+                    else -> Color.White.copy(alpha = 0.55f)
+                },
+            )
+            .then(
+                when {
+                    hint -> Modifier.dashedBorder(2.dp, FriendsTiles.purple, 16.dp)
+                    win -> Modifier.border(2.5.dp, tone, shape)
+                    else -> Modifier.border(1.5.dp, friendsLine(if (mark == null) FriendsTiles.purple else tone, 0.3f), shape)
+                },
+            ),
         Alignment.Center,
     ) {
         if (mark != null) {
-            Canvas(Modifier.size(size * 0.42f)) {
-                val w = 4.dp.toPx()
-                if (mark == me) {
-                    drawLine(Color.White, Offset(0f, 0f), Offset(this.size.width, this.size.height), w, StrokeCap.Round)
-                    drawLine(Color.White, Offset(this.size.width, 0f), Offset(0f, this.size.height), w, StrokeCap.Round)
-                } else {
-                    drawCircle(Color.White, this.size.minDimension / 2f - w / 2f, style = Stroke(w))
-                }
-            }
+            Image(
+                painterResource(if (mark == me) R.drawable.art_piece_ttt_x else R.drawable.art_piece_ttt_o),
+                contentDescription = null, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(size * 0.74f).graphicsLayer { scaleX = pop.value; scaleY = pop.value }.clearAndSetSemantics { },
+            )
         }
     }
 }
+
+/** J2 the opponent's O pink. */
+private val TTT_PINK = Color(0xFFEC4899)
 
 @Composable
 private fun LegendDot(color: Color, text: String) {
@@ -552,17 +630,10 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
         }
         if (myTurn) {
             FriendsLabel("YOUR CALL")
+            // A8: the two calls as candy buttons.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(FriendsTiles.purple)
-                        .clickableNoRipple { onCall(CoinFace.HEADS) }.padding(vertical = 14.dp),
-                    Alignment.Center,
-                ) { Text("HEADS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White) }
-                Box(
-                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(FriendsPink.lavender)
-                        .clickableNoRipple { onCall(CoinFace.TAILS) }.padding(vertical = 14.dp),
-                    Alignment.Center,
-                ) { Text("TAILS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color(0xFF6D28D9)) }
+                CandyButton("HEADS", onClick = { onCall(CoinFace.HEADS) }, color = CandyColor.PURPLE, size = CandySize.LARGE, modifier = Modifier.weight(1f), fill = true)
+                CandyButton("TAILS", onClick = { onCall(CoinFace.TAILS) }, color = CandyColor.PINK, size = CandySize.LARGE, modifier = Modifier.weight(1f), fill = true)
             }
         } else if (whoseTurn(s) != null) {
             FriendsLabel("${them.uppercase()} CALLS")
@@ -570,8 +641,8 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
         FriendsLabel("WHAT'S ON THE LINE")
         Text(
             s.stake, fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid,
-            modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White)
-                .border(2.dp, FriendsPink.solid, RoundedCornerShape(50)).padding(horizontal = 14.dp, vertical = 7.dp),
+            modifier = Modifier.clip(RoundedCornerShape(50)).background(friendsWash(FriendlyKind.COIN.color, 0.2f))
+                .border(2.dp, FriendlyKind.COIN.color, RoundedCornerShape(50)).padding(horizontal = 14.dp, vertical = 7.dp),
         )
     }
 }
@@ -626,9 +697,10 @@ private fun PassBoard(
                         }
                     } else {
                         val ch = if (typingRow) typed.getOrNull(i) else null
+                        // B1: an empty tile is frosted glass (not solid white) with a faint lilac line.
                         Box(
-                            Modifier.size(44.dp).clip(shape).background(Color.White)
-                                .border(if (typingRow) 2.dp else 1.5.dp, if (typingRow && ch != null) FriendsTiles.purple else Color(0xFFE5E7EB), shape),
+                            Modifier.size(44.dp).clip(shape).background(if (typingRow && ch != null) Color.White else Color.White.copy(alpha = 0.55f))
+                                .border(if (typingRow) 2.dp else 1.5.dp, if (typingRow && ch != null) FriendsTiles.purple else Color(0xFFDCCFF5), shape),
                             Alignment.Center,
                         ) { Text(ch?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black, color = DEEP) }
                     }
@@ -652,17 +724,13 @@ private fun PassBoard(
                         val st = best[k]
                         KeyCap(
                             k.toString(), Modifier.weight(1f),
-                            bg = st?.let { tileColor(it) } ?: Color.White,
+                            bg = st?.let { tileColor(it) } ?: KEY_FACE,
                             ink = if (st == null) DEEP else Color.White,
                             enabled = !busy,
                         ) { if (typed.length < 5) typed += k }
                     }
                     if (r == 2) {
-                        Box(
-                            Modifier.weight(1.6f).height(46.dp).clip(RoundedCornerShape(8.dp)).background(Color.White)
-                                .clickableNoRipple { if (typed.isNotEmpty()) typed = typed.dropLast(1) },
-                            Alignment.Center,
-                        ) { Icon(Icons.AutoMirrored.Filled.Backspace, "Delete", tint = DEEP, modifier = Modifier.size(18.dp)) }
+                        DeleteKey(Modifier.weight(1.6f)) { if (typed.isNotEmpty()) typed = typed.dropLast(1) }
                     }
                 }
             }
@@ -670,15 +738,40 @@ private fun PassBoard(
     }
 }
 
+/** B2 a key as a tile: a light lilac face (or its state color) on a thicker lip, squishing on tap. */
 @Composable
 private fun KeyCap(label: String, modifier: Modifier, bg: Color, ink: Color, enabled: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(8.dp)
     Box(
-        modifier.height(46.dp).shadow(1.dp, RoundedCornerShape(8.dp)).clip(RoundedCornerShape(8.dp)).background(bg)
+        modifier.height(46.dp)
+            .squishClickable(label = label, enabled = enabled, onClick = onClick)
             .alpha(if (enabled) 1f else 0.5f)
-            .clickableNoRipple { if (enabled) onClick() },
+            .clip(shape).background(keyLip(bg))
+            .padding(bottom = 3.dp)
+            .clip(shape).background(bg),
         Alignment.Center,
     ) { Text(label, fontSize = if (label.length > 1) 11.sp else 15.sp, fontWeight = FontWeight.Black, color = ink, maxLines = 1) }
 }
+
+/** B2 the chunky purple backspace key. */
+@Composable
+private fun DeleteKey(modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier.height(46.dp)
+            .squishClickable(label = "Delete", onClick = onClick)
+            .clip(shape).background(keyLip(KEY_FACE))
+            .padding(bottom = 3.dp)
+            .clip(shape).background(KEY_FACE),
+        Alignment.Center,
+    ) { Icon(Icons.AutoMirrored.Filled.Backspace, null, tint = FriendsTiles.purple, modifier = Modifier.size(22.dp)) }
+}
+
+/** B2 the keys' light lilac face. */
+private val KEY_FACE = Color(0xFFF1EAFF)
+
+/** A key's lip: its face darkened. */
+private fun keyLip(face: Color): Color = Color(com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.18f, face.toArgb()))
 
 // ── Ghost (§9) ──────────────────────────────────────────────────────────────
 
@@ -715,7 +808,7 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                     s.fragment.forEachIndexed { i, ch -> PlayerTile(ch, s.letters.getOrNull(i) == me, tile, 10.dp) }
                     if (myTurn) {
                         Box(
-                            Modifier.size(tile).clip(RoundedCornerShape(10.dp)).background(if (picked != null) YOU_TINT else Color.White)
+                            Modifier.size(tile).clip(RoundedCornerShape(10.dp)).background(if (picked != null) YOU_TINT else Color.White.copy(alpha = 0.55f))
                                 .dashedBorder(2.dp, FriendsTiles.purple, 10.dp),
                             Alignment.Center,
                         ) { Text(picked?.toString() ?: "", fontSize = (tile.value * 0.46f).sp, fontWeight = FontWeight.Black, color = FriendsTiles.purple) }
@@ -747,24 +840,18 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                     if (keys.length < 10) Spacer(Modifier.weight((10 - keys.length) / 2f))
                     keys.forEach { k ->
                         val on = picked == k
-                        KeyCap(k.toString(), Modifier.weight(1f), bg = if (on) FriendsTiles.purple else Color.White, ink = if (on) Color.White else DEEP, enabled = !busy) { picked = k }
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = if (on) FriendsTiles.purple else KEY_FACE, ink = if (on) Color.White else DEEP, enabled = !busy) { picked = k }
                     }
                     if (keys.length < 10) Spacer(Modifier.weight((10 - keys.length) / 2f))
                 }
             }
             val letter = picked
-            Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(GHOST_RED)
-                    .alpha(if (letter != null && !busy) 1f else 0.5f)
-                    .clickableNoRipple { if (letter != null && !busy) onLetter(letter) }
-                    .padding(horizontal = 16.dp, vertical = 13.dp),
-                Alignment.Center,
-            ) {
-                Text(
-                    if (letter != null) "ADD $letter" else "PICK A LETTER", fontSize = 14.sp, fontWeight = FontWeight.Black,
-                    letterSpacing = 0.6.sp, color = Color.White, maxLines = 1,
-                )
-            }
+            CandyButton(
+                if (letter != null) "ADD $letter" else "PICK A LETTER",
+                onClick = { if (letter != null && !busy) onLetter(letter) },
+                color = CandyColor.PURPLE, size = CandySize.LARGE,
+                enabled = letter != null && !busy, modifier = Modifier.fillMaxWidth(), fill = true,
+            )
         }
         Text(
             "Spell a word and you lose the round. Leave a dead end and you lose it too.",
@@ -829,7 +916,7 @@ private fun ChainBoard(
                     val isLocked = i < locked
                     val optional = i >= WORD_MIN && ch == null
                     Box(
-                        Modifier.size(40.dp).clip(shape).background(if (isLocked) YOU_TINT else Color.White)
+                        Modifier.size(40.dp).clip(shape).background(if (isLocked) YOU_TINT else if (ch != null) Color.White else Color.White.copy(alpha = 0.55f))
                             .then(
                                 if (optional) Modifier.dashedBorder(2.dp, Color(0xFFCBD5E1), 8.dp)
                                 else Modifier.border(2.dp, if (ch != null) FriendsTiles.purple else Color(0xFFE5E7EB), shape),
@@ -851,14 +938,10 @@ private fun ChainBoard(
                         }
                     }
                     keys.forEach { k ->
-                        KeyCap(k.toString(), Modifier.weight(1f), bg = Color.White, ink = DEEP, enabled = !busy) { if (typed.length < WORD_MAX) typed += k }
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = KEY_FACE, ink = DEEP, enabled = !busy) { if (typed.length < WORD_MAX) typed += k }
                     }
                     if (r == 2) {
-                        Box(
-                            Modifier.weight(1.6f).height(46.dp).clip(RoundedCornerShape(8.dp)).background(Color.White)
-                                .clickableNoRipple { if (typed.length > locked) typed = typed.dropLast(1) },
-                            Alignment.Center,
-                        ) { Icon(Icons.AutoMirrored.Filled.Backspace, "Delete", tint = DEEP, modifier = Modifier.size(18.dp)) }
+                        DeleteKey(Modifier.weight(1.6f)) { if (typed.length > locked) typed = typed.dropLast(1) }
                     }
                 }
             }

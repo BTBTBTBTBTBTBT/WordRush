@@ -86,18 +86,6 @@ export function Icon3D({ name, size = 20, label, inline = false, priority = fals
   );
 }
 
-/**
- * The 3D icon that replaces a UI-chrome emoji slot (a highlight or feed row
- * whose icon is 🔥 / 🏆 / 👑), or null to keep the emoji.
- */
-export function icon3dForEmoji(emoji: string): Icon3DName | null {
-  const e = emoji.replace(/\uFE0F/g, '');
-  if (e === '\u{1F525}') return 'flame';
-  if (e === '\u{1F3C6}') return 'trophy';
-  if (e === '\u{1F451}') return 'crown';
-  return null;
-}
-
 /** Props a lucide icon takes, so a 3D icon can stand in an icon table unchanged. */
 export interface IconLikeProps {
   className?: string;

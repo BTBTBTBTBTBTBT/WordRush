@@ -29,18 +29,17 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { PlayClock } from '@/components/game/play-clock';
 import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
-import { CompletedCustomDaily } from '@/components/game/completed-custom-daily';
+import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { wordsearchElsewhere } from '@/lib/elsewhere-progress';
 import { playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
-import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 
 // Spyglass (More Games §17): ten themed words hidden in a 10 × 10 grid, four
@@ -233,7 +232,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const wordList = renderWordList(state, finished);
 
   return (
-    <GameBackground mode="WORDSEARCH" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
+    <GameBackground mode="WORDSEARCH" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="WORDSEARCH" onComplete={() => setShowVictory(false)} guesses={state.misses} guessLabel="Misses" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.misses} guessLabel="Misses" boardsSolved={state.found.length} totalBoards={state.words.length} timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -262,21 +261,17 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
       {completion ? (
         // Today's daily was finished on another device (founder, 2026-09-28): the
         // day's grid with the found words from the matches row, then the completed card.
-        <CompletedCustomDaily dbKey="WORDSEARCH" completion={completion}
-          boardsSolved={elsewhereState?.found.length} totalBoards={elsewhereState?.words.length} hintsUsed={elsewhereState?.hintsUsed}>
-          {elsewhereState && (
-            <>
-              <SpyglassGrid state={elsewhereState} onSelect={() => {}} disabled revealMissing={!completion.won} />
-              {renderWordList(elsewhereState, true)}
-            </>
-          )}
-        </CompletedCustomDaily>
+        <PuzzleElsewhere dbKey="WORDSEARCH" completion={completion}
+          boardsSolved={elsewhereState?.found.length} totalBoards={elsewhereState?.words.length} hintsUsed={elsewhereState?.hintsUsed}
+          moreExtra={elsewhereState ? renderWordList(elsewhereState, true) : undefined}>
+          {elsewhereState && <SpyglassGrid state={elsewhereState} onSelect={() => {}} disabled revealMissing={!completion.won} />}
+        </PuzzleElsewhere>
       ) : checking ? (
         // Header only while daily_results is read: no fresh-grid flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
         <>
-          {/* Grid, word chips and the two capsules are one centred block (founder, 2026-09-24). */}
+          {/* Grid, word chips and the two capsules are one centered block (founder, 2026-09-24). */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center gap-3 px-3 pb-3">
             <SpyglassGrid state={state} onSelect={onSelect} />
             {wordList}
@@ -296,37 +291,31 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
           </div>
         </>
       ) : (
+        // FINISH_SPEC R2: one screen — the result strip, the grid (found words
+        // capsuled; after a reveal the missed ones outlined) scaled to the room
+        // left, then the dock. The word list and the breakdown sit under More.
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="flex flex-col items-center gap-2 px-3 py-2">
-              <SpyglassGrid state={state} onSelect={() => {}} disabled revealMissing={!won} />
-              {wordList}
-            </div>
-            <div className="px-4 pb-4 animate-fade-in-up">
-              <ResultCard accent={WORDSEARCH_ACCENT}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
-                  style={{ backgroundColor: `${WORDSEARCH_ACCENT}15`, border: `2px solid ${WORDSEARCH_ACCENT}44`, color: WORDSEARCH_ACCENT }}>
-                  {state.found.length}/{state.words.length}
+          <PuzzleFinished
+            strip={
+              <ResultStrip won={won} guesses={state.misses} guessLabel={state.misses === 1 ? 'miss' : 'misses'} time={formatTime(elapsedSeconds)} points={points}
+                srText={`${won ? (gc === 10 ? 'Clean clear' : state.wordsShown ? 'Cleared with the list' : 'Grid cleared') : 'Revealed'}. ${state.found.length}/${state.words.length} found · ${missLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
+            }
+            board={<div className="px-1 pb-1"><SpyglassGrid state={state} onSelect={() => {}} disabled revealMissing={!won} /></div>}
+            dock={
+              <FinishedDock currentMode="WORDSEARCH" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
+                onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
+                extra={mode === 'daily' ? <DailyRankBadge gameMode="WORDSEARCH" /> : undefined} />
+            }
+            more={
+              <MoreDisclosure label="Words & score" accent={WORDSEARCH_ACCENT}>
+                <div className="flex flex-col gap-3">
+                  {wordList}
+                  <ScoreBreakdownCard gameMode="WORDSEARCH" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
+                    boardsSolved={state.found.length} totalBoards={state.words.length} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
                 </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>
-                    {won ? (gc === 10 ? 'Clean clear' : state.wordsShown ? 'Cleared with the list' : 'Grid cleared') : 'Revealed'}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {`${state.found.length}/${state.words.length} found · ${missLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
-                  </span>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <ShareGlyph onShare={handleShare} copied={copied} />
-                    {mode === 'daily' && <DailyRankBadge gameMode="WORDSEARCH" />}
-                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
-                  </div>
-                </div>
-              </ResultCard>
-              <ScoreBreakdownCard gameMode="WORDSEARCH" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
-                boardsSolved={state.found.length} totalBoards={state.words.length} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
-              {mode === 'daily' && <NextDailyCta currentMode="WORDSEARCH" />}
-            </div>
-          </div>
+              </MoreDisclosure>
+            }
+          />
           <BottomNav />
         </>
       )}

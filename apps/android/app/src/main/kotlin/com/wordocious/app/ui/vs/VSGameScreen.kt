@@ -77,7 +77,14 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wordocious.app.ui.bannerShimmer
-import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.miniGameCard
+import com.wordocious.app.ui.game.gameTray
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.heading
 import com.wordocious.app.ui.game.CornerHomeButton
 import com.wordocious.app.GameViewModel
 import com.wordocious.app.ui.game.GauntletStepper
@@ -127,8 +134,6 @@ private fun gauntletStageGradient(name: String): List<Color> = when (name) {
     else -> listOf(Color(0xFFC084FC), Color(0xFFF472B6))  // The Opening / fallback
 }
 
-/** Soft grey for the small LEAVE / CANCEL pills (VS polish §2). */
-private val VsSoftGrey = Color(0xFFF1F5F9)
 
 /**
  * VS match UI — ports iOS VSGameView / web vs-game.tsx screens
@@ -198,6 +203,7 @@ fun VSGameScreen(
                 title = "VS IS ALMOST READY",
                 body = "Real-time matches turn on once the multiplayer server is connected.",
                 button = "BACK", onButton = ::goHome,
+                pose = com.wordocious.app.ui.MascotId.C to "map",
             )
             VSScreen.QUEUE -> QueueScreen(vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, vm, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, ::goHome)
@@ -213,6 +219,7 @@ fun VSGameScreen(
                 title = "OPPONENT LEFT THE MATCH",
                 body = null,
                 button = "HOME", onButton = ::goHome,
+                pose = com.wordocious.app.ui.MascotId.O2 to "gasp",
             )
             // Zombie-match recovery — the server dropped the match while the app
             // was backgrounded past the reconnect grace. Nothing was recorded (no
@@ -222,6 +229,7 @@ fun VSGameScreen(
                 title = "MATCH ENDED WHILE YOU WERE AWAY",
                 body = vm.message ?: "The server couldn’t hold the match open that long.",
                 button = "HOME", onButton = ::goHome,
+                pose = com.wordocious.app.ui.MascotId.R to "wake",
             )
             VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, vm.isPro, vm.dailyWon, ::goHome, onGoPro, onPlayUnlimited)
         }
@@ -232,19 +240,24 @@ fun VSGameScreen(
         vm.opponentDisconnectedSeconds?.let { secs ->
             if (vm.screen == VSScreen.MATCH || vm.screen == VSScreen.WAITING) {
                 Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 8.dp), Alignment.TopCenter) {
+                    // K1: a tinted notice in the alert red with its band, the seconds soft (A2).
                     Row(
-                        Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xEBDC2626))
-                            .padding(horizontal = 14.dp, vertical = 9.dp),
+                        Modifier.padding(horizontal = 24.dp).vsPill(Color(0xFFDC2626), 14.dp, amount = 0.14f)
+                            .semantics(mergeDescendants = true) {
+                                liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                            }
+                            .padding(start = 12.dp, end = 14.dp, top = 9.dp, bottom = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Icon(Icons.Filled.WifiOff, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Filled.WifiOff, null, tint = Color(0xFFB91C1C), modifier = Modifier.size(15.dp))
                         Text(
-                            "${vm.opponentName} disconnected — you win by forfeit in ${secs}s unless they return",
-                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
-                            textAlign = TextAlign.Center,
+                            "${vm.opponentName} disconnected — you win by forfeit in",
+                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
+                        VsNumber("${secs}s", 15.sp)
+                        Text("unless they return", fontSize = 12.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading)
                     }
                 }
             }
@@ -295,17 +308,17 @@ private fun VsLoadingScreen(mode: GameMode, sub: String? = null, botArtId: Strin
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
-        Box(Modifier.vsCard(16.dp)) { VsModeTile(mode, 56.dp) }
+        VsModeTile(mode, 60.dp)
         // The cast's staggered wave replaces the spinner (MASCOT_SPEC §3); the label stays.
         com.wordocious.app.ui.CastRow(22.dp, motion = com.wordocious.app.ui.MascotMotion.WAVE)
-        Text(
-            "LOADING ${vsModeName(mode).uppercase()}",
-            fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.label,
-        )
+        VsCapsLabel("LOADING ${vsModeName(mode).uppercase()}", color = VsTeal.label, fontSize = 12.sp)
         if (sub != null) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (botArtId != null) BotAvatar(botArtId, 28.dp)
-                Text(sub, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
+            // D3: the bot coming to play waits in its own "waiting" pose on a tinted card.
+            VsTintedCard(Modifier.widthIn(max = 360.dp).fillMaxWidth(), corner = 18.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (botArtId != null) VsBotPose(botArtId, "waiting", 64.dp)
+                    Text(sub, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, modifier = Modifier.weight(1f))
+                }
             }
         }
     }
@@ -337,25 +350,28 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             ) {
-                Column(
-                    Modifier.widthIn(max = 380.dp).fillMaxWidth().vsCard(14.dp).padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
+                VsTintedCard(Modifier.widthIn(max = 380.dp).fillMaxWidth(), corner = 18.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
+                  Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // A7: a waiting character that isn't the page host (S).
+                    VsCastPose(com.wordocious.app.ui.MascotId.I, "waiting", 84.dp)
                     VsSectionLabel("YOUR INVITE CODE")
-                    Text(inviteCode, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp, color = VsTeal.deep)
+                    VsNumber(inviteCode, 30.sp, Modifier.semantics { contentDescription = "Invite code " + inviteCode.toCharArray().joinToString(" ") })
                     Text(
                         "Share this code — the match starts when your friend joins.",
                         fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center,
                     )
-                    VsTealButton("SHARE INVITE", Modifier.fillMaxWidth()) {
+                    VsTealButton("SHARE INVITE", Modifier.fillMaxWidth(), fill = true, size = com.wordocious.app.ui.CandySize.LARGE, icon = com.wordocious.app.ui.CandyIcon.SHARE) {
                         com.wordocious.app.data.ShareEvents.log("link_invite", vm.mode.name.lowercase(), "vs_lobby")
-                        com.wordocious.app.data.ShareHelper.share(context, "Join my Wordocious VS match — code $inviteCode\nhttps://wordocious.com/vs/join/$inviteCode")
+                        com.wordocious.app.data.ShareHelper.share(context, com.wordocious.app.data.ShareHelper.vsInviteText(vsModeName(vm.mode), "https://wordocious.com/vs/join/$inviteCode"), "Invite a friend")
                     }
+                  }
                 }
-                CircularProgressIndicator(color = VsTeal.ink, trackColor = VsTeal.soft, strokeWidth = 4.dp, modifier = Modifier.size(36.dp))
-                Text("WAITING FOR YOUR FRIEND · #${position + 1}", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = VsTeal.label)
-                VsSoftPill("CANCEL", bg = VsSoftGrey, ink = VsTeal.label) { onHome() }
+                CircularProgressIndicator(color = VS_ACCENT, trackColor = vsWash(VS_ACCENT, 0.24f), strokeWidth = 4.dp, modifier = Modifier.size(36.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    VsCapsLabel("WAITING FOR YOUR FRIEND ·", color = VsTeal.label, fontSize = 11.sp)
+                    VsNumber("#${position + 1}", 13.sp)
+                }
+                VsSoftPill("CANCEL", color = com.wordocious.app.ui.CandyColor.PEACH) { onHome() }
                 message?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center) }
             }
         }
@@ -369,9 +385,11 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
  *  distinct from the normal win overlay. Animates on appear. */
 @Composable
 private fun PhotoFinishStamp(clutch: Boolean) {
-    var shown by remember { mutableStateOf(false) }
+    // Reduce Motion: the stamp is simply there.
+    val still = WTheme.reducedMotion
+    var shown by remember { mutableStateOf(still) }
     val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (shown) 1f else 0.3f,
+        targetValue = if (shown || still) 1f else 0.3f,
         animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 260f),
         label = "pf",
     )
@@ -405,16 +423,15 @@ private fun CountdownOverlay(count: Int, mode: GameMode, isRematch: Boolean = fa
                 // A ring pulses out from behind each tick, so the number bursts
                 // instead of just swapping (iOS parity).
                 CountdownRing(count, accent)
+                // A1 the disc takes the mode's wash; A2 the digits are soft numbers.
                 Box(
                     Modifier.size(132.dp)
                         .shadow(8.dp, CircleShape, ambientColor = accent.copy(alpha = 0.35f), spotColor = accent.copy(alpha = 0.35f))
-                        .clip(CircleShape).background(Color.White),
+                        .clip(CircleShape).background(vsWash(accent, 0.14f)).border(2.dp, vsLine(accent), CircleShape)
+                        .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite; contentDescription = if (count == 0) "Go" else "$count" },
                     Alignment.Center,
                 ) {
-                    Text(
-                        if (count == 0) "GO!" else "$count",
-                        fontSize = if (count == 0) 52.sp else 80.sp, fontWeight = FontWeight.Black, color = accent,
-                    )
+                    VsNumber(if (count == 0) "GO!" else "$count", if (count == 0) 50.sp else 80.sp, Modifier.clearAndSetSemantics { })
                 }
             }
         }
@@ -592,8 +609,24 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             // Moment callout — opponent milestones (greens / board solved /
             // last guess) as a soft pill floating over the top of the board,
             // right under the opponent strip in every mode.
-            vm.callout?.let { text ->
-                Box(Modifier.fillMaxWidth().padding(top = 6.dp), Alignment.TopCenter) { VsCalloutPill(text) }
+            // D3: the bot's banter bubble (kind, per character) under the strip, its
+            // tail toward the bot; the K1 callout below it. A7: the callout's O2 steps
+            // aside when Opal is the bot on screen.
+            Column(Modifier.fillMaxWidth().padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                val castId = vm.cpuCastId
+                if (castId != null) {
+                    VsBanterBubble(vm.banter, BotPersonas.name(castId), vsBotColor(castId), Modifier.padding(start = 14.dp))
+                }
+                vm.callout?.let { text ->
+                    val botMascot = vsBotMascot(castId)
+                    Box(Modifier.fillMaxWidth(), Alignment.TopCenter) {
+                        VsCalloutPill(
+                            text,
+                            pose = (if (botMascot == com.wordocious.app.ui.MascotId.O2) vsSpareCast(botMascot, preferred = listOf(com.wordocious.app.ui.MascotId.I, com.wordocious.app.ui.MascotId.O1)) to "cheer"
+                            else com.wordocious.app.ui.MascotId.O2 to "gasp"),
+                        )
+                    }
+                }
             }
         }
         // ProperNoundle VS: Clue/Vowel/Consonant hint pills (parity with solo).
@@ -655,6 +688,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             isVersus = true,
             completed = gauntlet.stages[gauntlet.currentStage],
             next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
+            guessesSoFar = com.wordocious.app.ui.game.GauntletLook.guessesSoFar(gauntlet, state.boards),
         ) { game.advanceGauntletStage() }
     }
 
@@ -712,54 +746,75 @@ private fun VsStatRow(vm: VSMatchViewModel, game: GameViewModel, state: GameStat
     val max = game.maxGuesses
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         val solved = state.boards.count { it.status == GameStatus.WON }
+        // A2: the counts and the clock are soft numbers (theme-aware: the match page follows the theme).
+        val numSp = statSp * 1.18f
+        @Composable
+        fun Stat(num: String, label: String) {
+            Row(
+                Modifier.semantics(mergeDescendants = true) { },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                com.wordocious.app.ui.SoftNumber(num, numSp)
+                Text(label, color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
+            }
+        }
         when {
             isGauntlet -> {
                 if (state.boards.size > 1) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, statIcon + 3.dp)
                         Spacer(Modifier.width(3.dp))
-                        Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
+                        com.wordocious.app.ui.SoftNumber("$solved/${state.boards.size}", numSp)
                     }
                 }
-                Text("$used/$max guesses", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
+                Stat("$used/$max", "guesses")
             }
-            state.boards.size > 1 -> Text(
-                "$solved/${state.boards.size} solved · $used/$max guesses",
-                color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold,
-            )
-            else -> Text("$used/$max guesses", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
+            state.boards.size > 1 -> Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Stat("$solved/${state.boards.size}", "solved ·")
+                Stat("$used/$max", "guesses")
+            }
+            else -> Stat("$used/$max", "guesses")
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Schedule, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(statIcon))
             Spacer(Modifier.width(3.dp))
-            VsMatchClock(vm, statSp)
+            VsMatchClock(vm, numSp, soft = true)
         }
     }
 }
 
 /** m:ss since match start — the only thing that recomposes every second. */
 @Composable
-private fun VsMatchClock(vm: VSMatchViewModel, size: TextUnit, color: Color = WTheme.textMuted) {
+private fun VsMatchClock(vm: VSMatchViewModel, size: TextUnit, color: Color = WTheme.textMuted, soft: Boolean = false, light: Boolean = false) {
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
     @Suppress("UNUSED_EXPRESSION") tick
     val secs = vm.matchElapsedSeconds
-    Text("${secs / 60}:${"%02d".format(secs % 60)}", color = color, fontSize = size, fontWeight = FontWeight.Bold)
+    val text = "${secs / 60}:${"%02d".format(secs % 60)}"
+    // A2 soft digits: theme-aware on the match page, pinned light on the VS pages.
+    when {
+        light -> VsNumber(text, size)
+        soft -> com.wordocious.app.ui.SoftNumber(text, size)
+        else -> Text(text, color = color, fontSize = size, fontWeight = FontWeight.Bold)
+    }
 }
 
 /** Soft confirm card (VS polish §2): caps title, purple primary, soft secondary. */
 @Composable
 private fun VsConfirmDialog(title: String, body: String, confirm: String, dismiss: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        Column(
-            Modifier.fillMaxWidth().vsCard(18.dp).padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, textAlign = TextAlign.Center)
-            Text(body, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
-            PurpleButton(confirm, onClick = onConfirm)
-            SoftPurpleButton(dismiss, onClick = onDismiss)
+        // A1 a tinted dialog card; A8 the action pink, keep-playing peach.
+        VsTintedCard(com.wordocious.app.ui.PopupWidth.fillMaxWidth(), accent = VS_RESULT_ACCENT, corner = 20.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                VsCastPose(com.wordocious.app.ui.MascotId.O2, "gasp", 84.dp)
+                Text(
+                    title, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(body, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
+                CandyButtonFill(confirm, onConfirm, color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM)
+                CandyButtonFill(dismiss, onDismiss, color = com.wordocious.app.ui.CandyColor.PEACH, size = com.wordocious.app.ui.CandySize.MEDIUM)
+            }
         }
     }
 }
@@ -809,66 +864,81 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { Spacer(Modifier.height(4.dp)) }
-        // The one-window card.
+        // The one-window card (A1 tinted, top bar): the opponent waits in character —
+        // a bot in its own "waiting" pose (D3), a person beside S waiting (A7: one of each).
         item {
-            Column(Modifier.widthIn(max = 520.dp).fillMaxWidth().vsTealWindow()) {
+            val botId = vm.cpuPersona?.artId
+            val oppMascot = vsBotMascot(botId)
+            VsTintedCard(
+                Modifier.widthIn(max = 520.dp).fillMaxWidth(), corner = 18.dp, barHeight = 10.dp,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp), verticalArrangement = Arrangement.spacedBy(0.dp),
+            ) {
                 Column(
-                    Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                        .padding(start = 14.dp, top = 12.dp, end = 12.dp, bottom = 10.dp),
+                    Modifier.fillMaxWidth().background(vsWash(VS_ACCENT, 0.20f))
+                        .padding(start = 14.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         "${headName.uppercase()} IS STILL PLAYING", fontSize = 16.sp, fontWeight = FontWeight.Black,
-                        letterSpacing = 0.4.sp, color = VsTeal.deep, maxLines = 2,
+                        letterSpacing = 0.4.sp, color = VsTeal.deep, maxLines = 2, modifier = Modifier.semantics { heading() },
                     )
                     Text(stakes, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.2.sp, color = VsTeal.ink)
                 }
                 Row(
-                    Modifier.fillMaxWidth().padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    Modifier.fillMaxWidth().padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    // Breathing "live" ring signals an active opponent while you wait.
-                    Box(contentAlignment = Alignment.Center) {
-                        if (!WTheme.reducedMotion) {
-                            val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "pulse")
-                            val s by inf.animateFloat(
-                                0.9f, 1.4f,
-                                androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
-                                label = "s",
-                            )
-                            val a by inf.animateFloat(
-                                0.7f, 0f,
-                                androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
-                                label = "a",
-                            )
-                            // ART_SPEC §20: around a letter tile the ring is a concentric rounded square.
-                            val ringShape = if (vm.opponentInfo?.avatarUrl.isNullOrBlank()) RoundedCornerShape(48.dp * 0.24f + 2.dp) else CircleShape
-                            Box(
-                                Modifier.size(52.dp)
-                                    .graphicsLayer { scaleX = s; scaleY = s; alpha = a }
-                                    .border(2.dp, VsTeal.ink, ringShape),
-                            )
-                        }
-                        VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 48.dp, borderColor = Color.Transparent)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(oppName, fontSize = 14.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        val attempts = vm.opponent.attempts
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "$attempts ${if (attempts == 1) "guess" else "guesses"} · ",
-                                fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub,
-                            )
-                            VsMatchClock(vm, 11.5.sp, VsTeal.sub)
-                            if (liveTotalBoards > 1) {
-                                Text(
-                                    " · ${vm.opponent.boardsSolved}/$liveTotalBoards boards",
-                                    fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub,
+                    if (botId != null) {
+                        VsBotPose(botId, "waiting", 84.dp)
+                    } else {
+                        // Breathing "live" ring signals an active opponent while you wait.
+                        Box(Modifier.padding(start = 6.dp), contentAlignment = Alignment.Center) {
+                            if (!WTheme.reducedMotion) {
+                                val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "pulse")
+                                val s by inf.animateFloat(
+                                    0.9f, 1.4f,
+                                    androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
+                                    label = "s",
+                                )
+                                val a by inf.animateFloat(
+                                    0.7f, 0f,
+                                    androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
+                                    label = "a",
+                                )
+                                // ART_SPEC §20: around a letter tile the ring is a concentric rounded square.
+                                val ringShape = if (vm.opponentInfo?.avatarUrl.isNullOrBlank()) RoundedCornerShape(48.dp * 0.24f + 2.dp) else CircleShape
+                                Box(
+                                    Modifier.size(52.dp)
+                                        .graphicsLayer { scaleX = s; scaleY = s; alpha = a }
+                                        .border(2.dp, VS_ACCENT, ringShape),
                                 )
                             }
+                            VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 48.dp, borderColor = Color.Transparent)
                         }
                     }
-                    if (vm.opponentTyping) TypingDots(dotSize = 6.dp, color = VsTeal.ink)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(oppName, fontSize = 14.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val attempts = vm.opponent.attempts
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                            VsNumber("$attempts", 14.sp)
+                            Text(
+                                "${if (attempts == 1) "guess" else "guesses"} ·",
+                                fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub,
+                            )
+                            VsMatchClock(vm, 14.sp, light = true)
+                            if (liveTotalBoards > 1) {
+                                Text("·", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub)
+                                VsNumber("${vm.opponent.boardsSolved}/$liveTotalBoards", 14.sp)
+                                Text("boards", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub)
+                            }
+                        }
+                        // D3: the bot keeps chatting while you wait.
+                        if (botId != null && vm.cpuCastId != null) {
+                            VsBanterBubble(vm.banter, headName, vsBotColor(botId))
+                        }
+                    }
+                    if (vm.opponentTyping) TypingDots(dotSize = 6.dp, color = VS_ACCENT)
+                    if (botId == null) VsCastPose(vsSpareCast(oppMascot, preferred = listOf(com.wordocious.app.ui.MascotId.S, com.wordocious.app.ui.MascotId.U)), "waiting", 64.dp)
                 }
             }
         }
@@ -886,7 +956,7 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                     spectatorBoard(template.getOrNull(i), vm.opponent.tiles[i].orEmpty(), vm.wordLen, startRows)
                 }
                 Box(
-                    Modifier.widthIn(max = 520.dp).fillMaxWidth().vsCard(14.dp).padding(14.dp),
+                    Modifier.widthIn(max = 520.dp).fillMaxWidth().vsCard(16.dp).padding(14.dp),
                     Alignment.Center,
                 ) {
                     SpectatorBoardGrid(boards, vm.opponent.tiles)
@@ -897,15 +967,15 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
         item {
             val solvedLine = if (vm.totalBoards > 1) "${vm.myBoardsSolved}/${vm.totalBoards}"
             else if (vm.myStatus == GameStatus.WON) "Solved" else "Not solved"
-            Column(
-                Modifier.widthIn(max = 520.dp).fillMaxWidth().vsCard(14.dp).padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+            VsTintedCard(
+                Modifier.widthIn(max = 520.dp).fillMaxWidth(), accent = VS_RESULT_ACCENT, corner = 18.dp,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                VsSectionLabel("YOUR RESULT")
-                Row(Modifier.fillMaxWidth()) {
-                    ResultStat("$myGuesses", "GUESSES", Modifier.weight(1f))
-                    ResultStat(com.wordocious.core.vsClock(vm.playerTimeMs.toLong()), "TIME", Modifier.weight(1f))
-                    ResultStat(solvedLine, if (vm.totalBoards > 1) "BOARDS" else "RESULT", Modifier.weight(1f))
+                VsSectionLabel("YOUR RESULT", modifier = Modifier.semantics { heading() })
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VsStatTile("GUESSES", "$myGuesses", Modifier.weight(1f), accent = VS_RESULT_ACCENT)
+                    VsStatTile("TIME", com.wordocious.core.vsClock(vm.playerTimeMs.toLong()), Modifier.weight(1f), accent = VS_RESULT_ACCENT)
+                    VsStatTile(if (vm.totalBoards > 1) "BOARDS" else "RESULT", solvedLine, Modifier.weight(1f), accent = VS_RESULT_ACCENT, valueSize = if (solvedLine.length > 6) 15.sp else 22.sp)
                 }
             }
         }
@@ -921,51 +991,35 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                     target <= 0 || vm.opponent.attempts >= target
                 }
                 val skipHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-                Row(
-                    Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VsTeal.soft)
-                        .clickableNoRipple {
-                            skipHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                            vm.finishCpuNow()
-                        }
-                        .padding(vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                ) {
-                    Icon(
-                        if (winLocked) Icons.Filled.SportsScore else Icons.Filled.FastForward,
-                        null, tint = VsTeal.ink, modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        if (winLocked) "CLAIM YOUR WIN" else "SKIP TO RESULT",
-                        fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink,
-                    )
-                }
+                // A8: CLAIM YOUR WIN is the purple primary; SKIP TO RESULT the teal action.
+                CandyButtonFill(
+                    if (winLocked) "CLAIM YOUR WIN" else "SKIP TO RESULT",
+                    onClick = {
+                        skipHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        vm.finishCpuNow()
+                    },
+                    modifier = Modifier.widthIn(max = 520.dp),
+                    color = if (winLocked) com.wordocious.app.ui.CandyColor.PURPLE else com.wordocious.app.ui.CandyColor.TEAL,
+                    icon = if (winLocked) null else com.wordocious.app.ui.CandyIcon.ARROW,
+                )
             }
         }
-        item { VsSoftPill("LEAVE", bg = VsSoftGrey, ink = VsTeal.label) { onHome() } }
+        item { VsSoftPill("LEAVE", color = com.wordocious.app.ui.CandyColor.PEACH) { onHome() } }
         item { Spacer(Modifier.height(16.dp)) }
-    }
-}
-
-@Composable
-private fun ResultStat(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = VsTeal.label)
     }
 }
 
 /** The teal one-window look (VS banner): gradient, gloss, soft shadow, r16. */
 private fun Modifier.vsTealWindow(): Modifier =
-    this.shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
-        .clip(RoundedCornerShape(16.dp))
-        .drawBehind {
-            drawRect(Brush.verticalGradient(listOf(Color(0xFFD5F5EE), Color(0xFFE0F2FE))))
-            drawRect(Brush.linearGradient(
-                0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                start = Offset.Zero, end = Offset(size.width, size.height),
-            ))
+    // A1: the tinted teal window with the game-card top bar.
+    this.shadow(6.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
+        .clip(RoundedCornerShape(18.dp))
+        .background(vsWash(VS_ACCENT))
+        .drawWithContent {
+            drawContent()
+            drawRect(VS_ACCENT, size = Size(size.width, 10.dp.toPx()))
         }
+        .border(1.5.dp, vsLine(VS_ACCENT), RoundedCornerShape(18.dp))
 
 /**
  * A spectator board for the solo MiniBoardView: the local board's shape (word
@@ -1002,8 +1056,11 @@ private fun SpectatorBoardGrid(boards: List<BoardState>, tiles: Map<Int, List<Li
     if (boards.size <= 1) {
         val b = boards.firstOrNull() ?: return
         val rows = tiles[0].orEmpty()
-        Box(Modifier.widthIn(max = singleMaxWidth).fillMaxWidth().aspectRatio(ratio(b, rows.size))) {
-            MiniBoardView(board = b, stateRows = rows, modifier = Modifier.fillMaxSize())
+        // L: each spectated board sits in the shared game tray (won purple / lost slate).
+        Box(Modifier.widthIn(max = singleMaxWidth + 16.dp).fillMaxWidth().gameTray(VS_ACCENT, trayState(b), corner = 14.dp, padding = androidx.compose.foundation.layout.PaddingValues(7.dp))) {
+            Box(Modifier.fillMaxWidth().aspectRatio(ratio(b, rows.size))) {
+                MiniBoardView(board = b, stateRows = rows, modifier = Modifier.fillMaxSize())
+            }
         }
         return
     }
@@ -1014,14 +1071,23 @@ private fun SpectatorBoardGrid(boards: List<BoardState>, tiles: Map<Int, List<Li
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
                 rowIdx.forEach { i ->
                     val rows = tiles[i].orEmpty()
-                    Box(Modifier.weight(1f).aspectRatio(ratio(boards[i], rows.size))) {
-                        MiniBoardView(board = boards[i], stateRows = rows, modifier = Modifier.fillMaxSize())
+                    Box(Modifier.weight(1f).gameTray(VS_ACCENT, trayState(boards[i]), corner = 10.dp, padding = androidx.compose.foundation.layout.PaddingValues(4.dp), shadow = false)) {
+                        Box(Modifier.fillMaxWidth().aspectRatio(ratio(boards[i], rows.size))) {
+                            MiniBoardView(board = boards[i], stateRows = rows, modifier = Modifier.fillMaxSize())
+                        }
                     }
                 }
                 repeat(cols - rowIdx.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
+}
+
+/** L the tray state for a spectated board. */
+private fun trayState(b: BoardState): com.wordocious.app.ui.game.TrayState = when (b.status) {
+    GameStatus.WON -> com.wordocious.app.ui.game.TrayState.WON
+    GameStatus.LOST -> com.wordocious.app.ui.game.TrayState.LOST
+    else -> com.wordocious.app.ui.game.TrayState.PLAYING
 }
 
 /**
@@ -1040,24 +1106,24 @@ private fun GauntletSpectatorStage(idx: Int, opponent: OpponentProgressState, wo
     val offset = com.wordocious.core.gauntletStages.take(idx).sumOf { it.boardCount }
     Column(
         Modifier.widthIn(max = 520.dp).fillMaxWidth().alpha(if (locked) 0.55f else 1f)
-            .vsCard(14.dp).padding(14.dp),
+            .vsRow(accent, 16.dp, selected = active).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.size(26.dp).clip(CircleShape).background(accent.copy(alpha = if (locked) 0.10f else 0.18f)), Alignment.Center) {
+            Box(Modifier.size(28.dp).miniGameCardCompat(accent, locked), Alignment.Center) {
                 if (cleared) {
-                    Icon(Icons.Filled.Check, null, tint = accent, modifier = Modifier.size(12.dp))
+                    com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 16.dp)
                 } else {
-                    Text("${idx + 1}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (locked) VsTeal.label else accent)
+                    VsNumber("${idx + 1}", 13.sp)
                 }
             }
-            Text(stage.name.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (locked) VsTeal.label else VsTeal.deep)
+            Text(stage.name.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (locked) VsTeal.label else com.wordocious.app.ui.FinishInk.heading)
             Spacer(Modifier.weight(1f))
             when {
-                cleared -> Text("CLEARED", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink)
+                cleared -> VsCapsLabel("CLEARED", color = vsInk(accent))
                 active -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text("PLAYING", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink)
-                    TypingDots(dotSize = 5.dp, color = VsTeal.ink)
+                    VsCapsLabel("PLAYING", color = vsInk(accent))
+                    TypingDots(dotSize = 5.dp, color = accent)
                 }
                 else -> Icon3D(Icon3DName.LOCK, 14.dp) // ART_SPEC §5
             }
@@ -1076,6 +1142,10 @@ private fun GauntletSpectatorStage(idx: Int, opponent: OpponentProgressState, wo
         }
     }
 }
+
+/** A small numbered stage chip: a 28 dp mini game card in the stage accent. */
+private fun Modifier.miniGameCardCompat(accent: Color, locked: Boolean): Modifier =
+    this.miniGameCard(if (locked) Color(0xFF94A3B8) else accent, 8.dp)
 
 // ── Result (live + bot) ────────────────────────────────────────────────────────
 
@@ -1150,31 +1220,26 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // The window.
+            // The window (A1: a tinted card in the results' purple with its top bar).
             item {
-                // The result's host stands on the window (MASCOT_SPEC §3): S pops on a win,
-                // R stands still on a loss, U (calm) on a draw.
-                Box(Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(top = com.wordocious.app.ui.BANNER_HOST_PEEK)) {
-                    Column(
+                // D3: a bot stands on the window in character — its "victory" pose when it
+                // won, "goodgame" when you won or drew. People keep the result hosts
+                // (MASCOT_SPEC §3): S pops on a win, R stands still on a loss, U on a draw.
+                val botId = vm.cpuPersona?.artId?.takeIf { vm.isCpu && it != com.wordocious.core.BotCast.GHOST_ID }
+                Box(Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(top = com.wordocious.app.ui.BANNER_HOST_PEEK + if (botId != null) 18.dp else 0.dp)) {
+                    VsTintedCard(
                         Modifier.widthIn(max = 520.dp).fillMaxWidth()
-                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
-                            .clip(RoundedCornerShape(16.dp))
-                            .drawBehind {
-                                drawRect(leftBg, size = Size(size.width / 2f, size.height))
-                                drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
-                                drawRect(Brush.linearGradient(
-                                    0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                                    start = Offset.Zero, end = Offset(size.width, size.height),
-                                ))
-                            }
-                            .then(if (isWin && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
+                            .then(if (isWin && !WTheme.reducedMotion) Modifier.clip(RoundedCornerShape(18.dp)).bannerShimmer() else Modifier),
+                        accent = VS_RESULT_ACCENT, corner = 18.dp, barHeight = 10.dp,
+                        barColor = if (isWin) VS_RESULT_ACCENT else if (isDraw) Color(0xFF94A3B8) else Color(0xFF64748B),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp), verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
                         Column(
-                            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+                            Modifier.fillMaxWidth().background(vsWash(VS_RESULT_ACCENT, 0.20f)).padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             com.wordocious.app.ui.MomentTitle(
-                                headlineArt, Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR - 4.dp),
+                                headlineArt, Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR + if (botId != null) 26.dp else (-4).dp),
                                 widthFraction = 0.8f, maxHeight = 60.dp, contentDescription = headlineLabel,
                                 alignment = Alignment.CenterStart,
                             )
@@ -1187,18 +1252,35 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                             }
                         }
                         vm.result?.let { r ->
-                            Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ResultSide(myName, r.playerScore, r.playerGuesses, r.playerTime, mySolved, isWin && !isDraw, Modifier.weight(1f))
                                 ResultSide(oppName, r.opponentScore, r.opponentGuesses, r.opponentTime, oppSolved, !isWin && !isDraw, Modifier.weight(1f))
                             }
                         }
                     }
-                    com.wordocious.app.ui.Mascot(
-                        if (isDraw) com.wordocious.app.ui.Mascots.vsDraw else if (isWin) com.wordocious.app.ui.Mascots.vsWin else com.wordocious.app.ui.Mascots.vsLoss,
-                        56.dp,
-                        Modifier.align(Alignment.TopEnd).offset(x = (-2).dp, y = -com.wordocious.app.ui.BANNER_HOST_PEEK),
-                        motion = if (isWin && !isDraw) com.wordocious.app.ui.MascotMotion.POP else com.wordocious.app.ui.MascotMotion.NONE,
-                    )
+                    if (botId != null) {
+                        VsBotPose(
+                            botId, if (!isWin && !isDraw) "victory" else "goodgame", 92.dp,
+                            Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = -(com.wordocious.app.ui.BANNER_HOST_PEEK + 18.dp)),
+                        )
+                    } else {
+                        com.wordocious.app.ui.Mascot(
+                            if (isDraw) com.wordocious.app.ui.Mascots.vsDraw else if (isWin) com.wordocious.app.ui.Mascots.vsWin else com.wordocious.app.ui.Mascots.vsLoss,
+                            56.dp,
+                            Modifier.align(Alignment.TopEnd).offset(x = (-2).dp, y = -com.wordocious.app.ui.BANNER_HOST_PEEK),
+                            motion = if (isWin && !isDraw) com.wordocious.app.ui.MascotMotion.POP else com.wordocious.app.ui.MascotMotion.NONE,
+                        )
+                    }
+                }
+            }
+            // D3: the bot's last word (its win / good-game line), in its bubble.
+            vm.endBanter?.let { line ->
+                vm.cpuCastId?.let { castId ->
+                    item {
+                        Box(Modifier.widthIn(max = 520.dp).fillMaxWidth(), Alignment.CenterEnd) {
+                            VsBanterBubble(line, BotPersonas.name(castId), vsBotColor(castId))
+                        }
+                    }
                 }
             }
             item {
@@ -1214,15 +1296,21 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                     item {
                         Text(
                             com.wordocious.app.data.HeadToHeadService.headToHeadLine(oppName, h2h),
-                            fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsPurple.mid, textAlign = TextAlign.Center,
+                            fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsPurple.deep, textAlign = TextAlign.Center,
+                            modifier = Modifier.vsPill(VS_RESULT_ACCENT, 12.dp).padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 5.dp),
                         )
                     }
                 }
             }
             // CPU practice flourish: photo finish + streak / milestone / cosmetic.
-            if (vm.isCpu && (vm.photoFinish != null || vm.cpuMilestone != null || vm.cpuStreak > 0 || vm.cpuUnlock != null)) {
+            if (vm.isCpu && (vm.photoFinish != null || vm.cpuMilestone != null || vm.cpuStreak > 0 || vm.cpuUnlock != null || vm.ladderJustCleared)) {
                 item {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // A1: the streak / milestone / unlock lines sit on a gold-tinted card.
+                    VsTintedCard(
+                        Modifier.widthIn(max = 520.dp).fillMaxWidth(), accent = VS_GOLD_ACCENT, corner = 16.dp, barHeight = 6.dp,
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                    ) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         vm.photoFinish?.let { pf -> PhotoFinishStamp(pf == "clutch") }
                         vm.cpuMilestone?.let { m ->
                             // Streak milestone: the STREAK! moment lettering (ART_SPEC §6) over the count.
@@ -1231,24 +1319,60 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
                             ) {
                                 com.wordocious.app.ui.MomentTitle(com.wordocious.app.ui.MomentArt.STREAK, widthFraction = 0.5f, maxHeight = 48.dp)
-                                Text("$m-win bot streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 18.dp)
+                                    VsNumber("$m", 20.sp)
+                                    Text("-win bot streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
+                                }
                             }
                         }
-                            ?: run { if (vm.cpuStreak > 0) Text("Bot win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub) }
+                            ?: run {
+                                if (vm.cpuStreak > 0) Row(
+                                    Modifier.semantics(mergeDescendants = true) { },
+                                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 16.dp)
+                                    Text("Bot win streak", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF92400E))
+                                    VsNumber("${vm.cpuStreak}", 16.sp)
+                                }
+                            }
                         vm.cpuUnlock?.let {
-                            Text("🏅 Unlocked ${BotPersonas.persona(vm.cpuPersona?.tier ?: BotTier.HARD).name}’s badge!", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(vm.cpuPersona?.color ?: 0xFFEF4444))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                androidx.compose.foundation.Image(
+                                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_medal_trophy), contentDescription = null,
+                                    modifier = Modifier.size(22.dp).clearAndSetSemantics { },
+                                )
+                                Text("Unlocked ${vm.cpuPersona?.name ?: "the bot"}’s badge!", fontSize = 12.sp, fontWeight = FontWeight.Black, color = vsInk(Color(vm.cpuPersona?.color ?: 0xFFEF4444)))
+                            }
                         }
+                        // The whole ladder, cleared (all ten rungs): the celebration art.
+                        if (vm.ladderJustCleared) {
+                            androidx.compose.foundation.Image(
+                                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_scene_ladder_cleared), contentDescription = null,
+                                modifier = Modifier.size(150.dp).clearAndSetSemantics { },
+                            )
+                            Text(
+                                "LADDER CLEARED! You beat all ten bots.", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF78350F),
+                                textAlign = TextAlign.Center, modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
+                            )
+                        }
+                    }
                     }
                 }
             }
             if (vm.rematch == RematchState.RECEIVED) {
                 item {
-                    Column(
-                        Modifier.widthIn(max = 520.dp).fillMaxWidth().vsCard(14.dp).padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
+                    // K1: the rematch offer as a notice — pink, the sender's tile, S ready.
+                    VsNoticeCard(
+                        accent = Color(0xFFEC4899),
+                        label = "$headName wants a rematch",
+                        onClick = null,
+                        modifier = Modifier.widthIn(max = 520.dp),
+                        avatar = { VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 38.dp, borderColor = Color.Transparent) },
+                        pose = vsSpareCast(vsBotMascot(vm.cpuCastId), preferred = listOf(com.wordocious.app.ui.MascotId.S, com.wordocious.app.ui.MascotId.O1)) to "ready",
                     ) {
-                        Text("${headName.uppercase()} WANTS A REMATCH", fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, textAlign = TextAlign.Center)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("${headName.uppercase()} WANTS A REMATCH", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep)
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             SoftPurpleButton("DECLINE", Modifier.weight(1f)) { vm.declineRematch() }
                             PurpleButton("ACCEPT", modifier = Modifier.weight(1f)) { vm.acceptRematch() }
                         }
@@ -1259,20 +1383,23 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
             item {
                 Column(Modifier.widthIn(max = 520.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     when (vm.rematch) {
-                        RematchState.DECLINED -> SoftPurpleButton("NO REMATCH", Modifier.alpha(0.6f)) {}
-                        RematchState.OFFERED -> PurpleButton("WAITING…", modifier = Modifier.alpha(0.7f)) {}
+                        RematchState.DECLINED -> SoftPurpleButton("NO REMATCH", enabled = false) {}
+                        RematchState.OFFERED -> PurpleButton("WAITING…", enabled = false) {}
                         RematchState.RECEIVED -> {}
-                        RematchState.IDLE -> PurpleButton("REMATCH") {
+                        RematchState.IDLE -> PurpleButton(if (vm.isCpu) "PLAY AGAIN" else "REMATCH") {
                             if (vm.isPro) vm.offerRematch() else showRematchUpsell = true
                         }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SoftPurpleButton("HOME", Modifier.weight(1f)) { onHome() }
-                        SoftPurpleButton("SHARE", Modifier.weight(1f)) {
-                            val text = if (isWin) "I just beat $oppName in a Wordocious VS $modeLabel duel! ⚔️🏆"
-                            else if (isDraw) "$oppName and I battled to a draw in VS $modeLabel on Wordocious! ⚔️"
-                            else "Epic VS $modeLabel duel against $oppName on Wordocious! ⚔️"
-                            val payload = "$text\nhttps://wordocious.com"
+                    // A8: Home is a round candy icon; SHARE the pink secondary.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        com.wordocious.app.ui.CandyRoundButton(
+                            "Home", onClick = { onHome() }, color = com.wordocious.app.ui.CandyColor.PEACH, diameter = 44.dp,
+                        ) { com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TAB_HOME, 24.dp) }
+                        com.wordocious.app.ui.CandyButton("SHARE", modifier = Modifier.weight(1f), color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM, icon = com.wordocious.app.ui.CandyIcon.SHARE, fill = true, onClick = {
+                            // S4 copy; S1: the card goes out as the image only — this text is
+                            // only the fallback when no image can be written.
+                            val text = com.wordocious.app.data.ShareHelper.vsResultText(isWin, isDraw, oppName, vsModeName(vm.mode))
+                            val payload = "$text\nwordocious.com"
                             // Render the VS share card (same aesthetic as the daily cards);
                             // text-only fallback when there's no result payload.
                             val r = vm.result
@@ -1300,7 +1427,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                             } else {
                                 com.wordocious.app.data.ShareHelper.share(context, payload)
                             }
-                        }
+                        })
                     }
                 }
             }
@@ -1309,7 +1436,16 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                 item {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         if (vm.cpuSessionWins + vm.cpuSessionLosses > 0) {
-                            Text("This session — You ${vm.cpuSessionWins} · Bots ${vm.cpuSessionLosses}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub)
+                            Row(
+                                Modifier.vsPill(VS_ACCENT, 12.dp).padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 4.dp)
+                                    .semantics(mergeDescendants = true) { contentDescription = "This session: you ${vm.cpuSessionWins}, bots ${vm.cpuSessionLosses}" },
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                VsCapsLabel("THIS SESSION · YOU", color = VsTeal.ink)
+                                VsNumber("${vm.cpuSessionWins}", 14.sp)
+                                VsCapsLabel("· BOTS", color = VsTeal.ink)
+                                VsNumber("${vm.cpuSessionLosses}", 14.sp)
+                            }
                         }
                         Text("Bot game — counts in your Bots record, not People", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VsTeal.label)
                     }
@@ -1349,13 +1485,13 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
     // Confetti for wins only (web Confetti / VictoryOverlay parity).
     if (isWin && !WTheme.reducedMotion) VsConfetti()
     if (showRematchUpsell) {
-        VSLimitUpsellModal(onGoPro = onGoPro, onClose = { showRematchUpsell = false })
+        VSLimitUpsellModal(onGoPro = onGoPro, onClose = { showRematchUpsell = false }, exclude = vsBotMascot(vm.cpuCastId))
     }
     // Free tier received a rematch offer — it was auto-declined in the VM
     // (non-Pro can't accept, and the opponent must not hang on "Waiting…");
     // iOS parity: surface the same Pro-limit modal instead of an inline card.
     if (vm.rematchProUpsell) {
-        VSLimitUpsellModal(onGoPro = onGoPro, onClose = { vm.rematchProUpsell = false })
+        VSLimitUpsellModal(onGoPro = onGoPro, onClose = { vm.rematchProUpsell = false }, exclude = vsBotMascot(vm.cpuCastId))
     }
 }
 
@@ -1365,24 +1501,28 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
 private fun ResultSide(name: String, score: Double, guesses: Int, timeMs: Double, solved: Boolean, winner: Boolean, modifier: Modifier) {
     val penalty = kotlin.math.max(0.0, score - guesses)
     val secs = kotlin.math.round(timeMs / 1000).toInt()   // iOS rounds, not truncates
-    Column(modifier.padding(horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+    // A1 / A2: each side is a tinted stat tile (the winner's stronger, with a ring), the score soft.
+    Column(
+        modifier.vsRow(if (winner) VS_RESULT_ACCENT else Color(0xFF94A3B8), 14.dp, selected = winner).padding(horizontal = 6.dp, vertical = 10.dp)
+            .semantics(mergeDescendants = true) { },
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             if (winner) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 16.dp)
             Text(name.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = VsPurple.deep, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Text(String.format(Locale.US, "%.2f", score), fontSize = 34.sp, fontWeight = FontWeight.Black, color = VsPurple.deep)
+        VsNumber(String.format(Locale.US, "%.2f", score), 32.sp)
         Text(
             "$guesses ${if (guesses == 1) "guess" else "guesses"} + ${String.format(Locale.US, "%.2f", penalty)} time",
             fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VsPurple.mid, textAlign = TextAlign.Center,
         )
-        Text("${secs / 60}:${"%02d".format(secs % 60)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VsPurple.mid)
+        VsNumber("${secs / 60}:${"%02d".format(secs % 60)}", 13.sp)
         Text(
             if (solved) "SOLVED" else "NOT SOLVED",
             fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-            color = if (solved) Color.White else Color(0xFF475569),
-            modifier = Modifier.clip(RoundedCornerShape(50))
-                .background(if (solved) VsPurple.ink else Color(0xFFE2E8F0))
-                .padding(horizontal = 10.dp, vertical = 3.dp),
+            color = if (solved) VsPurple.deep else Color(0xFF475569),
+            modifier = Modifier.vsPill(if (solved) VS_RESULT_ACCENT else Color(0xFF64748B), 50.dp, amount = if (solved) 0.2f else 0.12f)
+                .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 3.dp),
         )
     }
 }
@@ -1391,20 +1531,30 @@ private fun ResultSide(name: String, score: Double, guesses: Int, timeMs: Double
 
 /** A one-card notice on the VS page (opponent left, match gone, not configured). */
 @Composable
-private fun VsNoticeScreen(icon: @Composable () -> Unit, title: String, body: String?, button: String, onButton: () -> Unit) {
+private fun VsNoticeScreen(
+    icon: @Composable () -> Unit,
+    title: String,
+    body: String?,
+    button: String,
+    onButton: () -> Unit,
+    /** A cast pose that fits the notice (A7: never the page host twice). */
+    pose: Pair<com.wordocious.app.ui.MascotId, String>? = null,
+) {
     Box(
         Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
         Alignment.Center,
     ) {
-        Column(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().vsCard(16.dp).padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(Modifier.size(48.dp).clip(CircleShape).background(VsTeal.soft), Alignment.Center) { icon() }
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, textAlign = TextAlign.Center)
-            body?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center) }
-            VsTealButton(button, Modifier.fillMaxWidth(), onClick = onButton)
+        VsTintedCard(Modifier.widthIn(max = 420.dp).fillMaxWidth(), corner = 20.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (pose != null) VsCastPose(pose.first, pose.second, 110.dp)
+                else VsIconSquare { icon() }
+                Text(
+                    title, fontSize = 17.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { heading() },
+                )
+                body?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center) }
+                CandyButtonFill(button, onButton, color = com.wordocious.app.ui.CandyColor.TEAL)
+            }
         }
     }
 }
@@ -1420,28 +1570,28 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
         ) {
             Column(Modifier.widthIn(max = 520.dp).fillMaxWidth().vsTealWindow()) {
                 Column(
-                    Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                        .padding(start = 14.dp, top = 12.dp, end = 12.dp, bottom = 10.dp),
+                    Modifier.fillMaxWidth().padding(top = 10.dp).background(vsWash(VS_ACCENT, 0.20f))
+                        .padding(start = 14.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text("ALREADY PLAYED", fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep)
-                    // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight).
+                    Text("ALREADY PLAYED", fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, modifier = Modifier.semantics { heading() })
+                    // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight), soft (A2).
                     var cdTick by remember { mutableStateOf(0) }
                     LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); cdTick++ } }
                     @Suppress("UNUSED_EXPRESSION") cdTick
                     val s = vsSecondsUntilLocalMidnight()
-                    Text(
-                        "TODAY’S VS PUZZLE · NEXT IN ${"%02d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60)}",
-                        fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = VsTeal.ink,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        VsCapsLabel("TODAY’S VS PUZZLE · NEXT IN", color = VsTeal.ink, fontSize = 10.sp)
+                        VsNumber("%02d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60), 13.sp)
+                    }
                 }
                 Column(
                     Modifier.fillMaxWidth().padding(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // Today's daily VS outcome — W/L pill (the user asked for an explicit result here).
-                    // Played today: U's all-done scene (ART_SPEC §7).
-                    com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.ALL_DONE, height = 110.dp)
+                    // Played today: U waiting for tomorrow (a cast pose, G5).
+                    VsCastPose(com.wordocious.app.ui.MascotId.U, "waiting", 110.dp)
                     // Moment lettering (ART_SPEC §6): YOU WIN! / YOU LOSE.
                     won?.let {
                         com.wordocious.app.ui.MomentTitle(
@@ -1452,7 +1602,13 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
                     if (answer.isNotEmpty()) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             answer.uppercase().forEach { ch ->
-                                Box(Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)).background(VsPurple.ink), Alignment.Center) {
+                                // The game kit's purple tile (B1): gradient face, darker lip.
+                                Box(
+                                    Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF4C1D95))
+                                        .padding(bottom = 3.dp).clip(RoundedCornerShape(8.dp))
+                                        .background(Brush.verticalGradient(listOf(Color(0xFFA66BFF), VsPurple.ink))),
+                                    Alignment.Center,
+                                ) {
                                     Text(ch.toString(), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
                                 }
                             }
@@ -1467,9 +1623,9 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
             }
             Column(Modifier.widthIn(max = 520.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Pro: route to the VS lobby for unlimited (any-mode) battles (web parity).
-                if (isPro) VsTealButton("PLAY UNLIMITED VS", Modifier.fillMaxWidth(), onClick = onPlayUnlimited)
-                else PurpleButton("UPGRADE TO PRO", onClick = onGoPro)
-                VsSoftPill("HOME", Modifier.align(Alignment.CenterHorizontally), bg = VsSoftGrey, ink = VsTeal.label) { onHome() }
+                if (isPro) CandyButtonFill("PLAY UNLIMITED VS", onPlayUnlimited, color = com.wordocious.app.ui.CandyColor.TEAL, icon = com.wordocious.app.ui.CandyIcon.PLAY)
+                else CandyButtonFill("UPGRADE TO PRO", onGoPro, color = com.wordocious.app.ui.CandyColor.AMBER)
+                VsSoftPill("HOME", Modifier.align(Alignment.CenterHorizontally), color = com.wordocious.app.ui.CandyColor.PEACH) { onHome() }
             }
         }
     }
@@ -1485,39 +1641,19 @@ private fun vsSecondsUntilLocalMidnight(): Long {
     return ((cal.timeInMillis - now) / 1000).coerceAtLeast(0)
 }
 
-/** VS Pro-upsell modal — ports web vs-limit-modal.tsx (shown on non-Pro Rematch). */
+/**
+ * VS Pro-upsell modal — ports web vs-limit-modal.tsx (shown on non-Pro Rematch).
+ * G5 / FINISH_SPEC D3: the gold-tinted card family with its top bar, a waiting cast
+ * pose (A7: not the bot on screen), the reset clock soft, Go Pro = the large amber
+ * candy, Maybe later = peach.
+ */
 @Composable
-private fun VSLimitUpsellModal(onGoPro: () -> Unit, onClose: () -> Unit) {
-    Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)).clickableNoRipple(onClose)
-            .statusBarsPadding().navigationBarsPadding(),
-        Alignment.Center,
-    ) {
-        Column(
-            Modifier.padding(horizontal = 24.dp).widthIn(max = 420.dp).fillMaxWidth().vsCard(18.dp).clickableNoRipple { }
-                .padding(22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Played-today limit: U's all-done scene (ART_SPEC §7).
-            com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.ALL_DONE, height = 110.dp)
-            Text("DAILY VS USED", fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep)
-            Text(
-                "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",
-                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center,
-            )
-            var tick by remember { mutableStateOf(0) }
-            LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
-            @Suppress("UNUSED_EXPRESSION") tick
-            val s = vsSecondsUntilLocalMidnight()
-            Text(
-                "RESETS IN ${"%02d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60)}",
-                fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(VsTeal.soft)
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-            )
-            PurpleButton("GO PRO") { onClose(); onGoPro() }
-            SoftPurpleButton("MAYBE LATER", onClick = onClose)
-        }
-    }
+private fun VSLimitUpsellModal(onGoPro: () -> Unit, onClose: () -> Unit, exclude: com.wordocious.app.ui.MascotId? = null) {
+    VsLimitWindow(
+        title = "DAILY VS USED",
+        body = "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",
+        secondsUntilReset = ::vsSecondsUntilLocalMidnight,
+        onGoPro = onGoPro, onClose = onClose,
+        pose = vsSpareCast(exclude, com.wordocious.app.ui.Mascots.vsWin, com.wordocious.app.ui.Mascots.vsLoss) to "waiting",
+    )
 }

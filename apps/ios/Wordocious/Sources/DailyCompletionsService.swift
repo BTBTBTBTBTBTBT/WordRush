@@ -178,7 +178,9 @@ final class DailyCompletionsStore: ObservableObject {
         let client = AuthService.shared.client
         guard (try? await client.auth.session) != nil,
               let userId = try? await client.auth.session.user.id.uuidString else {
-            byMode = [:]; optimistic = [:]; dataDay = today; Self.writeCache(nil); return
+            byMode = [:]; optimistic = [:]; dataDay = today; Self.writeCache(nil)
+            WidgetBridge.update(completions: byMode)   // §AL: a fresh 0/N, ⭐ 0 widget
+            return
         }
         do {
             let rows: [DailyCompletion] = try await client.from("daily_results")

@@ -15,6 +15,8 @@ struct AuthView: View {
     /// When presented as a sheet (e.g. from Profile) we show a Close button.
     /// When used as the app-wide login gate there is nothing to dismiss to.
     var showsCloseButton: Bool = true
+    /// FINISH_SPEC §AO: the first-run flow opens straight on Sign up / Sign in.
+    var initialMode: Mode? = nil
     @ObservedObject var auth = AuthService.shared
     @Environment(\.dismiss) private var dismiss
 
@@ -46,7 +48,7 @@ struct AuthView: View {
                                 ArtTitle(.welcome, maxWidth: 360)
                             }
                             Wordmark(size: 30)
-                            Text("Daily Word Games").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                            Text("Daily Word Games").font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                         }.padding(.top, 20)
 
                         card
@@ -63,16 +65,17 @@ struct AuthView: View {
                 }
             }
         }
+        .onAppear { if let initialMode { mode = initialMode } }
     }
 
     private var card: some View {
         VStack(spacing: 16) {   // web card space-y-4 between header / social / divider / form
             Text(mode == .signin ? "WELCOME BACK!" : mode == .signup ? "JOIN THE FUN!" : "RESET PASSWORD")
-                .font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                .font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
 
             if mode == .reset {
                 Text("Enter your email and we'll send you a link to set a new password. Works for Google and Apple accounts too.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center)
             }
 
@@ -89,17 +92,18 @@ struct AuthView: View {
                 Button(action: signInWithGoogle) {
                     HStack(spacing: 12) {
                         Image("google").resizable().scaledToFit().frame(width: 20, height: 20)
-                        Text("Continue with Google").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                        Text("Continue with Google").font(Brand.font(14, .heavy)).foregroundStyle(FinishInk.heading)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                    // The provider's branded button keeps its logo + label; its face
+                    // is a light tinted tile (§A1) instead of plain white.
+                    .g5Option(active: false, accent: G5Accent.purple, radius: 12)
                 }.buttonStyle(.squish).disabled(working || !SupabaseConfig.isConfigured)
 
                 HStack(spacing: 10) {
-                    Rectangle().fill(Theme.border).frame(height: 1)
-                    Text("or").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)
-                    Rectangle().fill(Theme.border).frame(height: 1)
+                    G5Divider()
+                    Text("or").font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.secondary)
+                    G5Divider()
                 }
             }
 
@@ -117,44 +121,44 @@ struct AuthView: View {
                 }
 
                 if resetSent || signupSent {
-                    Text(signupSent
-                         ? "Account created. Check your email for a confirmation link, then sign in."
-                         : "Check your email — if an account exists for that address, a reset link is on its way.")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x047857))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xECFDF5)))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xA7F3D0), lineWidth: 1))
+                    G5Notice(signupSent
+                             ? "Account created. Check your email for a confirmation link, then sign in."
+                             : "Check your email — if an account exists for that address, a reset link is on its way.",
+                             tone: .success)
                 }
 
                 if let error {
-                    Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xFEE2E2)))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFECACA), lineWidth: 1))
+                    G5Notice(error, tone: .error)
                 }
 
+                // §A8: the primary action is a large purple candy button.
                 Button(action: submit) {
-                    HStack { if working { ProgressView().tint(.white) }
-                        Text(working ? "Loading..." : (mode == .signin ? "Sign In" : mode == .signup ? "Create Account" : "Send Reset Link")) }
-                    .font(Brand.font(15, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12)
-                        .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))   // btn-3d
+                    CandyLabel(title: working ? "Loading..." : (mode == .signin ? "Sign In" : mode == .signup ? "Create Account" : "Send Reset Link")) {
+                        if working { ProgressView().tint(.white) }
+                    }
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
                 .disabled(working || !SupabaseConfig.isConfigured || (mode == .reset && resetSent)
                           || (mode == .signup && signupSent))
 
-                Button(mode == .signin ? "Don't have an account? Sign up"
-                       : mode == .signup ? "Already have an account? Sign in"
-                       : "Back to sign in") {
-                    mode = mode == .reset ? .signin : (mode == .signin ? .signup : .signin)
-                    error = nil; resetSent = false; signupSent = false; confirmPassword = ""
+                // The mode switch: the question stays text, the action is a small
+                // candy button (§A8 — no plain text-link actions).
+                HStack(spacing: 8) {
+                    if mode != .reset {
+                        Text(mode == .signin ? "Don't have an account?" : "Already have an account?")
+                            .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                    }
+                    Button {
+                        mode = mode == .reset ? .signin : (mode == .signin ? .signup : .signin)
+                        error = nil; resetSent = false; signupSent = false; confirmPassword = ""
+                    } label: {
+                        CandyLabel(title: mode == .signin ? "Sign up" : mode == .signup ? "Sign in" : "Back to sign in")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: mode == .reset ? .peach : .pink, size: .small, fullWidth: false))
+                    .accessibilityLabel(mode == .signin ? "Don't have an account? Sign up"
+                                        : mode == .signup ? "Already have an account? Sign in"
+                                        : "Back to sign in")
                 }
-                .font(Brand.body(13)).foregroundStyle(Theme.primary)
             }
 
             // Apple 5.1.1(v): a signed-out visitor must be able to reach the
@@ -167,17 +171,16 @@ struct AuthView: View {
                     AuthService.claimSavesFor("guest")
                     auth.isGuest = true
                 }) {
-                    Text("Play without an account")
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary).underline()
+                    CandyLabel(title: "Play without an account", symbol: "play.fill")
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
                 .disabled(working)
             }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-        .shadow(color: Color(hex: 0x7C3AED).opacity(0.08), radius: 12, x: 0, y: 4)
+        // §G5: the sign-in card is a tinted card with the purple → pink top bar.
+        .tintedCard(accent: G5Accent.purple, bar: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
+                    radius: 20, barHeight: 8)
     }
 
     private var footer: some View {
@@ -185,22 +188,22 @@ struct AuthView: View {
             // Functional legal links (App Review expects these to work) — open the
             // in-app Privacy / Terms pages, matching the web's <Link href> footer.
             NavigationLink { InfoPage(.privacy) } label: {
-                Text("Privacy Policy").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text("Privacy Policy").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
-            Text("|").foregroundStyle(Theme.borderLight)
+            Text("|").foregroundStyle(FinishInk.secondary.opacity(0.5))
             NavigationLink { InfoPage(.terms) } label: {
-                Text("Terms of Service").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text("Terms of Service").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
         }
     }
 
     private func labeledField(_ label: String, _ icon: String, _ text: Binding<String>, _ placeholder: String, keyboard: UIKeyboardType = .default) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+            Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
             TextField(placeholder, text: text)
                 .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(keyboard)
-                .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
+                .foregroundStyle(FinishInk.heading)
+                .g5Field()
         }
     }
 
@@ -209,12 +212,12 @@ struct AuthView: View {
                                isMismatched: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+                Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
                 if let (title, action) = trailing {
                     Spacer()
-                    Button(title, action: action)
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
-                        .buttonStyle(.squish)
+                    Button(action: action) { CandyLabel(title: title) }
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                        .accessibilityLabel(title)
                 }
             }
             HStack(spacing: 8) {
@@ -228,14 +231,13 @@ struct AuthView: View {
                 }
                 Button { showPassword.toggle() } label: {
                     Image(systemName: showPassword ? "eye.slash" : "eye")
-                        .font(.system(size: 14)).foregroundStyle(Theme.textMuted)
+                        .font(.system(size: 14)).foregroundStyle(FinishInk.secondary)
                 }
                 .buttonStyle(.squish)
                 .accessibilityLabel(showPassword ? "Hide password" : "Show password")
             }
-            .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-            .overlay(RoundedRectangle(cornerRadius: 10)
-                .stroke(isMismatched ? Color(hex: 0xFCA5A5) : Theme.border, lineWidth: 1.5))
+            .foregroundStyle(FinishInk.heading)
+            .g5Field(error: isMismatched)
         }
     }
 

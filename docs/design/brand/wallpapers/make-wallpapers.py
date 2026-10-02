@@ -71,22 +71,24 @@ def wallpaper(size, hue, seed, home=False):
                 t = fade(t, alpha)
             sky.alpha_composite(t, (int(x - t.width / 2), int(y - t.height / 2)))
 
+    TOP = (0.28 if landscape else 0.36)   # founder 10-02: clean sky behind the header / cast row
+
     def edge():       # big near tiles hug the edges / corners, partly off-screen
         if landscape:
-            return (rnd.choice([rnd.uniform(-0.04, 0.16), rnd.uniform(0.84, 1.04)]) * w, rnd.uniform(-0.05, 1.05) * h)
+            return (rnd.choice([rnd.uniform(-0.04, 0.16), rnd.uniform(0.84, 1.04)]) * w, rnd.uniform(TOP + 0.04, 1.05) * h)
         side = rnd.random()
         if side < 0.7:
-            return (rnd.choice([rnd.uniform(-0.08, 0.1), rnd.uniform(0.9, 1.08)]) * w, rnd.uniform(0.02, 0.98) * h)
-        return (rnd.uniform(0.1, 0.9) * w, rnd.choice([rnd.uniform(-0.03, 0.06), rnd.uniform(0.94, 1.03)]) * h)
+            return (rnd.choice([rnd.uniform(-0.08, 0.1), rnd.uniform(0.9, 1.08)]) * w, rnd.uniform(TOP + 0.04, 0.98) * h)
+        return (rnd.uniform(0.1, 0.9) * w, rnd.uniform(0.94, 1.03) * h)
 
     def outer():      # mid tiles: anywhere except the calm middle
         while True:
-            x, y = rnd.uniform(0.02, 0.98), rnd.uniform(0.02, 0.98)
+            x, y = rnd.uniform(0.02, 0.98), rnd.uniform(TOP, 0.98)
             if not (0.28 < x < 0.72 and 0.22 < y < 0.78):
                 return x * w, y * h
 
     def anywhere():
-        return rnd.uniform(0.04, 0.96) * w, rnd.uniform(0.03, 0.97) * h
+        return rnd.uniform(0.04, 0.96) * w, rnd.uniform(TOP, 0.97) * h
 
     # far first (drawn behind), then mid, then near
     drop(7 if not landscape else 10, 0.06, 0.1, anywhere, blur=5, alpha=0.55)

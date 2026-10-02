@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/lib/auth-context';
-import { Sparkles, Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User } from 'lucide-react';
 import { validateUsername } from '@wordle-duel/core';
+import { CandyButton } from '@/components/ui/candy-button';
+import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-popup';
 
 interface AuthModalProps {
   open: boolean;
@@ -82,15 +84,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-md border"
-        style={{
-          background: 'var(--color-surface)',
-          borderColor: '#c4b5fd',
-        }}
+        className="sm:max-w-md border rounded-3xl sm:rounded-3xl pt-7"
+        style={barCard()}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="w-5 h-5" style={{ color: '#d97706' }} />
+            <PoseArt pose="art-pose-i-cheer" size={40} />
             <span className="font-black" style={{ color: 'var(--color-text)' }}>
               {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
             </span>
@@ -99,23 +98,24 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
         <div className="space-y-4">
           {/* Google Sign-In */}
-          <button
-            type="button"
+          <CandyButton
+            color="peach"
+            size="lg"
+            block
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+            icon={<span className="grid place-items-center rounded-full shrink-0" style={{ width: 28, height: 28, background: '#ffffff', boxShadow: '0 1px 2px rgba(59, 26, 120, 0.25)' }}><GoogleIcon className="w-5 h-5" /></span>}
+            style={{ textTransform: 'none' }}
           >
-            <GoogleIcon className="w-5 h-5" />
             Continue with Google
-          </button>
+          </CandyButton>
 
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+            <div className="flex-1 h-px" style={{ background: 'rgba(124, 58, 237, 0.25)' }} />
             <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+            <div className="flex-1 h-px" style={{ background: 'rgba(124, 58, 237, 0.25)' }} />
           </div>
 
           {/* Email/Password Form */}
@@ -135,11 +135,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   minLength={3}
                   maxLength={20}
                   className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={{
-                    color: 'var(--color-text)',
-                    background: 'var(--color-bg)',
-                    border: '1.5px solid var(--color-border)',
-                  }}
+                  style={softInput()}
                 />
               </div>
             )}
@@ -156,11 +152,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                style={{
-                  color: 'var(--color-text)',
-                  background: 'var(--color-bg)',
-                  border: '1.5px solid var(--color-border)',
-                }}
+                style={softInput()}
               />
             </div>
 
@@ -177,47 +169,35 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 required
                 minLength={6}
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                style={{
-                  color: 'var(--color-text)',
-                  background: 'var(--color-bg)',
-                  border: '1.5px solid var(--color-border)',
-                }}
+                style={softInput()}
               />
             </div>
 
             {error && (
               <div
-                className="p-3 rounded-xl text-xs font-bold"
-                style={{ background: 'var(--color-loss-bg)', border: '1px solid #fecaca', color: 'var(--color-loss-text)' }}
+                className="p-3 text-xs font-bold"
+                style={softNotice('error')}
               >
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                boxShadow: '0 4px 0 #4c1d95',
-              }}
-            >
+            <CandyButton type="submit" color="purple" size="lg" block disabled={loading}>
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-            </button>
+            </CandyButton>
 
             <div className="text-center">
-              <button
-                type="button"
+              <CandyButton
+                color="peach"
+                size="sm"
                 onClick={() => {
                   setMode(mode === 'signin' ? 'signup' : 'signin');
                   setError('');
                 }}
-                className="text-xs font-bold transition-colors"
-                style={{ color: 'var(--color-text-muted)' }}
+                style={{ textTransform: 'none' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-              </button>
+              </CandyButton>
             </div>
           </form>
         </div>

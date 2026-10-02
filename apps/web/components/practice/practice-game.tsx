@@ -8,8 +8,8 @@ import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock } from 'lucide-react';
-import { ResultLine, PlayAgainButton } from '@/components/game/result-line';
 import { CandyButton } from '@/components/ui/candy-button';
+import { UiIcon } from '@/components/ui/ui-icon';
 import { useBoardFit } from '@/hooks/use-board-fit';
 import { REVEAL } from '@/lib/tile-motion';
 import { GameHomeButton } from '@/components/game/game-home-button';
@@ -18,7 +18,8 @@ import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
-import { NextDailyCta } from '@/components/game/next-daily-cta';
+import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
+import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { recordDailyResult } from '@/lib/daily-service';
@@ -35,6 +36,7 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { useClassicHints, type PersistedClassicHintState } from '@/hooks/use-classic-hints';
 import { GameBackground } from '@/components/ui/page-background';
+import { modeTrayAccent } from '@/lib/tray-fit';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 interface PracticeGameProps {
@@ -242,7 +244,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         setMessage('Not enough letters');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -250,7 +252,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         setMessage('Not in word list');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -258,7 +260,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         setMessage('Already guessed');
         playInvalid();
         setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -355,9 +357,13 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       reveal: variant === 'full',
       letters,
       solutionDisplay: currentBoard.solution,
+      // E1: the gold POINTS window shows the same total the score card does.
+      points: state.status === GameStatus.WON
+        ? computeScoreBreakdown(mode, true, currentBoard.guesses.length, elapsedTime, 1, 1, hintsUsed).total
+        : computeScoreBreakdown(mode, false, currentBoard.guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [evaluations, state.status, currentBoard, elapsedTime]);
+  }, [evaluations, state.status, currentBoard, elapsedTime, mode, hintsUsed]);
 
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
@@ -371,16 +377,25 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   // as wide as the screen allows (a small side margin), centered in the
   // height left between the title / status line and the keyboard.
   const boardAreaRef = useRef<HTMLDivElement>(null);
+  const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
   const boardCols = currentBoard.solution.length;
-  const boardFit = useBoardFit(boardAreaRef, { cols: boardCols, rows: maxGuesses, vPad: 8 });
+  // R2: the same hook sizes the finished board to the room the one-screen
+  // finished layout leaves (the ref moves to that area; `gameComplete`
+  // re-measures it).
+  const boardFit = useBoardFit(boardAreaRef, { cols: boardCols, rows: maxGuesses, vPad: 8 }, gameComplete);
   const boardSize = boardFit ? { w: boardFit.w, h: boardFit.h } : null;
   const hintRows = useMemo(() => Object.keys(currentBoard.hintEvaluations ?? {}).map(Number), [currentBoard.hintEvaluations]);
-  const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
+  // Near-miss credit (hint rows excluded) and the points the score card shows — for the R2 strip.
+  const bestCorrectLetters = evaluations.reduce((best, e, i) =>
+    currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0);
+  const finishedPoints = gameComplete
+    ? computeScoreBreakdown(mode, state.status === GameStatus.WON, guessesUsed, elapsedTime, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed, undefined, state.status === GameStatus.WON ? undefined : bestCorrectLetters, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total
+    : null;
 
   return (
     <GameBackground
       mode={mode}
-      className={`h-screen-stable flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${gameComplete ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && <VictoryAnimation mode={mode} onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, false, guessesUsed, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
@@ -417,43 +432,54 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
           </div>
         )}
-        {(state.status === GameStatus.WON || state.status === GameStatus.LOST) && (
-          // FINISH_SPEC B6: two tinted result pills + the 3D share icon (no Home text link).
-          <ResultLine
-            className="mt-1.5"
-            won={state.status === GameStatus.WON}
-            guesses={guessesUsed}
-            time={formatTime(elapsedTime)}
-            srText={`${state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : 'Out of guesses'} · ${formatTime(elapsedTime)}`}
-            onShare={handleShare}
-            copied={copied}
-          >
-            {isDaily && <DailyRankBadge gameMode={mode} />}
-            {!isDaily && isPro && <PlayAgainButton onClick={handleReset} won={state.status === GameStatus.WON} />}
-          </ResultLine>
-        )}
       </div>
 
-      {/* Board + Post-game summary */}
-      <div className="flex-1 min-h-0 overflow-y-auto" ref={boardAreaRef}>
-        <div className={`flex flex-col items-center ${gameComplete ? 'justify-start pt-2' : 'justify-center h-full'}`}>
-          <Board
-            sizePx={boardSize ?? undefined}
-            gap={boardFit?.gap}
-            hintRows={hintRows}
-            guesses={currentBoard.guesses}
-            currentGuess={currentGuess}
-            maxGuesses={currentBoard.maxGuesses}
-            evaluations={evaluations}
-            showSolution={false}
-            solution={currentBoard.solution}
-            darkMode
-            isShaking={isShaking}
-            wordLength={currentBoard.solution.length}
-            isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || currentBoard.guesses.includes(currentGuess.toUpperCase()))}
-          />
-
-          {gameComplete && (
+      {gameComplete ? (
+        // FINISH_SPEC R2: one screen — the result strip, the board sized to
+        // the room left, the dock (share · Next daily / Leaderboard · the
+        // Unlimited card); the score breakdown + today's word under "More".
+        <FinishedScreen
+          fit="self"
+          boardRef={boardAreaRef}
+          strip={
+            <ResultStrip
+              won={state.status === GameStatus.WON}
+              guesses={guessesUsed}
+              time={formatTime(elapsedTime)}
+              points={finishedPoints}
+              srText={`${state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : 'Out of guesses'} · ${formatTime(elapsedTime)}`}
+            />
+          }
+          sub={isDaily ? <DailyRankBadge gameMode={mode} /> : undefined}
+          board={
+            <Board
+              trayAccent={modeTrayAccent(mode)}
+              sizePx={boardSize ?? undefined}
+              gap={boardFit?.gap}
+              hintRows={hintRows}
+              guesses={currentBoard.guesses}
+              currentGuess=""
+              maxGuesses={currentBoard.maxGuesses}
+              evaluations={evaluations}
+              showSolution={false}
+              solution={currentBoard.solution}
+              darkMode
+              isShaking={false}
+              wordLength={currentBoard.solution.length}
+              isInvalidWord={false}
+            />
+          }
+          dock={
+            <FinishedDock
+              currentMode={mode}
+              isDaily={!!isDaily}
+              onShare={handleShare}
+              copied={copied}
+              onNewPuzzle={!isDaily && isPro ? handleReset : undefined}
+            />
+          }
+          moreLabel="Score + word"
+          more={
             <>
               <ScoreBreakdownCard
                 gameMode={mode}
@@ -463,25 +489,44 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
                 boardsSolved={state.status === GameStatus.WON ? 1 : 0}
                 totalBoards={1}
                 hintsUsed={hintsUsed}
-                bestCorrectLetters={evaluations.reduce((best, e, i) =>
-                  currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)}
+                bestCorrectLetters={bestCorrectLetters}
                 day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
               />
               <PostGameSummary solution={currentBoard.solution} />
-              {isDaily && <NextDailyCta currentMode={mode} />}
             </>
-          )}
+          }
+        />
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto" ref={boardAreaRef}>
+          <div className="flex flex-col items-center justify-center h-full">
+            <Board
+              trayAccent={modeTrayAccent(mode)}
+              sizePx={boardSize ?? undefined}
+              gap={boardFit?.gap}
+              hintRows={hintRows}
+              guesses={currentBoard.guesses}
+              currentGuess={currentGuess}
+              maxGuesses={currentBoard.maxGuesses}
+              evaluations={evaluations}
+              showSolution={false}
+              solution={currentBoard.solution}
+              darkMode
+              isShaking={isShaking}
+              wordLength={currentBoard.solution.length}
+              isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || currentBoard.guesses.includes(currentGuess.toUpperCase()))}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Hint buttons — Six/Seven only, hidden when game is complete */}
       {hasHints && !gameComplete && (
         <div className="shrink-0 flex justify-center gap-3 px-4 pb-3">
-          <CandyButton size="sm" color="teal" onClick={handleVowelHint} disabled={hints.vowelUsed}>
-            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : '💡 Vowel'}
+          <CandyButton size="sm" color="teal" onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
           </CandyButton>
-          <CandyButton size="sm" color="teal" onClick={handleConsonantHint} disabled={hints.consonantUsed}>
-            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : '💡 Consonant'}
+          <CandyButton size="sm" color="teal" onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
           </CandyButton>
         </div>
       )}

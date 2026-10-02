@@ -77,32 +77,36 @@ struct TodaysRaceCard: View {
         let byId = Dictionary(uniqueKeysWithValues: friends.map { ($0.id, $0) })
         let anyPoints = rows.contains { $0.points > 0 }
 
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 5) {
-                Image(systemName: "flag.fill").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Self.purple)
-                Text("TODAY'S RACE").font(Brand.font(9, .black)).tracking(0.8)
-                    .foregroundStyle(Theme.textMuted)
+        // FINISH_SPEC §C4: the race on the pink card family — fixed light inks (the
+        // Friends pages stay light in dark mode), medal-colored places, soft numbers,
+        // candy actions.
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                FriendsLabel("Today's race", color: FriendsInk.bannerLabel)
                 Spacer(minLength: 6)
                 Text(TodaysRace.raceStatusLine(rows))
-                    .font(Brand.font(10, .black))
-                    .foregroundStyle(anyPoints ? Self.purple : Theme.textMuted)
+                    .font(Brand.font(11, .black))
+                    .foregroundStyle(anyPoints ? Self.purple : FriendsInk.muted)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
-            VStack(spacing: 6) {
-                ForEach(rows) { r in
-                    if r.me {
-                        row(r, friend: nil, anyPoints: anyPoints)
-                    } else if let f = byId[r.id] {
-                        NavigationLink(value: r.id) {
-                            row(r, friend: f, anyPoints: anyPoints)
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.element.id) { i, r in
+                    Group {
+                        if r.me {
+                            row(r, friend: nil, anyPoints: anyPoints)
+                        } else if let f = byId[r.id] {
+                            NavigationLink(value: r.id) {
+                                row(r, friend: f, anyPoints: anyPoints)
+                            }
+                            .buttonStyle(.squish)
                         }
-                        .buttonStyle(.squish)
                     }
+                    .friendsStripe(i, accent: Self.pink)
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             Text("Today's points across every daily · Challenge = a private Classic battle, free for friends")
-                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(9.5, .bold)).foregroundStyle(FriendsInk.muted)
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
         }
@@ -111,57 +115,55 @@ struct TodaysRaceCard: View {
 
     @ViewBuilder
     private func row(_ r: TodaysRace.Row, friend f: FriendsService.FriendProfile?, anyPoints: Bool) -> some View {
-        let medal: String? = anyPoints && r.points > 0 && r.rank <= 3 ? ["🥇", "🥈", "🥉"][r.rank - 1] : nil
+        let medal = anyPoints && r.points > 0 && r.rank <= 3
+        let disc = medal ? FriendsInk.medal(r.rank) : Self.purple.wash(0.55)
         HStack(spacing: 10) {
-            Text(medal ?? "\(r.rank)")
-                .font(medal == nil ? Brand.font(11, .black) : .system(size: 14))
-                .foregroundStyle(Theme.textMuted)
-                .frame(width: 24)
+            Text("\(r.rank)")
+                .font(Brand.font(12, .black)).foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(LinearGradient(colors: [disc.mixed(over: .white, 0.75), disc],
+                                                         startPoint: .top, endPoint: .bottom)))
+                .accessibilityLabel("Place \(r.rank)")
             if let f {
-                AvatarView(url: f.avatar_url, username: f.username, size: 30, emoji: f.avatar_emoji)
+                AvatarView(url: f.avatar_url, username: f.username, size: 32, emoji: f.avatar_emoji)
             } else {
-                AvatarView(url: me.avatarUrl, username: me.username, size: 30, emoji: me.avatarEmoji)
+                AvatarView(url: me.avatarUrl, username: me.username, size: 32, accentHex: me.accentColor, emoji: me.avatarEmoji, pro: Wordocious.isProActive(me))
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(r.me ? "You" : r.username).font(Brand.font(12, .heavy))
-                    .foregroundStyle(r.me ? Self.purple : Theme.textPrimary).lineLimit(1)
-                Text(r.points > 0
-                     ? "\(r.points.formatted()) pts · \(r.played)/\(DailyCompletionsStore.totalDailyModes) dailies"
-                     : "hasn't played today")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                Text(r.me ? "You" : r.username).font(Brand.font(13, .black))
+                    .foregroundStyle(r.me ? Self.purple : FriendsInk.heading).lineLimit(1)
+                if r.points > 0 {
+                    HStack(spacing: 3) {
+                        Text(r.points.formatted()).softNumber(12, color: FinishInk.softNumber)
+                        Text("pts · \(r.played)/\(DailyCompletionsStore.totalDailyModes) dailies")
+                            .font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.rowSub)
+                    }
+                    .lineLimit(1)
+                } else {
+                    Text("hasn't played today")
+                        .font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.rowSub).lineLimit(1)
+                }
             }
             Spacer(minLength: 4)
             if let f {
                 if r.points == 0 {
-                    // Slacker bell — the existing canned-taunt picker.
+                    // Slacker bell — the existing canned-taunt picker (§A8: round amber candy).
                     Button { onTaunt(f) } label: {
-                        Icon3D(.bell, size: 16) // ART_SPEC §5
-                            .frame(width: 26, height: 26)
-                            .background(Circle().fill(Theme.surfaceAlt))
-                            .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                        OutlinedSymbol(name: "bell.fill", size: 13, width: 1.25)
                     }
-                    .buttonStyle(.squish)
+                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false, circle: true))
                     .accessibilityLabel("Nudge \(f.username)")
                 }
                 Button { onChallenge(f) } label: {
-                    HStack(spacing: 4) {
-                        Image("swords").renderingMode(.template).resizable().scaledToFit()
-                            .frame(width: 11, height: 11)
-                        Text(challenging == f.id ? "Sending…" : "Challenge").font(Brand.font(10, .black))
-                    }
-                    .foregroundStyle(Self.pink)
-                    .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(Self.pink.opacity(0.08)))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Self.pink, lineWidth: 1.5))
+                    CandyLabel(title: challenging == f.id ? "Sending…" : "Challenge")
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
                 .disabled(challenging != nil)
-                .opacity(challenging != nil && challenging != f.id ? 0.5 : 1)
                 .accessibilityLabel("Challenge \(f.username) to a VS Battle")
             }
         }
-        .padding(.horizontal, 8).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 12).fill(r.me ? Self.purple.opacity(0.06) : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(r.me ? Color(hex: 0xC4B5FD) : Color.clear, lineWidth: 1))
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .background(r.me ? Self.purple.wash(0.10) : Color.clear)
+        .contentShape(Rectangle())
     }
 }

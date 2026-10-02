@@ -418,6 +418,7 @@ final class GameViewModel: ObservableObject {
         }
 
         let beforeGuessCount = totalGuesses
+        let wonBefore = state.boards.filter { $0.status == .won }.count
         // Capture which board this guess lands on BEFORE the reducer runs — for
         // SEQUENCE the active board advances once it's solved, so reading the
         // active index afterward would report the NEXT board. The VS relay needs
@@ -432,6 +433,12 @@ final class GameViewModel: ObservableObject {
         if totalGuesses != beforeGuessCount {
             currentInput = ""
             recomputeEvaluations()
+            // §U: a board solved mid-game (multi-board, not the finish) — notify @0.7 ·
+            // light once its row has flipped. The finish plays `win` at the popup.
+            if isMultiBoard, state.status == .playing, state.boards.filter({ $0.status == .won }).count > wonBefore {
+                let wait = Theme.reduceMotion ? 0 : TileMotion.rowReveal(columns: wordLength)
+                DispatchQueue.main.asyncAfter(deadline: .now() + wait) { Feedback.found() }
+            }
             if !isVersus { persistence.save(state) }
             if state.status == .won { flash("Solved!") }
             else if state.status == .lost { flash(lossMessage) }
@@ -457,7 +464,7 @@ final class GameViewModel: ObservableObject {
     /// right to left 90 ms apart (Reduce Motion: all at once after 0.6 s).
     private func rejectGuess(_ message: String) {
         flash(message)
-        SoundManager.shared.playInvalid()
+        Feedback.notAWord()
         shakeCount += 1
         let rejected = currentInput
         let still = Theme.reduceMotion

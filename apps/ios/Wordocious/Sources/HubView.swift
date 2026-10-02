@@ -134,7 +134,7 @@ final class HubVM: ObservableObject {
         persist()
     }
     func type(_ ch: Character) { guard !state.ended, typing.count < 19 else { return }; typing.append(ch); SoundManager.shared.playKeyTap() }
-    func delete() { guard !typing.isEmpty else { return }; typing.removeLast() }
+    func delete() { guard !typing.isEmpty else { return }; typing.removeLast(); SoundManager.shared.playDelete() }
     func shuffle() { outer.shuffle(); SoundManager.shared.playKeyTap() }
     func submit() {
         guard !state.ended else { return }
@@ -142,13 +142,13 @@ final class HubVM: ObservableObject {
         let word = typing.uppercased()
         dispatch(.submit(word))
         if let r = state.reject {
-            flash(rejectCopy(r)); Haptics.error(); SoundManager.shared.playInvalid()
+            flash(rejectCopy(r)); Haptics.warning(); SoundManager.shared.playInvalid()
             // Like the word games: the rejected entry shakes, then erases so the next word starts clean.
             shake = true; Task { try? await Task.sleep(nanoseconds: 450_000_000); shake = false; typing = "" }
         } else {
             typing = ""
             // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
-            Haptics.tap(); SoundManager.shared.playSuccess(); flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))")
+            Haptics.tap(); SoundManager.shared.playFound(); flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))")
         }
     }
     func hintStart() { dispatch(.hintStart) }
@@ -175,7 +175,7 @@ final class HubVM: ObservableObject {
     /// First finalization records once; later rank-ups after the win improve in place.
     private func afterChange(from before: HubState) {
         if state.status != .playing && recordedRank < 0 {
-            if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() } else { Haptics.error(); SoundManager.shared.playGameOver() }
+            if state.status == .won { Haptics.success(); SoundManager.shared.playSuccess() } else { Haptics.soft(); SoundManager.shared.playGameOver() }
             finalise()
         } else if state.status == .won && state.rank > before.rank && recordedRank >= 0 {
             improve()
@@ -224,14 +224,17 @@ struct HubView: View {
     var body: some View {
         ZStack {
             PageBackground(tint: .forGame(.hub))  // ART_SPEC §15 / §19: the game's wallpaper
-            VStack(spacing: 8) {
-                header
-                if vm.showResults { results } else { board }
+            if vm.showResults {
+                results.padding(.horizontal, 10)
+            } else {
+                VStack(spacing: 8) {
+                    header
+                    board
+                }
+                .padding(.horizontal, 10)
             }
-            .padding(.horizontal, 10)
             if let toast = vm.toast {
-                Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10).background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -293,13 +296,10 @@ struct HubView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    private func capsule(_ label: String, _ symbol: String, filled: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: symbol).font(Brand.font(11, .heavy)).foregroundStyle(filled ? .white : hubAccent)
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Capsule().fill(filled ? hubAccent : hubAccent.opacity(0.05)))
-                .overlay(Capsule().stroke(filled ? hubAccent : hubAccent.opacity(0.4), lineWidth: 1.5))
-        }.buttonStyle(.squish).accessibilityLabel(label)
+    /// §A8: the control row's small candy pills (purple Enter, teal Shuffle, amber
+    /// hint, pink reveal, peach Delete).
+    private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
     }
 
     private var header: some View {
@@ -331,11 +331,14 @@ struct HubView: View {
             HStack {
                 Text(s.rankName).font(Brand.font(12, .black)).foregroundStyle(hubAccent)
                 Spacer()
-                Text("\(s.points) pts · \(next ?? "")").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                HStack(spacing: 3) {
+                    Text("\(s.points)").softNumber(13)
+                    Text("pts · \(next ?? "")").font(Brand.caption(11)).foregroundStyle(FinishInk.secondary)
+                }
             }
             HStack(spacing: 4) {
                 ForEach(0..<HUB_RANKS.count, id: \.self) { i in
-                    Capsule().fill(i <= rank ? hubAccent : Theme.borderLight).frame(height: 8)
+                    Capsule().fill(i <= rank ? hubAccent : PuzKit.face(hubAccent, 0.16)).frame(height: 8)
                         .overlay(i == HUB_SOLVED_RANK ? Capsule().stroke(hubAccent.opacity(0.5), lineWidth: 2) : nil)
                 }
             }
@@ -345,24 +348,17 @@ struct HubView: View {
     }
 
     private func letterTile(_ ch: Character, centre: Bool, side: CGFloat) -> some View {
-        Button { vm.type(ch); Haptics.tap() } label: {
-            Text(String(ch)).font(Brand.font((side * 0.45).rounded(), .black)).foregroundStyle(centre ? .white : Theme.textPrimary)
-                .frame(width: side, height: side)
-                .background(RoundedRectangle(cornerRadius: 8).fill(centre ? hubAccent : Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(centre ? hubAccent : Theme.border, lineWidth: 2))
-                .shadow(color: .black.opacity(0.06), radius: 0, x: 0, y: 2)
-        }
-        .buttonStyle(PressableStyle()).disabled(vm.state.ended)
-        .accessibilityLabel(centre ? "\(ch), center letter" : String(ch))
+        HubHexKey(letter: ch, centre: centre, side: side, disabled: vm.state.ended) { vm.type(ch) }
     }
 
     private func chip(_ w: String, dim: Bool = false) -> some View {
         let s = vm.state, pangram = s.pangrams.contains(w), revealed = s.revealed.contains(w)
-        return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .bold))
-            .foregroundStyle(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : Theme.textPrimary)
+        // §A1: found words are tinted pills in the accent (pangrams stronger).
+        return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .black))
+            .foregroundStyle(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.ink)
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(pangram ? hubAccent.opacity(0.14) : Theme.surface))
-            .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : Theme.border, lineWidth: 1))
+            .background(Capsule().fill(PuzKit.face(hubAccent, pangram ? 0.2 : 0.09)))
+            .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.line(hubAccent, 0.28), lineWidth: 1))
             .opacity(dim ? 0.6 : 1)
     }
 
@@ -378,16 +374,19 @@ struct HubView: View {
     // first layout pass: tile = clamp(remaining / 3.3, 72, 100).
     private static let rankBarHeight: CGFloat = 27      // rank name + 8 pt capsules
     private static let entryLineHeight: CGFloat = 44    // 28 pt entry, min height
-    private static let controlRowHeight: CGFloat = 27   // one capsule row (×2)
+    private static let controlRowHeight: CGFloat = 38   // one candy row (34 pt + lip, ×2)
     private static let foundHeaderHeight: CGFloat = 12  // "N OF M WORDS"
-    private static let endLinkHeight: CGFloat = 22      // pinned End link + bottom pad
+    private static let endLinkHeight: CGFloat = 44      // pinned End candy + bottom pad
+    /// §L: the honeycomb's tray (padding both sides + the 4-pt lip).
+    private static let trayHeight: CGFloat = GameTray.padding * 2 + GameTray.lip
     private static let boardRowSpacing: CGFloat = 8
     private static let boardFixedRows = 7               // rows around the cluster band
-    private static let tileMin: CGFloat = 72, tileMax: CGFloat = 100
+    private static let tileMin: CGFloat = 64, tileMax: CGFloat = 100
 
     private static func tileSide(boardHeight h: CGFloat) -> CGFloat {
-        let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + boardRowSpacing * CGFloat(boardFixedRows)
-        // FINISH_SPEC §B5: the shared sizing rule over the honeycomb's 3.3-tile height.
+        let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + trayHeight + boardRowSpacing * CGFloat(boardFixedRows)
+        // FINISH_SPEC §B5: the shared sizing rule over the honeycomb's height
+        // (three hexes tall plus gaps ≈ 2.9 pieces; 3.3 leaves the found-words room).
         return CGFloat(BoardSizing.fitTile(widthUnits: 1, heightUnits: 3.3, fixedHeight: Double(reserved),
                                            width: .infinity, height: Double(h), heightFill: 1,
                                            maxTile: Double(tileMax), minTile: Double(tileMin))).rounded(.down)
@@ -412,15 +411,28 @@ struct HubView: View {
         .accessibilityLabel(vm.typing.isEmpty ? "Tap letters or type" : "Entry \(vm.typing)")
     }
 
-    /// 2-3-2 cluster, center tile accent-filled, spacing proportional to the tile.
+    /// FINISH_SPEC §J1: the honeycomb — the gold center hexagon with the six lilac
+    /// hexagons around it (flat-top pieces: one above, one below, two each side),
+    /// sitting on the shared game tray (§L).
     private func cluster(side: CGFloat) -> some View {
-        let gap = (side * 0.14).rounded()
         let o = vm.outer + Array(repeating: Character(" "), count: max(0, 6 - vm.outer.count))
-        return VStack(spacing: gap) {
-            HStack(spacing: gap) { letterTile(o[0], centre: false, side: side); letterTile(o[1], centre: false, side: side) }
-            HStack(spacing: gap) { letterTile(o[2], centre: false, side: side); letterTile(vm.centre, centre: true, side: side); letterTile(o[3], centre: false, side: side) }
-            HStack(spacing: gap) { letterTile(o[4], centre: false, side: side); letterTile(o[5], centre: false, side: side) }
+        // Piece centers relative to the middle: vertical step ≈ the hex's height,
+        // side neighbors ¾ of its width across and half a step up / down.
+        let v = side * 0.95, h = side * 0.77
+        let spots: [CGPoint] = [
+            CGPoint(x: 0, y: -v), CGPoint(x: h, y: -v / 2), CGPoint(x: h, y: v / 2),
+            CGPoint(x: 0, y: v), CGPoint(x: -h, y: v / 2), CGPoint(x: -h, y: -v / 2),
+        ]
+        let w = side + 2 * h, ht = side + 2 * v
+        return ZStack {
+            ForEach(0..<6, id: \.self) { i in
+                letterTile(o[i], centre: false, side: side).offset(x: spots[i].x, y: spots[i].y)
+            }
+            letterTile(vm.centre, centre: true, side: side)
         }
+        .frame(width: w, height: ht)
+        .accessibilityElement(children: .contain)
+        .gameTray(accent: hubAccent)
     }
 
     private var board: some View {
@@ -436,16 +448,16 @@ struct HubView: View {
                 cluster(side: side)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 HStack(spacing: 8) {
-                    capsule("Delete", "delete.left") { vm.delete() }
-                    capsule("Shuffle", "shuffle") { vm.shuffle() }
-                    capsule("Enter", "return", filled: true) { vm.submit() }
+                    capsule("Delete", "delete.left", variant: .peach) { vm.delete() }
+                    capsule("Shuffle", "shuffle", variant: .teal) { vm.shuffle() }
+                    capsule("Enter", "return", variant: .purple) { vm.submit() }
                 }
                 HStack(spacing: 8) {
-                    capsule("Starts with…", "lightbulb") { vm.hintStart() }
-                    capsule("Reveal a word", "eye") { vm.hintReveal() }
+                    capsule("Starts with…", "lightbulb", variant: .amber) { vm.hintStart() }
+                    capsule("Reveal a word", "eye", variant: .pink) { vm.hintReveal() }
                 }
                 if !pending.isEmpty {
-                    HStack(spacing: 6) { ForEach(pending, id: \.self) { w in Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.caption(11)).foregroundStyle(Theme.textMuted).padding(.horizontal, 8).padding(.vertical, 3).overlay(Capsule().stroke(hubAccent, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))) } }
+                    HStack(spacing: 6) { ForEach(pending, id: \.self) { w in Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.caption(11)).foregroundStyle(FinishInk.secondary).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(PuzKit.face(hubAccent, 0.08))).overlay(Capsule().stroke(hubAccent, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))) } }
                 }
                 let total = s.found.count + s.bonusFound.count
                 Text("\(total) \(total == 1 ? "WORD" : "WORDS") · \(s.points) \(s.points == 1 ? "PT" : "PTS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
@@ -460,42 +472,59 @@ struct HubView: View {
                     .padding(.vertical, 2)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if s.status == .won { Button { vm.end() } label: { Label("Finish", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(hubAccent).buttonStyle(.squish) }
-                else { Button { vm.end() } label: { Label("End puzzle and see answers", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(Theme.textMuted).buttonStyle(.squish) }
+                if s.status == .won { PuzCandyAction(title: "Finish", symbol: "flag", variant: .purple) { vm.end() } }
+                else { PuzCandyAction(title: "End puzzle and see answers", symbol: "flag", variant: .peach) { vm.end() } }
             }
             .padding(.bottom, 6)
             .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 
+    /// FINISH_SPEC §R2: one screen — header + result strip + the rank bar, the word
+    /// list scaled into the height left (it scrolls inside its area), the dock (Keep
+    /// going before the end, share, the daily CTAs / the Unlimited card); the full
+    /// summary + breakdown below the dock.
     private var results: some View {
         let s = vm.state, won = s.status == .won, secs = vm.displaySeconds
-        return ScrollView {
-            VStack(spacing: 10) {
+        return FinishedScreenLayout {
+            VStack(spacing: 6) {
+                header
+                PuzFinishedHeadline(text: won ? (s.rank == 9 ? "Pandemonium — every word" : s.rankName) : "\(s.rankName) — below Hubbub", won: won)
+                PuzResultLine(onShare: { share() }, won: won, items: [("\(s.found.count)/\(s.words.count)", "words"), (puzClock(secs), "time")],
+                                    points: vm.points)
                 rankBar
-                Text(won ? (s.rank == 9 ? "Pandemonium — every word" : s.rankName) : "\(s.rankName) — below Hubbub").font(Brand.title(20)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
-                Text("\(s.points)/\(s.max) pts · \(s.found.count)/\(s.words.count) words · \(vm.pangramsFound)/\(s.pangrams.count) pangram\(s.pangrams.count == 1 ? "" : "s") · \(timeText(secs))\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
-                HStack(spacing: 16) {
-                    Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                    Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
-                    if !s.ended { Button { vm.setResults(false) } label: { Label("Keep going", systemImage: "arrow.uturn.left").font(Brand.font(13, .black)) } }
-                    if let onPlayAgain, !vm.isDaily, isPro { Button { onPlayAgain() } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }.foregroundStyle(Color(hex: 0xD97706)) }
+            }
+        } board: { size in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 8) {
+                    Text(s.ended ? "ALL WORDS" : "FOUND SO FAR · \(s.words.count - s.found.count) MORE TO FIND").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(FinishInk.secondary)
+                    if s.ended {
+                        let all = (s.words + s.bonusFound).sorted()
+                        let rows = stride(from: 0, to: all.count, by: 4).map { Array(all[$0..<min($0 + 4, all.count)]) }
+                        VStack(spacing: 5) { ForEach(0..<rows.count, id: \.self) { r in HStack(spacing: 5) { ForEach(rows[r], id: \.self) { w in
+                            if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x8D99B0)).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(PuzKit.face(Color(hex: 0x6B7891), 0.08))).overlay(Capsule().stroke(PuzKit.line(Color(hex: 0x6B7891), 0.22), lineWidth: 1)) }
+                        } } } }
+                    } else { chipRows((s.found + s.bonusFound).sorted()) }
                 }
-                .foregroundStyle(hubAccent).padding(.top, 2)
-                Text(s.ended ? "ALL WORDS" : "FOUND SO FAR · \(s.words.count - s.found.count) MORE TO FIND").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                if s.ended {
-                    let all = (s.words + s.bonusFound).sorted()
-                    let rows = stride(from: 0, to: all.count, by: 4).map { Array(all[$0..<min($0 + 4, all.count)]) }
-                    VStack(spacing: 5) { ForEach(0..<rows.count, id: \.self) { r in HStack(spacing: 5) { ForEach(rows[r], id: \.self) { w in
-                        if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x9CA3AF)).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(Color(hex: 0xF9FAFB))).overlay(Capsule().stroke(Color(hex: 0xE5E7EB), lineWidth: 1)) }
-                    } } } }
-                } else { chipRows((s.found + s.bonusFound).sorted()) }
+                .frame(maxWidth: .infinity)
+                // §L: the word list on the tray (purple once Hubbub is reached).
+                .gameTray(accent: hubAccent, state: won ? .won : .normal, padding: 10)
+                .frame(maxWidth: .infinity, minHeight: size.height, alignment: .top)
+            }
+        } dock: {
+            PuzFinishedDock(isDaily: vm.isDaily, currentMode: "HUB", game: "Hubbub", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
+                            onOtherGames: { dismiss() },
+                            keepGoing: s.ended ? nil : { vm.setResults(false) })
+        } extras: {
+            VStack(spacing: 10) {
+                Text("\(s.points)/\(s.max) pts · \(s.found.count)/\(s.words.count) words · \(vm.pangramsFound)/\(s.pangrams.count) pangram\(s.pangrams.count == 1 ? "" : "s") · \(timeText(secs))\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")
+                    .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .tintedPill(hubAccent)
                 if vm.isDaily { DailyRankBadge(gameMode: .hub) }
                 ScoreBreakdownView(gameMode: GameMode.hub.rawValue, completed: won, guessCount: s.guessCount, timeSeconds: secs,
                                    boardsSolved: s.boardsSolved, totalBoards: HUB_TOTAL_BOARDS, hintsUsed: s.hintsUsed,
                                    day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
-                if vm.isDaily { NextDailyCTA(currentMode: "HUB") }
             }
             .padding(.vertical, 12)
         }
@@ -560,4 +589,62 @@ func hubFoundInOrder(_ s: HubState) -> [String] {
         let w = String(ev.dropFirst()); if !out.contains(w) { out.append(w) }
     }
     return out
+}
+
+/// FINISH_SPEC §J1: one hive letter as a glossy hexagon — `art-piece-hex-center`
+/// (gold) for the required center, `art-piece-hex` (lilac) for the six around it —
+/// with the letter drawn on top in code (white Nunito Black with the tile shadow;
+/// dark amber #7a3d00 on the gold center). Tap = squish + type pop.
+private struct HubHexKey: View {
+    let letter: Character
+    let centre: Bool
+    let side: CGFloat
+    let disabled: Bool
+    let action: () -> Void
+    @State private var taps = 0
+
+    var body: some View {
+        Button {
+            taps += 1
+            action()
+            Haptics.tap()
+        } label: {
+            ZStack {
+                Image(centre ? "art-piece-hex-center" : "art-piece-hex")
+                    .resizable().interpolation(.high).scaledToFit()
+                    .accessibilityHidden(true)
+                Text(String(letter))
+                    .font(Brand.fixedFont((side * 0.4).rounded(), .black))
+                    .foregroundStyle(centre ? Color(hex: 0x7A3D00) : .white)
+                    .shadow(color: centre ? Color.white.opacity(0.45) : Color(hex: 0x4C1D95).opacity(0.45),
+                            radius: side * 0.012, x: 0, y: side * 0.02)
+                    // The faces' optical center sits a touch above the frame center (the lip).
+                    .offset(y: -side * 0.03)
+            }
+            .frame(width: side, height: side)
+            .contentShape(HubHexShape())
+            .modifier(PuzTapPop(trigger: taps, size: CGSize(width: side, height: side)))
+        }
+        .buttonStyle(.squish)
+        .disabled(disabled)
+        .accessibilityLabel(centre ? "\(letter), center letter" : String(letter))
+    }
+}
+
+/// The flat-top hexagon hit shape (so neighbors never steal each other's taps).
+private struct HubHexShape: Shape {
+    func path(in r: CGRect) -> Path {
+        let inset = r.width * 0.04
+        let x0 = r.minX + inset, x1 = r.maxX - inset
+        let q = (x1 - x0) / 4
+        var p = Path()
+        p.move(to: CGPoint(x: x0, y: r.midY))
+        p.addLine(to: CGPoint(x: x0 + q, y: r.minY + inset))
+        p.addLine(to: CGPoint(x: x1 - q, y: r.minY + inset))
+        p.addLine(to: CGPoint(x: x1, y: r.midY))
+        p.addLine(to: CGPoint(x: x1 - q, y: r.maxY - inset))
+        p.addLine(to: CGPoint(x: x0 + q, y: r.maxY - inset))
+        p.closeSubpath()
+        return p
+    }
 }

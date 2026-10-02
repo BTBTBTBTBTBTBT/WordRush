@@ -19,6 +19,7 @@ struct LinkedSignInsSection: View {
     @State private var loadFailed = false
 
     private struct ProviderRow { let key: String; let name: String; let icon: String?; let symbol: String? }
+    private static let accent = Color(hex: 0x06B6D4)
     private let rows: [ProviderRow] = [
         .init(key: "google", name: "Google", icon: "google", symbol: nil),
         .init(key: "apple", name: "Apple", icon: nil, symbol: "applelogo"),
@@ -26,25 +27,22 @@ struct LinkedSignInsSection: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("LINKED SIGN-INS").font(Brand.font(11, .heavy)).tracking(1.1).foregroundStyle(Theme.textMuted)
+        // FINISH_SPEC §G5: a tinted section card with its top bar (§A1), like the
+        // rest of Settings; notices as tinted cards; Link / Unlink as candy (§A8).
+        G5Card("LINKED SIGN-INS", accent: Self.accent) {
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
-                    if i > 0 { Divider().overlay(Theme.border) }
+                    if i > 0 { G5Divider(accent: Self.accent) }
                     providerRow(row)
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
             if let error {
-                Text(error).font(Brand.body(12)).foregroundStyle(Color(hex: 0xDC2626))
-                    .fixedSize(horizontal: false, vertical: true)
+                G5Notice(error, tone: .error)
             } else if let notice {
-                Text(notice).font(Brand.body(12)).foregroundStyle(Theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                G5Notice(notice, tone: .success)
             }
             Text("Link Google or Apple so either one opens this same account. A sign-in already used by a different Wordocious account can't be linked here.")
-                .font(Brand.body(11)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .task { await load() }
@@ -69,15 +67,15 @@ struct LinkedSignInsSection: View {
                     if let icon = row.icon {
                         Image(icon).resizable().scaledToFit()
                     } else if let symbol = row.symbol {
-                        Image(systemName: symbol).font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.textPrimary)
+                        Image(systemName: symbol).font(.system(size: 16, weight: .semibold)).foregroundStyle(FinishInk.heading)
                     }
                 }
                 .frame(width: 20, height: 20)
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(row.name).font(Brand.headline(14)).foregroundStyle(Theme.textPrimary)
+                    Text(row.name).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                     Text(subtitle(linked, loaded: identities != nil))
-                        .font(Brand.body(11)).foregroundStyle(Theme.textMuted).lineLimit(1).truncationMode(.middle)
+                        .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer(minLength: 8)
                 trailing(row, linked: linked)
@@ -93,7 +91,7 @@ struct LinkedSignInsSection: View {
                     .accessibilityLabel("Link Apple")
             }
         }
-        .padding(12)
+        .padding(.vertical, 10)
         .accessibilityElement(children: .contain)
     }
 
@@ -106,21 +104,21 @@ struct LinkedSignInsSection: View {
         } else if let linked {
             HStack(spacing: 10) {
                 if (identities?.count ?? 0) > 1 {
-                    Button("Unlink") { error = nil; notice = nil; confirmUnlink = linked }
-                        .font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                        .disabled(working != nil)
+                    Button { error = nil; notice = nil; confirmUnlink = linked } label: {
+                        CandyLabel(title: "Unlink")
+                    }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .disabled(working != nil)
                         .accessibilityLabel("Unlink \(row.name)")
                 }
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.primary)
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Self.accent)
                     .accessibilityLabel("Linked")
             }
         } else if row.key == "google" {
             Button { linkGoogle() } label: {
-                Text("Link Google").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
-                    .padding(.horizontal, 12).padding(.vertical, 7)
-                    .overlay(Capsule().stroke(Theme.primary, lineWidth: 1.5))
+                CandyLabel(title: "Link Google")
             }
-            .buttonStyle(.squish)
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
             .disabled(working != nil)
         }
     }

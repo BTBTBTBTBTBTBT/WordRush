@@ -28,6 +28,19 @@ final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNot
         completionHandler()
     }
 
+    /// FINISH_SPEC §K1: a push that arrives while the app is open shows as the
+    /// in-app notice card (tinted, a cast pose, a candy action) instead of nothing.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let content = notification.request.content
+        let notice = InAppNotice(title: content.title, body: content.body, url: content.userInfo["url"] as? String)
+        if !notice.title.isEmpty || !notice.body.isEmpty {
+            Task { @MainActor in InAppNoticeCenter.shared.show(notice) }
+        }
+        completionHandler([])
+    }
+
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()

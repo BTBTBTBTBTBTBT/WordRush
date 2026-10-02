@@ -4,11 +4,20 @@ import { useEffect, useRef, useState } from 'react';
 import { validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
-import { X as XIcon, Check, Pencil, Star, Lock, Globe } from 'lucide-react';
+import { Pencil, Star, Lock, Globe } from 'lucide-react';
+import { CandyButton } from '@/components/ui/candy-button';
+import { POPUP_DIM, PoseArt, PopupBar, popupCard, softInput, softRow } from '@/components/ui/soft-popup';
+import { SoftSwitch } from '@/components/settings/settings-kit';
+import { softBackground, softBorder } from '@/lib/soft-surface';
 import { GameArt } from '@/components/ui/game-art';
 import { HeaderBack } from '@/components/ui/page-header';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
-import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
+import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { MascotBuilder } from '@/components/avatar/mascot-builder';
+import { usePlayerAvatar } from '@/components/avatar/player-avatar';
+import { choiceForConfig, saveProfileWithAvatar, type ProfilesUpdater } from '@/lib/avatar-cast';
+import { avatarInitial } from '@/lib/avatar-render';
+import type { AvatarConfig } from '@wordle-duel/core';
 import {
   PLATFORMS,
   SocialIcon,
@@ -18,7 +27,7 @@ import {
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { GameSquare } from '@/components/ui/game-tile';
 import { ACHIEVEMENTS } from '@/lib/achievement-service';
-import { ACCENT_COLORS, resolveAccent, accentDark } from '@/lib/profile-personalization';
+import { ACCENT_COLORS, resolveAccent } from '@/lib/profile-personalization';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface Props {
@@ -29,7 +38,7 @@ interface Props {
 const BIO_MAX = 80;
 
 export function ProfileEditModal({ open, onClose }: Props) {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, isProActive } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusRef = useRef<HTMLDivElement>(null);
   useFocusTrap(focusRef, open);
@@ -44,6 +53,54 @@ export function ProfileEditModal({ open, onClose }: Props) {
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  // FINISH_SPEC AN4: "Make your mascot" — the builder view (replaces the AH hero grid + frame row).
+  const [view, setView] = useState<'profile' | 'mascot'>('profile');
+  const [draft, setDraft] = useState<AvatarConfig | null>(null);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarNote, setAvatarNote] = useState('');
+  const [nudge, setNudge] = useState(false);
+  // The signed-in player's avatar as it shows everywhere (saved config, a locally kept one, or the default).
+  const ownLook = usePlayerAvatar({ name: profile?.username ?? null, userId: profile?.id ?? null });
+
+  const profileId = profile?.id ?? null;
+  useEffect(() => {
+    if (!open) return;
+    setView('profile');
+    setDraft(null);
+    setAvatarNote('');
+  }, [open]);
+
+  // AM2: players who had an emoji avatar get ONE gentle "Pick your character!" nudge (no DB change).
+  useEffect(() => {
+    if (!open || !profileId || !profile) return;
+    const p = profile as Record<string, unknown>;
+    const hadEmoji = typeof p.avatar_emoji === 'string' && p.avatar_emoji.trim().length > 0;
+    if (!hadEmoji || (p.avatar_config && typeof p.avatar_config === 'object')) return;
+    const key = `wordocious.pickCharacterNudge.${profileId}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch {
+      return;
+    }
+    setNudge(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, profileId]);
+
+  /** Tolerant save of the avatar (avatar_config + the legacy columns; kept on this device if the columns are missing). */
+  const saveAvatar = async (config: AvatarConfig): Promise<boolean> => {
+    if (!profile) return false;
+    setAvatarSaving(true);
+    setAvatarNote('');
+    const res = await saveProfileWithAvatar(supabase as unknown as ProfilesUpdater, profile.id, {}, choiceForConfig(config));
+    setAvatarSaving(false);
+    if (res.error) {
+      setAvatarNote((res.error as { message?: string }).message ?? 'Could not save your avatar. Please try again.');
+      return false;
+    }
+    await refreshProfile();
+    return true;
+  };
 
   // Seed local state from the current profile whenever the modal opens.
   useEffect(() => {
@@ -78,7 +135,8 @@ export function ProfileEditModal({ open, onClose }: Props) {
   const featuredName = featured ? ACHIEVEMENTS.find((a) => a.key === featured)?.name : null;
   const favMode = favoriteMode ? PROFILE_MODES.find((m) => m.dbKey === favoriteMode) : null;
   const avatarUrl = (profile as any).avatar_url as string | null;
-  const avatarEmoji = ((profile as any).avatar_emoji ?? null) as string | null;
+  const level = Number((profile as any).level) || 0;
+  const initial = avatarInitial(username.trim() || profile.username);
 
   const handleSave = async () => {
     setSaving(true);
@@ -116,6 +174,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
     };
     if (trimmed !== profile.username) payload.username = trimmed;
 
+    // AN4: the avatar saves from the mascot builder (its own Save); this saves the rest.
     const { error: updErr } = await (supabase as any)
       .from('profiles')
       .update(payload)
@@ -141,35 +200,57 @@ export function ProfileEditModal({ open, onClose }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(26,26,46,0.55)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: POPUP_DIM }}>
       <div
         ref={focusRef}
         className="w-full max-w-sm max-h-[92vh] overflow-y-auto relative"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
+        style={{ ...popupCard(EDIT_ACCENT, { share: 0.08 }), overflowY: 'auto' }}
         role="dialog"
         aria-modal="true"
       >
-        {/* Accent bar — matches the app chrome */}
-        <div className="h-1.5 rounded-t-[20px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }} />
+        {/* Accent bar — matches the app chrome (A1: the 10 px card top bar). */}
+        <PopupBar accent={EDIT_ACCENT} gradient="linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)" />
 
         <div className="p-5">
           <HeaderBack kind="close" onClick={onClose} size={32} className="absolute top-4 right-3" />
 
-          <h2 className="text-lg font-black uppercase text-transparent bg-clip-text mb-3" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Edit Profile</h2>
+          <div className="flex items-center gap-2 mb-3 pr-9">
+            {/* A7: O2, the star, strutting beside the title (a secondary spot). */}
+            <PoseArt pose="art-pose-o2-strut" size={44} />
+            <h2 className="text-lg font-black uppercase text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>{view === 'mascot' ? 'Make your mascot' : 'Edit Profile'}</h2>
+          </div>
 
+          {view === 'mascot' && draft ? (
+            <>
+              <MascotBuilder
+                value={draft}
+                onChange={setDraft}
+                initial={initial}
+                isPro={isProActive}
+                level={level}
+                photoUrl={avatarUrl}
+                saving={avatarSaving}
+                onBack={() => setView('profile')}
+                onSave={async (config) => {
+                  if (await saveAvatar(config)) setView('profile');
+                }}
+              />
+              {avatarNote && <p className="text-xs font-bold mt-2" style={{ color: 'var(--color-loss-text)' }}>{avatarNote}</p>}
+            </>
+          ) : (
+          <>
           {/* Live preview */}
-          <div className="rounded-2xl p-4 mb-5 flex flex-col items-center text-center" style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}>
-            {avatarUrl ? (
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden mb-2"
-                style={{ background: `linear-gradient(135deg, ${accentHex}, ${accentDark(accentHex)})` }}
-              >
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              // No photo: the letter tile (ART_SPEC §20), live with the name + accent being edited.
-              <LetterTileAvatar name={username.trim()} emoji={avatarEmoji} accent={accent} size={64} className="mb-2" />
-            )}
+          <div className="p-4 mb-5 flex flex-col items-center text-center" style={softRow(accentHex, { radius: 18 })}>
+            {/* AN5 / AN6: the avatar as it shows everywhere (photo or mascot), its letter live with the name. */}
+            <MascotAvatar
+              config={ownLook.config}
+              initial={initial}
+              size={64}
+              photoUrl={ownLook.url}
+              pro={ownLook.pro}
+              level={ownLook.level}
+              className="mb-2"
+            />
             <div className="text-lg font-black" style={{ color: accentHex }}>{username.trim() || 'username'}</div>
             {featuredName && (
               <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full mt-1" style={{ background: `${accentHex}1a`, color: accentHex }}>
@@ -184,11 +265,45 @@ export function ProfileEditModal({ open, onClose }: Props) {
             )}
           </div>
 
-          {/* Avatar */}
-          <div className="flex flex-col items-center mb-4">
-            <AvatarUpload size={72} editable accent={accent} />
-            <p className="text-[10px] font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>Tap the avatar to upload a photo.</p>
+          {/* Avatar (AN4): make your mascot, or tap your picture to upload a photo. */}
+          {label('Avatar')}
+          {nudge && (
+            // AM2: a one-time gentle nudge for players who had an emoji avatar.
+            <div className="flex items-center gap-3 p-3 mb-2" style={softRow('#ec4899', { radius: 16 })} role="status">
+              <MascotAvatar config={ownLook.config} initial={initial} size={40} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Pick your character!</div>
+                <div className="text-[11px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>Build a mascot that wears your initial.</div>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-3 mb-1.5">
+            <AvatarUpload
+              size={56}
+              editable
+              accent={accent}
+              photoOnly
+              onUploaded={() => {
+                // A new photo shows right away (the mascot / photo switch flips to the photo).
+                if (ownLook.config.display !== 'photo') void saveAvatar({ ...ownLook.config, display: 'photo' });
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <CandyButton
+                color="purple"
+                size="sm"
+                onClick={() => { setDraft(ownLook.config); setNudge(false); setView('mascot'); }}
+                disabled={saving}
+              >
+                Make your mascot
+              </CandyButton>
+              <p className="text-[10px] font-bold leading-snug mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                Tap your picture to upload a photo.
+              </p>
+            </div>
           </div>
+          {avatarNote && <p className="text-xs font-bold mb-2" style={{ color: 'var(--color-loss-text)' }}>{avatarNote}</p>}
+          <div className="mb-4" />
 
           {/* Username */}
           {label('Username')}
@@ -200,7 +315,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
             maxLength={20}
             disabled={saving}
             className="w-full px-3 py-2 text-sm font-bold outline-none mb-4"
-            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px', color: 'var(--color-text)' }}
+            style={softInput(EDIT_ACCENT)}
           />
 
           {/* Bio */}
@@ -215,12 +330,13 @@ export function ProfileEditModal({ open, onClose }: Props) {
             rows={2}
             disabled={saving}
             className="w-full px-3 py-2 text-sm font-bold outline-none mb-4 resize-none"
-            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px', color: 'var(--color-text)' }}
+            style={softInput(EDIT_ACCENT)}
           />
 
           {/* Accent color */}
           {label('Accent color')}
-          <div className="flex flex-wrap gap-2 mb-4">
+          {/* The swatches sit on a tray tinted in the chosen accent; each is a glossy candy dot, the chosen one ringed. */}
+          <div className="flex flex-wrap gap-2.5 mb-4 p-2.5" style={softRow(accentHex, { radius: 16 })}>
             {ACCENT_COLORS.map((c) => {
               const selected = (accent ?? '#7C3AED').toLowerCase() === c.hex.toLowerCase();
               return (
@@ -228,8 +344,14 @@ export function ProfileEditModal({ open, onClose }: Props) {
                   key={c.id}
                   onClick={() => setAccent(c.id === 'purple' ? null : c.hex)}
                   className="w-8 h-8 rounded-full"
-                  style={{ background: c.hex, outline: selected ? `2px solid ${c.hex}` : 'none', outlineOffset: '2px', border: '2px solid var(--color-surface)' }}
+                  style={{
+                    background: `radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%), ${c.hex}`,
+                    boxShadow: selected
+                      ? `0 0 0 2px var(--color-card-base, #fff), 0 0 0 4.5px ${c.hex}, 0 3px 6px ${c.hex}66`
+                      : `inset 0 -2.5px 0 rgba(0, 0, 0, 0.18), 0 2px 5px ${c.hex}55`,
+                  }}
                   aria-label={c.id}
+                  aria-pressed={selected}
                 />
               );
             })}
@@ -240,10 +362,8 @@ export function ProfileEditModal({ open, onClose }: Props) {
           <div className="flex flex-wrap gap-1.5 mb-4">
             <button
               onClick={() => setFeatured(null)}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
-              style={featured == null
-                ? { background: accentHex, color: '#fff' }
-                : { background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+              className="text-[11px] font-bold px-2.5 py-1"
+              style={{ ...chip(accentHex, featured == null), color: featured == null ? 'var(--color-text)' : 'var(--color-text-muted)' }}
             >None</button>
             {unlockedAchievements.length === 0 && (
               <span className="text-[11px] font-bold py-1" style={{ color: 'var(--color-text-muted)' }}>Unlock achievements to wear one as a title.</span>
@@ -254,12 +374,10 @@ export function ProfileEditModal({ open, onClose }: Props) {
                 <button
                   key={a.key}
                   onClick={() => setFeatured(a.key)}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full"
-                  style={sel
-                    ? { background: accentHex, color: '#fff' }
-                    : { background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1"
+                  style={{ ...chip(accentHex, sel), color: 'var(--color-text)' }}
                 >
-                  <Star className="w-3 h-3" /> {a.name}
+                  <Star className="w-3 h-3" style={{ color: accentHex }} /> {a.name}
                 </button>
               );
             })}
@@ -270,10 +388,8 @@ export function ProfileEditModal({ open, onClose }: Props) {
           <div className="flex flex-wrap gap-2 mb-4">
             <button
               onClick={() => setFavoriteMode(null)}
-              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg"
-              style={favoriteMode == null
-                ? { background: accentHex, color: '#fff' }
-                : { background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+              className="text-[11px] font-bold px-2.5 py-1.5"
+              style={{ ...chip(accentHex, favoriteMode == null, 10), color: favoriteMode == null ? 'var(--color-text)' : 'var(--color-text-muted)' }}
             >None</button>
             {PROFILE_MODES.map((m) => {
               const sel = favoriteMode === m.dbKey;
@@ -298,16 +414,9 @@ export function ProfileEditModal({ open, onClose }: Props) {
 
           {/* Privacy */}
           {label('Privacy')}
-          <button
-            onClick={() => setIsPrivate((v) => !v)}
-            disabled={saving}
-            className="w-full flex items-center gap-3 px-3 py-2.5 mb-1.5 transition-colors active:scale-[0.98] disabled:opacity-50"
-            style={{
-              background: 'var(--color-bg)',
-              border: `1.5px solid ${isPrivate ? '#c4b5fd' : 'var(--color-border)'}`,
-              borderRadius: '10px',
-            }}
-            aria-pressed={isPrivate}
+          <div
+            className="w-full flex items-center gap-3 px-3 py-2.5 mb-1.5"
+            style={{ ...softRow(EDIT_ACCENT, { radius: 14 }), opacity: saving ? 0.5 : 1 }}
           >
             {isPrivate ? (
               <Lock className="w-4 h-4 shrink-0" style={{ color: '#7c3aed' }} />
@@ -317,16 +426,14 @@ export function ProfileEditModal({ open, onClose }: Props) {
             <span className="flex-1 text-left text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
               Private profile
             </span>
-            <span
-              className="text-[10px] font-black px-2 py-0.5 rounded-full"
-              style={{
-                background: isPrivate ? '#f3f0ff' : 'var(--color-surface-hover)',
-                color: isPrivate ? '#7c3aed' : 'var(--color-text-muted)',
-              }}
-            >
-              {isPrivate ? 'ON' : 'OFF'}
-            </span>
-          </button>
+            <SoftSwitch
+              checked={isPrivate}
+              onCheckedChange={(v) => setIsPrivate(v)}
+              accent={EDIT_ACCENT}
+              disabled={saving}
+              label="Private profile"
+            />
+          </div>
           <p className="text-[10px] font-bold mb-4 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
             Hide your words, stats, and game history from other players. You&apos;ll still appear on leaderboards.
           </p>
@@ -346,31 +453,24 @@ export function ProfileEditModal({ open, onClose }: Props) {
                   placeholder={p.placeholder}
                   disabled={saving}
                   className="flex-1 text-xs font-bold px-2.5 py-1.5 outline-none"
-                  style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                  style={{ ...softInput(p.color), borderRadius: 10 }}
                 />
               </div>
             ))}
           </div>
 
-          {error && <p className="text-xs font-bold text-red-500 mb-2">{error}</p>}
+          {error && <p className="text-xs font-bold mb-2" style={{ color: 'var(--color-loss-text)' }}>{error}</p>}
 
           <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className="flex-1 py-2.5 rounded-xl text-sm font-black"
-              style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-            >Cancel</button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 py-2.5 rounded-xl text-sm font-black text-white disabled:opacity-50 flex items-center justify-center gap-1"
-              style={{ background: '#7c3aed' }}
-            >
-              <Check className="w-4 h-4" />
+            <CandyButton color="peach" size="md" className="flex-1" onClick={onClose} disabled={saving}>
+              Cancel
+            </CandyButton>
+            <CandyButton color="purple" size="md" className="flex-1" icon="check" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : 'Save'}
-            </button>
+            </CandyButton>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>
@@ -379,13 +479,20 @@ export function ProfileEditModal({ open, onClose }: Props) {
 
 export function EditProfileButton({ onClick }: { onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-full"
-      style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
-    >
-      <Pencil className="w-3 h-3" />
+    <CandyButton color="purple" size="sm" onClick={onClick} icon={<Pencil className="w-3 h-3" color="#ffffff" strokeWidth={3} />}>
       Edit profile
-    </button>
+    </CandyButton>
   );
+}
+
+/** The sheet's accent (brand purple). */
+const EDIT_ACCENT = '#7c3aed';
+
+/** A picker chip (featured title, favorite mode "None"): tinted, selected = stronger wash + ring. */
+function chip(accent: string, selected: boolean, radius = 999): React.CSSProperties {
+  return {
+    background: softBackground(accent, selected ? 0.24 : 0.08),
+    border: selected ? `2px solid ${accent}` : softBorder(accent, 0.08),
+    borderRadius: radius,
+  };
 }

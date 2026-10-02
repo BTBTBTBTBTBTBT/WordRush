@@ -1,0 +1,103 @@
+{
+  "levels": [
+    {
+      "level": 0,
+      "tier": "bronze",
+      "label": "Bronze"
+    },
+    {
+      "level": 1,
+      "tier": "bronze",
+      "label": "Bronze"
+    },
+    {
+      "level": 5,
+      "tier": "bronze",
+      "label": "Bronze"
+    },
+    {
+      "level": 10,
+      "tier": "bronze",
+      "label": "Bronze"
+    },
+    {
+      "level": 11,
+      "tier": "silver",
+      "label": "Silver"
+    },
+    {
+      "level": 25,
+      "tier": "silver",
+      "label": "Silver"
+    },
+    {
+      "level": 26,
+      "tier": "gold",
+      "label": "Gold"
+    },
+    {
+      "level": 50,
+      "tier": "gold",
+      "label": "Gold"
+    },
+    {
+      "level": 51,
+      "tier": "platinum",
+      "label": "Platinum"
+    },
+    {
+      "level": 99,
+      "tier": "platinum",
+      "label": "Platinum"
+    },
+    {
+      "level": 100,
+      "tier": "diamond",
+      "label": "Diamond"
+    },
+    {
+      "level": 101,
+      "tier": "diamond",
+      "label": "Diamond"
+    },
+    {
+      "level": 500,
+      "tier": "diamond",
+      "label": "Diamond"
+    }
+  ],
+  "days": [
+    {
+      "date": "2026-10-01",
+      "season": null
+    },
+    {
+      "date": "2026-10-23",
+      "season": null
+    },
+    {
+      "date": "2026-10-24",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-11-02",
+      "season": null
+    },
+    {
+      "date": "2026-12-25",
+      "season": null
+    },
+    {
+      "date": "2027-10-24",
+      "season": "halloween"
+    }
+  ]
+}
