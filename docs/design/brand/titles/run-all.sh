@@ -47,4 +47,6 @@ python3 split-lines.py gt5-keyed.png gt-seven,gt-sudoku,gt-crossword >/dev/null
 python3 split-lines.py gt6-keyed.png gt-ladder,gt-wordsearch,gt-regions >/dev/null
 # The re-rolled YOU WIN! (clean '!') replaces the one from sweep-flawless-win.
 python3 split-lines.py youwin-solo-keyed.png youwin >/dev/null
+# DAILIES title = the second line of the 'WORDOCIOUS DAILIES / DAILIES' sheet (founder: just DAILIES)
+python3 ../key-capture.py /Users/brianterchin/.claude/projects/-Users-brianterchin-Developer-WordRush--claude-worktrees-word-definitions-failing-c540b6/3d60503d-ed25-4482-ad22-5271a6c2134b/tool-results/mcp-Claude_Browser-blob-1790945303728-tmhdkq.jpg 40,105,760,240 cyan dailies2-raw-keyed.png >/dev/null && python3 split-lines.py dailies2-raw-keyed.png dailies >/dev/null
 echo

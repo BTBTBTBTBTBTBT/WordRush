@@ -29,7 +29,10 @@ for prev, cur in zip(shots, shots[1:]):
     # the bottom of each shot, so the next shot shows those rows clean).
     ov = (h - BOT) - TOP - best_dy
     if ov > 0:
-        canvas[canvas.shape[0] - ov:] = cur[TOP: TOP + ov]
+        # Both shots fade at their edges (header above, composer below): split the
+        # overlap in half — prev keeps the top half, cur supplies the bottom half.
+        half = ov // 2
+        canvas[canvas.shape[0] - (ov - half):] = cur[TOP + half: TOP + ov]
     canvas = np.concatenate([canvas, new_rows], axis=0)
     print('dy', best_dy, 'err', round(float(best), 2))
 Image.fromarray(canvas.clip(0, 255).astype('uint8')).save(out_path)

@@ -61,7 +61,7 @@ keyed = tempfile.mktemp(suffix='.png')
 subprocess.run(['python3', os.path.join(HERE, '..', 'key-capture.py'), tmp, f'0,0,{im.width},{im.height}', key, keyed], check=True, capture_output=True)
 k = Image.open(keyed).convert("RGBA"); k.save("/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-word-definitions-failing-c540b6/3d60503d-ed25-4482-ad22-5271a6c2134b/scratchpad/last-keyed.png")
 a = np.array(k.getchannel('A')) > 40
-if len(names) > 3:
+if len(names) > 3 and not os.environ.get('BLOB'):
     # Grid sheet (rows of 3): cut along the widest empty column/row gaps, then
     # keep everything inside each cell (icons can be several separate pieces).
     def cuts(profile, n):

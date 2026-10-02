@@ -102,4 +102,9 @@ for g in GAMES:
         continue
     ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
 ship('art-bg-tiles', Image.open(os.path.join(HERE, 'backgrounds', 'tile-pattern.png')).convert('RGBA')); n += 1
+WALLS = os.path.join(HERE, 'wallpapers', 'out')
+for f in sorted(os.listdir(WALLS)):
+    if f.endswith('.png'):
+        im = Image.open(os.path.join(WALLS, f)).convert('RGB').convert('RGBA')
+        ship('art-' + f[:-4], im); n += 1
 print('shipped', n)

@@ -17,7 +17,7 @@ POSES = os.path.join(HERE, '..', 'poses')
 # title rotates through them with its own offset, so no two titles share a pose set
 # and neighbors in the app never show the same pose for the same character.
 POSES6 = {
-    'w': ['cheer', 'point', 'lean', 'proud', 'sit', 'fly'],
+    'w': ['wave', 'point', 'hips', 'proud', 'sit', 'fly'],  # happy, beady-eyed (founder)
     'o1': ['cheer', 'jump', 'sit', 'cartwheel', 'lean', 'hug'],
     'r': ['sit', 'wake', 'lean', 'cocoa', 'cheer', 'sleepwalk'],
     'd': ['cheer', 'eureka', 'lean', 'notes', 'sit', 'skeptic'],
@@ -25,13 +25,13 @@ POSES6 = {
     'c': ['cheer', 'telescope', 'sit', 'map', 'lean', 'backpack'],
     'i': ['sit', 'water', 'cheer', 'giggle', 'lean', 'reach'],
     'o3': ['sit', 'cushion', 'handstand', 'mustache', 'sneak', 'laugh'],
-    'u': ['meditate', 'lotus', 'spin', 'tea', 'stretch', 'upside'],
+    'u': ['meditate', 'lotus', 'spin', 'tea', 'stretch', 'meditate'],  # upside reads as 'n'
     's': ['flex', 'trophy', 'slide', 'stopwatch', 'sit', 'blocks'],
 }
 PAGE_ORDER = ['welcome', 'dailies', 'puzzles', 'wotd', 'friends', 'stats', 'leaderboard', 'records',
               'vs', 'settings', 'howto', 'gopro', 'moregames']
 LETTERING = {n: f'{n}-lettering-keyed.png' for n in PAGE_ORDER}
-WIDE = {'welcome', 'dailies', 'friends', 'leaderboard', 'records', 'vs', 'wotd', 'howto', 'moregames'}
+WIDE = {'welcome', 'friends', 'leaderboard', 'records', 'vs', 'wotd', 'howto', 'moregames'}
 
 
 def layout(name):

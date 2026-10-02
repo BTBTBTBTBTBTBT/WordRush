@@ -234,3 +234,29 @@ Founder: "design in a layout with the help of chat design and knock all of this 
 4. **Greeting banner.** The frosted headline strip on Home: white at 72% with blur, radius 22,
    the host mascot peeking over its top-right edge (already there) — make sure the strip uses
    the full content width and the headline sits centered when it fits on one line.
+
+## 19. Wallpapers, centered section titles, big game titles (founder, 2026-10-02 late morning)
+
+1. **Wallpapers replace the tint + tile layer.** New assets `art-wall-<name>` (1080 px wide,
+   portrait, opaque): `home`, `leaderboard`, `stats`, `friends`, `vs`, and `game-<mode id>` for
+   each solo game (practice, gauntlet, quordle, octordle, sequence, rescue, six, seven,
+   propernoundle, sudoku, scramble, hub, crossword, groups, ladder, cryptogram, wordsearch,
+   regions). Each has its own tile arrangement and the page/game's color.
+   `PageBackground(tint)` draws the matching wallpaper: aspect-FILL the screen, centered,
+   FIXED (it does not scroll with content), behind the status bar. Home tint pages (Home,
+   Settings, Pro, Help, profile) use `home`; Leaderboard + Records `leaderboard`; Stats
+   `stats`; Friends `friends`; VS pages `vs`; each solo game screen `game-<id>`. Dark mode: the
+   same wallpaper under a 58% overlay of #120D1F (games 62%). Reduce transparency/contrast:
+   keep the wallpaper but add a 20% white (light) / 70% dark overlay. Remove the old gradient +
+   tile pattern drawing (keep the tint values for card shadows and fallbacks if the image fails).
+2. **Section titles centered.** The DAILIES, PUZZLES and WORD OF THE DAY title art on Home are
+   centered horizontally above their sections, same width rule for all three (≈78% of content
+   width, max 340 pt). `art-title-dailies` now reads just DAILIES (shipped). Word of the Day's
+   "Past words" link moves under the title, centered, small.
+3. **Game titles much bigger.** Game screen headers: the corner buttons (Home left, ? / sound
+   right) stay in their own top row; the game title art moves BELOW that row and spans the full
+   content width minus 32 pt, height following the aspect ratio, capped at 120 pt (phones land
+   ~95–115 pt). The guess / timer status line sits under the title. Reclaim the empty space:
+   the board area starts right after the status line (keep the board's own centering logic for
+   tall screens, but the title now occupies the top third that used to be empty). On short
+   screens (height < 700 pt) cap the title at 84 pt. VS matches unchanged.
