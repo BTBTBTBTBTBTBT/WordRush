@@ -32,10 +32,10 @@ U purple, white U, closed calm eyes, floats, no feet · S golden yellow, white S
 | # | Piece | Where it goes | Status |
 |---|---|---|---|
 | A | Day titles ×7 (Mon D … Sun O3) | Leaderboard banner title | DONE titles/<day>-keyed.png |
-| B | Pose sheets ×10 (sit / cheer / lean) | whole-cast compositions | in progress (C first) |
-| C | Whole-cast page titles: FRIENDS, STATS, ALL-TIME RECORDS, VS BATTLE, PUZZLES, WORD OF THE DAY, SETTINGS, GO PRO, HOW TO PLAY, MORE GAMES | top of each page | lettering FRIENDS + STATS done; compose with poses |
-| D | Game icons ×18 + VS + More, 3D glossy versions of today's glyphs (no faces) | game tiles / cards / selectors | todo |
-| E | W / L completion badges (+ ✓) | home game cards | todo |
+| B | Pose sheets ×10, three poses each with distinct expressions | whole-cast compositions, empty states | DONE poses/<id>-<pose>.png (run-all.sh) |
+| C | Whole-cast page titles: FRIENDS, STATS, ALL-TIME RECORDS, VS BATTLE, PUZZLES, WORD OF THE DAY, SETTINGS, GO PRO, HOW TO PLAY, MORE GAMES | top of each page | FRIENDS + STATS composed (titles/<name>-cast.png); lettering done for RECORDS, VS, PUZZLES, WOTD, SETTINGS, HOW TO PLAY, GO PRO (gold), MORE GAMES; compose next |
+| D | Game icons ×18 + VS + More, 3D glossy versions of today's glyphs (no faces) | game tiles / cards / selectors | DONE games/<mode id>.png (20, run-all.sh) |
+| E | W / L completion badges (+ ✓) + UI icons lock, bell, add-friend, share, sound, back | home game cards, header circles | DONE icons/<name>-capture.png |
 | F | Moment lettering: VICTORY!, SO CLOSE!, SWEEP!, FLAWLESS!, YOU WIN!, YOU LOSE, DRAW, NEW RECORD!, STREAK! | result + celebration screens | todo |
 | G | Scenes: R asleep (empty), R unplugged (offline), U zen (all done), O3 peeking (404), I waving (add a friend), D with clipboard (no stats yet) | empty / error states | todo |
 | H | Welcome hero: whole cast waving + WELCOME lettering | sign-in / onboarding | todo |

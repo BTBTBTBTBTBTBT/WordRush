@@ -61,6 +61,49 @@ keyed = tempfile.mktemp(suffix='.png')
 subprocess.run(['python3', os.path.join(HERE, '..', 'key-capture.py'), tmp, f'0,0,{im.width},{im.height}', key, keyed], check=True, capture_output=True)
 k = Image.open(keyed).convert("RGBA"); k.save("/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-word-definitions-failing-c540b6/3d60503d-ed25-4482-ad22-5271a6c2134b/scratchpad/last-keyed.png")
 a = np.array(k.getchannel('A')) > 40
+if len(names) > 3:
+    # Grid sheet (rows of 3): cut along the widest empty column/row gaps, then
+    # keep everything inside each cell (icons can be several separate pieces).
+    def cuts(profile, n):
+        gaps, i = [], 0
+        while i < len(profile):
+            if not profile[i]:
+                s0 = i
+                while i < len(profile) and not profile[i]:
+                    i += 1
+                if s0 > 0 and i < len(profile):
+                    gaps.append((i - s0, (s0 + i) // 2))
+            else:
+                i += 1
+        return sorted(c for _, c in sorted(gaps, reverse=True)[:n])
+    ys0, ys1 = np.nonzero(a.any(axis=1))[0][[0, -1]]
+    xs0, xs1 = np.nonzero(a.any(axis=0))[0][[0, -1]]
+    nrows = len(names) // 3
+    cx = [xs0] + cuts(a.any(axis=0), 2) + [xs1 + 1]
+    cy = [ys0] + cuts(a.any(axis=1), nrows - 1) + [ys1 + 1]
+    for idx, name in enumerate(names):
+        r, c = divmod(idx, 3)
+        cell = k.crop((cx[c], cy[r], cx[c + 1], cy[r + 1]))
+        # Drop fragments much smaller than the icon's main pieces (button
+        # remnants); multi-part icons (tile grids, numerals) keep every piece.
+        ca = np.array(cell)
+        # Icon sheets are colored to avoid the key hue, so key-hued pixels left
+        # in a cell are button/shading residue: drop them.
+        r_, g_, b_ = (ca[..., i].astype(int) for i in range(3))
+        hue = (g_ > r_ + 45) & (b_ > r_ + 45) if key == 'cyan' else (r_ > g_ + 60) & (b_ > g_ + 60) if key == 'magenta' else np.zeros(r_.shape, bool)
+        ca[..., 3] = np.where(hue, 0, ca[..., 3])
+        lab2, n2 = ndimage.label(ca[..., 3] > 40)
+        if n2 > 1:
+            sz = ndimage.sum(np.ones_like(lab2), lab2, range(1, n2 + 1))
+            keep2 = np.isin(lab2, [i + 1 for i, v in enumerate(sz) if v >= sz.max() * 0.15])
+            ca[..., 3] = np.where(ndimage.binary_dilation(keep2, iterations=2), ca[..., 3], 0)
+            cell = Image.fromarray(ca)
+        bb = cell.getchannel('A').point(lambda v: 255 if v > 40 else 0).getbbox()
+        cell = cell.crop(bb)
+        out = os.path.join(os.environ.get('OUTDIR', HERE), f'{name}.png' if cid == '-' else f'{cid}-{name}.png')
+        cell.save(out)
+        print(out, cell.size)
+    sys.exit(0)
 # The N biggest blobs are the poses (no dilation, so near-touching poses stay
 # apart); small bits (speed lines, props, hearts) join the nearest pose.
 lab, n = ndimage.label(ndimage.binary_opening(a, iterations=1))
@@ -76,7 +119,12 @@ for i in range(1, n + 1):
         cy, cx = ndimage.center_of_mass(lab == i)
         j = min(big, key=lambda b: (cent[b][0] - cy) ** 2 + (cent[b][1] - cx) ** 2)
         owner[lab == i] = j
-big.sort(key=lambda b: cent[b][1])
+if len(names) > 3:
+    # Grid sheet: rows of 3, read left to right, top to bottom.
+    by_y = sorted(big, key=lambda b: cent[b][0])
+    big = [b for r in range(0, len(by_y), 3) for b in sorted(by_y[r:r + 3], key=lambda b: cent[b][1])]
+else:
+    big.sort(key=lambda b: cent[b][1])
 arr = np.array(k)
 for name, b in zip(names, big):
     m = ndimage.binary_dilation(owner == b, iterations=2) & (np.array(k.getchannel('A')) > 0)
@@ -88,6 +136,6 @@ for name, b in zip(names, big):
     piece[..., 3] = np.where(m, piece[..., 3], 0)
     im2 = Image.fromarray(piece)
     im2 = im2.crop(im2.getchannel('A').point(lambda v: 255 if v > 40 else 0).getbbox())
-    out = os.path.join(HERE, f'{cid}-{name}.png')
+    out = os.path.join(os.environ.get('OUTDIR', HERE), f'{name}.png' if cid == '-' else f'{cid}-{name}.png')
     im2.save(out)
     print(out, im2.size)

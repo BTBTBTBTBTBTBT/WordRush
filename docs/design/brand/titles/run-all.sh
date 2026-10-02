@@ -15,5 +15,13 @@ done <<'LIST'
 1790920677165-ruz03j cyan sunday
 1790921315156-6th5th cyan friends-lettering
 1790921504139-rwsy94 cyan stats-lettering
+1790923821026-6tz10l cyan records-vs
+1790924029584-7u06ir cyan puzzles-wotd
+1790924128277-eol0ft cyan settings-howto
+1790924277188-fcqhds cyan gopro-more
 LIST
+python3 split-lines.py records-vs-keyed.png records,vs >/dev/null
+python3 split-lines.py puzzles-wotd-keyed.png puzzles,wotd >/dev/null
+python3 split-lines.py settings-howto-keyed.png settings,howto >/dev/null
+python3 split-lines.py gopro-more-keyed.png gopro,moregames >/dev/null
 echo
