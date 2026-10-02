@@ -341,7 +341,10 @@ fun HomeScreen(
             // lock/badge rules). The More Games band and sheet are gone.
             HomeSectionHeader("WORDOCIOUS DAILIES")
             ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
-            HomeSectionHeader("PUZZLES", host = Mascots.puzzles)
+            // ART_SPEC §2: the whole-cast PUZZLES art (~70% width, left aligned) is the header.
+            Box(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                PageTitleArt(TitleArt.PUZZLES, Modifier.fillMaxWidth(0.7f), maxWidth = 294.dp, alignment = Alignment.CenterStart)
+            }
             ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = openCard)
 
             WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
@@ -660,11 +663,10 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
         // NOT — it reflows at the user's full text size, on proportional lines.
         CappedFontScale {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // The Word of the Day host (I, the sprout: MASCOT_SPEC §1–§2), static.
-                Mascot(Mascots.wordOfTheDay, 28.dp)
-                Spacer(Modifier.width(6.dp))
-                Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
-                Spacer(Modifier.weight(1f))
+                // ART_SPEC §2: the whole-cast WORD OF THE DAY art replaces the label + I host.
+                Box(Modifier.weight(1f).padding(end = 8.dp), contentAlignment = Alignment.CenterStart) {
+                    PageTitleArt(TitleArt.WOTD, maxWidth = 260.dp, alignment = Alignment.CenterStart)
+                }
                 Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
                 Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
             }

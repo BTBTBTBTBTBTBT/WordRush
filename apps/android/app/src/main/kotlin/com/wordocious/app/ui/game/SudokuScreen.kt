@@ -589,7 +589,9 @@ private fun SudokuResult(
 @Composable
 private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
     Row(Modifier.clickableNoRipple(onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
+        // ART_SPEC §5: the result card's Share wears the 3D share icon (~1.2× the old glyph).
+        if (icon == Icons.Filled.Share) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.SHARE, 17.dp)
+        else Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
         Text(label, fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
     }
 }

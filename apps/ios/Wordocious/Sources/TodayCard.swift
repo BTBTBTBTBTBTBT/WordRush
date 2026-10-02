@@ -101,11 +101,11 @@ struct TodayCard: View {
                 // The rest of the day: Puzzles, VS, where you stand.
                 HStack(spacing: 8) {
                     pill(label: "Puzzles", value: moreDaily.isEmpty ? "—" : "\(morePlayed) of \(moreDaily.count)",
-                         color: Color(hex: 0x4F46E5), icon: .symbol("square.grid.2x2")) {
+                         color: Color(hex: 0x4F46E5), icon: .game("more", .symbol("square.grid.2x2"))) {
                         onJump(moreDaily.first?.dbKey ?? StatsRailKey.today)
                     }
                     pill(label: "VS Battle", value: vsDailyWon == nil ? "—" : (vsDailyWon! ? "W" : "L"),
-                         color: Color(hex: 0xEC4899), icon: .asset("swords")) { onJump(StatsRailKey.vs) }
+                         color: Color(hex: 0xEC4899), icon: .game("vs", .asset("swords")), won: vsDailyWon) { onJump(StatsRailKey.vs) }
                     pill(label: "Standing", value: standing.map { "Top \($0.topPercent)%" } ?? "—",
                          color: Color(hex: 0x7C3AED), icon: .symbol("chart.line.uptrend.xyaxis"), action: nil)
                 }
@@ -178,14 +178,16 @@ struct TodayCard: View {
         return Button { onOpenDaily(m) } label: {
             VStack(spacing: 3) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
                     if played {
-                        Text(won ? "W" : "L").font(Brand.font(14, .black)).foregroundStyle(.white)
+                        // ART_SPEC §4: the 3D W / L badge is the result tile.
+                        ResultBadge(won: won, size: 38)
                     } else {
+                        RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
                         ModeIconView(icon: m.icon, accent: m.accent, box: 26)
                     }
                 }
+                .frame(width: 38, height: 38)
                 .opacity(played ? 1 : 0.7)
                 Text(ModeGen.byId(m.id)?.shortTitle ?? m.title).font(Brand.font(8, .bold))
                     .foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
@@ -207,7 +209,12 @@ struct TodayCard: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 5).fill(bg).frame(width: 20, height: 20)
                     .overlay(RoundedRectangle(cornerRadius: 5).stroke(done ? Color.clear : m.accent.opacity(0.33), lineWidth: 1))
-                glyph(m.icon, color: fg, fallback: ModeGen.byId(m.id)?.glyph ?? String(m.title.prefix(1)))
+                if m.icon.gameArt != nil {
+                    // ART_SPEC §3: the 3D game icon (on a white disc over a solid result fill).
+                    BannerGlyph(icon: m.icon, ink: fg, accent: m.accent, solid: done, size: 13)
+                } else {
+                    glyph(m.icon, color: fg, fallback: ModeGen.byId(m.id)?.glyph ?? String(m.title.prefix(1)))
+                }
             }
         }
         .buttonStyle(.plain)
@@ -216,6 +223,15 @@ struct TodayCard: View {
 
     @ViewBuilder
     private func glyph(_ icon: ModeIconKind, color: Color, fallback: String) -> some View {
+        if let art = icon.gameArt {
+            GameArtImage(asset: art, size: 14)
+        } else {
+            plainGlyph(icon.glyph, color: color, fallback: fallback)
+        }
+    }
+
+    @ViewBuilder
+    private func plainGlyph(_ icon: ModeIconKind, color: Color, fallback: String) -> some View {
         switch icon {
         case .symbol(let name):
             Image(systemName: name).font(.system(size: 10, weight: .bold)).foregroundStyle(color)
@@ -226,7 +242,7 @@ struct TodayCard: View {
         }
     }
 
-    private func pill(label: String, value: String, color: Color, icon: ModeIconKind, action: (() -> Void)?) -> some View {
+    private func pill(label: String, value: String, color: Color, icon: ModeIconKind, won: Bool? = nil, action: (() -> Void)?) -> some View {
         Button { action?() } label: {
             VStack(spacing: 2) {
                 HStack(spacing: 4) {
@@ -235,8 +251,13 @@ struct TodayCard: View {
                 }
                 .foregroundStyle(color)
                 .lineLimit(1).minimumScaleFactor(0.7)
-                Text(value).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                if let won {
+                    // ART_SPEC §4: a known daily result reads as the 3D W / L badge.
+                    ResultBadge(won: won, size: 20)
+                } else {
+                    Text(value).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
             }
             .frame(maxWidth: .infinity).padding(.vertical, 8).padding(.horizontal, 4)
             .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))

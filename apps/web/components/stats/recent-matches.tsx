@@ -9,6 +9,7 @@ import { formatGuessStat } from '@/lib/format';
 import type { Database } from '@/lib/database.types';
 import { MascotEmptyState } from '@/components/ui/mascot';
 import type { MascotId } from '@/lib/mascots';
+import { isGameArtIcon } from '@/lib/art';
 
 type Match = Database['public']['Tables']['matches']['Row'];
 
@@ -126,7 +127,7 @@ function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentN
       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
         {(() => {
           if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
-          if (cfg.romanNumeral) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
+          if (cfg.romanNumeral && !isGameArtIcon(cfg.icon)) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
           if (cfg.icon) { const Icon = cfg.icon; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; }
           return <Zap className="w-4 h-4" style={{ color: cfg.color }} />;
         })()}
@@ -186,7 +187,7 @@ function UnlimitedGroup({ mode, matches, opponentNames, profileId }: { mode: str
     <div className="space-y-2">
       <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-3 p-3 text-left" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }} aria-expanded={open}>
         <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
-          {cfg?.romanNumeral ? <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
+          {cfg?.romanNumeral && !isGameArtIcon(cfg.icon) ? <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
             : cfg?.icon ? (() => { const Icon = cfg.icon!; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; })()
             : <Zap className="w-4 h-4" style={{ color: cfg?.color ?? '#d97706' }} />}
         </div>

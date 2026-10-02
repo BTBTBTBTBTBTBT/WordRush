@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ladderRungs, vsClock, VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
@@ -127,7 +127,7 @@ export function VsBots() {
                       {isPro ? (
                         <span className="text-[10px] font-black" style={{ color: tag.c, letterSpacing: 0.8 }}>{tag.t}</span>
                       ) : (
-                        <Lock className="w-3.5 h-3.5" style={{ color: VS.label }} />
+                        <Icon3D name="lock" size={17} />
                       )}
                     </button>
                   </div>
@@ -148,7 +148,7 @@ export function VsBots() {
                 {isPro ? (
                   <SoftPill onClick={() => play('ghost')}>Race it</SoftPill>
                 ) : (
-                  <button type="button" onClick={() => router.push('/pro')} aria-label="Pro" className="p-1"><Lock className="w-3.5 h-3.5" style={{ color: VS.label }} /></button>
+                  <button type="button" onClick={() => router.push('/pro')} aria-label="Pro" className="p-1"><Icon3D name="lock" size={17} /></button>
                 )}
               </div>
             )}

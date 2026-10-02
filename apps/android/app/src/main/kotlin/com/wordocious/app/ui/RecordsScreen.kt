@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -358,10 +357,7 @@ private fun DailyRecordsTab(
                         },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            Icons.Filled.Share, "Share leaderboard",
-                            tint = WTheme.textSecondary.copy(alpha = if (sharingLb) 0.4f else 1f),
-                            modifier = Modifier.size(16.dp),
+                        Icon3D(Icon3DName.SHARE, 19.dp, contentDescription = "Share leaderboard", alpha = if (sharingLb) 0.4f else 1f, modifier = Modifier,
                         )
                     }
                 }
@@ -542,10 +538,7 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
                     },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        Icons.Filled.Share, "Share yesterday's podium",
-                        tint = WTheme.textSecondary.copy(alpha = if (sharing) 0.4f else 1f),
-                        modifier = Modifier.size(16.dp),
+                    Icon3D(Icon3DName.SHARE, 19.dp, contentDescription = "Share yesterday's podium", alpha = if (sharing) 0.4f else 1f, modifier = Modifier,
                     )
                 }
             }

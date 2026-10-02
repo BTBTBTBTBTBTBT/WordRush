@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ComponentType, CSSProperties, ReactNode } from 'react';
+import { isGameArtIcon } from '@/lib/art';
 
 // One game-tile style everywhere (founder, 2026-10-01; docs/GAME_TILE_STYLE.md).
 // The reference is the home mode card in its completed state
@@ -48,10 +49,15 @@ export function GameTileBar({ accent, radius = GAME_TILE_RADIUS }: { accent: str
   );
 }
 
-/** What goes in the chip: a roman numeral, a lucide-style icon, or any node. */
+/**
+ * What goes in the chip: the game's 3D art (a MODE_CHROME icon; it fills the
+ * chip, docs/ART_SPEC.md §3), a roman numeral, or a lucide-style icon. `size`
+ * is the old glyph's size; the art draws at GAME_ART_FILL times it.
+ */
 export function GameTileGlyph({ accent, icon: Icon, romanNumeral, size = 16 }: {
   accent: string; icon?: ComponentType<any> | null; romanNumeral?: string | null; size?: number;
 }) {
+  if (Icon && isGameArtIcon(Icon)) return <Icon style={{ width: size, height: size, color: accent }} />;
   if (romanNumeral) {
     return <span className="font-black leading-none" style={{ color: accent, fontSize: Math.round(size * 0.69) }}>{romanNumeral}</span>;
   }

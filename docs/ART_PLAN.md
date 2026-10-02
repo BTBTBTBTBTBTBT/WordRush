@@ -15,6 +15,9 @@ Rules learned:
   host mascot (MASCOT_SPEC §5) (founder).
 - Every drawing of a character gets a DIFFERENT facial expression within its personality (W smug →
   determined → laughing, etc.) so poses never look copy-pasted (founder).
+- Browser pane screenshots can go stale: toggle resize_window (801 wide → desktop) to repaint.
+- Type prompts with form_input on the 'Ask ChatGPT' textbox + click the 'Send' ref (coordinate
+  clicks drift and can open the image editor).
 - Leave wide margins; ChatGPT's Edit/share buttons sit over the bottom corners of the card.
 
 Character checklist (paste into every prompt that draws one):
@@ -36,7 +39,7 @@ U purple, white U, closed calm eyes, floats, no feet · S golden yellow, white S
 | C | Whole-cast page titles: FRIENDS, STATS, ALL-TIME RECORDS, VS BATTLE, PUZZLES, WORD OF THE DAY, SETTINGS, GO PRO, HOW TO PLAY, MORE GAMES | top of each page | FRIENDS + STATS composed (titles/<name>-cast.png); lettering done for RECORDS, VS, PUZZLES, WOTD, SETTINGS, HOW TO PLAY, GO PRO (gold), MORE GAMES; compose next |
 | D | Game icons ×18 + VS + More, 3D glossy versions of today's glyphs (no faces) | game tiles / cards / selectors | DONE games/<mode id>.png (20, run-all.sh) |
 | E | W / L completion badges (+ ✓) + UI icons lock, bell, add-friend, share, sound, back | home game cards, header circles | DONE icons/<name>-capture.png |
-| F | Moment lettering: VICTORY!, SO CLOSE!, SWEEP!, FLAWLESS!, YOU WIN!, YOU LOSE, DRAW, NEW RECORD!, STREAK! | result + celebration screens | todo |
+| F | Moment lettering: VICTORY!, SO CLOSE!, SWEEP!, FLAWLESS!, YOU WIN! (done), YOU LOSE, DRAW, NEW RECORD!, STREAK! | result + celebration screens | 5 of 9 done (titles/<name>-lettering-keyed.png); polish: YOU WIN! '!' dot clipped |
 | G | Scenes: R asleep (empty), R unplugged (offline), U zen (all done), O3 peeking (404), I waving (add a friend), D with clipboard (no stats yet) | empty / error states | todo |
 | H | Welcome hero: whole cast waving + WELCOME lettering | sign-in / onboarding | todo |
 | I | Pro hero: crowned W + cast, GO PRO | Pro page | todo |

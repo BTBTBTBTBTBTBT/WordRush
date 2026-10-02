@@ -70,24 +70,32 @@ internal fun LeaderboardBanner(
     // Re-read the day once a minute so the title and date roll over at midnight.
     val minute = secs / 60
     val day = remember(minute) { com.wordocious.app.todayLocalDate() }
-    val title = remember(day) { leaderboardTitle(day, ProperNoundle.holidayNameForDay(day)) }
+    val holiday = remember(day) { ProperNoundle.holidayNameForDay(day) }
+    val title = remember(day) { leaderboardTitle(day, holiday) }
+    // ART_SPEC §1: the weekday's day-title art (it carries its own host); holidays keep the text.
+    val dayArt = remember(day) { dayTitleArtRes(day, holiday) }
     val dateLabel = remember(day) {
         java.time.LocalDate.parse(day).format(java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US)).uppercase(java.util.Locale.US)
     }
     val glow = with(LocalDensity.current) { 8.dp.toPx() }
 
-    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE), host = Mascots.leaderboard) {
+    // The banner's own O2 host is dropped while the day art shows (the art has its host).
+    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE), host = if (dayArt != null) null else Mascots.leaderboard) {
         // Frosted strip: the day title, then the date · reset clock and the ALL-TIME door.
         Column(
             Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 10.dp),
+                .padding(start = 12.dp, top = if (dayArt != null) 8.dp else 12.dp, end = 12.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(
-                title, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
-                color = LB_INK, maxLines = 2, modifier = Modifier.padding(end = BANNER_HOST_CLEAR - 4.dp),
-                style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
-            )
+            if (dayArt != null) {
+                DayTitleArt(dayArt, title, height = 110.dp)
+            } else {
+                Text(
+                    title, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
+                    color = LB_INK, maxLines = 2, modifier = Modifier.padding(end = BANNER_HOST_CLEAR - 4.dp),
+                    style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "$dateLabel · RESETS IN ${formatCountdown(secs)}",
@@ -262,26 +270,19 @@ internal fun RecordsBanner(
     val secs by rememberMidnightCountdown()
     val day = remember(secs / 60) { com.wordocious.app.todayLocalDate() }
     val dayTitle = remember(day) { leaderboardTitle(day, ProperNoundle.holidayNameForDay(day)) }
-    val glow = with(LocalDensity.current) { 8.dp.toPx() }
     val sub = if (daily) "$dayTitle · RESETS IN ${formatCountdown(secs)}"
         else if (recordCount != null && recordCount > 0) "THE BEST EVER · $recordCount RECORDS"
         else "THE BEST EVER"
 
-    LbBannerShell(Color(0xFFEDE9FE), Color(0xFFFEF3C7), host = Mascots.records) {
+    // ART_SPEC §2: the whole-cast ALL-TIME RECORDS art replaces the trophy + text title
+    // and the banner's host (the cast is on the art); the DAILY | ALL-TIME switch stays below.
+    LbBannerShell(Color(0xFFEDE9FE), Color(0xFFFEF3C7)) {
         Column(
             Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                .padding(start = 12.dp, top = 12.dp, end = 10.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Row(Modifier.padding(end = BANNER_HOST_CLEAR - 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon3D(Icon3DName.TROPHY, 22.dp)
-                Text(
-                    "ALL-TIME RECORDS", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                    lineHeight = 1.15.em, color = REC_INK, maxLines = 1, softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
-                )
-            }
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { PageTitleArt(TitleArt.RECORDS) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     sub, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,

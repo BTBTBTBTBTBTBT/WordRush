@@ -34,8 +34,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -193,21 +191,24 @@ fun FriendsScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 1. Controls row (founder, 2026-10-02: the shared AppHeader above every tab is
-        // the Friends header too, so the FRIENDS title row is gone). The bell and
-        // add-friend circles sit right-aligned; the leading space is reserved for a
-        // future title graphic.
+        // 1. Title + controls row (founder, 2026-10-02: the shared AppHeader above every
+        // tab is the Friends header too, so the FRIENDS text title row is gone). The
+        // whole-cast FRIENDS art (ART_SPEC §2) leads; the bell and add-friend circles
+        // sit right-aligned beside it.
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                PageTitleArt(TitleArt.FRIENDS, alignment = Alignment.CenterStart)
+            }
             NotificationPrefsButton(myProfile)
             if (signedIn) {
                 HeaderCircle(
                     onClick = { scope.launch { addRequester.bringIntoView(); runCatching { addFocus.requestFocus() } } },
                     contentDescription = "Add a friend",
-                ) { Icon(Icons.Filled.PersonAdd, null, tint = FriendsPink.solid, modifier = Modifier.size(19.dp)) }
+                ) { Icon3D(Icon3DName.ADD_FRIEND, 23.dp) }
             }
         }
         if (!signedIn) {
@@ -501,10 +502,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
             Spacer(Modifier.weight(1f))
             WeekEndsCountdown()
             if (raceStarted) {
-                Icon(
-                    Icons.Filled.Share, "Share weekly race",
-                    tint = FriendsPink.label.copy(alpha = if (sharingRace) 0.4f else 1f),
-                    modifier = Modifier.padding(start = 8.dp).size(15.dp).clickableNoRipple {
+                Icon3D(Icon3DName.SHARE, 18.dp, contentDescription = "Share weekly race", alpha = if (sharingRace) 0.4f else 1f, modifier = Modifier.padding(start = 8.dp).clickableNoRipple {
                         if (!sharingRace) {
                             sharingRace = true
                             scope.launch {
@@ -917,7 +915,7 @@ private fun AddFriendSection(modifier: Modifier, focus: FocusRequester, onNote: 
                     }
                 },
             ) {
-                Icon(Icons.Filled.Share, null, tint = FriendsPink.solid, modifier = Modifier.size(14.dp))
+                Icon3D(Icon3DName.SHARE, 17.dp, contentDescription = null, modifier = Modifier)
                 Text("Share invite link", fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid, fontFamily = Nunito)
             }
         }

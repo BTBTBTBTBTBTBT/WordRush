@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Bell, BellOff } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { HEADER_SHADOW } from '@/components/ui/page-header';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
@@ -59,7 +59,8 @@ export function NotificationPrefs() {
         className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
         style={{ width: 34, height: 34, background: '#ffffff', boxShadow: HEADER_SHADOW }}
       >
-        {anyOff ? <BellOff className="w-4 h-4" style={{ color: '#6b7280' }} /> : <Bell className="w-4 h-4" style={{ color: '#db2777' }} />}
+        {/* The 3D bell (docs/ART_SPEC.md §5); muted (any category off) reads grayed out. */}
+        <Icon3D name="bell" size={20} style={anyOff ? { filter: 'grayscale(1)', opacity: 0.55 } : undefined} />
       </button>
       {open && (
         <div

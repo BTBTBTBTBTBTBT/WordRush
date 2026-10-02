@@ -150,13 +150,10 @@ struct WordOfTheDayView: View {
         let showFlame = q != nil && (answer?.correct ?? false) && !revealing && streak > 0
         return VStack(alignment: .leading, spacing: 2) {
             HStack {
-                HStack(spacing: 6) {
-                    // I, the shy one with the sprout, hosts the card (MASCOT_SPEC §1–§2): growing your words.
-                    MascotView(Mascots.wordOfTheDay, size: 28)
-                    Text("WORD OF THE DAY").font(Brand.font(10, .heavy)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
-                }
-                Spacer()
+                // ART_SPEC §2: the whole-cast WORD OF THE DAY title art (it carries the cast,
+                // so I's host spot is gone).
+                ArtTitle(.wotd, maxWidth: 230)
+                Spacer(minLength: 8)
                 Button { showWords = true } label: {
                     HStack(spacing: 2) {
                         Text("Past words").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xC4B5FD))

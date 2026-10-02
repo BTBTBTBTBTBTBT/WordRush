@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { Users, ChevronDown, ChevronUp, Play, Share, Bell } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -510,7 +510,7 @@ export default function DailyPage() {
               className="p-1 -mr-1 active:scale-95 transition-transform"
               style={{ color: 'var(--color-text-muted)' }}
             >
-              <Bell className="w-3.5 h-3.5" />
+              <Icon3D name="bell" size={17} />
             </button>
           ) : null
         }
@@ -546,7 +546,7 @@ export default function DailyPage() {
         className="p-1 -mr-1 active:scale-95 transition-transform"
         style={{ color: 'var(--color-text-muted)' }}
       >
-        <Bell className="w-3.5 h-3.5" />
+        <Icon3D name="bell" size={17} />
       </button>
     </div>
   );
@@ -813,7 +813,7 @@ export default function DailyPage() {
                 className="p-1 -my-1 active:scale-95 transition-transform"
                 style={{ color: 'var(--color-text-secondary)', opacity: sharingLb ? 0.4 : 1 }}
               >
-                <Share className="w-4 h-4" />
+                <Icon3D name="share" size={20} />
               </button>
             )}
           </div>
@@ -912,7 +912,7 @@ export default function DailyPage() {
               className="p-1 -my-1 active:scale-95 transition-transform"
               style={{ color: 'var(--color-text-secondary)', opacity: sharingPodium ? 0.4 : 1 }}
             >
-              <Share className="w-4 h-4" />
+              <Icon3D name="share" size={20} />
             </button>
           )}
         </div>

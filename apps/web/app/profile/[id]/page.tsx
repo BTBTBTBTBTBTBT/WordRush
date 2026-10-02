@@ -18,6 +18,7 @@ import {
   Ban,
   Lock,
 } from 'lucide-react';
+import { GameArt } from '@/components/ui/game-art';
 import { Icon3D } from '@/components/ui/icon3d';
 import { PageHeader } from '@/components/ui/page-header';
 import Link from 'next/link';
@@ -31,7 +32,7 @@ import { resolveAccent } from '@/lib/profile-personalization';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { useAuth } from '@/lib/auth-context';
 import { reportUser, blockUser, unblockUser, fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
-import { UserPlus, UserCheck } from 'lucide-react';
+import { UserCheck } from 'lucide-react';
 import {
   loadFriends,
   isFriend,
@@ -65,6 +66,7 @@ import {
   ARCHETYPE_EMOJI,
 } from '@/components/profile/profile-social';
 import type { Database } from '@/lib/database.types';
+import { isGameArtIcon } from '@/lib/art';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -148,7 +150,7 @@ function AddFriendButton({ profileId }: { profileId: string }) {
         className={base}
         style={{ background: '#7c3aed', color: '#ffffff', border: '1.5px solid #7c3aed', opacity: busy ? 0.5 : 1 }}
       >
-        <UserPlus className="w-3.5 h-3.5" /> Accept request
+        <Icon3D name="add-friend" size={17} /> Accept request
       </button>
     );
   }
@@ -174,7 +176,7 @@ function AddFriendButton({ profileId }: { profileId: string }) {
       className={base}
       style={{ background: '#7c3aed', color: '#ffffff', border: '1.5px solid #7c3aed', opacity: busy ? 0.5 : 1 }}
     >
-      <UserPlus className="w-3.5 h-3.5" /> Add Friend
+      <Icon3D name="add-friend" size={17} /> Add Friend
     </button>
   );
 }
@@ -673,7 +675,7 @@ export default function PublicProfilePage() {
                   {bioText && <p className="text-sm font-bold max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
                   {favMode && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
-                      {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
+                      <GameArt id={favMode.id} size={16} className="-my-1" fallback={favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} /> {favMode.shortTitle}
                     </span>
                   )}
                 </div>
@@ -872,7 +874,7 @@ export default function PublicProfilePage() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: `${color}15` }}
                   >
-                    {mode?.romanNumeral ? (
+                    {!(Icon && isGameArtIcon(Icon)) && mode?.romanNumeral ? (
                       <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
                     ) : Icon ? (
                       <Icon className="w-4 h-4" style={{ color }} />

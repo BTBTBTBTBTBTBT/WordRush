@@ -11,7 +11,8 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Loader2, Lock, Radio, Swords, Users } from 'lucide-react';
+import { Bot, Loader2, Radio, Swords, Users } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { lookupInviteByCode, vsHrefForMode } from '@/lib/invite-service';
@@ -27,7 +28,6 @@ import { VsBanner } from './vs-banner';
 import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
 import { InitialAvatar, SectionLabel, SoftPill, VsModeIcon, VsNav, vsCardStyle } from './vs-ui';
 import { GameSquare } from '@/components/ui/game-tile';
-import { PAGE_HOSTS } from '@/lib/mascots';
 import { CastLoader } from '@/components/ui/cast-loader';
 
 const MODES = VS_MODE_ORDER as readonly string[];
@@ -96,8 +96,9 @@ export function VsLobby() {
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav
           title="VS BATTLE"
-          // S stands in the banner below; the title carries him only while there's no banner.
-          host={authLoading || signedOut ? PAGE_HOSTS.vs : undefined}
+          // The whole-cast VS BATTLE title art (docs/ART_SPEC.md §2) replaces the text title and its host.
+          art="art-title-vs"
+          artLabel="VS Battle"
           onBack={() => router.push('/')}
           right={count && !signedOut ? (
             <span className="flex items-center gap-1.5 text-[11px] font-extrabold" style={{ color: count.live ? VS.ink : VS.label }}>
@@ -332,7 +333,7 @@ function PlayTile({ icon: Icon, title, sub, locked, onClick }: {
       className="relative flex flex-col items-start gap-1.5 p-2.5 text-left transition-transform active:scale-[0.97]"
       style={{ ...vsCardStyle, minHeight: 104 }}
     >
-      {locked && <Lock className="absolute top-2.5 right-2.5 w-3 h-3" style={{ color: VS.label }} />}
+      {locked && <Icon3D name="lock" size={16} className="absolute top-2 right-2" />}
       <span className="flex items-center justify-center" style={{ width: 30, height: 30, borderRadius: 8, background: VS.soft }}>
         <Icon style={{ width: 16, height: 16, color: VS.ink }} />
       </span>

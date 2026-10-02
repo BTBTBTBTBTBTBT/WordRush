@@ -10,11 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -74,11 +70,11 @@ fun NotificationPrefsButton(profile: Profile?) {
     val anyOff = PUSH_CATEGORIES.any { prefs[it.key] == false }
     // A header action: the shared white circle (HEADER_SPEC §4).
     HeaderCircle(onClick = { open = true }, contentDescription = "Friends notification settings") {
-        Icon(
-            if (anyOff) Icons.Filled.NotificationsOff else Icons.Filled.Notifications,
-            null,
-            tint = if (anyOff) WTheme.textMuted else PREFS_PURPLE,
-            modifier = Modifier.size(19.dp),
+        // The 3D bell (ART_SPEC §5); any category off mutes it (the old NotificationsOff state).
+        Icon3D(
+            Icon3DName.BELL, 22.dp,
+            alpha = if (anyOff) 0.45f else 1f,
+            colorFilter = if (anyOff) Icon3DMuted else null,
         )
     }
     if (open) NotificationPrefsDialog(profile = profile, onDismiss = { open = false })

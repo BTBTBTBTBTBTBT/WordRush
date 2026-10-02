@@ -348,7 +348,7 @@ struct VSGameView: View {
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             ShareLink(item: URL(string: "https://wordocious.com/vs/join/\(code)")!,
                       message: Text("Join my Wordocious VS match — code \(code)")) {
-                Label("SHARE INVITE", systemImage: "square.and.arrow.up")
+                Label { Text("SHARE INVITE") } icon: { Icon3D(.share, size: 17) }
                     .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.ink))
@@ -1501,7 +1501,7 @@ private struct GauntletSpectatorView: View {
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Capsule().fill(VsLobbyKit.soft))
         case .locked:
-            Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.textMuted)
+            Icon3D(.lock, size: 14) // ART_SPEC §5
         }
     }
 }

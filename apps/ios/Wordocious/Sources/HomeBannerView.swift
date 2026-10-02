@@ -136,8 +136,7 @@ struct HomeBannerView: View {
                     .padding(.trailing, Mascots.bannerClearance)
                     if showsShare {
                         Button(action: onShare) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 19, weight: .semibold)).foregroundStyle(subInk)
+                            Icon3D(.share, size: 24)
                                 .frame(width: 36, height: 36).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -281,7 +280,27 @@ struct BannerGlyph: View {
     let size: CGFloat
 
     var body: some View {
-        switch icon {
+        if let art = icon.gameArt {
+            // ART_SPEC §3: the 3D game icon (~1.25× the glyph, i.e. the chip). On a
+            // solid result fill it sits on a white disc so it never melts into its
+            // own accent color.
+            if solid {
+                ZStack {
+                    Circle().fill(Color.white.opacity(0.94)).frame(width: size * 1.3, height: size * 1.3)
+                        .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 1)
+                    GameArtImage(asset: art, size: size * 1.12)
+                }
+            } else {
+                GameArtImage(asset: art, size: size * 1.25)
+            }
+        } else {
+            glyph
+        }
+    }
+
+    @ViewBuilder
+    private var glyph: some View {
+        switch icon.glyph {
         case .asset(let name):
             Image(name).renderingMode(.template).resizable().scaledToFit()
                 .frame(width: size, height: size).foregroundStyle(ink)
@@ -305,6 +324,8 @@ struct BannerGlyph: View {
             }
         case .symbol(let name):
             Image(systemName: name).font(.system(size: size * 0.9, weight: .bold)).foregroundStyle(ink)
+        case .game:
+            EmptyView() // unreachable: `glyph` unwraps game icons
         }
     }
 }

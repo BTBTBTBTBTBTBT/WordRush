@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, Lightbulb, BarChart3, Shuffle, Swords, X } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
-import { PAGE_HOSTS } from '@/lib/mascots';
 import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
 import { wordInsights, ordinal, BANK_SIZE } from '@/lib/word-insights';
 
@@ -90,8 +89,8 @@ export default async function WordOfDayPage({ params }: Props) {
         <PageHeader
           className="mb-6"
           title="Word of the Day"
+          art="art-title-wotd"
           titleTag="div"
-          host={PAGE_HOSTS.wordOfTheDay}
           back={{ href: '/words', label: 'All words' }}
           close={{ href: '/', label: 'Close and return home' }}
         />

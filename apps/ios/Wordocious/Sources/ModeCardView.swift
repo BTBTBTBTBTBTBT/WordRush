@@ -61,9 +61,8 @@ struct ModeCardView: View {
         return "\(formatGuessStat(semantics: mode.guessSemantics, guessBase: mode.guessBase, guessCount: done.guessCount)) · \(formatShortTime(Int(done.timeSeconds)))"
     }
 
+    /// ART_SPEC §4: the 3D W / L badge (26 pt, same corner).
     private func winBadge(won: Bool) -> some View {
-        Text(won ? "W" : "L").font(Brand.font(10, .black)).foregroundStyle(.white)
-            .frame(width: 20, height: 20)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Color(hex: won ? 0x7C3AED : 0xDC2626)))
+        ResultBadge(won: won, size: 26)
     }
 }

@@ -2,7 +2,7 @@
 
 import type { ReactNode, ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 
 /** Counts from 0 to `target` over ~500ms on mount (F4). Snaps under
@@ -156,7 +156,7 @@ export function ProLockOverlay({ children, label = 'Unlock with Pro' }: { childr
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black text-white"
           style={{ background: 'linear-gradient(90deg,#a78bfa,#ec4899)' }}
         >
-          <Lock className="w-3 h-3" /> {label}
+          <Icon3D name="lock" size={15} /> {label}
         </span>
       </Link>
     </div>

@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.Icon3D
+import com.wordocious.app.ui.Icon3DName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,9 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -234,7 +234,7 @@ fun ChallengeResultView(
                             Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
                             Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, modifier = Modifier.weight(1f), maxLines = 2)
                             Box(Modifier.size(36.dp).clickableNoRipple { onShare(headline) }, Alignment.Center) {
-                                Icon(Icons.Filled.Share, "Share", tint = VsPurple.mid, modifier = Modifier.size(19.dp))
+                                Icon3D(Icon3DName.SHARE, 23.dp, contentDescription = "Share", modifier = Modifier)
                             }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

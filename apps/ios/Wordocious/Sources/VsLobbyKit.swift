@@ -297,7 +297,7 @@ struct VSSoftPill: View {
 /// Small lock badge for Pro-only rows.
 struct VSLockBadge: View {
     var body: some View {
-        Image(systemName: "lock.fill").font(.system(size: 9, weight: .bold)).foregroundStyle(VsLobbyKit.label)
+        Icon3D(.lock, size: 12) // ART_SPEC §5
     }
 }
 
@@ -309,19 +309,32 @@ struct VSNavBar<Trailing: View>: View {
     /// The page's host beside the title (MASCOT_SPEC §6): S on the VS pages; nil
     /// where the page's banner already has its host peeking over it (§5).
     var host: MascotID? = Mascots.vs
+    /// ART_SPEC §2: the whole-cast title art in place of the text title + host.
+    var art: ArtTitleName? = nil
     let onBack: () -> Void
     @ViewBuilder var trailing: () -> Trailing
     var body: some View {
-        ZStack {
-            PageHostTitle(text: title, colors: VsLobbyKit.titleGradient, host: host)
-                .padding(.horizontal, 52)
-            HStack {
+        if let art {
+            // The art takes the row's middle; the back circle and trailing slot sit beside it.
+            HStack(spacing: 8) {
                 HeaderCircleButton(.symbol("chevron.left"), label: "Back", action: onBack)
-                Spacer()
+                ArtTitle(art, colors: VsLobbyKit.titleGradient)
+                    .frame(maxWidth: .infinity)
                 trailing()
             }
+            .padding(.horizontal, 10).padding(.top, 4).frame(minHeight: 48)
+        } else {
+            ZStack {
+                PageHostTitle(text: title, colors: VsLobbyKit.titleGradient, host: host)
+                    .padding(.horizontal, 52)
+                HStack {
+                    HeaderCircleButton(.symbol("chevron.left"), label: "Back", action: onBack)
+                    Spacer()
+                    trailing()
+                }
+            }
+            .padding(.horizontal, 10).padding(.top, 4).frame(height: 48)
         }
-        .padding(.horizontal, 10).padding(.top, 4).frame(height: 48)
     }
 }
 
@@ -429,7 +442,11 @@ struct VSSoftPurpleButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                if let icon { Image(systemName: icon).font(.system(size: 12, weight: .black)) }
+                if let icon {
+                    // ART_SPEC §5: share / lock / bell … draw the 3D icon set.
+                    if let i3d = Icon3DName.forHeaderSymbol(icon) { Icon3D(i3d, size: 15) }
+                    else { Image(systemName: icon).font(.system(size: 12, weight: .black)) }
+                }
                 Text(title).font(Brand.font(14, .black)).tracking(0.6)
             }
             .foregroundStyle(VsLobbyKit.purpleSub)

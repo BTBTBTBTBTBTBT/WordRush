@@ -1,6 +1,8 @@
 'use client';
 
-import { Lock, Infinity as InfinityIcon } from 'lucide-react';
+import { Infinity as InfinityIcon } from 'lucide-react';
+import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
+import { isGameArtIcon } from '@/lib/art';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
@@ -11,6 +13,10 @@ import type { HomeCard } from './mode-chrome';
 // two-line subtitle box is kept so Daily⇄Unlimited never reflows the grid.
 
 export type CardBadge = 'W' | 'L' | '✓' | null;
+
+/** The 3D completion badge for a card badge (docs/ART_SPEC.md §4). */
+export const BADGE_ICON: Record<'W' | 'L' | '✓', Icon3DName> = { W: 'badge-w', L: 'badge-l', '✓': 'badge-check' };
+const BADGE_LABEL: Record<'W' | 'L' | '✓', string> = { W: 'Won', L: 'Lost', '✓': 'Played' };
 
 export interface ModeCardState {
   isDailyDone: boolean;
@@ -93,7 +99,7 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
           takes this slot when the daily is complete) */}
       {isLocked && !isDailyDone ? (
         <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-          <Lock className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
+          <Icon3D name="lock" size={15} label="Locked" />
         </div>
       ) : null}
 
@@ -101,14 +107,10 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
         <InfinityIcon className="absolute top-2.5 right-2.5 w-4 h-4" style={{ color: card.accentColor }} aria-hidden="true" />
       )}
 
-      {/* W / L pill in the top-right when today's daily is already on the books. */}
+      {/* 3D W / L (or ✓) badge in the top-right when today's daily is already on
+          the books (docs/ART_SPEC.md §4: 26 px, same corner as the old 20 px pill). */}
       {isDailyDone && badge && (
-        <div
-          className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
-          style={{ background: badge === 'L' ? '#dc2626' : '#7c3aed' }}
-        >
-          <span className="text-[10px] font-black text-white leading-none">{badge}</span>
-        </div>
+        <Icon3D name={BADGE_ICON[badge]} size={26} label={BADGE_LABEL[badge]} className="absolute top-1.5 right-1.5" />
       )}
 
       {/* Icon — show mode icon when daily is done (even if locked), show lock
@@ -118,7 +120,9 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
         style={{ background: (isLocked && !isDailyDone) ? '#f3f4f6' : `${card.accentColor}15` }}
       >
         {(isLocked && !isDailyDone)
-          ? <Lock className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+          ? <Icon3D name="lock" size={20} />
+          : Icon && isGameArtIcon(Icon)
+          ? <Icon className="w-4 h-4" style={{ color: card.accentColor }} />
           : card.romanNumeral
           ? <span className="text-[11px] font-black leading-none" style={{ color: card.accentColor }}>{card.romanNumeral}</span>
           : Icon

@@ -10,6 +10,7 @@ import { SWEEP_MODES } from '@/lib/modes.generated';
 import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
 import { Mascot } from '@/components/ui/mascot';
 import { PAGE_HOSTS } from '@/lib/mascots';
+import { isGameArtIcon } from '@/lib/art';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -110,7 +111,7 @@ function NextDailyLink({ next }: { next: { id: string; href: string } }) {
           className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
           style={{ background: `${color}15` }}
         >
-          {mode.romanNumeral ? (
+          {!(Icon && isGameArtIcon(Icon)) && mode.romanNumeral ? (
             <span className="text-[9px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
           ) : Icon ? (
             <Icon className="w-3.5 h-3.5" style={{ color }} />
@@ -165,7 +166,7 @@ function KeepPlayingUnlimited({ currentMode }: { currentMode: string }) {
           className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
           style={{ background: `${color}15` }}
         >
-          {mode.romanNumeral ? (
+          {!(Icon && isGameArtIcon(Icon)) && mode.romanNumeral ? (
             <span className="text-[9px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
           ) : Icon ? (
             <Icon className="w-3.5 h-3.5" style={{ color }} />

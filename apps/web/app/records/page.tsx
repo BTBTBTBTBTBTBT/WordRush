@@ -3,7 +3,7 @@
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Users, User, Swords, ChevronDown, ChevronUp, Share } from 'lucide-react';
+import { Users, User, Swords, ChevronDown, ChevronUp } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -471,7 +471,7 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
               className="p-1 -my-1 shrink-0 active:scale-95 transition-transform"
               style={{ color: 'var(--color-text-secondary)', opacity: sharingLb ? 0.4 : 1 }}
             >
-              <Share className="w-4 h-4" />
+              <Icon3D name="share" size={20} />
             </button>
           ) : null
         }
@@ -666,7 +666,7 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
             className="p-1 -my-1 active:scale-95 transition-transform"
             style={{ color: 'var(--color-text-secondary)', opacity: sharing ? 0.4 : 1 }}
           >
-            <Share className="w-4 h-4" />
+            <Icon3D name="share" size={20} />
           </button>
         )}
       </div>

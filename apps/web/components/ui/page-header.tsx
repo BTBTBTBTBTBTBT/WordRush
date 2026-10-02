@@ -1,5 +1,8 @@
 import Link from 'next/link';
-import { ChevronLeft, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
+import { ArtTitle } from '@/components/ui/art-title';
+import type { TitleArtName } from '@/lib/art';
 import { Mascot, type MascotMotion } from '@/components/ui/mascot';
 import type { MascotId } from '@/lib/mascots';
 
@@ -70,14 +73,17 @@ export interface HeaderNav {
   label?: string;
 }
 
-/** The back (chevron) or close (X) control: a white circle, icon in #6d28d9. */
+/**
+ * The back or close (X) control: a white circle. Back draws the 3D back arrow
+ * (docs/ART_SPEC.md §5, ~1.2× the old chevron since the art fills its square);
+ * close keeps the X in #6d28d9.
+ */
 export function HeaderBack({ kind = 'back', href, onClick, label, size = 34, className = '' }: HeaderNav & { kind?: 'back' | 'close'; size?: number; className?: string }) {
-  const icon = Math.round(size * (kind === 'back' ? 0.56 : 0.47));
   return (
     <HeaderCircle label={label ?? (kind === 'back' ? 'Back' : 'Close')} href={href} onClick={onClick} size={size} className={className}>
       {kind === 'back'
-        ? <ChevronLeft aria-hidden="true" style={{ width: icon, height: icon, color: HEADER_INK, marginLeft: -1 }} strokeWidth={3} />
-        : <X aria-hidden="true" style={{ width: icon, height: icon, color: HEADER_INK }} strokeWidth={3} />}
+        ? <Icon3D name="back" size={Math.round(size * 0.66)} />
+        : <X aria-hidden="true" style={{ width: Math.round(size * 0.47), height: Math.round(size * 0.47), color: HEADER_INK }} strokeWidth={3} />}
     </HeaderCircle>
   );
 }
@@ -96,6 +102,15 @@ export function PageTitleText({ children, accent = 'brand', size = 22, className
 
 interface PageHeaderProps {
   title: React.ReactNode;
+  /**
+   * The page's whole-cast title art (docs/ART_SPEC.md §2). It replaces the text
+   * title and the host; `title` (or `artLabel`) becomes its accessible name.
+   */
+  art?: TitleArtName;
+  /** The art's accessible name when `title` isn't plain text. */
+  artLabel?: string;
+  /** Widest the art draws (CSS px). */
+  artMaxWidth?: number;
   accent?: PageAccent;
   /** The page's host (MASCOT_SPEC §1/§6). Leave unset where a banner below carries it (§5). */
   host?: MascotId;
@@ -115,10 +130,29 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({
-  title, accent = 'brand', host, hostSize = 40, hostMotion = 'bob', back, close, right,
+  title, art, artLabel, artMaxWidth = 420, accent = 'brand', host, hostSize = 40, hostMotion = 'bob', back, close, right,
   titleTag = 'h1', titleSize = 22, sub, className = '',
 }: PageHeaderProps) {
   const TitleTag = titleTag;
+  if (art) {
+    return (
+      <div className={`flex items-center gap-2 ${className}`} style={{ minHeight: 44 }}>
+        {back && <HeaderBack kind="back" {...back} />}
+        <div className="flex-1 min-w-0">
+          <ArtTitle
+            name={art}
+            label={artLabel ?? (typeof title === 'string' ? title : '')}
+            as={titleTag}
+            maxWidth={artMaxWidth}
+            align={back || close || right ? 'left' : 'center'}
+          />
+          {sub}
+        </div>
+        {right}
+        {close && <HeaderBack kind="close" {...close} />}
+      </div>
+    );
+  }
   return (
     <div className={`flex items-center gap-2 ${className}`} style={{ minHeight: 44 }}>
       {back && <HeaderBack kind="back" {...back} />}

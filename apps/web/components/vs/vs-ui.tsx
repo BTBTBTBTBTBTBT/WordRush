@@ -6,20 +6,27 @@ import { PageHeader } from '@/components/ui/page-header';
 import type { MascotId } from '@/lib/mascots';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
+import { isGameArtIcon, type TitleArtName } from '@/lib/art';
 import { VS, modeColor, modeTitle } from '@/lib/vs-lobby';
 
 // Shared pieces of the VS screens (VS overhaul, spec docs/VS_REDESIGN_SPEC.md
 // §0): the real mode icons from the home cards, the mode chip, section labels,
 // the teal nav, avatars and the bot art in a circle.
 
-/** The home card's icon for a VS mode (roman numeral for Quad/Octo), in `color`. */
+/** The home card's icon for a VS mode: the game's 3D art, else the old glyph (roman numeral for Quad/Octo) in `color`. */
 export function VsModeIcon({ mode, size = 16, color }: { mode: string; size?: number; color?: string }) {
   const meta = MODE_BY_DBKEY[mode];
   const ink = color ?? modeColor(mode);
+  const chrome = meta ? MODE_CHROME[meta.id]?.icon : null;
+  // The game's 3D art (docs/ART_SPEC.md §3) fills the tile the glyph sat in.
+  if (chrome && isGameArtIcon(chrome)) {
+    const Art = chrome;
+    return <Art style={{ width: size, height: size, color: ink }} />;
+  }
   if (meta?.romanNumeral) {
     return <span className="font-black leading-none" style={{ color: ink, fontSize: meta.romanNumeral.length > 2 ? size * 0.55 : size * 0.72 }}>{meta.romanNumeral}</span>;
   }
-  const Icon = (meta && MODE_CHROME[meta.id]?.icon) || Swords;
+  const Icon = chrome || Swords;
   return <Icon style={{ width: size, height: size, color: ink }} />;
 }
 
@@ -50,8 +57,12 @@ export function SectionLabel({ children, right }: { children: React.ReactNode; r
  * a white back circle, the gradient caps title, the host when no banner below
  * carries it, and a right slot.
  */
-export function VsNav({ title, onBack, right, host }: { title: string; onBack: () => void; right?: React.ReactNode; host?: MascotId }) {
-  return <PageHeader title={title} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
+export function VsNav({ title, onBack, right, host, art, artLabel }: {
+  title: string; onBack: () => void; right?: React.ReactNode; host?: MascotId;
+  /** Whole-cast title art in place of the text title (docs/ART_SPEC.md §2). */
+  art?: TitleArtName; artLabel?: string;
+}) {
+  return <PageHeader title={title} art={art} artLabel={artLabel} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
 }
 
 export const vsCardStyle: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow };

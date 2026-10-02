@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
@@ -979,11 +977,11 @@ internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
         modifier = modifier,
         size = GAME_CORNER,
     ) {
-        Icon(
-            if (enabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-            contentDescription = null,
-            tint = com.wordocious.app.ui.HeaderInk.control,
-            modifier = Modifier.size(20.dp),
+        // The 3D sound icon (ART_SPEC §5, ~1.2× the old glyph); muted = faded + desaturated.
+        com.wordocious.app.ui.Icon3D(
+            com.wordocious.app.ui.Icon3DName.SOUND, 24.dp,
+            alpha = if (enabled) 1f else 0.4f,
+            colorFilter = if (enabled) null else com.wordocious.app.ui.Icon3DMuted,
         )
     }
 }

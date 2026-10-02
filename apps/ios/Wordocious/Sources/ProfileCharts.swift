@@ -1020,7 +1020,7 @@ struct ProStatsCard: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover).frame(height: 160)
             VStack(spacing: 8) {
-                Image(systemName: "lock.fill").font(.system(size: 28)).foregroundStyle(Color(hex: 0xC4B5FD))
+                Icon3D(.lock, size: 34) // ART_SPEC §5
                 Text("Pro Feature").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 Button { showPro = true } label: {
                     HStack(spacing: 6) {

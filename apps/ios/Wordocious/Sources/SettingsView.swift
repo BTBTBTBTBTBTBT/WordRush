@@ -162,8 +162,8 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    // R, relaxed in its nightcap, hosts Settings (MASCOT_SPEC §6).
-                    PageHostTitle(text: "SETTINGS", host: Mascots.settings, hostSize: 32)
+                    // ART_SPEC §2: the whole-cast SETTINGS art (it carries the cast, so R's host spot is gone).
+                    ArtTitle(.settings, maxWidth: 230).frame(maxHeight: 42)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }

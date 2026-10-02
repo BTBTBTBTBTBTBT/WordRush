@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material3.CircularProgressIndicator
@@ -661,10 +660,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                Icons.Filled.Share, if (isSweep) "Share sweep board" else "Share leaderboard",
-                                tint = WTheme.textSecondary.copy(alpha = if (sharingLb) 0.4f else 1f),
-                                modifier = Modifier.size(16.dp),
+                            Icon3D(Icon3DName.SHARE, 19.dp, contentDescription = if (isSweep) "Share sweep board" else "Share leaderboard", alpha = if (sharingLb) 0.4f else 1f, modifier = Modifier,
                             )
                         }
                     }
@@ -850,10 +846,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                Icons.Filled.Share, "Share yesterday's podium",
-                                tint = WTheme.textSecondary.copy(alpha = if (sharingPodium) 0.4f else 1f),
-                                modifier = Modifier.size(16.dp),
+                            Icon3D(Icon3DName.SHARE, 19.dp, contentDescription = "Share yesterday's podium", alpha = if (sharingPodium) 0.4f else 1f, modifier = Modifier,
                             )
                         }
                     }
@@ -1253,20 +1246,10 @@ internal fun UserRankCard(
     }
 }
 
-/** Win/Loss pill (full word "Win"/"Loss"). */
+/** A row's daily result: the 3D W / L badge (ART_SPEC §4; was a "Win" / "Loss" text pill). */
 @Composable
-private fun WinLossPill(completed: Boolean, abbrev: Boolean = false) {
-    Box(
-        Modifier.clip(RoundedCornerShape(4.dp))
-            .background(if (completed) WTheme.winBg else WTheme.lossBg)
-            .padding(horizontal = 5.dp, vertical = 1.dp),
-    ) {
-        Text(
-            if (abbrev) (if (completed) "W" else "L") else (if (completed) "Win" else "Loss"),
-            fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-            color = if (completed) WTheme.winText else WTheme.lossText,
-        )
-    }
+private fun WinLossPill(completed: Boolean, @Suppress("UNUSED_PARAMETER") abbrev: Boolean = false) {
+    ResultBadge(completed, 18.dp, contentDescription = if (completed) "Win" else "Loss")
 }
 
 /** GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP" (completed all 9 but lost ≥1)

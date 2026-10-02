@@ -512,7 +512,7 @@ struct ProperNoundleView: View {
             // Home / Share row (web parity).
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { showShareOptions = true } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
+                Button { showShareOptions = true } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
                     .sheet(isPresented: $showShareOptions,
                            onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
                         ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])

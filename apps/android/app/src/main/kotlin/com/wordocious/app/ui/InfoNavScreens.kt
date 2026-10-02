@@ -258,12 +258,14 @@ private fun OverlayScaffold(
     onBack: (() -> Unit)? = null,
     /** The page host beside the title (Help / Guides: C, MASCOT_SPEC §6). */
     host: MascotId? = null,
+    /** The whole-cast title art (ART_SPEC §2), replacing the title text and host. */
+    art: TitleArt? = null,
     content: @Composable () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         // The shared page header (HEADER_SPEC §4).
-        PageHeader(title, host = host, onBack = onBack, onClose = onDone, titleMaxLines = 4, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp))
+        PageHeader(title, host = host, onBack = onBack, onClose = onDone, titleMaxLines = 4, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), art = art)
         content()
     }
 }
@@ -337,7 +339,8 @@ fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
         return
     }
 
-    OverlayScaffold(navTitle, onDone) {
+    // ART_SPEC §2: opened as the Word of the Day page, the header wears the WOTD art.
+    OverlayScaffold(navTitle, onDone, art = if (navTitle == "Word of the Day") TitleArt.WOTD else null) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (words.isEmpty()) {
@@ -438,7 +441,7 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
         return
     }
 
-    OverlayScaffold("Guides", onDone, host = Mascots.help) {
+    OverlayScaffold("Guides", onDone, art = TitleArt.HOWTO) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             (guides.ifEmpty { modes.map { it to null } }).forEach { (mode, g) ->
                 val accent = modeAccent(mode)
@@ -448,7 +451,9 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     GameTileChip(accent, 40.dp) {
-                        Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp))
+                        // ART_SPEC §3: the game's 3D icon; the book stays for a mode without a card.
+                        if (modeCardFor(mode) != null) ModeGlyph(mode, accent, 40.dp)
+                        else Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp))
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         // Before /api/guides resolves, iOS falls back to the capitalized slug ("Six"), not the enum name.
@@ -542,7 +547,7 @@ private fun htpColor(hex: String): Color =
 @Composable
 fun HowToPlayScreen(onDone: () -> Unit) {
     val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList()) { value = HowToPlayService.sections() }
-    OverlayScaffold("How to Play", onDone, host = Mascots.help) {
+    OverlayScaffold("How to Play", onDone, art = TitleArt.HOWTO) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Everything you need to know to get started", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (sections.isEmpty()) {

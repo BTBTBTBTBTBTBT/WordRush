@@ -127,8 +127,7 @@ struct VSChallengeResultView: View {
                         .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     ShareLink(item: VsChallengeService.shareURL(code), message: Text(shareText)) {
-                        Image(systemName: "square.and.arrow.up").font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(VsLobbyKit.purpleSub).frame(width: 34, height: 34)
+                        Icon3D(.share, size: 22).frame(width: 34, height: 34)
                     }
                     .accessibilityLabel("Share the result")
                 }

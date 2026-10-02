@@ -1,6 +1,7 @@
 'use client';
 
-import { UserPlus, Swords } from 'lucide-react';
+import { Swords } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { HomeCard } from './mode-chrome';
 
 // VS Battle as a full-width tile at the very bottom of the game area (founder +
@@ -43,11 +44,9 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
       aria-label="VS Battle"
     >
       <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: `linear-gradient(180deg, ${accent}, ${accent}88)` }} />
-      {/* W / L pill top-right — the same badge the mode cards show (founder, 2026-09-26). */}
+      {/* 3D W / L badge top-right — the same badge the mode cards show (founder, 2026-09-26; docs/ART_SPEC.md §4). */}
       {done && (
-        <div className="absolute top-2 right-2.5 w-5 h-5 rounded-md flex items-center justify-center" style={{ background: vsDailyWon ? '#7c3aed' : '#dc2626' }}>
-          <span className="text-[10px] font-black text-white leading-none">{vsDailyWon ? 'W' : 'L'}</span>
-        </div>
+        <Icon3D name={vsDailyWon ? 'badge-w' : 'badge-l'} size={26} label={vsDailyWon ? 'Won' : 'Lost'} className="absolute top-1 right-1.5" />
       )}
       <button type="button" onClick={onOpen} className="flex-1 min-w-0 flex items-center gap-3 text-left transition-transform active:scale-[0.98]" aria-label="Open VS Battle">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}15` }}>
@@ -71,7 +70,7 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
           className="flex items-center gap-1 px-3 font-black text-[11px] rounded-full transition-transform active:scale-95 shrink-0"
           style={{ height: 32, background: `${accent}14`, border: `1.5px solid ${accent}55`, color: '#0f766e' }}
         >
-          <UserPlus className="w-3.5 h-3.5" strokeWidth={2.6} />
+          <Icon3D name="add-friend" size={17} />
           Invite
         </button>
       )}

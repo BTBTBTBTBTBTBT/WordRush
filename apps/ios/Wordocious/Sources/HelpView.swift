@@ -28,9 +28,14 @@ struct HelpView: View {
                 .frame(height: 6)
 
             HStack {
-                // C, the explorer, hosts Help (MASCOT_SPEC §6).
-                PageHostTitle(text: tab.rawValue, host: Mascots.help, hostSize: 40)
-                Spacer()
+                if tab == .howToPlay {
+                    // ART_SPEC §2: the whole-cast HOW TO PLAY art.
+                    ArtTitle(.howto).frame(maxWidth: .infinity)
+                } else {
+                    // C, the explorer, hosts Help (MASCOT_SPEC §6).
+                    PageHostTitle(text: tab.rawValue, host: Mascots.help, hostSize: 40)
+                    Spacer()
+                }
                 HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
             }
             .padding(.horizontal, 20).padding(.top, 16)

@@ -16,9 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -93,11 +90,8 @@ fun VSLiveTile(
     ) {
         Box(Modifier.width(4.dp).fillMaxHeight().padding(vertical = 6.dp).clip(CircleShape).background(accent))
         if (done) {
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 10.dp).size(20.dp)
-                    .clip(RoundedCornerShape(6.dp)).background(if (vsDailyWon == true) Color(0xFF7C3AED) else Color(0xFFDC2626)),
-                contentAlignment = Alignment.Center,
-            ) { Text(if (vsDailyWon == true) "W" else "L", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White) }
+            // ART_SPEC §4: the 3D W / L badge at 26 dp, same corner as the old 20 dp pill.
+            ResultBadge(vsDailyWon == true, 26.dp, Modifier.align(Alignment.TopEnd).padding(top = 5.dp, end = 7.dp))
         }
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
@@ -129,7 +123,7 @@ fun VSLiveTile(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
-                    Icon(androidx.compose.material.icons.Icons.Filled.PersonAdd, null, tint = Color(0xFF0F766E), modifier = Modifier.size(14.dp))
+                    Icon3D(Icon3DName.ADD_FRIEND, 17.dp) // ART_SPEC §5
                     Text("Invite", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF0F766E))
                 }
             }

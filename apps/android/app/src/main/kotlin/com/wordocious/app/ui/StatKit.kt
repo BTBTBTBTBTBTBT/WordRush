@@ -205,7 +205,7 @@ fun ProLockOverlay(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text("🔒", fontSize = 11.sp)
+            Icon3D(Icon3DName.LOCK, 14.dp) // ART_SPEC §5
             Text(label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White)
         }
     }

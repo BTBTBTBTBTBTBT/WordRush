@@ -167,7 +167,7 @@ struct ProLockOverlay<Content: View>: View {
                 .accessibilityHidden(true)
             Button { showPro = true } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
+                    Icon3D(.lock, size: 14) // ART_SPEC §5
                     Text(label).font(Brand.font(11, .black))
                 }
                 .foregroundStyle(.white)

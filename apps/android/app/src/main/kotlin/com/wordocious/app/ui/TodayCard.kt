@@ -299,8 +299,10 @@ fun SweepTile(modeId: String, completion: DailyCompletionsService.Completion?, m
     val won = completion?.completed == true
     val mode = runCatching { GameMode.valueOf(modeId) }.getOrNull()
     val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
-    val tileBg = if (!played) WTheme.bg else if (won) WTheme.correct else RAIL_LOSS_RED
-    val tileBorder = if (!played) WTheme.border else tileBg
+    // ART_SPEC §4: a played tile shows the 3D W / L badge on the page tone, its border
+    // keeping the win / loss color.
+    val tileBg = WTheme.bg
+    val tileBorder = if (!played) WTheme.border else if (won) WTheme.correct else RAIL_LOSS_RED
     Column(
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.then(if (mode != null) Modifier.clickableNoRipple { onPlayDaily(mode) } else Modifier),
@@ -310,7 +312,7 @@ fun SweepTile(modeId: String, completion: DailyCompletionsService.Completion?, m
                 .border(1.5.dp, tileBorder, RoundedCornerShape(10.dp)).alpha(if (played) 1f else 0.7f),
             contentAlignment = Alignment.Center,
         ) {
-            if (played) Text(if (won) "W" else "L", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+            if (played) ResultBadge(won, 30.dp, contentDescription = if (won) "Won" else "Lost")
             else mode?.let { ModeGlyph(it, accent, box = 36.dp) }
         }
         Text(

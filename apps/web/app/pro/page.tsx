@@ -9,7 +9,6 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
 import { PageHeader } from '@/components/ui/page-header';
-import { PAGE_HOSTS } from '@/lib/mascots';
 
 const benefits = [
   { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
@@ -81,13 +80,12 @@ export default function ProPage() {
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
-        {/* W, cape and all, hosts GO PRO (HEADER_SPEC §4: the shared page header). */}
+        {/* The whole-cast GO PRO title art (docs/ART_SPEC.md §2) in the shared page header. */}
         <PageHeader
           className="mb-6"
           title="GO PRO"
-          titleSize={30}
-          host={PAGE_HOSTS.pro}
-          hostSize={56}
+          art="art-title-gopro"
+          artLabel="Go Pro"
           sub={(
             <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
               Play unlimited &amp; ad-free — every mode, any time

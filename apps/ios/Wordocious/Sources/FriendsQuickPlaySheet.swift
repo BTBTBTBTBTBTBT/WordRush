@@ -184,8 +184,15 @@ struct FriendsQuickPlaySheet: View {
     private func wordociousCard(title: String, sub: String, solid: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image("swords").renderingMode(.template).resizable().scaledToFit()
-                    .frame(width: 15, height: 15).foregroundStyle(solid ? .white : VsLobbyKit.ink)
+                Group {
+                    if ArtAsset.exists("game-vs") {
+                        // ART_SPEC §3: the VS game's 3D icon.
+                        GameArtImage(asset: "game-vs", size: 26)
+                    } else {
+                        Image("swords").renderingMode(.template).resizable().scaledToFit()
+                            .frame(width: 15, height: 15).foregroundStyle(solid ? .white : VsLobbyKit.ink)
+                    }
+                }
                     .frame(width: 30, height: 30)
                     .background(RoundedRectangle(cornerRadius: 9).fill(solid ? Color.white.opacity(0.2) : Color.white))
                 VStack(alignment: .leading, spacing: 1) {

@@ -131,6 +131,7 @@ fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
             PageHeader(
                 "MORE GAMES", onClose = onDismiss, closeLabel = "Done",
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                art = TitleArt.MOREGAMES, // ART_SPEC §2
             )
             val flagTable by FlagsService.flags.collectAsState()
             val flagsLoaded by FlagsService.loaded.collectAsState()

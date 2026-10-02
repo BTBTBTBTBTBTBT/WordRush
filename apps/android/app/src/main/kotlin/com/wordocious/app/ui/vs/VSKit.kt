@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.Icon3D
+import com.wordocious.app.ui.Icon3DName
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -100,6 +101,8 @@ fun VsNavBar(
     onBack: () -> Unit,
     /** The page host beside the title (MASCOT_SPEC §6). Null where the VS banner already hosts (§5). */
     host: com.wordocious.app.ui.MascotId? = null,
+    /** The whole-cast title art (ART_SPEC §2), replacing the text title. */
+    art: com.wordocious.app.ui.TitleArt? = null,
     right: @Composable RowScope.() -> Unit = {},
 ) {
     com.wordocious.app.ui.PageHeader(
@@ -110,6 +113,7 @@ fun VsNavBar(
         onBack = onBack,
         titleSize = 20.sp,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        art = art,
         actions = right,
     )
 }
@@ -168,10 +172,10 @@ fun VsModeChip(mode: GameMode) {
     }
 }
 
-/** A small lock for Pro-only rows. */
+/** A small lock for Pro-only rows: the 3D lock (ART_SPEC §5, ~1.2× the old glyph). [tint] is unused since the art. */
 @Composable
-fun VsLock(size: Dp = 12.dp, tint: Color = VsTeal.label) {
-    Icon(Icons.Filled.Lock, "Pro", tint = tint, modifier = Modifier.size(size))
+fun VsLock(size: Dp = 12.dp, @Suppress("UNUSED_PARAMETER") tint: Color = VsTeal.label) {
+    Icon3D(Icon3DName.LOCK, size * 1.2f, contentDescription = "Pro")
 }
 
 /** The icon square on a lobby tile: 30×30 soft-teal, radius 8. */

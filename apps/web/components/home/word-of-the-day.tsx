@@ -7,8 +7,7 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE, SOLUTION_SWAPS, SOLUTION_SWAPS_2 } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
-import { Mascot } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { ArtTitle } from '@/components/ui/art-title';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -135,13 +134,10 @@ export function WordOfTheDay() {
       className="px-3 py-2"
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}
     >
-      <div className="flex items-center justify-between mb-0.5">
-        <div className="flex items-center gap-1.5">
-          {/* Hosted by I (the sprout): growing your words. */}
-          <Mascot id={PAGE_HOSTS.wordOfTheDay} size={28} />
-          <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Word of the Day
-          </span>
+      <div className="flex items-center justify-between gap-2 mb-0.5">
+        {/* The whole-cast WORD OF THE DAY title art (docs/ART_SPEC.md §2). */}
+        <div className="flex-1 min-w-0">
+          <ArtTitle name="art-title-wotd" label="Word of the Day" as="h2" align="left" maxWidth={260} priority={false} />
         </div>
         <Link href="/words" className="text-[10px] font-bold hover:underline" style={{ color: '#c4b5fd' }}>
           Past words →

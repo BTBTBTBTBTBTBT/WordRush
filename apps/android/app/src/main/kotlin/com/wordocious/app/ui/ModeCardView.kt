@@ -110,22 +110,15 @@ internal fun ModeCardView(
             )
         }
 
-        // W/L pill top-right when today's daily is on the books (web parity).
+        // W/L badge top-right when today's daily is on the books (web parity): the
+        // 3D badge-w / badge-l at 26 dp (ART_SPEC §4), in the old 20 dp pill's corner.
         if (isDone) {
-            Box(
-                // iOS keeps the badge inside the 12pt content padding, below the
-                // 4pt accent bar — not flush against the card corner.
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 16.dp, end = 12.dp)
-                    .size(20.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(if (doneWon) Color(0xFF7C3AED) else Color(0xFFDC2626)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    if (doneWon) "W" else "L",
-                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                )
-            }
+            // iOS keeps the badge inside the content padding, below the 4pt accent
+            // bar — not flush against the card corner.
+            ResultBadge(
+                won = doneWon, size = 26.dp,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 13.dp, end = 9.dp),
+            )
         }
 
         // VS swords button (Pro + Unlimited) — quick-match this mode (web parity).

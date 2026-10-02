@@ -19,9 +19,15 @@ done <<'LIST'
 1790924029584-7u06ir cyan puzzles-wotd
 1790924128277-eol0ft cyan settings-howto
 1790924277188-fcqhds cyan gopro-more
+1790926093547-bwmvon cyan victory-close
+1790926243029-d6tvoy cyan sweep-flawless-win
+1790926428997-65mmzj cyan lose-draw-record-streak
 LIST
 python3 split-lines.py records-vs-keyed.png records,vs >/dev/null
 python3 split-lines.py puzzles-wotd-keyed.png puzzles,wotd >/dev/null
 python3 split-lines.py settings-howto-keyed.png settings,howto >/dev/null
 python3 split-lines.py gopro-more-keyed.png gopro,moregames >/dev/null
+python3 split-lines.py victory-close-keyed.png victory,soclose >/dev/null
+python3 split-lines.py sweep-flawless-win-keyed.png sweep,flawless,youwin >/dev/null
+python3 split-lines.py lose-draw-record-streak-keyed.png youlose,draw,newrecord,streak >/dev/null
 echo

@@ -2,13 +2,11 @@
 
 
 import { BannerGameRows, ResetLine, dayTitle } from './leaderboard-banner';
-import { Icon3D } from '@/components/ui/icon3d';
-import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { ArtTitle } from '@/components/ui/art-title';
 
 // The Records banner (founder, 2026-10-01; docs/RECORDS_REDESIGN_SPEC.md §1): the
-// Leaderboard banner's one window in lilac-to-gold. A frosted strip with the trophy
-// + ALL-TIME RECORDS, the sub line (Daily: the day's title · reset clock; All-Time:
+// Leaderboard banner's one window in lilac-to-gold. A frosted strip with the
+// ALL-TIME RECORDS title art (whole cast, docs/ART_SPEC.md §2), the sub line (Daily: the day's title · reset clock; All-Time:
 // THE BEST EVER · N RECORDS) and the DAILY | ALL-TIME pill switch, then the same two
 // game rows as the Leaderboard banner.
 
@@ -49,9 +47,9 @@ export function RecordsBanner({ tab, onTab, today, recordsCount, selectedMode, o
   };
 
   return (
-    // The Records host (O2, as on the Leaderboard) stands at the strip's right
-    // end beside ALL-TIME RECORDS; the switch sits on the sub line below it.
-    <BannerHost id={PAGE_HOSTS.records}>
+    // The whole-cast ALL-TIME RECORDS title art (docs/ART_SPEC.md §2) heads the
+    // strip, so the banner no longer carries a separate host; the switch sits
+    // on the sub line below it.
     <div
       className="relative shrink-0 overflow-hidden"
       style={{
@@ -61,12 +59,7 @@ export function RecordsBanner({ tab, onTab, today, recordsCount, selectedMode, o
       }}
     >
       <div className="relative flex flex-col gap-1.5" style={{ padding: '12px 10px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
-        <div className="flex items-center gap-1.5" style={{ minHeight: 30, paddingRight: BANNER_HOST_CLEARANCE - 10 }}>
-          <Icon3D name="trophy" size={20} className="shrink-0" />
-          <h1 className="font-black truncate" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: HEAD, textShadow: '0 0 8px rgba(245,158,11,0.55)' }}>
-            ALL-TIME RECORDS
-          </h1>
-        </div>
+        <ArtTitle name="art-title-records" label="All-Time Records" />
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0 font-extrabold truncate" style={{ fontSize: 10.5, letterSpacing: 0.4, color: SUB }}>
             {tab === 'daily'
@@ -82,6 +75,5 @@ export function RecordsBanner({ tab, onTab, today, recordsCount, selectedMode, o
 
       <BannerGameRows selectedMode={selectedMode} onSelect={onSelect} ink={SUB} />
     </div>
-    </BannerHost>
   );
 }

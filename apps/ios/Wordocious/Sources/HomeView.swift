@@ -262,7 +262,11 @@ struct HomeView: View {
                             }
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
-                                sectionHeader("PUZZLES", host: Mascots.puzzles).id(Self.puzzlesAnchor)
+                                // ART_SPEC §2: the whole-cast PUZZLES art (~70% width, left aligned).
+                                ArtTitle(.puzzles, maxWidth: 250)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.top, 2)
+                                    .id(Self.puzzlesAnchor)
                                 LazyVGrid(columns: columns, spacing: 8) {
                                     ForEach(puzzleModes) { mode in card(mode) }
                                 }
@@ -909,7 +913,7 @@ struct ModeLimitModal: View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { onClose() }
             VStack(spacing: 0) {
-                Image(systemName: "lock.fill").font(.system(size: 40)).foregroundStyle(Theme.textMuted)
+                Icon3D(.lock, size: 52) // ART_SPEC §5
                     .padding(.bottom, 12)
                 Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center).padding(.bottom, 4)

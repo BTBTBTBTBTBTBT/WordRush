@@ -189,12 +189,12 @@ struct PublicProfileView: View {
                         Image(systemName: "person.fill.checkmark").font(.system(size: 11, weight: .semibold))
                         Text(confirmUnfriend ? "Remove friend?" : "Friends")
                     } else if incoming {
-                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
+                        Icon3D(.addFriend, size: 15) // ART_SPEC §5
                         Text("Accept request")
                     } else if requested {
                         Text("Requested")
                     } else {
-                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
+                        Icon3D(.addFriend, size: 15) // ART_SPEC §5
                         Text("Add Friend")
                     }
                 }
@@ -716,8 +716,8 @@ struct RecentMatchRow: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(won ? "Win" : "Loss").font(Brand.font(12, .heavy))
-                    .foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
+                // ART_SPEC §4: the 3D W / L badge.
+                ResultBadge(won: won, size: 24)
                 if let d = match.date {
                     Text(dateTimeStr(d)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }

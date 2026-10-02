@@ -49,13 +49,14 @@ enum WidgetBridge {
         let c = m.dbKey.flatMap { byMode[$0] }
         // Home-menu icon for this mode (homeModes / moreModes key icons by catalog id).
         var kind: String?, asset: String?, text: String?
-        switch (homeModes + moreModes).first(where: { $0.id == m.id })?.icon {
+        // The widget draws the one-ink glyph (it has no game art): unwrap the 3D game icon.
+        switch (homeModes + moreModes).first(where: { $0.id == m.id })?.icon.glyph {
         case .asset(let name):    kind = "asset";    asset = name
         case .original(let name): kind = "original"; asset = name
         case .roman(let t):       kind = "roman";    text = t
         case .hand(let name, let n): kind = "hand";  asset = name; text = n
         case .symbol(let name):   kind = "symbol";   asset = name   // SF Symbol name (the Puzzles titles)
-        case nil: break
+        case .game, nil: break
         }
         return ModeEntry(key: m.dbKey ?? m.id, title: m.shortTitle,
                          glyph: m.romanNumeral ?? m.glyph ?? String(m.title.prefix(1)),

@@ -11,6 +11,7 @@ import type { DailyStanding } from '@/lib/stats-service';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { WIN_FG } from '@/lib/tile-theme';
 import { guessNoun } from '@/lib/mode-stats';
+import { isGameArtIcon } from '@/lib/art';
 
 // The Stats tab's landing page — "your day in one card" (Stats + Friends
 // redesign D2, founder 2026-09-26): the eight sweep tiles with today's W/L,
@@ -132,14 +133,15 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
             const played = result !== undefined;
             const won = result?.won === true;
             const color = meta?.accentHex ?? '#7c3aed';
-            const tileBg = !played ? 'var(--color-bg)' : won ? WIN_FG : '#dc2626';
+            // Played: the 3D W / L badge (docs/ART_SPEC.md §4) on the game's soft tint.
+            const tileBg = !played ? 'var(--color-bg)' : `${color}15`;
             const tileBorder = !played ? 'var(--color-border)' : won ? WIN_FG : '#dc2626';
             return (
               <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1 min-w-0" style={{ width: '40px' }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
                   {played ? (
-                    <span className="text-sm font-black" style={{ color: '#ffffff' }}>{won ? 'W' : 'L'}</span>
-                  ) : meta?.romanNumeral ? (
+                    <Icon3D name={won ? 'badge-w' : 'badge-l'} size={28} label={won ? 'Won' : 'Lost'} />
+                  ) : !(Icon && isGameArtIcon(Icon)) && meta?.romanNumeral ? (
                     <span className="text-[11px] font-black" style={{ color }}>{meta.romanNumeral}</span>
                   ) : Icon ? (
                     <Icon className="w-3.5 h-3.5" style={{ color }} />
@@ -167,7 +169,7 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
         <div className="flex gap-2 mt-3">
           {pill(<LayoutGrid className="w-3 h-3" />, 'Puzzles', moreDaily.length > 0 ? `${morePlayed} of ${moreDaily.length}` : '—', '#4f46e5',
             () => onJump(moreDaily[0]?.dbKey ?? 'today'))}
-          {pill(<Swords className="w-3 h-3" />, 'VS Battle', vsDailyWon === null ? '—' : vsDailyWon ? 'W' : 'L', '#ec4899', () => onJump('vs'))}
+          {pill(<Swords className="w-3 h-3" />, 'VS Battle', vsDailyWon === null ? '—' : <Icon3D name={vsDailyWon ? 'badge-w' : 'badge-l'} size={20} label={vsDailyWon ? 'Won' : 'Lost'} className="mx-auto" />, '#ec4899', () => onJump('vs'))}
           {pill(<TrendingUp className="w-3 h-3" />, 'Standing', standing ? `Top ${standing.topPercent}%` : '—', '#7c3aed')}
         </div>
 

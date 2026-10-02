@@ -108,7 +108,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // The shared page header (HEADER_SPEC §4) with the page host, R relaxing in
         // his nightcap (MASCOT_SPEC §6); Done is the white close circle.
-        PageHeader("SETTINGS", host = Mascots.settings, onClose = onDone, closeLabel = "Done")
+        PageHeader("SETTINGS", onClose = onDone, closeLabel = "Done", art = TitleArt.SETTINGS) // ART_SPEC §2
 
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),

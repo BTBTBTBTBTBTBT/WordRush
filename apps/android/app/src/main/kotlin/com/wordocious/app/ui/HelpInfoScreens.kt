@@ -53,7 +53,12 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
         // Top accent bar (purple → pink → amber)
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         // The shared page header (HEADER_SPEC §4) with the Help host, C the explorer (MASCOT_SPEC §6).
-        PageHeader(tabs[tab], host = Mascots.help, onClose = onDone, titleSize = 20.sp)
+        // ART_SPEC §2: the full Help screen (and its How to Play section) wears the whole-cast
+        // HOW TO PLAY art; a single section opened alone (FAQ from the menu) keeps its text title.
+        PageHeader(
+            tabs[tab], host = Mascots.help, onClose = onDone, titleSize = 20.sp,
+            art = if (showTabs || tab == 0) TitleArt.HOWTO else null,
+        )
         // Tab chips — hidden when opened for a single section (e.g. FAQ from the
         // menu / footer), where the pill switcher makes no sense.
         if (showTabs) {

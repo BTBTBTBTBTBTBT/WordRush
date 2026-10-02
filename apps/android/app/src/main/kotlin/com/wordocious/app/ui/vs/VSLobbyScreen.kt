@@ -190,7 +190,8 @@ private fun LobbyMain(
     Box(Modifier.fillMaxSize().background(VsTeal.page)) {
         Column(Modifier.fillMaxSize()) {
             // HEADER_SPEC §5: the VS banner's S is the page host; the title row doesn't repeat it.
-            VsNavBar("VS BATTLE", onBack = onClose) {
+            // ART_SPEC §2: the whole-cast VS BATTLE art is the title.
+            VsNavBar("VS BATTLE", onBack = onClose, art = com.wordocious.app.ui.TitleArt.VS) {
                 val looking = counts.values.sumOf { it.waiting }
                 if (looking > 0 || online != null) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(if (looking > 0) Color(0xFF22C55E) else VsTeal.grey))

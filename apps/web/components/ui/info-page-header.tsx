@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/page-header';
 import type { MascotId } from '@/lib/mascots';
+import type { TitleArtName } from '@/lib/art';
 
 /**
  * Native MenuScaffold parity chrome for the site-nav info pages (the pages
@@ -13,8 +14,12 @@ import type { MascotId } from '@/lib/mascots';
  * articles) pass `backHref` for the leading chevron, mirroring the native
  * scaffold's onBack. Built on the shared PageHeader (HEADER_SPEC §4).
  */
-export function InfoPageHeader({ title, backHref, titleTag = 'h1', host }: {
+export function InfoPageHeader({ title, backHref, titleTag = 'h1', host, art, artLabel }: {
   title: string;
+  /** Whole-cast title art in place of the text title and host (docs/ART_SPEC.md §2). */
+  art?: TitleArtName;
+  /** The art's accessible name (the lettering's text); defaults to `title`. */
+  artLabel?: string;
   backHref?: string;
   /** The page's host (docs/MASCOT_SPEC.md §6), standing beside the title. */
   host?: MascotId;
@@ -33,6 +38,8 @@ export function InfoPageHeader({ title, backHref, titleTag = 'h1', host }: {
       <PageHeader
         className="max-w-2xl mx-auto px-4 pt-4 pb-2"
         title={title}
+        art={art}
+        artLabel={artLabel}
         titleTag={titleTag}
         titleSize={24}
         host={host}

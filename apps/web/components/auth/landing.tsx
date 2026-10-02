@@ -10,6 +10,8 @@ import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
 import { LadderIcon } from '@/components/ui/ladder-icon';
 import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
+import { GameArt } from '@/components/ui/game-art';
+import { MODES as CATALOG } from '@/lib/modes.generated';
 import dynamic from 'next/dynamic';
 // Loaded on the "Sign in" tap only (founder, 2026-09-29).
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
@@ -27,9 +29,13 @@ type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProper
 // Icons mirror the signed-in home grid (app/page.tsx MODE_CARDS and
 // components/home/mode-chrome.tsx): real game icons everywhere, except
 // QuadWord/OctoWord which brand with roman numerals.
-type LandingMode = { title: string; desc: string; accent: string; roman?: string; guide?: string; Icon?: IconCmp };
+// `art`: the catalog id of the game's 3D icon (docs/ART_SPEC.md §3); defaults to the guide slug's mode.
+type LandingMode = { title: string; desc: string; accent: string; roman?: string; guide?: string; Icon?: IconCmp; art?: string };
+const MODE_ID_BY_GUIDE: Record<string, string> = Object.fromEntries(
+  CATALOG.filter((m) => m.guideSlug).map((m) => [m.guideSlug as string, m.id]),
+);
 // The eight Daily Sweep word games (VS Battle has its own card under More Games).
-const VS_MODE: LandingMode = { title: 'VS Battle', desc: 'Race a friend or a live opponent on the same puzzle.', accent: '#0d9488', Icon: Swords };
+const VS_MODE: LandingMode = { title: 'VS Battle', desc: 'Race a friend or a live opponent on the same puzzle.', accent: '#0d9488', Icon: Swords, art: 'vs' };
 const MODES: LandingMode[] = [
   { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed', guide: 'classic', Icon: WordleGridIcon },
   { title: 'QuadWord', desc: 'Solve four words at once with nine shared guesses.', accent: '#ec4899', roman: 'IV', guide: 'quadword' },
@@ -56,13 +62,15 @@ const MORE_GAMES: LandingMode[] = [
 ];
 
 function ModeCard({ m }: { m: LandingMode }) {
+  const artId = m.art ?? (m.guide ? MODE_ID_BY_GUIDE[m.guide] : undefined);
+  const oldGlyph = m.roman ? m.roman : m.Icon ? <m.Icon className="w-4 h-4" style={{ color: m.accent }} /> : m.title.charAt(0);
   return (
     // One game-tile style (docs/GAME_TILE_STYLE.md): the home card's tint, border and top bar.
     <div className="relative overflow-hidden p-4 pt-5" style={gameTileSurface(m.accent)}>
       <GameTileBar accent={m.accent} />
       <div className="flex items-center gap-2 mb-1">
         <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black" style={{ background: `${m.accent}15`, color: m.accent }}>
-          {m.roman ? m.roman : m.Icon ? <m.Icon className="w-4 h-4" style={{ color: m.accent }} /> : m.title.charAt(0)}
+          {artId ? <GameArt id={artId} size={26} fallback={oldGlyph} /> : oldGlyph}
         </span>
         <h3 className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{m.title}</h3>
       </div>

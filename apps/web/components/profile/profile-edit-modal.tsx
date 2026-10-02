@@ -5,6 +5,7 @@ import { validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { X as XIcon, Check, Pencil, Star, Lock, Globe } from 'lucide-react';
+import { GameArt } from '@/components/ui/game-art';
 import { HeaderBack } from '@/components/ui/page-header';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import {
@@ -171,7 +172,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
             {bio.trim() && <p className="text-xs font-bold mt-1.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{bio.trim()}</p>}
             {favMode && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
-                {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
+                <GameArt id={favMode.id} size={16} className="-my-1" fallback={favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} /> {favMode.shortTitle}
               </span>
             )}
           </div>

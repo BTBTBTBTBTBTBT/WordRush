@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { ReactNode } from 'react';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_SCORE_CONFIG } from '@/lib/composite-scoring';
@@ -77,14 +78,8 @@ export function CompletedCustomDaily({ dbKey, completion, boardsSolved, totalBoa
               <span className="text-xs text-gray-400">{stat}</span>
               <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                 <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                <span
-                  className="inline-flex items-center text-[10px] font-black px-2 py-0.5 rounded-full"
-                  style={won
-                    ? { background: '#dcfce7', border: '1px solid #86efac', color: '#166534' }
-                    : { background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b' }}
-                  aria-label={won ? 'Win' : 'Loss'}>
-                  {won ? 'W' : 'L'}
-                </span>
+                {/* The 3D W / L badge (docs/ART_SPEC.md §4). */}
+                <Icon3D name={won ? 'badge-w' : 'badge-l'} size={24} label={won ? 'Win' : 'Loss'} />
                 <DailyRankBadge gameMode={dbKey} />
               </div>
             </div>

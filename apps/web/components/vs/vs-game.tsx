@@ -40,7 +40,7 @@ import { useProperNoundleBank } from '@/components/propernoundle/puzzle-service'
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
-import { Loader2, Home, RotateCcw, Share2, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
+import { Loader2, Home, RotateCcw, X, Swords, Bot, Users, ChevronLeft } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { GameHomeButton } from '@/components/game/game-home-button';
@@ -1446,7 +1446,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     ) : (
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: VS.label }}>
-          <Lock className="w-3.5 h-3.5" /> Bot matches are a Pro feature
+          <Icon3D name="lock" size={17} /> Bot matches are a Pro feature
         </div>
         <button
           onClick={() => router.push('/pro')}
@@ -1473,7 +1473,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         <span className="w-11 h-11 flex items-center justify-center shrink-0" style={{ background: opts.iconBg, borderRadius: 12 }}>{opts.icon}</span>
         <span className="flex-1 min-w-0">
           <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.3 }}>
-            {opts.title} {opts.locked && <Lock className="w-3.5 h-3.5" style={{ color: VS.label }} />}
+            {opts.title} {opts.locked && <Icon3D name="lock" size={17} />}
           </span>
           <span className="block text-[12px] font-bold" style={{ color: '#4b5563' }}>{opts.sub}</span>
         </span>
@@ -1854,7 +1854,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               >
                 {/* Honest label: for free users the tap opens the Pro upsell,
                     not a rematch — say so instead of a bait "Rematch". */}
-                {isCpu || isPro ? <RotateCcw className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                {isCpu || isPro ? <RotateCcw className="w-4 h-4" /> : <Icon3D name="lock" size={20} />}
                 {isCpu ? 'Run it back' : isPro ? 'Rematch' : 'Rematch — Pro'}
               </button>
             ) : null}
@@ -1863,7 +1863,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 <Home className="w-4 h-4" /> Home
               </button>
               <button onClick={handleShare} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
-                <Share2 className="w-4 h-4" /> Share
+                <Icon3D name="share" size={20} /> Share
               </button>
             </div>
           </div>

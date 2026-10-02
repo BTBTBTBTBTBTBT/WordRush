@@ -1,7 +1,9 @@
 import Image from 'next/image';
 
 // The 3D icon set (docs/HEADER_SPEC.md §0): ChatGPT-designed in the same style
-// as the cast, 256 px transparent PNGs in public/icons3d/. ONE component,
+// as the cast, 256 px transparent PNGs in public/icons3d/ (plus the art pass's
+// badge / lock / bell / add-friend / share / sound / back webps in public/art/,
+// docs/ART_SPEC.md §0). ONE component,
 // Icon3D(name, size), used for every streak flame, trophy, streak shield,
 // crown, settings gear, help button and tab icon in the app (§2, §3).
 // Decorative unless given a label. No hooks, so it renders in server
@@ -18,16 +20,32 @@ export type Icon3DName =
   | 'tab-home'
   | 'tab-leaderboard'
   | 'tab-stats'
-  | 'tab-friends';
+  | 'tab-friends'
+  // The art pass (docs/ART_SPEC.md §0, §4, §5): 256 px webp in public/art/.
+  | 'badge-w'
+  | 'badge-l'
+  | 'badge-check'
+  | 'lock'
+  | 'bell'
+  | 'add-friend'
+  | 'share'
+  | 'sound'
+  | 'back';
 
 export const ICON3D_NAMES: readonly Icon3DName[] = [
   'flame', 'trophy', 'shield', 'gear', 'help', 'crown',
   'tab-home', 'tab-leaderboard', 'tab-stats', 'tab-friends',
+  'badge-w', 'badge-l', 'badge-check', 'lock', 'bell', 'add-friend', 'share', 'sound', 'back',
 ];
+
+/** The names shipped with the art pass, served from public/art/icon3d-<name>.webp. */
+const ART_PASS_NAMES: ReadonlySet<Icon3DName> = new Set([
+  'badge-w', 'badge-l', 'badge-check', 'lock', 'bell', 'add-friend', 'share', 'sound', 'back',
+]);
 
 /** Public path of an icon's art. */
 export function icon3dSrc(name: Icon3DName): string {
-  return `/icons3d/${name}.png`;
+  return ART_PASS_NAMES.has(name) ? `/art/icon3d-${name}.webp` : `/icons3d/${name}.png`;
 }
 
 interface Icon3DProps {
@@ -128,3 +146,7 @@ export const Shield3D = icon3dAs('shield');
 export const Crown3D = icon3dAs('crown');
 export const Gear3D = icon3dAs('gear');
 export const Help3D = icon3dAs('help');
+export const Lock3D = icon3dAs('lock');
+export const Bell3D = icon3dAs('bell');
+export const AddFriend3D = icon3dAs('add-friend');
+export const Share3D = icon3dAs('share');

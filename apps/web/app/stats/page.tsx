@@ -15,9 +15,9 @@ import {
   Sparkles,
   Bot,
   Lock,
-  Share,
   Pencil,
 } from 'lucide-react';
+import { GameArt } from '@/components/ui/game-art';
 import { Icon3D, Crown3D, Flame3D, type IconLike } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
@@ -43,7 +43,7 @@ import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
-import { PageHeader } from '@/components/ui/page-header';
+import { ArtTitle } from '@/components/ui/art-title';
 import { MASCOT_LINES, PAGE_HOSTS } from '@/lib/mascots';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -456,9 +456,8 @@ export default function StatsPage() {
       <AppHeader />
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
-        {/* STATS, with its host D (brainy, glasses + pencil) beside the title. */}
-        {/* HEADER_SPEC §4: the shared page header (gradient caps title, host beside it). */}
-        <PageHeader title="STATS" titleTag="div" titleSize={24} host={PAGE_HOSTS.stats} hostSize={44} className="pt-1" />
+        {/* STATS: the whole-cast title art (docs/ART_SPEC.md §2) in place of the text title and its host. */}
+        <ArtTitle name="art-title-stats" label="Stats" as="div" className="pt-1" />
 
         {/* ── Player card (founder, 2026-09-26: "the top looks unfinished with the random
             buttons"): ONE card. Avatar · name · chips on the first row with Edit / Share as
@@ -495,7 +494,7 @@ export default function StatsPage() {
                     )}
                     {favMode && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
-                        {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
+                        <GameArt id={favMode.id} size={16} className="-my-1" fallback={favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} /> {favMode.shortTitle}
                       </span>
                     )}
                     {bioText && <p className="text-xs font-bold w-full" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
@@ -539,7 +538,7 @@ export default function StatsPage() {
                 className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
                 style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
               >
-                <Share className="w-3.5 h-3.5" />
+                <Icon3D name="share" size={17} />
               </button>
             </div>
           </div>
@@ -1200,7 +1199,7 @@ function FlawlessBannerFooter({ total }: { total: number }) {
             className="p-0.5 active:scale-95 transition-transform"
             style={{ color: '#b45309', opacity: sharing ? 0.4 : 1 }}
           >
-            <Share className="w-3.5 h-3.5" />
+            <Icon3D name="share" size={17} />
           </button>
         )}
       </div>

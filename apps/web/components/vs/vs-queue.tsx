@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
 import { BotAvatar, VsModeIcon } from './vs-ui';
 import { CastLoader } from '@/components/ui/cast-loader';
@@ -177,7 +178,7 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
           className="w-full flex items-center gap-3 px-4 py-3 text-left"
           style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow, opacity: looking.saving ? 0.6 : 1 }}
         >
-          <Bell className="w-4 h-4 shrink-0" style={{ color: VS.ink }} />
+          <Icon3D name="bell" size={20} />
           <span className="flex-1 min-w-0 text-[12.5px] font-extrabold" style={{ color: VS.deep }}>{looking.label}</span>
           <span
             className="relative shrink-0 rounded-full transition-colors"

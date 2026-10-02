@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronRight, UserPlus } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { friendsBannerClockLine, friendsBannerHeadline, type FriendsBannerInput } from '@wordle-duel/core';
 import type { FriendProfile } from '@/lib/friends-service';
 import type { RaceRow } from '@/lib/todays-race';
@@ -68,7 +69,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
             className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[13px] font-black text-white rounded-xl transition-transform active:scale-[0.98]"
             style={{ background: FR.solid, letterSpacing: 0.5 }}
           >
-            <UserPlus className="w-4 h-4" /> ADD A FRIEND
+            <Icon3D name="add-friend" size={20} /> ADD A FRIEND
           </button>
         </div>
       ) : (

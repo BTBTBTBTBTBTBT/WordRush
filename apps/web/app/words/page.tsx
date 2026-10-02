@@ -40,7 +40,7 @@ export default async function WordsArchivePage() {
 
   return (
     <div className="min-h-screen pb-16" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <InfoPageHeader title="Word of the Day" />
+      <InfoPageHeader title="Word of the Day" art="art-title-wotd" />
       <div className="max-w-2xl mx-auto px-4 pt-1">
         <p className="text-base leading-relaxed mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Every day Wordocious surfaces a Word of the Day — a hand-curated five-letter word from the same answer bank the

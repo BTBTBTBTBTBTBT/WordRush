@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AllInclusive
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -164,7 +163,7 @@ fun HomeBannerView(
                                 .semantics { contentDescription = "Share today's progress" },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Filled.Share, null, tint = subInk, modifier = Modifier.size(19.dp))
+                            Icon3D(Icon3DName.SHARE, 23.dp, contentDescription = null, modifier = Modifier)
                         }
                     }
                 }

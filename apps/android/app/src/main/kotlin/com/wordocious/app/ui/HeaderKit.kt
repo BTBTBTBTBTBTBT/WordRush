@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -51,7 +50,7 @@ import com.wordocious.app.ui.theme.Nunito
 // soft white header circles, and the one shared `PageHeader` every page, screen
 // and sheet uses (§4). Mirrors web components/icon-3d.tsx and iOS HeaderKit.swift.
 
-/** The 3D icon set (§0), `res/drawable-nodpi/icon3d_<name>.png`, 256 px transparent. */
+/** The 3D icon set (§0, plus ART_SPEC §4–§5), `res/drawable-nodpi/icon3d_<name>`, 256 px transparent. */
 enum class Icon3DName(@DrawableRes val res: Int) {
     FLAME(R.drawable.icon3d_flame),
     TROPHY(R.drawable.icon3d_trophy),
@@ -63,6 +62,16 @@ enum class Icon3DName(@DrawableRes val res: Int) {
     TAB_LEADERBOARD(R.drawable.icon3d_tab_leaderboard),
     TAB_STATS(R.drawable.icon3d_tab_stats),
     TAB_FRIENDS(R.drawable.icon3d_tab_friends),
+    // The art pass (docs/ART_SPEC.md §4–§5), WebP.
+    BADGE_W(R.drawable.icon3d_badge_w),
+    BADGE_L(R.drawable.icon3d_badge_l),
+    BADGE_CHECK(R.drawable.icon3d_badge_check),
+    LOCK(R.drawable.icon3d_lock),
+    BELL(R.drawable.icon3d_bell),
+    ADD_FRIEND(R.drawable.icon3d_add_friend),
+    SHARE(R.drawable.icon3d_share),
+    SOUND(R.drawable.icon3d_sound),
+    BACK(R.drawable.icon3d_back),
 }
 
 /**
@@ -154,7 +163,10 @@ fun HeaderIconButton(
     HeaderCircle(onClick, contentDescription, modifier, size) { Icon3D(icon, iconSize) }
 }
 
-/** The back (or close) control: a soft white circle with the glyph in #6d28d9 (§4). */
+/**
+ * The back (or close) control: a soft white circle (§4). Back wears the 3D `back`
+ * icon (ART_SPEC §5, ~1.2× the old glyph); close keeps the X in #6d28d9.
+ */
 @Composable
 fun HeaderBackButton(
     onClick: () -> Unit,
@@ -164,10 +176,11 @@ fun HeaderBackButton(
     size: Dp = 38.dp,
 ) {
     HeaderCircle(onClick, contentDescription, modifier, size) {
-        Icon(
-            if (close) Icons.Filled.Close else Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = null, tint = HeaderInk.control, modifier = Modifier.size(size * 0.5f),
-        )
+        if (close) {
+            Icon(Icons.Filled.Close, contentDescription = null, tint = HeaderInk.control, modifier = Modifier.size(size * 0.5f))
+        } else {
+            Icon3D(Icon3DName.BACK, size * 0.58f)
+        }
     }
 }
 
@@ -211,6 +224,8 @@ fun PageHeader(
     titleMaxLines: Int = 2,
     hostSize: Dp = 40.dp,
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+    /** The page's whole-cast title image (ART_SPEC §2): replaces the text title AND the host. */
+    art: TitleArt? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -221,7 +236,11 @@ fun PageHeader(
         if (onBack != null) HeaderBackButton(onBack, close = backAsClose, contentDescription = backLabel)
         // Title + host share ONE weighted cell (a second weighted spacer would cap
         // the title at half the leftover width; see AppHeader's history).
-        Row(
+        if (art != null) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                PageTitleArt(art)
+            }
+        } else Row(
             Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),

@@ -79,12 +79,10 @@ struct VSLiveTile<Destination: View>: View {
         }
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(done ? accent.opacity(0.55) : Theme.border, lineWidth: 1.5))
         .overlay(alignment: .topTrailing) {
-            // W / L pill in the top-right corner — the same badge the mode cards show.
+            // W / L badge in the top-right corner — the same 3D badge the mode cards show (ART_SPEC §4).
             if done {
-                Text((vsDailyWon ?? false) ? "W" : "L").font(Brand.font(10, .black)).foregroundStyle(.white)
-                    .frame(width: 20, height: 20)
-                    .background(RoundedRectangle(cornerRadius: 6).fill((vsDailyWon ?? false) ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)))
-                    .padding(.top, 8).padding(.trailing, 10)
+                ResultBadge(won: vsDailyWon ?? false, size: 26)
+                    .padding(.top, 6).padding(.trailing, 8)
             }
         }
         .shadow(color: done ? accent.opacity(0.25) : .clear, radius: 8, y: 2)

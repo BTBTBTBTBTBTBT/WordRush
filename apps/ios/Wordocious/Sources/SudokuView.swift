@@ -308,7 +308,7 @@ struct SudokuView: View {
                 .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { share() } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
+                Button { share() } label: { Label { Text("Share") } icon: { Icon3D(.share, size: 17) }.font(Brand.font(13, .black)) }
                 if let onPlayAgain, !vm.isDaily, isPro {
                     Button { onPlayAgain(vm.state.difficulty) } label: { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
                         .foregroundStyle(Color(hex: 0xD97706))

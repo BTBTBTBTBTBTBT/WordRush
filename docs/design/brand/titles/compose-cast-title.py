@@ -28,6 +28,62 @@ LAYOUTS = {
         'top': [('r', 'lean'), ('d', 'cheer'), ('o2', 'lean'), ('c', 'sit'),
                 ('i', 'cheer'), ('o3', 'handstand')],
     },
+    'records': {
+        'lettering': 'records-lettering-keyed.png',
+        'left': [('w', 'sit', False)],
+        'right': [('s', 'flex', False)],
+        'top': [('o1', 'lean'), ('r', 'cheer'), ('d', 'sit'), ('o2', 'cheer'),
+                ('c', 'lean'), ('i', 'cheer'), ('o3', 'handstand'), ('u', 'stretch')],
+    },
+    'vs': {
+        'lettering': 'vs-lettering-keyed.png',
+        'left': [('w', 'cheer', False), ('o1', 'sit', False)],
+        'right': [('u', 'spin', False), ('s', 'slide', False)],
+        'top': [('r', 'lean'), ('d', 'cheer'), ('o2', 'cheer'), ('c', 'sit'),
+                ('i', 'lean'), ('o3', 'sneak')],
+    },
+    'puzzles': {
+        'lettering': 'puzzles-lettering-keyed.png',
+        'left': [('w', 'lean', True), ('o1', 'cheer', False)],
+        'right': [('u', 'meditate', False), ('s', 'sit', False)],
+        'top': [('r', 'sit'), ('d', 'lean'), ('o2', 'sit'), ('c', 'cheer'),
+                ('i', 'sit'), ('o3', 'sit')],
+    },
+    'wotd': {
+        'lettering': 'wotd-lettering-keyed.png',
+        'left': [('w', 'cheer', False)],
+        'right': [('s', 'flex', False)],
+        'top': [('o1', 'sit'), ('r', 'lean'), ('d', 'cheer'), ('o2', 'lean'),
+                ('c', 'sit'), ('i', 'cheer'), ('o3', 'sneak'), ('u', 'meditate')],
+    },
+    'settings': {
+        'lettering': 'settings-lettering-keyed.png',
+        'left': [('w', 'sit', False), ('o1', 'lean', True)],
+        'right': [('u', 'stretch', False), ('s', 'sit', False)],
+        'top': [('r', 'lean'), ('d', 'sit'), ('o2', 'sit'), ('c', 'lean'),
+                ('i', 'sit'), ('o3', 'sit')],
+    },
+    'howto': {
+        'lettering': 'howto-lettering-keyed.png',
+        'left': [('w', 'lean', True)],
+        'right': [('s', 'slide', False)],
+        'top': [('o1', 'cheer'), ('r', 'sit'), ('d', 'cheer'), ('o2', 'sit'),
+                ('c', 'cheer'), ('i', 'lean'), ('o3', 'handstand'), ('u', 'spin')],
+    },
+    'gopro': {
+        'lettering': 'gopro-lettering-keyed.png',
+        'left': [('w', 'cheer', False), ('o1', 'cheer', False)],
+        'right': [('u', 'stretch', False), ('s', 'flex', False)],
+        'top': [('r', 'cheer'), ('d', 'cheer'), ('o2', 'cheer'), ('c', 'cheer'),
+                ('i', 'cheer'), ('o3', 'handstand')],
+    },
+    'moregames': {
+        'lettering': 'moregames-lettering-keyed.png',
+        'left': [('w', 'sit', False)],
+        'right': [('s', 'sit', False)],
+        'top': [('o1', 'cheer'), ('r', 'lean'), ('d', 'lean'), ('o2', 'cheer'),
+                ('c', 'sit'), ('i', 'cheer'), ('o3', 'sit'), ('u', 'spin')],
+    },
 }
 
 

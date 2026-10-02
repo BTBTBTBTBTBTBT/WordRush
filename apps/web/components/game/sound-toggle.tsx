@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 import { HEADER_INK, HEADER_SHADOW } from '@/components/ui/page-header';
 
@@ -23,8 +23,6 @@ export function SoundToggle({
     setSoundEnabled(next);
   };
 
-  const Icon = enabled ? Volume2 : VolumeX;
-
   return (
     <button
       type="button"
@@ -33,7 +31,17 @@ export function SoundToggle({
       className={`${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`}
       style={{ background: '#ffffff', boxShadow: HEADER_SHADOW }}
     >
-      <Icon className="w-5 h-5" style={{ color: HEADER_INK }} strokeWidth={2.4} />
+      {/* The 3D speaker (docs/ART_SPEC.md §5); muted = grayed with a slash. */}
+      <span className="relative flex items-center justify-center" style={{ width: 24, height: 24 }}>
+        <Icon3D name="sound" size={24} style={enabled ? undefined : { filter: 'grayscale(1)', opacity: 0.5 }} />
+        {!enabled && (
+          <span
+            aria-hidden="true"
+            className="absolute rounded-full"
+            style={{ width: 26, height: 2.5, background: HEADER_INK, transform: 'rotate(-45deg)' }}
+          />
+        )}
+      </span>
     </button>
   );
 }

@@ -24,6 +24,15 @@ while len(runs) > len(names):
     runs[i:i + 2] = [(runs[i][0], runs[i + 1][1])]
 for n, (y0, y1) in zip(names, runs):
     piece = im.crop((0, y0, im.width, y1))
+    # Drop specks (button residue): components under 1.5% of the biggest one.
+    from scipy import ndimage
+    pa = np.array(piece)
+    lab, nlab = ndimage.label(pa[..., 3] > 40)
+    if nlab > 1:
+        sz = ndimage.sum(np.ones_like(lab), lab, range(1, nlab + 1))
+        keep = np.isin(lab, [i + 1 for i, v in enumerate(sz) if v >= sz.max() * 0.015])
+        pa[..., 3] = np.where(ndimage.binary_dilation(keep, iterations=2), pa[..., 3], 0)
+        piece = Image.fromarray(pa)
     piece = piece.crop(piece.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox())
     piece.save(os.path.join(HERE, f'{n}-lettering-keyed.png'))
     print(n, piece.size)

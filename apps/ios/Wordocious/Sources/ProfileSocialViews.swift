@@ -391,7 +391,7 @@ struct YouVsThemCard: View {
                 }.buttonStyle(.plain)
             }
             HStack(spacing: 4) {
-                Image(systemName: "lock.fill").font(.system(size: 8)).foregroundStyle(Theme.textMuted)
+                Icon3D(.lock, size: 11) // ART_SPEC §5
                 Text("Boards open only for dailies you've finished")
                     .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
             }
@@ -529,7 +529,7 @@ struct GuardedBoardSheet: View {
             ProgressView().tint(Theme.primary)
         case .locked:
             VStack(spacing: 10) {
-                Image(systemName: "lock.fill").font(.system(size: 30)).foregroundStyle(Theme.textMuted)
+                Icon3D(.lock, size: 36) // ART_SPEC §5
                 Text("Finish today's \(request.modeTitle) first — no spoilers")
                     .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center)

@@ -97,8 +97,8 @@ struct SweepCelebrationView: View {
                                 Text(r.modeLabel).font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                                 .minimumScaleFactor(0.7)
                                 Spacer(minLength: 0)
-                                Text(r.won ? "✓" : "✗").font(Brand.font(12, .black))
-                                    .foregroundStyle(r.won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                                // ART_SPEC §4: the 3D W / L badge per daily.
+                                ResultBadge(won: r.won, size: 18)
                             }
                         }
                     }
@@ -110,7 +110,7 @@ struct SweepCelebrationView: View {
                             ShareEvents.log(kind: "image", gameMode: "", surface: more ? "more_sweep_celebration" : "sweep_celebration")
                             if more { ShareService.shareMoreSweep(byMode: byMode) } else { ShareService.shareDailySweep(byMode: byMode) }
                         } label: {
-                            HStack(spacing: 6) { Image(systemName: "square.and.arrow.up"); Text("Share") }
+                            HStack(spacing: 6) { Icon3D(.share, size: 20); Text("Share") }
                                 .font(Brand.font(15, .black)).foregroundStyle(.white)
                                 .frame(maxWidth: .infinity).padding(.vertical, 11)
                                 .background(RoundedRectangle(cornerRadius: 12).fill(

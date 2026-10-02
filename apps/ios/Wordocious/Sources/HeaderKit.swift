@@ -14,6 +14,12 @@ enum Icon3DName: String, CaseIterable {
     case tabLeaderboard = "tab-leaderboard"
     case tabStats = "tab-stats"
     case tabFriends = "tab-friends"
+    // ART_SPEC §4–§5: completion badges and the extra UI icons.
+    case badgeW = "badge-w"
+    case badgeL = "badge-l"
+    case badgeCheck = "badge-check"
+    case lock, bell, share, sound, back
+    case addFriend = "add-friend"
 
     var assetName: String { "icon3d-\(rawValue)" }
 
@@ -27,6 +33,21 @@ enum Icon3DName: String, CaseIterable {
         case "gearshape", "gearshape.fill", "gear": return .gear
         case "questionmark", "questionmark.circle", "questionmark.circle.fill": return .help
         default: return nil
+        }
+    }
+
+    /// ART_SPEC §5: the header-circle symbols the icon set replaces (back, share,
+    /// bell, add-friend, sound, lock). A state the art can't show (bell.slash,
+    /// speaker.slash) stays a symbol.
+    static func forHeaderSymbol(_ symbol: String) -> Icon3DName? {
+        switch symbol {
+        case "chevron.left", "arrow.left": return .back
+        case "square.and.arrow.up": return .share
+        case "bell", "bell.fill": return .bell
+        case "person.badge.plus", "person.crop.circle.badge.plus": return .addFriend
+        case "speaker.wave.2.fill", "speaker.wave.2", "speaker.fill": return .sound
+        case "lock", "lock.fill": return .lock
+        default: return forSymbol(symbol)
         }
     }
 }
@@ -164,6 +185,9 @@ struct HeaderCircleButton: View {
     enum Glyph {
         case symbol(String)
         case icon(Icon3DName)
+        /// An icon in its "off" state (bell with a category off, sound muted):
+        /// dimmed + desaturated with a slash (ART_SPEC §5).
+        case mutedIcon(Icon3DName)
     }
 
     let glyph: Glyph
@@ -198,11 +222,25 @@ struct HeaderCircleLabel: View {
         Group {
             switch glyph {
             case .symbol(let s):
-                Image(systemName: s)
-                    .font(.system(size: (size * 0.42).rounded(), weight: .bold))
-                    .foregroundStyle(tint)
+                if let icon = Icon3DName.forHeaderSymbol(s) {
+                    // §5: the 3D art fills its square, so ~1.2× the old glyph size.
+                    Icon3D(icon, size: (size * 0.5).rounded())
+                } else {
+                    Image(systemName: s)
+                        .font(.system(size: (size * 0.42).rounded(), weight: .bold))
+                        .foregroundStyle(tint)
+                }
             case .icon(let i):
                 Icon3D(i, size: (size * 0.6).rounded())
+            case .mutedIcon(let i):
+                let side = (size * 0.5).rounded()
+                ZStack {
+                    Icon3D(i, size: side).saturation(0.4).opacity(0.5)
+                    Capsule().fill(tint)
+                        .frame(width: side * 1.1, height: max(2, side * 0.11))
+                        .overlay(Capsule().stroke(Theme.surface, lineWidth: 1))
+                        .rotationEffect(.degrees(-45))
+                }
             }
         }
         .headerCircle(size)

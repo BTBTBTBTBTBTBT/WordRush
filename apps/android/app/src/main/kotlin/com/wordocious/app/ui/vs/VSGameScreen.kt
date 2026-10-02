@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.Icon3D
+import com.wordocious.app.ui.Icon3DName
 import com.wordocious.app.ui.theme.Nunito
 
 import androidx.compose.animation.core.animateFloat
@@ -36,7 +38,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TimerOff
@@ -1049,7 +1050,7 @@ private fun GauntletSpectatorStage(idx: Int, opponent: OpponentProgressState, wo
                     Text("PLAYING", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.ink)
                     TypingDots(dotSize = 5.dp, color = VsTeal.ink)
                 }
-                else -> Icon(Icons.Filled.Lock, null, tint = VsTeal.label, modifier = Modifier.size(12.dp))
+                else -> Icon3D(Icon3DName.LOCK, 14.dp) // ART_SPEC §5
             }
         }
         if (!locked) {

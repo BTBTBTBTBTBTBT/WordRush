@@ -87,6 +87,8 @@ struct MenuScaffold<Content: View>: View {
     let title: String
     /// The page's host beside the title (MASCOT_SPEC §6), 40 pt with an idle bob.
     var host: MascotID? = nil
+    /// ART_SPEC §2: the whole-cast title art in place of the text title + host.
+    var art: ArtTitleName? = nil
     var onBack: (() -> Void)? = nil
     /// Close action when the scaffold is NOT hosted in a presentation (the More Games
     /// morph panel); nil → the environment dismiss.
@@ -94,10 +96,11 @@ struct MenuScaffold<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     let content: () -> Content
 
-    init(_ title: String, host: MascotID? = nil, onBack: (() -> Void)? = nil, onClose: (() -> Void)? = nil,
-         @ViewBuilder content: @escaping () -> Content) {
+    init(_ title: String, host: MascotID? = nil, art: ArtTitleName? = nil, onBack: (() -> Void)? = nil,
+         onClose: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.host = host
+        self.art = art
         self.onBack = onBack
         self.onClose = onClose
         self.content = content
@@ -112,8 +115,12 @@ struct MenuScaffold<Content: View>: View {
                 if let onBack {
                     HeaderCircleButton(.symbol("chevron.left"), size: 32, label: "Back", action: onBack)
                 }
-                PageHostTitle(text: title, host: host, size: 22, hostSize: 40)
-                Spacer()
+                if let art {
+                    ArtTitle(art).frame(maxWidth: .infinity)
+                } else {
+                    PageHostTitle(text: title, host: host, size: 22, hostSize: 40)
+                    Spacer()
+                }
                 HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") {
                     if let onClose { onClose() } else { dismiss() }
                 }
@@ -185,7 +192,7 @@ struct GuidesIndexView: View {
     }
 
     var body: some View {
-        MenuScaffold("Guides", host: Mascots.help) {
+        MenuScaffold("Guides", host: Mascots.help, art: .howto) {
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(modes, id: \.self) { mode in
@@ -203,8 +210,13 @@ struct GuidesIndexView: View {
         let g = service.guide(for: mode)
         let accent = ModeStyle.accent(mode)
         return HStack(spacing: 12) {
-            Image(systemName: "book.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
-                .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.08)))
+            if let h = (homeModes + moreModes).first(where: { $0.dbKey == mode.rawValue }) {
+                // ART_SPEC §3: the game's own icon on its guide row.
+                ModeIconView(icon: h.icon, accent: accent, box: 40)
+            } else {
+                Image(systemName: "book.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
+                    .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.08)))
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(g?.title ?? GuideService.slug(for: mode).capitalized).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
                 if let tagline = g?.tagline {
@@ -396,7 +408,8 @@ struct WordsView: View {
             if let w = selected {
                 MenuScaffold(w.word.uppercased(), onBack: { selected = nil }) { WordDetailBody(entry: w) }
             } else {
-                MenuScaffold(navTitle) { list }
+                // ART_SPEC §2: the Word of the Day archive wears the WORD OF THE DAY art.
+                MenuScaffold(navTitle, art: .wotd) { list }
             }
         }
         .task { await service.load() }

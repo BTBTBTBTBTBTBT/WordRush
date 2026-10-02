@@ -1,9 +1,8 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Mascot } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
-import { HeaderBack, PageTitleText } from '@/components/ui/page-header';
+import { HeaderBack } from '@/components/ui/page-header';
+import { ArtTitle } from '@/components/ui/art-title';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, Theme } from '@/lib/theme-context';
@@ -119,11 +118,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
       >
         <DialogHeader>
-          {/* HEADER_SPEC §4: R (relaxed, nightcap) beside the gradient caps title, white close circle. */}
+          {/* The whole-cast SETTINGS title art (docs/ART_SPEC.md §2) beside the white close circle. */}
           <div className="flex items-center gap-2">
-            <Mascot id={PAGE_HOSTS.settings} size={40} motion="bob" priority />
             <DialogTitle className="flex-1 min-w-0 text-left">
-              <PageTitleText size={22}>Settings</PageTitleText>
+              <ArtTitle name="art-title-settings" label="Settings" as="div" align="left" maxWidth={340} />
             </DialogTitle>
             <HeaderBack kind="close" onClick={() => onOpenChange(false)} size={32} />
           </div>

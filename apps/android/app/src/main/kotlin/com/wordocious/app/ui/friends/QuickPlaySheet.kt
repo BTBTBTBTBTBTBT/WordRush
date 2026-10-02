@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.friends
 
+import com.wordocious.app.ui.Icon3D
+import com.wordocious.app.ui.Icon3DName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -18,7 +20,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -245,6 +246,6 @@ private fun WordociousCard(
             Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(sub, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ink.copy(alpha = 0.8f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (locked) Icon(Icons.Filled.Lock, "Pro", tint = ink, modifier = Modifier.size(12.dp))
+        if (locked) Icon3D(Icon3DName.LOCK, 14.dp, contentDescription = "Pro") // ART_SPEC §5
     }
 }

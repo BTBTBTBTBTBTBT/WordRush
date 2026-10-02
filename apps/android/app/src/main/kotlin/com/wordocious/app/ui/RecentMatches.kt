@@ -159,7 +159,8 @@ internal fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppo
             )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (won) "Win" else "Loss", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
+            // ART_SPEC §4: the 3D W / L badge in place of the Win / Loss word.
+            ResultBadge(won, 22.dp, contentDescription = if (won) "Win" else "Loss")
             Text(date, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }

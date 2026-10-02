@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Sparkles, Share2, X as XIcon } from 'lucide-react';
+import { Sparkles, X as XIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { haptic } from '@/lib/haptics';
 import { playSuccess } from '@/lib/sounds';
@@ -234,7 +234,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
                 className="btn-3d flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-black"
                 style={{ background: flawless ? 'linear-gradient(135deg, #d97706, #b45309)' : (more ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : 'linear-gradient(135deg, #7c3aed, #ec4899)') }}
               >
-                <Share2 className="w-4 h-4" />
+                <Icon3D name="share" size={20} />
                 {sharing ? 'Sharing…' : 'Share'}
               </button>
               <button

@@ -85,8 +85,7 @@ struct VSBannerView: View {
                     // Nothing played yet: nothing to share, so no button (home parity).
                     if anyPlayed {
                         ShareLink(item: URL(string: "https://wordocious.com")!, message: Text(shareText)) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 19, weight: .semibold)).foregroundStyle(subInk)
+                            Icon3D(.share, size: 24)
                                 .frame(width: 36, height: 36).contentShape(Rectangle())
                         }
                         .accessibilityLabel("Share today's VS")

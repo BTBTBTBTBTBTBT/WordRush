@@ -156,7 +156,7 @@ struct InviteSheet: View {
                             .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surfaceHover)).foregroundStyle(Theme.textPrimary)
                     }.buttonStyle(.plain)
                     Button { share(url) } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        Label { Text("Share") } icon: { Icon3D(.share, size: 17) }
                             .font(Brand.font(13, .black)).frame(maxWidth: .infinity).padding(.vertical, 11)
                             .foregroundStyle(.white)
                             .background(RoundedRectangle(cornerRadius: 10).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))

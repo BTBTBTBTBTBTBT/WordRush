@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CardGiftcard
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -199,8 +198,7 @@ fun InvitePanel() {
                 }
                 Spacer(Modifier.weight(1f))
                 if (inv.status == "pending") {
-                    Icon(Icons.Filled.Share, "Share", tint = WTheme.primary,
-                        modifier = Modifier.size(14.dp).clickableNoRipple { share(inv.code) })
+                    Icon3D(Icon3DName.SHARE, 17.dp, contentDescription = "Share", modifier = Modifier.clickableNoRipple { share(inv.code) })
                     Spacer(Modifier.width(4.dp))
                     Text("✕", fontSize = 12.sp, color = WTheme.textMuted,
                         modifier = Modifier.clickableNoRipple { cancelTarget = inv })

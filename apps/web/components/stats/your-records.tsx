@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Clock, Target, Zap, Medal, Sparkles, TrendingUp, Star, Share, BookOpen, LayoutGrid } from 'lucide-react';
+import { Clock, Target, Zap, Medal, Sparkles, TrendingUp, Star, BookOpen, LayoutGrid } from 'lucide-react';
 import { Icon3D, Flame3D, Trophy3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
@@ -13,6 +13,7 @@ import {
   fetchAllTimeRecordsShared, RECORD_LABELS, recordValue, recordLabel, formatRecordTime, SHIELD_EVERY,
   MyStatCell, type UserStatRow,
 } from '@/lib/records-ui';
+import { isGameArtIcon } from '@/lib/art';
 
 // YOUR RECORDS, folded into the Stats tab (Stats + Friends redesign D2 step 3,
 // founder 2026-09-26: the Records tab goes "so long as the information
@@ -351,7 +352,7 @@ export function TrophyShelf({ recordsHeld }: { recordsHeld: AllTimeRecord[] }) {
     if (!gameMode) return <Star style={{ width: boxPx / 2, height: boxPx / 2, color: '#d97706' }} />;
     const m = modeByKey(gameMode);
     const MIcon = m.icon;
-    return m.romanNumeral
+    return !(MIcon && isGameArtIcon(MIcon)) && m.romanNumeral
       ? <span className="font-black leading-none" style={{ color: m.accentColor, fontSize: boxPx * 0.34 }}>{m.romanNumeral}</span>
       : MIcon ? <MIcon style={{ width: boxPx / 2, height: boxPx / 2, color: m.accentColor }} /> : null;
   };
@@ -375,7 +376,7 @@ export function TrophyShelf({ recordsHeld }: { recordsHeld: AllTimeRecord[] }) {
             className="p-1 -my-1 active:scale-95 transition-transform"
             style={{ color: 'var(--color-text-muted)', opacity: sharing ? 0.4 : 1 }}
           >
-            <Share className="w-3.5 h-3.5" />
+            <Icon3D name="share" size={17} />
           </button>
         </div>
         {marquee.length > 0 && (

@@ -723,14 +723,11 @@ struct ProfileTab: View {
         return Array(out.prefix(2))
     }
 
-    /// The page title in the shared header style (HEADER_SPEC §4) with its host
-    /// (MASCOT_SPEC §1/§6): D, glasses and a pencil, for the numbers.
+    /// The page title as the whole-cast art (ART_SPEC §2: `art-title-stats`, which
+    /// carries its own cast, so D's host spot is gone), centered at the content width.
     private var statsTitle: some View {
-        HStack(spacing: 0) {
-            PageHostTitle(text: "STATS", host: Mascots.stats)
-            Spacer()
-        }
-        .padding(.bottom, -8)
+        ArtTitle(.stats)
+            .frame(maxWidth: .infinity)
     }
 
     // MARK: Player card
@@ -1887,10 +1884,8 @@ struct LeaderboardTab: View {
             Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
             .minimumScaleFactor(0.7)
             Spacer()
-            Text(entry.completed ? "W" : "L").font(Brand.font(9, .heavy))
-                .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
-                .padding(.horizontal, 5).padding(.vertical, 1)
-                .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
+            // ART_SPEC §4: the 3D W / L badge.
+            ResultBadge(won: entry.completed, size: 20)
             Text(yLbScoreLabels[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -1960,9 +1955,7 @@ struct LeaderboardTab: View {
                                         avatar_url: entry.profiles.avatarUrl, level: 0,
                                         since: nil, requestedAt: nil)
                 } label: {
-                    Image(systemName: "bell")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Theme.textMuted)
+                    Icon3D(.bell, size: 16) // ART_SPEC §5
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Taunt \(entry.username)")
@@ -2005,9 +1998,7 @@ struct LeaderboardTab: View {
             }.buttonStyle(.plain)
             Spacer()
             Button { tauntTarget = f } label: {
-                Image(systemName: "bell")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.textMuted)
+                Icon3D(.bell, size: 16) // ART_SPEC §5
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Nudge \(f.username)")
@@ -2513,8 +2504,7 @@ struct FlawlessBannerFooter: View {
                             username: AuthService.shared.profile?.username)
                         sharing = false
                     } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color(hex: 0xB45309))
+                        Icon3D(.share, size: 14)
                     }
                     .buttonStyle(.plain)
                     .opacity(sharing ? 0.4 : 1)

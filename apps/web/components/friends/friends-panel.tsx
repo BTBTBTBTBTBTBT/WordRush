@@ -13,8 +13,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Users, UserPlus, Check, X, Send, ChevronDown, MoreHorizontal, Share } from 'lucide-react';
-import { HeaderCircle, HEADER_INK } from '@/components/ui/page-header';
+import { Users, Check, X, Send, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { HeaderCircle } from '@/components/ui/page-header';
+import { ArtTitle } from '@/components/ui/art-title';
 import { Icon3D } from '@/components/ui/icon3d';
 import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
@@ -369,14 +370,16 @@ export function FriendsPanel() {
 
   return (
     <div className="space-y-3.5">
-      {/* 1. Controls row (founder, 2026-10-02): the shared AppHeader above the page is
-          the Friends header, so the FRIENDS title row is gone. The bell and
-          add-friend circles sit right-aligned; the leading space is reserved for
-          a future title graphic. */}
-      <div className="flex items-center justify-end gap-2">
+      {/* 1. Title + controls row (founder, 2026-10-02): the shared AppHeader above the
+          page is the Friends header. The whole-cast FRIENDS title art (docs/ART_SPEC.md
+          §2) fills the leading space; the bell and add-friend circles sit beside it. */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <ArtTitle name="art-title-friends" label="Friends" align="left" maxWidth={300} />
+        </div>
         <NotificationPrefs />
         <HeaderCircle label="Add a friend" onClick={jumpToAdd}>
-          <UserPlus className="w-4 h-4" style={{ color: HEADER_INK }} strokeWidth={2.6} />
+          <Icon3D name="add-friend" size={22} />
         </HeaderCircle>
       </div>
 
@@ -468,7 +471,7 @@ export function FriendsPanel() {
                   className="p-1 -my-1 active:scale-95 transition-transform"
                   style={{ color: FR.label, opacity: sharingRace ? 0.4 : 1 }}
                 >
-                  <Share className="w-3.5 h-3.5" />
+                  <Icon3D name="share" size={17} />
                 </button>
               )}
             </span>
@@ -747,7 +750,7 @@ export function FriendsPanel() {
             className="px-4 py-2 rounded-full text-[12px] font-black text-white disabled:opacity-50 flex items-center gap-1.5"
             style={{ background: FR.solid }}
           >
-            <UserPlus className="w-3.5 h-3.5" /> ADD
+            <Icon3D name="add-friend" size={17} /> ADD
           </button>
         </div>
         {suggestions.length > 0 && (
@@ -776,7 +779,7 @@ export function FriendsPanel() {
                 <FriendAvatar name={u.username} url={u.avatar_url} emoji={u.avatar_emoji} size={30} />
                 <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: FR.text }}>{u.username}</span>
                 <span className="text-[10px] font-bold" style={{ color: FR.label }}>Lvl {u.level}</span>
-                <UserPlus className="w-3.5 h-3.5" style={{ color: FR.solid }} />
+                <Icon3D name="add-friend" size={17} />
               </button>
             ))}
           </div>

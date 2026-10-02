@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Language
@@ -435,7 +434,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp))
+                    Icon3D(Icon3DName.BACK, 17.dp) // ART_SPEC §5
                     Text("Back", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
                 }
             }
@@ -1082,7 +1081,8 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
             )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(if (won) "Win" else "Loss", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
+            // ART_SPEC §4: the 3D W / L badge in place of the Win / Loss word.
+            ResultBadge(won, 20.dp, contentDescription = if (won) "Win" else "Loss")
             Text(dateTime, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }

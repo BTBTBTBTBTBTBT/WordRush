@@ -135,8 +135,7 @@ struct TodaysRaceCard: View {
                 if r.points == 0 {
                     // Slacker bell — the existing canned-taunt picker.
                     Button { onTaunt(f) } label: {
-                        Image(systemName: "bell.fill").font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Self.purple)
+                        Icon3D(.bell, size: 16) // ART_SPEC §5
                             .frame(width: 26, height: 26)
                             .background(Circle().fill(Theme.surfaceAlt))
                             .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))

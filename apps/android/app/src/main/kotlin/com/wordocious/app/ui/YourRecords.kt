@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.TrendingUp
@@ -525,10 +524,7 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.weight(1f))
-            Icon(
-                Icons.Filled.Share, "Share trophy shelf",
-                tint = WTheme.textMuted.copy(alpha = if (sharingShelf) 0.4f else 1f),
-                modifier = Modifier.size(15.dp).clickableNoRipple {
+            Icon3D(Icon3DName.SHARE, 18.dp, contentDescription = "Share trophy shelf", alpha = if (sharingShelf) 0.4f else 1f, modifier = Modifier.clickableNoRipple {
                     if (!sharingShelf) {
                         sharingShelf = true
                         scope.launch {

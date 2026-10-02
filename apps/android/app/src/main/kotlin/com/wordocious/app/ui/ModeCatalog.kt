@@ -198,6 +198,26 @@ fun modeIconRes(lucide: String?): Int? = when (lucide) {
  */
 @Composable
 fun ModeGlyph(card: ModeCard, tint: Color, box: Dp) {
+    // ART_SPEC §3: the glossy 3D game icon fills the chip (the chip keeps its accent
+    // tint). Callers that pass a WHITE tint sit the glyph on a solid fill (selected
+    // VS tile, played banner / Today chips), where the art in its own color would
+    // vanish into its own accent — there it draws as a white silhouette of the same
+    // art. The old glyph below stays only as the fallback for a mode without art.
+    val art = gameArtRes(card.id)
+    if (art != null) {
+        androidx.compose.foundation.Image(
+            painterResource(art), contentDescription = null,
+            colorFilter = if (tint == Color.White) androidx.compose.ui.graphics.ColorFilter.tint(Color.White) else null,
+            modifier = Modifier.size(box * 0.82f),
+        )
+    } else {
+        ModeGlyphFallback(card, tint, box)
+    }
+}
+
+/** The pre-art glyph (hand + digit, roman numeral, or lucide drawable): the §3 fallback. */
+@Composable
+private fun ModeGlyphFallback(card: ModeCard, tint: Color, box: Dp) {
     val density = LocalDensity.current
     // Pin the line box to the glyph (TileView-style) so a digit/roman centers
     // truly in the tile instead of riding the default 24sp line height.

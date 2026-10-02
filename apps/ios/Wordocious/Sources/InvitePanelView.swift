@@ -131,8 +131,7 @@ struct InvitePanelView: View {
                     Spacer()
                     if inv.status == "pending" {
                         Button { share(code: inv.code) } label: {
-                            Image(systemName: "square.and.arrow.up").font(.system(size: 13))
-                                .foregroundStyle(Color(hex: 0x7C3AED))
+                            Icon3D(.share, size: 16)
                         }.buttonStyle(.plain)
                         Button { cancelTarget = inv } label: {
                             Image(systemName: "xmark").font(.system(size: 12))

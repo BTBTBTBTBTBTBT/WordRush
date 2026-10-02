@@ -417,10 +417,10 @@ fun ProfileScreen(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
 
-        // The shared page header (HEADER_SPEC §4) with the page host (MASCOT_SPEC §6): D,
-        // glasses and a pencil, for the numbers.
+        // The shared page header (HEADER_SPEC §4) wearing the whole-cast STATS art
+        // (ART_SPEC §2) in place of the STATS label + D host row.
         item {
-            PageHeader("STATS", host = Mascots.stats, contentPadding = PaddingValues(0.dp))
+            PageHeader("STATS", art = TitleArt.STATS, contentPadding = PaddingValues(0.dp))
         }
 
         // ── A. Header ─────────────────────────────────────────────
@@ -1087,7 +1087,11 @@ private fun CardIconButton(icon: ImageVector, label: String, tint: Color, onClic
         modifier = Modifier.size(32.dp).clip(CircleShape).background(WTheme.surfaceAlt)
             .border(1.5.dp, WTheme.borderAlt, CircleShape).pressScale { onClick() },
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, label, tint = tint, modifier = Modifier.size(14.dp)) }
+    ) {
+        // ART_SPEC §5: Share wears the 3D share icon (~1.2× the old glyph).
+        if (icon == Icons.Filled.Share) Icon3D(Icon3DName.SHARE, 17.dp, contentDescription = label)
+        else Icon(icon, label, tint = tint, modifier = Modifier.size(14.dp))
+    }
 }
 
 // (The old Today's Dailies card is TodayCard.kt now — the eight sweep tiles in
@@ -1121,10 +1125,7 @@ private fun FlawlessBannerFooter(total: Int, seed: MatchStatsService.DailySweepS
                 fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFB45309),
             )
             if (sweep.currentFlawlessStreak >= 1) {
-                Icon(
-                    Icons.Filled.Share, "Share flawless streak",
-                    tint = Color(0xFFB45309).copy(alpha = if (sharing) 0.4f else 1f),
-                    modifier = Modifier.size(13.dp).clickableNoRipple {
+                Icon3D(Icon3DName.SHARE, 16.dp, contentDescription = "Share flawless streak", alpha = if (sharing) 0.4f else 1f, modifier = Modifier.clickableNoRipple {
                         if (!sharing) {
                             sharing = true
                             scope.launch {
@@ -2128,7 +2129,7 @@ private fun ProBarRow(label: String, value: String, frac: Float, color: Color) {
 @Composable
 private fun ProLockedTeaser(label: String, onGoPro: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("🔒", fontSize = 26.sp)
+        Icon3D(Icon3DName.LOCK, 32.dp) // ART_SPEC §5
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         Row(
             Modifier.clip(RoundedCornerShape(10.dp))

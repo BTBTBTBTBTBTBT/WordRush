@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { HOW_TO_PLAY, type HTPTileColor } from '@/lib/how-to-play-content';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
-import { PAGE_HOSTS } from '@/lib/mascots';
 
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
@@ -29,7 +28,7 @@ const cardStyle = { background: 'var(--color-surface)', border: '1.5px solid var
 export default function HowToPlayPage() {
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <InfoPageHeader title="How to Play" host={PAGE_HOSTS.guides} />
+      <InfoPageHeader title="How to Play" art="art-title-howto" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Everything you need to know to get started</p>
 

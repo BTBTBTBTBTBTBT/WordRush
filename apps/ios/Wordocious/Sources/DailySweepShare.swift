@@ -142,7 +142,8 @@ struct DailySweepCardView: View {
     @ViewBuilder
     private func shareGlyph(_ r: DailySweepRow) -> some View {
         // homeModes alone left the ten More Games titles as letter glyphs (founder, 2026-09-28).
-        if let icon = (homeModes + moreModes).first(where: { $0.dbKey == r.dbKey })?.icon {
+        // White on the accent badge: the one-ink glyph, not the 3D game art.
+        if let icon = (homeModes + moreModes).first(where: { $0.dbKey == r.dbKey })?.icon.glyph {
             switch icon {
             case .asset(let name), .original(let name):
                 Image(name).renderingMode(.template).resizable().scaledToFit()
@@ -158,6 +159,8 @@ struct DailySweepCardView: View {
                 }
             case .symbol(let name):
                 Image(systemName: name).font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
+            case .game:
+                EmptyView() // unreachable: unwrapped above
             }
         } else {
             Text(r.glyph).font(Brand.font(CGFloat(r.glyph.count >= 3 ? 24 : 30), .black)).foregroundStyle(.white)

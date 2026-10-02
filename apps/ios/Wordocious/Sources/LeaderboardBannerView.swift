@@ -19,13 +19,19 @@ struct LeaderboardBannerView: View {
     private static let gold = Color(hex: 0xF59E0B)
 
     var body: some View {
-        VStack(spacing: 0) {
+        let window = VStack(spacing: 0) {
             strip
             BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
         }
         .bannerWindow(top: Color(hex: 0xFEF3C7), bottom: Color(hex: 0xEDE9FE), shadow: Color(hex: 0x92400E))
-        // The cast (docs/MASCOT_SPEC.md §1): O2 in the spotlight beside the day's title.
-        .bannerHost(Mascots.leaderboard, trailing: 12)
+        if DayTitleArt.forTitle(Self.todayTitle()) != nil {
+            // ART_SPEC §1: the day art carries its own host, so O2 steps aside
+            // (same top inset, so the page doesn't shift between days).
+            window.padding(.top, 12)
+        } else {
+            // The cast (docs/MASCOT_SPEC.md §1): O2 in the spotlight beside the day's title.
+            window.bannerHost(Mascots.leaderboard, trailing: 12)
+        }
     }
 
     // MARK: Frosted strip
@@ -35,15 +41,22 @@ struct LeaderboardBannerView: View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
             let clock = Self.resetClock()
             let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
+            let title = Self.todayTitle()
             VStack(alignment: .leading, spacing: 4) {
-                Text(Self.todayTitle())
-                    .font(Brand.font(22, .black)).tracking(0.4)
-                    .foregroundStyle(Self.head)
-                    .shadow(color: Self.gold.opacity(0.55), radius: 8)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-                    .padding(.trailing, Mascots.bannerClearance)
-                    .accessibilityAddTraits(.isHeader)
+                if let art = DayTitleArt.forTitle(title) {
+                    // ART_SPEC §1: the weekday's title art (lettering + that day's host).
+                    DayTitleArtView(asset: art.asset, label: art.label)
+                } else {
+                    // A holiday ("<HOLIDAY> HEROES") keeps the text treatment.
+                    Text(title)
+                        .font(Brand.font(22, .black)).tracking(0.4)
+                        .foregroundStyle(Self.head)
+                        .shadow(color: Self.gold.opacity(0.55), radius: 8)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                        .padding(.trailing, Mascots.bannerClearance)
+                        .accessibilityAddTraits(.isHeader)
+                }
                 HStack(spacing: 8) {
                     Text("\(date) · RESETS IN \(clock)")
                         .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
@@ -102,25 +115,17 @@ struct RecordsBannerView: View {
             BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
         }
         .bannerWindow(top: Color(hex: 0xEDE9FE), bottom: Color(hex: 0xFEF3C7), shadow: Color(hex: 0x4C1D95))
-        // The cast (docs/MASCOT_SPEC.md §1): O2, the Leaderboard's family, hosts Records.
-        .bannerHost(Mascots.records, trailing: 10)
+        // ART_SPEC §2: the title art carries the whole cast, so the O2 host is gone
+        // (same top inset as the hosted banners).
+        .padding(.top, 12)
     }
 
     private var strip: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Icon3D(.trophy, size: 21)
-                Text("ALL-TIME RECORDS")
-                    .font(Brand.font(22, .black)).tracking(0.4)
-                    .foregroundStyle(Self.head)
-                    .shadow(color: Color(hex: 0xF59E0B).opacity(0.55), radius: 8)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                    .accessibilityAddTraits(.isHeader)
-            }
-            .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-            // The title row's right end belongs to the host (MASCOT_SPEC §2), so the
-            // DAILY | ALL-TIME switch rides the sub line (the home banner's switch row).
-            .padding(.trailing, Mascots.bannerClearance)
+            // ART_SPEC §2: ALL-TIME RECORDS as the whole-cast title art. The
+            // DAILY | ALL-TIME switch stays on the sub line (the home banner's switch row).
+            ArtTitle(.records, colors: [Self.head, Self.head])
+                .frame(maxWidth: .infinity)
             HStack(alignment: .center, spacing: 8) {
                 Group {
                     if tab == .daily {

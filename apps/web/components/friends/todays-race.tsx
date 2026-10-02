@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Swords, Bell, Flag } from 'lucide-react';
+import { Swords, Flag } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
 import { vsHrefForMode } from '@/lib/invite-service';
@@ -101,7 +102,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                         className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform shrink-0"
                         style={{ background: '#fce7f3' }}
                       >
-                        <Bell className="w-3.5 h-3.5" style={{ color: '#9d174d' }} />
+                        <Icon3D name="bell" size={17} />
                       </button>
                     )}
                     <button

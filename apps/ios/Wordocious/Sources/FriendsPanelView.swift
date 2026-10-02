@@ -298,9 +298,7 @@ struct FriendsPanelView: View {
                             username: AuthService.shared.profile?.username)
                         sharingRace = false
                     } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(FriendsKit.solid)
+                        Icon3D(.share, size: 15)
                     }
                     .buttonStyle(.plain)
                     .opacity(sharingRace ? 0.4 : 1)
@@ -597,7 +595,7 @@ struct FriendsPanelView: View {
                         .onSubmit { add() }
                     Button(action: add) {
                         HStack(spacing: 5) {
-                            Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
+                            Icon3D(.addFriend, size: 15) // ART_SPEC §5
                             Text("ADD").font(Brand.font(12, .black)).tracking(0.5)
                         }
                         .foregroundStyle(.white)
@@ -633,9 +631,7 @@ struct FriendsPanelView: View {
                                     Spacer()
                                     Text("Lvl \(u.level)").font(Brand.font(10, .bold))
                                         .foregroundStyle(FriendsKit.label)
-                                    Image(systemName: "person.badge.plus")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(FriendsKit.solid)
+                                    Icon3D(.addFriend, size: 16) // ART_SPEC §5
                                 }
                                 .padding(.horizontal, 10).padding(.vertical, 7)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.page))
@@ -648,7 +644,7 @@ struct FriendsPanelView: View {
                 if AuthService.shared.profile != nil {
                     Button { shareInviteLink() } label: {
                         HStack(spacing: 5) {
-                            Image(systemName: "square.and.arrow.up").font(.system(size: 10, weight: .semibold))
+                            Icon3D(.share, size: 13)
                             Text("Share invite link").font(Brand.font(11, .black))
                         }
                         .foregroundStyle(FriendsKit.solid)
@@ -1129,13 +1125,15 @@ struct FriendsScreenView: View {
         ScrollView {
             VStack(spacing: 18) {
                 if asTab {
-                    // The tab's controls row (the old title row's buttons). The
-                    // leading space is reserved for the future title graphic.
-                    HStack(spacing: 8) {
-                        Spacer(minLength: 0)
-                        actions(proxy)
+                    // ART_SPEC §2: the whole-cast FRIENDS title art in the old title
+                    // row's slot, the bell + add-friend circles stacked beside it.
+                    HStack(alignment: .center, spacing: 8) {
+                        ArtTitle(.friends, colors: FriendsKit.titleGradient)
+                            .frame(maxWidth: .infinity)
+                        VStack(spacing: 8) {
+                            actions(proxy)
+                        }
                     }
-                    .padding(.bottom, -8)
                 }
                 FriendsPanelView(focusAdd: focusAdd)
                 // §212: recruiting and friending are the same motion — the
@@ -1153,7 +1151,7 @@ struct FriendsScreenView: View {
             withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("add-friend", anchor: .center) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
         } label: {
-            HeaderCircleLabel(glyph: .symbol("person.badge.plus"), size: 32)
+            HeaderCircleLabel(glyph: .icon(.addFriend), size: 32)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add a friend")

@@ -288,7 +288,7 @@ struct PuzzleSweepsCard: View {
         RecordCardShell(bar: [accent, accent.opacity(0.53)]) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
-                    ModeIconView(icon: .symbol("square.grid.2x2"), accent: accent, box: 32)
+                    ModeIconView(icon: .game("more", .symbol("square.grid.2x2")), accent: accent, box: 32)
                     Text("Puzzles Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                 }
                 if totals.sweepDays > 0 {
@@ -486,8 +486,7 @@ struct TrophyShelf: View {
                                                              username: auth.profile?.username)
                         sharingShelf = false
                     } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textMuted)
+                        Icon3D(.share, size: 15)
                     }
                     .buttonStyle(.plain)
                     .opacity(sharingShelf ? 0.4 : 1)

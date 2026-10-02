@@ -13,8 +13,7 @@ import { useFlags } from '@/hooks/use-flags';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
-import { Mascot } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { ArtTitle } from '@/components/ui/art-title';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
@@ -332,10 +331,9 @@ export default function HomePage() {
         <div className="section-header mt-1 mb-0.5">WORDOCIOUS DAILIES</div>
         {grid(wordCards)}
 
-        {/* PUZZLES, hosted by C (the explorer). */}
-        <div id="puzzles" className="section-header mt-1 mb-0.5 flex items-center gap-1.5" style={{ scrollMarginTop: 12 }}>
-          <Mascot id={PAGE_HOSTS.puzzles} size={28} />
-          PUZZLES
+        {/* PUZZLES: the whole-cast title art (docs/ART_SPEC.md §2), ~70% width, left aligned. */}
+        <div id="puzzles" className="mt-1 mb-0.5" style={{ scrollMarginTop: 12 }}>
+          <ArtTitle name="art-title-puzzles" label="Puzzles" as="h2" widthPct={70} maxWidth={300} align="left" priority={false} />
         </div>
         {grid(puzzleCards)}
 

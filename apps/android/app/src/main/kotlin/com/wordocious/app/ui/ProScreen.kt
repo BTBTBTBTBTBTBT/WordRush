@@ -98,19 +98,15 @@ fun ProScreen(onDone: () -> Unit) {
             .verticalScroll(rememberScrollState()),
     ) {
         // The shared header chrome (HEADER_SPEC §4): Close is the white close circle;
-        // the page title + host sit in the hero below (GO PRO, W with the crown).
+        // the GO PRO title art sits in the hero below (ART_SPEC §2).
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.End) {
             HeaderBackButton(onDone, close = true)
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // Header
-            // The Pro host: W, the leader in his cape, wearing the Pro crown (MASCOT_SPEC §6).
-            Box(Modifier.size(width = 64.dp, height = 84.dp).mascotGroupBob(), contentAlignment = Alignment.BottomCenter) {
-                Mascot(Mascots.pro, 64.dp)
-                Icon3D(Icon3DName.CROWN, 30.dp, Modifier.align(Alignment.TopCenter))
-            }
+            // Header: the whole-cast GO PRO art (ART_SPEC §2) replaces the W + crown host
+            // and the Go Pro text title.
+            PageTitleArt(TitleArt.GOPRO)
             Spacer(Modifier.height(6.dp))
-            PageTitleText("Go Pro", fontSize = 36.sp, maxLines = 1)
             Text(
                 "Play unlimited & ad-free — every mode, any time",
                 fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,

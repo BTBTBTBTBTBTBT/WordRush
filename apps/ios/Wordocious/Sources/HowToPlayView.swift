@@ -69,7 +69,7 @@ struct HowToPlayView: View {
     }
 
     var body: some View {
-        MenuScaffold("How to Play", host: Mascots.help) {
+        MenuScaffold("How to Play", host: Mascots.help, art: .howto) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Everything you need to know to get started")

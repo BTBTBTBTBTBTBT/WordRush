@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X as XIcon, Share2, Copy, Check, Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
+import { X as XIcon, Copy, Check, Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { useAuth } from '@/lib/auth-context';
 import { createInvite } from '@/lib/invite-service';
@@ -9,6 +9,8 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
 import { DAILY_MODES } from '@/lib/modes.generated';
+import { GameArt } from '@/components/ui/game-art';
+import { Icon3D } from '@/components/ui/icon3d';
 
 interface ModeOption {
   id: string;
@@ -16,6 +18,8 @@ interface ModeOption {
   color: string;
   icon?: React.ComponentType<{ className?: string }>;
   romanNumeral?: string;
+  /** Catalog id, for the game's 3D art (docs/ART_SPEC.md §3). */
+  artId: string;
 }
 
 // Icons stay web-native (keyed by dbKey); label/color/order from the single-source catalog.
@@ -30,9 +34,15 @@ const MODES: ModeOption[] = DAILY_MODES.map((m) => ({
   color: m.accentHex,
   icon: MODE_ICONS[m.dbKey as string],
   romanNumeral: m.romanNumeral ?? undefined,
+  artId: m.id,
 }));
 
+/** The game's 3D art filling its 24 px chip; the old glyph only if the art is missing. */
 function ModeGlyph({ mode, size = 16 }: { mode: ModeOption; size?: number }) {
+  return <GameArt id={mode.artId} size={22} fallback={<OldModeGlyph mode={mode} size={size} />} />;
+}
+
+function OldModeGlyph({ mode, size = 16 }: { mode: ModeOption; size?: number }) {
   if (mode.romanNumeral) {
     return (
       <span className="font-black" style={{ color: mode.color, fontSize: `${size - 2}px`, lineHeight: 1 }}>
@@ -279,7 +289,7 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
                     className="w-full py-2.5 rounded-xl text-sm font-black text-white flex items-center justify-center gap-1.5"
                     style={{ background: '#7c3aed' }}
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Icon3D name="share" size={20} />
                     Share
                   </button>
                   <p className="text-[10px] font-bold mt-2 text-center" style={{ color: 'var(--color-text-muted)' }}>

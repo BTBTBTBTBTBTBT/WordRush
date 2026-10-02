@@ -585,7 +585,8 @@ private struct GauntletSoundToggle: View {
     @AppStorage("pref-sound") private var soundOn = true
     var body: some View {
         // The same soft white circle as the corner Home / Help controls (HEADER_SPEC §4).
-        HeaderCircleButton(.symbol(soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill"), size: 44,
+        // ART_SPEC §5: the 3D sound icon, slashed + dimmed when muted.
+        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44,
                            label: soundOn ? "Sound on" : "Sound off") { soundOn.toggle() }
     }
 }

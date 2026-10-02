@@ -1,6 +1,6 @@
 'use client';
 
-import { Share, Swords, X } from 'lucide-react';
+import { Swords, X } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { challengeHeadline, vsClock, vsMargin, type VsRun } from '@wordle-duel/core';
@@ -119,7 +119,7 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
               <Swords className="w-[18px] h-[18px] shrink-0" style={{ color: '#7c3aed' }} />
               <span className="flex-1 font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: '#4c1d95' }}>{challengeHeadline(outcome, them.name)}</span>
               <button type="button" onClick={onShare} aria-label="Share the result" className="shrink-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
-                <Share style={{ width: 19, height: 19, color: '#6d28d9' }} strokeWidth={2.4} />
+                <Icon3D name="share" size={24} />
               </button>
             </div>
             <div className="flex items-center gap-1.5">

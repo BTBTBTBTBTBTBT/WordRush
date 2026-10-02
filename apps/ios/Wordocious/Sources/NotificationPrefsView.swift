@@ -21,8 +21,8 @@ enum PushCategories {
     }
 }
 
-/// The bell in the FRIENDS card header: "bell.slash" when any category is
-/// off, "bell" otherwise; tapping opens the prefs sheet.
+/// The bell in the FRIENDS card header: the 3D bell, slashed when any category
+/// is off; tapping opens the prefs sheet.
 struct NotificationPrefsButton: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var open = false
@@ -32,7 +32,8 @@ struct NotificationPrefsButton: View {
             let anyOff = PushCategories.anyOff(auth.profile?.notificationPrefs)
             Button { open = true } label: {
                 // A header action: the shared soft white circle (HEADER_SPEC §4).
-                HeaderCircleLabel(glyph: .symbol(anyOff ? "bell.slash" : "bell"), size: 32,
+                // ART_SPEC §5: the 3D bell; slashed + dimmed when a category is off.
+                HeaderCircleLabel(glyph: anyOff ? .mutedIcon(.bell) : .icon(.bell), size: 32,
                                   tint: anyOff ? Theme.textMuted : PageHeaderStyle.ink)
             }
             .buttonStyle(.plain)

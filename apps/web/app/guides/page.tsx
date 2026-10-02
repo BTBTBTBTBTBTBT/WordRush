@@ -4,7 +4,6 @@ import { ChevronRight } from 'lucide-react';
 import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
-import { PAGE_HOSTS } from '@/lib/mascots';
 import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
 
 export const metadata: Metadata = {
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 export default function GuidesIndexPage() {
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <InfoPageHeader title="Mode Guides" host={PAGE_HOSTS.guides} />
+      <InfoPageHeader title="Mode Guides" art="art-title-howto" artLabel="How to Play" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-sm font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.

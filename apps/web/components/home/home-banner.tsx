@@ -1,7 +1,8 @@
 'use client';
 
-import { Check, Infinity as InfinityIcon, Share } from 'lucide-react';
+import { Check, Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { isGameArtIcon } from '@/lib/art';
 import {
   bannerClockLine, bannerHeadline, groupStatus, groupStreak, groupTier, unlimitedGroupStatus,
   type BannerTier, type GroupProgress,
@@ -73,7 +74,11 @@ function Tile({ card, result, unlimited, size, onOpen }: {
       className="flex items-center justify-center shrink-0 transition-transform active:scale-90"
       style={{ width: px, height: px, borderRadius: size === 'lg' ? 9 : 8, ...style }}
     >
-      {card.romanNumeral
+      {Icon && isGameArtIcon(Icon)
+        // The 3D game art fills the tile (docs/ART_SPEC.md §3); a soft white
+        // halo keeps it readable on a won tile's solid accent.
+        ? <Icon style={{ width: iconPx, height: iconPx, ...(result?.won && !unlimited ? { filter: 'drop-shadow(0 0 1.5px rgba(255,255,255,0.95))' } : null) }} />
+        : card.romanNumeral
         ? <span className="font-black leading-none" style={{ color: ink, fontSize: card.romanNumeral.length > 2 ? 8 : 11 }}>{card.romanNumeral}</span>
         : Icon
         ? <Icon style={{ width: iconPx, height: iconPx, color: ink }} />
@@ -191,7 +196,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
               className="shrink-0 flex items-center justify-center active:opacity-60"
               style={{ width: 36, height: 36 }}
             >
-              <Share style={{ width: 19, height: 19, color: subInk }} strokeWidth={2.4} />
+              <Icon3D name="share" size={24} />
             </button>
           )}
         </div>

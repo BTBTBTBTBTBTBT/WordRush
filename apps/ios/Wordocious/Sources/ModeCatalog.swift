@@ -2,12 +2,29 @@ import SwiftUI
 import WordociousCore
 
 /// Icon rendering kind per mode, mirroring app/page.tsx MODE_CARDS.
-enum ModeIconKind {
+indirect enum ModeIconKind {
     case asset(String)          // template SVG, tinted by accent (lucide)
     case original(String)       // colored SVG, rendered as-is
     case roman(String)          // "IV" / "VIII"
     case hand(String, String)   // hand SVG asset + number digit
     case symbol(String)         // SF Symbol, tinted by accent (More Games titles)
+    /// ART_SPEC §3: the game's glossy 3D icon (`game-<mode id>`); the wrapped glyph
+    /// is the fallback when the image is missing (and what one-ink renderers —
+    /// the share card, the widget — still draw).
+    case game(String, ModeIconKind)
+
+    /// The `game-<id>` image set to draw, if this is a game icon and the art ships.
+    var gameArt: String? {
+        guard case .game(let id, _) = self else { return nil }
+        let name = "game-\(id)"
+        return ArtAsset.exists(name) ? name : nil
+    }
+
+    /// The old glyph (a game icon unwrapped to its fallback).
+    var glyph: ModeIconKind {
+        if case .game(_, let fallback) = self { return fallback.glyph }
+        return self
+    }
 }
 
 struct HomeMode: Identifiable {
@@ -85,7 +102,9 @@ private let modeChrome: [String: (icon: ModeIconKind, mode: GameMode?)] = [
 
 private func homeMode(_ g: GenMode) -> HomeMode {
     let c = modeChrome[g.id]
-    return HomeMode(gen: g, icon: c?.icon ?? .roman(g.glyph ?? String(g.title.prefix(1))), mode: c?.mode)
+    // ART_SPEC §3: every game draws its 3D icon; the native glyph stays as the fallback.
+    let glyph = c?.icon ?? .roman(g.glyph ?? String(g.title.prefix(1)))
+    return HomeMode(gen: g, icon: .game(g.id, glyph), mode: c?.mode)
 }
 
 /// The home grid — every enabled core tile, catalog order.
@@ -145,13 +164,18 @@ struct ModeIconView: View {
             RoundedRectangle(cornerRadius: box * 0.27)
                 .fill(accent.opacity(0.08))
                 .frame(width: box, height: box)
-            glyph
+            if let art = icon.gameArt {
+                // ART_SPEC §3: the 3D game icon fills the chip; the chip keeps its tint.
+                GameArtImage(asset: art, size: box * 0.94)
+            } else {
+                glyph
+            }
         }
     }
 
     @ViewBuilder
     private var glyph: some View {
-        switch icon {
+        switch icon.glyph {
         case .asset(let name):
             Image(name).renderingMode(.template).resizable().scaledToFit()
                 .frame(width: box * 0.5, height: box * 0.5).foregroundStyle(accent)
@@ -173,6 +197,8 @@ struct ModeIconView: View {
         case .symbol(let name):
             // A trophy (the Stats rail's All-time chip) draws the 3D icon (HEADER_SPEC §2).
             SymbolGlyph(name, size: box * 0.45, weight: .bold, color: accent)
+        case .game:
+            EmptyView() // unreachable: `glyph` unwraps game icons
         }
     }
 }

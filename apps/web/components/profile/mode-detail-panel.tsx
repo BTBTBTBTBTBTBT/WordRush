@@ -16,6 +16,7 @@ import { ProDeepModeCard } from './pro-insights-deep';
 import { fetchModeDetail } from '@/lib/stats-service';
 import { statPanels, modeAggregates, guessNoun, distributionSpec, avg1, type MatchRow } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { isGameArtIcon } from '@/lib/art';
 
 interface ModeData {
   guessDist: Array<{ guesses: number; count: number }>;
@@ -114,7 +115,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: `${accentColor}15` }}
           >
-            {mode?.romanNumeral ? (
+            {!(Icon && isGameArtIcon(Icon)) && mode?.romanNumeral ? (
               <span className="text-[11px] font-black leading-none" style={{ color: accentColor }}>{mode.romanNumeral}</span>
             ) : Icon ? (
               <Icon className="w-4 h-4" style={{ color: accentColor }} />

@@ -80,9 +80,7 @@ struct LbShareButton: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.textMuted)
+            Icon3D(.share, size: 18)
                 .frame(width: 30, height: 30).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
