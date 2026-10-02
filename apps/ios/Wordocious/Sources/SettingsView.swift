@@ -277,7 +277,6 @@ struct SettingsView: View {
         HStack {
             Text(title).font(Brand.headline(14)).foregroundStyle(Theme.textPrimary)
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Theme.textMuted)
         }.padding(12)
     }
 }

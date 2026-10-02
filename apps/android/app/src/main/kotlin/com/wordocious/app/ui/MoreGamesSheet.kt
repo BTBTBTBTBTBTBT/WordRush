@@ -36,7 +36,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -156,10 +155,6 @@ fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
                                 Text(card.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                                 Text(card.desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                             }
-                            Icon(
-                                Icons.Filled.ChevronRight, null,
-                                tint = WTheme.textMuted, modifier = Modifier.size(16.dp),
-                            )
                         }
                     }
                 }

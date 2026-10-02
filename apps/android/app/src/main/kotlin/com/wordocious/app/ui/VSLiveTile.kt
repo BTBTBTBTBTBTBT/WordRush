@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -79,22 +79,14 @@ fun VSLiveTile(
         unlimitedMode -> card.desc
         else -> "Today's shared battle"
     }
-    val shape = RoundedCornerShape(14.dp)
 
-    // Completed daily: the same accent glow the mode cards wear (done tint + accent border)
-    // so today's battle never looks unplayed (founder, 2026-09-26); W/L pill top-right like the cards.
-    Box(
-        Modifier.fillMaxWidth().clip(shape)
-            .background(if (done) accent.copy(alpha = 0.10f) else WTheme.surface)
-            .border(1.5.dp, if (done) accent.copy(alpha = 0.55f) else WTheme.border, shape),
-    ) {
-        Box(Modifier.width(4.dp).fillMaxHeight().padding(vertical = 6.dp).clip(CircleShape).background(accent))
-        if (done) {
-            // ART_SPEC §4: the 3D W / L badge at 26 dp, same corner as the old 20 dp pill.
-            ResultBadge(vsDailyWon == true, 26.dp, Modifier.align(Alignment.TopEnd).padding(top = 5.dp, end = 7.dp))
-        }
+    // ART_SPEC §21.5: the exact Home game-card treatment (surface, radius, shadow, the
+    // colored top band in the VS accent, the card's inner padding). A completed daily wears
+    // the game cards' done tint + accent border so today's battle never looks unplayed
+    // (founder, 2026-09-26); the W/L badge sits at the end of the title line (§21.1).
+    GameCardFrame(accent, done = done) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(Modifier.weight(1f).clickableNoRipple(onOpen), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -102,7 +94,16 @@ fun VSLiveTile(
                     ModeGlyph(card, accent, 36.dp)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                        )
+                        if (done) {
+                            Spacer(Modifier.width(4.dp))
+                            TitleLineBadge(won = vsDailyWon == true)
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         LivePulseDot()
                         Text("LIVE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { X, EyeOff, Eye, ChevronRight } from 'lucide-react';
+import { X, EyeOff, Eye } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 
 export type ShareVariant = 'clean' | 'full';
@@ -131,7 +131,6 @@ export function ShareVariantHost() {
                     {v.subtitle}
                   </span>
                 </span>
-                <ChevronRight className="w-[13px] h-[13px] ml-auto flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
               </button>
             );
           })}

@@ -14,7 +14,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Lock, X } from 'lucide-react';
+import { Lock, X } from 'lucide-react';
 import { Icon3D, icon3dForEmoji } from '@/components/ui/icon3d';
 import { HeaderBack } from '@/components/ui/page-header';
 import { evaluateGuess } from '@wordle-duel/core';
@@ -73,7 +73,7 @@ function CardTitle({ children }: { children: ReactNode }) {
   );
 }
 
-/** The mock's white card with tap affordance: chevron, hover shadow, press scale. */
+/** The mock's white card with tap affordance: hover shadow, press scale (no chevron, ART_SPEC §21.4). */
 function TappableCard({
   title,
   onClick,
@@ -103,12 +103,9 @@ function TappableCard({
         border: '1.5px solid var(--color-border)',
       }}
     >
-      <div className="flex items-center justify-between mb-2.5 pr-5">
+      <div className="flex items-center justify-between mb-2.5">
         <CardTitle>{title}</CardTitle>
       </div>
-      {tappable && (
-        <ChevronRight className="absolute right-3 top-4 w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-      )}
       {children}
     </div>
   );
@@ -442,7 +439,6 @@ export function YouVsThemCard({
           >
             <span className="font-black uppercase" style={{ color: '#7c3aed' }}>{modeLabel(today.mode)}</span>
             <span>today — {targetName} {today.theirGuesses}, you {today.yourGuesses}</span>
-            <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" style={{ color: 'var(--color-text-muted)' }} />
           </div>
         )}
         <div className="flex items-center gap-1 mt-1.5 text-[9px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>
@@ -627,7 +623,6 @@ export function TrophyCaseCard({
                 <div className="ml-auto text-xs font-black tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
                   {m.composite_score}
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
               </div>
             ))}
           </div>
@@ -652,7 +647,6 @@ export function TrophyCaseCard({
                     <span className="text-lg">{MEDAL_EMOJI[p.medal] ?? '\u{1F3C5}'}</span>
                     <span className="text-sm font-black truncate" style={{ color: 'var(--color-text)' }}>{p.username}</span>
                     <span className="ml-auto text-xs font-black tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{p.score}</span>
-                    <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
                   </Link>
                 ))}
               </div>
@@ -756,7 +750,6 @@ export function HighlightsReel({
                 <div className="text-base leading-none">{icon3dForEmoji(h.emoji) ? <Icon3D name={icon3dForEmoji(h.emoji)!} size={18} /> : h.emoji}</div>
                 <div className="text-[15px] font-black mt-1 flex items-center gap-1" style={{ color: 'var(--color-text)' }}>
                   {h.big}
-                  {tappable && <ChevronRight className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />}
                 </div>
                 <div className="text-[9.5px] font-bold mt-0.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{h.cap}</div>
               </div>
@@ -852,7 +845,6 @@ export function LatelyCard({
                 {e.text}
                 <span className="block text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{e.when}</span>
               </div>
-              {tappable && <ChevronRight className="w-3.5 h-3.5 ml-auto self-center shrink-0" style={{ color: 'var(--color-text-muted)' }} />}
             </div>
           );
         })}
@@ -867,7 +859,6 @@ export function LatelyCard({
           >
             <span>{'⚔️'}</span>
             <span>Most frequent rival: <b style={{ color: '#ec4899' }}>{nemesis.username}</b> — {nemesis.sharedBoards} shared boards</span>
-            <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" style={{ color: 'var(--color-text-muted)' }} />
           </Link>
         )}
       </div>
@@ -890,7 +881,6 @@ export function LatelyCard({
                     <span className="text-lg">{MEDAL_EMOJI[p.medal] ?? '\u{1F3C5}'}</span>
                     <span className="text-sm font-black truncate" style={{ color: 'var(--color-text)' }}>{p.username}</span>
                     <span className="ml-auto text-xs font-black tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{p.score}</span>
-                    <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
                   </Link>
                 ))}
               </div>

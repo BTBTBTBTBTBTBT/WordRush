@@ -665,7 +665,6 @@ export default function PublicProfilePage() {
                   style={{ color: '#7c3aed', border: '1.5px solid #c4b5fd', background: 'var(--color-surface-hover)' }}
                 >
                   {ARCHETYPE_EMOJI[persona.archetype]} {archetypeName(persona.archetype)}
-                  <span className="opacity-60"> ›</span>
                 </button>
                 {persona.bestPercentile && (
                   <span

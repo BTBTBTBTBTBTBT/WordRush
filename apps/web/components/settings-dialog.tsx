@@ -206,7 +206,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       </div>
                       <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Bought on wordocious.com — cancel or update card</div>
                     </div>
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>›</span>
                   </div>
                 </button>
               )}
@@ -227,7 +226,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{s.label}</div>
                       <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{s.description}</div>
                     </div>
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>›</span>
                   </div>
                 </a>
               ))}

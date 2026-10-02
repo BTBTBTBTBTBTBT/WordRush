@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { friendsBannerClockLine, friendsBannerHeadline, type FriendsBannerInput } from '@wordle-duel/core';
 import type { FriendProfile } from '@/lib/friends-service';
@@ -104,7 +103,6 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
           <button type="button" onClick={onRace} className="relative w-full flex flex-col gap-2 text-left" style={{ padding: '8px 12px 12px' }} aria-label="Open today's race">
             <span className="w-full flex items-center gap-1.5">
               <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: FR.mid }}>TODAY&apos;S RACE</span>
-              <ChevronRight className="w-3 h-3" style={{ color: FR.mid }} />
               <span className="flex-1" />
               {streak && <FlameCount days={streak.days} label={`${streak.name.toUpperCase()} ${streak.days} DAY${streak.days === 1 ? '' : 'S'}`} />}
             </span>

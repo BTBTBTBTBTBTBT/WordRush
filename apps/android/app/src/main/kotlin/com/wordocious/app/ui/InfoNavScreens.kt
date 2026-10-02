@@ -23,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Description
@@ -111,7 +110,6 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
                         Text(item.label.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(item.subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
-                    Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(13.dp))
                 }
             }
         }
@@ -155,7 +153,6 @@ private fun ShareVariantRow(
             Text(title.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Text(subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
-        Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -354,7 +351,6 @@ fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
                         Text(w.word.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(prettyDate(w.date), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
-                    Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -460,7 +456,6 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
                         Text(g?.title ?: com.wordocious.app.data.GuideService.slugFor(mode).replaceFirstChar { it.uppercase() }, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         if (g?.tagline != null) Text(g.tagline, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
-                    Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
                 }
             }
             Spacer(Modifier.height(24.dp))

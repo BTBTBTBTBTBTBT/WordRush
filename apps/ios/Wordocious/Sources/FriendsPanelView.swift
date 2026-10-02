@@ -1186,8 +1186,6 @@ struct FriendsRowLink: View {
                         .background(Capsule().fill(Color(hex: 0xDC2626)))
                 }
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .black))
-                    .foregroundStyle(Color(hex: 0x7C3AED))
             }
             .padding(16)
             .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))

@@ -168,7 +168,6 @@ struct MenuSheet: View {
                 Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
     }
@@ -224,7 +223,6 @@ struct GuidesIndexView: View {
                 }
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }
         .padding(12).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
         // The shared game-tile chrome (docs/GAME_TILE_STYLE.md) on the row layout.
@@ -442,7 +440,6 @@ struct WordsView: View {
                 Text(prettyDate(w.date)).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
     }

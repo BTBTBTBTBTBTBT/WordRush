@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { XCircle, Clock, Hash, Eye, X, ChevronRight } from 'lucide-react';
+import { XCircle, Clock, Hash, Eye, X } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
@@ -214,8 +214,8 @@ export function GauntletResults({
             const isFailed = result?.status === GameStatus.LOST;
             // Only offer Review when we actually captured the final
             // boards. Older saved sessions that completed before the
-            // snapshot landed still show the summary row; the chevron
-            // just disappears for those.
+            // snapshot landed still show the summary row, just not
+            // tappable (no ">" chevron on rows, ART_SPEC §21.4).
             const canReview = !!result?.boardsSnapshot?.length;
 
             const rowContent = (
@@ -248,16 +248,6 @@ export function GauntletResults({
                     </>
                   ) : (
                     <span className="text-gray-300">—</span>
-                  )}
-                  {canReview && (
-                    <ChevronRight
-                      className={`w-4 h-4 shrink-0 ${
-                        isCompleted ? 'text-violet-500/70' :
-                        isFailed ? 'text-red-400/70' :
-                        'text-gray-300'
-                      }`}
-                      aria-hidden
-                    />
                   )}
                 </div>
               </>

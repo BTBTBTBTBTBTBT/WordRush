@@ -310,3 +310,42 @@ stay circles. Bots keep their own art. One shared component per platform so it c
 
 Same helper for the color pick on all three platforms; add a small unit test per platform for
 the color map (W → #8B2CF5, O → #FF2F91, A → palette[65 mod 9 = 2] = #0A6CFF, accent wins).
+
+## 21. Home game card: completion badge on the title line, text spans the icon (founder, 2026-10-02 late morning)
+
+Founder (screenshot of the Classic card on Home, solved, with the W badge hanging off the top-right
+corner): "the finished letter positioning … looks great, but is sitting up too high, I want that to
+align horizontally with the classic title … with the 4 guesses part being in line horizontally with
+the bottom of the icon image so it lines up nicely."
+
+On the horizontal Home game cards (§18, DAILIES and PUZZLES grids):
+1. **Badge on the title line.** The completion badge (the W / L / done art in the card's top-right
+   corner today) moves INSIDE the card, onto the same row as the game name: right-aligned at the
+   end of the title row (just left of the chevron's column, which stays vertically centered on the
+   card), vertically centered on the title's cap height. Same art and size as today; it no longer
+   overlaps the colored top bar or the card edge. The title truncates before it rather than running
+   under it.
+2. **Text spans the icon.** The text column (title + subtitle) is exactly as tall as the game
+   icon and pinned to it: the title's top lines up with the icon's top, and the subtitle's last
+   line ("4 guesses · 48s", "5 escalating stages") sits on the icon's bottom edge (title at the top,
+   subtitle at the bottom, space between). Long subtitles that wrap to two lines grow upward from
+   the bottom edge; if title + subtitle can't fit in the icon height, the card grows and the icon
+   stays centered on the text block.
+3. Unsolved cards keep the same alignment (no badge). Same on web, iOS and Android.
+4. **No ">" chevrons on menus anywhere** (founder: "get rid of those > arrows on all the menus, as
+   well, those are ugly"). Remove the trailing disclosure chevron from every tappable menu card or
+   row: the Home game cards, the game pickers on Leaderboard / Stats / Friends / VS, More Games,
+   Settings / Help / profile menu rows, and any similar list row that opens another screen. The
+   whole card / row stays tappable with its press feedback; the text column takes the freed width
+   (the §21.1 badge sits at the right end of the title line). Keep arrows that are part of a button's
+   label ("View Classic Leaderboard →", "Next Daily: Gauntlet →") and back buttons.
+5. **Word of the Day and VS Battle windows match the game cards** (founder: "restyle the two
+   buttons on the bottom of the main page under word of the day … to match the look of the windows
+   above it with the color bar at the top"). The Word of the Day quiz card and the VS Battle tile at
+   the bottom of Home use the exact same card treatment as the §18/§21 game cards: same white
+   surface, radius, border, shadow and the SAME colored top bar as the game cards (same thickness — 10 pt today).
+   Bar colors: Word of the Day = I's green #4CC77A (its host); VS Battle = the VS catalog accent.
+   Their content stays the same (WOTD: word, quiz, streak, Past words; VS: icon, title, LIVE count,
+   Invite) but sits inside the card with the game cards' inner padding; any old border, tint or
+   gradient those two had is replaced by the card treatment. The VS W/L badge follows §21.1 (end of
+   the title line). Same on web, iOS and Android.

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
-  ChevronRight,
   BookOpen,
   Lightbulb,
   Calendar,
@@ -125,7 +124,6 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
                     {item.subtitle}
                   </span>
                 </span>
-                <ChevronRight className="w-[13px] h-[13px] ml-auto flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
               </Link>
             );
           })}

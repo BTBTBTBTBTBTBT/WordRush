@@ -8,7 +8,7 @@ import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUT
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
 import { HomeSectionTitle } from '@/components/home/home-section-title';
-import { onPageShadow } from '@/lib/art';
+import { MODE_CARD, ModeCardBand, modeCardSurface } from '@/components/home/mode-card';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -41,9 +41,19 @@ function offlineWotd(list: string[], dayIndex: number, dayKey: string): string {
 }
 
 const LETTERS = ['A', 'B', 'C'];
-const CARD_STYLE: React.CSSProperties = {
-  background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px', boxShadow: onPageShadow(),
-};
+/** I's green, the Word of the Day host (docs/ART_SPEC.md §21.5). */
+const WOTD_ACCENT = '#4CC77A';
+const PAD = `${MODE_CARD.padY}px ${MODE_CARD.padX}px`;
+
+/** §21.5: the Home game card's frame (surface, radius, border, shadow, 10 px band, padding). */
+function WotdCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className="relative overflow-hidden" style={modeCardSurface(WOTD_ACCENT)}>
+      <ModeCardBand accent={WOTD_ACCENT} />
+      <div className={className} style={{ padding: PAD }}>{children}</div>
+    </div>
+  );
+}
 
 /** The section: the header (title art, Past words under it) above the card. */
 function WotdSection({ children }: { children: React.ReactNode }) {
@@ -126,14 +136,14 @@ export function WordOfTheDay() {
 
   if (!info) return (
     <WotdSection>
-      <div className="px-3 py-2 animate-pulse" style={CARD_STYLE}>
+      <WotdCard className="animate-pulse">
         <div className="flex items-center gap-1.5 mb-1.5">
           <div className="w-3 h-3 rounded" style={{ background: 'var(--color-border)' }} />
           <div className="h-2.5 w-24 rounded" style={{ background: 'var(--color-border)' }} />
         </div>
         <div className="h-4 w-32 rounded mb-1" style={{ background: 'var(--color-border)' }} />
         <div className="h-3 w-48 rounded" style={{ background: 'var(--color-border)' }} />
-      </div>
+      </WotdCard>
     </WotdSection>
   );
 
@@ -157,7 +167,7 @@ export function WordOfTheDay() {
 
   return (
     <WotdSection>
-      <div className="px-3 py-2" style={CARD_STYLE}>
+      <WotdCard>
         <div className="flex items-baseline gap-2">
           <span className="text-base font-black" style={{ color: 'var(--color-text)' }}>
             {info.word.charAt(0) + info.word.slice(1).toLowerCase()}
@@ -219,7 +229,7 @@ export function WordOfTheDay() {
         {settled && !revealing && definition && (
           <p className="mt-1 text-[11px] font-bold leading-snug" style={{ color: '#4b5563' }}>{definition}</p>
         )}
-      </div>
+      </WotdCard>
     </WotdSection>
   );
 }

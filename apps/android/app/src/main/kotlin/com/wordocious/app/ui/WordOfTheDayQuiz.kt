@@ -71,6 +71,9 @@ private sealed interface WotdLoad {
  * ABOVE the card, centered (same size as the DAILIES / PUZZLES headers), with "Past
  * words" small and centered under it; the card keeps its content.
  */
+/** ART_SPEC §21.5: the Word of the Day card's top band — I's green (the WOTD host). */
+internal val WOTD_CARD_ACCENT = Color(0xFF4CC77A)
+
 @Composable
 internal fun WordOfTheDayCard(onPastWords: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -151,15 +154,9 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
-            // Once answered, the whole card opens Past Words again (today's behavior).
-            .then(if (settled && !revealing) Modifier.clickableNoRipple(onPastWords) else Modifier)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
+    // ART_SPEC §21.5: the Home game-card treatment with I's green band.
+    // Once answered, the whole card opens Past Words again (today's behavior).
+    GameCardFrame(WOTD_CARD_ACCENT, onClick = if (settled && !revealing) onPastWords else null) {
         CappedFontScale {
             // The WORD OF THE DAY title + "Past words" are the section header above (§12).
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -237,13 +234,7 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
 /** Web parity: structural pulse skeleton while today's entry loads, never a "…" placeholder. */
 @Composable
 private fun WotdSkeleton() {
-    Column(
-        Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
+    GameCardFrame(WOTD_CARD_ACCENT) {
         SkeletonBlock(height = 16.dp, width = 70.dp, cornerRadius = 6.dp)
         Spacer(Modifier.height(6.dp))
         SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)

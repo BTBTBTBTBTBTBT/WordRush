@@ -193,11 +193,14 @@ struct WordOfTheDayView: View {
                     .padding(.top, 2)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(GameCardChrome.inner)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+        // ART_SPEC §21.5: the Home game cards' chrome, top band in I's green (its host).
+        .gameCardChrome(bar: Self.barColor)
     }
+
+    /// ART_SPEC §21.5: the card's top band — I's green, the Word of the Day host.
+    private static let barColor = Color(hex: 0x4CC77A)
 
     /// ART_SPEC §12 / §19.2: the whole-cast WORD OF THE DAY art as a section header
     /// ABOVE the card, centered on the DAILIES / PUZZLES width rule, with a small
@@ -268,10 +271,9 @@ struct WordOfTheDayView: View {
             SkeletonBlock(height: 16, width: 70, cornerRadius: 6)
             SkeletonBlock(height: 10, cornerRadius: 5)
         }
-        .padding(12)
+        .padding(GameCardChrome.inner)
         .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+        .gameCardChrome(bar: Self.barColor)
     }
 
     // MARK: - Day-keyed UserDefaults cache (one fetch per day)

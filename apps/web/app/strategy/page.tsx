@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { STRATEGY_ARTICLES } from '@/lib/strategy-content';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 
@@ -62,7 +61,6 @@ export default function StrategyIndexPage() {
                   <h2 className="text-lg font-black leading-snug mb-1" style={{ color: 'var(--color-text)' }}>{a.title}</h2>
                   <p className="text-sm font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>{a.dek}</p>
                 </div>
-                <ChevronRight className="w-5 h-5 shrink-0 mt-1" style={{ color: 'var(--color-text-muted)' }} />
               </div>
             </Link>
           ))}

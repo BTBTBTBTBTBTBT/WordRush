@@ -650,14 +650,8 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
             null,
         )
     }
-    Column(
-        modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
-            .clickableNoRipple(onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
+    // ART_SPEC §21.5: the Home game-card treatment with I's green band.
+    GameCardFrame(WOTD_CARD_ACCENT, onClick = onClick) {
         // Card-chrome rows (the word) are capped; the definition below is NOT — it
         // reflows at the user's full text size, on proportional lines. The WORD OF THE
         // DAY title + "Past words" sit above the card (ART_SPEC §12, WordOfTheDayCard).
@@ -667,7 +661,7 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
             SkeletonBlock(height = 16.dp, width = 70.dp, cornerRadius = 6.dp)
             Spacer(Modifier.height(6.dp))
             SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)
-            return@Column
+            return@GameCardFrame
         }
         CappedFontScale {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

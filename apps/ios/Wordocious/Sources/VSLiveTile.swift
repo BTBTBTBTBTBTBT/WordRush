@@ -4,7 +4,8 @@ import WordociousCore
 /// VS Battle as a full-width tile at the very bottom of the game area (founder +
 /// JP, 2026-09-26): the VS card and the old LIVE bar merged — VS icon and accent,
 /// "VS Battle", the live pulse + player count, Invite for Pro. The grid above is
-/// exactly the eight sweep games. Mirrors web vs-live-tile.tsx.
+/// exactly the eight sweep games. Mirrors web vs-live-tile.tsx. Wears the game
+/// cards' chrome (ART_SPEC §21.5) with its W / L badge on the title line (§21.1).
 struct VSLiveTile<Destination: View>: View {
     let mode: HomeMode
     /// The live count is observed HERE, not by Home, so a new count redraws
@@ -39,7 +40,15 @@ struct VSLiveTile<Destination: View>: View {
                 HStack(spacing: 12) {
                     ModeIconView(icon: mode.icon, accent: accent, box: 36)
                     VStack(alignment: .leading, spacing: 3) {
+                        // §21.1 / §21.5: today's W / L badge at the end of the title line
+                        // (an overlay, so it never changes the line's height).
                         Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.trailing, done ? 30 : 0)
+                            .overlay(alignment: .trailing) {
+                                if done { ResultBadge(won: vsDailyWon ?? false, size: 26) }
+                            }
                         HStack(spacing: 6) {
                             LivePulseDot()
                             Text("LIVE").font(Brand.font(10, .black)).foregroundStyle(Theme.textPrimary)
@@ -47,8 +56,9 @@ struct VSLiveTile<Destination: View>: View {
                         }
                         Text(subtitle).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
                     }
-                    Spacer(minLength: 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("VS Battle, \(countText)")
@@ -70,21 +80,10 @@ struct VSLiveTile<Destination: View>: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        // Completed daily: the same accent glow the mode cards wear (ModeCardView done
-        // tint + accent border) so today's battle never looks unplayed (founder, 2026-09-26).
-        .background(RoundedRectangle(cornerRadius: 14).fill(done ? accent.opacity(0.10) : Theme.surface))
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 14).fill(accent).frame(width: 4).padding(.vertical, 6)
-        }
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(done ? accent.opacity(0.55) : Theme.border, lineWidth: 1.5))
-        .overlay(alignment: .topTrailing) {
-            // W / L badge in the top-right corner — the same 3D badge the mode cards show (ART_SPEC §4).
-            if done {
-                ResultBadge(won: vsDailyWon ?? false, size: 26)
-                    .padding(.top, 6).padding(.trailing, 8)
-            }
-        }
-        .shadow(color: done ? accent.opacity(0.25) : .clear, radius: 8, y: 2)
+        .padding(GameCardChrome.inner)
+        // ART_SPEC §21.5: the exact Home game-card chrome (surface, radius, border,
+        // lift, the colored top band in the VS accent). A completed daily wears the
+        // game cards' done wash + accent border so today's battle never looks unplayed.
+        .gameCardChrome(bar: accent, done: done)
     }
 }

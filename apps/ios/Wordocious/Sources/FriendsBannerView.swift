@@ -174,7 +174,6 @@ struct FriendsBannerView: View {
                         }
                         .accessibilityLabel("\(n)-day friend streak with \(b.username)")
                     }
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .black)).foregroundStyle(FriendsKit.mid)
                 }
                 HStack(spacing: 6) {
                     ForEach(chips) { r in raceChip(r) }

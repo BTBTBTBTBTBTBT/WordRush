@@ -354,8 +354,6 @@ struct YouVsThemCard: View {
             HStack {
                 socialCaption("YOU vs \(target.username.uppercased())")
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
             }
             HStack(alignment: .center) {
                 (Text("\(h2h.myWins)").foregroundColor(Theme.primary)
@@ -384,8 +382,6 @@ struct YouVsThemCard: View {
                             .font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary)
                             .lineLimit(1).minimumScaleFactor(0.7)
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textMuted)
                     }
                     .padding(.horizontal, 10).padding(.vertical, 9)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
@@ -622,8 +618,6 @@ struct TrophyCaseCard: View {
             HStack {
                 socialCaption("TROPHY CASE")
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
             }
             HStack(spacing: 8) {
                 shelf("crown.fill", profile.goldMedals, "GOLD", Color(hex: 0xD97706), highlight: true)
@@ -716,14 +710,14 @@ struct MedalHistorySheet: View {
         let isPodium = ["gold", "silver", "bronze"].contains(m.medalType) && m.gameMode != nil && m.gameMode != "ALL"
         if isPodium, let mode = m.gameMode {
             NavigationLink(value: PodiumRequest(day: m.day, mode: mode)) {
-                rowContent(m, chevron: true)
+                rowContent(m)
             }.buttonStyle(.plain)
         } else {
-            rowContent(m, chevron: false)
+            rowContent(m)
         }
     }
 
-    private func rowContent(_ m: MedalRow, chevron: Bool) -> some View {
+    private func rowContent(_ m: MedalRow) -> some View {
         HStack(spacing: 10) {
             SymbolGlyph(medalIcon(m.medalType).0, size: 14, color: medalIcon(m.medalType).1)
             VStack(alignment: .leading, spacing: 1) {
@@ -731,10 +725,6 @@ struct MedalHistorySheet: View {
                 Text(socialDayLabel(m.day)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
-            if chevron {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
-            }
         }
         .padding(11)
         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
@@ -794,8 +784,6 @@ struct PodiumScreen: View {
                                     SymbolGlyph(medalIcon(e.medalType).0, size: 15, color: medalIcon(e.medalType).1)
                                     Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
                                     Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
                                 }
                                 .padding(12)
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
@@ -1015,8 +1003,6 @@ struct LatelyCard: View {
                                 .font(Brand.font(11, .heavy))
                                 .lineLimit(1).minimumScaleFactor(0.7)
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
                         }
                         .padding(.horizontal, 11).padding(.vertical, 9)
                         .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xEC4899).opacity(0.06)))

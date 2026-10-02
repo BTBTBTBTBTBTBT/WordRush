@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -1034,7 +1033,7 @@ private fun PodiumAvatar(e: PodiumEntry) {
 
 // FRIENDS row (§207 Tier 3) — the compact card on the OWN profile screen
 // pointing at the Friends tab: Users icon, gradient FRIENDS, count, red pending
-// pill, chevron.
+// pill (ART_SPEC §21.4: no chevron).
 @Composable
 fun FriendsRowLink(onOpen: () -> Unit) {
     if (AuthService.userId == null) return
@@ -1076,7 +1075,6 @@ fun FriendsRowLink(onOpen: () -> Unit) {
                 )
             }
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
     }
 }
 

@@ -86,7 +86,6 @@ struct FriendsQuickPlaySheet: View {
                                     .foregroundStyle(f.isOnline() ? FriendsKit.green : FriendsKit.label).lineLimit(1)
                             }
                             Spacer(minLength: 4)
-                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .black)).foregroundStyle(FriendsKit.solid)
                         }
                         .padding(.horizontal, 12).padding(.vertical, 9)
                         .contentShape(Rectangle())

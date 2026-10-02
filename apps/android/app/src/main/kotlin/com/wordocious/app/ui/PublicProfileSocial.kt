@@ -374,7 +374,6 @@ fun YouVsThemCard(
     SocialCard(onClick = onCardTap) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             CardTitle("YOU vs ${targetName.uppercase()}")
-            Text("›", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -416,7 +415,6 @@ fun YouVsThemCard(
                     fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.text,
                     modifier = Modifier.weight(1f),
                 )
-                Text("›", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
             }
         }
         Text(
@@ -616,7 +614,6 @@ fun TrophyCaseCard(
     SocialCard(onClick = onTap) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             CardTitle("TROPHY CASE")
-            Text("›", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             TrophyShelf("🥇", gold, "GOLD", highlight = true, Modifier.weight(1f))
@@ -715,7 +712,6 @@ fun MedalHistorySheet(
                         Text(medalLabel(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(shortDayLabel(m.day), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
-                    if (podiumable) Text("›", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -758,7 +754,6 @@ fun PodiumDialog(
                             Text(listOf("🥇", "🥈", "🥉").getOrElse(i) { "🏅" }, fontSize = 15.sp)
                             Text(e.username, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f))
                             Text(formatScore(e.score), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
-                            Text("›", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
                         }
                     }
                 }
@@ -939,7 +934,6 @@ fun LatelyCard(
                     Text(item.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
                     Text(item.whenLabel, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                 }
-                if (item.onTap != null) Text("›", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
             }
         }
         nemesis?.let { n ->
@@ -961,7 +955,6 @@ fun LatelyCard(
                     fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.text,
                     modifier = Modifier.weight(1f), maxLines = 1,
                 )
-                Text("›", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
             }
         }
     }

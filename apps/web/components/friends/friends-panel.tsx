@@ -914,7 +914,6 @@ export function FriendsRowLink() {
           {pendingCount}
         </span>
       )}
-      <span className="ml-auto text-sm font-black" style={{ color: FR.solid }}>→</span>
     </Link>
   );
 }

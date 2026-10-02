@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
@@ -70,7 +69,7 @@ export default function GuidesIndexPage() {
               style={gameTileSurface(g.accent)}
             >
               <GameTileBar accent={g.accent} />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
                   <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${g.accent}15` }}>
                     <GuideIcon slug={g.slug} accent={g.accent} />
@@ -79,7 +78,6 @@ export default function GuidesIndexPage() {
                 </div>
                 <p className="text-xs font-medium mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>{g.tagline}</p>
               </div>
-              <ChevronRight className="w-4 h-4 flex-shrink-0 ml-2" style={{ color: 'var(--color-text-muted)' }} />
             </Link>
           ))}
         </div>

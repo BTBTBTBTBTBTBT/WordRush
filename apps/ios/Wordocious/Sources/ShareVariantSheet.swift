@@ -37,7 +37,7 @@ struct ShareVariantSheet: View {
     }
 
     /// 1:1 with MenuSheet.row — accent icon tile, uppercase title, muted
-    /// subtitle, trailing chevron, on the shared card background.
+    /// subtitle (no chevron, ART_SPEC §21.4), on the shared card background.
     private func row(icon: String, accent: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
@@ -48,7 +48,6 @@ struct ShareVariantSheet: View {
                 Text(subtitle).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
         .background(

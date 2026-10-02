@@ -24,7 +24,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
@@ -540,7 +539,6 @@ private fun LinkRow(title: String, onClick: () -> Unit = {}) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
     }
 }
 

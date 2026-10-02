@@ -8,11 +8,12 @@ import WordociousCore
 ///
 /// Layout (ART_SPEC §18.2, the founder's ChatGPT mockup; web mode-card.tsx): a
 /// white card, radius 18, a thick 10 pt band in the game's accent across its
-/// rounded top, then a row — the glossy game icon at 52 pt (no chip box), the
-/// game name in its accent (900, 16; shrinks to fit a long word) over the
-/// description (secondary ink, 12.5, a fixed two-line box so Daily ⇄ Unlimited
-/// never reflows the grid), and a small chevron. ~84 pt tall. Every state is as
-/// before: the 3D W / L badge top-right over the band, the dimmed free-played
+/// rounded top, then a row — the glossy game icon at 52 pt (no chip box) and a
+/// text column pinned to the icon's height (§21.2): the game name in its accent
+/// (900, 16; shrinks to fit a long word) on the icon's top edge, the description
+/// (secondary ink, 12.5, up to two lines) on its bottom edge. No chevron (§21.4).
+/// ~84 pt tall. Every state is as before: the 3D W / L badge (now at the end of
+/// the title line, §21.1; Unlimited's infinity mark in the same slot), the dimmed free-played
 /// (locked) card with its gray band, the done tint, the result line in place of
 /// the description once played, and Unlimited's infinity mark.
 struct ModeCardView: View {
@@ -23,70 +24,72 @@ struct ModeCardView: View {
     var vsWon: Bool? = nil
     var locked: Bool = false
     /// Pro's Unlimited mode (home redesign, founder 2026-10-01): no badges, a small
-    /// infinity mark top-right in the accent instead.
+    /// infinity mark in the accent at the end of the title line instead (§21.1).
     var unlimited: Bool = false
 
-    /// §18.2 measures.
-    private static let radius: CGFloat = 18
-    private static let band: CGFloat = 10
+    /// §18.2 measures (radius, band and padding live on GameCardChrome).
     private static let icon: CGFloat = 52
 
     var body: some View {
         let isVs = mode.id == "vs"
         let isDone = done != nil || vsWon != nil
         let lockGray = Color(hex: 0xD1D5DB)
-        let bandColors = locked ? [lockGray, lockGray] : [mode.accent, mode.accent.opacity(0.8)]
-        let borderC = locked ? lockGray : (isDone ? mode.accent.opacity(0.4) : Theme.border)
-        let shape = RoundedRectangle(cornerRadius: Self.radius)
-        return VStack(spacing: 0) {
-            // The thick top band in the game's accent (gray when locked), flush with
-            // the card's rounded top (the clip rounds it).
-            LinearGradient(colors: bandColors, startPoint: .leading, endPoint: .trailing)
-                .frame(height: Self.band)
-            HStack(spacing: 8) {
-                iconView
-                VStack(alignment: .leading, spacing: 2) {
-                    // One line, scaled down before it wraps ("Crosswordocious").
-                    Text(mode.title).font(Brand.font(16, .black))
-                        .foregroundStyle(locked ? Theme.textMuted : mode.accent)
-                        .lineLimit(1).minimumScaleFactor(0.68)
-                    Text(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
-                        .font(Brand.font(12.5, .semibold)).foregroundStyle(Theme.textSecondary)
-                        .lineLimit(2, reservesSpace: true)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Theme.textMuted)
-                    .accessibilityHidden(true)
+        // §21.2: the text column is pinned to the icon — exactly as tall as it,
+        // title on the icon's top edge, the subtitle's last line on its bottom
+        // edge (a two-line subtitle grows upward). If the text can't fit, the
+        // column (and the card) grows and the icon stays centered on it.
+        // §21.4: no trailing chevron; the column takes the full width.
+        return HStack(alignment: .center, spacing: 8) {
+            iconView
+            VStack(alignment: .leading, spacing: 0) {
+                titleRow
+                Spacer(minLength: 2)
+                Text(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
+                    .font(Brand.font(12.5, .semibold)).foregroundStyle(Theme.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.leading, 8).padding(.trailing, 6).padding(.vertical, 10)
-            .frame(maxWidth: .infinity, minHeight: 84 - Self.band, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: Self.icon, alignment: .leading)
         }
-        .background(ZStack {
-            shape.fill(Theme.surface)
-            if isDone { shape.fill(mode.accent.opacity(0.06)) }
-        })
-        .clipShape(shape)
-        .overlay(shape.stroke(borderC, lineWidth: 1.5))
-        // The corner mark over the band: today's W / L badge, or Unlimited's infinity.
-        .overlay(alignment: .topTrailing) {
-            if unlimited {
-                if !locked {
+        .padding(GameCardChrome.inner)
+        .frame(maxWidth: .infinity, minHeight: 84 - GameCardChrome.band, alignment: .leading)
+        .gameCardChrome(bar: locked ? lockGray : mode.accent, done: isDone && !locked,
+                        border: locked ? lockGray : nil)
+        .opacity(locked ? 0.6 : 1)
+    }
+
+    /// Today's W / L outcome for the title-line badge (Daily only; never on Unlimited).
+    private var badgeWon: Bool? {
+        if unlimited { return nil }
+        if let done { return done.completed }
+        return vsWon
+    }
+
+    /// §21.1: the game name, one line (scaled down, then truncated), with today's
+    /// W / L badge right-aligned at the end of the same row. The badge rides in an
+    /// overlay centered on the title line (whose center sits on the cap-height
+    /// middle), so solved and unsolved cards keep identical text alignment; the
+    /// title reserves the badge's width and truncates before it.
+    /// Unlimited's infinity mark takes the same slot (it used to sit in the corner,
+    /// where the full-width title would now run under it).
+    private var titleRow: some View {
+        let badgeSize: CGFloat = 26
+        let won = badgeWon
+        let infinity = unlimited && !locked
+        let reserve: CGFloat = won != nil ? badgeSize + 4 : (infinity ? 20 : 0)
+        return Text(mode.title).font(Brand.font(16, .black))
+            .foregroundStyle(locked ? Theme.textMuted : mode.accent)
+            .lineLimit(1).minimumScaleFactor(0.68)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, reserve)
+            .overlay(alignment: .trailing) {
+                if let won {
+                    winBadge(won: won, size: badgeSize)
+                } else if infinity {
                     Image(systemName: "infinity").font(.system(size: 13, weight: .bold))
                         .foregroundStyle(mode.accent).accessibilityLabel("Unlimited")
-                        .padding(.top, Self.band + 4).padding(.trailing, 8)
                 }
-            } else if let done {
-                winBadge(won: done.completed).padding(.top, 4).padding(.trailing, 6)
-            } else if let vsWon {
-                winBadge(won: vsWon).padding(.top, 4).padding(.trailing, 6)
             }
-        }
-        // ART_SPEC §11: an opaque base carrying the page-tinted lift, outside the clip.
-        .background(shape.fill(Theme.surface).pageCardShadow())
-        .opacity(locked ? 0.6 : 1)
     }
 
     /// The glossy game icon at 52 pt (no chip box); the old chip glyph when the art is missing.
@@ -107,8 +110,51 @@ struct ModeCardView: View {
         return "\(formatGuessStat(semantics: mode.guessSemantics, guessBase: mode.guessBase, guessCount: done.guessCount)) · \(formatShortTime(Int(done.timeSeconds)))"
     }
 
-    /// ART_SPEC §4: the 3D W / L badge (26 pt, same corner).
-    private func winBadge(won: Bool) -> some View {
-        ResultBadge(won: won, size: 26)
+    /// ART_SPEC §4: the 3D W / L badge (26 pt), on the title line since §21.1.
+    private func winBadge(won: Bool, size: CGFloat) -> some View {
+        ResultBadge(won: won, size: size)
+    }
+}
+
+/// ART_SPEC §18.2 / §21.5: the Home game card's chrome, shared by ModeCardView and
+/// the two windows under the grids (Word of the Day, VS Battle) so all of them wear
+/// the exact same treatment: white surface, radius 18, 1.5 pt border, the page-tinted
+/// lift, and the thick colored top band across the rounded top. `done` adds the
+/// completed card's accent wash + accent border. Callers pad their content with
+/// `GameCardChrome.inner` (the game card's inner padding).
+struct GameCardChrome: ViewModifier {
+    static let radius: CGFloat = 18
+    static let band: CGFloat = 10
+    static let inner = EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 10)
+
+    let bar: Color
+    var done: Bool = false
+    /// Overrides the border color (the locked card's gray); nil = the standard border.
+    var border: Color? = nil
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Self.radius)
+        let borderC = border ?? (done ? bar.opacity(0.4) : Theme.border)
+        return VStack(spacing: 0) {
+            // The thick top band (the clip rounds it into the card's top corners).
+            LinearGradient(colors: [bar, bar.opacity(0.8)], startPoint: .leading, endPoint: .trailing)
+                .frame(height: Self.band)
+            content
+        }
+        .background(ZStack {
+            shape.fill(Theme.surface)
+            if done { shape.fill(bar.opacity(0.06)) }
+        })
+        .clipShape(shape)
+        .overlay(shape.stroke(borderC, lineWidth: 1.5))
+        // ART_SPEC §11: an opaque base carrying the page-tinted lift, outside the clip.
+        .background(shape.fill(Theme.surface).pageCardShadow())
+    }
+}
+
+extension View {
+    /// ART_SPEC §21.5: wrap in the Home game card's chrome (see GameCardChrome).
+    func gameCardChrome(bar: Color, done: Bool = false, border: Color? = nil) -> some View {
+        modifier(GameCardChrome(bar: bar, done: done, border: border))
     }
 }

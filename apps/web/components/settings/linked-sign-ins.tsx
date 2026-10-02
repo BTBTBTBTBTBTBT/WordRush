@@ -178,7 +178,6 @@ export function LinkedSignIns() {
               <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>
                 {busy === provider ? 'Opening…' : `Link ${providerLabel(provider)}`}
               </div>
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>›</span>
             </div>
           </button>
         ))}
