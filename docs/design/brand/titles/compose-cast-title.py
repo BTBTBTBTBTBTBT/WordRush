@@ -98,6 +98,13 @@ LAYOUTS = {
         'top': [('o1', 'cheer'), ('r', 'sit'), ('d', 'sit'), ('o2', 'cheer'),
                 ('c', 'sit'), ('i', 'cheer'), ('o3', 'sit'), ('u', 'meditate')],
     },
+    'dailies': {
+        'lettering': 'dailies-lettering-keyed.png',
+        'left': [('w', 'cheer', False)],
+        'right': [('s', 'slide', False)],
+        'top': [('o1', 'lean'), ('r', 'cheer'), ('d', 'lean'), ('o2', 'sit'),
+                ('c', 'cheer'), ('i', 'sit'), ('o3', 'sneak'), ('u', 'stretch')],
+    },
 }
 
 

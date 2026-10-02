@@ -24,7 +24,7 @@ os.makedirs(WEB, exist_ok=True)
 
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 PAGES = ['friends', 'stats', 'records', 'vs', 'puzzles', 'wotd', 'settings', 'howto', 'gopro', 'moregames',
-         'welcome', 'leaderboard']
+         'welcome', 'leaderboard', 'dailies']
 GAMES = ['practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven', 'gauntlet',
          'propernoundle', 'more', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder',
          'cryptogram', 'wordsearch', 'regions',
@@ -38,8 +38,21 @@ def trim(im):
     return im.crop(im.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox())
 
 
+def despeck(im):
+    """Drop specks/hairlines left by the capture (components under 0.4% of the biggest)."""
+    import numpy as np
+    from scipy import ndimage
+    a = np.array(im)
+    lab, n = ndimage.label(a[..., 3] > 40)
+    if n > 1:
+        sz = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
+        keep = np.isin(lab, [i + 1 for i, v in enumerate(sz) if v >= sz.max() * 0.004])
+        a[..., 3] = np.where(ndimage.binary_dilation(keep, iterations=2), a[..., 3], 0)
+    return Image.fromarray(a)
+
+
 def wide(path, width=1080):
-    im = trim(Image.open(path).convert('RGBA'))
+    im = trim(despeck(Image.open(path).convert('RGBA')))
     if im.width > width:
         im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
     return im
@@ -88,4 +101,5 @@ for g in GAMES:
     if g.startswith('pocket-') or g in ('vs', 'more'):
         continue
     ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
+ship('art-bg-tiles', Image.open(os.path.join(HERE, 'backgrounds', 'tile-pattern.png')).convert('RGBA')); n += 1
 print('shipped', n)

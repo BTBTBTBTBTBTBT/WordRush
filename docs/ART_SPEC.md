@@ -125,3 +125,44 @@ cryptogram, wordsearch, regions): the game's name lettered in its own accent col
 - Parity fixes from pass 2: the VS "already played" screen shows the `u-alldone` scene and its
   W/L result as `youwin` / `youlose` art (≈28 pt tall) on all three platforms (Android has it; iOS
   and web align).
+
+## 11. Page backgrounds — "page tint + tiles" (founder pick, 2026-10-02 morning)
+
+Founder: "The pages look cool, but unfinished … some sort of background?" → mockups in
+docs/design/brand/backgrounds/mock-compare.png → picked B + tiles. One shared `PageBackground(tint)`
+per platform, drawn behind every tab/page's scroll content (below the header, edge to edge,
+behind the status bar too; the tab bar keeps its own surface):
+1. A soft diagonal gradient (top-left → bottom-right, 3 stops) per tint:
+
+| tint | light stops | dark stops |
+|---|---|---|
+| home (Home, Settings, Pro, Help/Guides, profile, default) | #F3EEFF → #FBEFFF → #FFF1F7 | #160F26 → #1C1231 → #22122C |
+| leaderboard (Leaderboard, Records) | #FFF8E6 → #FFEFD2 → #FDE9F2 | #1E1608 → #23160D → #241221 |
+| stats | #EEF4FF → #EEEBFF → #F4EEFF | #0E1530 → #141433 → #1A1233 |
+| friends | #FFF0F7 → #FCE7F3 → #F3E8FF | #241024 → #22102A → #1A1030 |
+| vs (VS pages) | #E9FBF8 → #ECF6FF → #F1EEFF | #08201E → #0E1A2A → #15142B |
+
+2. On top, the shipped tile pattern `art-bg-tiles` (640 px seamless, transparent) repeated across
+   the page at 12% opacity in light mode, 7% in dark, drawn at 320 pt per tile (so tiles read
+   ~20–32 pt), fixed to the page (it scrolls with the content is fine too — pick what's natural per
+   platform, same on all three if possible).
+3. Cards: keep white (dark: current surface) but tint their shadow toward the page's accent
+   (home #7c3aed, leaderboard #f59e0b, stats #2563eb, friends #ec4899, vs #0d9488) at ~10–12%
+   alpha, radius 12–16, y 4–6, so they lift off the tint. Sections that sat on the old flat
+   background need no other change.
+The old flat page background color is replaced everywhere these pages render. Respect reduce
+transparency/contrast settings where the platform exposes them (fall back to the gradient only).
+
+## 12. Home section titles
+
+- New `art-title-dailies` (whole cast around WORDOCIOUS DAILIES): the section header above the
+  WORDOCIOUS daily games on Home, styled exactly like the PUZZLES art header (same width rule,
+  alignment, spacing, scroll anchor if any), replacing the text header there.
+- Word of the Day: move `art-title-wotd` OUT of the card — it becomes a section header above the WOTD
+  card at the same size/alignment as the PUZZLES header; the card keeps its content; "Past words"
+  stays a link at the right of that header row (or inside the card top if there's no room).
+
+## 13. Small fixes
+
+- Leaderboard / Records / recent-match rows that show a text "Win" / "Loss" chip use the
+  `icon3d-badge-w` / `icon3d-badge-l` art at ~18 pt with the same accessibility label.
