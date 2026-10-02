@@ -123,6 +123,11 @@ for g in GAMES:
         continue
     ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
 ship('art-bg-tiles', Image.open(os.path.join(HERE, 'backgrounds', 'tile-pattern.png')).convert('RGBA')); n += 1
+# every cast pose on its own (founder 10-02 build: popups, share footers, VS, empty states)
+POSES_DIR = os.path.join(HERE, 'poses')
+for f in sorted(os.listdir(POSES_DIR)):
+    if f.endswith('.png') and f != 'contact-sheet.png':
+        ship('art-pose-' + f[:-4], square(os.path.join(POSES_DIR, f), 320, 0.02)); n += 1
 WALLS = os.path.join(HERE, 'wallpapers', 'out')
 for f in sorted(os.listdir(WALLS)):
     if f.endswith('.png'):
