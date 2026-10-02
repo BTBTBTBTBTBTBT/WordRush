@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
 import { Check, Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { isGameArtIcon } from '@/lib/art';
@@ -102,6 +103,9 @@ function RowHeader({ label, status, ink, streak }: { label: string; status: stri
   );
 }
 
+const HEAD_SIZE = 22;
+const HEAD_LINE = 1.15;
+
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, clock, onOpen, onShare }: Props) {
   const unlimited = playMode === 'unlimited';
   const wTier = unlimited ? 'none' : groupTier(word.progress);
@@ -117,6 +121,27 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const headInk = double ? '#78350f' : '#4c1d95';
   const subInk = double ? '#92400e' : '#6d28d9';
   const shimmer = !unlimited && (wTier !== 'none' || pTier !== 'none');
+
+  // The headline runs two lines at most at 22px, then steps down (to 70%) rather than
+  // truncating: the web side of iOS minimumScaleFactor / Android's onTextLayout fit.
+  const headRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = headRef.current;
+    if (!el) return;
+    const fit = () => {
+      let size = HEAD_SIZE;
+      el.style.fontSize = `${size}px`;
+      while (el.offsetHeight > 2 * size * HEAD_LINE + 1 && size > HEAD_SIZE * 0.7) {
+        size = Math.max(HEAD_SIZE * 0.7, size - 1);
+        el.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined' || !el.parentElement) return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(el.parentElement);
+    return () => ro.disconnect();
+  }, [headline]);
 
   const segment = (mode: 'daily' | 'unlimited', label: string) => {
     const on = playMode === mode;
@@ -185,7 +210,24 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           <div className="flex-1 flex items-center gap-1.5" style={{ minHeight: 30 }}>
             {double && <Icon3D name="trophy" size={18} className="shrink-0" />}
             {unlimited && <InfinityIcon className="w-5 h-5 shrink-0" style={{ color: '#7c3aed' }} />}
-            <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
+            {/* The old WORDOCIOUS wordmark style (Nunito Black, violet→pink) with a soft pink glow;
+                the double-flawless gold day keeps its tier ink. */}
+            <span
+              ref={headRef}
+              className="font-black"
+              style={{
+                fontSize: HEAD_SIZE, letterSpacing: 0.4, lineHeight: HEAD_LINE,
+                ...(double
+                  ? { color: headInk }
+                  : {
+                      backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+                      WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent',
+                      filter: 'drop-shadow(0 0 3px rgba(236,72,153,0.25))',
+                    }),
+              }}
+            >
+              {headline}
+            </span>
           </div>
           {/* Nothing to share before the first finished game (iOS/Android parity). */}
           {!unlimited && word.progress.played + puzzles.progress.played > 0 && (

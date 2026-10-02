@@ -44,6 +44,15 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -151,9 +160,21 @@ fun HomeBannerView(
                     ) {
                         if (double) Icon3D(Icon3DName.TROPHY, 22.dp)
                         if (unlimited) Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+                        // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
+                        // violet→pink) with a soft pink glow; the double-flawless gold day keeps
+                        // its tier ink. Two lines, then it steps down (to 70%) rather than truncating.
+                        var headScale by remember(headline) { mutableFloatStateOf(1f) }
+                        var headFitted by remember(headline) { mutableStateOf(false) }
+                        val glow = with(LocalDensity.current) { 3.dp.toPx() }
                         Text(
-                            headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                            lineHeight = 1.2.em, color = headInk, maxLines = 2,
+                            headline, fontSize = 22.sp * headScale, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+                            lineHeight = 1.15.em, maxLines = 2, overflow = TextOverflow.Clip,
+                            style = if (double) LocalTextStyle.current.merge(TextStyle(color = headInk))
+                            else LocalTextStyle.current.merge(
+                                TextStyle(brush = WTheme.wordmarkGradient, shadow = Shadow(Color(0xFFEC4899).copy(alpha = 0.25f), Offset.Zero, glow)),
+                            ),
+                            modifier = Modifier.drawWithContent { if (headFitted) drawContent() },
+                            onTextLayout = { r -> if (r.hasVisualOverflow && headScale > 0.7f) headScale -= 0.05f else headFitted = true },
                         )
                     }
                     // Nothing to share before the first finished game (iOS/web parity).

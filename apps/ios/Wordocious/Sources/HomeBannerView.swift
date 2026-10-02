@@ -125,11 +125,15 @@ struct HomeBannerView: View {
                         if unlimited {
                             Image(systemName: "infinity").font(.system(size: 17, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
                         }
+                        // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
+                        // violet→pink) with a soft pink glow; the double-flawless gold day keeps its tier ink.
                         Text(headline)
-                            .font(Brand.font(16, .black)).tracking(0.4).lineSpacing(3)
-                            .foregroundStyle(headInk)
+                            .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(0)
+                            .foregroundStyle(double ? AnyShapeStyle(headInk) : AnyShapeStyle(Theme.wordmarkGradient))
+                            .shadow(color: double ? .clear : Color(hex: 0xEC4899).opacity(0.25), radius: 3)
                             .fixedSize(horizontal: false, vertical: true)
                             .lineLimit(2)
+                            .minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
                     // The headline keeps clear of the host standing at the strip's right end.
