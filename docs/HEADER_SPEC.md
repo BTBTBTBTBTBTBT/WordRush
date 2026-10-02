@@ -64,3 +64,14 @@ Records, Home), the page title row does NOT repeat that host: the title keeps th
 caps style and the banner host is the page's host. Web already does this; iOS and Android
 drop the duplicate VS BATTLE / FRIENDS title hosts. The Leaderboard day title art (one
 designed graphic per weekday) is a separate pass, so leave the Leaderboard banner title as is.
+
+## 6. The Friends tab wears the app header (founder, 2026-10-02)
+
+"Rework the friends page so it never loses the header like the rest of the pages have and
+lose the Friends title." The Friends tab hosts the §1 home header exactly like Home,
+Leaderboard, Stats and Records (iOS: `AppHeaderView` pinned above the scroll; Android: the
+shell's shared `AppHeader`; web: `<AppHeader />` atop the page, as on /daily, /stats,
+/records). The FRIENDS title row is gone; its bell and add-friend circles sit in a compact
+right-aligned row atop the content, above the Friends banner. The leading space of that row
+(and the STATS title spot on Stats) is where a future image title will go. The iOS Friends
+screen pushed from a profile or the empty Friends board keeps its nav-bar FRIENDS title.

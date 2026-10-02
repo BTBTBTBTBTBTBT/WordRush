@@ -124,7 +124,7 @@ struct RootTabView: View {
             NavigationStack {
                 // The bottom-nav inset does not reach this ScrollView's tail (founder, 2026-09-26:
                 // "I can't scroll all the way to the bottom") — pad by the chrome height like a push.
-                FriendsScreenView(padsForChrome: true)
+                FriendsScreenView(padsForChrome: true, asTab: true)
                     .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             }
             .tag(Tab.friends).tabItem { Label("Friends", systemImage: "person.2") }

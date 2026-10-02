@@ -1,9 +1,10 @@
 'use client';
 
 // THE FRIENDS TAB (Friends overhaul, founder-approved 2026-10-01; spec
-// docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom: the FRIENDS header (bell =
-// notification prefs, add-friend jumps to Add by username), the Friends banner
-// (ON NOW + TODAY'S RACE, the full race in a sheet), YOUR TURN, PLAY WITH
+// docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom (under the shared AppHeader):
+// the controls row (bell = notification prefs, add-friend jumps to Add by
+// username), the Friends banner (ON NOW + TODAY'S RACE, the full race in a
+// sheet), YOUR TURN, PLAY WITH
 // FRIENDS, THIS WEEK'S RACE, YOUR FRIENDS (presence, friend streak, one action
 // pill), INVITES, MOMENTS with reactions, and Add by username + share link. The
 // page adds the InvitePanel under it. Earlier history: §207 (friends card),
@@ -13,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Users, UserPlus, Check, X, Send, ChevronDown, MoreHorizontal, Share } from 'lucide-react';
-import { HeaderCircle, HEADER_INK, PageHeader } from '@/components/ui/page-header';
+import { HeaderCircle, HEADER_INK } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
@@ -368,20 +369,16 @@ export function FriendsPanel() {
 
   return (
     <div className="space-y-3.5">
-      {/* 1. Header */}
-      {/* HEADER_SPEC §4/§5: the shared header in the Friends accent; O1 stands in the banner below, so no title host. */}
-      <PageHeader
-        title="FRIENDS"
-        accent="friends"
-        right={(
-          <>
-            <NotificationPrefs />
-            <HeaderCircle label="Add a friend" onClick={jumpToAdd}>
-              <UserPlus className="w-4 h-4" style={{ color: HEADER_INK }} strokeWidth={2.6} />
-            </HeaderCircle>
-          </>
-        )}
-      />
+      {/* 1. Controls row (founder, 2026-10-02): the shared AppHeader above the page is
+          the Friends header, so the FRIENDS title row is gone. The bell and
+          add-friend circles sit right-aligned; the leading space is reserved for
+          a future title graphic. */}
+      <div className="flex items-center justify-end gap-2">
+        <NotificationPrefs />
+        <HeaderCircle label="Add a friend" onClick={jumpToAdd}>
+          <UserPlus className="w-4 h-4" style={{ color: HEADER_INK }} strokeWidth={2.6} />
+        </HeaderCircle>
+      </div>
 
       {/* 2. Friends banner */}
       {pending ? (

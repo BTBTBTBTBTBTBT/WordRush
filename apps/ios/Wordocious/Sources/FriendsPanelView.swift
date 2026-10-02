@@ -1074,55 +1074,89 @@ struct FriendsPanelView: View {
 
 /// FRIENDS — the Friends tab (D1, 2026-09-26) and the dedicated friends
 /// screen pushed from the profile / presented from the empty Friends board.
-/// Friends overhaul §2.1: FRIENDS in the pink→violet gradient, the bell (the
-/// notification prefs) and an add-friend icon that jumps to Add by username.
+/// Friends overhaul §2.1: the bell (the notification prefs) and an add-friend
+/// icon that jumps to Add by username.
+/// Founder (2026-10-02): the TAB never loses the shared app header and drops the
+/// FRIENDS title — `asTab` pins AppHeaderView above the scroll exactly like Home,
+/// Leaderboard, Stats and Records, and the bell + add-friend circles move to a
+/// compact right-aligned row atop the content (its left side is the room kept
+/// for a future title graphic). Pushed / sheet copies keep the nav-bar title.
 struct FriendsScreenView: View {
     // §218: pushed views don't inherit the root's safeAreaInset, so pad by the
     // reported chrome height (the tab root needs it too — see RootTabView).
     var padsForChrome = true
+    var asTab = false
     @ObservedObject private var chrome = ChromeVisibility.shared
     @State private var focusAdd: UUID?
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                VStack(spacing: 18) {
-                    FriendsPanelView(focusAdd: focusAdd)
-                    // §212: recruiting and friending are the same motion — the
-                    // gift-Pro panel lives here too.
-                    InvitePanelView()
+            if asTab {
+                VStack(spacing: 0) {
+                    AppHeaderView()
+                    scroll(proxy)
                 }
-                .padding(.horizontal, 16).padding(.top, 6)
-                .padding(.bottom, 16 + (padsForChrome ? chrome.bottomInset : 0))
-            }
-            .background(FriendsKit.page.ignoresSafeArea())
-            // navigationTitle stays for the next push's back label; the
-            // principal item is what renders.
-            .navigationTitle("Friends")
-            .navigationBarTitleDisplayMode(.inline)
-            // §10 (founder, iOS 220): the pinned header is opaque page color —
-            // the list never shows through the title and buttons.
-            .toolbarBackground(FriendsKit.page, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    // HEADER_SPEC §5: the Friends banner's O1 is the page's host, so
-                    // the title row doesn't repeat it.
-                    PageTitle("FRIENDS", colors: FriendsKit.titleGradient)
-                }
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    NotificationPrefsButton()
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("add-friend", anchor: .center) }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
-                    } label: {
-                        HeaderCircleLabel(glyph: .symbol("person.badge.plus"), size: 32)
+                .background(FriendsKit.page.ignoresSafeArea())
+                // navigationTitle stays for the next push's back label.
+                .navigationTitle("Friends")
+                .toolbar(.hidden, for: .navigationBar)
+            } else {
+                scroll(proxy)
+                    .background(FriendsKit.page.ignoresSafeArea())
+                    // navigationTitle stays for the next push's back label; the
+                    // principal item is what renders.
+                    .navigationTitle("Friends")
+                    .navigationBarTitleDisplayMode(.inline)
+                    // §10 (founder, iOS 220): the pinned header is opaque page color —
+                    // the list never shows through the title and buttons.
+                    .toolbarBackground(FriendsKit.page, for: .navigationBar)
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbar {
+                        ToolbarItem(placement: .principal) {
+                            // HEADER_SPEC §5: the Friends banner's O1 is the page's host, so
+                            // the title row doesn't repeat it.
+                            PageTitle("FRIENDS", colors: FriendsKit.titleGradient)
+                        }
+                        ToolbarItemGroup(placement: .navigationBarTrailing) {
+                            actions(proxy)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Add a friend")
-                }
             }
         }
+    }
+
+    private func scroll(_ proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                if asTab {
+                    // The tab's controls row (the old title row's buttons). The
+                    // leading space is reserved for the future title graphic.
+                    HStack(spacing: 8) {
+                        Spacer(minLength: 0)
+                        actions(proxy)
+                    }
+                    .padding(.bottom, -8)
+                }
+                FriendsPanelView(focusAdd: focusAdd)
+                // §212: recruiting and friending are the same motion — the
+                // gift-Pro panel lives here too.
+                InvitePanelView()
+            }
+            .padding(.horizontal, 16).padding(.top, 6)
+            .padding(.bottom, 16 + (padsForChrome ? chrome.bottomInset : 0))
+        }
+    }
+
+    @ViewBuilder private func actions(_ proxy: ScrollViewProxy) -> some View {
+        NotificationPrefsButton()
+        Button {
+            withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("add-friend", anchor: .center) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
+        } label: {
+            HeaderCircleLabel(glyph: .symbol("person.badge.plus"), size: 32)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add a friend")
     }
 }
 

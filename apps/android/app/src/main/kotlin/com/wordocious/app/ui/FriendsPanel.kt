@@ -101,8 +101,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // The Friends tab (§207 → D3 → the Friends overhaul, founder-approved
-// 2026-10-01; spec docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom: FRIENDS
-// header (bell = notification prefs, add-friend = jump to Add by username), the
+// 2026-10-01; spec docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom (under the
+// shared AppHeader): the controls row (bell = notification prefs, add-friend =
+// jump to Add by username), the
 // Friends banner, YOUR TURN, PLAY WITH FRIENDS, THIS WEEK'S RACE, YOUR
 // FRIENDS, INVITES, MOMENTS, Add by username + share link, then the gift-Pro panel. The
 // look is the home / VS redesign in a pink accent (ui/friends/FriendsKit.kt).
@@ -192,11 +193,14 @@ fun FriendsScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 1. Header (HEADER_SPEC §4). §5: the Friends banner's O1 is the page host,
-        // so the title row doesn't repeat it.
-        PageHeader(
-            "FRIENDS", accent = PageAccent.friends,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        // 1. Controls row (founder, 2026-10-02: the shared AppHeader above every tab is
+        // the Friends header too, so the FRIENDS title row is gone). The bell and
+        // add-friend circles sit right-aligned; the leading space is reserved for a
+        // future title graphic.
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         ) {
             NotificationPrefsButton(myProfile)
             if (signedIn) {
