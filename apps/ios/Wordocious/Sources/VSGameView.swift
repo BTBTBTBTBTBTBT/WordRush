@@ -3,6 +3,9 @@ import WordociousCore
 
 /// The VS match UI — ports apps/web/components/vs/vs-game.tsx screens
 /// (queue → countdown → match → waiting → result → rematch) for native.
+/// VS polish (founder, 2026-10-01; docs/VS_POLISH_SPEC.md): the match reuses
+/// each mode's solo header, board layout, hints and keyboard exactly, plus a
+/// compact opponent strip; every screen around it is in the home/VS aesthetic.
 struct VSGameView: View {
     @StateObject private var vm: VSMatchViewModel
     @Environment(\.dismiss) private var dismiss
@@ -16,11 +19,14 @@ struct VSGameView: View {
         _vm = StateObject(wrappedValue: VSMatchViewModel(mode: mode, isDaily: isDaily, inviteCode: inviteCode, intent: intent))
     }
 
-    private var gradient: [Color] { ModeStyle.titleGradient(mode) }
     private var vsModeLabel: String {
         switch mode { case .duel6: return "SIX"; case .duel7: return "SEVEN"; default: return ModeStyle.title(mode) }
     }
-    private var label: String { "VS \(vsModeLabel)" }
+    private var modeName: String { VsLobbyKit.modeName(mode) }
+    /// "Rook" for "Rook · Bot" — the caps headlines name the bot plainly.
+    private var opponentShortName: String {
+        vm.opponentName.replacingOccurrences(of: " · Bot", with: "")
+    }
 
     // Non-Pro Rematch tap shows the Pro upsell modal (web parity — VsLimitModal).
     @State private var showRematchUpsell = false
@@ -31,8 +37,14 @@ struct VSGameView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            // The match keeps the solo game's backdrop; every screen around it
+            // sits on the VS page color.
+            if vm.screen == .match {
+                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
+                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            } else {
+                VsLobbyKit.page.ignoresSafeArea()
+            }
 
             switch vm.screen {
             case .notConfigured:     notConfigured
@@ -42,24 +54,25 @@ struct VSGameView: View {
             case .result:            resultScreen
             case .opponentLeft:      opponentLeftScreen
             case .matchGone:         matchGoneScreen
-            case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, gradient: gradient, isPro: AuthService.shared.isProActive, won: vm.dailyWon, onHome: goHome)
+            case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, isPro: AuthService.shared.isProActive, won: vm.dailyWon, onHome: goHome)
             case .challengeSent:     VSChallengeSentView(vm: vm, onHome: goHome)
             case .challengeResult:
                 if let o = vm.challengeOutcome, let c = vm.raceChallenge {
                     VSChallengeResultView(mode: mode, code: c.code, outcome: o, opponentId: c.challenger.id,
                                           headToHead: vm.headToHead, xpGain: vm.xpResult?.xpGain,
                                           note: vm.challengeNote, onHome: goHome)
+                } else {
+                    VSLoadingView(mode: mode)
                 }
             }
 
             // Don't stack the countdown UNDER the intro splash — it ticked behind
-            // the dark overlay and then "popped" in color when the intro lifted.
-            // Show it only once the intro is gone (clean dark intro → colored count).
+            // it and then "popped" in when the intro lifted. Show it only once
+            // the intro is gone.
             if vm.countdown != nil && !vm.showIntro {
                 countdownOverlay
                     // Instant IN, fade OUT: the intro splash drops the same frame
-                    // the countdown mounts, and a fade-in let the bright queue
-                    // screen flash through between the two dark overlays.
+                    // the countdown mounts, so nothing behind can flash through.
                     .transition(.asymmetric(insertion: .identity, removal: .opacity))
                     .zIndex(6)
             }
@@ -68,6 +81,7 @@ struct VSGameView: View {
             // tapped), web parity: MatchIntro renders only on the queue screen.
             if vm.showIntro, vm.screen == .queue {
                 VSMatchIntroView(
+                    mode: mode,
                     me: .init(username: AuthService.shared.profile?.username ?? "You",
                               avatarUrl: AuthService.shared.profile?.avatarUrl,
                               level: AuthService.shared.profile?.level),
@@ -78,6 +92,7 @@ struct VSGameView: View {
                                                                // A challenge ghost is the challenger's run (bots carry "· Bot" in the name).
                                                                subtitle: vm.raceChallenge.map { "@\($0.challenger.username)’s run" }) : nil,
                     headToHead: vm.headToHead,
+                    purple: vm.isRace,
                     onDone: { vm.showIntro = false; vm.startCountdownTick() })
             }
 
@@ -103,10 +118,11 @@ struct VSGameView: View {
                         let left = max(0, Int(((deadline - Date().timeIntervalSince1970 * 1000) / 1000).rounded()))
                         Label("\(vm.opponentName) disconnected — you win by forfeit in \(left)s unless they return",
                               systemImage: "wifi.slash")
-                            .font(Brand.font(12, .heavy)).foregroundStyle(.white)
+                            .font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xB91C1C))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 14).padding(.vertical, 9)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xDC2626).opacity(0.92)))
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xFEF2F2)))
+                            .shadow(color: Color(hex: 0x7F1D1D).opacity(0.12), radius: 6, x: 0, y: 3)
                             .padding(.horizontal, 24)
                     }
                     .padding(.top, 52)
@@ -120,7 +136,7 @@ struct VSGameView: View {
             // Moment callout — opponent milestones (greens / board solved / last guess).
             if let c = vm.callout, vm.screen == .match {
                 VStack {
-                    VSCalloutPill(text: c.text).id(c.id).padding(.top, 96)
+                    VSCalloutPill(text: c.text).id(c.id).padding(.top, 172)
                     Spacer()
                 }
                 .allowsHitTesting(false)
@@ -142,22 +158,39 @@ struct VSGameView: View {
             if vm.rematchProUpsell {
                 VSLobbyView.VSLimitModal(onClose: { vm.rematchProUpsell = false })
             }
+
+            // Forfeit confirm — a soft VS card (spec §2), only during a live match.
+            if confirmForfeit {
+                VSConfirmCard(
+                    title: "FORFEIT MATCH?",
+                    message: "Leaving now forfeits the match — it counts as a loss" + (vm.isDaily ? " and uses today’s daily VS." : "."),
+                    primary: "KEEP PLAYING",
+                    secondary: "FORFEIT & LEAVE",
+                    secondaryDestructive: true,
+                    onPrimary: { confirmForfeit = false },
+                    onSecondary: { confirmForfeit = false; goHome() })
+                    .zIndex(8)
+            }
         }
-        // Fade the countdown overlay in/out (it used to pop) — scoped to the
-        // overlay's visibility so nothing else picks up this animation.
+        // Fade the countdown overlay in/out — scoped to the overlay's visibility
+        // so nothing else picks up this animation.
         .animation(Theme.animation(.easeInOut(duration: 0.3)), value: vm.countdown == nil)
         .animation(Theme.animation(.easeInOut(duration: 0.3)), value: vm.showIntro)
+        .animation(Theme.animation(.easeInOut(duration: 0.2)), value: confirmForfeit)
         // The game renders its own KeyboardView — never let a lingering SYSTEM
         // keyboard inset (e.g. from the share sheet's iMessage compose) squeeze
         // the layout: post-rematch the board rendered tiny with a keyboard-sized
         // dead zone at the bottom.
         .ignoresSafeArea(.keyboard)
         // Physical keys (founder, 2026-09-30) stay off under the countdown,
-        // the Gauntlet stage transition and the upsell modals.
+        // the Gauntlet stage transition, the forfeit confirm and the upsell modals.
         .hardwareKeyboardEnabled(vm.screen == .match && vm.countdown == nil && !(vm.game?.stageCleared ?? false)
-                                 && !showRematchUpsell && !vm.rematchProUpsell)
+                                 && !showRematchUpsell && !vm.rematchProUpsell && !confirmForfeit)
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        // Every VS screen draws its own top row (home / close) like the other
+        // VS pages — an empty system bar only stole board height.
+        .toolbar(.hidden, for: .navigationBar)
         // Fullscreen like the solo games — hide the bottom tab bar (the VS game is
         // pushed inside the Home tab's nav stack, so the tab bar was overlapping
         // and clipping the keyboard's bottom row).
@@ -183,6 +216,8 @@ struct VSGameView: View {
                 UIApplication.shared.sendAction(
                     #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             }
+            // The confirm only belongs to a live match.
+            if screen != .match { confirmForfeit = false }
         }
         .onDisappear { vm.leave() }
         // A backgrounded app drops the VS socket; past the server's reconnect
@@ -193,20 +228,13 @@ struct VSGameView: View {
             if phase == .background { vm.appDidEnterBackground() }
             else if phase == .active { vm.appDidBecomeActive() }
         }
-        .confirmationDialog("Forfeit match?", isPresented: $confirmForfeit, titleVisibility: .visible) {
-            Button("Forfeit & Leave", role: .destructive) { goHome() }
-            Button("Keep Playing", role: .cancel) { }
-        } message: {
-            Text("Leaving now forfeits the match — it counts as a loss" + (vm.isDaily ? " and uses today's daily VS." : "."))
-        }
     }
 
     private func goHome() { vm.forfeit(); dismiss() }
 
-    private func vsTitle(_ size: CGFloat) -> some View {
-        Text(label).font(Brand.font(size, .black))
-            .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
-    }
+    /// Home during play: confirm only when leaving would TRULY forfeit (a
+    /// recorded loss) — CPU practice and resolved matches just leave.
+    private func homeTapped() { if vm.leaveWouldForfeit { confirmForfeit = true } else { goHome() } }
 
     // MARK: - Queue / live search (§6 — never a dead end)
 
@@ -214,27 +242,16 @@ struct VSGameView: View {
         if vm.isCpu {
             // A bot: a brief branded warmup while it spins up (the intro splash
             // covers it a beat later).
-            VStack(spacing: 18) {
-                vsTitle(36)
-                if let p = vm.cpuPersona { BotArtCircle(art: p.art, size: 96) }
-                Text(vm.cpuPersona.map { "Matching you with \($0.name)…" } ?? "Setting up your match…")
-                    .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textMuted)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VSLoadingView(mode: mode, botArt: vm.cpuPersona?.art,
+                          line: vm.cpuPersona.map { "Matching you with \($0.name)…" })
         } else if vm.isRace || vm.isSend {
-            VStack(spacing: 18) {
-                vsTitle(36)
-                ProgressView().controlSize(.large).tint(VsLobbyKit.ink)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VSLoadingView(mode: mode)
         } else {
             liveSearch
         }
     }
 
     private var liveSearch: some View {
-        let modeName = VsLobbyKit.modeName(mode)
         let waitingLine: String = {
             guard let n = waitingInMode else { return "Checking who’s around in \(modeName)…" }
             return n > 0 ? "\(n) waiting in \(modeName)" : "Nobody else is waiting in \(modeName) right now"
@@ -244,33 +261,26 @@ struct VSGameView: View {
                 // Private match: surface the shareable code/link so the host can
                 // actually invite a friend (the matchmaker buckets both by code).
                 if let code = vm.inviteCode { invitePanel(code).padding(.top, 12) }
-                TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
-                    let elapsed = vm.searchStartedAt.map { max(0, ctx.date.timeIntervalSince($0)) } ?? 0
-                    VStack(spacing: 18) {
-                        SearchRing(elapsed: elapsed)
-                            .padding(.top, vm.inviteCode == nil ? 36 : 4)
-                        VStack(spacing: 6) {
-                            Text("SEARCHING").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.ink)
-                            Text(vm.inviteCode == nil ? "LOOKING FOR A RIVAL" : "WAITING FOR YOUR FRIEND")
-                                .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.deep)
-                                .multilineTextAlignment(.center)
-                            if vm.inviteCode == nil {
-                                Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
-                                    .multilineTextAlignment(.center)
-                            }
-                        }
-                        if vm.canStepIn && vm.countdown == nil && !vm.showIntro {
-                            stepInCard(elapsed: elapsed)
-                            if vm.canPingLooking { VSLookingPingRow(mode: mode) }
-                        }
+                // The ring and the step-in bar each run on their own 60 fps
+                // animation timeline (founder, 2026-10-01: the 4 fps periodic
+                // timeline made the 15 s countdown choppy). Only the digits tick.
+                LiveSearchRing(startedAt: vm.searchStartedAt, paused: vm.showIntro || vm.countdown != nil)
+                    .padding(.top, vm.inviteCode == nil ? 36 : 4)
+                VStack(spacing: 6) {
+                    Text("SEARCHING").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.ink)
+                    Text(vm.inviteCode == nil ? "LOOKING FOR A RIVAL" : "WAITING FOR YOUR FRIEND")
+                        .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.deep)
+                        .multilineTextAlignment(.center)
+                    if vm.inviteCode == nil {
+                        Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                            .multilineTextAlignment(.center)
                     }
                 }
-                Button(action: goHome) {
-                    Label("Cancel", systemImage: "xmark")
-                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
-                        .padding(.horizontal, 20).padding(.vertical, 10)
-                        .background(Capsule().fill(Theme.surface)).overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
+                if vm.canStepIn && vm.countdown == nil && !vm.showIntro {
+                    stepInCard
+                    if vm.canPingLooking { VSLookingPingRow(mode: mode) }
+                }
+                VSGreyPill(title: "CANCEL", icon: "xmark", action: goHome)
                 if let m = vm.message { errorPill(m) }
             }
             .padding(.horizontal, 20).padding(.bottom, 24)
@@ -290,9 +300,8 @@ struct VSGameView: View {
 
     /// The step-in card: the bot that takes over at 0:15, a progress bar to it,
     /// PLAY NOW and KEEP WAITING (which turns the card into "We'll keep looking").
-    private func stepInCard(elapsed: TimeInterval) -> some View {
+    private var stepInCard: some View {
         let bot = CpuOpponent.identity(vm.stepInKind)
-        let progress = min(1, elapsed / 15)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 BotArtCircle(art: bot.art, size: 48)
@@ -305,13 +314,7 @@ struct VSGameView: View {
                 Spacer(minLength: 0)
             }
             if !vm.keepWaiting {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(VsLobbyKit.soft)
-                        Capsule().fill(VsLobbyKit.ink).frame(width: geo.size.width * progress)
-                    }
-                }
-                .frame(height: 6)
+                StepInProgressBar(startedAt: vm.searchStartedAt)
             }
             HStack(spacing: 10) {
                 VSPrimaryButton(title: "PLAY \(bot.name.uppercased()) NOW") { Haptics.tap(); vm.stepInNow() }
@@ -338,18 +341,17 @@ struct VSGameView: View {
     /// the friend joins with the same code (server buckets by inviteCode).
     private func invitePanel(_ code: String) -> some View {
         VStack(spacing: 10) {
-            Text("PRIVATE MATCH").font(Brand.font(10, .heavy)).tracking(2).foregroundStyle(Theme.textMuted)
-            Text(code).font(Brand.font(30, .black)).tracking(6)
-                .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+            Text("PRIVATE MATCH").font(Brand.font(10, .black)).tracking(2).foregroundStyle(VsLobbyKit.label)
+            Text(code).font(Brand.font(30, .black)).tracking(6).foregroundStyle(VsLobbyKit.deep)
             Text("Share this code — the match starts when your friend joins.")
-                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             ShareLink(item: URL(string: "https://wordocious.com/vs/join/\(code)")!,
                       message: Text("Join my Wordocious VS match — code \(code)")) {
-                Label("Share invite", systemImage: "square.and.arrow.up")
-                    .font(Brand.font(14, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
+                Label("SHARE INVITE", systemImage: "square.and.arrow.up")
+                    .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.ink))
             }.buttonStyle(.plain)
             // Logs alongside the ShareLink's own tap (share-sheet open = the
             // user's choice to share the invite link).
@@ -358,29 +360,33 @@ struct VSGameView: View {
             })
         }
         .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .padding(.horizontal, 24)
+        .vsCard(radius: 16)
+        .padding(.horizontal, 4)
     }
 
+    /// 3-2-1-GO (spec §2): the number big in the mode color — solid, no
+    /// gradient text — on the opaque VS page (an opaque backdrop so the queue
+    /// screen can never ghost through between the intro and the board).
     private var countdownOverlay: some View {
-        ZStack {
-            // FULLY opaque vignette (the earlier 0.92–0.96 alphas still let the
-            // bright queue screen ghost through) — nothing behind can show.
-            RadialGradient(colors: [Color(hex: 0x1E1B3A), Color(hex: 0x0A0A12)],
-                           center: .center, startRadius: 60, endRadius: 520)
-                .ignoresSafeArea()
+        let accent = ModeStyle.accent(mode)
+        return ZStack {
+            VsLobbyKit.page.ignoresSafeArea()
             VSOverlayWordmark()
-            VStack(spacing: 16) {
+            VStack(spacing: 18) {
                 Text(vm.countdownLabel)
-                    .font(Brand.font(15, .heavy)).tracking(3).foregroundStyle(.white.opacity(0.7))
-                vsTitle(30)
+                    .font(Brand.font(12, .black)).tracking(2).foregroundStyle(VsLobbyKit.label)
+                HStack(spacing: 8) {
+                    VSModeGlyphTile(mode: mode, selected: true, size: 30)
+                    Text(modeName.uppercased()).font(Brand.font(22, .black)).tracking(0.4)
+                        .foregroundStyle(VsLobbyKit.deep).lineLimit(1).minimumScaleFactor(0.6)
+                    VSTagPill(size: 12)
+                }
                 ZStack {
-                    // A ring that expands + fades on each tick, so the number
-                    // pulses out of a burst instead of just swapping.
-                    Circle().stroke(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing), lineWidth: 3)
+                    Circle().fill(accent.opacity(0.10)).frame(width: 150, height: 150)
+                    // A ring that pops on each tick, so the number pulses out of
+                    // a burst instead of just swapping.
+                    Circle().stroke(accent, lineWidth: 4)
                         .frame(width: 150, height: 150)
-                        .scaleEffect(1)
                         .id(vm.countdown)
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                     // Stays inside the 150 pt ring at every Dynamic Type size (Oliver's
@@ -389,7 +395,7 @@ struct VSGameView: View {
                         .font(Brand.font(vm.countdown == 0 ? 64 : 96, .black))
                         .lineLimit(1).minimumScaleFactor(0.5)
                         .frame(width: 118)
-                        .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+                        .foregroundStyle(accent)
                         .id(vm.countdown)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -398,68 +404,33 @@ struct VSGameView: View {
         }
     }
 
-    // MARK: - Match (playing)
+    // MARK: - Match (playing) — the solo screen + one compact opponent strip
 
     @ViewBuilder private var matchScreen: some View {
         if mode == .propernoundle, let pvm = vm.proper {
-            VStack(spacing: 0) {
-                matchHeader
-                if vm.isSend {
-                    yourRunPanel.padding(.horizontal, 10).padding(.top, 6)
-                } else {
-                    tugOfWarHeader
-                        .padding(.horizontal, 10).padding(.top, 6)
-                    OpponentStrip(opponent: vm.opponent, gradient: gradient, totalBoards: vm.totalBoards)
-                        .padding(.horizontal, 10).padding(.top, 6)
-                }
-                ProperNoundleVSBoard(vm: pvm)   // bespoke ProperNoundle board+keyboard
-            }
+            // The solo ProperNoundle header, board, hints row and keyboard.
+            ProperNoundleVSBoard(vm: pvm, onHome: homeTapped) { opponentStrip(maxGuesses: pvm.maxGuesses, wordLength: max(1, pvm.answerLen)) }
             if let t = pvm.toast { toastView(t) }
         } else if let game = vm.game {
             VStack(spacing: 0) {
-                matchHeader
-                // Gauntlet: the same 5-node stage stepper as the solo run so you can
-                // always tell which stage you're on.
-                if mode == .gauntlet {
-                    GauntletStepperBar(game: game).padding(.top, 6)
-                }
-                if vm.isSend {
-                    yourRunPanel.padding(.horizontal, 10).padding(.top, 6)
-                } else {
-                tugOfWarHeader
-                    .padding(.horizontal, 10).padding(.top, 6)
-                // Always the FULL empty frame (all maxGuesses rows) from match
-                // start — a growing board hid what turn the opponent was on and
-                // how many guesses they had left. Succession's 10-row frame fits
-                // because the strip shrinks its cell for >9-row budgets.
-                OpponentStrip(opponent: vm.opponent, gradient: gradient,
-                              maxGuesses: game.maxGuesses,
-                              wordLength: game.wordLength,
-                              totalBoards: vm.totalBoards,
-                              stageName: mode == .gauntlet ? game.gauntletStageName(at: vm.opponent.stagesCleared) : nil,
-                              stageGradient: mode == .gauntlet ? GameScreen.gauntletStageGradient(game.gauntletStageName(at: vm.opponent.stagesCleared)) : [])
-                    .padding(.horizontal, 10).padding(.top, 6)
-                }
-
-                // Board fills the slack BETWEEN header and keyboard. The keyboard
-                // gets layout priority so the VStack always reserves its full
-                // height first and the greedy board yields — otherwise the board
-                // ate the space and clipped the keyboard's bottom row.
+                VSMatchHeader(game: game, mode: mode, onHome: homeTapped)
+                opponentStrip(maxGuesses: game.maxGuesses, wordLength: game.wordLength)
+                    .padding(.top, 8)
+                // Board fills the slack BETWEEN header and keyboard — the solo
+                // GameScreen's exact BoardLayout. The keyboard gets layout
+                // priority so the VStack always reserves its full height first.
                 GeometryReader { geo in
                     BoardLayout(vm: game, availableWidth: geo.size.width, fitHeight: geo.size.height)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 4)
+                .padding(.vertical, 6)
                 .layoutPriority(0)
                 // Gauntlet: a cleared stage hides the keyboard while the
-                // auto-advancing StageTransitionOverlay (rendered in the top-level
-                // body ZStack) covers the board — matching the solo run, instead of
-                // a bare Continue button.
+                // auto-advancing StageTransitionOverlay covers the board — the solo run.
                 if !game.stageCleared {
                     // Six/Seven expose the same vowel + consonant hints as solo (the
                     // reveal is added as a board row → counts as a guess, the VS cost).
                     // Keep the bar's SLOT when the game finishes (fade, don't
-                    // remove) so the centered board never reflows/jumps at the
-                    // finish moment — same guard as solo GameScreen's hint bar.
+                    // remove) so the centered board never reflows at the finish.
                     if game.hasHints {
                         vsHintButtons(game)
                             .opacity(game.isFinished ? 0 : 1)
@@ -468,8 +439,31 @@ struct VSGameView: View {
                     KeyboardView(vm: game).padding(.bottom, 6).layoutPriority(1)
                 }
             }
+            .padding(.horizontal, 10)
             .frame(maxHeight: .infinity)
             if let t = game.toast { toastView(t) }
+        } else {
+            VSLoadingView(mode: mode)
+        }
+    }
+
+    /// The single VS addition over the solo screen: who you're racing, in one
+    /// row (a challenge send shows YOUR RUN — nobody is racing it live yet).
+    @ViewBuilder private func opponentStrip(maxGuesses: Int, wordLength: Int) -> some View {
+        if vm.isSend {
+            yourRunPanel
+        } else {
+            let gauntlet = mode == .gauntlet
+            VSOpponentStrip(name: vm.opponentName,
+                            avatarUrl: vm.opponentInfo?.avatarUrl,
+                            botArt: vm.opponentInfo?.botArt,
+                            opponent: vm.opponent,
+                            totalBoards: vm.totalBoards,
+                            maxGuesses: maxGuesses,
+                            wordLength: wordLength,
+                            typing: vm.opponentTyping,
+                            stageLine: gauntlet ? "Stage \(min(vm.opponent.stagesCleared + 1, gauntletStages.count)) · \(vm.game?.gauntletStageName(at: vm.opponent.stagesCleared) ?? "")" : nil,
+                            stageProgress: gauntlet ? Double(vm.opponent.stagesCleared) / Double(max(1, gauntletStages.count)) : nil)
         }
     }
 
@@ -484,8 +478,8 @@ struct VSGameView: View {
             vsHintPill(label: game.consonantUsed ? (game.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(game.consonantRevealed ?? "")") : "💡 Consonant",
                        used: game.consonantUsed) { Haptics.success(); game.revealConsonant() }
         }
-        // 16pt bottom (was 4): keeps the pills clear of the Q-row so reaching
-        // for the keyboard can't fat-finger a hint (founder request, Aug 11).
+        // 16pt bottom: keeps the pills clear of the Q-row so reaching for the
+        // keyboard can't fat-finger a hint (founder request, Aug 11).
         .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
@@ -503,204 +497,175 @@ struct VSGameView: View {
         .disabled(used)
     }
 
-    private var matchHeader: some View {
-        HStack {
-            // Confirm only when leaving would TRULY forfeit (a recorded loss):
-            // CPU practice and already-resolved matches leave without the scary
-            // "counts as a loss" dialog, which would be lying there.
-            Button { if vm.leaveWouldForfeit { confirmForfeit = true } else { goHome() } } label: {
-                Image(systemName: "house.fill").font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(ModeStyle.accent(mode))
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-            }
-            Spacer()
-            VStack(spacing: 1) {
-                vsTitle(20)
-                // Live guesses + elapsed clock (web parity — vs-classic top stat row).
-                if let game = vm.game {
-                    TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        HStack(spacing: 6) {
-                            // Gauntlet's per-stage "1/6" is confusing next to the
-                            // cumulative guess count in the tug-of-war, so show only
-                            // the clock there (the stepper conveys the stage).
-                            if mode != .gauntlet {
-                                Text("\(game.rowsUsed)/\(game.maxGuesses) guesses")
-                            }
-                            HStack(spacing: 2) {
-                                Image(systemName: "clock").font(.system(size: 9))
-                                Text("\(game.elapsedSeconds / 60):\(String(format: "%02d", game.elapsedSeconds % 60))")
-                            }
-                        }
-                        .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).monospacedDigit()
-                    }
-                }
-            }
-            Spacer()
-            Color.clear.frame(width: 34, height: 34)
-        }
-        .padding(.horizontal, 10).padding(.top, 6)
-    }
-
-    /// Challenge-send game: no opponent — the panel says who will race this run.
+    /// Challenge-send game: no opponent — the strip says who will race this run.
     private var yourRunPanel: some View {
         let n = vm.sendTarget?.friendIds.count ?? 0
         let who = n > 0 ? "\(n) \(n == 1 ? "friend" : "friends") will race it" : "Anyone with the link"
         return HStack(spacing: 10) {
-            AvatarView(url: AuthService.shared.profile?.avatarUrl, username: AuthService.shared.profile?.username ?? "You", size: 28)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("YOUR RUN").font(Brand.font(11, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
+            AvatarView(url: AuthService.shared.profile?.avatarUrl, username: AuthService.shared.profile?.username ?? "You", size: 34)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("YOUR RUN").font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
                 Text(who).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.sub)
             }
             Spacer()
             Image(systemName: "paperplane.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        .padding(.horizontal, 12).frame(height: VSOpponentStrip.height)
+        .vsCard(radius: 14)
     }
 
-    /// Persistent VS header: you vs opponent + tug-of-war lead bar + typing
-    /// indicator (ports vs-match-header.tsx, fed like vs-game.tsx does).
-    private var tugOfWarHeader: some View {
-        VSMatchHeaderBar(
-            me: .init(username: AuthService.shared.profile?.username ?? "You",
-                      avatarUrl: AuthService.shared.profile?.avatarUrl,
-                      guesses: vm.myGuessLog.count,
-                      progress: vm.myProgress),
-            opponent: .init(username: vm.opponentName,
-                            avatarUrl: vm.opponentInfo?.avatarUrl,
-                            guesses: vm.opponent.attempts,
-                            progress: vm.theirProgress,
-                            botArt: vm.opponentInfo?.botArt),
-            opponentTyping: vm.opponentTyping)
-    }
-
+    /// Bounced-guess toast — the solo GameScreen's toast (fixed dark fill so it
+    /// reads in Dark too), just under the opponent strip.
     private func toastView(_ text: String) -> some View {
-        Text(text).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
-            .padding(.top, 120).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
+        Text(text).font(Brand.font(12, .bold)).foregroundStyle(.white)
+            .padding(.horizontal, 12).padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x1A1A2E)))
+            .padding(.top, 132).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
     }
 
     // MARK: - Waiting (spectator: you finished, opponent still playing) —
-    // ports the vs-game.tsx 'waiting' screen: opponent live board at ~2x tile
-    // size (colors only), live guess counter + clock, and stakes copy.
+    // ports the vs-game.tsx 'waiting' screen as a teal one-window card + their
+    // live boards drawn with the solo tiles/frames, laid out to never overflow.
 
     private var waitingScreen: some View {
-        let oppName = vm.opponentName
         let liveTotalBoards = vm.opponent.totalBoards > 0 ? vm.opponent.totalBoards : vm.totalBoards
-        // Full frame from the start (all maxGuesses rows) so you can tell how
-        // many guesses the opponent has left; it's inside a ScrollView so even
-        // OctoWord's 13-row frames are fine. Gauntlet (50-guess budget) never
-        // reads this — it spectates via GauntletSpectatorView below.
-        let spectatorRows = vm.modeMaxGuesses
+        return GeometryReader { geo in
+            // Card content width: page gutters (16) + card padding (14) per side.
+            let boardsWidth = max(120, geo.size.width - 32 - 28)
+            ScrollView {
+                VStack(spacing: 14) {
+                    waitingWindow(totalBoards: liveTotalBoards)
 
-        return ScrollView {
-            VStack(spacing: 18) {
-                Text("\(oppName) is still playing...")
-                    .font(Brand.font(24, .black))
-                    .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 32)
-
-                // Opponent identity + live counters
-                HStack(spacing: 12) {
-                    LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: oppName, accent: gradient.first ?? Theme.primary,
-                                    botArt: vm.opponentInfo?.botArt)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(oppName).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-                        TimelineView(.periodic(from: .now, by: 1)) { _ in
-                            let secs = max(0, Int((Date().timeIntervalSince1970 * 1000 - vm.startTimeMs) / 1000))
-                            Text("\(vm.opponent.attempts) \(vm.opponent.attempts == 1 ? "guess" : "guesses") · \(secs / 60):\(String(format: "%02d", secs % 60))"
-                                 + (liveTotalBoards > 1 ? " · \(vm.opponent.boardsSolved)/\(liveTotalBoards) boards" : ""))
-                                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).monospacedDigit()
-                        }
+                    // Gauntlet spectates by STAGE (its 21 boards are meaningless as a
+                    // flat wall) — a card per stage with its name, status, and boards.
+                    if mode == .gauntlet {
+                        GauntletSpectatorView(opponent: vm.opponent, wordLength: vm.wordLen, width: boardsWidth)
+                    } else {
+                        // Full frame from the start (all maxGuesses rows) so you can
+                        // tell how many guesses the opponent has left.
+                        OpponentBoardsGrid(opponent: vm.opponent, boards: liveTotalBoards,
+                                           rows: vm.modeMaxGuesses, wordLength: vm.wordLen,
+                                           width: boardsWidth, cap: liveTotalBoards <= 1 ? 40 : 26)
+                            .padding(14).frame(maxWidth: .infinity)
+                            .vsCard(radius: 14)
                     }
-                    if vm.opponentTyping { TypingDots(dotSize: 6) }
-                }
 
-                // Stakes copy
-                if let stakes = stakesCopy {
-                    Text(stakes)
-                        .font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                }
+                    if let guesses = vm.myFinalGuesses { yourResultCard(guesses: guesses, totalBoards: liveTotalBoards) }
 
-                // Gauntlet spectates by STAGE (its 21 boards are meaningless as a
-                // flat wall) — a card per stage with its name, status, and boards.
-                if mode == .gauntlet {
-                    GauntletSpectatorView(opponent: vm.opponent, wordLength: vm.wordLen)
-                } else {
-                    // Opponent live board — bigger now, so it fills the space and the
-                    // flip-in reveal reads clearly while you watch.
-                    let specCell: CGFloat = liveTotalBoards <= 1 ? 34 : (liveTotalBoards <= 4 ? 24 : 14)
-                    Group {
-                        if liveTotalBoards <= 1 {
-                            OpponentMiniBoard(tiles: vm.opponent.tiles[0] ?? [],
-                                              maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
+                    // CPU only: the bot's outcome is already fixed by its plan, so let
+                    // the player skip watching it grind out its remaining boards.
+                    // Win-locked → "Claim your win"; otherwise a neutral fast-forward
+                    // (which may be a win OR a loss — whatever the plan resolves to).
+                    if vm.isCpu {
+                        if cpuWinLocked {
+                            VSPrimaryButton(title: "CLAIM YOUR WIN") { Haptics.success(); vm.finishCpuNow() }
                         } else {
-                            let columns = Array(repeating: GridItem(.flexible(), spacing: 10),
-                                                count: min(liveTotalBoards, 4))
-                            LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(0..<liveTotalBoards, id: \.self) { i in
-                                    OpponentMiniBoard(tiles: vm.opponent.tiles[i] ?? [],
-                                                      maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
-                                }
+                            Button { Haptics.success(); vm.finishCpuNow() } label: {
+                                Label("SKIP TO RESULT", systemImage: "forward.fill")
+                                    .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.ink)
+                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.soft))
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(PressableStyle())
                         }
                     }
-                    .padding(20).frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border, lineWidth: 1.5))
-                }
 
-                // Your stats
-                if let guesses = vm.myFinalGuesses {
-                    statCard(title: "YOUR RESULT", rows: [
-                        ("Guesses", "\(guesses)"),
-                        ("Time", formatTime(Double(vm.playerTimeMs))),
-                    ])
+                    VSGreyPill(title: "LEAVE", icon: "xmark", action: goHome)
                 }
-
-                // CPU only: the bot's outcome is already fixed by its plan, so let
-                // the player skip watching it grind out its remaining boards.
-                // Win-locked → celebratory "Claim your win"; otherwise a neutral
-                // "Skip to result" fast-forward (which may be a win OR a loss —
-                // whatever the bot's plan resolves to).
-                if vm.isCpu {
-                    Button { Haptics.success(); vm.finishCpuNow() } label: {
-                        Label(cpuWinLocked ? "Claim your win" : "Skip to result",
-                              systemImage: cpuWinLocked ? "flag.checkered" : "forward.fill")
-                            .font(Brand.font(15, .black))
-                            .foregroundStyle(cpuWinLocked ? .white : Theme.primary)
-                            .frame(maxWidth: .infinity).padding(.vertical, 13)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(cpuWinLocked
-                                ? AnyShapeStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
-                                : AnyShapeStyle(Theme.surfaceHover)))
-                            .overlay(cpuWinLocked ? nil : RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
-                    }.buttonStyle(.plain)
-                }
-
-                Button(action: goHome) {
-                    Label("Leave", systemImage: "xmark")
-                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
-                        .padding(.horizontal, 20).padding(.vertical, 10)
-                        .background(Capsule().fill(Theme.surface)).overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
+                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
             }
-            .padding(.horizontal, 24).padding(.bottom, 24)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            HStack {
+                Spacer()
+                VSModeChip(mode: mode)
+                Spacer()
+            }
+            .frame(height: 40)
+            .frame(maxWidth: .infinity)
+            // Opaque under the status bar: scrolled boards never show through it.
+            .background(VsLobbyKit.page.ignoresSafeArea(edges: .top))
         }
     }
 
-    /// STAKES copy — ports the web waiting-screen IIFE. The real win rule is:
-    /// solve, then tie-break on boardsSolved, then composite score = guesses +
-    /// timeSeconds/45. We approximate the composite by guess count: the
-    /// opponent is still playing, so they're almost always behind on time and
-    /// need strictly FEWER guesses; if they're somehow still ahead of your
-    /// clock, matching your guess count could win on time.
+    /// The teal one-window card: `<NAME> IS STILL PLAYING`, the stakes line,
+    /// and their art/avatar with live guesses · clock · boards.
+    private func waitingWindow(totalBoards: Int) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("\(opponentShortName.uppercased()) IS STILL PLAYING")
+                    .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                if let stakes = stakesCopy {
+                    Text(stakes).font(Brand.font(11.5, .heavy)).foregroundStyle(VsLobbyKit.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.5))
+
+            HStack(spacing: 12) {
+                LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: vm.opponentName, accent: VsLobbyKit.ink,
+                                botArt: vm.opponentInfo?.botArt)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(vm.opponentName).font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.deep)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        TypingDots(dotSize: 5).opacity(vm.opponentTyping ? 1 : 0)
+                    }
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        let secs = max(0, Int((Date().timeIntervalSince1970 * 1000 - vm.startTimeMs) / 1000))
+                        Text("\(vm.opponent.attempts) \(vm.opponent.attempts == 1 ? "guess" : "guesses") · \(secs / 60):\(String(format: "%02d", secs % 60))"
+                             + (totalBoards > 1 ? " · \(vm.opponent.boardsSolved)/\(totalBoards) boards" : ""))
+                            .font(Brand.font(11.5, .heavy)).foregroundStyle(VsLobbyKit.ink).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                }
+                Spacer(minLength: 0)
+                VSModeGlyphTile(mode: mode, selected: false, size: 32)
+            }
+            .padding(12)
+        }
+        .background {
+            ZStack {
+                LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom)
+                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+            }
+        }
+        .clipShape(shape)
+        .shadow(color: VsLobbyKit.deep.opacity(0.08), radius: 7, x: 0, y: 4)
+    }
+
+    /// YOUR RESULT in the soft card style: guesses, time, solved / boards.
+    private func yourResultCard(guesses: Int, totalBoards: Int) -> some View {
+        let solvedValue = totalBoards > 1
+            ? "\(min(vm.myBoardsSolved, totalBoards))/\(totalBoards)"
+            : (vm.myStatus == .won ? "Solved" : "Not solved")
+        return VStack(alignment: .leading, spacing: 10) {
+            VSSectionLabel(text: "YOUR RESULT")
+            HStack(spacing: 0) {
+                resultStat("GUESSES", "\(guesses)")
+                resultStat("TIME", VsLobby.vsClock(vm.playerTimeMs))
+                resultStat(totalBoards > 1 ? "BOARDS" : "RESULT", solvedValue)
+            }
+        }
+        .padding(14).frame(maxWidth: .infinity)
+        .vsCard(radius: 14)
+    }
+
+    private func resultStat(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value).font(Brand.font(18, .black)).monospacedDigit().foregroundStyle(VsLobbyKit.deep)
+                .lineLimit(1).minimumScaleFactor(0.6)
+            Text(label).font(Brand.font(9.5, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.label)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     /// True once the (CPU) opponent can no longer beat the player — mirrors the
     /// "can no longer beat your score!" branch of stakesCopy. Gates the
     /// "Claim your win" shortcut so it only appears when the result is locked.
@@ -714,6 +679,12 @@ struct VSGameView: View {
         return target <= 0 || vm.opponent.attempts >= target
     }
 
+    /// STAKES copy — ports the web waiting-screen IIFE. The real win rule is:
+    /// solve, then tie-break on boardsSolved, then composite score = guesses +
+    /// timeSeconds/45. We approximate the composite by guess count: the
+    /// opponent is still playing, so they're almost always behind on time and
+    /// need strictly FEWER guesses; if they're somehow still ahead of your
+    /// clock, matching your guess count could win on time.
     private var stakesCopy: String? {
         guard let myGuesses = vm.myFinalGuesses else { return nil }
         let oppName = vm.opponentName
@@ -735,108 +706,91 @@ struct VSGameView: View {
         return "\(oppName) must solve in \(target) or fewer to beat you"
     }
 
-    // MARK: - Result
+    // MARK: - Result — the home-palette window (like the challenge result)
 
     private var resultScreen: some View {
-        let winner = vm.result?.winner
+        let r = vm.result
+        let winner = r?.winner
         let isWin = winner == "player", isDraw = winner == "draw"
-        let headline = isWin ? "WINNER" : isDraw ? "DRAW" : "DEFEAT"
-        let colors: [Color] = isWin ? [Color(hex: 0xA78BFA), Color(hex: 0xC4B5FD)]
-            : isDraw ? [Color(hex: 0xFACC15), Color(hex: 0xFDBA74)]
-            : [Color(hex: 0xF87171), Color(hex: 0xFDA4AF)]
+        let isLoss = !isWin && !isDraw
         let myName = AuthService.shared.profile?.username ?? "You"
         let oppName = vm.opponentName
         // Solve status decides most matches (solving beats score), so spell it
         // out — the loser often has "better" numbers and it reads as a mistake.
         let mySolved = vm.myStatus == .won
-        let oppSolved = VSResultBoards.solved(log: vm.result?.opponentGuessLog ?? [],
-                                              solutions: vm.result?.solutions ?? [])
+        let oppSolved = VSResultBoards.solved(log: r?.opponentGuessLog ?? [],
+                                              solutions: r?.solutions ?? [])
+        let headline = isWin ? "YOU WIN!" : isDraw ? "IT’S A DRAW" : "\(opponentShortName.uppercased()) WINS"
         let whyLine: String? = {
-            guard let r = vm.result else { return nil }
+            guard let r else { return nil }
             // A forfeit ended it — say so instead of pretending it was decided
             // on score ("Both solved — you won on score" read as a bug).
             if r.forfeit == true {
-                return isWin ? "\(oppName) left the match — you win by forfeit"
-                             : "Match forfeited — \(oppName) wins"
+                return isWin ? "\(opponentShortName) left — you win by forfeit"
+                             : "Match forfeited — \(opponentShortName) wins"
             }
             if isDraw { return "Dead even — identical scores" }
             if isWin {
-                if mySolved && !oppSolved { return "You solved it — \(oppName) didn’t" }
+                if mySolved && !oppSolved { return "You solved it — \(opponentShortName) didn’t" }
                 if mySolved && oppSolved { return "Both solved — you won on score" }
                 // Server timeout resolution: neither solved, board progress decided.
                 return "Neither solved — you won on progress"
             }
-            if oppSolved && !mySolved { return "\(oppName) solved it — you didn’t" }
-            if oppSolved && mySolved { return "Both solved — \(oppName) won on score" }
-            return "Neither solved — \(oppName) won on progress"
+            if oppSolved && !mySolved { return "\(opponentShortName) solved it — you didn’t" }
+            if oppSolved && mySolved { return "Both solved — \(opponentShortName) won on score" }
+            return "Neither solved — \(opponentShortName) won on progress"
+        }()
+        // The deciding margin (core vsMargin, the challenge result's wording)
+        // when it agrees with the server's call; otherwise the why-line.
+        let margin: String = {
+            guard let r else { return "" }
+            if r.forfeit == true { return (whyLine ?? "").uppercased() }
+            let total = max(1, vm.totalBoards)
+            let mine = VsRun(solved: mySolved, boardsSolved: total > 1 ? vm.myBoardsSolved : (mySolved ? 1 : 0),
+                             guesses: r.playerGuesses, timeMs: Int(r.playerTime))
+            let theirs = VsRun(solved: oppSolved, boardsSolved: total > 1 ? vm.opponent.boardsSolved : (oppSolved ? 1 : 0),
+                               guesses: r.opponentGuesses, timeMs: Int(r.opponentTime))
+            let expected: VsOutcome = isWin ? .win : (isDraw ? .draw : .loss)
+            if VsLobby.vsOutcome(mine, theirs) == expected { return VsLobby.vsMargin(mine, theirs) }
+            return (whyLine ?? "").uppercased()
         }()
 
         return ZStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    // Headline + why-you-won/lost + updated all-time head-to-head
-                    // (refetched after the match was recorded).
-                    VStack(spacing: 8) {
-                        Text(headline).font(Brand.font(56, .black))
-                            .foregroundStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
-                            .minimumScaleFactor(0.6).lineLimit(1)
-                        if let whyLine {
-                            Text(whyLine).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary)
-                        }
-                        if vm.opponentUserId != nil, let h2h = vm.headToHead {
-                            Text(HeadToHeadService.headToHeadLine(opponentName: oppName, h2h))
-                                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                        }
-                    }
-                    .padding(.top, 40)
-
-                    // CPU practice: photo-finish flourish + streak / milestone /
-                    // cosmetic unlock / run-it-back session tally.
-                    if vm.isCpu {
-                        VStack(spacing: 4) {
-                            if let pf = vm.photoFinish {
-                                PhotoFinishStamp(clutch: pf == "clutch")
-                            }
-                            if let p = vm.cpuPersona { BotArtCircle(art: p.art, size: 56).padding(.bottom, 2) }
-                            if let rung = vm.cpuClearedRung {
-                                Text("\(VsLobby.botName(rung).uppercased()) CLEARED ON THE LADDER!")
-                                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.ink)
-                            }
-                            if let m = vm.cpuMilestone {
-                                Text("🔥 \(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xF97316))
-                            } else if vm.cpuStreak > 0 {
-                                Text("Bot win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                            }
-                            if vm.cpuUnlock != nil {
-                                Text("🏅 Unlocked \(BotPersonas.persona(vm.cpuPersona?.tier ?? .hard).name)’s badge!")
-                                    .font(Brand.font(12, .black)).foregroundStyle(Color(hex: UInt(vm.cpuPersona?.color ?? 0xEF4444)))
-                            }
-                            if vm.cpuSessionWins + vm.cpuSessionLosses > 0 {
-                                Text("This session — You \(vm.cpuSessionWins) · Bots \(vm.cpuSessionLosses)")
-                                    .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted)
-                            }
-                            Text("Bot game — counts in your Bots record, not People").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                        }
+                VStack(spacing: 14) {
+                    if let r {
+                        resultWindow(headline: headline, margin: margin, isWin: isWin, isDraw: isDraw, isLoss: isLoss,
+                                     me: ResultSide(name: myName, avatarUrl: AuthService.shared.profile?.avatarUrl, botArt: nil,
+                                                    score: r.playerScore, guesses: r.playerGuesses, timeMs: r.playerTime,
+                                                    solved: mySolved, winner: isWin),
+                                     them: ResultSide(name: oppName, avatarUrl: vm.opponentInfo?.avatarUrl, botArt: vm.opponentInfo?.botArt,
+                                                      score: r.opponentScore, guesses: r.opponentGuesses, timeMs: r.opponentTime,
+                                                      solved: oppSolved, winner: isLoss))
+                        Text("Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving")
+                            .font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.label)
+                            .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 8)
+                    } else {
+                        Text(headline).font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.purpleInk)
+                            .padding(.top, 24)
                     }
 
-                    // Prominent head-to-head FINAL SCORE — big totals with the exact
-                    // calculation + solve badges (replaces the inverted comparison
-                    // bars, which read backwards for lower-is-better metrics).
-                    if let r = vm.result {
-                        VSScoreCard(
-                            me: .init(name: myName, score: r.playerScore, guesses: r.playerGuesses,
-                                      timeMs: r.playerTime, solved: mySolved, isWinner: isWin),
-                            opponent: .init(name: oppName, score: r.opponentScore, guesses: r.opponentGuesses,
-                                            timeMs: r.opponentTime, solved: oppSolved, isWinner: !isWin && !isDraw),
-                            isDraw: isDraw)
+                    // Updated all-time head-to-head (refetched after the match was recorded).
+                    if vm.opponentUserId != nil, !vm.isCpu, let h2h = vm.headToHead {
+                        h2hCard(h2h)
                     }
 
                     rematchSection
                     actions
 
+                    // CPU practice: photo-finish flourish + streak / milestone /
+                    // cosmetic unlock / run-it-back session tally — below the
+                    // window, inside the safe area.
+                    if vm.isCpu { botExtras }
+
                     // Final boards with letters — opponent's reconstructed from
                     // the match-end guess log + solutions.
-                    if let r = vm.result, let solutions = r.solutions, !solutions.isEmpty {
+                    if let r, let solutions = r.solutions, !solutions.isEmpty {
                         VSFinalBoards(myName: myName, opponentName: oppName,
                                       myGuessLog: vm.myGuessLog,
                                       opponentGuessLog: r.opponentGuessLog ?? [],
@@ -850,71 +804,213 @@ struct VSGameView: View {
                                       myFinalPNRows: vm.myFinalPNRows)
                     }
                 }
-                .padding(.horizontal, 24).padding(.bottom, 24)
+                .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 32)
             }
             // Confetti for wins only (web parity).
-            if isWin { ConfettiView().ignoresSafeArea() }
+            if isWin { ConfettiView().ignoresSafeArea().allowsHitTesting(false) }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            ZStack {
+                Wordmark(size: 22)
+                HStack {
+                    Button(action: goHome) {
+                        Image(systemName: "xmark").font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(VsLobbyKit.purple).frame(width: 40, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).accessibilityLabel("Close")
+                    Spacer()
+                }
+            }
+            .padding(.horizontal, 10).frame(height: 44)
+            // Opaque under the status bar — nothing scrolls up behind the clock.
+            .background(VsLobbyKit.page.ignoresSafeArea(edges: .top))
+        }
+    }
+
+    private struct ResultSide {
+        let name: String
+        let avatarUrl: String?
+        let botArt: String?
+        let score: Double
+        let guesses: Int
+        let timeMs: Double
+        let solved: Bool
+        let winner: Bool
+    }
+
+    /// Split halves (winner `#ebd6fd`, other `#e2e6ff`; a draw both `#ece8ff`)
+    /// under a frosted strip with the caps headline + mode icon + margin.
+    private func resultWindow(headline: String, margin: String, isWin: Bool, isDraw: Bool, isLoss: Bool,
+                              me: ResultSide, them: ResultSide) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        let mineBg = isDraw ? Color(hex: 0xECE8FF) : (isWin ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
+        let theirBg = isDraw ? Color(hex: 0xECE8FF) : (isLoss ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
+        return VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image("swords").renderingMode(.template).resizable().scaledToFit()
+                        .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
+                    Text(headline)
+                        .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                HStack(spacing: 6) {
+                    if let h = VsLobbyKit.home(mode) {
+                        BannerGlyph(icon: h.icon, ink: h.accent, accent: h.accent, solid: false, size: 18)
+                    }
+                    Text(margin.isEmpty ? modeName.uppercased() : "\(modeName.uppercased()) · \(margin)")
+                        .font(Brand.font(10.5, .heavy)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleSub)
+                        .lineLimit(2).minimumScaleFactor(0.7)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.5))
+
+            HStack(alignment: .top, spacing: 0) {
+                resultColumn(me, label: "YOU").frame(maxWidth: .infinity)
+                resultColumn(them, label: (vm.isCpu ? opponentShortName : them.name).uppercased()).frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 14)
+        }
+        .background {
+            ZStack {
+                HStack(spacing: 0) { mineBg; theirBg }
+                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                if isWin && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
+            }
+        }
+        .clipShape(shape)
+        .shadow(color: VsLobbyKit.purpleInk.opacity(0.08), radius: 7, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func resultColumn(_ p: ResultSide, label: String) -> some View {
+        let penalty = max(0, p.score - Double(p.guesses))
+        return VStack(spacing: 6) {
+            VSPlayerAvatar(url: p.avatarUrl, username: p.name, botArt: p.botArt, size: 36)
+            HStack(spacing: 4) {
+                if p.winner { Image(systemName: "trophy.fill").font(.system(size: 10, weight: .bold)).foregroundStyle(Color(hex: 0xB45309)) }
+                Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.purpleSub)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+            }
+            Text(String(format: "%.2f", p.score))
+                .font(Brand.font(32, .black)).monospacedDigit().foregroundStyle(VsLobbyKit.purpleInk)
+                .lineLimit(1).minimumScaleFactor(0.6)
+            // The exact calculation, spelled out.
+            Text("\(p.guesses) \(p.guesses == 1 ? "guess" : "guesses") + \(String(format: "%.2f", penalty)) time")
+                .font(Brand.font(10, .bold)).foregroundStyle(VsLobbyKit.purpleSub)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Text(VsLobby.vsClock(Int(p.timeMs)))
+                .font(Brand.font(10, .bold)).monospacedDigit().foregroundStyle(VsLobbyKit.purpleSub)
+            // Solve chip — the tiebreak that actually decides most matches.
+            Text(p.solved ? "SOLVED" : "NOT SOLVED")
+                .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(.white)
+                .padding(.horizontal, 9).padding(.vertical, 4)
+                .background(Capsule().fill(p.solved ? VsLobbyKit.purple : Color(hex: 0x64748B)))
+        }
+        .padding(.horizontal, 8)
+    }
+
+    private func h2hCard(_ h2h: HeadToHeadRecord) -> some View {
+        HStack(spacing: 12) {
+            VSPlayerAvatar(url: vm.opponentInfo?.avatarUrl, username: vm.opponentName, size: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("YOU AND \(vm.opponentName.uppercased())").font(Brand.font(10, .black)).tracking(0.6)
+                    .foregroundStyle(VsLobbyKit.label).lineLimit(1).minimumScaleFactor(0.7)
+                Text(HeadToHeadService.headToHeadLine(opponentName: vm.opponentName, h2h))
+                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.purpleInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14).vsCard(radius: 14)
+    }
+
+    /// Bot extras in one soft card: photo finish, ladder clear, streak or
+    /// milestone, badge unlock, the session tally and the Bots-record note.
+    private var botExtras: some View {
+        VStack(spacing: 6) {
+            if let pf = vm.photoFinish {
+                PhotoFinishStamp(clutch: pf == "clutch")
+            }
+            if let rung = vm.cpuClearedRung {
+                Text("\(VsLobby.botName(rung).uppercased()) CLEARED ON THE LADDER!")
+                    .font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.ink)
+                    .multilineTextAlignment(.center)
+            }
+            if let m = vm.cpuMilestone {
+                Text("🔥 \(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+            } else if vm.cpuStreak > 0 {
+                Text("Bot win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.sub)
+            }
+            if vm.cpuUnlock != nil {
+                Text("🏅 Unlocked \(BotPersonas.persona(vm.cpuPersona?.tier ?? .hard).name)’s badge!")
+                    .font(Brand.font(12, .black)).foregroundStyle(Color(hex: UInt(vm.cpuPersona?.color ?? 0xEF4444)))
+            }
+            if vm.cpuSessionWins + vm.cpuSessionLosses > 0 {
+                Text("THIS SESSION · YOU \(vm.cpuSessionWins) · BOTS \(vm.cpuSessionLosses)")
+                    .font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.deep)
+            }
+            Text("Bot game — counts in your Bots record, not People")
+                .font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.label)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity)
+        .vsCard(radius: 14)
     }
 
     @ViewBuilder private var rematchSection: some View {
         switch vm.rematch {
         case .received:
             VStack(spacing: 10) {
-                Text("Opponent wants a rematch!").font(Brand.font(14, .bold)).foregroundStyle(Theme.textPrimary)
-                HStack(spacing: 12) {
-                    Button("Decline") { vm.declineRematch() }
-                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-                    Button("Accept") { vm.acceptRematch() }
-                        .font(Brand.font(14, .black)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
+                Text("\(opponentShortName.uppercased()) WANTS A REMATCH")
+                    .font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                    .multilineTextAlignment(.center)
+                HStack(spacing: 10) {
+                    VSSoftPurpleButton(title: "DECLINE") { vm.declineRematch() }
+                    VSPrimaryButton(title: "ACCEPT", color: VsLobbyKit.purple) { vm.acceptRematch() }
                 }
             }
-            .padding(14).background(RoundedRectangle(cornerRadius: 14).stroke(Theme.primary, lineWidth: 2))
+            .padding(14).frame(maxWidth: .infinity)
+            .vsCard(radius: 14)
         default: EmptyView()
         }
     }
 
-    /// Actions — prominent Rematch on top, Home/Share below (web parity).
+    /// Actions — solid purple REMATCH on top, soft HOME / SHARE below.
     private var actions: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             switch vm.rematch {
             case .declined:
-                Label("No Rematch", systemImage: "xmark").font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
+                Text("NO REMATCH").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.label)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEEF0F3)))
             case .offered:
-                Label("Waiting…", systemImage: "hourglass").font(Brand.font(14, .black)).foregroundStyle(.white.opacity(0.8))
-                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
+                HStack(spacing: 8) {
+                    ProgressView().tint(.white).controlSize(.small)
+                    Text("WAITING FOR \(opponentShortName.uppercased())…").font(Brand.font(14, .black)).tracking(0.6)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.purple.opacity(0.6)))
             case .received:
-                EmptyView()   // the "Opponent wants a rematch!" card carries the buttons
+                EmptyView()   // the "wants a rematch" card carries the buttons
             case .idle:
                 // Free users get the Pro upsell modal instead of an inline error
                 // (web parity — Rematch opens VsLimitModal for non-Pro).
-                Button { if vm.isPro { vm.offerRematch() } else { showRematchUpsell = true } } label: {
-                    Label("Rematch", systemImage: "arrow.clockwise").font(Brand.font(14, .black)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
-                }.buttonStyle(.plain)
+                VSPrimaryButton(title: "REMATCH", color: VsLobbyKit.purple) {
+                    if vm.isPro { vm.offerRematch() } else { showRematchUpsell = true }
+                }
             }
 
-            HStack(spacing: 12) {
-                Button(action: goHome) {
-                    Label("Home", systemImage: "house.fill").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
-
-                Button { shareVSCard() } label: {
-                    Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
+            HStack(spacing: 10) {
+                VSSoftPurpleButton(title: "HOME", icon: "house.fill", action: goHome)
+                VSSoftPurpleButton(title: "SHARE", icon: "square.and.arrow.up") { shareVSCard() }
             }
         }
     }
@@ -971,82 +1067,94 @@ struct VSGameView: View {
         return "\(text)\nhttps://wordocious.com"
     }
 
-    // MARK: - Opponent left / not configured
+    // MARK: - Opponent left / match gone / not configured (soft VS cards)
 
     private var opponentLeftScreen: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "person.fill.xmark").font(.system(size: 40)).foregroundStyle(Theme.textMuted)
-            Text("Opponent left the match").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
-            Button("Home", action: goHome).font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        noticeCard(icon: "person.fill.xmark", title: "\(opponentShortName.uppercased()) LEFT THE MATCH", sub: nil)
     }
 
     /// The match no longer exists server-side — the app was backgrounded past
     /// the server's reconnect grace (or the server timed the match out). No
     /// local result is recorded from this screen (leaving here is NOT a forfeit).
     private var matchGoneScreen: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "clock.badge.xmark").font(.system(size: 40)).foregroundStyle(Theme.textMuted)
-            Text("Match ended while you were away").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
-                .multilineTextAlignment(.center)
-            Text("The server couldn’t hold the match open that long.")
-                .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
-            Button("Home", action: goHome).font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
-        }
-        .padding(.horizontal, 32).frame(maxWidth: .infinity, maxHeight: .infinity)
+        noticeCard(icon: "clock.badge.xmark", title: "MATCH ENDED WHILE YOU WERE AWAY",
+                   sub: "The server couldn’t hold the match open that long.")
     }
 
     private var notConfigured: some View {
+        noticeCard(icon: "bolt.horizontal.circle", title: "VS IS ALMOST READY",
+                   sub: "Real-time matches turn on once the multiplayer server is connected.", button: "BACK")
+    }
+
+    private func noticeCard(icon: String, title: String, sub: String?, button: String = "VS HOME") -> some View {
         VStack(spacing: 14) {
-            vsTitle(30)
-            Image(systemName: "bolt.horizontal.circle").font(.system(size: 44)).foregroundStyle(Theme.textMuted)
-            Text("VS is almost ready").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
-            Text("Real-time matches turn on once the multiplayer server is connected.")
-                .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
-            Button("Back", action: goHome).font(Brand.font(15, .black)).foregroundStyle(Theme.primary).padding(.top, 4)
+            VSModeGlyphTile(mode: mode, selected: false, size: 44)
+            Image(systemName: icon).font(.system(size: 30, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
+            Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+                .multilineTextAlignment(.center)
+            if let sub {
+                Text(sub).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub).multilineTextAlignment(.center)
+            }
+            VSPrimaryButton(title: button, action: goHome).padding(.top, 4)
         }
-        .padding(.horizontal, 32).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(20).frame(maxWidth: 380)
+        .vsCard(radius: 16)
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Shared bits
 
-    private func statCard(title: String?, rows: [(String, String)]) -> some View {
-        VStack(spacing: 10) {
-            if let title { Text(title).font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity, alignment: .leading) }
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack {
-                    Text(row.0).font(Brand.font(13, .bold)).foregroundStyle(Theme.textSecondary)
-                    Spacer()
-                    Text(row.1).font(Brand.font(13, .bold)).foregroundStyle(Theme.textPrimary)
-                }
-            }
-        }
-        .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
-
     private func errorPill(_ text: String) -> some View {
-        Text(text).font(Brand.font(13, .bold)).foregroundStyle(.white)
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
-    }
-
-    private func formatTime(_ ms: Double) -> String {
-        let total = Int((ms / 1000).rounded())
-        if total < 60 { return "\(total)s" }
-        let m = total / 60, s = total % 60
-        return s > 0 ? "\(m)m \(s)s" : "\(m)m"
+        Text(text).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xB91C1C))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .background(Capsule().fill(Color(hex: 0xFEF2F2)))
     }
 }
 
-/// Compact opponent progress strip shown above the player's board during a match.
-/// The 5-node Gauntlet stage stepper — a self-contained copy of the solo
-/// GameScreen's stepper so the VS match screen shows the player's stage.
-private struct GauntletStepperBar: View {
+/// The solo mode header for a VS board match (VS polish spec §1): the solo
+/// home button, the mode title in its usual style with a small solid teal VS
+/// pill beside it, and the solo progress line + clock. Gauntlet keeps the solo
+/// stage stepper / stage title / stats header. Observes the game so the
+/// guesses line updates on every guess.
+struct VSMatchHeader: View {
     @ObservedObject var game: GameViewModel
+    let mode: GameMode
+    let onHome: () -> Void
 
     var body: some View {
+        HStack(alignment: .top, spacing: 4) {
+            VSGameHomeButton(accent: ModeStyle.accent(mode), action: onHome)
+            Spacer(minLength: 0)
+            Group {
+                if mode == .gauntlet { gauntletHeader } else { standardHeader }
+            }
+            Spacer(minLength: 0)
+            Color.clear.frame(width: 44, height: 44)
+        }
+        .padding(.top, 6)
+    }
+
+    private var standardHeader: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Text(ModeStyle.title(mode))
+                    .font(Brand.font(28, .black))
+                    .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                VSTagPill()
+            }
+            HStack(spacing: 12) {
+                Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                clock(12)
+            }
+        }
+    }
+
+    // Gauntlet — the solo stage stepper · colored stage-name title · stats.
+    private var gauntletHeader: some View {
         VStack(spacing: 3) {
             HStack(spacing: 0) {
                 ForEach(0..<max(game.gauntletStageCount, 1), id: \.self) { i in
@@ -1056,12 +1164,47 @@ private struct GauntletStepperBar: View {
                     node(i)
                 }
             }
-            // Stage title (gradient) — parity with the solo Gauntlet header.
-            Text(game.gauntletStageName)
-                .font(Brand.font(17, .black))
-                .foregroundStyle(LinearGradient(colors: GameScreen.gauntletStageGradient(game.gauntletStageName),
-                                                startPoint: .leading, endPoint: .trailing))
+            .padding(.top, 2)
+            HStack(spacing: 8) {
+                Text(game.gauntletStageName)
+                    .font(Brand.font(18, .black))
+                    .foregroundStyle(LinearGradient(colors: GameScreen.gauntletStageGradient(game.gauntletStageName),
+                                                    startPoint: .leading, endPoint: .trailing))
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                VSTagPill(size: 10)
+            }
+            if !game.stageCleared {
+                HStack(spacing: 12) {
+                    if game.boardCount > 1 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "trophy.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xD97706))
+                            Text("\(game.boardsSolvedCount)/\(game.boardCount)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                        }
+                    }
+                    Text("\(game.rowsUsed)/\(game.maxGuesses) guesses").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                    clock(11)
+                }
+            }
         }
+    }
+
+    private func clock(_ size: CGFloat) -> some View {
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            HStack(spacing: 3) {
+                Image(systemName: "clock").font(.system(size: size - 1)).foregroundStyle(Color(hex: 0x60A5FA))
+                Text("\(game.elapsedSeconds / 60):\(String(format: "%02d", game.elapsedSeconds % 60))")
+                    .font(Brand.caption(size)).foregroundStyle(Theme.textMuted).monospacedDigit()
+            }
+        }
+    }
+
+    /// Solo GameScreen.progressLabel.
+    private var progressLabel: String {
+        if let g = game.gauntletStageLabel { return g }
+        if game.isMultiBoard {
+            return "\(game.boardsSolvedCount)/\(game.boardCount) solved · \(game.rowsUsed)/\(game.maxGuesses) guesses"
+        }
+        return "\(game.rowsUsed)/\(game.maxGuesses) guesses"
     }
 
     private func connector(_ i: Int) -> Color {
@@ -1078,6 +1221,7 @@ private struct GauntletStepperBar: View {
         let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
         ZStack {
             Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
+                .shadow(color: active ? Color(hex: 0xA855F7).opacity(0.35) : .clear, radius: active ? 4 : 0)
             if completed {
                 Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(fg)
             } else if active {
@@ -1089,18 +1233,216 @@ private struct GauntletStepperBar: View {
     }
 }
 
+/// The solo games' corner Home button (44 pt, mode-accent ring) — reused by
+/// the VS match header and the ProperNoundle VS board.
+struct VSGameHomeButton: View {
+    let accent: Color
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "house.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(accent)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(Theme.surface))
+                .overlay(Circle().stroke(accent, lineWidth: 2))
+                .shadow(color: accent.opacity(0.2), radius: 0, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Home")
+    }
+}
+
+/// The one-row opponent strip (VS polish spec §1, ≤ 64 pt): avatar or bot art,
+/// name, a slim teal progress bar (boards solved / total; Gauntlet stages),
+/// guess count, a typing dot, and on the right a tiny color-only board for
+/// single-board modes or `2/4 boards` for multi-board modes — never a wall
+/// of empty grids. Fixed height so the board below never jumps.
+struct VSOpponentStrip: View {
+    static let height: CGFloat = 56
+
+    let name: String
+    let avatarUrl: String?
+    let botArt: String?
+    let opponent: VSMatchViewModel.OpponentProgress
+    /// The MODE's board count, known from match start (opponent.totalBoards is
+    /// 0 until their first progress event).
+    let totalBoards: Int
+    let maxGuesses: Int
+    let wordLength: Int
+    let typing: Bool
+    /// Gauntlet: "Stage 2 · QuadWord" replaces the boards count.
+    var stageLine: String? = nil
+    var stageProgress: Double? = nil
+
+    private var total: Int { max(opponent.totalBoards, totalBoards) }
+
+    var body: some View {
+        let progress = min(1, max(0, stageProgress ?? Double(opponent.boardsSolved) / Double(max(1, total))))
+        HStack(spacing: 10) {
+            VSPlayerAvatar(url: avatarUrl, username: name, botArt: botArt, size: 34)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Text(name).font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.deep)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    // Reserved slot: the dots fade, they never shift the row.
+                    TypingDots(dotSize: 4).opacity(typing ? 1 : 0)
+                        .animation(Theme.animation(.easeInOut(duration: 0.2)), value: typing)
+                    Spacer(minLength: 4)
+                    Text("\(opponent.attempts) \(opponent.attempts == 1 ? "guess" : "guesses")")
+                        .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.sub).monospacedDigit()
+                        .lineLimit(1).fixedSize()
+                }
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(VsLobbyKit.soft)
+                        Capsule().fill(VsLobbyKit.ink).frame(width: geo.size.width * progress)
+                    }
+                }
+                .frame(height: 5)
+                .animation(Theme.animation(.easeInOut(duration: 0.4)), value: progress)
+            }
+            trailing
+        }
+        .padding(.horizontal, 12)
+        .frame(height: Self.height)
+        .frame(maxWidth: .infinity)
+        .vsCard(radius: 14)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(a11y)
+    }
+
+    @ViewBuilder private var trailing: some View {
+        if let stageLine {
+            Text(stageLine).font(Brand.font(11, .black)).foregroundStyle(VsLobbyKit.ink)
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .frame(maxWidth: 110, alignment: .trailing)
+        } else if total > 1 {
+            HStack(spacing: 3) {
+                Text("\(opponent.boardsSolved)/\(total)").font(Brand.font(14, .black)).monospacedDigit()
+                    .foregroundStyle(VsLobbyKit.deep)
+                Text("boards").font(Brand.font(10.5, .heavy)).foregroundStyle(VsLobbyKit.sub)
+            }
+            .fixedSize()
+        } else {
+            // Tiny color-only board (≤ 44 pt tall, ≤ 72 pt wide).
+            let rows = CGFloat(max(1, maxGuesses)), cols = CGFloat(max(1, wordLength))
+            let cell = max(3, min(7, floor((44 - (rows - 1)) / rows), floor((72 - (cols - 1)) / cols)))
+            OpponentMiniBoard(tiles: opponent.tiles[0] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
+        }
+    }
+
+    private var a11y: String {
+        var parts = ["\(name)", "\(opponent.attempts) \(opponent.attempts == 1 ? "guess" : "guesses")"]
+        if let stageLine { parts.append(stageLine) }
+        else if total > 1 { parts.append("\(opponent.boardsSolved) of \(total) boards solved") }
+        else if opponent.solved { parts.append("solved") }
+        if typing { parts.append("typing") }
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// Fits the opponent's live boards into `width` with the solo completed-board
+/// geometry (1 / 2 / 4 columns, tile*0.1 gaps, the multi-board frame), so
+/// boards can never overlap or overflow horizontally (founder screenshot: a
+/// 4-across grid of 24 pt boards spilled off a phone).
+enum SpectatorLayout {
+    static let gap: CGFloat = 8
+    static func tile(width: CGFloat, boards: Int, wordLength: Int, cap: CGFloat) -> CGFloat {
+        let cols = CompletedBoardLayout.cols(boards)
+        let framePad: CGFloat = boards > 1 ? 12 : 0
+        let cellW = (width - CGFloat(cols - 1) * gap) / CGFloat(cols) - framePad
+        let wl = CGFloat(max(1, wordLength))
+        return max(6, min(cap, floor(cellW / (wl + (wl - 1) * 0.1))))
+    }
+}
+
+/// The opponent's boards on the spectator screen, rows of 1 / 2 / 4.
+private struct OpponentBoardsGrid: View {
+    let opponent: VSMatchViewModel.OpponentProgress
+    let boards: Int
+    let rows: Int
+    let wordLength: Int
+    let width: CGFloat
+    var cap: CGFloat = 26
+    var offset: Int = 0
+
+    var body: some View {
+        let n = max(1, boards)
+        let cols = CompletedBoardLayout.cols(n)
+        let tile = SpectatorLayout.tile(width: width, boards: n, wordLength: wordLength, cap: cap)
+        VStack(spacing: SpectatorLayout.gap) {
+            ForEach(0..<((n + cols - 1) / cols), id: \.self) { r in
+                HStack(alignment: .top, spacing: SpectatorLayout.gap) {
+                    ForEach(0..<cols, id: \.self) { c in
+                        let i = r * cols + c
+                        if i < n {
+                            OpponentLiveBoard(tiles: opponent.tiles[offset + i] ?? [], rows: rows,
+                                              wordLength: wordLength, tile: tile, framed: n > 1)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// One opponent board drawn with the solo tiles (TileView, color only — the
+/// letters stay hidden until match end) inside the solo multi-board frame;
+/// rows that land while you watch flip in with the solo FlipRevealTile.
+private struct OpponentLiveBoard: View {
+    let tiles: [[TileState]]
+    let rows: Int
+    let wordLength: Int
+    let tile: CGFloat
+    let framed: Bool
+    /// Rows present on first appear never flip; only rows that land live do.
+    @State private var seen = -1
+
+    private var solved: Bool { tiles.contains { !$0.isEmpty && $0.allSatisfy { $0 == .correct } } }
+
+    var body: some View {
+        let gap = tile * 0.1
+        VStack(spacing: gap) {
+            ForEach(0..<max(rows, tiles.count, 1), id: \.self) { r in
+                HStack(spacing: gap) {
+                    ForEach(0..<max(wordLength, 1), id: \.self) { c in
+                        let st: TileState? = (r < tiles.count && c < tiles[r].count) ? tiles[r][c] : nil
+                        if let st, st != .empty {
+                            if seen >= 0 && r >= seen {
+                                FlipRevealTile(letter: "", state: st, size: tile, delay: Double(c) * 0.08, duration: 0.3)
+                            } else {
+                                TileView(letter: "", state: st, revealed: true, size: tile)
+                            }
+                        } else {
+                            TileView(letter: "", state: .empty, revealed: false, size: tile)
+                        }
+                    }
+                }
+            }
+        }
+        .modifier(SolvedBoardFrame(won: framed && solved, lost: false, active: framed, tileSize: tile))
+        .onAppear { if seen < 0 { seen = tiles.count } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(solved ? "Board solved" : "\(tiles.count) \(tiles.count == 1 ? "guess" : "guesses") on this board")
+    }
+}
+
 /// Gauntlet spectator — the opponent's 21 boards broken down by stage (name,
 /// status, boards), instead of a meaningless flat wall. Cleared stages collapse
-/// to their solved rows; the active stage shows live (with the flip-in reveal);
-/// locked stages dim out.
+/// to their solved rows; the active stage shows live; locked stages dim out.
 private struct GauntletSpectatorView: View {
     let opponent: VSMatchViewModel.OpponentProgress
     let wordLength: Int
+    /// The card content width (boards are fitted to it, never overflow).
+    let width: CGFloat
 
     private enum StageStatus { case cleared, active, locked }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             ForEach(Array(gauntletStages.enumerated()), id: \.offset) { idx, stage in
                 stageCard(idx, stage)
             }
@@ -1136,119 +1478,43 @@ private struct GauntletSpectatorView: View {
                 Spacer()
                 statusChip(st)
             }
-            if st != .locked { boardsGrid(stage, offset: offset, active: st == .active) }
+            if st != .locked {
+                // The ACTIVE stage renders its full frame (all maxGuesses rows) so
+                // you can tell how many guesses the opponent has left; CLEARED
+                // stages compact to the rows actually used.
+                let used = (0..<stage.boardCount).map { opponent.tiles[offset + $0]?.count ?? 0 }.max() ?? 0
+                let rows = st == .active ? stage.maxGuesses : min(stage.maxGuesses, max(1, used))
+                OpponentBoardsGrid(opponent: opponent, boards: stage.boardCount, rows: rows,
+                                   wordLength: wordLength, width: width, cap: stage.boardCount == 1 ? 26 : 18,
+                                   offset: offset)
+            }
         }
         .padding(14).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(st == .active ? (accent.first ?? Theme.border) : Theme.border,
-                                                           lineWidth: st == .active ? 1.8 : 1.5))
+        .vsCard(radius: 14)
         .opacity(st == .locked ? 0.55 : 1)
     }
 
     @ViewBuilder private func statusChip(_ st: StageStatus) -> some View {
         switch st {
         case .cleared:
-            Label("Cleared", systemImage: "checkmark.seal.fill")
-                .font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0x16A34A))
+            Text("CLEARED").font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(.white)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Capsule().fill(VsLobbyKit.purple))
         case .active:
             HStack(spacing: 5) {
-                Text("PLAYING").font(Brand.font(10, .heavy)).foregroundStyle(Theme.primary)
-                TypingDots(dotSize: 5)
+                Text("PLAYING").font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.ink)
+                TypingDots(dotSize: 4)
             }
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Capsule().fill(VsLobbyKit.soft))
         case .locked:
             Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.textMuted)
         }
     }
-
-    @ViewBuilder private func boardsGrid(_ stage: GauntletStageConfig, offset: Int, active: Bool) -> some View {
-        // The ACTIVE stage renders its full frame (all maxGuesses rows) so you
-        // can tell how many guesses the opponent has left; CLEARED stages are
-        // over, so they compact to the rows actually used — a cleared OctoWord
-        // stage shouldn't render 8 towers of empty rows.
-        let used = (0..<stage.boardCount).map { opponent.tiles[offset + $0]?.count ?? 0 }.max() ?? 0
-        let rows = active ? stage.maxGuesses : min(stage.maxGuesses, max(1, used))
-        let cell: CGFloat = stage.boardCount == 1 ? 22 : stage.boardCount <= 4 ? 16 : 11
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: min(stage.boardCount, 4))
-        LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(0..<stage.boardCount, id: \.self) { b in
-                OpponentMiniBoard(tiles: opponent.tiles[offset + b] ?? [], maxGuesses: rows, wordLength: wordLength, cell: cell)
-            }
-        }
-    }
 }
 
-private struct OpponentStrip: View {
-    let opponent: VSMatchViewModel.OpponentProgress
-    let gradient: [Color]
-    var maxGuesses: Int = 6
-    var wordLength: Int = 5
-    /// The MODE's board count, known from match start — opponent.totalBoards is
-    /// 0 until their first progress event, which made Quad/Octo render a single
-    /// tall placeholder board pre-typing.
-    var totalBoards: Int = 1
-    /// Gauntlet VS: the opponent's current stage name + its accent gradient.
-    var stageName: String? = nil
-    var stageGradient: [Color] = []
-
-    var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 10) {
-                Image(systemName: "person.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
-                Text("Opponent").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textSecondary)
-                Spacer()
-                // Gauntlet VS: the opponent's current stage — number, flag (tinted
-                // to the stage accent), and the stage name in its gradient.
-                if let stageName {
-                    HStack(spacing: 5) {
-                        Image(systemName: "flag.fill").font(.system(size: 11))
-                            .foregroundStyle(stageGradient.first ?? Theme.textPrimary)
-                        Text("Stage \(opponent.stagesCleared + 1)").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
-                        Text(stageName).font(Brand.font(12, .black))
-                            .foregroundStyle(LinearGradient(colors: stageGradient.isEmpty ? gradient : stageGradient,
-                                                            startPoint: .leading, endPoint: .trailing))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                } else if max(opponent.totalBoards, totalBoards) > 1 {
-                    Text("\(opponent.boardsSolved)/\(max(opponent.totalBoards, totalBoards)) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
-                }
-                Text("\(opponent.attempts) guesses").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
-                if opponent.solved {
-                    Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0x7C3AED))
-                }
-            }
-            // Live opponent tile preview (colors only, no letters) — ports the
-            // web OpponentMiniBoard / OpponentMultiMiniBoard.
-            // During your own play only render per-board grids for <=4 boards —
-            // 8 tiny OctoWord grids over your own 8 boards are illegible and
-            // steal space, so those stay summary-only (the count line above);
-            // the spectator "still playing" screen renders all boards larger.
-            // Gauntlet (21 boards) also falls out here — it shows Stage N.
-            // Render the EMPTY grid from the start (no hasTiles gate) so the board
-            // is visible the whole match and never flickers in on the first guess.
-            if max(opponent.totalBoards, totalBoards) <= 4 {
-                let total = max(opponent.totalBoards, totalBoards)
-                let boards = total > 1 ? Array(0..<total) : [0]
-                // Bigger cells so the opponent board uses the space around it and
-                // the live flip-in reveal is easy to follow (single board gets the
-                // most room; multi-board stays compact so 4 grids still fit).
-                // Succession's 10-row full frame drops to cell 8 so its strip is
-                // no taller than QuadWord's 9-row one (10×8+gaps ≈ 9×10+gaps).
-                let cell: CGFloat = total > 1 ? (maxGuesses > 9 ? 8 : 10) : 14
-                HStack(spacing: 8) {
-                    ForEach(boards, id: \.self) { i in
-                        OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-    }
-}
-
-/// Compact grid of the opponent's guess tiles (colors only — no letters), one
-/// per board. Ports apps/web/components/vs/opponent-mini-board.tsx.
+/// Compact grid of the opponent's guess tiles (colors only — no letters) — the
+/// strip's tiny single-board preview. Ports opponent-mini-board.tsx.
 private struct OpponentMiniBoard: View {
     let tiles: [[TileState]]
     let maxGuesses: Int
@@ -1271,9 +1537,8 @@ private struct OpponentMiniBoard: View {
     }
 }
 
-/// A single opponent tile that flips in (3D rotate + scale + fade, staggered
-/// left-to-right) the moment it fills — so each opponent guess reveals with a
-/// fluid cascade instead of popping in flat. Empty tiles stay static.
+/// A single opponent tile that flips in (staggered left-to-right) the moment it
+/// fills. Empty tiles are flat soft gray — no outline at this size.
 private struct OpponentTile: View {
     let state: TileState?
     let cell: CGFloat
@@ -1282,16 +1547,14 @@ private struct OpponentTile: View {
     @State private var revealed = false
 
     private var filled: Bool { state != nil && state != .empty }
-    private var radius: CGFloat { max(2, cell * 0.16) }
+    private var radius: CGFloat { max(1.5, cell * 0.2) }
 
     var body: some View {
         RoundedRectangle(cornerRadius: radius)
             .fill(color)
             .frame(width: cell, height: cell)
-            .overlay(filled ? nil : RoundedRectangle(cornerRadius: radius).stroke(Color(hex: 0xD1D5DB), lineWidth: 1))
             .scaleEffect(filled && !revealed ? 0.5 : 1)
             .opacity(filled && !revealed ? 0 : 1)
-            .rotation3DEffect(.degrees(filled && !revealed ? -85 : 0), axis: (x: 1, y: 0, z: 0), perspective: 0.4)
             .onAppear { revealed = true }
             .onChange(of: filled) { now in
                 guard now else { return }
@@ -1305,10 +1568,8 @@ private struct OpponentTile: View {
 
     private var color: Color {
         switch state {
-        case .correct: return Color(hex: 0x7C3AED)
-        case .present: return Color(hex: 0xF59E0B)
-        case .absent:  return Theme.textMuted
-        default:       return .clear
+        case .correct, .present, .absent: return Theme.tileColor(for: state ?? .empty)
+        default: return Color(hex: 0xE5E7EB)
         }
     }
 }
@@ -1328,7 +1589,7 @@ private struct LivePulseAvatar: View {
             Circle().stroke(accent, lineWidth: 2.5).frame(width: 56, height: 56)
                 .scaleEffect(pulse ? 1.45 : 0.95).opacity(pulse ? 0 : 0.7)
             VSPlayerAvatar(url: url, username: name, botArt: botArt, size: 52)
-                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                .overlay(Circle().strokeBorder(.white, lineWidth: 2.5))
         }
         .onAppear {
             guard !reduceMotion else { return }
@@ -1344,13 +1605,11 @@ private struct PhotoFinishStamp: View {
     @State private var shown = false
     var body: some View {
         Text(clutch ? "CLUTCH!" : "PHOTO FINISH!")
-            .font(Brand.font(30, .black))
-            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF97316), Color(hex: 0xEC4899)],
-                                            startPoint: .leading, endPoint: .trailing))
+            .font(Brand.font(26, .black)).tracking(0.6)
+            .foregroundStyle(VsLobbyKit.purple)
             .rotationEffect(.degrees(-6))
             .scaleEffect(shown ? 1 : 0.3)
             .opacity(shown ? 1 : 0)
-            .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
             .onAppear { withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { shown = true } }
     }
 }
@@ -1372,81 +1631,86 @@ struct CyclingStatus: View {
     }
 }
 
-/// Freemium "already played today" screen — ports DailyVsAlreadyPlayed.
+/// Freemium "already played today" screen — ports DailyVsAlreadyPlayed, in
+/// the VS aesthetic: a teal one-window card (caps headline, W/L chip, the
+/// answer in solo tiles, the next-battle clock), then the actions.
 private struct DailyVsAlreadyPlayed: View {
     let answer: String
-    let gradient: [Color]
     var isPro: Bool = false
     var won: Bool? = nil
     let onHome: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 4) {
-                Text("TODAY'S VS PUZZLE").font(Brand.font(10, .heavy)).tracking(2).foregroundStyle(Theme.textMuted)
-                Text("Already Played").font(Brand.font(32, .black))
-                    .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+        ScrollView {
+            VStack(spacing: 14) {
+                window
+                Text(isPro
+                     ? "Want more? Jump into unlimited VS battles with fresh puzzles."
+                     : "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
+                    .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                    .multilineTextAlignment(.center).padding(.horizontal, 16)
+                if isPro {
+                    // Pro: back to the VS lobby (where the Daily Battle launched from,
+                    // VS overhaul 2026-10-01) for unlimited any-mode battles
+                    // (web parity — DailyVsAlreadyPlayed's "Play Unlimited VS").
+                    VSPrimaryButton(title: "PLAY UNLIMITED VS", action: onHome)
+                } else {
+                    // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
+                    NavigationLink { ProView() } label: {
+                        Label("UPGRADE TO PRO", systemImage: "crown.fill").font(Brand.font(14, .black)).tracking(0.6)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 14)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xD97706)))
+                    }.buttonStyle(PressableStyle())
+                }
+                VSGreyPill(title: "VS HOME", icon: "house.fill", action: onHome)
             }
-            // Today's daily VS outcome — W/L pill (web shows just the answer;
-            // the user asked for an explicit result indicator here).
-            if let won {
-                Text(won ? "YOU WON" : "YOU LOST")
-                    .font(Brand.font(13, .black)).foregroundStyle(.white)
-                    .padding(.horizontal, 14).padding(.vertical, 6)
-                    .background(Capsule().fill(Color(hex: won ? 0x7C3AED : 0xDC2626)))
-            }
-            if !answer.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(Array(answer.uppercased().enumerated()), id: \.offset) { _, ch in
-                        Text(String(ch)).font(Brand.font(18, .black)).foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    }
+            .padding(.horizontal, 16).padding(.top, 24).padding(.bottom, 32)
+        }
+        .background(VsLobbyKit.page.ignoresSafeArea())
+    }
+
+    private var window: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("TODAY’S DAILY BATTLE").font(Brand.font(10, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
+                    Text("ALREADY PLAYED").font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.deep)
+                }
+                Spacer(minLength: 6)
+                // Today's daily VS outcome — W/L chip (purple win, slate loss).
+                if let won {
+                    Text(won ? "YOU WON" : "YOU LOST")
+                        .font(Brand.font(11, .black)).tracking(0.6).foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Capsule().fill(won ? VsLobbyKit.purple : Color(hex: 0x64748B)))
                 }
             }
-            // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight pill).
-            TimelineView(.periodic(from: Date(), by: 1)) { _ in
-                let s = secondsUntilLocalMidnight()
-                Text("Next daily VS in \(cd(s))")
-                    .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Capsule().fill(Theme.primary.opacity(0.12)))
-            }
-            Text(isPro
-                 ? "Want more? Jump into unlimited VS battles with fresh puzzles."
-                 : "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
-                .multilineTextAlignment(.center).padding(.horizontal, 16)
-            if isPro {
-                // Pro: back to the VS lobby (where the Daily Battle launched from,
-                // VS overhaul 2026-10-01) for unlimited any-mode battles
-                // (web parity — DailyVsAlreadyPlayed's "Play Unlimited VS").
-                Button(action: onHome) {
-                    HStack(spacing: 8) {
-                        Image("swords").renderingMode(.template).resizable().scaledToFit().frame(width: 16, height: 16)
-                        Text("Play Unlimited VS")
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.5))
+
+            VStack(spacing: 14) {
+                if !answer.isEmpty {
+                    HStack(spacing: 5) {
+                        ForEach(Array(answer.uppercased().enumerated()), id: \.offset) { _, ch in
+                            TileView(letter: String(ch), state: .correct, revealed: true, size: 44)
+                        }
                     }
-                    .font(Brand.font(14, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(
-                        LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }.buttonStyle(.plain)
-            } else {
-                // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
-                NavigationLink { ProView() } label: {
-                    Label("Upgrade to Pro", systemImage: "crown.fill").font(Brand.font(14, .black)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(
-                            LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }.buttonStyle(.plain)
+                }
+                // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight pill).
+                TimelineView(.periodic(from: Date(), by: 1)) { _ in
+                    let s = secondsUntilLocalMidnight()
+                    Text("NEXT DAILY BATTLE IN \(cd(s))")
+                        .font(Brand.font(10.5, .black)).tracking(0.5).monospacedDigit().foregroundStyle(VsLobbyKit.ink)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Capsule().fill(Color.white.opacity(0.75)))
+                }
             }
-            Button(action: onHome) {
-                Label("Home", systemImage: "house.fill").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain)
+            .padding(16)
         }
-        .padding(.horizontal, 24).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(LinearGradient(colors: [Color(hex: 0xD5F5EE), Color(hex: 0xE0F2FE)], startPoint: .top, endPoint: .bottom))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: VsLobbyKit.deep.opacity(0.08), radius: 7, x: 0, y: 4)
     }
 
     private func cd(_ s: Int) -> String {

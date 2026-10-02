@@ -8,6 +8,7 @@ import { OpponentHUD } from './opponent-hud';
 import { Clock } from 'lucide-react';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { isTypingTarget } from '@/lib/keyboard';
+import { playInvalid } from '@/lib/sounds';
 import { useClassicHints } from '@/hooks/use-classic-hints';
 import type { EvaluatedRow } from './vs-result-detail';
 
@@ -38,6 +39,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
   const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode, solutions));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [hasReported, setHasReported] = useState(false);
 
@@ -62,6 +64,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
     for (const eval_ of evaluations) {
       for (const tile of eval_.tiles) {
         const letter = tile.letter.toUpperCase();
+        if (letter < 'A' || letter > 'Z') continue; // skip blanks from hint rows (solo parity)
         if (tile.state === 'CORRECT') states[letter] = 'correct';
         else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
         else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
@@ -110,27 +113,22 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;
+    if (isShaking) return;
     setMessage('');
 
+    // Invalid entries shake the row like solo, then clear it.
+    const reject = (msg: string) => {
+      setMessage(msg);
+      playInvalid();
+      setIsShaking(true);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => setMessage(''), 1500);
+    };
+
     if (key === 'ENTER') {
-      if (currentGuess.length !== currentBoard.solution.length) {
-        setMessage('Not enough letters');
-        setCurrentGuess('');
-        setTimeout(() => setMessage(''), 1500);
-        return;
-      }
-      if (!isValidWord(currentGuess)) {
-        setMessage('Not in word list');
-        setCurrentGuess('');
-        setTimeout(() => setMessage(''), 1500);
-        return;
-      }
-      if (hasDuplicateGuess(state.boards, currentGuess)) {
-        setMessage('Already guessed');
-        setCurrentGuess('');
-        setTimeout(() => setMessage(''), 1500);
-        return;
-      }
+      if (currentGuess.length !== currentBoard.solution.length) { reject('Not enough letters'); return; }
+      if (!isValidWord(currentGuess)) { reject('Not in word list'); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { reject('Already guessed'); return; }
       onGuessSubmitted(currentGuess, 0);
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
       setCurrentGuess('');
@@ -140,7 +138,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
       setCurrentGuess(prev => prev + key);
       onTyping?.();
     }
-  }, [currentGuess, currentBoard.status, onTyping]);
+  }, [currentGuess, currentBoard.status, isShaking, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -195,21 +193,21 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* Header */}
-      <div className="text-center py-2 px-2 shrink-0">
-        <div className="flex justify-center gap-3 mt-1">
-          <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
-          <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
+      {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
+      <div className="text-center px-2 shrink-0">
+        <div className="flex justify-center gap-3">
+          <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
+            <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
           </div>
         )}
       </div>
 
-      {/* Opponent HUD */}
-      <div className="flex justify-center px-4 mb-2">
+      {/* Opponent strip */}
+      <div className="shrink-0 px-3 pt-2">
         <OpponentHUD
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
@@ -225,7 +223,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
           items — the board rendered at its natural aspect height and
           overflowed under the hints/keyboard. An absolutely-positioned box
           has a definite height, so the clamp works on WebKit too. */}
-      <div className="flex-1 min-h-0 relative" ref={boardAreaRef}>
+      <div className="flex-1 min-h-0 relative mt-2" ref={boardAreaRef}>
         <div className="absolute inset-0 flex items-center justify-center px-4">
         {boardSize && <Board
           sizePx={boardSize}
@@ -236,6 +234,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
           showSolution={currentBoard.status === GameStatus.LOST}
           solution={currentBoard.solution}
           darkMode
+          isShaking={isShaking}
           // Six/Seven: without this the Board defaulted to 5 columns (wrong
           // grid for the mode) and a 5-row aspect ratio that oversized it.
           wordLength={currentBoard.solution.length}

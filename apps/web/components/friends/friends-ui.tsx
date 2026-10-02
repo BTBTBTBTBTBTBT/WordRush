@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Flame, Hash, Scissors, ArrowLeftRight } from 'lucide-react';
+import { Flame, Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
 
@@ -32,7 +32,7 @@ function CoinOutline({ size, color, stroke }: { size: number; color: string; str
   );
 }
 
-/** The game's outline icon: RPS scissors · Tic-Tac-Tile hash · Call It coin · Pass the Puzzle opposing arrows. */
+/** The game's outline icon: RPS scissors · Tic-Tac-Tile hash · Call It coin · Pass the Puzzle opposing arrows · Ghost ghost · Word Chain chain link. */
 export function GameGlyph({ kind, size = 16, color = '#ffffff', stroke = 2.4 }: { kind: FriendlyKind; size?: number; color?: string; stroke?: number }) {
   const props = { width: size, height: size, color, strokeWidth: stroke, 'aria-hidden': true } as const;
   switch (kind) {
@@ -40,6 +40,8 @@ export function GameGlyph({ kind, size = 16, color = '#ffffff', stroke = 2.4 }: 
     case 'ttt': return <Hash {...props} />;
     case 'coin': return <CoinOutline size={size} color={color} stroke={stroke} />;
     case 'pass': return <ArrowLeftRight {...props} />;
+    case 'ghost': return <Ghost {...props} />;
+    case 'chain': return <LinkChain {...props} />;
   }
 }
 

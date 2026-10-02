@@ -109,3 +109,50 @@ export function SoftPill({ children, onClick, disabled }: { children: React.Reac
     </button>
   );
 }
+
+/** Centered teal ring spinner (VS polish §2 — loading, sending, starting). */
+export function VsRingSpinner({ size = 44 }: { size?: number }) {
+  return (
+    <span
+      className="block rounded-full animate-spin"
+      style={{ width: size, height: size, border: `${Math.max(3, Math.round(size / 11))}px solid ${VS.soft}`, borderTopColor: VS.ink }}
+      aria-hidden="true"
+    />
+  );
+}
+
+/**
+ * The VS loading screen (VS polish §2): the mode icon in its color, the teal
+ * ring spinner and `LOADING <MODE>` on the VS page — never bare text or a
+ * blank screen while the match or its word lists load.
+ */
+export function VsLoadingScreen({ mode, label }: { mode: string; label?: string }) {
+  return (
+    <div
+      className="h-screen-stable flex flex-col items-center justify-center gap-4 px-6"
+      style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="flex items-center justify-center" style={{ width: 52, height: 52, borderRadius: 14, background: `${modeColor(mode)}1f` }}>
+        <VsModeIcon mode={mode} size={26} />
+      </span>
+      <VsRingSpinner />
+      <span className="text-[12px] font-black uppercase" style={{ color: VS.label, letterSpacing: 1.2 }}>
+        {label ?? `Loading ${modeTitle(mode)}`}
+      </span>
+    </div>
+  );
+}
+
+/** Small solid teal `VS` pill beside a match title (VS polish §1). */
+export function VsPill() {
+  return (
+    <span
+      className="inline-flex items-center justify-center font-black text-white shrink-0"
+      style={{ background: VS.ink, borderRadius: 999, fontSize: 11, letterSpacing: 0.8, height: 20, padding: '0 8px' }}
+    >
+      VS
+    </span>
+  );
+}

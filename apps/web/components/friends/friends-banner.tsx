@@ -52,7 +52,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
       )}
 
       <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
-        <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: FR.ink }}>{headline}</span>
+        <span className="font-black" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: FR.ink, textShadow: '0 0 12px rgba(219,39,119,0.55)' }}>{headline}</span>
         <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: FR.mid }}>{clockLine}</span>
       </div>
 

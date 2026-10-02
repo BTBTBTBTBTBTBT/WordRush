@@ -9,6 +9,9 @@ import WordociousCore
 /// components/friends/activity-feed.tsx. Friends overhaul (2026-10-01, spec
 /// §6): titled MOMENTS on a white card, finished pocket games join the feed,
 /// and every moment takes the fixed reactions (👏 🔥 😱 😤, Rematch on games).
+/// §10 (founder, iOS 220): chips show only when a moment has reactions, small
+/// and inside its card; double-tap toggles 👏, long-press floats the reaction
+/// bar above the card (tap outside to dismiss).
 struct ActivityFeedView: View {
     /// Friends overhaul §6: a Rematch reaction on a game moment opens the
     /// quick-play sheet with that game and friend.
@@ -20,8 +23,10 @@ struct ActivityFeedView: View {
     @State private var events: [FriendsService.FeedEvent]? = StatsMemo.shared.get(Self.memoKey)
     private static var memoKey: String { "friendsFeed:\(StatsMemo.uid)" }
     @State private var reactions: [String: FriendsService.MomentReactions] = [:]
-    /// The moment whose + picker is open.
+    /// The moment whose floating reaction bar is open (long-press).
     @State private var picking: String?
+    /// A friend's moment tapped once → their profile.
+    @State private var profileId: String?
     @State private var expanded = false
     @State private var pulse = false
 
@@ -34,7 +39,8 @@ struct ActivityFeedView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             FriendsSectionHeader(title: "MOMENTS") {
-                Text("LAST 7 DAYS").font(Brand.font(9.5, .black)).tracking(0.8).foregroundStyle(FriendsKit.label)
+                Text("LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT").font(Brand.font(8.5, .black)).tracking(0.6)
+                    .foregroundStyle(FriendsKit.label).lineLimit(1).minimumScaleFactor(0.7)
             }
             VStack(alignment: .leading, spacing: 8) {
                 if let events {
@@ -44,15 +50,8 @@ struct ActivityFeedView: View {
                     } else {
                         let today = FriendsService.localDay()
                         ForEach(expanded ? events : Array(events.prefix(Self.shown))) { e in
-                            VStack(alignment: .leading, spacing: 5) {
-                                if e.me {
-                                    row(e, today: today)
-                                } else {
-                                    NavigationLink(value: e.userId) { row(e, today: today) }
-                                        .buttonStyle(.plain)
-                                }
-                                reactionRow(e)
-                            }
+                            moment(e, today: today)
+                                .zIndex(picking == e.id ? 1 : 0)
                         }
                         if events.count > Self.shown {
                             Button {
@@ -82,6 +81,19 @@ struct ActivityFeedView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .vsCard(radius: 14)
         }
+        // Tap outside the floating bar to dismiss it: an oversized catcher behind
+        // the feed (it doesn't take layout space).
+        .background {
+            if picking != nil {
+                Color.white.opacity(0.001)
+                    .frame(width: 4000, height: 8000)
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation(.easeOut(duration: 0.15)) { picking = nil } }
+            }
+        }
+        .navigationDestination(isPresented: Binding(get: { profileId != nil }, set: { if !$0 { profileId = nil } })) {
+            if let id = profileId { PublicProfileView(userId: id) }
+        }
         .task(id: AuthService.shared.profile?.id) {
             guard AuthService.shared.profile != nil else { return }
             if let fresh = await FriendsService.fetchFeedWithReactions() {
@@ -90,6 +102,46 @@ struct ActivityFeedView: View {
                 StatsMemo.shared.set(Self.memoKey, fresh.events)
             } else if events == nil {
                 events = []
+            }
+        }
+    }
+
+    /// One moment: its card (the row, plus reaction chips when it has any),
+    /// double-tap → 👏, hold → the floating reaction bar, tap → the profile.
+    private func moment(_ e: FriendsService.FeedEvent, today: String) -> some View {
+        let open = picking == e.id
+        return VStack(alignment: .leading, spacing: 5) {
+            row(e, today: today)
+            reactionChips(e)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 12).fill(e.me ? FriendsKit.soft.opacity(0.6) : FriendsKit.page))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(open ? FriendsKit.solid.opacity(0.5) : .clear, lineWidth: 1.5))
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .onTapGesture(count: 2) {
+            picking = nil
+            toggle(e, "clap")
+        }
+        .onTapGesture {
+            if picking != nil { withAnimation(.easeOut(duration: 0.15)) { picking = nil }; return }
+            if !e.me { profileId = e.userId }
+        }
+        .onLongPressGesture(minimumDuration: 0.35) {
+            Haptics.tap()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { picking = e.id }
+        }
+        .overlay(alignment: .top) {
+            if open {
+                reactionBar(e)
+                    .alignmentGuide(.top) { $0[.bottom] + 6 }
+                    .transition(.scale(scale: 0.8, anchor: .bottom).combined(with: .opacity))
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(e.me ? "" : "Opens the profile")
+        .accessibilityActions {
+            ForEach(options(e), id: \.key) { o in
+                Button("React \(o.label)") { toggle(e, o.key) }
             }
         }
     }
@@ -112,53 +164,76 @@ struct ActivityFeedView: View {
             Text(Self.dayLabel(e.day, today: today)).font(Brand.font(9.5, .bold)).foregroundStyle(FriendsKit.label)
                 .fixedSize()
         }
-        .padding(.horizontal, 8).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 12).fill(e.me ? FriendsKit.soft.opacity(0.6) : FriendsKit.page))
     }
 
-    // MARK: Reactions (§6)
+    // MARK: Reactions (§6, §10)
 
-    @ViewBuilder private func reactionRow(_ e: FriendsService.FeedEvent) -> some View {
-        let r = reactions[e.id] ?? .init(counts: [:], mine: [])
+    private func options(_ e: FriendsService.FeedEvent) -> [(key: String, label: String)] {
         let isGame = e.type == "game"
-        let options = Self.reactionKeys.filter { $0.key != "rematch" || isGame }
-        HStack(spacing: 6) {
-            ForEach(options.filter { (r.counts[$0.key] ?? 0) > 0 }, id: \.key) { o in
-                chip(o.label, count: r.counts[o.key] ?? 0, mine: r.mine.contains(o.key)) { toggle(e, o.key) }
-            }
-            if picking == e.id {
-                ForEach(options.filter { (r.counts[$0.key] ?? 0) == 0 }, id: \.key) { o in
-                    chip(o.label, count: 0, mine: false) { picking = nil; toggle(e, o.key) }
+        return Self.reactionKeys.filter { $0.key != "rematch" || isGame }
+    }
+
+    /// Small chips inside the card, only for reactions that have a count.
+    @ViewBuilder private func reactionChips(_ e: FriendsService.FeedEvent) -> some View {
+        let r = reactions[e.id] ?? .init(counts: [:], mine: [])
+        let shown = options(e).filter { (r.counts[$0.key] ?? 0) > 0 }
+        if !shown.isEmpty {
+            HStack(spacing: 5) {
+                ForEach(shown, id: \.key) { o in
+                    chip(o.label, count: r.counts[o.key] ?? 0, mine: r.mine.contains(o.key)) { toggle(e, o.key) }
                 }
+                Spacer(minLength: 0)
             }
-            Button { withAnimation(.easeOut(duration: 0.15)) { picking = picking == e.id ? nil : e.id } } label: {
-                Image(systemName: picking == e.id ? "xmark" : "plus")
-                    .font(.system(size: 10, weight: .black)).foregroundStyle(FriendsKit.solid)
-                    .frame(width: 28, height: 24)
-                    .background(Capsule().fill(FriendsKit.soft))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(picking == e.id ? "Close reactions" : "React")
-            Spacer(minLength: 0)
+            .padding(.leading, 60)
         }
-        .padding(.leading, 48)
     }
 
     private func chip(_ label: String, count: Int, mine: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 3) {
-                Text(label).font(label.count > 2 ? Brand.font(10.5, .black) : .system(size: 12))
+            HStack(spacing: 2) {
+                Text(label).font(label.count > 2 ? Brand.font(10, .black) : .system(size: 11))
                     .foregroundStyle(FriendsKit.solid)
-                if count > 0 {
-                    Text("\(count)").font(Brand.font(10.5, .black)).foregroundStyle(FriendsKit.ink)
-                }
+                Text("\(count)").font(Brand.font(11, .black)).foregroundStyle(FriendsKit.ink).monospacedDigit()
             }
-            .padding(.horizontal, 8).frame(height: 24)
+            .padding(.horizontal, 7).frame(height: 20)
             .background(Capsule().fill(FriendsKit.soft))
             .overlay(Capsule().stroke(mine ? FriendsKit.solid : .clear, lineWidth: 1.5))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(mine ? .isSelected : [])
+    }
+
+    /// The floating pill above a held moment: 👏 🔥 😱 😤 (+ Rematch on games).
+    private func reactionBar(_ e: FriendsService.FeedEvent) -> some View {
+        let r = reactions[e.id] ?? .init(counts: [:], mine: [])
+        return HStack(spacing: 4) {
+            ForEach(options(e), id: \.key) { o in
+                let mine = r.mine.contains(o.key)
+                Button {
+                    toggle(e, o.key)
+                    withAnimation(.easeOut(duration: 0.15)) { picking = nil }
+                } label: {
+                    Group {
+                        if o.label.count > 2 {
+                            Text(o.label).font(Brand.font(11, .black)).foregroundStyle(FriendsKit.solid)
+                                .padding(.horizontal, 10)
+                        } else {
+                            Text(o.label).font(.system(size: 22)).frame(width: 38)
+                        }
+                    }
+                    .frame(height: 38)
+                    .background(Capsule().fill(mine ? FriendsKit.soft : .clear))
+                    .overlay(Capsule().stroke(mine ? FriendsKit.solid : .clear, lineWidth: 1.5))
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(o.key == "rematch" ? "Rematch" : "React \(o.label)")
+                .accessibilityAddTraits(mine ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 6).padding(.vertical, 4)
+        .background(Capsule().fill(Color.white)
+            .shadow(color: FriendsKit.ink.opacity(0.18), radius: 12, y: 4))
+        .fixedSize()
     }
 
     /// Optimistic toggle; a Rematch tap on a game moment also opens quick play.

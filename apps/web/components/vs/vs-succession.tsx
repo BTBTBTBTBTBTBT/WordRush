@@ -1,12 +1,15 @@
 'use client';
 
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
+import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
+import { SequenceMiniBoard } from '@/components/sequence/sequence-mini-board';
+import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import { OpponentHUD } from './opponent-hud';
-import { Trophy, Clock, Lock } from 'lucide-react';
+import { Trophy, Clock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -19,6 +22,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [hasReported, setHasReported] = useState(false);
   const prevSolvedRef = useRef(0);
@@ -82,27 +86,22 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
+    if (isShaking) return;
     setError('');
 
+    // Invalid entries shake the row like solo, then clear it.
+    const reject = (msg: string) => {
+      setError(msg);
+      playInvalid();
+      setIsShaking(true);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => setError(''), 1500);
+    };
+
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) {
-        setError('Word must be 5 letters');
-        setCurrentGuess('');
-        setTimeout(() => setError(''), 1500);
-        return;
-      }
-      if (!isValidWord(currentGuess)) {
-        setError('Not in word list');
-        setCurrentGuess('');
-        setTimeout(() => setError(''), 1500);
-        return;
-      }
-      if (hasDuplicateGuess(state.boards, currentGuess)) {
-        setError('Already guessed');
-        setCurrentGuess('');
-        setTimeout(() => setError(''), 1500);
-        return;
-      }
+      if (currentGuess.length !== 5) { reject('Word must be 5 letters'); return; }
+      if (!isValidWord(currentGuess)) { reject('Not in word list'); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { reject('Already guessed'); return; }
 
       // Relay the ACTIVE board (not a hardcoded 0): Succession is sequential, so
       // the guess lands on the current still-playing board. Sending 0 made the
@@ -118,7 +117,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
       setCurrentGuess(prev => prev + key);
       onTyping?.();
     }
-  }, [state, currentGuess, onTyping]);
+  }, [state, currentGuess, isShaking, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -137,11 +136,15 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
   const guessesUsed = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
+  // Same measured square-tile fit as the solo Succession screen.
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const boardFit = useSquareBoardFit(boardAreaRef, 4, maxGuesses, 18);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* Header */}
-      <div className="text-center py-2 px-2 shrink-0">
-        <div className="flex justify-center gap-3 mt-1">
+      {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
+      <div className="text-center px-2 shrink-0">
+        <div className="flex justify-center gap-3">
           <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{solvedCount}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
@@ -149,21 +152,24 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
       </div>
 
-      {/* Opponent HUD */}
-      <div className="flex justify-center px-4 mb-1">
+      {/* Opponent strip */}
+      <div className="shrink-0 px-3 pt-2">
         <OpponentHUD
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
           totalBoards={opponentProgress.totalBoards}
           opponentTiles={opponentTiles}
-          maxGuesses={state.boards[0]?.maxGuesses || 10}
+          maxGuesses={maxGuesses}
           wordLength={5}
         />
       </div>
 
-      {/* 2x2 Board Grid */}
-      <div className="flex-1 min-h-0 px-2 pb-1">
-        <div className="grid grid-cols-2 gap-2 w-full h-full max-w-lg mx-auto">
+      {/* The solo 2x2 (or 4-across) board grid, sequential unlock. */}
+      <div ref={boardAreaRef} className="flex-1 min-h-0 px-2 pt-2 pb-2 overflow-hidden">
+        <div
+          className={boardFit ? 'grid gap-2 w-full h-full justify-center content-center' : 'grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto h-full'}
+          style={boardFit ? { gridTemplateColumns: `repeat(${boardFit.cols}, ${boardFit.boardW}px)` } : undefined}
+        >
           {BOARD_ORDER.map((boardIdx) => {
             const board = state.boards[boardIdx];
             if (!board) return null;
@@ -183,7 +189,9 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
                 isFailed={isFailed}
                 isLocked={isLocked}
                 currentGuess={isActive ? currentGuess : ''}
+                isShaking={isActive && isShaking}
                 isInvalidWord={isActive && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
+                tileSize={boardFit?.tile}
               />
             );
           })}
@@ -191,133 +199,9 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
       </div>
 
       {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2">
+      <div className="shrink-0 pb-2 px-2 pt-1">
         <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
       </div>
-    </div>
-  );
-}
-
-function SequenceMiniBoard({
-  board,
-  boardIndex,
-  isActive,
-  isCompleted,
-  isFailed,
-  isLocked,
-  currentGuess,
-  isInvalidWord,
-}: {
-  board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
-  boardIndex: number;
-  isActive: boolean;
-  isCompleted: boolean;
-  isFailed: boolean;
-  isLocked: boolean;
-  currentGuess: string;
-  isInvalidWord?: boolean;
-}) {
-  const evalGuess = (guess: string, solution: string): TileState[] => {
-    const result: TileState[] = Array(5).fill(TileState.EMPTY);
-    const solutionArr = solution.split('');
-    const guessArr = guess.split('');
-    const used = Array(5).fill(false);
-
-    guessArr.forEach((letter, i) => {
-      if (letter === solutionArr[i]) { result[i] = TileState.CORRECT; used[i] = true; }
-    });
-    guessArr.forEach((letter, i) => {
-      if (result[i] === TileState.EMPTY) {
-        const foundIndex = solutionArr.findIndex((l, idx) => l === letter && !used[idx]);
-        if (foundIndex !== -1) { result[i] = TileState.PRESENT; used[foundIndex] = true; }
-        else { result[i] = TileState.ABSENT; }
-      }
-    });
-    return result;
-  };
-
-  const getTileColor = (state: TileState) => {
-    switch (state) {
-      case TileState.CORRECT: return 'tile-correct';
-      case TileState.PRESENT: return 'tile-present';
-      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-      default: return 'bg-zinc-800 border-zinc-600';
-    }
-  };
-
-  const showColors = isActive || isCompleted || isFailed;
-
-  const allGuesses = [...board.guesses];
-  if (isActive && currentGuess.length > 0 && board.guesses.length < board.maxGuesses) {
-    allGuesses.push(currentGuess);
-  }
-
-  return (
-    <div
-      className={`relative p-1 rounded-lg border-2 transition-all duration-300 h-full flex flex-col ${
-        isCompleted
-          ? 'border-violet-400 bg-violet-900/20 shadow-lg shadow-violet-500/20'
-          : isFailed
-          ? 'border-red-400 bg-red-900/20'
-          : isActive
-          ? 'border-yellow-400 bg-zinc-900/50 shadow-lg shadow-yellow-500/20'
-          : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
-      }`}
-    >
-      {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <Lock className="w-8 h-8 text-zinc-500/50" />
-        </div>
-      )}
-
-      <div className="flex flex-col gap-[2px] flex-1">
-        {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
-          const guess = allGuesses[rowIndex] || '';
-          const isPastGuess = rowIndex < board.guesses.length;
-          const isCurrentRow = rowIndex === board.guesses.length && isActive;
-          const tiles = isPastGuess && showColors
-            ? evalGuess(guess, board.solution)
-            : Array(5).fill(TileState.EMPTY);
-
-          return (
-            <div key={rowIndex} className="flex gap-[2px] flex-1">
-              {Array.from({ length: 5 }).map((_, letterIndex) => {
-                const letter = guess[letterIndex] || '';
-                const tileState = tiles[letterIndex];
-                const hasLetter = letter !== '';
-
-                return (
-                  <div
-                    key={letterIndex}
-                    className={`
-                      flex-1 flex items-center justify-center
-                      border rounded text-white font-bold text-[10px] sm:text-xs
-                      ${isCurrentRow && isInvalidWord && hasLetter
-                        ? 'bg-red-900/40 border-red-400 text-red-400'
-                        : isPastGuess && showColors
-                        ? getTileColor(tileState)
-                        : isPastGuess && !showColors
-                        ? 'bg-zinc-700/50 border-zinc-600/50'
-                        : hasLetter
-                        ? 'bg-zinc-800 border-zinc-500'
-                        : 'bg-zinc-800/50 border-zinc-700/30'
-                      }
-                    `}
-                  >
-                    {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '\u2022' : ''}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-
-      {isFailed && (
-        <div className="text-center text-xs text-red-300 mt-1 font-bold">
-          {board.solution.toUpperCase()}
-        </div>
-      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GameMode, initDictionary } from '@wordle-duel/core';
 import { VsGame } from '@/components/vs/vs-game';
+import { VsLoadingScreen } from '@/components/vs/vs-ui';
 import { AdGate } from '@/components/ads/ad-gate';
 import { VsProGate } from '@/components/game/unlimited-gate';
 
@@ -23,7 +24,7 @@ function VsClassicInner() {
 
 export default function VsClassicPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<VsLoadingScreen mode={GameMode.DUEL} />}>
       <VsClassicInner />
     </Suspense>
   );

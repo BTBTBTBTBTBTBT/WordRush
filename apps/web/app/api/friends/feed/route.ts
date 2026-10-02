@@ -40,7 +40,7 @@ export interface FeedEvent {
   value?: number | null;
   /** Pocket games: 'win' or 'draw', and the final score from the winner's side ("2–1"). */
   score?: string | null;
-  /** Pocket games: the game kind ('rps' | 'ttt' | 'coin' | 'pass'). */
+  /** Pocket games: the game kind ('rps' | 'ttt' | 'coin' | 'pass' | 'ghost' | 'chain'). */
   gameKind?: string | null;
 }
 

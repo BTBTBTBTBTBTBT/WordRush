@@ -9,6 +9,7 @@ import { Trophy, Clock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { isTypingTarget } from '@/lib/keyboard';
+import { playInvalid } from '@/lib/sounds';
 
 export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
@@ -18,6 +19,7 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [hasReported, setHasReported] = useState(false);
   const prevSolvedRef = useRef(0);
@@ -55,12 +57,22 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
+    if (isShaking) return;
     setError('');
 
+    // Invalid entries shake the row like solo, then clear it.
+    const reject = (msg: string) => {
+      setError(msg);
+      playInvalid();
+      setIsShaking(true);
+      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
+      setTimeout(() => setError(''), 1500);
+    };
+
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
-      if (!isWordValid(currentGuess)) { setError('Not in word list'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
-      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
+      if (currentGuess.length !== 5) { reject('Word must be 5 letters'); return; }
+      if (!isWordValid(currentGuess)) { reject('Not in word list'); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { reject('Already guessed'); return; }
 
       onGuessSubmitted(currentGuess, 0);
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
@@ -71,7 +83,7 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
       setCurrentGuess(prev => prev + key);
       onTyping?.();
     }
-  }, [state, currentGuess, onTyping]);
+  }, [state, currentGuess, isShaking, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -95,9 +107,9 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* Header */}
-      <div className="text-center py-2 px-2 shrink-0">
-        <div className="flex justify-center gap-3 mt-1">
+      {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
+      <div className="text-center px-2 shrink-0">
+        <div className="flex justify-center gap-3">
           <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{completedBoards}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
@@ -105,8 +117,8 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
       </div>
 
-      {/* Opponent HUD */}
-      <div className="flex justify-center px-4 mb-1">
+      {/* Opponent strip */}
+      <div className="shrink-0 px-3 pt-2">
         <OpponentHUD
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
@@ -118,8 +130,8 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
       </div>
 
       {/* Boards */}
-      <div className="flex-1 min-h-0 px-2 pb-1">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+      <div className="flex-1 min-h-0 px-2 pt-2 pb-1 overflow-hidden">
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 
       {/* Keyboard */}

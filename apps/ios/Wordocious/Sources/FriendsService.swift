@@ -339,7 +339,7 @@ enum FriendsService {
         var otherId: String?
         /// Pocket-game moments (`type: game`): "2–1", "by resignation" or nil.
         var score: String?
-        /// Pocket-game moments: rps | ttt | coin | pass.
+        /// Pocket-game moments: rps | ttt | coin | pass | ghost | chain.
         var gameKind: String?
 
         /// The pocket game of a game moment (gameKind, else its title).

@@ -2,7 +2,7 @@ import Foundation
 
 // Friends overhaul (founder, 2026-10-01; spec docs/FRIENDS_REDESIGN_SPEC.md):
 // the pocket games you play with a friend — Rock Paper Scissors, Tic-Tac-Tile,
-// Call It and Pass the Puzzle — plus the Friends banner words, friend streaks
+// Call It, Pass the Puzzle, Ghost and Word Chain (§9) — plus the Friends banner words, friend streaks
 // and the "on now" rule. Swift port of packages/core/src/friendly-games.ts,
 // pinned to it by friendly-games-fixtures.json (FriendlyGamesFixtureTests).
 //
@@ -11,7 +11,7 @@ import Foundation
 // applyFriendlyMove is ported too so the fixtures can replay every script.
 
 public enum FriendlyKind: String, Codable, CaseIterable, Identifiable {
-    case rps, ttt, coin, pass
+    case rps, ttt, coin, pass, ghost, chain
     public var id: String { rawValue }
 
     /// FRIENDLY_TITLES.
@@ -21,15 +21,19 @@ public enum FriendlyKind: String, Codable, CaseIterable, Identifiable {
         case .ttt: return "Tic-Tac-Tile"
         case .coin: return "Call It"
         case .pass: return "Pass the Puzzle"
+        case .ghost: return "Ghost"
+        case .chain: return "Word Chain"
         }
     }
 
-    /// FRIENDLY_TARGET — wins needed: best of 3 (RPS, Tic-Tac-Tile), best of 5 (Call It).
+    /// FRIENDLY_TARGET — wins needed: best of 3 (RPS, Tic-Tac-Tile, Ghost),
+    /// best of 5 (Call It); Word Chain is points (CHAIN_TARGET).
     public var target: Int {
         switch self {
-        case .rps, .ttt: return 2
+        case .rps, .ttt, .ghost: return 2
         case .coin: return 3
         case .pass: return 1
+        case .chain: return FriendlyGames.chainTarget
         }
     }
 
@@ -168,12 +172,52 @@ public struct PassState: Codable, Equatable {
     public var solvedBy: FriendlySide?
 }
 
-/// The server's `state` — one of the four shapes, tagged by `kind`.
+/// Ghost: why a round ended — the loser spelled a word, or left a dead end.
+public enum GhostReason: String, Codable, Equatable {
+    case word, dead
+}
+
+public struct GhostRound: Codable, Equatable {
+    public let fragment: String
+    public let loser: FriendlySide
+    public let reason: GhostReason
+}
+
+/// Ghost: add a letter each turn. Spell a whole word, or leave letters no word
+/// starts with, and you lose the round. `letters[i]` = who played fragment[i].
+public struct GhostState: Codable, Equatable {
+    public var fragment: String
+    public var letters: [FriendlySide]
+    public var turn: FriendlySide
+    public var starter: FriendlySide
+    public var rounds: [GhostRound]
+    public var score: FriendlyScore
+}
+
+public struct ChainWord: Codable, Equatable {
+    public let by: FriendlySide
+    public let word: String
+    public let points: Int
+}
+
+/// Word Chain: each word starts with the last letter of the one before; a word scores its letters.
+public struct ChainState: Codable, Equatable {
+    public var words: [ChainWord]
+    public var turn: FriendlySide
+    public var score: FriendlyScore
+
+    /// The letter the next word must start with (nil before the first word).
+    public var nextLetter: Character? { words.last?.word.last }
+}
+
+/// The server's `state` — one of the six shapes, tagged by `kind`.
 public enum FriendlyState: Codable, Equatable {
     case rps(RpsState)
     case ttt(TttState)
     case coin(CoinState)
     case pass(PassState)
+    case ghost(GhostState)
+    case chain(ChainState)
 
     private enum KindKey: String, CodingKey { case kind }
 
@@ -183,6 +227,8 @@ public enum FriendlyState: Codable, Equatable {
         case .ttt: return .ttt
         case .coin: return .coin
         case .pass: return .pass
+        case .ghost: return .ghost
+        case .chain: return .chain
         }
     }
 
@@ -193,6 +239,8 @@ public enum FriendlyState: Codable, Equatable {
         case .ttt(let s): return s.score
         case .coin(let s): return s.score
         case .pass: return nil
+        case .ghost(let s): return s.score
+        case .chain(let s): return s.score
         }
     }
 
@@ -204,6 +252,8 @@ public enum FriendlyState: Codable, Equatable {
         case .ttt: self = .ttt(try TttState(from: decoder))
         case .coin: self = .coin(try CoinState(from: decoder))
         case .pass: self = .pass(try PassState(from: decoder))
+        case .ghost: self = .ghost(try GhostState(from: decoder))
+        case .chain: self = .chain(try ChainState(from: decoder))
         }
     }
 
@@ -215,19 +265,24 @@ public enum FriendlyState: Codable, Equatable {
         case .ttt(let s): try s.encode(to: encoder)
         case .coin(let s): try s.encode(to: encoder)
         case .pass(let s): try s.encode(to: encoder)
+        case .ghost(let s): try s.encode(to: encoder)
+        case .chain(let s): try s.encode(to: encoder)
         }
     }
 }
 
 /// A move as the server takes it: `{kind:'rps', pick}` / `{kind:'ttt', cell}` /
-/// `{kind:'coin', call}` / `{kind:'pass', word}`.
+/// `{kind:'coin', call}` / `{kind:'pass', word}` / `{kind:'ghost', letter}` /
+/// `{kind:'chain', word}`.
 public enum FriendlyMove: Codable, Equatable {
     case rps(RpsPick)
     case ttt(Int)
     case coin(CoinFace)
     case pass(String)
+    case ghost(String)
+    case chain(String)
 
-    private enum Keys: String, CodingKey { case kind, pick, cell, call, word }
+    private enum Keys: String, CodingKey { case kind, pick, cell, call, word, letter }
 
     public var kind: FriendlyKind {
         switch self {
@@ -235,6 +290,8 @@ public enum FriendlyMove: Codable, Equatable {
         case .ttt: return .ttt
         case .coin: return .coin
         case .pass: return .pass
+        case .ghost: return .ghost
+        case .chain: return .chain
         }
     }
 
@@ -245,6 +302,8 @@ public enum FriendlyMove: Codable, Equatable {
         case .ttt: self = .ttt(try c.decode(Int.self, forKey: .cell))
         case .coin: self = .coin(try c.decode(CoinFace.self, forKey: .call))
         case .pass: self = .pass(try c.decode(String.self, forKey: .word))
+        case .ghost: self = .ghost(try c.decode(String.self, forKey: .letter))
+        case .chain: self = .chain(try c.decode(String.self, forKey: .word))
         }
     }
 
@@ -256,6 +315,8 @@ public enum FriendlyMove: Codable, Equatable {
         case .ttt(let i): try c.encode(i, forKey: .cell)
         case .coin(let f): try c.encode(f, forKey: .call)
         case .pass(let w): try c.encode(w, forKey: .word)
+        case .ghost(let l): try c.encode(l, forKey: .letter)
+        case .chain(let w): try c.encode(w, forKey: .word)
         }
     }
 }
@@ -312,6 +373,11 @@ public enum FriendlyGames {
     public static let coinStakes = ["Bragging rights", "Loser picks tonight's VS mode", "Winner goes first next time"]
     /// Pass the Puzzle shares one Classic board: six guesses between the two players.
     public static let passMaxGuesses = 6
+    /// Ghost and Word Chain play on the 5- to 7-letter word lists.
+    public static let wordMin = 5
+    public static let wordMax = 7
+    /// Word Chain: a word scores its letters; first to 30 wins.
+    public static let chainTarget = 30
     /// A friend is "on now" when their app heartbeat is under two minutes old.
     public static let onlineWindowMs = 2 * 60 * 1000
 
@@ -324,6 +390,8 @@ public enum FriendlyGames {
             let s = stake.flatMap { coinStakes.contains($0) ? $0 : nil } ?? coinStakes[0]
             return .coin(CoinState(caller: .a, rounds: [], score: FriendlyScore(), stake: s))
         case .pass: return .pass(PassState(turn: .a, guesses: [], solvedBy: nil))
+        case .ghost: return .ghost(GhostState(fragment: "", letters: [], turn: .a, starter: .a, rounds: [], score: FriendlyScore()))
+        case .chain: return .chain(ChainState(words: [], turn: .a, score: FriendlyScore()))
         }
     }
 
@@ -352,6 +420,8 @@ public enum FriendlyGames {
         case .ttt(let t): return FriendlyTurn(rawValue: t.turn.rawValue)
         case .coin(let c): return FriendlyTurn(rawValue: c.caller.rawValue)
         case .pass(let p): return FriendlyTurn(rawValue: p.turn.rawValue)
+        case .ghost(let g): return FriendlyTurn(rawValue: g.turn.rawValue)
+        case .chain(let c): return FriendlyTurn(rawValue: c.turn.rawValue)
         }
     }
 
@@ -365,8 +435,11 @@ public enum FriendlyGames {
         let target = s.kind.target
         if score.a >= target { return .a }
         if score.b >= target { return .b }
-        // Tic-Tac-Tile stops after five games (draws included): the leader wins.
+        // Tic-Tac-Tile stops after five games (draws included), Ghost after five rounds: the leader wins.
         if case .ttt(let t) = s, t.games.count >= 5 {
+            return score.a == score.b ? .draw : score.a > score.b ? .a : .b
+        }
+        if case .ghost(let g) = s, g.rounds.count >= 5 {
             return score.a == score.b ? .draw : score.a > score.b ? .a : .b
         }
         return nil
@@ -377,11 +450,21 @@ public enum FriendlyGames {
         case failure(String)
     }
 
-    /// Apply one move by `by`. Pure: randomness and the answer are parameters.
+    /// A–Z only (the core's /^[A-Z]+$/ on an upper-cased string).
+    private static func isLetters(_ w: String) -> Bool {
+        !w.isEmpty && w.unicodeScalars.allSatisfy { $0.value >= 65 && $0.value <= 90 }
+    }
+
+    /// Apply one move by `by`. Pure: randomness, the answer and the word checks are parameters.
+    /// `isWord`: a 5–7 letter word on the lists; `hasPrefix`: some 5–7 letter word starts
+    /// with these letters (Ghost); `blocked`: letters the app never shows.
     public static func applyMove(_ s: FriendlyState, by: FriendlySide, _ move: FriendlyMove,
                                  random: () -> Double = { Double.random(in: 0..<1) },
                                  solution: String? = nil,
-                                 isValidWord: ((String) -> Bool)? = nil) -> MoveResult {
+                                 isValidWord: ((String) -> Bool)? = nil,
+                                 isWord: ((String) -> Bool)? = nil,
+                                 hasPrefix: ((String) -> Bool)? = nil,
+                                 blocked: ((String) -> Bool)? = nil) -> MoveResult {
         if move.kind != s.kind { return .failure("Wrong game") }
         if friendlyWinner(s) != nil { return .failure("This game is over") }
         let turn = whoseTurn(s)
@@ -446,6 +529,42 @@ public enum FriendlyGames {
             p.solvedBy = solved ? by : nil
             return done(.pass(p))
 
+        case (.ghost(var g), .ghost(let raw)):
+            let letter = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            if letter.count != 1 || !isLetters(letter) { return .failure("One letter, please") }
+            let fragment = g.fragment + letter
+            if let blocked, blocked(fragment) { return .failure("Try another letter") }
+            let spelled = fragment.count >= wordMin && (isWord?(fragment) ?? false)
+            let dead = !spelled && hasPrefix != nil && !(hasPrefix?(fragment) ?? true)
+            if spelled || dead {
+                let winner = by.other
+                let starter = g.starter.other
+                g.fragment = ""
+                g.letters = []
+                g.starter = starter
+                g.turn = starter
+                g.rounds.append(GhostRound(fragment: fragment, loser: by, reason: spelled ? .word : .dead))
+                g.score[winner] += 1
+                return done(.ghost(g))
+            }
+            g.fragment = fragment
+            g.letters.append(by)
+            g.turn = by.other
+            return done(.ghost(g))
+
+        case (.chain(var c), .chain(let raw)):
+            let word = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            if !isLetters(word) || word.count < wordMin || word.count > wordMax { return .failure("\(wordMin) to \(wordMax) letters, please") }
+            if let need = c.nextLetter, word.first != need { return .failure("Start with \(need)") }
+            if c.words.contains(where: { $0.word == word }) { return .failure("Already played") }
+            if let blocked, blocked(word) { return .failure("Try another word") }
+            if let isWord, !isWord(word) { return .failure("Not in the word list") }
+            let points = word.count
+            c.turn = by.other
+            c.words.append(ChainWord(by: by, word: word, points: points))
+            c.score[by] += points
+            return done(.chain(c))
+
         default:
             return .failure("Bad move")
         }
@@ -485,6 +604,11 @@ public enum FriendlyGames {
             return myTurn ? "Your call · \(mine)–\(theirs)" : "\(them) calls next · \(mine)–\(theirs)"
         case .ttt:
             return myTurn ? "Your move · \(them) moved \(ago(minutesAgo))" : "Waiting on \(them) · \(mine)–\(theirs)"
+        case .ghost(let g):
+            return myTurn ? (g.fragment.isEmpty ? "Your letter · start it" : "Your letter · \(g.fragment)") : "Waiting on \(them) · \(mine)–\(theirs)"
+        case .chain(let c):
+            if myTurn { return c.nextLetter.map { "Your word · starts with \($0)" } ?? "Your word · any word" }
+            return "\(them)'s word · \(mine)–\(theirs)"
         }
     }
 
@@ -505,6 +629,10 @@ public enum FriendlyGames {
         case .coin(let c): return "ROUND \(c.rounds.count + 1) OF 5"
         case .pass(let p):
             return myTurn ? "YOUR GUESS · \(p.guesses.count + 1) OF \(passMaxGuesses)" : "THEIR GUESS · \(p.guesses.count + 1) OF \(passMaxGuesses)"
+        case .ghost: return myTurn ? "YOUR LETTER" : "THEIR LETTER"
+        case .chain(let c):
+            if myTurn { return c.nextLetter.map { "YOUR WORD · STARTS WITH \($0)" } ?? "YOUR WORD" }
+            return "THEIR WORD"
         }
     }
 

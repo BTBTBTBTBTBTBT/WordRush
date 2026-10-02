@@ -2,8 +2,8 @@ import SwiftUI
 import WordociousCore
 
 /// One pocket game with a friend (Friends overhaul, founder 2026-10-01; spec
-/// docs/FRIENDS_REDESIGN_SPEC.md §4, board AE): Rock Paper Scissors,
-/// Tic-Tac-Tile, Call It or Pass the Puzzle. The server runs the rules; this
+/// docs/FRIENDS_REDESIGN_SPEC.md §4, §9, board AE): Rock Paper Scissors,
+/// Tic-Tac-Tile, Call It, Pass the Puzzle, Ghost or Word Chain. The server runs the rules; this
 /// screen polls GET /api/friends/games/<id> every 2 s while open (live play
 /// when both are on — the poll also marks you as watching, so moves reach you
 /// without a push), sends moves, retries on 409 and offers RESIGN in the close
@@ -17,6 +17,10 @@ struct FriendlyGameScreen: View {
     @State private var sending = false
     @State private var moveError: String?
     @State private var passInput = ""
+    /// Ghost: the letter in the dashed tile, played by ADD <L> (a stray tap can't lose a round).
+    @State private var ghostPending: String?
+    /// Word Chain: the letters typed after the locked first letter.
+    @State private var chainTyped = ""
     @State private var confirmClose = false
     @State private var rematching = false
 
@@ -33,20 +37,24 @@ struct FriendlyGameScreen: View {
         VStack(spacing: 0) {
             topBar
             if let g = game {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        scoreWindow(g)
-                        board(g)
-                        if let moveError {
-                            Text(moveError).font(Brand.font(12, .heavy)).foregroundStyle(Color(hex: 0xDC2626))
-                                .multilineTextAlignment(.center)
-                                .transition(.opacity)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            scoreWindow(g)
+                            board(g)
+                            if let moveError, !pinsInput(g) { errorText(moveError) }
+                            if !g.isActive { overButtons(g) }
                         }
-                        if !g.isActive { overButtons(g) }
+                        .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 24)
                     }
-                    .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 24)
+                    // Word Chain: keep the newest word in view.
+                    .onChange(of: chainCount(g)) { _ in
+                        withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo("chain-end", anchor: .bottom) }
+                    }
                 }
                 if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p) }
+                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs) }
+                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c) }
             } else if let loadError {
                 Spacer()
                 VStack(spacing: 12) {
@@ -111,7 +119,12 @@ struct FriendlyGameScreen: View {
             switch r {
             case .success(let ng):
                 apply(ng)
-                if case .pass = m { passInput = "" }
+                switch m {
+                case .pass: passInput = ""
+                case .ghost: ghostPending = nil
+                case .chain: chainTyped = ""
+                default: break
+                }
                 if !ng.isActive { ng.result == "win" ? Haptics.success() : Haptics.tap() } else { Haptics.tap() }
             case .failure(.retry):
                 moveError = "The game moved on — try again"
@@ -143,6 +156,8 @@ struct FriendlyGameScreen: View {
             switch r {
             case .success(let ng):
                 passInput = ""
+                ghostPending = nil
+                chainTyped = ""
                 gameId = ng.id
                 withAnimation { game = ng }
             case .failure(.message(let m)): moveError = m
@@ -265,6 +280,8 @@ struct FriendlyGameScreen: View {
         case .ttt(let t): parts.append("BEST OF 3 · GAME \(min(t.games.count + 1, 5))")
         case .coin: parts.append("BEST OF 5")
         case .pass: parts.append("ONE BOARD · SIX GUESSES")
+        case .ghost: parts.append("BEST OF 3")
+        case .chain: parts.append("FIRST TO \(FriendlyGames.chainTarget)")
         }
         if g.status == "resigned" || g.status == "expired" { return (parts + [g.line.uppercased()]).joined(separator: " · ") }
         if g.isActive && themOnline { parts.append("LIVE · \(themName.uppercased()) IS ON") }
@@ -282,6 +299,15 @@ struct FriendlyGameScreen: View {
         case .coin(let c):
             if let last = c.rounds.last { parts.append("LANDED \(last.flip.rawValue.uppercased())") }
         case .pass: break
+        case .ghost(let gs):
+            if let last = gs.rounds.last {
+                let n = gs.rounds.count
+                parts.append(last.loser == me ? "\(themName.uppercased()) TOOK ROUND \(n)" : "YOU TOOK ROUND \(n)")
+            }
+        case .chain(let c):
+            if let last = c.words.last {
+                parts.append("\(last.by == me ? "YOU" : themName.uppercased()) PLAYED \(last.word) +\(last.points)")
+            }
         }
         return parts.joined(separator: " · ")
     }
@@ -294,7 +320,31 @@ struct FriendlyGameScreen: View {
         case .ttt(let t): tttBoard(g, t)
         case .coin(let c): coinBoard(g, c)
         case .pass(let p): passBoard(g, p)
+        case .ghost(let gs): ghostBoard(g, gs)
+        case .chain(let c): chainBoard(g, c)
         }
+    }
+
+    /// Ghost and Word Chain pin their input (and its inline error) above the keyboard.
+    private func pinsInput(_ g: FriendlyGameView) -> Bool {
+        guard g.isActive else { return false }
+        return g.kind == .ghost || g.kind == .chain
+    }
+
+    private func errorText(_ m: String) -> some View {
+        Text(m).font(Brand.font(12, .heavy)).foregroundStyle(Color(hex: 0xDC2626))
+            .multilineTextAlignment(.center)
+            .transition(.opacity)
+    }
+
+    private func chainCount(_ g: FriendlyGameView) -> Int {
+        if case .chain(let c) = g.state { return c.words.count }
+        return 0
+    }
+
+    /// Whose color a letter wears in Ghost and Word Chain: yours purple, theirs amber.
+    private func sideColor(_ side: FriendlySide, me: FriendlySide) -> Color {
+        side == me ? FriendsKit.purple : FriendsKit.amber
     }
 
     // Rock Paper Scissors
@@ -568,6 +618,259 @@ struct FriendlyGameScreen: View {
         .opacity(mine ? 1 : 0.5)
         .padding(.bottom, 6)
         .background(FriendsKit.page)
+    }
+
+    // Ghost (§9)
+
+    @ViewBuilder private func ghostBoard(_ g: FriendlyGameView, _ s: GhostState) -> some View {
+        let me = g.me
+        let myLetter = g.isActive && g.yourTurn
+        let letters = Array(s.fragment).map(String.init)
+        VStack(spacing: 12) {
+            // A round just ended (or the match did): what happened.
+            if let last = s.rounds.last, s.fragment.isEmpty {
+                ghostRoundCard(last, round: s.rounds.count, me: me)
+                    .id("ghost-round-\(s.rounds.count)")
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+            if g.isActive {
+                VSSectionLabel(text: s.fragment.isEmpty ? (myLetter ? "START THE WORD" : "\(themName.uppercased()) STARTS") : "THE LETTERS SO FAR")
+                HStack(spacing: 6) {
+                    ForEach(letters.indices, id: \.self) { i in
+                        let by = i < s.letters.count ? s.letters[i] : me.other
+                        ghostTile(letters[i], fill: sideColor(by, me: me))
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                    if myLetter {
+                        ghostTile(ghostPending ?? "", fill: nil)
+                    } else if letters.isEmpty {
+                        ghostTile("", fill: nil).opacity(0.5)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .animation(.spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
+                if !myLetter {
+                    Text("\(themName) is adding a letter…").font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                }
+                Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 16) {
+                    legend("YOU", FriendsKit.purple)
+                    legend(themName.uppercased(), FriendsKit.amber)
+                }
+            }
+        }
+    }
+
+    /// One fragment tile (52 px, radius 10): colored by who played it, or the
+    /// dashed tile for your next letter.
+    private func ghostTile(_ letter: String, fill: Color?) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        return ZStack {
+            if let fill {
+                shape.fill(fill).shadow(color: fill.opacity(0.4), radius: 5, y: 2)
+            } else {
+                shape.fill(Color.white)
+                shape.strokeBorder(letter.isEmpty ? FriendsKit.purple.opacity(0.45) : FriendsKit.purple,
+                                   style: StrokeStyle(lineWidth: 2, dash: letter.isEmpty ? [5, 4] : []))
+            }
+            Text(letter).font(Brand.font(26, .black)).foregroundStyle(fill == nil ? FriendsKit.purple : .white)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: 52, maxHeight: 52)
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityLabel(letter.isEmpty ? "Your next letter" : letter)
+    }
+
+    /// `<WORD> — <name> spelled a word` / `<LETTERS> — no word starts with that`.
+    private func ghostRoundCard(_ r: GhostRound, round: Int, me: FriendlySide) -> some View {
+        let loser = r.loser == me ? "you" : themName
+        let winner = r.loser == me ? themName.uppercased() : "YOU"
+        let text = r.reason == .word ? "\(r.fragment) — \(loser) spelled a word" : "\(r.fragment) — no word starts with that"
+        return VStack(spacing: 4) {
+            Text("ROUND \(round) · \(winner) TAKE\(r.loser == me ? "S" : "") IT")
+                .font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsKit.mid)
+            Text(text).font(Brand.font(14, .black)).foregroundStyle(FriendsKit.ink)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(FriendsKit.soft))
+    }
+
+    /// Letters only: a tap fills the dashed tile; `ADD <L>` plays it (web parity).
+    private func ghostKeyboard(_ g: FriendlyGameView, _ s: GhostState) -> some View {
+        let mine = g.yourTurn && !sending
+        let ghostColor = FriendsKit.color(.ghost)
+        let play = {
+            guard mine, let l = ghostPending else { return }
+            send(.ghost(l))
+        }
+        return VStack(spacing: 8) {
+            if let moveError { errorText(moveError).padding(.horizontal, 16) }
+            if g.yourTurn {
+                Button(action: play) {
+                    Group {
+                        if sending { ProgressView().tint(.white) }
+                        else { Text(ghostPending.map { "ADD \($0)" } ?? "TAP A LETTER").font(Brand.font(15, .black)).tracking(0.8) }
+                    }
+                    .foregroundStyle(.white).frame(maxWidth: .infinity).frame(height: 46)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(ghostColor)
+                        .shadow(color: ghostColor.opacity(ghostPending == nil ? 0 : 0.4), radius: 6, y: 3))
+                    .opacity(ghostPending == nil ? 0.45 : 1)
+                }
+                .buttonStyle(PressableStyle())
+                .disabled(ghostPending == nil || sending)
+                .padding(.horizontal, 16)
+            }
+            LetterKeyboard(
+                onLetter: { l in
+                    guard mine else { return }
+                    ghostPending = l
+                    moveError = nil
+                },
+                onEnter: play,
+                onDelete: {
+                    guard mine else { return }
+                    ghostPending = nil
+                },
+                showEnter: false,
+                onHardwareKey: { key in
+                    // Return plays the letter in the dashed tile, like ADD.
+                    guard key == .enter else { return false }
+                    play()
+                    return true
+                },
+                hardwareEnabled: mine
+            )
+            .opacity(mine ? 1 : 0.5)
+        }
+        .padding(.top, 6).padding(.bottom, 6)
+        .background(FriendsKit.page)
+    }
+
+    // Word Chain (§9)
+
+    @ViewBuilder private func chainBoard(_ g: FriendlyGameView, _ c: ChainState) -> some View {
+        let me = g.me
+        VStack(spacing: 8) {
+            if c.words.isEmpty {
+                Text(g.isActive && g.yourTurn ? "Open the chain with any 5- to 7-letter word." : "\(themName) opens the chain.")
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    .padding(.vertical, 8)
+            }
+            ForEach(Array(c.words.enumerated()), id: \.offset) { i, w in
+                chainRow(w, me: me, newest: i == c.words.count - 1 && g.isActive)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            Color.clear.frame(height: 1).id("chain-end")
+            HStack(spacing: 16) {
+                legend("YOU", FriendsKit.purple)
+                legend(themName.uppercased(), FriendsKit.amber)
+            }
+            .padding(.top, 2)
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
+    }
+
+    /// One word pill: tiles (30 px) in the player's color and a `+5` chip; the
+    /// newest word's last letter glows (the next word starts with it).
+    private func chainRow(_ w: ChainWord, me: FriendlySide, newest: Bool) -> some View {
+        let letters = Array(w.word).map(String.init)
+        let fill = sideColor(w.by, me: me)
+        return HStack(spacing: 4) {
+            ForEach(letters.indices, id: \.self) { i in
+                let glow = newest && i == letters.count - 1
+                Text(letters[i]).font(Brand.font(15, .black)).foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(fill))
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(glow ? FriendsKit.color(.chain) : .clear, lineWidth: 2.5))
+                    .shadow(color: glow ? FriendsKit.color(.chain).opacity(0.7) : .clear, radius: glow ? 7 : 0)
+                    .scaleEffect(glow ? 1.08 : 1)
+            }
+            Spacer(minLength: 6)
+            Text("+\(w.points)").font(Brand.font(12, .black)).monospacedDigit()
+                .foregroundStyle(w.by == me ? FriendsKit.purple : Color(hex: 0xB45309))
+                .padding(.horizontal, 9).frame(height: 24)
+                .background(Capsule().fill(w.by == me ? Color(hex: 0xEDE9FE) : Color(hex: 0xFEF3C7)))
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .vsCard(radius: 14)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(w.by == me ? "You" : themName) played \(w.word), plus \(w.points)")
+    }
+
+    /// Your word: 5–7 tiles with the needed first letter pre-filled and locked,
+    /// the keyboard and ENTER. Errors show inline right above it.
+    private func chainInputArea(_ g: FriendlyGameView, _ c: ChainState) -> some View {
+        let mine = g.yourTurn && !sending
+        let locked = c.nextLetter.map(String.init)
+        let letters = (locked.map { [$0] } ?? []) + Array(chainTyped).map(String.init)
+        let wordMax = FriendlyGames.wordMax
+        return VStack(spacing: 8) {
+            if g.yourTurn {
+                HStack(spacing: 5) {
+                    ForEach(0..<wordMax, id: \.self) { i in
+                        chainInputTile(i < letters.count ? letters[i] : "", locked: i == 0 && locked != nil,
+                                       optional: i >= FriendlyGames.wordMin)
+                    }
+                }
+                .padding(.horizontal, 16)
+            } else {
+                Text("\(themName)'s word — it lands in the chain here.")
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+            }
+            if let moveError { errorText(moveError).padding(.horizontal, 16) }
+            LetterKeyboard(
+                onLetter: { l in
+                    guard mine, letters.count < wordMax else { return }
+                    chainTyped += l
+                    moveError = nil
+                },
+                onEnter: {
+                    guard mine else { return }
+                    let word = letters.joined()
+                    guard word.count >= FriendlyGames.wordMin else {
+                        moveError = "\(FriendlyGames.wordMin) to \(wordMax) letters, please"
+                        return
+                    }
+                    send(.chain(word))
+                },
+                onDelete: {
+                    // The locked first letter stays.
+                    guard mine, !chainTyped.isEmpty else { return }
+                    chainTyped.removeLast()
+                },
+                hardwareEnabled: mine
+            )
+            .opacity(mine ? 1 : 0.5)
+        }
+        .padding(.top, 8).padding(.bottom, 6)
+        .background(FriendsKit.page)
+    }
+
+    private func chainInputTile(_ letter: String, locked: Bool, optional: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+        let green = FriendsKit.color(.chain)
+        return ZStack {
+            if locked {
+                shape.fill(green).shadow(color: green.opacity(0.45), radius: 6, y: 2)
+            } else {
+                shape.fill(Color.white)
+                shape.strokeBorder(letter.isEmpty ? Color(hex: 0xE5E7EB) : FriendsKit.purple.opacity(0.7),
+                                   style: StrokeStyle(lineWidth: 2, dash: optional && letter.isEmpty ? [4, 3] : []))
+            }
+            Text(letter).font(Brand.font(21, .black)).foregroundStyle(locked ? .white : Color(hex: 0x111827))
+            if locked {
+                Image(systemName: "lock.fill").font(.system(size: 7, weight: .black)).foregroundStyle(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(4)
+            }
+        }
+        .frame(maxWidth: 44, maxHeight: 44)
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityLabel(locked ? "\(letter), locked" : letter.isEmpty ? "Empty" : letter)
     }
 
     // MARK: Over

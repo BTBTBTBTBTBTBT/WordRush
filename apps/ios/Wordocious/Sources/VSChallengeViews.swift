@@ -379,7 +379,13 @@ struct VSChallengeRaceView: View {
     @ViewBuilder private var content: some View {
         switch phase {
         case .loading:
-            ProgressView().tint(VsLobbyKit.ink).padding(.top, 80)
+            // The VS loading look (spec §2) — the mode isn't known until it loads.
+            VStack(spacing: 16) {
+                VSRingSpinner()
+                Text("LOADING CHALLENGE").font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.label)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 120)
         case .error(let message):
             simpleCard(message, sub: auth.isAuthenticated ? nil : "Sign in to race a friend’s run.")
         case .expired:

@@ -354,3 +354,176 @@ struct SearchRing: View {
         .accessibilityLabel("Searching for \(secs) seconds")
     }
 }
+
+/// The live-search ring driven by a 60 fps animation timeline (founder,
+/// 2026-10-01: the 15 s step-in countdown ticked choppily at 4 fps). The arc
+/// moves continuously; the digits still change once a second.
+struct LiveSearchRing: View {
+    let startedAt: Date?
+    /// Stops the frame clock while an opaque overlay (intro / countdown) covers it.
+    var paused = false
+    var body: some View {
+        TimelineView(.animation(minimumInterval: nil, paused: paused)) { ctx in
+            SearchRing(elapsed: startedAt.map { max(0, ctx.date.timeIntervalSince($0)) } ?? 0)
+        }
+    }
+}
+
+/// The step-in card's slim teal bar, filling continuously toward the bot's 0:15.
+struct StepInProgressBar: View {
+    let startedAt: Date?
+    var window: TimeInterval = 15
+    var body: some View {
+        TimelineView(.animation) { ctx in
+            let elapsed = startedAt.map { max(0, ctx.date.timeIntervalSince($0)) } ?? 0
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(VsLobbyKit.soft)
+                    Capsule().fill(VsLobbyKit.ink).frame(width: geo.size.width * min(1, elapsed / window))
+                }
+            }
+        }
+        .frame(height: 6)
+    }
+}
+
+/// Small solid teal `VS` pill — sits beside a mode title on the match header
+/// and the countdown (VS polish spec §1).
+struct VSTagPill: View {
+    var size: CGFloat = 11
+    var body: some View {
+        Text("VS").font(Brand.font(size, .black)).tracking(0.6).foregroundStyle(.white)
+            .padding(.horizontal, size * 0.65).frame(height: size * 1.8)
+            .background(Capsule().fill(VsLobbyKit.ink))
+            .accessibilityLabel("Versus")
+    }
+}
+
+/// Small soft gray caps pill — LEAVE / CANCEL on the VS screens.
+struct VSGreyPill: View {
+    let title: String
+    var icon: String? = nil
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if let icon { Image(systemName: icon).font(.system(size: 10, weight: .black)) }
+                Text(title).font(Brand.font(11, .black)).tracking(0.6)
+            }
+            .foregroundStyle(VsLobbyKit.sub)
+            .padding(.horizontal, 16).frame(height: 32)
+            .background(Capsule().fill(Color(hex: 0xEEF0F3)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(PressableStyle())
+    }
+}
+
+/// Soft lavender caps button (`#ede9fe` bg, `#6d28d9` text) — the result
+/// screens' secondary actions (HOME, SHARE, DECLINE).
+struct VSSoftPurpleButton: View {
+    let title: String
+    var icon: String? = nil
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let icon { Image(systemName: icon).font(.system(size: 12, weight: .black)) }
+                Text(title).font(Brand.font(14, .black)).tracking(0.6)
+            }
+            .foregroundStyle(VsLobbyKit.purpleSub)
+            .frame(maxWidth: .infinity).padding(.vertical, 14)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEDE9FE)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle())
+    }
+}
+
+/// Teal ring spinner on soft teal (VS loading screens).
+struct VSRingSpinner: View {
+    var size: CGFloat = 46
+    var body: some View {
+        TimelineView(.animation) { ctx in
+            let angle = ctx.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.9) / 0.9 * 360
+            ZStack {
+                Circle().stroke(VsLobbyKit.soft, lineWidth: size * 0.12)
+                Circle().trim(from: 0, to: 0.28)
+                    .stroke(VsLobbyKit.ink, style: StrokeStyle(lineWidth: size * 0.12, lineCap: .round))
+                    .rotationEffect(.degrees(angle))
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityLabel("Loading")
+    }
+}
+
+/// VS loading / entry screen (VS polish spec §2): the mode icon in its color,
+/// a teal ring spinner and `LOADING <MODE>` on the VS page color — never bare
+/// text or a blank screen. Bots add their art + a "Matching you with…" line.
+struct VSLoadingView: View {
+    let mode: GameMode?
+    /// Replaces `LOADING <MODE>` (e.g. "LOADING CHALLENGE" before the mode is known).
+    var title: String? = nil
+    var botArt: String? = nil
+    var line: String? = nil
+
+    var body: some View {
+        VStack(spacing: 16) {
+            if let mode { VSModeGlyphTile(mode: mode, selected: false, size: 48) }
+            VSRingSpinner()
+            Text(title ?? "LOADING \(mode.map { VsLobbyKit.modeName($0).uppercased() } ?? "")")
+                .font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.label)
+            if botArt != nil || line != nil {
+                HStack(spacing: 8) {
+                    if let botArt { BotArtCircle(art: botArt, size: 30) }
+                    if let line {
+                        Text(line).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(VsLobbyKit.page.ignoresSafeArea())
+    }
+}
+
+/// Soft VS confirm card over a dim backdrop (forfeit and friends): caps title,
+/// a short message, a purple primary and a soft secondary action.
+struct VSConfirmCard: View {
+    let title: String
+    let message: String
+    let primary: String
+    let secondary: String
+    var secondaryDestructive = false
+    let onPrimary: () -> Void
+    let onSecondary: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.35).ignoresSafeArea().onTapGesture(perform: onPrimary)
+            VStack(spacing: 12) {
+                Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                    .multilineTextAlignment(.center)
+                Text(message).font(Brand.font(13, .bold)).foregroundStyle(VsLobbyKit.sub)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                VSPrimaryButton(title: primary, color: VsLobbyKit.purple, action: onPrimary).padding(.top, 4)
+                Button(action: onSecondary) {
+                    Text(secondary).font(Brand.font(14, .black)).tracking(0.6)
+                        .foregroundStyle(secondaryDestructive ? Color(hex: 0xB91C1C) : VsLobbyKit.purpleSub)
+                        .frame(maxWidth: .infinity).padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xEDE9FE)))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle())
+            }
+            .padding(18).frame(maxWidth: 340)
+            .vsCard(radius: 16)
+            .padding(.horizontal, 24)
+        }
+        .transition(.opacity)
+    }
+}

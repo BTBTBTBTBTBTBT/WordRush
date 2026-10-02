@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -141,7 +142,7 @@ fun MiniRunBoard(mode: GameMode, run: VsChallengeService.Run, solutions: List<St
 
 /** Close (purple) + centered WORDOCIOUS wordmark — the results screens' top bar (§5). */
 @Composable
-private fun ResultTopBar(onClose: () -> Unit) {
+internal fun ResultTopBar(onClose: () -> Unit) {
     Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         Box(Modifier.size(36.dp).clip(CircleShape).clickableNoRipple(onClose).align(Alignment.CenterStart), Alignment.Center) {
             Icon(Icons.Filled.Close, "Close", tint = VsPurple.ink, modifier = Modifier.size(22.dp))
@@ -155,7 +156,7 @@ private fun ResultTopBar(onClose: () -> Unit) {
 }
 
 @Composable
-private fun PurpleButton(title: String, sub: String? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun PurpleButton(title: String, sub: String? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VsPurple.ink).clickableNoRipple(onClick).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -166,7 +167,7 @@ private fun PurpleButton(title: String, sub: String? = null, modifier: Modifier 
 }
 
 @Composable
-private fun SoftPurpleButton(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun SoftPurpleButton(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(VsPurple.soft).clickableNoRipple(onClick).padding(vertical = 13.dp),
         Alignment.Center,
@@ -207,7 +208,7 @@ fun ChallengeResultView(
     Column(Modifier.fillMaxSize().background(VsTeal.page)) {
         ResultTopBar(onClose)
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(
@@ -329,7 +330,7 @@ fun ChallengeSentScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     Column(Modifier.fillMaxSize().background(VsTeal.page)) {
         ResultTopBar(onHome)
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Spacer(Modifier.height(8.dp))
@@ -425,7 +426,7 @@ fun ChallengeRouteScreen(
     Column(Modifier.fillMaxSize().background(VsTeal.page)) {
         VsNavBar("CHALLENGE", onBack = onHome) { if (c != null) VsModeChip(mode) }
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(12.dp))

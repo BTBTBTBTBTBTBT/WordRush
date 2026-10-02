@@ -2,7 +2,7 @@ import SwiftUI
 import WordociousCore
 
 /// Shared pieces of the Friends overhaul (founder-approved 2026-10-01; spec
-/// docs/FRIENDS_REDESIGN_SPEC.md §0): the pink palette, the four pocket-game
+/// docs/FRIENDS_REDESIGN_SPEC.md §0, §9): the pink palette, the six pocket-game
 /// outline icons, pills and section rows. Same rules as the home and VS pages:
 /// `#f8f7ff` page, caps 900 headlines, 11/900 gray section labels, white cards
 /// (radius 14, soft shadow, no borders), one shimmer.
@@ -27,6 +27,8 @@ enum FriendsKit {
         case .ttt: return Color(hex: 0x7C3AED)
         case .coin: return Color(hex: 0xCA8A04)
         case .pass: return Color(hex: 0x2563EB)
+        case .ghost: return Color(hex: 0x9F1239)
+        case .chain: return Color(hex: 0x059669)
         }
     }
 
@@ -37,16 +39,20 @@ enum FriendsKit {
         case .ttt: return [Color(hex: 0x7C3AED), Color(hex: 0xDB2777)]
         case .coin: return [Color(hex: 0xCA8A04), Color(hex: 0xDB2777)]
         case .pass: return [Color(hex: 0x2563EB), Color(hex: 0x7C3AED)]
+        case .ghost: return [Color(hex: 0x9F1239), Color(hex: 0x7C3AED)]
+        case .chain: return [Color(hex: 0x059669), Color(hex: 0x2563EB)]
         }
     }
 
-    /// The PLAY WITH FRIENDS sub line (§2.5).
+    /// The PLAY WITH FRIENDS sub line (§2.5, §9).
     static func sub(_ k: FriendlyKind) -> String {
         switch k {
         case .rps: return "Best of 3 · our tiles"
         case .ttt: return "Three in a row, best of 3"
         case .coin: return "Heads or tails, best of 5"
         case .pass: return "One board, take turns"
+        case .ghost: return "Add a letter; don't finish a word"
+        case .chain: return "Last letter starts the next"
         }
     }
 
@@ -132,6 +138,30 @@ struct CoinOutline: Shape {
     }
 }
 
+/// The ghost outline (lucide "ghost" on a 24 grid): rounded head, wavy hem.
+/// The eyes are drawn separately as dots.
+struct GhostOutline: Shape {
+    func path(in r: CGRect) -> Path {
+        let k = min(r.width, r.height) / 24
+        let ox = r.midX - 12 * k, oy = r.midY - 12 * k
+        func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: ox + x * k, y: oy + y * k) }
+        var p = Path()
+        p.move(to: pt(12, 2))
+        p.addArc(tangent1End: pt(4, 2), tangent2End: pt(4, 10), radius: 8 * k)
+        p.addLine(to: pt(4, 22))
+        p.addLine(to: pt(7, 19))
+        p.addLine(to: pt(9.5, 21.5))
+        p.addLine(to: pt(12, 19))
+        p.addLine(to: pt(14.5, 21.5))
+        p.addLine(to: pt(17, 19))
+        p.addLine(to: pt(20, 22))
+        p.addLine(to: pt(20, 10))
+        p.addArc(tangent1End: pt(20, 2), tangent2End: pt(12, 2), radius: 8 * k)
+        p.closeSubpath()
+        return p
+    }
+}
+
 /// A pocket game's icon: a white 2.4-stroke outline in a rounded square of the
 /// game's color, glowing in the same color.
 struct FriendlyGameIcon: View {
@@ -162,6 +192,19 @@ struct FriendlyGameIcon: View {
                 .frame(width: g, height: g)
         case .pass:
             Image(systemName: "arrow.left.arrow.right").font(.system(size: g * 0.85, weight: .semibold))
+        case .ghost:
+            let lw = max(1.6, size * 0.06)
+            ZStack {
+                GhostOutline().stroke(Color.white, style: StrokeStyle(lineWidth: lw, lineCap: .round, lineJoin: .round))
+                HStack(spacing: max(1, g * 0.25 - lw * 1.3)) {
+                    Circle().fill(Color.white).frame(width: lw * 1.3, height: lw * 1.3)
+                    Circle().fill(Color.white).frame(width: lw * 1.3, height: lw * 1.3)
+                }
+                .offset(y: -g / 12)
+            }
+            .frame(width: g, height: g)
+        case .chain:
+            Image(systemName: "link").font(.system(size: g * 0.85, weight: .semibold))
         }
     }
 }

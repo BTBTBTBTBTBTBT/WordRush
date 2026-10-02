@@ -110,7 +110,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
       </div>
 
       <SectionLabel>Quick games{on ? ' · live while they’re on' : ''}</SectionLabel>
-      <div className="grid grid-cols-4 gap-2 mt-2">
+      <div className="grid grid-cols-3 gap-2 mt-2">
         {FRIENDLY_KINDS.map((k) => {
           const sel = k === kind;
           return (

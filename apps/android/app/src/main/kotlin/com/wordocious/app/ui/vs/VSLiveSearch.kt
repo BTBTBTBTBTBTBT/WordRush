@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -29,6 +30,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -83,7 +88,12 @@ internal fun keepWaitingPingLine(ping: VsChallengeService.Looking?): String? = w
 @Composable
 fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onCancel: () -> Unit) {
     val startedAt = remember { System.currentTimeMillis() }
-    var elapsed by remember { mutableLongStateOf(0L) }
+    // Per-frame elapsed (founder 2026-10-01: the 15 s step-in read choppy when
+    // it moved in 250 ms jumps). Only DRAW phases read it — the ring arc and the
+    // step-in bar — so a frame tick redraws them without recomposing the page;
+    // the clock digits recompose once a second off [elapsedSec].
+    val frameMs = remember { mutableLongStateOf(0L) }
+    val elapsedSec by remember { derivedStateOf { frameMs.longValue / 1000L } }
     var keepWaiting by remember { mutableStateOf(false) }
     var waiting by remember { mutableStateOf<Int?>(null) }
     val kind = remember { vm.stepInKind }
@@ -101,9 +111,10 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
 
     LaunchedEffect(Unit) {
         while (true) {
-            elapsed = System.currentTimeMillis() - startedAt
-            if (elapsed >= STEP_IN_MS && !keepWaiting) { vm.stepIn(); break }
-            kotlinx.coroutines.delay(250)
+            withFrameMillis { }
+            frameMs.longValue = System.currentTimeMillis() - startedAt
+            // KEEP WAITING keeps the clock running past the deadline.
+            if (frameMs.longValue >= STEP_IN_MS && !keepWaiting) { vm.stepIn(); break }
         }
     }
     // Who else is waiting in this mode (the queue includes me).
@@ -114,21 +125,17 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
             kotlinx.coroutines.delay(5000)
         }
     }
-    // Keep the clock moving after the step-in deadline when KEEP WAITING was tapped.
-    LaunchedEffect(keepWaiting) {
-        while (keepWaiting) { elapsed = System.currentTimeMillis() - startedAt; kotlinx.coroutines.delay(500) }
-    }
 
     Column(
         Modifier.fillMaxSize().background(VsTeal.page),
     ) {
         VsNavBar("VS BATTLE", onBack = onCancel) { VsModeChip(vm.mode) }
         Column(
-            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
-            RingTimer(elapsed)
+            RingTimer(elapsedSec * 1000L) { frameMs.longValue }
             Text("SEARCHING", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.label)
             Text("LOOKING FOR A RIVAL", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, textAlign = TextAlign.Center)
             val n = waiting ?: 0
@@ -151,7 +158,20 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
                         Text("If a person joins first, you get them.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
                     }
                 }
-                if (!keepWaiting) VsProgressBar(elapsed.toFloat() / STEP_IN_MS)
+                if (!keepWaiting) {
+                    // Drawn, not laid out: the fill follows every frame.
+                    Box(
+                        Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(VsTeal.soft)
+                            .drawWithContent {
+                                drawContent()
+                                val f = (frameMs.longValue.toFloat() / STEP_IN_MS).coerceIn(0f, 1f)
+                                drawRoundRect(
+                                    VsTeal.ink, size = Size(size.width * f, size.height),
+                                    cornerRadius = CornerRadius(size.height / 2f),
+                                )
+                            },
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VsTealButton("PLAY ${bot.name.uppercase()} NOW", Modifier.weight(1f)) { vm.stepIn() }
                     if (!keepWaiting) {
@@ -207,9 +227,11 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     }
 }
 
-/** Teal ring on #ccfbf1 counting up, with a soft pulse behind it. */
+/** Teal ring on #ccfbf1 counting up, with a soft pulse behind it. The arc
+ *  reads [frameMs] inside the draw phase, so it sweeps continuously; the
+ *  digits ([clockMs]) tick once a second. */
 @Composable
-private fun RingTimer(elapsedMs: Long) {
+private fun RingTimer(clockMs: Long, frameMs: () -> Long) {
     Box(Modifier.size(132.dp), Alignment.Center) {
         if (!WTheme.reducedMotion) {
             val t = rememberInfiniteTransition(label = "ringPulse")
@@ -221,11 +243,11 @@ private fun RingTimer(elapsedMs: Long) {
             val inset = w / 2
             val arc = Size(size.width - w, size.height - w)
             drawArc(VsTeal.soft, 0f, 360f, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w))
-            val frac = ((elapsedMs % 60_000L).toFloat() / 60_000f)
+            val frac = ((frameMs() % 60_000L).toFloat() / 60_000f)
             drawArc(VsTeal.ink, -90f, 360f * frac, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w, cap = StrokeCap.Round))
         }
         Box(Modifier.size(96.dp).clip(CircleShape).background(Color.White), Alignment.Center) {
-            Text(vsClock(elapsedMs), fontSize = 24.sp, fontWeight = FontWeight.Black, color = VsTeal.deep)
+            Text(vsClock(clockMs), fontSize = 24.sp, fontWeight = FontWeight.Black, color = VsTeal.deep)
         }
     }
 }

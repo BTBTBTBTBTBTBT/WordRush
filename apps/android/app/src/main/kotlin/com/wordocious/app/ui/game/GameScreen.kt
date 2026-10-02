@@ -1001,7 +1001,7 @@ internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val circle = androidx.compose.foundation.shape.CircleShape
     Box(
         modifier = modifier

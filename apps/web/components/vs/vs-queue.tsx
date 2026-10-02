@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Bell, Loader2, X } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
-import { BotAvatar } from './vs-ui';
+import { BotAvatar, VsModeIcon, VsRingSpinner } from './vs-ui';
 
 // Live search (VS overhaul §6) — never a dead end. A ring timer counts up
 // while we look for a person; a bot steps in at 0:15 unless the player taps
@@ -42,14 +42,33 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
   const [keepWaiting, setKeepWaiting] = useState(false);
   const [pingLine, setPingLine] = useState<string | null>(null);
   const firedRef = useRef(false);
+  // Fluid timer motion (founder, 2026-10-01: the 15 s step-in countdown was
+  // choppy): the ring and the step-in bar are driven every animation frame
+  // from the exact elapsed milliseconds, written straight to the DOM (no
+  // re-render per frame). Only the digits tick once a second.
+  const elapsedMsRef = useRef(0);
+  const ringRef = useRef<SVGCircleElement>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const hasStepIn = !!stepIn;
 
   useEffect(() => {
     if (!searching) return;
-    const start = Date.now() - elapsed * 1000;
+    const start = Date.now() - elapsedMsRef.current;
+    const ringLen = 2 * Math.PI * 52;
+    let raf = 0;
+    const frame = () => {
+      const ms = Date.now() - start;
+      elapsedMsRef.current = ms;
+      const stepFrac = Math.min(1, ms / (STEP_IN_SECONDS * 1000));
+      const ringFrac = hasStepIn ? stepFrac : (ms % 60000) / 60000;
+      ringRef.current?.setAttribute('stroke-dashoffset', String(ringLen * (1 - ringFrac)));
+      if (barRef.current) barRef.current.style.width = `${stepFrac * 100}%`;
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
     const t = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 250);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searching]);
+    return () => { cancelAnimationFrame(raf); clearInterval(t); };
+  }, [searching, hasStepIn]);
 
   // At 0:15 the bot match starts on its own, unless KEEP WAITING was tapped.
   useEffect(() => {
@@ -62,7 +81,6 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
 
   const clock = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
   const ring = 2 * Math.PI * 52;
-  const frac = Math.min(1, elapsed / STEP_IN_SECONDS);
   const waitingLine = othersWaiting === null
     ? `Searching ${modeName}`
     : othersWaiting > 0
@@ -75,10 +93,13 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
         <span className="absolute inset-3 rounded-full animate-ping" style={{ background: VS.soft, opacity: 0.6 }} />
         <svg width="132" height="132" viewBox="0 0 132 132" className="relative">
           <circle cx="66" cy="66" r="52" fill="#ffffff" stroke={VS.soft} strokeWidth="10" />
+          {/* strokeDashoffset is animated per frame through ringRef (a constant
+              prop here, so React never overwrites the live value). */}
           <circle
+            ref={ringRef}
             cx="66" cy="66" r="52" fill="none" stroke={VS.ink} strokeWidth="10" strokeLinecap="round"
-            strokeDasharray={ring} strokeDashoffset={ring * (1 - (stepIn ? frac : (elapsed % 60) / 60))}
-            transform="rotate(-90 66 66)" style={{ transition: 'stroke-dashoffset 250ms linear' }}
+            strokeDasharray={ring} strokeDashoffset={ring}
+            transform="rotate(-90 66 66)"
           />
         </svg>
         <span className="absolute inset-0 flex items-center justify-center text-[26px] font-black" style={{ color: VS.deep }}>{clock}</span>
@@ -105,7 +126,15 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
           </div>
           {!keepWaiting && (
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: VS.soft }}>
-              <div className="h-full rounded-full" style={{ width: `${frac * 100}%`, background: VS.ink, transition: 'width 250ms linear' }} />
+              <div
+                ref={(el) => {
+                  barRef.current = el;
+                  // Mount at the live position (no jump from 0 on first paint).
+                  if (el) el.style.width = `${Math.min(1, elapsedMsRef.current / (STEP_IN_SECONDS * 1000)) * 100}%`;
+                }}
+                className="h-full rounded-full"
+                style={{ background: VS.ink }}
+              />
             </div>
           )}
           <div className="flex gap-2">
@@ -172,11 +201,16 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
 }
 
 /** The short beat before a bot / race / challenge-send game starts (no live search). */
-export function VsStartingScreen({ title, sub }: { title: string; sub?: string }) {
+export function VsStartingScreen({ title, sub, mode }: { title: string; sub?: string; mode?: string }) {
   return (
-    <div className="max-w-sm w-full mx-auto px-5 text-center space-y-3">
-      <Loader2 className="w-10 h-10 mx-auto animate-spin" style={{ color: VS.ink }} />
-      <h1 className="text-[20px] font-black" style={{ color: VS.deep }}>{title}</h1>
+    <div className="max-w-sm w-full mx-auto px-5 text-center flex flex-col items-center gap-3">
+      {mode && (
+        <span className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 14, background: '#ffffff', boxShadow: VS.cardShadow }}>
+          <VsModeIcon mode={mode} size={24} />
+        </span>
+      )}
+      <VsRingSpinner />
+      <h1 className="text-[20px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>{title}</h1>
       {sub && <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>{sub}</p>}
     </div>
   );

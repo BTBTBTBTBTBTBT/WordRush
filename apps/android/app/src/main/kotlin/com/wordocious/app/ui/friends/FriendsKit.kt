@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -81,6 +83,8 @@ val FriendlyKind.color: Color get() = when (this) {
     FriendlyKind.TTT -> Color(0xFF7C3AED)
     FriendlyKind.COIN -> Color(0xFFCA8A04)
     FriendlyKind.PASS -> Color(0xFF2563EB)
+    FriendlyKind.GHOST -> Color(0xFF9F1239)
+    FriendlyKind.CHAIN -> Color(0xFF059669)
 }
 
 /** The game screen's title gradient (§4). */
@@ -89,14 +93,31 @@ val FriendlyKind.gradient: List<Color> get() = when (this) {
     FriendlyKind.TTT -> listOf(Color(0xFF7C3AED), Color(0xFFDB2777))
     FriendlyKind.COIN -> listOf(Color(0xFFCA8A04), Color(0xFFDB2777))
     FriendlyKind.PASS -> listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+    FriendlyKind.GHOST -> listOf(Color(0xFF9F1239), Color(0xFF7C3AED))
+    FriendlyKind.CHAIN -> listOf(Color(0xFF059669), Color(0xFF2563EB))
 }
 
-/** The PLAY WITH FRIENDS tile sub line (§2.5). */
+/** The PLAY WITH FRIENDS tile sub line (§2.5, §9). */
 val FriendlyKind.sub: String get() = when (this) {
     FriendlyKind.RPS -> "Best of 3 · our tiles"
     FriendlyKind.TTT -> "Three in a row, best of 3"
     FriendlyKind.COIN -> "Heads or tails, best of 5"
     FriendlyKind.PASS -> "One board, take turns"
+    FriendlyKind.GHOST -> "Add a letter; don't finish a word"
+    FriendlyKind.CHAIN -> "Last letter starts the next"
+}
+
+// Lucide "ghost" and "link" outlines on the same 24-unit grid (§9).
+private val GHOST_GLYPH by lazy {
+    PathParser().parsePathString(
+        "M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z",
+    ).toPath()
+}
+private val CHAIN_GLYPH by lazy {
+    PathParser().parsePathString(
+        "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" +
+            "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+    ).toPath()
 }
 
 /** The ChatGPT art (§0): res/drawable-nodpi/friends_<name>.png. */
@@ -159,7 +180,7 @@ fun PinkButton(text: String, modifier: Modifier = Modifier, solid: Boolean = tru
  * A pocket game's OUTLINE icon (§0): a white 2.4 stroke in a colored rounded
  * square with a glow in the same color. RPS = scissors, Tic-Tac-Tile = hash,
  * Call It = a coin (two concentric circles + a short vertical line), Pass the
- * Puzzle = two opposing arrows.
+ * Puzzle = two opposing arrows, Ghost = a ghost, Word Chain = a chain link.
  */
 @Composable
 fun FriendlyGameIcon(kind: FriendlyKind, size: Dp, modifier: Modifier = Modifier) {
@@ -201,6 +222,15 @@ fun DrawScope.drawGameGlyph(kind: FriendlyKind, color: Color) {
                 moveTo(20f * u, 17f * u); lineTo(4f * u, 17f * u)
             }
             drawPath(p, color, style = stroke)
+        }
+        FriendlyKind.GHOST, FriendlyKind.CHAIN -> {
+            // The path is in grid units: scale the canvas so the 2.4 stroke scales with it.
+            withTransform({ scale(u, u, Offset.Zero) }) {
+                drawPath(
+                    if (kind == FriendlyKind.GHOST) GHOST_GLYPH else CHAIN_GLYPH, color,
+                    style = Stroke(width = 2.4f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+                )
+            }
         }
     }
 }

@@ -125,8 +125,8 @@ struct FriendsQuickPlaySheet: View {
     private func gamesSection(_ f: FriendsService.FriendProfile) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             FriendsSectionHeader(title: f.isOnline() ? "QUICK GAMES · LIVE WHILE THEY'RE ON" : "QUICK GAMES")
-            // Four across (web parity).
-            HStack(alignment: .top, spacing: 8) {
+            // §9: six tiles, 3 across × 2 rows.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
                     Button { withAnimation(.easeOut(duration: 0.12)) { kind = k; error = nil } } label: {
                         VStack(spacing: 6) {
@@ -135,7 +135,7 @@ struct FriendsQuickPlaySheet: View {
                                 .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 92, alignment: .top)
+                        .frame(maxWidth: .infinity, minHeight: 80, alignment: .top)
                         .padding(.vertical, 10).padding(.horizontal, 4)
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white)
                             .shadow(color: Color(hex: 0x4C1D95).opacity(0.07), radius: 5, x: 0, y: 2))

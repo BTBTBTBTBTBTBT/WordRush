@@ -56,6 +56,10 @@ fun MiniBoardView(
     shakeKey: Int = 0,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    // VS spectator (founder 2026-10-01, VS polish §2): an opponent's live rows
+    // arrive as colors only (no letters). When set, these rows replace
+    // board.guesses — same card, frame, tiles and flip-in as the solo board.
+    stateRows: List<List<TileState>>? = null,
 ) {
     val isWon = board.status == GameStatus.WON
     val isLost = board.status == GameStatus.LOST
@@ -77,8 +81,11 @@ fun MiniBoardView(
     }
 
     val prefills = board.prefilledGuesses ?: emptyList()
-    val totalRows = prefills.size + board.maxGuesses
-    val lastSubmittedRow = if (board.guesses.isNotEmpty()) board.guesses.size - 1 else -1
+    val guessCount = stateRows?.size ?: board.guesses.size
+    // A color-only opponent can outrun the starting row budget (Gauntlet steal
+    // guess); never clip a filled row.
+    val rowCount = maxOf(board.maxGuesses, guessCount)
+    val lastSubmittedRow = if (guessCount > 0) guessCount - 1 else -1
 
     // Font, corner radius and border are derived per tile now (TileView measures
     // itself: letter = min(w,h)*0.5, corner = 0.14×, stroke = 0.09× clamped
@@ -130,10 +137,12 @@ fun MiniBoardView(
             }
 
             // Player guess rows
-            for (rowIdx in 0 until board.maxGuesses) {
-                val isPastGuess = rowIdx < board.guesses.size
-                val isCurrentRow = isPlaying && !isPastGuess && rowIdx == board.guesses.size
+            for (rowIdx in 0 until rowCount) {
+                val isPastGuess = rowIdx < guessCount
+                val isCurrentRow = isPlaying && !isPastGuess && rowIdx == guessCount
+                val colorRow = if (isPastGuess) stateRows?.getOrNull(rowIdx) else null
                 val guess = when {
+                    stateRows != null -> ""
                     isPastGuess -> board.guesses[rowIdx]
                     isCurrentRow -> currentGuess
                     else -> ""
@@ -143,8 +152,8 @@ fun MiniBoardView(
                 // never renders its letter in the wrong slot or the wrong color.
                 // Re-evaluating the space-padded hint string dropped the hint
                 // styling and could misplace the letter.
-                val hintEval = if (isPastGuess) board.hintEvaluations?.get(rowIdx.toString()) else null
-                val eval = hintEval ?: if (isPastGuess) evaluateGuess(board.solution, board.guesses[rowIdx]) else null
+                val hintEval = if (isPastGuess && stateRows == null) board.hintEvaluations?.get(rowIdx.toString()) else null
+                val eval = hintEval ?: if (isPastGuess && stateRows == null) evaluateGuess(board.solution, board.guesses[rowIdx]) else null
                 val isLastSubmitted = isPastGuess && rowIdx == lastSubmittedRow && hintEval == null
 
                 Row(
@@ -164,7 +173,11 @@ fun MiniBoardView(
                             hintEval != null -> hintEval.tiles.getOrNull(col)?.letter?.takeIf { it.isNotBlank() } ?: ""
                             else -> guess.getOrNull(col)?.toString() ?: ""
                         }
-                        val state = if (masked) TileState.EMPTY else (eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY)
+                        val state = when {
+                        masked -> TileState.EMPTY
+                        colorRow != null -> colorRow.getOrNull(col) ?: TileState.EMPTY
+                        else -> eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY
+                    }
                         val flipDelay = if (isLastSubmitted && !locked) col * 80 else null
                         TileView(
                             letter = letter,

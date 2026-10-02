@@ -184,3 +184,14 @@ quick-play sheet shows six tiles, 3 across × 2 rows.
 - Card lines and headlines come from core (`friendlyCardLine`, `friendlyHeadline`).
 - Fixtures now include `words` (a small embedded list) and two scripts (ghost, chain) plus
   an `error` field on each step — ports rebuild `isWord`/`hasPrefix` from `words`.
+
+## 10. Founder fixes after iOS 220 (2026-10-01)
+
+- Banner headline 22 pt/px/sp, weight 900, `#831843`, soft pink glow (`#db2777` at 55%,
+  radius ~8 pt / 12 px blur).
+- INVITES moves to directly under YOUR FRIENDS (before MOMENTS).
+- Moments reactions replace the "+" row: chips show only when a moment has reactions,
+  small, inside the moment's card; double-tap toggles 👏; long-press opens a floating
+  reaction bar (👏 🔥 😱 😤, + Rematch on game moments). Header label
+  `LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT`.
+- The pinned Friends header gets the page background so the list never shows through.

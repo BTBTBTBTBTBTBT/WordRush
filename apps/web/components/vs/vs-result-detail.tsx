@@ -18,10 +18,11 @@ import {
 import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 
+// The solo tile colors (the .tile-* CSS vars — colorblind palette included).
 const TILE_BG: Record<string, string> = {
-  CORRECT: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-  PRESENT: 'linear-gradient(135deg, #f59e0b, #d97706)',
-  ABSENT: 'var(--color-text-muted)',
+  CORRECT: 'var(--tile-correct)',
+  PRESENT: 'var(--tile-present)',
+  ABSENT: 'var(--tile-absent)',
 };
 
 export interface EvaluatedRow {
@@ -70,77 +71,99 @@ export function logSolved(guessLog: OpponentGuessLogEntry[], solutions: string[]
   );
 }
 
+/** The result screens' soft white card (VS polish §2: no outline borders). */
+const RESULT_CARD: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: '0 2px 10px rgba(76,29,149,0.07)' };
+
+/** Solved / Not solved chip — purple / slate (VS polish §2: not green/red). */
 function SolveBadge({ solved, size = 10 }: { solved: boolean; size?: number }) {
-  const color = solved ? '#16a34a' : '#dc2626';
   return (
     <span
-      className="inline-flex items-center gap-1 font-extrabold rounded-full px-2 py-0.5"
-      style={{ color, background: `${color}1a`, fontSize: size }}
+      className="inline-flex items-center gap-1 font-black rounded-full px-2 py-0.5 uppercase"
+      style={{ color: solved ? '#6d28d9' : '#475569', background: solved ? '#ede9fe' : '#e2e8f0', fontSize: size, letterSpacing: 0.3 }}
     >
-      {solved ? '✓ Solved' : '✗ Not solved'}
+      {solved ? 'Solved' : 'Not solved'}
     </span>
   );
 }
 
-interface ScoreCardPlayer {
+export interface ResultSide {
   name: string;
+  avatarUrl: string | null;
+  /** Bot art in a circle instead of the player avatar. */
+  isBot?: boolean;
   score: number;
   guesses: number;
   timeMs: number;
   solved: boolean;
-  isWinner: boolean;
 }
 
 /**
- * Prominent head-to-head FINAL SCORE card — big totals (winner crowned +
- * highlighted, loser dimmed), the exact calculation under each, and solve
- * badges. Replaces the inverted comparison bars, which read backwards for
- * lower-is-better metrics.
+ * The live / bot result window in the HOME palette (VS polish §2), the same
+ * one-window look as the challenge result: split halves (the winner's half
+ * #ebd6fd, the other #e2e6ff; a draw both #ece8ff), a frosted strip with the
+ * caps headline, the mode icon + deciding margin, then per side the name, the
+ * score in big numerals and its calculation, the time and a Solved chip.
  */
-export function ScoreCard({ me, opponent, isDraw }: { me: ScoreCardPlayer; opponent: ScoreCardPlayer; isDraw: boolean }) {
+export function VsResultWindow({ modeIcon, headline, sub, why, me, opponent, outcome }: {
+  modeIcon: React.ReactNode;
+  headline: string;
+  /** "CLASSIC · 1 FEWER GUESS" */
+  sub: string;
+  /** Plain-English reason (forfeits, solve vs no solve). */
+  why?: string | null;
+  me: ResultSide;
+  opponent: ResultSide;
+  outcome: 'win' | 'loss' | 'draw';
+}) {
+  const left = outcome === 'draw' ? '#ece8ff' : outcome === 'win' ? '#ebd6fd' : '#e2e6ff';
+  const right = outcome === 'draw' ? '#ece8ff' : outcome === 'loss' ? '#ebd6fd' : '#e2e6ff';
   const clock = (ms: number) => {
-    const s = Math.round(ms / 1000);
-    return `${Math.floor(s / 60)}m ${s % 60}s`;
+    const t = Math.max(0, Math.round(ms / 1000));
+    return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
   };
-  const column = (p: ScoreCardPlayer, accent: string) => {
-    const highlighted = p.isWinner || isDraw;
+  const column = (p: ResultSide, winner: boolean) => {
     const timePenalty = Math.max(0, p.score - p.guesses);
     return (
-      <div className={`flex-1 min-w-0 flex flex-col items-center gap-1 ${highlighted ? '' : 'opacity-75'}`}>
-        <div className="flex items-center gap-1 text-[11px] font-extrabold truncate max-w-full" style={{ color: accent }}>
-          {p.isWinner && !isDraw && <span style={{ color: '#f59e0b' }}>👑</span>}
-          {p.name}
+      <div className="flex-1 min-w-0 flex flex-col items-center gap-1" style={{ padding: '12px 8px 14px' }}>
+        <div className="flex items-center gap-1.5 max-w-full">
+          {p.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={p.avatarUrl} alt="" className={`rounded-full shrink-0 ${p.isBot ? 'object-contain bg-white' : 'object-cover'}`} style={{ width: 22, height: 22 }} />
+          ) : null}
+          <span className="text-[11px] font-black uppercase truncate" style={{ color: '#4c1d95', letterSpacing: 0.6 }}>{p.name}</span>
         </div>
-        <div
-          className="text-4xl font-black tabular-nums leading-none"
-          style={{ color: highlighted ? accent : 'var(--color-text-muted)' }}
-        >
+        <span className="font-black tabular-nums" style={{ fontSize: 34, lineHeight: 1.05, color: winner || outcome === 'draw' ? '#4c1d95' : '#6b7280' }}>
           {p.score.toFixed(2)}
-        </div>
-        <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          {p.guesses} guesses + {timePenalty.toFixed(2)} time
-        </div>
-        <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{clock(p.timeMs)}</div>
-        <SolveBadge solved={p.solved} />
+        </span>
+        <span className="text-[10px] font-bold tabular-nums" style={{ color: '#6d28d9' }}>
+          {p.guesses} {p.guesses === 1 ? 'guess' : 'guesses'} + {timePenalty.toFixed(2)} time
+        </span>
+        <span className="text-[11px] font-black tabular-nums" style={{ color: '#4c1d95' }}>{clock(p.timeMs)}</span>
+        <SolveBadge solved={p.solved} size={9.5} />
       </div>
     );
   };
-
   return (
     <div
-      className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+      className="relative overflow-hidden animate-fade-in-up"
+      style={{ borderRadius: 16, background: `linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${left} 0%, ${left} 50%, ${right} 50%, ${right} 100%)`, boxShadow: '0 4px 14px rgba(76,29,149,0.08)' }}
     >
-      <div className="text-[10px] font-extrabold uppercase tracking-widest text-center" style={{ color: 'var(--color-text-muted)' }}>
-        Final Score
+      {outcome === 'win' && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="absolute" style={{ top: '-20%', left: 0, width: '38%', height: '140%', background: 'linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.55), rgba(255,255,255,0))', animation: 'banner-shimmer 2.6s ease-in-out 1 both' }} />
+        </div>
+      )}
+      <div className="relative flex flex-col gap-1 text-center" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+        <span className="font-black" style={{ fontSize: 22, letterSpacing: 0.5, lineHeight: 1.15, color: '#4c1d95' }}>{headline}</span>
+        <span className="flex items-center justify-center gap-1.5">
+          <span className="flex items-center justify-center shrink-0" style={{ width: 16, height: 16 }}>{modeIcon}</span>
+          <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>{sub}</span>
+        </span>
+        {why && <span className="text-[11.5px] font-bold" style={{ color: '#5b21b6' }}>{why}</span>}
       </div>
-      <div className="flex items-start gap-2">
-        {column(me, '#7c3aed')}
-        <div className="text-[13px] font-black pt-8" style={{ color: 'var(--color-text-muted)' }}>VS</div>
-        {column(opponent, '#ec4899')}
-      </div>
-      <div className="text-[9px] font-bold text-center" style={{ color: 'var(--color-text-muted)' }}>
-        Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving
+      <div className="relative flex">
+        {column(me, outcome === 'win')}
+        {column(opponent, outcome === 'loss')}
       </div>
     </div>
   );
@@ -401,7 +424,7 @@ export function FinalBoards({
     return (
       <div
         className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        style={RESULT_CARD}
       >
         {gauntletSection(myName, myGuessLog.map(e => e.guess), '#7c3aed', myTimeMs)}
         <div className="h-px" style={{ background: 'var(--color-border)' }} />
@@ -421,7 +444,7 @@ export function FinalBoards({
       // under a "Solved" badge).
       const won = boards.filter(b => b.won).length;
       const allWon = boards.length > 0 && won === boards.length;
-      const badgeColor = allWon ? '#16a34a' : won > 0 ? '#d97706' : '#dc2626';
+      const badgeColor = allWon ? '#6d28d9' : '#475569';
       return (
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-1.5">
@@ -430,9 +453,9 @@ export function FinalBoards({
             </span>
             <span
               className="inline-flex items-center gap-1 font-extrabold rounded-full px-2 py-0.5"
-              style={{ color: badgeColor, background: `${badgeColor}1a`, fontSize: 9 }}
+              style={{ color: badgeColor, background: allWon ? '#ede9fe' : '#e2e8f0', fontSize: 9 }}
             >
-              {allWon ? '✓' : '✗'} {won}/{boards.length} boards
+              {won}/{boards.length} boards
             </span>
           </div>
           {words.length === 0 ? (
@@ -460,7 +483,7 @@ export function FinalBoards({
     return (
       <div
         className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        style={RESULT_CARD}
       >
         {recapSection(myName, myGuessLog.map(e => e.guess), '#7c3aed')}
         <div className="h-px" style={{ background: 'var(--color-border)' }} />
@@ -519,7 +542,7 @@ export function FinalBoards({
     return (
       <div
         className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        style={RESULT_CARD}
       >
         {stackSide(myName, mineDisplay, '#7c3aed', mySolved)}
         <div className="h-px" style={{ background: 'var(--color-border)' }} />
@@ -536,7 +559,7 @@ export function FinalBoards({
   return (
     <div
       className="rounded-2xl p-4 animate-fade-in-up"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+      style={RESULT_CARD}
     >
       <div className="flex items-start gap-4">
         {renderSide(myName, mineDisplay, '#7c3aed', mySolved)}
@@ -570,7 +593,7 @@ export function ComparisonBars({ myName, opponentName, metrics }: ComparisonBars
   return (
     <div
       className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+      style={RESULT_CARD}
     >
       {metrics.map((m) => {
         const total = m.mine + m.theirs;

@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
 import { FR, KIND_GRADIENT, TILE, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
-import { CoinBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
+import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, Sheet } from './friends-ui';
 
 // A Friends pocket game (Friends overhaul §4, canvas board AE; also the push
@@ -23,7 +23,7 @@ const POLL_MS = 2000;
 /** How many rounds / flips the state holds (a new one triggers the reveal). */
 function roundCount(g: GameView): number {
   const s = g.state;
-  return s.kind === 'rps' || s.kind === 'coin' ? s.rounds.length : 0;
+  return s.kind === 'rps' || s.kind === 'coin' || s.kind === 'ghost' ? s.rounds.length : 0;
 }
 
 export function FriendlyGameScreen({ id }: { id: string }) {
@@ -234,6 +234,8 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       {game.state.kind === 'ttt' && <TttBoard state={game.state} {...boardProps} />}
       {game.state.kind === 'coin' && <CoinBoard state={game.state} {...boardProps} />}
       {game.state.kind === 'pass' && <PassBoard state={game.state} {...boardProps} answer={game.answer} />}
+      {game.state.kind === 'ghost' && <GhostBoard state={game.state} {...boardProps} />}
+      {game.state.kind === 'chain' && <ChainBoard state={game.state} {...boardProps} />}
 
       {!active && (
         <div className="space-y-2.5 pt-1">

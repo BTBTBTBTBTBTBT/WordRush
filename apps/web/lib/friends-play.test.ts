@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { friendsBannerHeadline, friendsBannerClockLine, newFriendlyState, type CellMark, type FriendlyState } from '@wordle-duel/core';
+import { FRIENDLY_KINDS, friendsBannerHeadline, friendsBannerClockLine, newFriendlyState, type CellMark, type ChainState, type FriendlyState, type GhostState } from '@wordle-duel/core';
 import {
-  activityKeyForPath, bannerModel, bestFriendStreak, doingLine, friendAction, friendLine, friendsBadgeCount,
-  gameMomentText, gameSubLine, kindForTitle, midnightClock, nobodyOnLine, onNow, passKeyStates, raceChips,
+  KIND_COLOR, KIND_GRADIENT, KIND_SHORT, KIND_SUB, activityKeyForPath, bannerModel, bestFriendStreak, chainNeededLetter,
+  chainPrecheck, doingLine, friendAction, friendLine, friendsBadgeCount, gameMomentText, gameSubLine, ghostRoundCard, ghostTiles,
+  kindForTitle, midnightClock, nobodyOnLine, onNow, passKeyStates, raceChips,
   reactionChips, rivalryLine, scoreOf, screenHeadline, sortActiveGames, sortForPicker, toggleReaction, tttThreats,
 } from './friends-play';
 
@@ -175,5 +176,67 @@ describe('moments and reactions', () => {
     expect(kindForTitle('Pass the Puzzle')).toBe('pass');
     expect(kindForTitle('Classic')).toBeNull();
     expect(kindForTitle(null)).toBeNull();
+  });
+});
+
+describe('Ghost and Word Chain (spec §9)', () => {
+  it('every kind has a color, gradient, sub and short name', () => {
+    expect(FRIENDLY_KINDS).toHaveLength(6);
+    for (const k of FRIENDLY_KINDS) {
+      expect(KIND_COLOR[k]).toMatch(/^#[0-9a-f]{6}$/);
+      expect(KIND_GRADIENT[k]).toContain('linear-gradient');
+      expect(KIND_SUB[k]).toBeTruthy();
+      expect(KIND_SHORT[k]).toBeTruthy();
+    }
+    expect(KIND_COLOR.ghost).toBe('#9f1239');
+    expect(KIND_COLOR.chain).toBe('#059669');
+    expect(KIND_SUB.ghost).toBe("Add a letter; don't finish a word");
+    expect(KIND_SUB.chain).toBe('Last letter starts the next');
+    expect(kindForTitle('Ghost')).toBe('ghost');
+    expect(kindForTitle('Word Chain')).toBe('chain');
+  });
+
+  const ghost: GhostState = {
+    kind: 'ghost', fragment: 'CRA', letters: ['a', 'b', 'a'], turn: 'b', starter: 'a',
+    rounds: [{ fragment: 'QZ', loser: 'b', reason: 'dead' }], score: { a: 1, b: 0 },
+  };
+
+  it('Ghost tiles know who played each letter', () => {
+    expect(ghostTiles(ghost, 'a')).toEqual([{ letter: 'C', mine: true }, { letter: 'R', mine: false }, { letter: 'A', mine: true }]);
+    expect(ghostTiles(ghost, 'b').map((t) => t.mine)).toEqual([false, true, false]);
+  });
+
+  it('Ghost round card words', () => {
+    expect(ghostRoundCard({ fragment: 'CRANE', loser: 'b', reason: 'word' }, 'a', 'Doug')).toEqual({ letters: 'CRANE', text: 'Doug spelled a word', youLost: false });
+    expect(ghostRoundCard({ fragment: 'CRANE', loser: 'a', reason: 'word' }, 'a', 'Doug').text).toBe('you spelled a word');
+    expect(ghostRoundCard({ fragment: 'QZ', loser: 'a', reason: 'dead' }, 'a', 'Doug')).toEqual({ letters: 'QZ', text: 'no word starts with that', youLost: true });
+  });
+
+  const chain: ChainState = {
+    kind: 'chain', turn: 'b', score: { a: 5, b: 0 },
+    words: [{ by: 'a', word: 'CRANE', points: 5 }],
+  };
+
+  it('Word Chain needs the last letter of the newest word', () => {
+    expect(chainNeededLetter(newFriendlyState('chain') as ChainState)).toBeNull();
+    expect(chainNeededLetter(chain)).toBe('E');
+  });
+
+  it('Word Chain precheck uses the core errors (word list left to the server)', () => {
+    expect(chainPrecheck(chain, 'b', 'EAT')).toBe('5 to 7 letters, please');
+    expect(chainPrecheck(chain, 'b', 'EXCITING')).toBe('5 to 7 letters, please');
+    expect(chainPrecheck(chain, 'b', 'TRAIN')).toBe('Start with E');
+    expect(chainPrecheck({ ...chain, words: [...chain.words, { by: 'b', word: 'EAGLE', points: 5 }], turn: 'a' }, 'a', 'eagle')).toBe('Already played');
+    expect(chainPrecheck(chain, 'b', 'eagle')).toBeNull();
+    expect(chainPrecheck(newFriendlyState('chain') as ChainState, 'a', 'ZZZZZ')).toBeNull();
+  });
+
+  it('sub lines for Ghost and Word Chain', () => {
+    expect(gameSubLine(newFriendlyState('ghost'), 'a', 'doug', false)).toBe('BEST OF 3');
+    expect(gameSubLine(ghost, 'a', 'doug', false)).toBe('BEST OF 3 · YOU TOOK ROUND 1');
+    expect(gameSubLine(ghost, 'b', 'doug', true)).toBe('BEST OF 3 · LIVE, DOUG IS ON · DOUG TOOK ROUND 1');
+    expect(gameSubLine(newFriendlyState('chain'), 'a', 'amy', false)).toBe('FIRST TO 30');
+    expect(gameSubLine(chain, 'b', 'amy', false)).toBe('FIRST TO 30 · AMY PLAYED CRANE +5');
+    expect(scoreOf(chain, 'b')).toEqual({ mine: 0, theirs: 5 });
   });
 });

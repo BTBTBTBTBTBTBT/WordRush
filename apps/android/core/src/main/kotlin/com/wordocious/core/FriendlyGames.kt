@@ -13,7 +13,8 @@ import kotlinx.serialization.json.put
 // Friends overhaul (founder, 2026-10-01; spec docs/FRIENDS_REDESIGN_SPEC.md):
 // Kotlin port of packages/core/src/friendly-games.ts — the four pocket games you
 // play with a friend (Rock Paper Scissors, Tic-Tac-Tile, Call It, Pass the
-// Puzzle), plus the Friends banner words, friend streaks and the "on now" rule.
+// Puzzle) and the two word games that joined the same night (Ghost, Word Chain),
+// plus the Friends banner words, friend streaks and the "on now" rule.
 //
 // The server is the only writer (it runs applyFriendlyMove and stores the
 // state); the client decodes the state it is sent, renders it and prints the
@@ -21,7 +22,7 @@ import kotlinx.serialization.json.put
 // FriendlyGamesFixtureTest against friendly-games-fixtures.json.
 
 enum class FriendlyKind(val raw: String) {
-    RPS("rps"), TTT("ttt"), COIN("coin"), PASS("pass");
+    RPS("rps"), TTT("ttt"), COIN("coin"), PASS("pass"), GHOST("ghost"), CHAIN("chain");
 
     val title: String get() = FRIENDLY_TITLES.getValue(this)
 
@@ -80,18 +81,23 @@ enum class FriendlyWinner(val raw: String) {
     }
 }
 
-val FRIENDLY_KINDS: List<FriendlyKind> = listOf(FriendlyKind.RPS, FriendlyKind.TTT, FriendlyKind.COIN, FriendlyKind.PASS)
+val FRIENDLY_KINDS: List<FriendlyKind> = listOf(
+    FriendlyKind.RPS, FriendlyKind.TTT, FriendlyKind.COIN, FriendlyKind.PASS, FriendlyKind.GHOST, FriendlyKind.CHAIN,
+)
 
 val FRIENDLY_TITLES: Map<FriendlyKind, String> = mapOf(
     FriendlyKind.RPS to "Rock Paper Scissors",
     FriendlyKind.TTT to "Tic-Tac-Tile",
     FriendlyKind.COIN to "Call It",
     FriendlyKind.PASS to "Pass the Puzzle",
+    FriendlyKind.GHOST to "Ghost",
+    FriendlyKind.CHAIN to "Word Chain",
 )
 
-/** Wins needed: best of 3 (RPS, Tic-Tac-Tile), best of 5 (Call It). */
+/** Wins needed: best of 3 (RPS, Tic-Tac-Tile, Ghost), best of 5 (Call It); Word Chain is points. */
 val FRIENDLY_TARGET: Map<FriendlyKind, Int> = mapOf(
     FriendlyKind.RPS to 2, FriendlyKind.TTT to 2, FriendlyKind.COIN to 3, FriendlyKind.PASS to 1,
+    FriendlyKind.GHOST to 2, FriendlyKind.CHAIN to 30,
 )
 
 /** Call It stakes — a fixed list (no free text). */
@@ -100,14 +106,33 @@ val COIN_STAKES: List<String> = listOf("Bragging rights", "Loser picks tonight's
 /** Pass the Puzzle shares one Classic board: six guesses between the two players. */
 const val PASS_MAX_GUESSES = 6
 
+/** Ghost and Word Chain play on the 5- to 7-letter word lists. */
+const val WORD_MIN = 5
+const val WORD_MAX = 7
+
+/** Word Chain: a word scores its letters; first to 30 wins. */
+const val CHAIN_TARGET = 30
+
 data class FriendlyScore(val a: Int = 0, val b: Int = 0) {
     operator fun get(side: Side): Int = if (side == Side.A) a else b
-    fun plus(side: Side): FriendlyScore = if (side == Side.A) copy(a = a + 1) else copy(b = b + 1)
+    fun plus(side: Side, n: Int = 1): FriendlyScore = if (side == Side.A) copy(a = a + n) else copy(b = b + n)
 }
 
 data class RpsRound(val a: RpsPick, val b: RpsPick, val winner: Side?)
 data class CoinRound(val caller: Side, val call: CoinFace, val flip: CoinFace, val winner: Side)
 data class PassGuess(val by: Side, val word: String, val tiles: List<TileState>)
+
+/** Why a Ghost round ended: the loser spelled a word, or left letters no word starts with. */
+enum class GhostReason(val raw: String) {
+    WORD("word"), DEAD("dead");
+
+    companion object {
+        fun from(raw: String?): GhostReason? = values().firstOrNull { it.raw == raw }
+    }
+}
+
+data class GhostRound(val fragment: String, val loser: Side, val reason: GhostReason)
+data class ChainWord(val by: Side, val word: String, val points: Int)
 
 sealed class FriendlyState {
     abstract val kind: FriendlyKind
@@ -142,12 +167,37 @@ data class PassState(
     val solvedBy: Side? = null,
 ) : FriendlyState() { override val kind get() = FriendlyKind.PASS }
 
+/** Ghost: add a letter each turn. Spell a whole word, or leave letters no word starts with, and you lose the round. */
+data class GhostState(
+    val fragment: String = "",
+    /** Who played each letter of [fragment]. */
+    val letters: List<Side> = emptyList(),
+    val turn: Side = Side.A,
+    val starter: Side = Side.A,
+    val rounds: List<GhostRound> = emptyList(),
+    val score: FriendlyScore = FriendlyScore(),
+) : FriendlyState() { override val kind get() = FriendlyKind.GHOST }
+
+/** Word Chain: each word starts with the last letter of the one before; a word scores its letters. */
+data class ChainState(
+    val words: List<ChainWord> = emptyList(),
+    val turn: Side = Side.A,
+    val score: FriendlyScore = FriendlyScore(),
+) : FriendlyState() {
+    override val kind get() = FriendlyKind.CHAIN
+
+    /** The letter the next word must start with (null = any word opens). */
+    val needed: Char? get() = words.lastOrNull()?.word?.lastOrNull()
+}
+
 sealed class FriendlyMove {
     abstract val kind: FriendlyKind
     data class Rps(val pick: RpsPick) : FriendlyMove() { override val kind get() = FriendlyKind.RPS }
     data class Ttt(val cell: Int) : FriendlyMove() { override val kind get() = FriendlyKind.TTT }
     data class Coin(val call: CoinFace) : FriendlyMove() { override val kind get() = FriendlyKind.COIN }
     data class Pass(val word: String) : FriendlyMove() { override val kind get() = FriendlyKind.PASS }
+    data class Ghost(val letter: String) : FriendlyMove() { override val kind get() = FriendlyKind.GHOST }
+    data class Chain(val word: String) : FriendlyMove() { override val kind get() = FriendlyKind.CHAIN }
 
     /** The wire shape the server expects: `{kind:'rps', pick:'rock'}` … */
     fun toJson(): JsonObject = buildJsonObject {
@@ -157,6 +207,8 @@ sealed class FriendlyMove {
             is Ttt -> put("cell", cell)
             is Coin -> put("call", call.raw)
             is Pass -> put("word", word)
+            is Ghost -> put("letter", letter)
+            is Chain -> put("word", word)
         }
     }
 
@@ -168,17 +220,28 @@ sealed class FriendlyMove {
                 FriendlyKind.TTT -> o.int("cell")?.let { Ttt(it) }
                 FriendlyKind.COIN -> CoinFace.from(o.str("call"))?.let { Coin(it) }
                 FriendlyKind.PASS -> o.str("word")?.let { Pass(it) }
+                FriendlyKind.GHOST -> o.str("letter")?.let { Ghost(it) }
+                FriendlyKind.CHAIN -> o.str("word")?.let { Chain(it) }
                 null -> null
             }
         }
     }
 }
 
-/** Pure inputs for applyFriendlyMove: server randomness for the coin, and Pass the Puzzle's answer + word check. */
+/**
+ * Pure inputs for applyFriendlyMove: server randomness for the coin, Pass the
+ * Puzzle's answer + word check, and the Ghost / Word Chain word checks.
+ */
 class MoveContext(
     val random: () -> Double = { Math.random() },
     val solution: String? = null,
     val isValidWord: ((String) -> Boolean)? = null,
+    /** Ghost / Word Chain: a 5–7 letter word on the lists (upper case in). */
+    val isWord: ((String) -> Boolean)? = null,
+    /** Ghost: some 5–7 letter word starts with these letters. */
+    val hasPrefix: ((String) -> Boolean)? = null,
+    /** Ghost / Word Chain: letters the app never shows (the blocked-term list). */
+    val blocked: ((String) -> Boolean)? = null,
 )
 
 sealed class MoveResult {
@@ -192,6 +255,8 @@ fun newFriendlyState(kind: FriendlyKind, stake: String? = null): FriendlyState =
     FriendlyKind.TTT -> TttState()
     FriendlyKind.COIN -> CoinState(stake = if (stake != null && stake in COIN_STAKES) stake else COIN_STAKES[0])
     FriendlyKind.PASS -> PassState()
+    FriendlyKind.GHOST -> GhostState()
+    FriendlyKind.CHAIN -> ChainState()
 }
 
 fun rpsBeats(x: RpsPick, y: RpsPick): Boolean =
@@ -224,6 +289,8 @@ fun whoseTurn(s: FriendlyState): FriendlyTurn? {
         is TttState -> FriendlyTurn.of(s.turn)
         is CoinState -> FriendlyTurn.of(s.caller)
         is PassState -> FriendlyTurn.of(s.turn)
+        is GhostState -> FriendlyTurn.of(s.turn)
+        is ChainState -> FriendlyTurn.of(s.turn)
     }
 }
 
@@ -237,8 +304,8 @@ fun friendlyWinner(s: FriendlyState): FriendlyWinner? {
     val target = FRIENDLY_TARGET.getValue(s.kind)
     if (score.a >= target) return FriendlyWinner.A
     if (score.b >= target) return FriendlyWinner.B
-    // Tic-Tac-Tile stops after five games (draws included): the leader wins.
-    if (s is TttState && s.games.size >= 5) {
+    // Tic-Tac-Tile stops after five games (draws included), Ghost after five rounds: the leader wins.
+    if ((s is TttState && s.games.size >= 5) || (s is GhostState && s.rounds.size >= 5)) {
         return if (score.a == score.b) FriendlyWinner.DRAW else if (score.a > score.b) FriendlyWinner.A else FriendlyWinner.B
     }
     return null
@@ -250,6 +317,8 @@ fun scoreOf(s: FriendlyState): FriendlyScore? = when (s) {
     is TttState -> s.score
     is CoinState -> s.score
     is PassState -> null
+    is GhostState -> s.score
+    is ChainState -> s.score
 }
 
 /** Apply one move by [by]. Pure: randomness and the answer come from [ctx]. */
@@ -300,6 +369,38 @@ fun applyFriendlyMove(s: FriendlyState, by: Side, move: FriendlyMove, ctx: MoveC
             val tiles = evaluateGuess(solution, word).tiles.map { it.state }
             val solved = word == solution.uppercase()
             return done(s.copy(turn = by.other, guesses = s.guesses + PassGuess(by, word, tiles), solvedBy = if (solved) by else null))
+        }
+        s is GhostState && move is FriendlyMove.Ghost -> {
+            val letter = move.letter.trim().uppercase()
+            if (!Regex("^[A-Z]$").matches(letter)) return MoveResult.Err("One letter, please")
+            val fragment = s.fragment + letter
+            if (ctx.blocked?.invoke(fragment) == true) return MoveResult.Err("Try another letter")
+            val spelled = fragment.length >= WORD_MIN && ctx.isWord?.invoke(fragment) == true
+            val dead = !spelled && ctx.hasPrefix != null && !ctx.hasPrefix.invoke(fragment)
+            if (spelled || dead) {
+                val starter = s.starter.other
+                return done(
+                    s.copy(
+                        fragment = "", letters = emptyList(), starter = starter, turn = starter,
+                        rounds = s.rounds + GhostRound(fragment, by, if (spelled) GhostReason.WORD else GhostReason.DEAD),
+                        score = s.score.plus(by.other),
+                    ),
+                )
+            }
+            return done(s.copy(fragment = fragment, letters = s.letters + by, turn = by.other))
+        }
+        s is ChainState && move is FriendlyMove.Chain -> {
+            val word = move.word.trim().uppercase()
+            if (!Regex("^[A-Z]+$").matches(word) || word.length < WORD_MIN || word.length > WORD_MAX) {
+                return MoveResult.Err("$WORD_MIN to $WORD_MAX letters, please")
+            }
+            val needed = s.needed
+            if (needed != null && word[0] != needed) return MoveResult.Err("Start with $needed")
+            if (s.words.any { it.word == word }) return MoveResult.Err("Already played")
+            if (ctx.blocked?.invoke(word) == true) return MoveResult.Err("Try another word")
+            if (ctx.isWord != null && !ctx.isWord.invoke(word)) return MoveResult.Err("Not in the word list")
+            val points = word.length
+            return done(s.copy(turn = by.other, words = s.words + ChainWord(by, word, points), score = s.score.plus(by, points)))
         }
     }
     return MoveResult.Err("Bad move")
@@ -382,6 +483,30 @@ fun decodeFriendlyState(el: JsonElement?): FriendlyState? {
             },
             solvedBy = Side.from(o.str("solvedBy")),
         )
+        FriendlyKind.GHOST -> GhostState(
+            fragment = o.str("fragment") ?: "",
+            letters = o.arr("letters").mapNotNull { Side.from((it as? JsonPrimitive)?.contentOrNull) },
+            turn = Side.from(o.str("turn")) ?: Side.A,
+            starter = Side.from(o.str("starter")) ?: Side.A,
+            rounds = o.arr("rounds").mapNotNull { r ->
+                val ro = r as? JsonObject ?: return@mapNotNull null
+                GhostRound(
+                    ro.str("fragment") ?: return@mapNotNull null,
+                    Side.from(ro.str("loser")) ?: return@mapNotNull null,
+                    GhostReason.from(ro.str("reason")) ?: GhostReason.WORD,
+                )
+            },
+            score = decodeScore(o.obj("score")),
+        )
+        FriendlyKind.CHAIN -> ChainState(
+            words = o.arr("words").mapNotNull { w ->
+                val wo = w as? JsonObject ?: return@mapNotNull null
+                val word = wo.str("word") ?: return@mapNotNull null
+                ChainWord(Side.from(wo.str("by")) ?: return@mapNotNull null, word, wo.int("points") ?: word.length)
+            },
+            turn = Side.from(o.str("turn")) ?: Side.A,
+            score = decodeScore(o.obj("score")),
+        )
         null -> null
     }
 }
@@ -418,6 +543,11 @@ fun friendlyCardLine(state: FriendlyState, me: Side, them: String, minutesAgo: I
         }
         is CoinState -> if (myTurn) "Your call · $mine–$theirs" else "$them calls next · $mine–$theirs"
         is TttState -> if (myTurn) "Your move · $them moved ${ago(minutesAgo)}" else "Waiting on $them · $mine–$theirs"
+        is GhostState -> if (myTurn) (if (state.fragment.isNotEmpty()) "Your letter · ${state.fragment}" else "Your letter · start it") else "Waiting on $them · $mine–$theirs"
+        is ChainState -> {
+            val needed = state.needed
+            if (myTurn) (if (needed != null) "Your word · starts with $needed" else "Your word · any word") else "$them's word · $mine–$theirs"
+        }
     }
 }
 
@@ -434,6 +564,11 @@ fun friendlyHeadline(s: FriendlyState, me: Side): String {
         is TttState -> if (myTurn) "YOUR MOVE" else "THEIR MOVE"
         is CoinState -> "ROUND ${s.rounds.size + 1} OF 5"
         is PassState -> if (myTurn) "YOUR GUESS · ${s.guesses.size + 1} OF $PASS_MAX_GUESSES" else "THEIR GUESS · ${s.guesses.size + 1} OF $PASS_MAX_GUESSES"
+        is GhostState -> if (myTurn) "YOUR LETTER" else "THEIR LETTER"
+        is ChainState -> {
+            val needed = s.needed
+            if (myTurn) (if (needed != null) "YOUR WORD · STARTS WITH $needed" else "YOUR WORD") else "THEIR WORD"
+        }
     }
 }
 

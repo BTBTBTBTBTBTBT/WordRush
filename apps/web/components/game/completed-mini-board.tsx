@@ -45,16 +45,58 @@ export const evaluateGuessTiles = (guess: string, solution: string): TileState[]
 // fewer guesses rendered shorter than their neighbors (the "wonky"/uneven
 // grid). A definite tile size makes every board the same height = crisp grid,
 // mirroring the native CompletedMiniBoardView.
-export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations, tileSize = 16 }: {
+export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations, tileSize = 16, liveStates, wordLength }: {
   solution: string;
   guesses: string[];
   maxGuesses: number;
   hintEvaluations?: Record<number, import('@wordle-duel/core').GuessResult>;
   won: boolean;
   tileSize?: number;
+  /**
+   * VS spectator (VS polish §2): an opponent's board still in play, drawn
+   * colors-only from their relayed tile states (letters stay hidden until
+   * match end). `won` keeps the solved frame; an unsolved live board gets the
+   * neutral in-play frame instead of the failed one.
+   */
+  liveStates?: string[][];
+  /** Column count when `solution` is unknown (live spectator boards). */
+  wordLength?: number;
 }) {
-  const wordLen = solution.length;
+  const wordLen = liveStates ? (wordLength ?? liveStates[0]?.length ?? 5) : solution.length;
   const fontSize = Math.max(6, Math.round(tileSize * 0.5));
+  if (liveStates) {
+    return (
+      <div className={`relative p-0.5 rounded-lg border-2 transition-colors duration-300 ${
+        won ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-white'
+      }`}>
+        {won && (
+          <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
+            ✓
+          </div>
+        )}
+        <div
+          className="grid gap-[1px]"
+          style={{ gridTemplateColumns: `repeat(${wordLen}, ${tileSize}px)`, gridTemplateRows: `repeat(${maxGuesses}, ${tileSize}px)` }}
+        >
+          {Array.from({ length: maxGuesses }).flatMap((_, rowIndex) => {
+            const row = liveStates[rowIndex];
+            const isNew = rowIndex === liveStates.length - 1;
+            return Array.from({ length: wordLen }).map((_, li) => {
+              const st = (row?.[li] as TileState | undefined) ?? TileState.EMPTY;
+              const flip = isNew && st !== TileState.EMPTY;
+              return (
+                <div
+                  key={`${rowIndex}-${li}`}
+                  className={`border rounded ${getTileColor(st)} ${flip ? 'opp-tile-flip' : ''}`}
+                  style={{ width: tileSize, height: tileSize, animationDelay: flip ? `${li * 55}ms` : undefined }}
+                />
+              );
+            });
+          })}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={`relative p-0.5 rounded-lg border-2 ${
       won ? 'border-violet-400 bg-violet-50' : 'border-red-400 bg-red-50'

@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GameMode } from '@wordle-duel/core';
 import { VsGame } from '@/components/vs/vs-game';
+import { VsLoadingScreen } from '@/components/vs/vs-ui';
 import { AdGate } from '@/components/ads/ad-gate';
 import { VsProGate } from '@/components/game/unlimited-gate';
 
@@ -24,7 +25,7 @@ function VsSixInner() {
 
 export default function VsSixPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<VsLoadingScreen mode={GameMode.DUEL_6} />}>
       <VsSixInner />
     </Suspense>
   );

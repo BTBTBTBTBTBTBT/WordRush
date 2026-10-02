@@ -9,8 +9,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -99,8 +101,8 @@ import kotlinx.coroutines.launch
 // The Friends tab (§207 → D3 → the Friends overhaul, founder-approved
 // 2026-10-01; spec docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom: FRIENDS
 // header (bell = notification prefs, add-friend = jump to Add by username), the
-// Friends banner, INVITES, YOUR TURN, PLAY WITH FRIENDS, THIS WEEK'S RACE, YOUR
-// FRIENDS, MOMENTS, Add by username + share link, then the gift-Pro panel. The
+// Friends banner, YOUR TURN, PLAY WITH FRIENDS, THIS WEEK'S RACE, YOUR
+// FRIENDS, INVITES, MOMENTS, Add by username + share link, then the gift-Pro panel. The
 // look is the home / VS redesign in a pink accent (ui/friends/FriendsKit.kt).
 
 private val PURPLE = Color(0xFF7C3AED)
@@ -226,11 +228,6 @@ fun FriendsScreen(
             onRace = { if (friends.isNotEmpty()) showRace = true },
         )
 
-        // 3. INVITES (only while something is pending)
-        if (incoming.isNotEmpty() || outgoing.isNotEmpty()) {
-            InvitesSection(incoming, outgoing, onOpenProfile)
-        }
-
         // 4. YOUR TURN
         if (games.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -271,21 +268,22 @@ fun FriendsScreen(
                 Spacer(Modifier.weight(1f))
                 Text("TAP A GAME, PICK A FRIEND", fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label, maxLines = 1)
             }
-            FRIENDLY_KINDS.chunked(2).forEach { pair ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    pair.forEach { k ->
+            // Six games, 3 across × 2 rows (§9); each row's cards share one height.
+            FRIENDLY_KINDS.chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { k ->
                         Column(
-                            Modifier.weight(1f).friendsCard().clickableNoRipple {
+                            Modifier.weight(1f).fillMaxHeight().friendsCard().clickableNoRipple {
                                 if (friends.isEmpty()) {
                                     note = "Add a friend first — then pick a game"
                                     scope.launch { addRequester.bringIntoView() }
                                 } else quickPlay = QuickPlayRequest(null, k)
-                            }.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            }.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            FriendlyGameIcon(k, 36.dp)
-                            Text(k.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(k.sub, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            FriendlyGameIcon(k, 32.dp)
+                            Text(k.title, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(k.sub, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -306,6 +304,11 @@ fun FriendsScreen(
             onUnfriend = { unfriendTarget = it },
             onNote = { note = it },
         )
+
+        // INVITES (only while something is pending) — under YOUR FRIENDS (founder 2026-10-01).
+        if (incoming.isNotEmpty() || outgoing.isNotEmpty()) {
+            InvitesSection(incoming, outgoing, onOpenProfile)
+        }
 
         // 8. MOMENTS
         ActivityFeed(onOpenProfile = onOpenProfile, onRematch = { kind, friendId -> quickPlay = QuickPlayRequest(friendId, kind) })

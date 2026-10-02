@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
 import {
   GameMode,
   generateDailySeed,
@@ -9,21 +9,24 @@ import {
   generateSolutionsFromSeedForLength,
   evaluateGuess,
   vsOutcome,
+  vsMargin,
+  vsClock,
+  GAUNTLET_STAGES,
 } from '@wordle-duel/core';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SocketIOMatchService, type MatchEndedData, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
 import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, botIdForKind, type CpuKind } from '@/lib/adapters/bot-match-service';
-import { VsSoloHudContext } from './opponent-hud';
+import { VsSoloHudContext, VsOpponentContext } from './opponent-hud';
 import { BOT_PERSONAS, botArt, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
 import { recordCpuGame, recordBotOfDay, recordBotOfDayResult, recordLadderGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
-import { ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily, lookingRowLabel, vsLookingOn } from '@/lib/vs-lobby';
+import { VS, modeColor, ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily, lookingRowLabel, vsLookingOn } from '@/lib/vs-lobby';
 import { pingVsLooking, postRaceResult, sendChallenge, type ChallengeRun, type ChallengeView } from '@/lib/vs-challenges-client';
 import { PENDING_RACE_SAVED_LINE, isRetryableFailure, savePendingRace } from '@/lib/vs-pending-races';
 import { supabase } from '@/lib/supabase-client';
 import { ChallengeResult, ChallengeSent } from './challenge-result';
 import { VsQueueScreen, VsStartingScreen } from './vs-queue';
-import { BotAvatar } from './vs-ui';
+import { BotAvatar, InitialAvatar, ModeChip, VsLoadingScreen, VsModeIcon, VsPill } from './vs-ui';
 import { useVsCounts } from './use-vs-lobby';
 import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
 import { PhotoFinish, type PhotoFinishKind } from '@/components/effects/photo-finish';
@@ -34,17 +37,15 @@ import { fetchHeadToHead, fetchVsProfile, type HeadToHeadRecord, type VsProfile 
 import { XpToast } from '@/components/effects/xp-toast';
 import { useDictionary, dictLengthsForMode } from '@/lib/init-dictionary';
 import { useProperNoundleBank } from '@/components/propernoundle/puzzle-service';
-import { GameLoading } from '@/components/game/game-loading';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
 import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
-import { MatchIntro, headToHeadLine , VsOverlayWordmark, INTRO_DURATION_MS } from './match-intro';
-import { VsMatchHeader } from './vs-match-header';
-import { FinalBoards, ScoreCard, logSolved, type EvaluatedRow } from './vs-result-detail';
-import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
+import { MatchIntro, headToHeadLine, INTRO_DURATION_MS } from './match-intro';
+import { FinalBoards, VsResultWindow, logSolved, type EvaluatedRow } from './vs-result-detail';
+import { OpponentLiveBoards } from './opponent-mini-board';
 import {
   hasPlayedModeToday,
   recordModePlayed,
@@ -62,49 +63,6 @@ import { VsSuccession } from './vs-succession';
 import { VsDeliverance } from './vs-deliverance';
 import { VsGauntlet } from './vs-gauntlet';
 import { VsProperNoundle } from './vs-propernoundle';
-
-const WAITING_PHRASES = [
-  'Searching',
-  'Scanning',
-  'Seeking',
-  'Matching',
-  'Pairing',
-  'Connecting',
-  'Locating',
-  'Scouting',
-  'Hunting',
-  'Queuing',
-  'Polling',
-  'Awaiting',
-  'Preparing',
-  'Loading',
-  'Syncing',
-  'Summoning',
-  'Fetching',
-  'Probing',
-  'Browsing',
-  'Rallying',
-];
-
-function CyclingStatus() {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex(prev => (prev + 1) % WAITING_PHRASES.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <p
-      key={index}
-      className="text-gray-500 text-lg font-bold animate-fade-in-up"
-    >
-      {WAITING_PHRASES[index]}...
-    </p>
-  );
-}
 
 interface VsGameProps {
   mode: GameMode;
@@ -179,6 +137,35 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
   [GameMode.DUEL_6]: 'from-cyan-400 via-teal-400 to-sky-400',
   [GameMode.DUEL_7]: 'from-lime-400 via-green-400 to-emerald-400',
 };
+
+// The solo screen's title per mode (VS polish §1): the VS match header is the
+// solo header — same title, size and colors — plus a small teal VS pill.
+// Gauntlet's solo screen has no title row (its stage stepper is the header).
+const GRADIENT_TEXT: CSSProperties = { WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' };
+const SOLO_TITLES: Record<string, { title: string; className: string; style?: CSSProperties }> = {
+  [GameMode.DUEL]: { title: 'CLASSIC', className: 'text-3xl', style: { backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)', ...GRADIENT_TEXT } },
+  [GameMode.DUEL_6]: { title: 'CLASSIC SIX', className: 'text-3xl', style: { backgroundImage: 'linear-gradient(135deg, #06b6d4, #22d3ee)', ...GRADIENT_TEXT } },
+  [GameMode.DUEL_7]: { title: 'CLASSIC SEVEN', className: 'text-3xl', style: { backgroundImage: 'linear-gradient(135deg, #84cc16, #a3e635)', ...GRADIENT_TEXT } },
+  [GameMode.QUORDLE]: { title: 'QUADWORD', className: 'text-3xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400' },
+  [GameMode.OCTORDLE]: { title: 'OCTOWORD', className: 'text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400' },
+  [GameMode.SEQUENCE]: { title: 'SUCCESSION', className: 'text-3xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400' },
+  [GameMode.RESCUE]: { title: 'DELIVERANCE', className: 'text-3xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400' },
+  [GameMode.PROPERNOUNDLE]: { title: 'PROPERNOUNDLE', className: 'text-2xl', style: { color: '#dc2626' } },
+};
+
+/** Soft toast pill (VS polish §2: toasts are soft cards, not black slabs). */
+function VsToast({ text, className = 'bottom-8' }: { text: string; className?: string }) {
+  return (
+    <div className={`fixed left-0 right-0 text-center z-50 px-4 pointer-events-none ${className}`} style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+      <span className="inline-block text-[13px] font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ background: '#ffffff', color: VS.deep, boxShadow: '0 4px 16px rgba(76,29,149,0.14)' }}>
+        {text}
+      </span>
+    </div>
+  );
+}
+
+/** Live opponent clock string (m:ss). */
+const clockOf = (secs: number) => `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
 
 // Per-mode accent used for the corner Home button during a VS match.
 // Matches the solid accent each mode uses on the home-screen mode cards
@@ -279,7 +266,7 @@ export function VsGame(props: VsGameProps) {
   const isPN = props.mode === GameMode.PROPERNOUNDLE;
   const dict = useDictionary(dictLengthsForMode(props.mode));
   const pn = useProperNoundleBank(isPN);
-  return dict && pn ? <VsGameInner {...props} /> : <GameLoading />;
+  return dict && pn ? <VsGameInner {...props} /> : <VsLoadingScreen mode={props.mode} />;
 }
 
 function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
@@ -561,6 +548,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const lastTypingSentRef = useRef(0);
   const prevOppBoardsSolvedRef = useRef(0);
   const [waitingClock, setWaitingClock] = useState(0);
+  // Gauntlet: the stage the opponent is on (0-4), from opponent_stage_completed.
+  const [opponentStage, setOpponentStage] = useState(0);
 
   const totalBoards = MODE_TOTAL_BOARDS[mode] || 1;
   const modeMaxGuesses = VS_MODE_MAX_GUESSES[mode] || 6;
@@ -714,6 +703,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       setScreen('match');
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
       setOpponentTiles({});
+      setOpponentStage(0);
       resultRecordedRef.current = false;
       resetPerMatchState();
       clearDisconnectGrace();
@@ -765,6 +755,13 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         calloutText = `${name} is on their last guess!`;
       }
       if (calloutText) showCallout(calloutText);
+    });
+
+    // Gauntlet: the opponent cleared a stage. Their next stage's boards reuse
+    // the same board indices, so the live (display-only) tiles restart with it.
+    matchService.onOpponentStageCompleted(({ stageIndex }) => {
+      setOpponentStage((prev) => Math.max(prev, Math.min(GAUNTLET_STAGES.length - 1, stageIndex + 1)));
+      setOpponentTiles({});
     });
 
     matchService.onOpponentTyping(() => {
@@ -907,6 +904,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         setScreen('match');
         setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
         setOpponentTiles({});
+        setOpponentStage(0);
         resultRecordedRef.current = false;
         resetPerMatchState();
         setCountdownIsRematch(false);
@@ -1300,29 +1298,26 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // socket effect above also early-returns while authGated).
   if (authGated) {
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative px-6" style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="w-full max-w-sm space-y-6">
-          <h1 className={`text-center text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-            VS {label}
-          </h1>
-          <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
-            <div className="text-center space-y-3 py-2">
-              <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>Sign in to play VS</div>
-              <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                VS Battle pits you against a live opponent and records your results — it needs an account.
-              </p>
-              <button
-                onClick={exitGuest}
-                className="w-full rounded-xl py-3 text-[15px] font-black text-white"
-                style={{ background: '#7c3aed' }}
-              >
-                Sign in
-              </button>
-            </div>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative px-5" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="w-full max-w-sm space-y-5">
+          <VsScreenTitle mode={mode} />
+          <div className="p-5 text-center space-y-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+            <div className="text-[16px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>Sign in to play VS</div>
+            <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>
+              VS Battle pits you against a live opponent and records your results — it needs an account.
+            </p>
+            <button
+              onClick={exitGuest}
+              className="w-full py-3 text-[14px] font-black text-white uppercase transition-transform active:scale-[0.98]"
+              style={{ background: '#7c3aed', borderRadius: 12, letterSpacing: 0.6 }}
+            >
+              Sign in
+            </button>
           </div>
           <button
             onClick={() => router.push('/')}
-            className="mx-auto flex items-center gap-2 text-gray-400 hover:text-gray-500 font-bold text-sm"
+            className="mx-auto flex items-center gap-1.5 px-5 py-2 text-[13px] font-black"
+            style={{ color: VS.label }}
           >
             <X className="w-4 h-4" /> Cancel
           </button>
@@ -1356,24 +1351,24 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // "Match Found / Matching you with…" no longer bleeds through, and
   // intro → countdown reads as one continuous scene.
   const countdownOverlayEl = showCountdown ? (
+    // VS polish §2: big 3-2-1-GO in the mode color (solid, no gradient text)
+    // over the dimmed board. On the queue / result screens there is no board
+    // yet, so the scrim is opaque — the search screen never bleeds through.
     // No fade-in on the ROOT: the intro splash unmounts the same frame this
-    // mounts, and a fade-in let the bright queue screen flash through between
-    // the two dark overlays (the inner elements keep their entrances).
+    // mounts (the inner elements keep their entrances).
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'radial-gradient(circle at center, #1e1b3a, #0a0a12)' }}
+      className={`fixed inset-0 z-50 flex items-center justify-center ${screen === 'match' ? 'backdrop-blur-[2px]' : ''}`}
+      style={{ background: screen === 'match' ? 'rgba(248,247,255,0.86)' : VS.page }}
     >
-      <VsOverlayWordmark />
-      <div className="text-center space-y-4">
-        <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
-          {countdownIsRematch ? 'Rematch starting in' : 'Match Found'}
+      <div className="text-center space-y-3">
+        <div className="text-[12px] font-black uppercase animate-fade-in-scale" style={{ color: VS.label, letterSpacing: 1.4 }}>
+          {countdownIsRematch ? 'Rematch starting in' : 'Match found'}
         </div>
-        <div className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-          VS {label.toUpperCase()}
-        </div>
+        <div className="flex justify-center"><ModeChip mode={mode} /></div>
         <div
           key={countdown}
-          className={`${countdown === 0 ? 'text-8xl' : 'text-9xl'} font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} animate-fade-in-scale`}
+          className={`${countdown === 0 ? 'text-8xl' : 'text-9xl'} font-black tabular-nums animate-fade-in-scale`}
+          style={{ color: modeColor(mode), lineHeight: 1.05 }}
         >
           {countdown === 0 ? 'GO!' : countdown}
         </div>
@@ -1385,8 +1380,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // screens while the server holds the match open for a reconnect. When the
   // count hits 0 the server ends the match itself (match_ended, forfeit).
   const disconnectBannerEl = disconnectGrace !== null ? (
-    <div className="absolute top-14 left-0 right-0 text-center z-40 pointer-events-none">
-      <span className="inline-block bg-amber-500 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg animate-fade-in-up">
+    <div className="absolute left-0 right-0 text-center z-40 pointer-events-none px-4" style={{ top: 'calc(env(safe-area-inset-top) + 56px)' }}>
+      <span className="inline-block text-xs font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ background: '#fef3c7', color: '#92400e', boxShadow: '0 4px 14px rgba(146,64,14,0.12)' }}>
         {disconnectGrace > 0
           ? `Opponent lost connection — you win in ${disconnectGrace}s…`
           : 'Opponent lost connection — claiming your win…'}
@@ -1407,52 +1402,52 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               <button
                 key={tier}
                 onClick={() => startCpu(tier)}
-                className="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 transition-transform hover:-translate-y-0.5"
-                style={{ borderColor: p.color, background: 'var(--color-surface-hover)' }}
+                className="flex flex-col items-center gap-1 px-2 py-3 transition-transform active:scale-[0.97]"
+                style={{ background: VS.page, borderRadius: 12 }}
               >
-                <BotAvatar src={p.avatar} name={p.name} size={36} />
-                <span className="text-xs font-black" style={{ color: p.color }}>{tierLabel(tier)}</span>
-                <span className="text-[10px] font-bold text-gray-400">{p.name}</span>
+                <BotAvatar src={p.avatar} name={p.name} size={40} bg={VS.soft} />
+                <span className="text-[12px] font-black uppercase" style={{ color: p.color, letterSpacing: 0.4 }}>{tierLabel(tier)}</span>
+                <span className="text-[10.5px] font-bold" style={{ color: VS.label }}>{p.name}</span>
               </button>
             );
           })}
         </div>
         <button
           onClick={() => startCpu('adaptive')}
-          className="w-full rounded-xl border px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5"
-          style={{ borderColor: '#7c3aed', background: 'var(--color-surface-hover)', color: '#7c3aed' }}
+          className="w-full px-3 py-2.5 text-[12px] font-black transition-transform active:scale-[0.98]"
+          style={{ background: VS.page, borderRadius: 12, color: '#6d28d9' }}
         >
-          <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('adapt')} name="Adapt" size={20} />Adaptive — matched to your form</span>
+          <span className="inline-flex items-center gap-2"><BotAvatar src={botArt('adapt')} name="Adapt" size={22} bg={VS.soft} />Adaptive — matched to your form</span>
         </button>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => ghostRun && startCpu('ghost', { ghost: ghostRun })}
             disabled={!ghostRun}
-            className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-40"
-            style={{ borderColor: '#64748b', background: 'var(--color-surface-hover)', color: '#475569' }}
+            className="px-2 py-2.5 text-[11.5px] font-black transition-transform enabled:active:scale-[0.98] disabled:opacity-40"
+            style={{ background: VS.page, borderRadius: 12, color: '#475569' }}
             title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
           >
-            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('ghost')} name="Your Ghost" size={20} />Beat Your Best</span>
+            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('ghost')} name="Your Ghost" size={22} bg={VS.soft} />Beat Your Best</span>
           </button>
           <button
             onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
-            className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform hover:-translate-y-0.5"
-            style={{ borderColor: '#f59e0b', background: 'var(--color-surface-hover)', color: '#b45309' }}
+            className="px-2 py-2.5 text-[11.5px] font-black transition-transform active:scale-[0.98]"
+            style={{ background: VS.page, borderRadius: 12, color: '#b45309' }}
           >
-            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('lexi')} name="Lexi" size={20} />Bot of the Day</span>
+            <span className="inline-flex items-center gap-1.5"><BotAvatar src={botArt('lexi')} name="Lexi" size={22} bg={VS.soft} />Bot of the Day</span>
           </button>
         </div>
-        <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
+        <p className="text-center text-[10.5px] font-bold" style={{ color: VS.label }}>Practice only — doesn’t affect your ranked stats</p>
       </>
     ) : (
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-1 text-xs font-bold text-gray-400">
+        <div className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: VS.label }}>
           <Lock className="w-3.5 h-3.5" /> Bot matches are a Pro feature
         </div>
         <button
           onClick={() => router.push('/pro')}
-          className="w-full rounded-xl px-4 py-2 text-sm font-black text-white"
-          style={{ background: 'linear-gradient(135deg,#a78bfa,#ec4899)' }}
+          className="w-full px-4 py-2.5 text-[13px] font-black text-white uppercase"
+          style={{ background: '#7c3aed', borderRadius: 12, letterSpacing: 0.5 }}
         >
           Unlock with Pro
         </button>
@@ -1465,84 +1460,74 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // match). Replaces the old flow that silently queued AND offered the CPU at
   // the same time.
   if (screen === 'entry') {
+    const entryRow = (opts: { onClick: () => void; icon: React.ReactNode; iconBg: string; title: string; sub: string; locked?: boolean }) => (
+      <button
+        onClick={opts.onClick}
+        className="w-full flex items-center gap-3.5 p-3.5 text-left transition-transform active:scale-[0.98]"
+        style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}
+      >
+        <span className="w-11 h-11 flex items-center justify-center shrink-0" style={{ background: opts.iconBg, borderRadius: 12 }}>{opts.icon}</span>
+        <span className="flex-1 min-w-0">
+          <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.3 }}>
+            {opts.title} {opts.locked && <Lock className="w-3.5 h-3.5" style={{ color: VS.label }} />}
+          </span>
+          <span className="block text-[12px] font-bold" style={{ color: '#4b5563' }}>{opts.sub}</span>
+        </span>
+      </button>
+    );
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative px-6" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative px-5 overflow-y-auto" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); router.push('/'); }} />
         <InviteModal open={showInvite} onClose={() => setShowInvite(false)} />
-        <div className="w-full max-w-sm space-y-6">
-          <h1 className={`text-center text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-            VS {label}
-          </h1>
+        <div className="w-full max-w-sm space-y-5 py-6">
+          <VsScreenTitle mode={mode} />
 
           {!showCpuChooser ? (
-            <div className="space-y-3">
-              {/* Quick Match */}
-              <button
-                onClick={handleQuickMatch}
-                className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-              >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#a78bfa,#ec4899)' }}>
-                  <Swords className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>Quick Match</div>
-                  <div className="text-xs font-bold text-gray-400">Get matched with a live opponent</div>
-                </div>
-              </button>
-
-              {/* Bot Match */}
-              <button
-                onClick={() => (isPro ? setShowCpuChooser(true) : router.push('/pro'))}
-                className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-              >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#64748b15' }}>
-                  <Bot className="w-6 h-6" style={{ color: '#64748b' }} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 text-base font-black" style={{ color: 'var(--color-text)' }}>
-                    Bot Match {!isPro && <Lock className="w-3.5 h-3.5 text-gray-400" />}
-                  </div>
-                  <div className="text-xs font-bold text-gray-400">Practice vs a bot — pick a difficulty</div>
-                </div>
-              </button>
-
+            <div className="space-y-2.5">
+              {entryRow({
+                onClick: handleQuickMatch,
+                icon: <Swords className="w-5 h-5 text-white" />,
+                iconBg: VS.ink,
+                title: 'Quick Match',
+                sub: 'Get matched with a live opponent',
+              })}
+              {entryRow({
+                onClick: () => (isPro ? setShowCpuChooser(true) : router.push('/pro')),
+                icon: <Bot className="w-5 h-5" style={{ color: VS.ink }} />,
+                iconBg: VS.soft,
+                title: 'Bot Match',
+                sub: 'Practice vs a bot — pick a difficulty',
+                locked: !isPro,
+              })}
               {/* Invite a Friend — this MINTS an invite code, which is the
                   "private matches" bullet /pro sells, so it locks like Bot
                   Match. Accepting someone else's invite stays free (native
                   does the same); only creating one is the perk. */}
-              <button
-                onClick={() => (isPro ? setShowInvite(true) : router.push('/pro'))}
-                className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-              >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed15' }}>
-                  <Users className="w-6 h-6" style={{ color: '#7c3aed' }} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 text-base font-black" style={{ color: 'var(--color-text)' }}>
-                    Invite a Friend {!isPro && <Lock className="w-3.5 h-3.5 text-gray-400" />}
-                  </div>
-                  <div className="text-xs font-bold text-gray-400">Send a private match link or @username</div>
-                </div>
-              </button>
+              {entryRow({
+                onClick: () => (isPro ? setShowInvite(true) : router.push('/pro')),
+                icon: <Users className="w-5 h-5" style={{ color: '#7c3aed' }} />,
+                iconBg: '#ede9fe',
+                title: 'Invite a Friend',
+                sub: 'Send a private match link or @username',
+                locked: !isPro,
+              })}
 
               <button
                 onClick={() => router.push('/')}
-                className="mx-auto flex items-center gap-2 text-gray-400 hover:text-gray-500 font-bold text-sm pt-2"
+                className="mx-auto flex items-center gap-1.5 px-5 py-2 text-[13px] font-black"
+                style={{ color: VS.label }}
               >
                 <X className="w-4 h-4" /> Cancel
               </button>
             </div>
           ) : (
             /* Bot Match → difficulty/options picker */
-            <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
-              <div className="flex items-center gap-2 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
-                <button onClick={() => setShowCpuChooser(false)} className="text-gray-400 hover:text-gray-500">
-                  <ChevronLeft className="w-4 h-4" />
+            <div className="p-4 space-y-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+              <div className="flex items-center gap-2 text-[13px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>
+                <button onClick={() => setShowCpuChooser(false)} aria-label="Back" className="flex items-center justify-center" style={{ width: 28, height: 28, marginLeft: -4 }}>
+                  <ChevronLeft className="w-5 h-5" style={{ color: VS.ink }} strokeWidth={2.6} />
                 </button>
-                <Bot className="w-4 h-4" /> Choose your opponent
+                Choose your opponent
               </div>
               {cpuChooserContent()}
             </div>
@@ -1554,7 +1539,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
   if (screen === 'queue') {
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Match-intro splash — sits above the countdown for 2.5s (or until tapped). */}
         {showIntro && (
@@ -1568,8 +1553,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               username: isCpu ? `${opponentInfo?.username ?? 'CPU'} · ${cpuPersona ? tierLabel(cpuPersona.tier) : 'CPU'}` : (opponentInfo?.username ?? '…'),
               avatarUrl: opponentInfo?.avatarUrl ?? null,
               level: isCpu || flow ? null : (opponentInfo?.level ?? null),
+              art: isCpu,
             } : null}
             headToHead={headToHead}
+            mode={mode}
             onDone={() => { setShowIntro(false); startCountdown(pendingCountdownRef.current); }}
           />
         )}
@@ -1593,13 +1580,13 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             } : undefined}
           >
             {inviteCode && !isCpu && (
-              <div className="w-full max-w-xs mx-auto rounded-2xl border p-4 space-y-2"
-                   style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
-                <div className="text-[11px] font-extrabold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="w-full max-w-xs mx-auto p-4 space-y-2"
+                   style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+                <div className="text-[11px] font-black uppercase" style={{ color: VS.label, letterSpacing: 1.2 }}>
                   Private match
                 </div>
-                <div className="text-3xl font-black tracking-[6px]" style={{ color: 'var(--color-text)' }}>{inviteCode}</div>
-                <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="text-3xl font-black tracking-[6px]" style={{ color: VS.deep }}>{inviteCode}</div>
+                <p className="text-xs font-bold" style={{ color: '#4b5563' }}>
                   Share this code — the match starts when your friend joins.
                 </p>
                 <button
@@ -1611,8 +1598,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                     }
                     try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
                   }}
-                  className="w-full rounded-xl py-2.5 text-sm font-black text-white"
-                  style={{ background: '#7c3aed' }}
+                  className="w-full py-2.5 text-[13px] font-black text-white uppercase"
+                  style={{ background: VS.ink, borderRadius: 12, letterSpacing: 0.5 }}
                 >
                   Share invite
                 </button>
@@ -1622,16 +1609,13 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           </VsQueueScreen>
         ) : (
           <VsStartingScreen
+            mode={mode}
             title={flow === 'race' ? `RACE @${(race?.challenger.username ?? '').toUpperCase()}’S RUN` : flow === 'send' ? 'YOUR RUN' : `${cpuPersona?.name ?? 'Your bot'} is ready`}
             sub={flow === 'send' ? sendPanelLine(sendFriendIds.length, sendLink) : flow === 'race' ? 'Same puzzle. Their pace plays out beside you.' : undefined}
           />
         )}
 
-        {message && (
-          <div className="absolute bottom-8 left-0 right-0 text-center">
-            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
-          </div>
-        )}
+        {message && <VsToast text={message} />}
       </div>
     );
   }
@@ -1662,15 +1646,11 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             onHome={() => { matchService.disconnect(); router.push('/vs'); }}
           />
         ) : (
-          <div className="h-screen-stable flex items-center justify-center" style={{ backgroundColor: '#f8f7ff' }}>
-            <VsStartingScreen title="SENDING YOUR RUN" />
+          <div className="h-screen-stable flex items-center justify-center" style={{ backgroundColor: VS.page }}>
+            <VsStartingScreen mode={mode} title="SENDING YOUR RUN" />
           </div>
         )}
-        {message && (
-          <div className="fixed bottom-8 left-0 right-0 text-center z-50">
-            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
-          </div>
-        )}
+        {message && <VsToast text={message} />}
       </>
     );
   }
@@ -1698,11 +1678,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           onChallengeBack={() => { matchService.disconnect(); router.push(isPro ? `/vs/friend?mode=${mode}&friend=${race.challenger.id}` : '/pro'); }}
           onShare={share}
         />
-        {message && (
-          <div className="fixed bottom-8 left-0 right-0 text-center z-50">
-            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
-          </div>
-        )}
+        {message && <VsToast text={message} />}
       </>
     );
   }
@@ -1712,10 +1688,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     const winner = matchResult?.winner;
     const isWin = winner === 'player';
     const isDraw = winner === 'draw';
-    const headlineText = isWin ? 'WINNER' : isDraw ? 'DRAW' : 'DEFEAT';
-    const headlineColor = isWin ? 'from-green-400 to-emerald-300' : isDraw ? 'from-yellow-400 to-orange-300' : 'from-red-400 to-rose-300';
     const myName = profile?.username || 'You';
     const oppName = opponentInfo?.username || 'Opponent';
+    const headlineText = isWin ? 'YOU WIN!' : isDraw ? 'IT’S A DRAW' : `${oppName.toUpperCase()} WINS`;
 
     // Solve status decides most matches (solving beats score), so spell it out —
     // the loser often has "better" numbers, which reads as a mistake otherwise.
@@ -1729,8 +1704,16 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       : isDraw
       ? 'Dead even — identical scores'
       : isWin
-        ? (mySolved && !oppSolved ? `You solved it — ${oppName} didn’t` : 'Both solved — you won on score')
-        : (oppSolved && !mySolved ? `${oppName} solved it — you didn’t` : `Both solved — ${oppName} won on score`);
+        ? (mySolved && !oppSolved ? `You solved it — ${oppName} didn’t` : `${mySolved ? 'Both solved' : 'Neither solved'} — you won on score`)
+        : (oppSolved && !mySolved ? `${oppName} solved it — you didn’t` : `${oppSolved ? 'Both solved' : 'Neither solved'} — ${oppName} won on score`);
+
+    // The deciding margin (core vsMargin), shown only when the core rule agrees
+    // with the server's verdict (a forfeit or a partial log can differ).
+    const outcome: 'win' | 'loss' | 'draw' = isWin ? 'win' : isDraw ? 'draw' : 'loss';
+    const myRun = { solved: mySolved, boardsSolved: mySolved ? totalBoards : myBoardsSolved, guesses: matchResult?.playerGuesses ?? 0, timeMs: matchResult?.playerTime ?? 0 };
+    const oppRun = { solved: oppSolved, boardsSolved: oppSolved ? totalBoards : Math.min(totalBoards, opponentProgress.boardsSolved), guesses: matchResult?.opponentGuesses ?? 0, timeMs: matchResult?.opponentTime ?? 0 };
+    const margin = isForfeit ? 'BY FORFEIT' : matchResult && vsOutcome(myRun, oppRun) === outcome ? vsMargin(myRun, oppRun) : null;
+    const resultSub = [modeTitle(mode).toUpperCase(), margin].filter(Boolean).join(' · ');
 
     const handleShare = async () => {
       const text = isWin
@@ -1781,8 +1764,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       }
     };
 
+    const softBtn = 'flex-1 py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2 transition-transform active:scale-[0.98]';
     return (
-      <div className="min-h-screen overflow-y-auto relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div className="h-screen-stable overflow-y-auto relative" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* Rematch countdown plays over the result screen before the new game. */}
         {countdownOverlayEl}
         {/* Photo-finish flourish (CPU close/last-guess win) — plays FIRST and is
@@ -1793,95 +1777,76 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         {isWin && !photoFinish && <Confetti />}
         {/* Rematch upsell for freemium — handleRematch sets this open */}
         <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
-        <div className="max-w-md w-full mx-auto px-6 py-10 space-y-5">
-          {/* Headline */}
-          <div className="text-center animate-fade-in-scale">
-            <h1 className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${headlineColor}`}>
-              {headlineText}
-            </h1>
-            {/* Why you won/lost, in plain English. */}
-            {matchResult && (
-              <p className="text-[13px] font-extrabold mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-                {whyLine}
-              </p>
-            )}
-            {/* Updated all-time head-to-head (refetched after the match was recorded) */}
-            {opponentUserId && headToHead && !isCpu && (
-              <p className="text-sm font-extrabold mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-                {headToHeadLine(oppName, headToHead)}
-              </p>
-            )}
-            {/* CPU practice: streak + milestone + cosmetic unlock (no ranked H2H) */}
-            {isCpu && (
-              <div className="mt-2 space-y-1">
-                {cpuMilestone ? (
-                  <p className="text-sm font-black" style={{ color: '#f97316' }}>🔥 {cpuMilestone}-win bot streak!</p>
-                ) : cpuStreak > 0 ? (
-                  <p className="text-xs font-extrabold text-gray-400">Bot win streak: {cpuStreak}</p>
-                ) : null}
-                {cpuUnlock && (
-                  <p className="text-xs font-black" style={{ color: BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].color }}>
-                    🏅 Unlocked {BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].name}’s badge!
-                  </p>
-                )}
-                <p className="text-[10px] font-bold text-gray-400">Practice — not counted in ranked stats</p>
-              </div>
-            )}
+        <div className="max-w-md w-full mx-auto px-4 py-3 space-y-3.5">
+          {/* Top bar — close (home) + wordmark, as on the challenge result. */}
+          <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
+            <button type="button" onClick={handleHome} aria-label="Close" className="absolute left-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
+              <X style={{ width: 22, height: 22, color: '#7c3aed' }} strokeWidth={2.6} />
+            </button>
+            <span className="font-black" style={{ fontSize: 20, backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)', ...GRADIENT_TEXT }}>
+              WORDOCIOUS
+            </span>
           </div>
 
-          {/* Prominent head-to-head FINAL SCORE — big totals with the exact
-              calculation + solve badges (replaces the inverted comparison bars). */}
+          {/* The one-window result (home palette). */}
           {matchResult && (
-            <ScoreCard
-              me={{ name: myName, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved, isWinner: isWin }}
-              opponent={{ name: oppName, score: matchResult.opponentScore ?? matchResult.opponentGuesses, guesses: matchResult.opponentGuesses, timeMs: matchResult.opponentTime, solved: oppSolved, isWinner: !isWin && !isDraw }}
-              isDraw={isDraw}
+            <VsResultWindow
+              modeIcon={<VsModeIcon mode={mode} size={14} />}
+              headline={headlineText}
+              sub={resultSub}
+              why={whyLine}
+              outcome={outcome}
+              me={{ name: myName, avatarUrl: (profile as any)?.avatar_url ?? null, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved }}
+              opponent={{ name: oppName, avatarUrl: opponentInfo?.avatarUrl ?? null, isBot: isCpu, score: matchResult.opponentScore ?? matchResult.opponentGuesses, guesses: matchResult.opponentGuesses, timeMs: matchResult.opponentTime, solved: oppSolved }}
             />
           )}
+          {matchResult && (
+            <p className="text-center text-[10.5px] font-bold" style={{ color: VS.label }}>
+              Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving
+            </p>
+          )}
 
-          {/* Rematch Status */}
+          {/* Updated all-time head-to-head (refetched after the match was recorded) */}
+          {opponentUserId && headToHead && !isCpu && (
+            <div className="flex items-center gap-3 p-3" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+              <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={34} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-black uppercase truncate" style={{ color: VS.label, letterSpacing: 0.8 }}>You and {oppName}</div>
+                <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{headToHeadLine(oppName, headToHead)}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Rematch offer — soft card, caps title, purple primary / soft secondary. */}
           {rematchState === 'received' && (
-            <div
-              className="bg-white border-2 border-purple-300 rounded-xl p-4 text-center animate-fade-in-up"
-            >
-              <p className="text-sm font-bold text-gray-700 mb-3">Opponent wants a rematch!</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDeclineRematch}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 font-bold py-2.5 rounded-xl transition-all"
-                >
+            <div className="p-4 text-center space-y-3 animate-fade-in-up" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+              <p className="text-[14px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>{oppName} wants a rematch!</p>
+              <div className="flex gap-2.5">
+                <button onClick={handleDeclineRematch} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
                   Decline
                 </button>
-                <button
-                  onClick={handleRematch}
-                  className={`flex-1 bg-gradient-to-r ${titleGradient} text-white font-bold py-2.5 rounded-xl transition-all shadow-lg`}
-                >
+                <button onClick={handleRematch} className={`${softBtn} text-white`} style={{ background: '#7c3aed', borderRadius: 14 }}>
                   Accept
                 </button>
               </div>
             </div>
           )}
 
-          {/* Actions — prominent Rematch on top, Home/Share below */}
-          <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            {/* Run-it-back session tally (CPU only) */}
-            {isCpu && (cpuSession.wins + cpuSession.losses) > 0 && (
-              <p className="text-center text-xs font-extrabold text-gray-400">
-                This session — You {cpuSession.wins} · Bots {cpuSession.losses}
-              </p>
-            )}
+          {/* Actions — solid purple REMATCH, soft HOME + SHARE. */}
+          <div className="space-y-2.5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             {rematchState === 'declined' ? (
-              <div className="w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
-                <X className="w-4 h-4" /> No Rematch
+              <div className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2" style={{ background: '#f1f5f9', color: '#64748b', borderRadius: 14 }}>
+                <X className="w-4 h-4" /> No rematch
               </div>
             ) : rematchState === 'offered' ? (
-              <div className={`w-full bg-gradient-to-r ${titleGradient} text-white/80 font-black py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg`}>
-                <Loader2 className="w-4 h-4 animate-spin" /> Waiting...
+              <div className="w-full py-3.5 text-[15px] font-black uppercase flex items-center justify-center gap-2" style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
+                <Loader2 className="w-4 h-4 animate-spin" /> Waiting…
               </div>
             ) : rematchState !== 'received' ? (
               <button
                 onClick={handleRematch}
-                className={`w-full bg-gradient-to-r ${titleGradient} text-white font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg btn-3d`}
+                className="w-full py-3.5 text-[15px] font-black uppercase text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+                style={{ background: '#7c3aed', borderRadius: 14, letterSpacing: 0.6 }}
               >
                 {/* Honest label: for free users the tap opens the Pro upsell,
                     not a rematch — say so instead of a bait "Rematch". */}
@@ -1889,21 +1854,37 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 {isCpu ? 'Run it back' : isPro ? 'Rematch' : 'Rematch — Pro'}
               </button>
             ) : null}
-            <div className="flex gap-3">
-              <button
-                onClick={handleHome}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-              >
+            <div className="flex gap-2.5">
+              <button onClick={handleHome} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
                 <Home className="w-4 h-4" /> Home
               </button>
-              <button
-                onClick={handleShare}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-              >
+              <button onClick={handleShare} className={softBtn} style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14 }}>
                 <Share2 className="w-4 h-4" /> Share
               </button>
             </div>
           </div>
+
+          {/* Bot game: session tally, streak / unlocks and the record note — below the window. */}
+          {isCpu && (
+            <div className="text-center space-y-1">
+              {(cpuSession.wins + cpuSession.losses) > 0 && (
+                <p className="text-[12px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>
+                  This session — You {cpuSession.wins} · Bots {cpuSession.losses}
+                </p>
+              )}
+              {cpuMilestone ? (
+                <p className="text-[13px] font-black" style={{ color: '#b45309' }}>🔥 {cpuMilestone}-win bot streak!</p>
+              ) : cpuStreak > 0 ? (
+                <p className="text-[11.5px] font-extrabold" style={{ color: VS.label }}>Bot win streak: {cpuStreak}</p>
+              ) : null}
+              {cpuUnlock && (
+                <p className="text-[12px] font-black" style={{ color: BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].color }}>
+                  🏅 Unlocked {BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].name}’s badge!
+                </p>
+              )}
+              <p className="text-[11px] font-bold" style={{ color: VS.label }}>Bot game — counts in your Bots record, not People</p>
+            </div>
+          )}
 
           {/* Final boards with letters — opponent's reconstructed from the
               match-end guess log + solutions */}
@@ -1924,11 +1905,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           )}
         </div>
 
-        {message && (
-          <div className="fixed bottom-8 left-0 right-0 text-center z-50">
-            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
-          </div>
-        )}
+        {message && <VsToast text={message} />}
       </div>
     );
   }
@@ -1946,9 +1923,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // ProperNoundle's answer length varies per puzzle (MODE_WORD_LEN says 5) —
     // size the frame columns to the real answer so opponent rows aren't cut off.
     const specWordLen = mode === GameMode.PROPERNOUNDLE ? (puzzleMetadata?.answerLength || wordLen) : wordLen;
-    // Bigger board so it fills the space and the flip-in reveal reads clearly.
-    const specTile = liveTotalBoards <= 1 ? 34 : liveTotalBoards <= 4 ? 24 : 14;
-    const clockStr = `${Math.floor(waitingClock / 60)}:${(waitingClock % 60).toString().padStart(2, '0')}`;
+    const clockStr = clockOf(waitingClock);
 
     // STAKES copy. The real win rule is: solve, then tie-break on
     // boardsSolved, then composite score = guesses + timeSeconds/45.
@@ -1985,124 +1960,122 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       return target <= 0 || opponentProgress.attempts >= target;
     })();
 
-    return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ backgroundColor: 'var(--color-bg)' }}>
-        {disconnectBannerEl}
-        <div className="text-center space-y-5 max-w-md w-full px-6 py-6">
-          <h2 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-            {oppName} is still playing...
-          </h2>
+    // The challenge-send game has nobody to watch — its result follows at once.
+    if (opponentUserId === SOLO_OPPONENT_ID) {
+      return (
+        <div className="h-screen-stable flex items-center justify-center" style={{ backgroundColor: VS.page }}>
+          <VsStartingScreen mode={mode} title="SENDING YOUR RUN" />
+        </div>
+      );
+    }
 
-          {/* Opponent identity + live counters */}
-          <div className="flex items-center justify-center gap-3">
-            {/* Breathing "live" ring signals an active opponent while you wait. */}
-            <div className="relative w-12 h-12 flex items-center justify-center">
-              <span className="absolute inset-0 rounded-full animate-ping" style={{ border: '2px solid #a78bfa', opacity: 0.5 }} />
-              {opponentInfo?.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={opponentInfo.avatarUrl} alt={oppName} className="relative w-12 h-12 rounded-full object-cover" style={{ border: '1.5px solid var(--color-border)' }} />
-              ) : (
-                <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <span className="text-white font-black text-xs">{oppName.slice(0, 2).toUpperCase()}</span>
-                </div>
-              )}
+    // Their live boards, laid out for the mode. Gauntlet shows the stage the
+    // opponent is on (its board indices restart every stage).
+    const gStage = mode === GameMode.GAUNTLET ? GAUNTLET_STAGES[Math.min(opponentStage, GAUNTLET_STAGES.length - 1)] : null;
+    const liveIndices = Array.from({ length: gStage ? gStage.boardCount : liveTotalBoards }, (_, i) => i);
+    const liveRows = gStage ? Math.max(gStage.maxGuesses, oppRowsUsed) : spectatorRows;
+    const solvedLive = new Set(
+      Object.entries(opponentTiles)
+        .filter(([, rows]) => rows.some((r) => r.length > 0 && r.every((t) => t === 'CORRECT')))
+        .map(([k]) => Number(k)),
+    );
+    const progressLine = [
+      `${opponentProgress.attempts} ${opponentProgress.attempts === 1 ? 'guess' : 'guesses'}`,
+      clockStr,
+      gStage ? `Stage ${opponentStage + 1}/5` : liveTotalBoards > 1 ? `${opponentProgress.boardsSolved}/${liveTotalBoards} boards` : null,
+    ].filter(Boolean).join(' · ');
+    const myBoardsLine = myStatus === 'won' ? totalBoards : Math.min(totalBoards, myBoardsSolved);
+
+    return (
+      <div className="h-screen-stable overflow-y-auto relative" style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {disconnectBannerEl}
+        <div className="max-w-md w-full mx-auto px-4 py-4 space-y-3.5">
+          {/* Teal one-window card: who's still playing, the stakes, their live boards. */}
+          <div
+            className="relative overflow-hidden animate-fade-in-up"
+            style={{ borderRadius: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #ccfbf1, #e0f2fe)', boxShadow: '0 4px 14px rgba(15,118,110,0.10)' }}
+          >
+            <div className="relative flex flex-col gap-1 text-center" style={{ padding: '14px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+              <span className="font-black" style={{ fontSize: 19, letterSpacing: 0.4, lineHeight: 1.2, color: VS.deep }}>
+                {oppName.toUpperCase()} IS STILL PLAYING
+              </span>
+              {stakes && <span className="text-[12px] font-extrabold" style={{ color: VS.ink }}>{stakes}</span>}
             </div>
-            <div className="text-left">
-              <div className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>{oppName}</div>
-              <div className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                {opponentProgress.attempts} {opponentProgress.attempts === 1 ? 'guess' : 'guesses'} · {clockStr}
-                {liveTotalBoards > 1 && ` · ${opponentProgress.boardsSolved}/${liveTotalBoards} boards`}
+
+            <div className="relative flex items-center gap-3 px-4 pt-3">
+              {/* Breathing "live" ring signals an active opponent while you wait. */}
+              <span className="relative flex items-center justify-center shrink-0" style={{ width: 44, height: 44 }}>
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ border: `2px solid ${VS.ink}`, opacity: 0.35 }} />
+                {isCpu && opponentInfo?.avatarUrl ? (
+                  <BotAvatar src={opponentInfo.avatarUrl} name={oppName} size={44} bg="#ffffff" />
+                ) : (
+                  <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={44} />
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] font-black truncate" style={{ color: VS.deep }}>{oppName}</div>
+                <div className="text-[11.5px] font-bold tabular-nums" style={{ color: '#4b5563' }}>{progressLine}</div>
               </div>
-            </div>
-            {opponentTyping && (
-              <span className="flex gap-0.5 items-center">
+              <span className={`flex gap-0.5 items-center shrink-0 transition-opacity duration-200 ${opponentTyping ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true">
                 {[0, 1, 2].map((i) => (
-                  <span key={i} className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#ec4899', animationDelay: `${i * 0.2}s` }} />
+                  <span key={i} className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: VS.ink, animationDelay: `${i * 0.2}s` }} />
                 ))}
               </span>
-            )}
-          </div>
-
-          {/* Stakes copy */}
-          {stakes && (
-            <div
-              className="inline-block px-4 py-2 rounded-xl text-xs font-extrabold animate-fade-in-up"
-              style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
-            >
-              {stakes}
             </div>
-          )}
 
-          {/* Opponent live board — scaled-up mini board, colors only */}
-          <div
-            className="rounded-2xl p-4 flex justify-center"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
-          >
-            {liveTotalBoards <= 1 ? (
-              <OpponentMiniBoard
-                tiles={opponentTiles[0] || []}
-                maxGuesses={spectatorRows}
-                wordLength={specWordLen}
-                tileSize={specTile}
-              />
-            ) : (
-              <OpponentMultiMiniBoard
+            {/* Opponent live board(s) — the solo mini-board, colors only. */}
+            <div className="relative px-3 pt-3 pb-4">
+              <OpponentLiveBoards
                 opponentTiles={opponentTiles}
-                totalBoards={liveTotalBoards}
-                maxGuesses={spectatorRows}
+                boardIndices={liveIndices}
+                solvedBoards={solvedLive}
+                maxGuesses={liveRows}
                 wordLength={specWordLen}
-                tileSize={specTile}
               />
-            )}
+            </div>
           </div>
 
           {/* Your stats */}
           {playerStats && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
-              <div className="text-gray-400 text-xs font-bold uppercase tracking-wider">Your Result</div>
-              <div className="flex justify-between text-sm font-bold">
-                <span className="text-gray-500">Guesses</span>
-                <span className="text-gray-800">{playerStats.guesses}</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold">
-                <span className="text-gray-500">Time</span>
-                <span className="text-gray-800">{formatTime(playerStats.timeMs)}</span>
+            <div className="p-4" style={{ background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow }}>
+              <div className="text-[11px] font-black uppercase mb-2" style={{ color: VS.label, letterSpacing: 1.2 }}>Your result</div>
+              <div className="flex">
+                {[
+                  { k: 'Guesses', v: String(playerStats.guesses) },
+                  { k: 'Time', v: formatTime(playerStats.timeMs) },
+                  { k: totalBoards > 1 ? 'Boards' : 'Solved', v: totalBoards > 1 ? `${myBoardsLine}/${totalBoards}` : myStatus === 'won' ? 'Yes' : 'No' },
+                ].map((c) => (
+                  <div key={c.k} className="flex-1 text-center">
+                    <div className="text-[20px] font-black tabular-nums" style={{ color: '#4c1d95' }}>{c.v}</div>
+                    <div className="text-[10.5px] font-bold uppercase" style={{ color: VS.label, letterSpacing: 0.6 }}>{c.k}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {(isCpu || flow === 'race') && (
-            cpuWinLocked ? (
-              <button
-                onClick={() => matchService.resolveNow?.()}
-                className={`text-white font-black px-6 py-3 rounded-xl transition-transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto bg-gradient-to-r ${titleGradient}`}
-              >
-                🏁 Claim your win
-              </button>
-            ) : (
-              <button
-                onClick={() => matchService.resolveNow?.()}
-                className="font-black px-6 py-3 rounded-xl transition-transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto"
-                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
-              >
-                ⏩ Skip to result
-              </button>
-            )
+            <button
+              onClick={() => matchService.resolveNow?.()}
+              className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+              style={cpuWinLocked
+                ? { background: VS.ink, color: '#ffffff', borderRadius: 14, letterSpacing: 0.6 }
+                : { background: VS.soft, color: VS.ink, borderRadius: 14, letterSpacing: 0.6 }}
+            >
+              {cpuWinLocked ? 'Claim your win' : 'Skip to result'}
+            </button>
           )}
 
           <button
             onClick={handleForfeit}
-            className="bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-400 hover:text-gray-600 font-bold px-6 py-2 rounded-xl transition-all flex items-center gap-2 mx-auto"
+            className="mx-auto flex items-center gap-1.5 px-4 py-1.5 text-[12px] font-black uppercase rounded-full transition-transform active:scale-95"
+            style={{ background: '#f1f5f9', color: '#64748b', letterSpacing: 0.5 }}
           >
-            <X className="w-4 h-4" /> Leave
+            <X className="w-3.5 h-3.5" /> Leave
           </button>
         </div>
 
-        {message && (
-          <div className="absolute bottom-8 left-0 right-0 text-center">
-            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
-          </div>
-        )}
+        {message && <VsToast text={message} />}
       </div>
     );
   }
@@ -2142,7 +2115,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       case GameMode.RESCUE:
         return <VsDeliverance {...commonProps} />;
       case GameMode.GAUNTLET:
-        return <VsGauntlet {...commonProps} onStageCompleted={handleStageCompleted} />;
+        return <VsGauntlet {...commonProps} opponentProgress={{ ...commonProps.opponentProgress, currentStage: opponentStage }} onStageCompleted={handleStageCompleted} />;
       case GameMode.PROPERNOUNDLE:
         return <VsProperNoundle {...commonProps} puzzleMetadata={puzzleMetadata} />;
       case GameMode.DUEL_6:
@@ -2154,8 +2127,19 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     }
   };
 
+  // Who the opponent strip shows (VS polish §1): the bot's art + "Bot", a
+  // friend's run, or the live opponent.
+  const opponentIdentity = {
+    name: opponentInfo?.username || (isCpu ? 'Bot' : 'Opponent'),
+    avatarUrl: opponentInfo?.avatarUrl ?? null,
+    isBot: isCpu,
+    tag: isCpu ? 'Bot' : flow === 'race' ? 'Their run' : undefined,
+    typing: opponentTyping,
+  };
+  const soloTitle = SOLO_TITLES[mode];
+
   return (
-    <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: 'var(--color-bg)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* 3-2-1-GO: the screen flips to 'match' the moment the count hits 0,
           so the overlay must render HERE too — otherwise the "GO!" beat
           (held ~600ms over the board, native parity) never showed and the
@@ -2168,49 +2152,34 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           completes, matching the un-skipped player exactly. */}
       {sharedInputLock && <div className="fixed inset-0 z-40" aria-hidden="true" />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
-      {/* Match Header. The Home button forfeits the match first so the
-          server can end it cleanly and credit the opponent — just navigating
-          away mid-VS leaves a dangling match. */}
-      {/* min-h-[56px]: the 44px home button (top-2 + 44) overflowed the
-          ~48px title row and clipped into the match-header card below. */}
-      <div className="text-center py-2 shrink-0 relative min-h-[56px] flex items-center justify-center">
-        <GameHomeButton accentColor={accentColor} onClick={handleForfeit} />
-        <h1 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-          VS {label}
-        </h1>
-      </div>
+      {/* Match header = the solo header + a teal VS pill (VS polish §1). The
+          Home button forfeits the match first so the server can end it
+          cleanly and credit the opponent — just navigating away mid-VS leaves
+          a dangling match. Gauntlet's solo screen has no title row: its home
+          button and the VS pill overlay the stage stepper, like solo. */}
+      {soloTitle ? (
+        <div className="text-center pt-2 pb-1 px-[52px] shrink-0 relative min-h-[52px] flex items-center justify-center gap-2">
+          <GameHomeButton accentColor={accentColor} onClick={handleForfeit} />
+          {/* Long titles step down a size on narrow phones so the pill never collides with Home. */}
+          <h1 className={`${soloTitle.className} max-[400px]:text-2xl font-black truncate min-w-0`} style={soloTitle.style}>
+            {soloTitle.title}
+          </h1>
+          <VsPill />
+        </div>
+      ) : (
+        <>
+          <GameHomeButton accentColor={accentColor} onClick={handleForfeit} positionClass="absolute top-[calc(env(safe-area-inset-top)+4px)] left-2 z-10" />
+          <span className="absolute right-3 z-10" style={{ top: 'calc(env(safe-area-inset-top) + 8px)' }}><VsPill /></span>
+        </>
+      )}
 
-      {/* Persistent VS header: you vs opponent + tug-of-war lead bar */}
-      <VsMatchHeader
-        me={{
-          username: profile?.username || 'You',
-          avatarUrl: (profile as any)?.avatar_url ?? null,
-          guesses: myGuessLog.length,
-          progress: computeVsProgress(myBoardsSolved, totalBoards, bestRowGreens(myTiles), wordLen),
-        }}
-        opponent={{
-          username: opponentInfo?.username || (isCpu ? 'Bot' : 'Opponent'),
-          avatarUrl: opponentInfo?.avatarUrl ?? null,
-          guesses: opponentProgress.attempts,
-          progress: computeVsProgress(opponentProgress.boardsSolved, totalBoards, bestRowGreens(opponentTiles), wordLen),
-          // The bot is labeled a bot; a friend's run reads "@doug's run"; the send game has no opponent.
-          subtitle: flow === 'send'
-            ? sendPanelLine(sendFriendIds.length, sendLink || sendFriendIds.length === 0)
-            : flow === 'race'
-            ? `@${opponentInfo?.username ?? ''}’s run · ${opponentProgress.attempts} ${opponentProgress.attempts === 1 ? 'guess' : 'guesses'}`
-            : isCpu
-            ? `Bot · ${opponentProgress.attempts} ${opponentProgress.attempts === 1 ? 'guess' : 'guesses'}`
-            : undefined,
-        }}
-        opponentTyping={opponentTyping}
-      />
-
-      {/* Moment callout — opponent milestones (greens / board solved / last guess) */}
+      {/* Moment callout — opponent milestones (greens / board solved / last guess) as a soft pill. */}
       {callout && (
-        <div className="absolute top-12 left-0 right-0 text-center z-40 pointer-events-none">
+        <div className="absolute left-0 right-0 text-center z-40 pointer-events-none px-4" style={{ top: 'calc(env(safe-area-inset-top) + 52px)' }}>
           <span
             key={callout.id}
-            className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg animate-fade-in-up"
+            className="inline-block text-xs font-extrabold px-4 py-2 rounded-full animate-fade-in-up"
+            style={{ background: VS.soft, color: VS.deep, boxShadow: '0 4px 14px rgba(15,118,110,0.16)' }}
           >
             {callout.text}
           </span>
@@ -2224,16 +2193,28 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           natural aspect height instead of shrinking to fit, pushing the
           keyboard below the fold. */}
       <div className="flex-1 min-h-0 flex flex-col">
-        <VsSoloHudContext.Provider value={opponentUserId === SOLO_OPPONENT_ID ? soloHudLine : null}>
-          {renderModeComponent()}
-        </VsSoloHudContext.Provider>
+        <VsOpponentContext.Provider value={opponentIdentity}>
+          <VsSoloHudContext.Provider value={opponentUserId === SOLO_OPPONENT_ID ? soloHudLine : null}>
+            {renderModeComponent()}
+          </VsSoloHudContext.Provider>
+        </VsOpponentContext.Provider>
       </div>
 
-      {message && (
-        <div className="absolute bottom-20 left-0 right-0 text-center z-30">
-          <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
-        </div>
-      )}
+      {message && <VsToast text={message} className="bottom-24" />}
+    </div>
+  );
+}
+
+/** Mode icon + `VS · MODE` caps headline for the screens around a match. */
+function VsScreenTitle({ mode }: { mode: GameMode }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 14, background: `${modeColor(mode)}1f` }}>
+        <VsModeIcon mode={mode} size={24} />
+      </span>
+      <h1 className="text-center text-[24px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.5 }}>
+        VS · {modeTitle(mode)}
+      </h1>
     </div>
   );
 }
@@ -2272,30 +2253,25 @@ function DailyVsAlreadyPlayed({
 
   return (
     <div
-      className="h-screen-stable flex flex-col items-center justify-center relative"
-      style={{ backgroundColor: 'var(--color-bg)' }}
+      className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto"
+      style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="text-center space-y-6 max-w-md w-full px-6">
+      <div className="text-center space-y-5 max-w-sm w-full px-5 py-6">
         {/* Headline */}
-        <div className="space-y-2 animate-fade-in-scale">
-          <div
-            className="text-[10px] font-extrabold uppercase tracking-widest"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
-            Today&apos;s VS Puzzle
+        <div className="space-y-1 animate-fade-in-scale">
+          <div className="text-[11px] font-black uppercase" style={{ color: VS.ink, letterSpacing: 1.2 }}>
+            Today&apos;s VS puzzle
           </div>
-          <h1
-            className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}
-          >
-            Already Played
+          <h1 className="text-[26px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>
+            Already played
           </h1>
         </div>
 
         {/* Today's outcome — W/L pill (iOS/Android parity). */}
         {won !== null && (
           <div
-            className="inline-block px-4 py-1.5 rounded-full text-xs font-black text-white tracking-widest animate-fade-in-scale"
-            style={{ background: won ? '#7c3aed' : '#dc2626' }}
+            className="inline-block px-4 py-1.5 rounded-full text-xs font-black tracking-widest animate-fade-in-scale"
+            style={won ? { background: '#7c3aed', color: '#ffffff' } : { background: '#e2e8f0', color: '#475569' }}
           >
             {won ? 'YOU WON' : 'YOU LOST'}
           </div>
@@ -2303,19 +2279,9 @@ function DailyVsAlreadyPlayed({
 
         {/* Answer tiles */}
         {letters.length > 0 && (
-          <div
-            className="flex items-center justify-center gap-1.5 animate-fade-in-up"
-            style={{ animationDelay: '0.15s' }}
-          >
+          <div className="flex items-center justify-center gap-1.5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             {letters.map((ch, i) => (
-              <div
-                key={i}
-                className="w-11 h-11 rounded-md flex items-center justify-center text-lg font-black text-white"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  boxShadow: '0 3px 0 #5b21b6',
-                }}
-              >
+              <div key={i} className="w-11 h-11 rounded-md flex items-center justify-center text-lg font-black text-white tile-correct border">
                 {ch}
               </div>
             ))}
@@ -2324,68 +2290,38 @@ function DailyVsAlreadyPlayed({
 
         {/* Countdown */}
         <div
-          className="inline-block px-4 py-2 rounded-lg animate-fade-in-up"
-          style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border)', animationDelay: '0.25s' }}
+          className="inline-block px-4 py-2 rounded-full animate-fade-in-up"
+          style={{ background: '#ffffff', boxShadow: VS.cardShadow, animationDelay: '0.25s' }}
         >
-          <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>
+          <span className="text-xs font-black tabular-nums" style={{ color: '#6d28d9' }}>
             Next daily VS in {countdown}
           </span>
         </div>
 
         {/* Pro: prompt unlimited VS. Freemium: upsell to Pro. */}
-        <p
-          className="text-xs font-bold px-4 animate-fade-in"
-          style={{ color: 'var(--color-text-secondary)', animationDelay: '0.35s' }}
-        >
+        <p className="text-[12.5px] font-bold px-2 animate-fade-in" style={{ color: '#4b5563', animationDelay: '0.35s' }}>
           {isPro
             ? 'Want more? Jump into unlimited VS battles with fresh puzzles.'
             : 'Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.'}
         </p>
 
         {/* Actions */}
-        <div
-          className="space-y-2 animate-fade-in-up"
-          style={{ animationDelay: '0.45s' }}
-        >
-          {isPro ? (
-            <Link href="/practice/vs" className="block">
-              <button
-                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d flex items-center justify-center gap-2"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  boxShadow: '0 4px 0 #5b21b6',
-                }}
-              >
-                <Swords className="w-4 h-4" />
-                Play Unlimited VS
-              </button>
-            </Link>
-          ) : (
-            <Link href="/pro" className="block">
-              <button
-                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d flex items-center justify-center gap-2"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  boxShadow: '0 4px 0 #92400e',
-                }}
-              >
-                <Crown className="w-4 h-4" />
-                Upgrade to Pro
-              </button>
-            </Link>
-          )}
-          <Link href="/" className="block">
-            <button
-              className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
-              style={{
-                background: 'var(--color-surface-alt)',
-                border: '1px solid #e5e7eb',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              <Home className="w-4 h-4" />
-              Home
-            </button>
+        <div className="space-y-2.5 animate-fade-in-up" style={{ animationDelay: '0.45s' }}>
+          <Link
+            href={isPro ? '/practice/vs' : '/pro'}
+            className="w-full py-3 text-[14px] font-black uppercase text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            style={{ background: '#7c3aed', borderRadius: 14, letterSpacing: 0.5 }}
+          >
+            {isPro ? <Swords className="w-4 h-4" /> : <Crown className="w-4 h-4" />}
+            {isPro ? 'Play unlimited VS' : 'Upgrade to Pro'}
+          </Link>
+          <Link
+            href="/"
+            className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            style={{ background: '#ede9fe', color: '#6d28d9', borderRadius: 14, letterSpacing: 0.5 }}
+          >
+            <Home className="w-4 h-4" />
+            Home
           </Link>
         </div>
       </div>

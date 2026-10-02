@@ -8,11 +8,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,76 +43,99 @@ import com.wordocious.core.TileState
 import kotlinx.coroutines.delay
 
 /**
- * Compact opponent-progress strip shown above the player's board during a match —
- * ports iOS OpponentStrip / web OpponentMiniBoard. Shows guess count, boards
- * solved (multi), a solved checkmark, and a live colors-only tile preview.
+ * The in-match opponent strip (VS polish §1, founder 2026-10-01): ONE compact
+ * row (56 dp, white card, soft shadow, no border) instead of the old HUD card
+ * with a wall of empty grids. Avatar (bot art for bots, the challenger for a
+ * race), name, a slim teal progress bar, `N guesses` and a typing dot; on the
+ * right a tiny color-only board for single-board modes, `2/4 boards` for
+ * multi-board modes, the stage for Gauntlet. Fixed height so nothing below
+ * ever jumps when it updates.
  */
 @Composable
-fun OpponentStrip(
+fun VsOpponentBar(
+    name: String,
+    avatarUrl: String?,
     opponent: OpponentProgressState,
+    /** The STARTING row budget (live maxGuesses can shrink). */
     maxGuesses: Int,
     wordLength: Int,
+    typing: Boolean,
     modifier: Modifier = Modifier,
-    // The MODE's board count, known from match start — opponent.totalBoards is
-    // 0 until their first progress event, which made Quad/Octo render a single
-    // tall placeholder board pre-typing (iOS build-87 parity).
+    /** The MODE's board count (opponent.totalBoards is 0 until their first event). */
     totalBoards: Int = 1,
-    // Gauntlet VS: the opponent's current stage name + its accent gradient
-    // (iOS OpponentStrip stageName/stageGradient). Null for every other mode.
+    /** Gauntlet: the opponent's current stage name + accent; null elsewhere. */
     stageName: String? = null,
     stageGradient: List<Color> = emptyList(),
-    /** The strip's label: "Opponent", or "@doug’s run" when racing a challenge. */
-    title: String = "Opponent",
 ) {
     val liveTotalBoards = maxOf(opponent.totalBoards, totalBoards)
-    Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    val multi = liveTotalBoards > 1
+    // Boards solved / total; a single board also counts its best row's greens
+    // so the bar moves before the solve.
+    val fraction = when {
+        opponent.solved -> 1f
+        multi -> opponent.boardsSolved.toFloat() / liveTotalBoards
+        else -> bestRowGreens(opponent.tiles).toFloat() / maxOf(1, wordLength)
+    }
+    val dur = if (WTheme.reducedMotion) 0 else 400
+    val animated by androidx.compose.animation.core.animateFloatAsState(fraction.coerceIn(0f, 1f), androidx.compose.animation.core.tween(dur), label = "oppBar")
+    Row(
+        modifier.fillMaxWidth().height(56.dp).vsCard(14.dp).padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, maxLines = 1)
-            Spacer(Modifier.weight(1f))
-            if (stageName != null) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Icon(
-                        Icons.Filled.Flag, null,
-                        tint = stageGradient.firstOrNull() ?: WTheme.text, modifier = Modifier.size(11.dp),
-                    )
-                    Text("Stage ${opponent.stagesCleared + 1}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-                    Text(
-                        stageName, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                        style = TextStyle(
-                            brush = Brush.horizontalGradient(if (stageGradient.isEmpty()) listOf(WTheme.text, WTheme.text) else stageGradient),
-                            fontFamily = Nunito,
-                        ),
-                    )
+        VsAvatar(name, avatarUrl, size = 36.dp, borderColor = Color.Transparent)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(
+                    name, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = VsTeal.deep,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                )
+                if (opponent.solved) Icon(Icons.Filled.Check, "Solved", tint = VsTeal.ink, modifier = Modifier.size(12.dp))
+                // Space is always reserved: the dot fades, the row never shifts.
+                Box(Modifier.size(7.dp).graphicsLayer { alpha = if (typing && !opponent.solved) 1f else 0f }) {
+                    TypingPulseDot()
                 }
-            } else if (liveTotalBoards > 1) {
-                Text("${opponent.boardsSolved}/$liveTotalBoards boards", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             }
-            Text("${opponent.attempts} guesses", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-            if (opponent.solved) Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
+            Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(VsTeal.soft)) {
+                Box(Modifier.fillMaxWidth(animated).height(4.dp).clip(RoundedCornerShape(2.dp)).background(VsTeal.ink))
+            }
+            Text(
+                "${opponent.attempts} ${if (opponent.attempts == 1) "guess" else "guesses"}",
+                fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub, maxLines = 1,
+            )
         }
-        // During your own play only render per-board grids for <=4 boards — 8
-        // tiny OctoWord grids over your own 8 boards are illegible and steal
-        // space, so those stay summary-only (the count line above); the spectator
-        // "still playing" screen renders all boards larger. Gauntlet (21 boards)
-        // also falls out here — it shows Stage N.
-        // Render the EMPTY grid from the start (no hasTiles gate) so the board is
-        // visible the whole match and never flickers in on the opponent's first guess.
-        if (liveTotalBoards <= 4) {
-            val boards = if (liveTotalBoards > 1) (0 until liveTotalBoards).toList() else listOf(0)
-            // Bigger cells so the opponent board uses the space around it and the
-            // live flip-in reveal is easy to follow (single gets the most room).
-            // Succession's 10-row full frame drops to cell 8 so its strip is no
-            // taller than QuadWord's 9-row one (10×8+gaps ≈ 9×10+gaps).
-            val cell = if (liveTotalBoards > 1) (if (maxGuesses > 9) 8.dp else 10.dp) else 14.dp
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, cell) }
+        when {
+            stageName != null -> Column(horizontalAlignment = Alignment.End) {
+                Text("STAGE ${opponent.stagesCleared + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = VsTeal.label)
+                Text(
+                    stageName, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                    color = stageGradient.firstOrNull() ?: VsTeal.deep,
+                )
+            }
+            multi -> Text(
+                "${opponent.boardsSolved}/$liveTotalBoards boards",
+                fontSize = 12.sp, fontWeight = FontWeight.Black, color = VsTeal.ink, maxLines = 1,
+            )
+            // A tiny colors-only board — only where it reads (Classic/Six/Seven;
+            // a long ProperNoundle name would not fit the row).
+            wordLength <= 7 -> {
+                val rows = maxOf(maxGuesses, opponent.tiles[0]?.size ?: 0, 1)
+                val cell = minOf(6f, (40f - (rows - 1)) / rows).dp
+                OpponentMiniBoard(opponent.tiles[0] ?: emptyList(), maxGuesses, wordLength, cell)
             }
         }
     }
+}
+
+/** One soft teal dot that breathes while the opponent types. */
+@Composable
+private fun TypingPulseDot() {
+    var on by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) { while (true) { delay(500); on = !on } }
+    val a by androidx.compose.animation.core.animateFloatAsState(
+        if (on || WTheme.reducedMotion) 1f else 0.3f, androidx.compose.animation.core.tween(if (WTheme.reducedMotion) 0 else 450), label = "typingDot",
+    )
+    Box(Modifier.fillMaxSize().graphicsLayer { alpha = a }.clip(CircleShape).background(VsTeal.ink))
 }
 
 /**
@@ -164,17 +192,4 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
             }
         }
     }
-}
-
-/** Cycling "Searching…/Scanning…/…" status — ports vs-game.tsx WAITING_PHRASES. */
-@Composable
-fun CyclingStatus() {
-    val phrases = remember {
-        listOf("Searching", "Scanning", "Seeking", "Matching", "Pairing", "Connecting", "Locating",
-            "Scouting", "Hunting", "Queuing", "Polling", "Awaiting", "Preparing", "Loading", "Syncing",
-            "Summoning", "Fetching", "Probing", "Browsing", "Rallying")
-    }
-    var index by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) { while (true) { delay(2500); index = (index + 1) % phrases.size } }
-    Text("${phrases[index]}…", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
 }

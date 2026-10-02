@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { lookupInviteByCode } from '@/lib/invite-service';
 import { loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { utcDay } from '@/lib/vs-lobby';
+import { VsLoadingScreen } from '@/components/vs/vs-ui';
 
 /** Shared "this is a Pro perk" screen — one look for every route-level gate. */
 function GateCard({ title, blurb, fallbackHref, fallbackLabel }: {
@@ -150,9 +151,9 @@ export function VsProGate({ mode, isDaily = false, inviteCode, children }: {
   }, [needsInviteCheck, inviteCode]);
 
   if (freeDailyVs || isProActive) return <>{children}</>;
-  if (loading) return <GateLoading />;
+  if (loading) return <VsLoadingScreen mode={mode} />;
   if (wantsBotOfDay) {
-    if (botOfDayOpen === null) return <GateLoading />;
+    if (botOfDayOpen === null) return <VsLoadingScreen mode={mode} />;
     if (botOfDayOpen) return <>{children}</>;
     return (
       <GateCard
@@ -164,7 +165,7 @@ export function VsProGate({ mode, isDaily = false, inviteCode, children }: {
     );
   }
   if (needsInviteCheck) {
-    if (inviteValid === null) return <GateLoading />;
+    if (inviteValid === null) return <VsLoadingScreen mode={mode} />;
     if (inviteValid) return <>{children}</>;
   }
 

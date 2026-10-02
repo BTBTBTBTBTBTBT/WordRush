@@ -73,9 +73,6 @@ struct FriendsPanelView: View {
                                   onFace: { quickPlay = QuickPlay(friend: $0, kind: .rps) },
                                   onRace: { showRace = true })
             }
-            if !incoming.isEmpty || !outgoing.isEmpty {
-                invitesCard
-            }
             if !FriendlyGamesService.active.isEmpty {
                 yourTurnSection
             }
@@ -86,6 +83,10 @@ struct FriendsPanelView: View {
                 weeklyRaceSection
             }
             yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)
+            // §10 (founder, iOS 220): INVITES sits directly under YOUR FRIENDS.
+            if !incoming.isEmpty || !outgoing.isEmpty {
+                invitesCard
+            }
             if AuthService.shared.profile != nil {
                 // §290 + §6: the circle's moments, with reactions and game moments.
                 ActivityFeedView(onRematch: { kind, friendId in
@@ -258,20 +259,24 @@ struct FriendsPanelView: View {
                 Text("TAP A GAME, PICK A FRIEND").font(Brand.font(9.5, .black)).tracking(0.8)
                     .foregroundStyle(FriendsKit.solid).lineLimit(1).minimumScaleFactor(0.7)
             }
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            // §9: six games, 3 across × 2 rows.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
                     Button { quickPlay = QuickPlay(friend: nil, kind: k) } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            FriendlyGameIcon(kind: k, size: 40)
+                        VStack(alignment: .leading, spacing: 7) {
+                            FriendlyGameIcon(kind: k, size: 36)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(k.title).font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x111827))
-                                    .lineLimit(1).minimumScaleFactor(0.75)
-                                Text(FriendsKit.sub(k)).font(Brand.font(10.5, .bold)).foregroundStyle(FriendsKit.label)
-                                    .lineLimit(1).minimumScaleFactor(0.75)
+                                Text(k.title).font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x111827))
+                                    .lineLimit(2).minimumScaleFactor(0.8)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(FriendsKit.sub(k)).font(Brand.font(9.5, .bold)).foregroundStyle(FriendsKit.label)
+                                    .lineLimit(2).minimumScaleFactor(0.8)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
+                            Spacer(minLength: 0)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
+                        .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+                        .padding(10)
                         .vsCard(radius: 14)
                     }
                     .buttonStyle(PressableStyle())
@@ -1094,6 +1099,10 @@ struct FriendsScreenView: View {
             // principal item is what renders.
             .navigationTitle("Friends")
             .navigationBarTitleDisplayMode(.inline)
+            // §10 (founder, iOS 220): the pinned header is opaque page color —
+            // the list never shows through the title and buttons.
+            .toolbarBackground(FriendsKit.page, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("FRIENDS").font(Brand.font(20, .black)).tracking(0.4)

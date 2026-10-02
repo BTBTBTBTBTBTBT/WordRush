@@ -3,11 +3,11 @@
 // game screens. The words every platform prints come from packages/core
 // friendly-games.ts; this file only arranges them for the web (who is on, which
 // action pill a row gets, the banner input, reactions, Tic-Tac-Tile threats,
-// Pass the Puzzle key colors). No React, so vitest pins it.
+// Pass the Puzzle key colors, Ghost tiles, Word Chain checks). No React, so vitest pins it.
 
 import {
-  FRIENDLY_TITLES, friendlyHeadline, isOnline, presenceLine, tttLine, whoseTurn,
-  type CellMark, type FriendlyKind, type FriendlyState, type FriendsBannerInput, type Side,
+  CHAIN_TARGET, FRIENDLY_TITLES, WORD_MAX, WORD_MIN, applyFriendlyMove, friendlyHeadline, isOnline, presenceLine, tttLine, whoseTurn,
+  type CellMark, type ChainState, type FriendlyKind, type FriendlyState, type FriendsBannerInput, type GhostState, type Side,
 } from '@wordle-duel/core';
 import { MODE_BY_DBKEY } from './modes.generated';
 import { MODE_ROUTES } from './mode-routes';
@@ -35,21 +35,29 @@ export const FR = {
 /** Our tile colors (never Wordle green/yellow): purple = right / you, amber = present / them. */
 export const TILE = { you: '#7c3aed', them: '#f59e0b', absent: '#cbd5e1' } as const;
 
-export const KIND_COLOR: Record<FriendlyKind, string> = { rps: '#f97316', ttt: '#7c3aed', coin: '#ca8a04', pass: '#2563eb' };
+export const KIND_COLOR: Record<FriendlyKind, string> = {
+  rps: '#f97316', ttt: '#7c3aed', coin: '#ca8a04', pass: '#2563eb', ghost: '#9f1239', chain: '#059669',
+};
 export const KIND_GRADIENT: Record<FriendlyKind, string> = {
   rps: 'linear-gradient(90deg, #f97316, #db2777)',
   ttt: 'linear-gradient(90deg, #7c3aed, #db2777)',
   coin: 'linear-gradient(90deg, #ca8a04, #db2777)',
   pass: 'linear-gradient(90deg, #2563eb, #7c3aed)',
+  ghost: 'linear-gradient(90deg, #9f1239, #7c3aed)',
+  chain: 'linear-gradient(90deg, #059669, #2563eb)',
 };
 export const KIND_SUB: Record<FriendlyKind, string> = {
   rps: 'Best of 3 · our tiles',
   ttt: 'Three in a row, best of 3',
   coin: 'Heads or tails, best of 5',
   pass: 'One board, take turns',
+  ghost: "Add a letter; don't finish a word",
+  chain: 'Last letter starts the next',
 };
-/** Short names for the four-across tiles in the quick-play sheet. */
-export const KIND_SHORT: Record<FriendlyKind, string> = { rps: 'Rock Paper Scissors', ttt: 'Tic-Tac-Tile', coin: 'Call It', pass: 'Pass the Puzzle' };
+/** Short names for the three-across tiles in the quick-play sheet. */
+export const KIND_SHORT: Record<FriendlyKind, string> = {
+  rps: 'Rock Paper Scissors', ttt: 'Tic-Tac-Tile', coin: 'Call It', pass: 'Pass the Puzzle', ghost: 'Ghost', chain: 'Word Chain',
+};
 
 export function kindForTitle(title: string | null | undefined): FriendlyKind | null {
   if (!title) return null;
@@ -277,6 +285,18 @@ export function gameSubLine(s: FriendlyState, me: Side, them: string, online: bo
     case 'pass':
       parts.push('ONE BOARD, TAKE TURNS');
       break;
+    case 'ghost': {
+      parts.push('BEST OF 3');
+      const last = s.rounds[s.rounds.length - 1];
+      if (last) parts.push(`${last.loser === me ? THEM : 'YOU'} TOOK ROUND ${s.rounds.length}`);
+      break;
+    }
+    case 'chain': {
+      parts.push(`FIRST TO ${CHAIN_TARGET}`);
+      const last = s.words[s.words.length - 1];
+      if (last) parts.push(`${last.by === me ? 'YOU' : THEM} PLAYED ${last.word} +${last.points}`);
+      break;
+    }
   }
   if (online && turn !== null) parts.splice(1, 0, `LIVE, ${THEM} IS ON`);
   return parts.join(' · ');
@@ -314,6 +334,37 @@ export function passKeyStates(guesses: Array<{ word: string; tiles: string[] }>)
     }
   }
   return out;
+}
+
+// ── Ghost + Word Chain (spec §9) ───────────────────────────────────────────
+
+/** Ghost: the fragment as tiles, each marked with who played it. */
+export function ghostTiles(s: GhostState, me: Side): Array<{ letter: string; mine: boolean }> {
+  return [...s.fragment].map((letter, i) => ({ letter, mine: s.letters[i] === me }));
+}
+
+/** Ghost: the soft card after a round — "CRANE — Doug spelled a word", "QZ — no word starts with that". */
+export function ghostRoundCard(round: GhostState['rounds'][number], me: Side, them: string): { letters: string; text: string; youLost: boolean } {
+  const youLost = round.loser === me;
+  if (round.reason === 'word') return { letters: round.fragment, text: `${youLost ? 'you' : them} spelled a word`, youLost };
+  return { letters: round.fragment, text: 'no word starts with that', youLost };
+}
+
+/** Word Chain: the letter the next word must start with (null on the opening word). */
+export function chainNeededLetter(s: ChainState): string | null {
+  const last = s.words[s.words.length - 1];
+  return last ? last.word[last.word.length - 1] : null;
+}
+
+/**
+ * Word Chain: the core's own error for this word before it goes to the server
+ * (length, first letter, repeat); null when only the word list is left to check.
+ */
+export function chainPrecheck(s: ChainState, me: Side, word: string): string | null {
+  const w = word.trim().toUpperCase();
+  if (w.length < WORD_MIN || w.length > WORD_MAX) return `${WORD_MIN} to ${WORD_MAX} letters, please`;
+  const r = applyFriendlyMove(s, me, { kind: 'chain', word: w });
+  return r.ok ? null : r.error;
 }
 
 // ── Moments + reactions (spec §6) ───────────────────────────────────────────

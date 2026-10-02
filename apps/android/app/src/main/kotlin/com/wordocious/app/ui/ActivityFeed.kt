@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -144,8 +146,9 @@ internal fun momentKind(e: FriendsService.FeedEvent): com.wordocious.core.Friend
 /**
  * MOMENTS (§290 → Friends overhaul §6): the last seven days of your circle's
  * moments — sweeps, medals, records, shield gifts and now pocket-game wins and
- * draws — with reactions under each one (👏 🔥 😱 😤, + Rematch on game
- * moments). A Rematch tap also opens the quick-play sheet with that game and
+ * draws. Reaction chips (👏 🔥 😱 😤, + Rematch on game moments) show inside a
+ * moment only once it has reactions; double-tap toggles 👏, a hold opens a
+ * floating reaction bar (founder 2026-10-01). A Rematch tap also opens the quick-play sheet with that game and
  * friend ([onRematch]).
  */
 @Composable
@@ -192,7 +195,10 @@ fun ActivityFeed(
         Row(verticalAlignment = Alignment.CenterVertically) {
             com.wordocious.app.ui.friends.FriendsLabel("MOMENTS")
             Spacer(Modifier.weight(1f))
-            com.wordocious.app.ui.friends.FriendsLabel("LAST 7 DAYS")
+            Text(
+                "LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT", fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                color = com.wordocious.app.ui.friends.FriendsPink.label, maxLines = 1, fontFamily = Nunito,
+            )
         }
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -254,6 +260,7 @@ internal fun gameMomentText(e: FriendsService.FeedEvent): String {
     else "$who beat $other at $title" + when (val sc = e.score) { null, "" -> ""; "by resignation" -> " by resignation"; else -> " ($sc)" }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun MomentRow(
     e: FriendsService.FeedEvent,
@@ -265,58 +272,96 @@ private fun MomentRow(
     val isGame = e.type == "game"
     val gameKind = if (isGame) momentKind(e) else null
     val line = if (isGame) null else describe(e)
-    var picker by remember { mutableStateOf(false) }
+    var bar by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val pink = com.wordocious.app.ui.friends.FriendsPink
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-            .background(if (e.me) Color(0xFFF5F3FF) else pink.page)
-            .padding(horizontal = 8.dp, vertical = 7.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            // Friends' rows open the profile; your own row stays put.
-            modifier = Modifier.fillMaxWidth().let { m -> if (e.me) m else m.clickableNoRipple { onOpenProfile(e.userId) } },
+    val keys = REACTION_KEYS + if (isGame) listOf("rematch" to "Rematch") else emptyList()
+    Box {
+        // Tap = profile (friends' rows); double-tap = toggle 👏; hold = the reaction bar.
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .background(if (e.me) Color(0xFFF5F3FF) else pink.page)
+                .combinedClickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null,
+                    onClick = { if (!e.me) onOpenProfile(e.userId) },
+                    onDoubleClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onToggle("clap")
+                    },
+                    onLongClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        bar = true
+                    },
+                )
+                .padding(horizontal = 8.dp, vertical = 7.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            FriendAvatar(
-                FriendsService.FriendProfile(
-                    id = e.userId, username = e.username,
-                    avatarUrl = e.avatarUrl, avatarEmoji = e.avatarEmoji,
-                ),
-            )
-            when {
-                gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 18.dp)
-                line?.crown == true -> Icon(painterResource(R.drawable.ic_crown), null, tint = line.tint, modifier = Modifier.size(16.dp))
-                line?.icon != null -> Icon(line.icon, null, tint = line.tint, modifier = Modifier.size(16.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                FriendAvatar(
+                    FriendsService.FriendProfile(
+                        id = e.userId, username = e.username,
+                        avatarUrl = e.avatarUrl, avatarEmoji = e.avatarEmoji,
+                    ),
+                )
+                when {
+                    gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 18.dp)
+                    line?.crown == true -> Icon(painterResource(R.drawable.ic_crown), null, tint = line.tint, modifier = Modifier.size(16.dp))
+                    line?.icon != null -> Icon(line.icon, null, tint = line.tint, modifier = Modifier.size(16.dp))
+                }
+                Text(
+                    if (isGame) gameMomentText(e) else line!!.text, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                    color = WTheme.text, fontFamily = Nunito, lineHeight = 14.sp,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    feedDayLabel(e.day, today), fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                    color = WTheme.textMuted, fontFamily = Nunito,
+                )
             }
-            Text(
-                if (isGame) gameMomentText(e) else line!!.text, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                color = WTheme.text, fontFamily = Nunito, lineHeight = 14.sp,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                feedDayLabel(e.day, today), fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                color = WTheme.textMuted, fontFamily = Nunito,
-            )
+            // Reaction chips only when the moment has reactions (mine ringed), inside the card under its text.
+            val counted = keys.filter { (key, _) -> (rx.counts[key] ?: 0) > 0 }
+            if (counted.isNotEmpty()) {
+                Row(
+                    Modifier.padding(start = 40.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    counted.forEach { (key, glyph) ->
+                        ReactionChip("$glyph ${rx.counts[key] ?: 0}", mine = key in rx.mine) { onToggle(key) }
+                    }
+                }
+            }
         }
-        // Reactions: chips with a count, mine ringed; "+" opens the fixed set.
-        Row(
-            Modifier.padding(start = 40.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            val keys = REACTION_KEYS + if (isGame) listOf("rematch" to "Rematch") else emptyList()
-            keys.forEach { (key, glyph) ->
-                val n = rx.counts[key] ?: 0
-                if (n > 0) ReactionChip("$glyph $n", mine = key in rx.mine) { onToggle(key) }
-            }
-            Box {
-                ReactionChip("+", mine = false) { picker = true }
-                androidx.compose.material3.DropdownMenu(expanded = picker, onDismissRequest = { picker = false }) {
-                    Row(Modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        keys.forEach { (key, glyph) ->
-                            ReactionChip(glyph, mine = key in rx.mine) { picker = false; onToggle(key) }
-                        }
+        // Hold: a floating pill reaction bar above the card; tap outside to dismiss.
+        if (bar) {
+            val lift = with(androidx.compose.ui.platform.LocalDensity.current) { 46.dp.roundToPx() }
+            androidx.compose.ui.window.Popup(
+                alignment = Alignment.TopCenter,
+                offset = androidx.compose.ui.unit.IntOffset(0, -lift),
+                onDismissRequest = { bar = false },
+                properties = androidx.compose.ui.window.PopupProperties(focusable = true),
+            ) {
+                Row(
+                    Modifier.shadow(8.dp, RoundedCornerShape(50), ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))
+                        .clip(RoundedCornerShape(50)).background(Color.White)
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    keys.forEach { (key, glyph) ->
+                        val mine = key in rx.mine
+                        val shape = RoundedCornerShape(50)
+                        Text(
+                            glyph, fontSize = if (key == "rematch") 12.sp else 20.sp, fontWeight = FontWeight.Black,
+                            color = pink.solid, fontFamily = Nunito, maxLines = 1,
+                            modifier = Modifier.clip(shape)
+                                .then(if (mine) Modifier.background(pink.soft).border(1.5.dp, pink.solid, shape) else Modifier)
+                                .clickableNoRipple { bar = false; onToggle(key) }
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
+                        )
                     }
                 }
             }

@@ -76,10 +76,15 @@ import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.dashedBorder
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.CHAIN_TARGET
+import com.wordocious.core.ChainState
 import com.wordocious.core.CoinFace
 import com.wordocious.core.CoinState
 import com.wordocious.core.FriendlyKind
 import com.wordocious.core.FriendlyMove
+import com.wordocious.core.GhostReason
+import com.wordocious.core.GhostState
+import com.wordocious.core.MoveResult
 import com.wordocious.core.PASS_MAX_GUESSES
 import com.wordocious.core.PassState
 import com.wordocious.core.RpsPick
@@ -87,6 +92,9 @@ import com.wordocious.core.RpsState
 import com.wordocious.core.Side
 import com.wordocious.core.TileState
 import com.wordocious.core.TttState
+import com.wordocious.core.WORD_MAX
+import com.wordocious.core.WORD_MIN
+import com.wordocious.core.applyFriendlyMove
 import com.wordocious.core.friendlyHeadline
 import com.wordocious.core.scoreOf
 import com.wordocious.core.tttLine
@@ -99,12 +107,13 @@ private val THEM_TINT = Color(0xFFFEF3C7)
 private val YOU_WON = Color(0xFFDDD6FE)
 private val THEM_WON = Color(0xFFFDE68A)
 private val DEEP = Color(0xFF4C1D95)
+private val GHOST_RED = Color(0xFF9F1239)
 
 /**
  * A pocket game's screen (Friends overhaul §4, board AE): close + the game's
  * gradient title, the split score window (YOU | @THEM, frosted headline strip
  * from core friendlyHeadline), then the board for Rock Paper Scissors,
- * Tic-Tac-Tile, Call It or Pass the Puzzle. Polls the game every 2 s while on
+ * Tic-Tac-Tile, Call It, Pass the Puzzle, Ghost or Word Chain (§9). Polls the game every 2 s while on
  * screen (which also tells the server you are watching), handles 400 errors
  * inline and 409 retries by refetching. Over: REMATCH and FRIENDS; RESIGN
  * lives in the close confirm while the game is active.
@@ -216,6 +225,8 @@ fun FriendlyGameScreen(
                 is TttState -> TttBoard(s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Ttt(it)) }
                 is CoinState -> CoinBoard(gameId, s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Coin(it)) }
                 is PassState -> PassBoard(gameId, s, g.me, g.opponent, myTurn = myTurn, busy = busy, answer = g.answer) { send(FriendlyMove.Pass(it)) }
+                is GhostState -> GhostBoard(s, g.me, them, myTurn = myTurn, busy = busy) { send(FriendlyMove.Ghost(it.toString())) }
+                is ChainState -> ChainBoard(gameId, s, g.me, them, myTurn = myTurn, busy = busy, onError = { error = it }) { send(FriendlyMove.Chain(it)) }
             }
             error?.let {
                 Text(it, fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
@@ -285,6 +296,14 @@ private fun subLineFor(g: FriendlyGamesService.GameView, theyOn: Boolean): Strin
             s.rounds.lastOrNull()?.let { r -> parts += "${r.flip.raw.uppercase()} · ${if (r.winner == me) "YOU" else them} WON IT" }
         }
         is PassState -> parts += "ONE BOARD, TAKE TURNS"
+        is GhostState -> {
+            parts += "BEST OF 3"
+            s.rounds.lastOrNull()?.let { r -> parts += "${if (r.loser == me) them else "YOU"} TOOK ROUND ${s.rounds.size}" }
+        }
+        is ChainState -> {
+            parts += "FIRST TO $CHAIN_TARGET"
+            s.words.lastOrNull()?.let { w -> parts += "${if (w.by == me) "YOU" else them} PLAYED ${w.word} +${w.points}" }
+        }
     }
     if (theyOn && whoseTurn(g.state) != null) parts.add(1, "LIVE, $them IS ON")
     return parts.joinToString(" · ")
@@ -650,4 +669,195 @@ private fun KeyCap(label: String, modifier: Modifier, bg: Color, ink: Color, ena
             .clickableNoRipple { if (enabled) onClick() },
         Alignment.Center,
     ) { Text(label, fontSize = if (label.length > 1) 11.sp else 15.sp, fontWeight = FontWeight.Black, color = ink, maxLines = 1) }
+}
+
+// ── Ghost (§9) ──────────────────────────────────────────────────────────────
+
+/** A letter tile colored by who played it (yours purple, theirs amber), white letter. */
+@Composable
+private fun PlayerTile(letter: Char, mine: Boolean, size: Dp, radius: Dp, glow: Boolean = false) {
+    val shape = RoundedCornerShape(radius)
+    val c = if (mine) FriendsTiles.purple else FriendsTiles.amber
+    Box(
+        Modifier.size(size)
+            .shadow(if (glow) 10.dp else 2.dp, shape, ambientColor = c.copy(alpha = if (glow) 0.9f else 0.35f), spotColor = c.copy(alpha = if (glow) 0.9f else 0.35f))
+            .clip(shape).background(c)
+            .then(if (glow) Modifier.border(2.dp, Color.White, shape) else Modifier),
+        Alignment.Center,
+    ) { Text(letter.toString(), fontSize = (size.value * 0.46f).sp, fontWeight = FontWeight.Black, color = Color.White) }
+}
+
+@Composable
+private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, busy: Boolean, onLetter: (Char) -> Unit) {
+    // A tap only fills the dashed tile; ADD <L> plays it, so a mis-tap can't lose a round.
+    var picked by remember(s.fragment, s.rounds.size) { mutableStateOf<Char?>(null) }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        // The fragment as big tiles, each colored by who played it; an empty dashed tile at the end on your turn.
+        val count = s.fragment.length + if (myTurn) 1 else 0
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+            val gap = 6.dp
+            val tile: Dp = if (count == 0) 52.dp else min(52.dp, (maxWidth - gap * (count - 1)) / count)
+            if (count == 0) {
+                Box(Modifier.height(tile), Alignment.Center) {
+                    FriendsLabel(if (whoseTurn(s) != null) "${them.uppercase()} STARTS THE WORD" else "THE ROUNDS ARE IN")
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
+                    s.fragment.forEachIndexed { i, ch -> PlayerTile(ch, s.letters.getOrNull(i) == me, tile, 10.dp) }
+                    if (myTurn) {
+                        Box(
+                            Modifier.size(tile).clip(RoundedCornerShape(10.dp)).background(if (picked != null) YOU_TINT else Color.White)
+                                .dashedBorder(2.dp, FriendsTiles.purple, 10.dp),
+                            Alignment.Center,
+                        ) { Text(picked?.toString() ?: "", fontSize = (tile.value * 0.46f).sp, fontWeight = FontWeight.Black, color = FriendsTiles.purple) }
+                    }
+                }
+            }
+        }
+        if (whoseTurn(s) != null && !myTurn) FriendsLabel("${them.uppercase()} IS PICKING A LETTER")
+
+        // The last round's result: "GHOST — Doug spelled a word" / "QZ — no word starts with that".
+        s.rounds.lastOrNull()?.let { r ->
+            val youLost = r.loser == me
+            val text = if (r.reason == GhostReason.WORD) "${if (youLost) "you" else them} spelled a word" else "no word starts with that"
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (youLost) THEM_TINT else YOU_TINT).padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                FriendsLabel("ROUND ${s.rounds.size} · ${if (youLost) "${them.uppercase()} TAKES IT" else "YOU TAKE IT"}")
+                Text(
+                    "${r.fragment} — $text", fontSize = 15.sp, fontWeight = FontWeight.Black, color = DEEP,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+
+        if (myTurn) {
+            KEY_ROWS.forEach { keys ->
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                    if (keys.length < 10) Spacer(Modifier.weight((10 - keys.length) / 2f))
+                    keys.forEach { k ->
+                        val on = picked == k
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = if (on) FriendsTiles.purple else Color.White, ink = if (on) Color.White else DEEP, enabled = !busy) { picked = k }
+                    }
+                    if (keys.length < 10) Spacer(Modifier.weight((10 - keys.length) / 2f))
+                }
+            }
+            val letter = picked
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(GHOST_RED)
+                    .alpha(if (letter != null && !busy) 1f else 0.5f)
+                    .clickableNoRipple { if (letter != null && !busy) onLetter(letter) }
+                    .padding(horizontal = 16.dp, vertical = 13.dp),
+                Alignment.Center,
+            ) {
+                Text(
+                    if (letter != null) "ADD $letter" else "PICK A LETTER", fontSize = 14.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = 0.6.sp, color = Color.White, maxLines = 1,
+                )
+            }
+        }
+        Text(
+            "Spell a word and you lose the round. Leave a dead end and you lose it too.",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+// ── Word Chain (§9) ─────────────────────────────────────────────────────────
+
+@Composable
+private fun ChainBoard(
+    gameId: String,
+    s: ChainState,
+    me: Side,
+    them: String,
+    myTurn: Boolean,
+    busy: Boolean,
+    onError: (String) -> Unit,
+    onWord: (String) -> Unit,
+) {
+    val needed = s.needed
+    // The needed first letter is pre-filled and locked; a landed word resets the row.
+    var typed by remember(gameId, s.words.size) { mutableStateOf(needed?.toString() ?: "") }
+    val locked = if (needed != null) 1 else 0
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        if (s.words.isEmpty()) {
+            Text(
+                if (myTurn) "Any $WORD_MIN- to $WORD_MAX-letter word opens the chain." else "${them.replaceFirstChar { it.uppercaseChar() }} opens the chain.",
+                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        // The chain: one pill per word (tiles by player), points chip at the right; the newest word's last letter glows.
+        s.words.forEachIndexed { wi, w ->
+            val mine = w.by == me
+            val newest = wi == s.words.lastIndex
+            Row(
+                Modifier.fillMaxWidth().friendsCard().padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                w.word.forEachIndexed { i, ch -> PlayerTile(ch, mine, 30.dp, 7.dp, glow = newest && i == w.word.lastIndex && whoseTurn(s) != null) }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "+${w.points}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (mine) FriendsTiles.purple else Color(0xFFB45309),
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (mine) YOU_TINT else THEM_TINT).padding(horizontal = 8.dp, vertical = 3.dp),
+                )
+            }
+        }
+        if (whoseTurn(s) != null && !myTurn) {
+            FriendsLabel(
+                if (needed != null) "${them.uppercase()} NEEDS A WORD WITH $needed" else "${them.uppercase()} IS THINKING",
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        if (myTurn) {
+            // Your word: 7 tiles, the locked first letter in a soft purple tile, tiles 6–7 dashed (optional).
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(top = 6.dp)) {
+                (0 until WORD_MAX).forEach { i ->
+                    val ch = typed.getOrNull(i)
+                    val shape = RoundedCornerShape(8.dp)
+                    val isLocked = i < locked
+                    val optional = i >= WORD_MIN && ch == null
+                    Box(
+                        Modifier.size(40.dp).clip(shape).background(if (isLocked) YOU_TINT else Color.White)
+                            .then(
+                                if (optional) Modifier.dashedBorder(2.dp, Color(0xFFCBD5E1), 8.dp)
+                                else Modifier.border(2.dp, if (ch != null) FriendsTiles.purple else Color(0xFFE5E7EB), shape),
+                            ),
+                        Alignment.Center,
+                    ) { Text(ch?.toString() ?: "", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (isLocked) FriendsTiles.purple else DEEP) }
+                }
+            }
+            Spacer(Modifier.height(2.dp))
+            KEY_ROWS.forEachIndexed { r, keys ->
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                    if (r == 2) {
+                        KeyCap("ENTER", Modifier.weight(1.6f), bg = FriendsPink.solid, ink = Color.White, enabled = !busy && typed.length >= WORD_MIN) {
+                            // The core's own checks first (length, first letter, repeat); the word list is the server's.
+                            when (val res = applyFriendlyMove(s, me, FriendlyMove.Chain(typed))) {
+                                is MoveResult.Err -> onError(res.error)
+                                is MoveResult.Ok -> onWord(typed)
+                            }
+                        }
+                    }
+                    keys.forEach { k ->
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = Color.White, ink = DEEP, enabled = !busy) { if (typed.length < WORD_MAX) typed += k }
+                    }
+                    if (r == 2) {
+                        Box(
+                            Modifier.weight(1.6f).height(46.dp).clip(RoundedCornerShape(8.dp)).background(Color.White)
+                                .clickableNoRipple { if (typed.length > locked) typed = typed.dropLast(1) },
+                            Alignment.Center,
+                        ) { Icon(Icons.AutoMirrored.Filled.Backspace, "Delete", tint = DEEP, modifier = Modifier.size(18.dp)) }
+                    }
+                }
+            }
+        }
+        Text(
+            "Start with the last letter. No repeats. Each letter scores a point; first to $CHAIN_TARGET wins.",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        )
+    }
 }

@@ -3,9 +3,9 @@
 // THE FRIENDS TAB (Friends overhaul, founder-approved 2026-10-01; spec
 // docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom: the FRIENDS header (bell =
 // notification prefs, add-friend jumps to Add by username), the Friends banner
-// (ON NOW + TODAY'S RACE, the full race in a sheet), INVITES, YOUR TURN, PLAY
-// WITH FRIENDS, THIS WEEK'S RACE, YOUR FRIENDS (presence, friend streak, one
-// action pill), MOMENTS with reactions, and Add by username + share link. The
+// (ON NOW + TODAY'S RACE, the full race in a sheet), YOUR TURN, PLAY WITH
+// FRIENDS, THIS WEEK'S RACE, YOUR FRIENDS (presence, friend streak, one action
+// pill), INVITES, MOMENTS with reactions, and Add by username + share link. The
 // page adds the InvitePanel under it. Earlier history: §207 (friends card),
 // §212/§216/§225/§232/§238 (rows, weekly race), D3 (Today's Race, feed).
 
@@ -397,73 +397,6 @@ export function FriendsPanel() {
         />
       )}
 
-      {/* 3. INVITES (only with requests in flight) */}
-      {(incoming.length > 0 || outgoing.length > 0) && (
-        <>
-          <SectionLabel>
-            Invites
-            <span className="px-1.5 rounded-full text-[10px] font-black text-white" style={{ background: FR.solid, letterSpacing: 0 }}>{incoming.length + outgoing.length}</span>
-          </SectionLabel>
-          <div style={cardStyle}>
-            {incoming.map((r, i) => (
-              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}>
-                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
-                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
-                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Wants to be friends</span>
-                </Link>
-                <button
-                  onClick={() => acceptFriend(r.id)}
-                  aria-label={`Accept ${r.username}`}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: FR.solid, color: '#ffffff' }}
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => declineFriend(r.id)}
-                  aria-label={`Decline ${r.username}`}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: FR.soft, color: FR.mid }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-            {outgoing.map((r, i) => (
-              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 && incoming.length === 0 ? undefined : '1px solid #f1f5f9' }}>
-                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
-                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
-                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Sent · waiting {agoShort(r.requestedAt)}</span>
-                </Link>
-                <Pill
-                  disabled={withinDay(r.remindedAt)}
-                  label={`Remind ${r.username}`}
-                  onClick={async () => {
-                    const res = await remindFriend(r.id);
-                    setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
-                  }}
-                >
-                  {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
-                </Pill>
-                <button
-                  onClick={() => declineFriend(r.id)}
-                  aria-label={`Cancel request to ${r.username}`}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: '#f1f5f9', color: FR.label }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-          {inviteNote && (
-            <p className="text-xs font-extrabold cursor-pointer px-1" style={{ color: FR.label }} onClick={() => setInviteNote(null)}>{inviteNote}</p>
-          )}
-        </>
-      )}
-
       {/* 4. YOUR TURN (only with active games) */}
       {sortedGames.length > 0 && (
         <>
@@ -503,7 +436,7 @@ export function FriendsPanel() {
       <SectionLabel right={<span className="text-[10px] font-black" style={{ color: FR.label, letterSpacing: 0.8 }}>TAP A GAME, PICK A FRIEND</span>}>
         Play with friends
       </SectionLabel>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {FRIENDLY_KINDS.map((k) => (
           <button
             key={k}
@@ -512,12 +445,12 @@ export function FriendsPanel() {
               if (friends.length === 0) { setNote('Add a friend first, then pick a game'); jumpToAdd(); return; }
               openPlay(friends.length === 1 ? friends[0] : null, k);
             }}
-            className="flex flex-col items-start gap-1.5 p-3 text-left transition-transform active:scale-[0.97]"
-            style={{ ...cardStyle, minHeight: 104 }}
+            className="flex flex-col items-start gap-1.5 p-2.5 text-left transition-transform active:scale-[0.97]"
+            style={{ ...cardStyle, minHeight: 112 }}
           >
-            <GameIconSquare kind={k} size={34} />
-            <span className="text-[13px] font-black" style={{ color: FR.text }}>{FRIENDLY_TITLES[k]}</span>
-            <span className="font-bold" style={{ fontSize: 10.5, lineHeight: 1.3, color: '#4b5563' }}>{KIND_SUB[k]}</span>
+            <GameIconSquare kind={k} size={32} />
+            <span className="text-[12px] font-black leading-tight" style={{ color: FR.text }}>{FRIENDLY_TITLES[k]}</span>
+            <span className="font-bold" style={{ fontSize: 10, lineHeight: 1.25, color: '#4b5563' }}>{KIND_SUB[k]}</span>
           </button>
         ))}
       </div>
@@ -718,6 +651,73 @@ export function FriendsPanel() {
         )
       )}
       {note && <p className="text-xs font-extrabold px-1" style={{ color: FR.mid }}>{note}</p>}
+
+      {/* 7b. INVITES (only with requests in flight; founder 2026-10-01: under YOUR FRIENDS) */}
+      {(incoming.length > 0 || outgoing.length > 0) && (
+        <>
+          <SectionLabel>
+            Invites
+            <span className="px-1.5 rounded-full text-[10px] font-black text-white" style={{ background: FR.solid, letterSpacing: 0 }}>{incoming.length + outgoing.length}</span>
+          </SectionLabel>
+          <div style={cardStyle}>
+            {incoming.map((r, i) => (
+              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}>
+                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
+                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Wants to be friends</span>
+                </Link>
+                <button
+                  onClick={() => acceptFriend(r.id)}
+                  aria-label={`Accept ${r.username}`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: FR.solid, color: '#ffffff' }}
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => declineFriend(r.id)}
+                  aria-label={`Decline ${r.username}`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: FR.soft, color: FR.mid }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {outgoing.map((r, i) => (
+              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 && incoming.length === 0 ? undefined : '1px solid #f1f5f9' }}>
+                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
+                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Sent · waiting {agoShort(r.requestedAt)}</span>
+                </Link>
+                <Pill
+                  disabled={withinDay(r.remindedAt)}
+                  label={`Remind ${r.username}`}
+                  onClick={async () => {
+                    const res = await remindFriend(r.id);
+                    setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
+                  }}
+                >
+                  {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
+                </Pill>
+                <button
+                  onClick={() => declineFriend(r.id)}
+                  aria-label={`Cancel request to ${r.username}`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: '#f1f5f9', color: FR.label }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {inviteNote && (
+            <p className="text-xs font-extrabold cursor-pointer px-1" style={{ color: FR.label }} onClick={() => setInviteNote(null)}>{inviteNote}</p>
+          )}
+        </>
+      )}
 
       {/* 8. MOMENTS */}
       <ActivityFeed

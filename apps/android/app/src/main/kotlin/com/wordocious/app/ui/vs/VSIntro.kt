@@ -30,6 +30,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import com.wordocious.core.GameMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -55,41 +63,16 @@ data class IntroPlayer(val username: String, val avatarUrl: String?, val level: 
 private const val INTRO_DURATION_MS = 2500L
 
 /**
- * Full-screen 2.5s splash shown when a match is found, before the countdown
- * finishes — Android port of web components/vs/match-intro.tsx. Avatar cards
- * slam in from opposite sides with spring overshoot, a rotated gradient "VS"
- * pops, then the all-time head-to-head line fades in. Skippable on tap.
+ * The 2.5 s match intro (VS polish §2, founder 2026-10-01): a teal one-window
+ * card on the VS page — the mode chip in the frosted strip, your avatar and
+ * theirs facing each other around a teal VS, names in caps, then the all-time
+ * head-to-head line. Cards slam in from opposite sides; tap to skip.
  * Anonymous opponents (null) render as "Anonymous" with the initials avatar
  * and no head-to-head line.
  */
-
-/** WORDOCIOUS wordmark for the dark VS overlays (clash splash + countdown) —
- *  the header wordmark's gradient/weight, rendered at the SAME fixed position
- *  on both overlays so it appears not to move across the clash → countdown
- *  transition (iOS VSOverlayWordmark / web VsOverlayWordmark parity). */
-@Composable
-fun VSOverlayWordmark(boxScope: androidx.compose.foundation.layout.BoxScope) = with(boxScope) {
-    // Centered ~1/4 down the overlay (user-specified placement) — identical on
-    // the clash splash and the countdown so it reads as pinned across the
-    // transition.
-    Column(Modifier.fillMaxSize()) {
-        Spacer(Modifier.fillMaxHeight(0.19f))
-        // Shrink-to-fit on narrow screens / large font scales, matching iOS's
-        // minimumScaleFactor(0.6) on the 58pt wordmark.
-        var wordmarkSize by remember { mutableStateOf(58.sp) }
-        Text(
-            "WORDOCIOUS",
-            fontSize = wordmarkSize, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
-            maxLines = 1, softWrap = false,
-            onTextLayout = { r -> if (r.didOverflowWidth && wordmarkSize > 35.sp) wordmarkSize *= 0.9f },
-            style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), fontFamily = Nunito),
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = 12.dp),
-        )
-    }
-}
-
 @Composable
 fun MatchIntro(
+    mode: GameMode,
     me: IntroPlayer,
     opponent: IntroPlayer?,                                  // null = anonymous
     headToHead: HeadToHeadService.HeadToHeadRecord?,         // null while loading / anonymous
@@ -101,40 +84,58 @@ fun MatchIntro(
         onDone()
     }
     val opp = opponent ?: IntroPlayer("Anonymous", null, null)
+    val shape = RoundedCornerShape(18.dp)
 
     Box(
-        Modifier.fillMaxSize()
-            // Finished-looking deep radial vignette instead of flat black.
-            .background(androidx.compose.ui.graphics.Brush.radialGradient(
-                colors = listOf(Color(0xF51E1B3A), Color(0xEB000000)))).clickableNoRipple(onDone),
+        Modifier.fillMaxSize().background(VsTeal.page).clickableNoRipple(onDone)
+            .statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
-        VSOverlayWordmark(this)
-        Column(
-            Modifier.padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                IntroPlayerCard(me, fromLeft = true)
-                VsPop()
-                // The two cards land a beat apart (opponent +0.12s) for a duel feel — iOS parity.
-                IntroPlayerCard(opp, fromLeft = false, delayMs = 120)
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(
+                Modifier.widthIn(max = 440.dp).fillMaxWidth()
+                    .shadow(8.dp, shape, ambientColor = Color(0x1A4C1D95), spotColor = Color(0x1A4C1D95))
+                    .clip(shape)
+                    .drawBehind {
+                        drawRect(Brush.verticalGradient(listOf(Color(0xFFD5F5EE), Color(0xFFE0F2FE))))
+                        drawRect(Brush.linearGradient(
+                            0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
+                            start = Offset.Zero, end = Offset(size.width, size.height),
+                        ))
+                    },
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    VsModeChip(mode)
+                    Spacer(Modifier.weight(1f))
+                    Text("MATCH FOUND", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.ink)
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 22.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    IntroPlayerCard(me, fromLeft = true, modifier = Modifier.weight(1f))
+                    VsPop()
+                    // The two cards land a beat apart (opponent +0.12s) for a duel feel — iOS parity.
+                    IntroPlayerCard(opp, fromLeft = false, delayMs = 120, modifier = Modifier.weight(1f))
+                }
+                if (opponent != null && headToHead != null) {
+                    Box(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 16.dp), Alignment.Center) {
+                        H2HLine(HeadToHeadService.headToHeadLine(opp.username, headToHead))
+                    }
+                }
             }
-            if (opponent != null && headToHead != null) {
-                H2HLine(HeadToHeadService.headToHeadLine(opp.username, headToHead))
-            }
-            Text(
-                "TAP TO SKIP", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp, color = Color.White.copy(alpha = 0.4f),
-            )
+            Text("TAP TO SKIP", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.6.sp, color = VsTeal.grey)
         }
     }
 }
 
 /** Avatar card slamming in from its side with overshoot (web vs-slam keyframes). */
 @Composable
-private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Long = 0) {
+private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Long = 0, modifier: Modifier = Modifier) {
     val offset = remember { Animatable(if (WTheme.reducedMotion) 0f else if (fromLeft) -1.3f else 1.3f) }
     val alpha = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
     LaunchedEffect(Unit) {
@@ -150,33 +151,32 @@ private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Lon
         }
     }
     Column(
-        Modifier
-            .width(128.dp)
+        modifier
             .graphicsLayer {
-                translationX = offset.value * 160.dp.toPx()
+                translationX = offset.value * 120.dp.toPx()
                 this.alpha = alpha.value
             },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        VsAvatar(player.username, player.avatarUrl, size = 72.dp, borderWidth = 2.dp)
+        Box(Modifier.shadow(6.dp, CircleShape, ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))) {
+            VsAvatar(player.username, player.avatarUrl, size = 72.dp, borderWidth = 3.dp, borderColor = Color.White)
+        }
         Text(
-            player.username, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+            player.username.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep,
             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
         )
-        player.level?.let { lv ->
+        player.level?.takeIf { it > 0 }?.let { lv ->
             Text(
-                "Lv $lv", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
-                modifier = Modifier.clip(RoundedCornerShape(50))
-                    .background(Color.White.copy(alpha = 0.15f))
-                    .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(50))
+                "LV $lv", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.ink,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(VsTeal.soft)
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             )
         }
     }
 }
 
-/** Rotated gradient "VS" — scale-pop with overshoot, 0.5s after the cards. */
+/** A solid teal "VS" disc — scale-pop with overshoot, 0.5s after the cards. */
 @Composable
 private fun VsPop() {
     val scale = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
@@ -186,18 +186,18 @@ private fun VsPop() {
             scale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMedium))
         }
     }
-    Text(
-        "VS", fontSize = 48.sp, fontWeight = FontWeight.Black,
-        style = TextStyle(
-            fontFamily = com.wordocious.app.ui.theme.Nunito,
-            brush = Brush.linearGradient(listOf(Color(0xFFFACC15), Color(0xFFEC4899), Color(0xFFA855F7))),
-        ),
-        modifier = Modifier.graphicsLayer {
-            scaleX = scale.value; scaleY = scale.value
-            rotationZ = -12f
-            alpha = if (scale.value > 0.05f) 1f else 0f
-        },
-    )
+    Box(
+        Modifier.size(52.dp)
+            .graphicsLayer {
+                scaleX = scale.value; scaleY = scale.value
+                rotationZ = -8f
+                alpha = if (scale.value > 0.05f) 1f else 0f
+            }
+            .clip(CircleShape).background(VsTeal.ink),
+        Alignment.Center,
+    ) {
+        Text("VS", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+    }
 }
 
 /** Head-to-head line slides up + fades in (0.85s delay, after the VS settles). */
@@ -208,8 +208,7 @@ private fun H2HLine(text: String) {
         if (!WTheme.reducedMotion) { delay(850); progress.animateTo(1f, tween(450)) }
     }
     Text(
-        text, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold,
-        color = Color.White.copy(alpha = 0.9f),
+        text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, textAlign = TextAlign.Center,
         modifier = Modifier.graphicsLayer {
             translationY = (1f - progress.value) * 10.dp.toPx()
             alpha = progress.value

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { isTypingTarget } from '@/lib/keyboard';
+import { playInvalid } from '@/lib/sounds';
 import { GameMode, pnGuessBlocked } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
@@ -41,6 +42,7 @@ export function VsProperNoundle({
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
+  const [shouldShake, setShouldShake] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [hasReported, setHasReported] = useState(false);
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
@@ -140,14 +142,20 @@ export function VsProperNoundle({
     if (key === 'ENTER') {
       const normalized = normalizeString(currentGuess);
       if (normalized.length !== answerLength) {
+        // Shake + buzz like solo.
+        setShouldShake(true);
+        playInvalid();
         setMessage(`Must be ${answerLength} letters`);
-        setTimeout(() => setMessage(''), 1500);
+        setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
         return;
       }
 
       if (guesses.some((g) => normalizeString(g.word) === normalized)) {
+        // Shake + buzz like solo.
+        setShouldShake(true);
+        playInvalid();
         setMessage('Already guessed');
-        setTimeout(() => setMessage(''), 1500);
+        setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
         return;
       }
 
@@ -156,8 +164,11 @@ export function VsProperNoundle({
       // so a guess containing a blocklisted term is rejected like an
       // invalid word — BEFORE it's relayed to the server.
       if (pnGuessBlocked(normalized, answerDisplay)) {
+        // Shake + buzz like solo.
+        setShouldShake(true);
+        playInvalid();
         setMessage('Not allowed');
-        setTimeout(() => setMessage(''), 1500);
+        setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
         return;
       }
 
@@ -213,9 +224,9 @@ export function VsProperNoundle({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* Header */}
-      <div className="text-center py-2 px-2 shrink-0">
-        <div className="flex justify-center items-center gap-3 mt-1">
+      {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
+      <div className="text-center px-2 shrink-0">
+        <div className="flex justify-center items-center gap-2">
           {puzzleMetadata?.themeCategory && (
             <span
               className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
@@ -235,8 +246,8 @@ export function VsProperNoundle({
         )}
       </div>
 
-      {/* Opponent HUD */}
-      <div className="flex justify-center px-4 mb-2">
+      {/* Opponent strip */}
+      <div className="shrink-0 px-3 pt-2 pb-2">
         <OpponentHUD
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
@@ -249,23 +260,20 @@ export function VsProperNoundle({
 
       {/* Hint clue text (once fetched) */}
       {hints.hint && (
-        <div
-          className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
-        >
-          <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
+        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+          <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
         </div>
       )}
 
       {/* Board */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
         <NoundleBoard
           guesses={guesses}
           currentGuess={currentGuess}
           maxGuesses={MAX_GUESSES}
           answerLength={answerLength}
           answerDisplay={answerDisplay}
-          shouldShake={false}
+          shouldShake={shouldShake}
         />
       </div>
 
@@ -307,7 +315,7 @@ export function VsProperNoundle({
         </div>
 
       {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2">
+      <div className="shrink-0 pb-2 px-2 pt-1">
         <Keyboard onKey={handleKey} letterStates={letterStates} />
       </div>
     </div>

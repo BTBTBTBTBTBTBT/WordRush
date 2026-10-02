@@ -59,7 +59,7 @@ import kotlin.random.Random
 
 /**
  * VS result-screen detail components — Android port of web
- * components/vs/vs-result-detail.tsx (ComparisonBars + FinalBoards) plus the
+ * components/vs/vs-result-detail.tsx (FinalBoards) plus the
  * win confetti (same parameters as VictoryOverlay's ConfettiView / web
  * effects/confetti.tsx).
  */
@@ -126,7 +126,8 @@ fun logSolved(log: List<GuessLogEntry>, solutions: List<String>): Boolean =
  *  a tinted capsule; the FinalBoards sides show it bare (iOS `side()`). */
 @Composable
 private fun SolveBadge(solved: Boolean, fontSize: Int = 10, capsule: Boolean = true) {
-    val color = if (solved) Color(0xFF16A34A) else Color(0xFFDC2626)
+    // VS polish §2: purple / slate, not green / red.
+    val color = if (solved) Color(0xFF7C3AED) else Color(0xFF64748B)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -144,76 +145,6 @@ private fun SolveBadge(solved: Boolean, fontSize: Int = 10, capsule: Boolean = t
             if (solved) "Solved" else "Not solved",
             fontSize = fontSize.sp, fontWeight = FontWeight.ExtraBold, color = color,
         )
-    }
-}
-
-data class ScoreCardPlayer(
-    val name: String,
-    val score: Double,
-    val guesses: Int,
-    val timeMs: Double,
-    val solved: Boolean,
-    val isWinner: Boolean,
-)
-
-/**
- * Prominent head-to-head FINAL SCORE card — big totals (winner crowned +
- * highlighted, loser dimmed), the exact calculation under each, and solve
- * badges. Replaces the inverted comparison bars, which read backwards for
- * lower-is-better metrics.
- */
-@Composable
-fun ScoreCard(me: ScoreCardPlayer, opponent: ScoreCardPlayer, isDraw: Boolean) {
-    fun clock(ms: Double): String {
-        val s = kotlin.math.round(ms / 1000).toInt()   // iOS rounds, not truncates
-        return "${s / 60}m ${s % 60}s"
-    }
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text("FINAL SCORE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp, color = WTheme.textMuted)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ScoreColumn(me, Color(0xFF7C3AED), isDraw, ::clock, Modifier.weight(1f))
-            Text("VS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.padding(top = 34.dp))
-            ScoreColumn(opponent, Color(0xFFEC4899), isDraw, ::clock, Modifier.weight(1f))
-        }
-        Text(
-            "Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving",
-            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun ScoreColumn(p: ScoreCardPlayer, accent: Color, isDraw: Boolean, clock: (Double) -> String, modifier: Modifier) {
-    val highlighted = p.isWinner || isDraw
-    val timePenalty = max(0.0, p.score - p.guesses)
-    Column(
-        // iOS fades the whole losing column to 0.75 on top of dropping the
-        // score to textMuted (VSScoreCard.column).
-        modifier.alpha(if (highlighted) 1f else 0.75f),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            // iOS uses the amber crown.fill glyph, not a multicolor emoji.
-            if (p.isWinner && !isDraw) {
-                Icon(
-                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),
-                    null, tint = Color(0xFFF59E0B), modifier = Modifier.size(10.dp),
-                )
-            }
-            Text(p.name, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        Text(
-            String.format("%.2f", p.score), fontSize = 36.sp, fontWeight = FontWeight.Black,
-            color = if (highlighted) accent else WTheme.textMuted,
-        )
-        Text("${p.guesses} guesses + ${String.format("%.2f", timePenalty)} time", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        Text(clock(p.timeMs), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        SolveBadge(p.solved)
     }
 }
 
@@ -404,8 +335,7 @@ fun FinalBoards(
     // 21-board letter wall was unreadable). ─────────────────────────────────
     if (mode == GameMode.GAUNTLET) {
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            Modifier.fillMaxWidth().vsCard(16.dp).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             GauntletRecapSection(myName, myFlatWords, Color(0xFF7C3AED), seed, myTimeMs)
@@ -419,8 +349,7 @@ fun FinalBoards(
     // FULL board set as the compact solo-style recap. ────────────────────────
     if (solutions.size > 1) {
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            Modifier.fillMaxWidth().vsCard(16.dp).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // My side uses the actual final boards when snapshotted (no replay
@@ -452,8 +381,7 @@ fun FinalBoards(
     // ProperNoundleMiniBoard derives from the display).
     val pnGroups = pnDisplay?.let { pn.wordGroups(it) }
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        Modifier.fillMaxWidth().vsCard(16.dp).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // CRASH CLASS, DO NOT REINTRODUCE height(IntrinsicSize.*) HERE: LetterBoard
@@ -533,7 +461,7 @@ private fun MultiBoardRecapSection(
                 color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
             // iOS: bare icon + "n/m boards" tally, no capsule (recapSection).
-            val badgeColor = if (allWon) Color(0xFF16A34A) else if (won > 0) Color(0xFFD97706) else Color(0xFFDC2626)
+            val badgeColor = if (allWon) Color(0xFF7C3AED) else if (won > 0) Color(0xFFD97706) else Color(0xFF64748B)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 Icon(
                     if (allWon) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
@@ -573,53 +501,6 @@ private fun FinalBoardsSide(
                 indices.forEach { idx -> LetterBoard(boards[idx] ?: emptyList(), wordGroups) }
             }
         }
-    }
-}
-
-// ── Comparison bars ────────────────────────────────────────────────────────────
-
-data class ComparisonMetric(val label: String, val mine: Double, val theirs: Double, val format: (Double) -> String)
-
-/**
- * Two horizontal bars per metric (you = purple, them = pink). All metrics are
- * lower-is-better, so bar length is inverted: the lower value gets the fuller
- * bar (width = other/(sum), min 6%).
- */
-@Composable
-fun ComparisonBars(myName: String, opponentName: String, metrics: List<ComparisonMetric>) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        metrics.forEach { m ->
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    m.label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 0.8.sp, color = WTheme.textMuted,
-                )
-                val total = m.mine + m.theirs
-                val myFrac = if (total <= 0.0) 0.5f else (m.theirs / total).toFloat()
-                val theirFrac = if (total <= 0.0) 0.5f else (m.mine / total).toFloat()
-                ComparisonBarRow(m.format(m.mine), myFrac, Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFF7C3AED))))
-                ComparisonBarRow(m.format(m.theirs), theirFrac, Brush.horizontalGradient(listOf(Color(0xFFF472B6), Color(0xFFEC4899))))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ComparisonBarRow(value: String, fraction: Float, brush: Brush) {
-    val dur = if (WTheme.reducedMotion) 0 else 600
-    val animated by animateFloatAsState(max(0.06f, fraction.coerceIn(0f, 1f)), tween(dur), label = "vsBar")
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
-            Box(Modifier.fillMaxWidth(animated).fillMaxHeight().clip(RoundedCornerShape(50)).background(brush))
-        }
-        Text(
-            value, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text,
-            modifier = Modifier.width(56.dp), textAlign = TextAlign.End, maxLines = 1,
-        )
     }
 }
 

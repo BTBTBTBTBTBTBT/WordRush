@@ -119,9 +119,13 @@ fun FriendsBannerView(
                     .padding(start = 12.dp, top = 12.dp, end = 10.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                // Larger and glowing (founder 2026-10-01): 22 sp / 900 with a soft pink glow.
                 Text(
-                    headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em,
-                    color = FriendsPink.ink, maxLines = 2, modifier = Modifier.heightIn(min = 20.dp),
+                    headline, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
+                    color = FriendsPink.ink, maxLines = 2, modifier = Modifier.heightIn(min = 26.dp),
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(Color(0x8CDB2777), Offset.Zero, blurRadius = 16f),
+                    ),
                 )
                 Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = FriendsPink.mid)
             }

@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import {
-  PASS_MAX_GUESSES, whoseTurn,
-  type CoinFace, type CoinState, type FriendlyMove, type PassState, type RpsPick, type RpsState, type Side, type TttState,
+  CHAIN_TARGET, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, whoseTurn,
+  type ChainState, type CoinFace, type CoinState, type FriendlyMove, type GhostState, type PassState, type RpsPick, type RpsState,
+  type Side, type TttState,
 } from '@wordle-duel/core';
+import { Lock } from 'lucide-react';
 import { Keyboard } from '@/components/game/keyboard';
-import { FR, TILE, otherSide, passKeyStates, tileState, tttThreats } from '@/lib/friends-play';
+import {
+  FR, TILE, chainNeededLetter, chainPrecheck, ghostRoundCard, ghostTiles, otherSide, passKeyStates, tileState, tttThreats,
+} from '@/lib/friends-play';
 import { FriendAvatar, SectionLabel } from './friends-ui';
 
-// The four pocket-game boards (Friends overhaul §4, canvas board AE). Each one
+// The six pocket-game boards (Friends overhaul §4 + §9, canvas board AE). Each one
 // only renders the server's state and hands a move up; the screen sends it.
 // Tiles always use our colors: purple = you, amber = them, slate = absent.
 
@@ -397,6 +401,288 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer }
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Shared: physical keys on desktop ────────────────────────────────────────
+
+function usePhysicalKeys(active: boolean, onKey: (key: string) => void) {
+  useEffect(() => {
+    if (!active) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if (e.key === 'Enter') onKey('ENTER');
+      else if (e.key === 'Backspace') onKey('BACK');
+      else if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  });
+}
+
+const LETTER_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+/** Ghost's keyboard: letters only (no ENTER / backspace); the picked key fills purple. */
+function LetterKeys({ onKey, selected, disabled }: { onKey: (k: string) => void; selected: string | null; disabled: boolean }) {
+  return (
+    <div className="w-full flex flex-col" style={{ gap: 6, opacity: disabled ? 0.55 : 1 }}>
+      {LETTER_ROWS.map((row) => (
+        <div key={row} className="flex justify-center" style={{ gap: 5 }}>
+          {[...row].map((k) => {
+            const sel = k === selected;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => onKey(k)}
+                aria-label={k}
+                aria-pressed={sel}
+                className="flex items-center justify-center font-black transition-transform active:scale-95"
+                style={{
+                  flex: '1 1 0', maxWidth: 36, height: 46, borderRadius: 8, fontSize: 16,
+                  background: sel ? TILE.you : '#ffffff', color: sel ? '#ffffff' : FR.text,
+                  boxShadow: sel ? '0 0 10px rgba(124,58,237,0.45)' : '0 1px 3px rgba(76,29,149,0.12)',
+                }}
+              >
+                {k}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const sideColor = (mine: boolean) => (mine ? TILE.you : TILE.them);
+const sideGlow = (mine: boolean) => (mine ? '0 0 6px rgba(124,58,237,0.4)' : '0 0 6px rgba(245,158,11,0.4)');
+
+// ── Ghost ───────────────────────────────────────────────────────────────────
+
+export function GhostBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<GhostState>) {
+  const myTurn = active && whoseTurn(state) === me;
+  const [pick, setPick] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
+  const sig = `${state.fragment}|${state.rounds.length}`;
+  useEffect(() => { setPick(null); setHint(null); }, [sig]);
+  const tiles = ghostTiles(state, me);
+  const last = state.rounds[state.rounds.length - 1];
+  const card = last && state.fragment === '' ? ghostRoundCard(last, me, them.name) : null;
+  const showSlot = myTurn;
+  const count = tiles.length + (showSlot ? 1 : 0);
+  const size = Math.min(52, Math.floor((340 - Math.max(0, count - 1) * 6) / Math.max(1, count)));
+
+  const send = async () => {
+    if (!myTurn || busy || !pick) return;
+    const ok = await onMove({ kind: 'ghost', letter: pick });
+    if (ok) setPick(null);
+  };
+
+  const onKey = (key: string) => {
+    setHint(null);
+    if (!myTurn) { setHint(`It's ${them.name}'s letter`); return; }
+    if (key === 'ENTER') { void send(); return; }
+    if (key === 'BACK') { setPick(null); return; }
+    if (/^[A-Z]$/.test(key)) setPick(key);
+  };
+  usePhysicalKeys(active, onKey);
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {card && (
+        <div
+          key={revealKey}
+          className="w-full flex flex-col items-center gap-0.5 px-3 py-2.5 text-center"
+          style={{ background: FR.soft, borderRadius: 14, animation: revealKey ? 'friends-flip 0.45s ease-out both' : undefined }}
+        >
+          <span className="text-[13px] font-black" style={{ color: FR.ink }}>
+            <span style={{ letterSpacing: 2 }}>{card.letters}</span> — {card.text}
+          </span>
+          <span className="text-[10.5px] font-black uppercase" style={{ color: FR.mid, letterSpacing: 0.8 }}>
+            Round {state.rounds.length} to {card.youLost ? them.name : 'you'}
+          </span>
+        </div>
+      )}
+
+      <div className="flex justify-center items-center" style={{ gap: 6, minHeight: 56 }}>
+        {tiles.map((t, i) => (
+          <span
+            key={i}
+            className="flex items-center justify-center font-black uppercase"
+            style={{ width: size, height: size, borderRadius: 10, fontSize: Math.round(size * 0.46), color: '#ffffff', background: sideColor(t.mine), boxShadow: sideGlow(t.mine) }}
+          >
+            {t.letter}
+          </span>
+        ))}
+        {showSlot && (
+          <span
+            className="flex items-center justify-center font-black uppercase"
+            style={{
+              width: size, height: size, borderRadius: 10, fontSize: Math.round(size * 0.46),
+              background: pick ? '#ede9fe' : '#ffffff', color: TILE.you, border: `2px dashed ${TILE.you}`,
+            }}
+            aria-label={pick ? `Your letter ${pick}` : 'Your letter goes here'}
+          >
+            {pick ?? ''}
+          </span>
+        )}
+        {tiles.length === 0 && !showSlot && (
+          <span className="text-[12px] font-bold" style={{ color: FR.label }}>No letters yet</span>
+        )}
+      </div>
+
+      {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
+
+      {active && (
+        <>
+          <p className="text-[12px] font-bold text-center" style={{ color: FR.label }}>
+            {myTurn
+              ? state.fragment ? 'Your letter. Pick one, then add it.' : 'You start this round. Pick any letter.'
+              : `${them.name} is adding a letter. It lands here live.`}
+          </p>
+          {myTurn && (
+            <button
+              type="button"
+              onClick={() => void send()}
+              disabled={!pick || busy}
+              className="w-full py-3 text-[15px] font-black text-white transition-transform active:scale-[0.98] disabled:opacity-50"
+              style={{ background: FR.solid, borderRadius: 14, letterSpacing: 0.6 }}
+            >
+              {pick ? `ADD ${pick}` : 'PICK A LETTER'}
+            </button>
+          )}
+          <LetterKeys onKey={onKey} selected={pick} disabled={!myTurn} />
+        </>
+      )}
+      <p className="text-[11.5px] font-bold text-center" style={{ color: FR.label }}>
+        Spell a word and you lose the round. Leave a dead end and you lose it too.
+      </p>
+    </div>
+  );
+}
+
+// ── Word Chain ──────────────────────────────────────────────────────────────
+
+const CHAIN_TILE = 30;
+const INPUT_TILE = 40;
+
+export function ChainBoard({ state, me, you, them, active, busy, onMove }: BoardProps<ChainState>) {
+  const myTurn = active && whoseTurn(state) === me;
+  const locked = chainNeededLetter(state);
+  const [typed, setTyped] = useState('');
+  const [hint, setHint] = useState<string | null>(null);
+  useEffect(() => { setTyped(''); setHint(null); }, [state.words.length]);
+  const word = (locked ?? '') + typed;
+  const room = WORD_MAX - (locked ? 1 : 0);
+
+  const submit = async () => {
+    if (!myTurn || busy) return;
+    const err = chainPrecheck(state, me, word);
+    if (err) { setHint(err); return; }
+    const ok = await onMove({ kind: 'chain', word });
+    if (ok) setTyped('');
+  };
+
+  const onKey = (key: string) => {
+    setHint(null);
+    if (!myTurn) { setHint(`It's ${them.name}'s word`); return; }
+    if (key === 'ENTER') { void submit(); return; }
+    if (key === 'BACK') { setTyped((v) => v.slice(0, -1)); return; }
+    if (/^[A-Z]$/.test(key)) setTyped((v) => (v.length < room ? v + key : v));
+  };
+  usePhysicalKeys(active, onKey);
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-full flex flex-col" style={{ gap: 6 }}>
+        {state.words.length === 0 && (
+          <p className="text-center text-[12px] font-bold py-2" style={{ color: FR.label }}>
+            Any {WORD_MIN} to {WORD_MAX} letter word opens the chain.
+          </p>
+        )}
+        {state.words.map((w, wi) => {
+          const mine = w.by === me;
+          const newest = wi === state.words.length - 1;
+          const p = mine ? you : them;
+          return (
+            <div key={wi} className="flex items-center" style={{ gap: 6 }}>
+              <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} size={22} />
+              <div className="flex-1 flex" style={{ gap: 3 }}>
+                {[...w.word].map((ch, i) => {
+                  const glow = newest && i === w.word.length - 1;
+                  return (
+                    <span
+                      key={i}
+                      className="flex items-center justify-center font-black uppercase"
+                      style={{
+                        width: CHAIN_TILE, height: CHAIN_TILE, borderRadius: 6, fontSize: 14, color: '#ffffff',
+                        background: sideColor(mine),
+                        boxShadow: glow ? `0 0 0 2px #ffffff, 0 0 0 4px ${FR.solid}, 0 0 14px ${FR.solid}` : undefined,
+                      }}
+                    >
+                      {ch}
+                    </span>
+                  );
+                })}
+              </div>
+              <span
+                className="shrink-0 px-2 flex items-center text-[11px] font-black rounded-full"
+                style={{ height: 22, background: mine ? '#ede9fe' : '#fef3c7', color: mine ? '#6d28d9' : '#b45309' }}
+              >
+                +{w.points}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {active && myTurn && (
+        <div className="flex justify-center" style={{ gap: 5 }} aria-label="Your word">
+          {Array.from({ length: WORD_MAX }, (_, i) => {
+            const ch = word[i] ?? '';
+            const isLocked = !!locked && i === 0;
+            const optional = i >= WORD_MIN;
+            const style: React.CSSProperties = isLocked
+              ? { background: TILE.you, color: '#ffffff', boxShadow: `0 0 10px ${TILE.you}88` }
+              : ch
+                ? { background: '#ffffff', color: FR.text, boxShadow: '0 0 0 2px #c4b5fd' }
+                : optional
+                  ? { background: 'transparent', color: FR.text, border: '1.5px dashed #c4b5fd' }
+                  : { background: '#ffffff', color: FR.text, boxShadow: '0 1px 3px rgba(76,29,149,0.10)' };
+            return (
+              <span
+                key={i}
+                className="relative flex items-center justify-center font-black uppercase"
+                style={{ width: INPUT_TILE, height: INPUT_TILE, borderRadius: 8, fontSize: 18, ...style }}
+              >
+                {ch}
+                {isLocked && <Lock className="absolute" style={{ width: 9, height: 9, top: 3, right: 3, color: '#ffffff' }} aria-label="Locked" />}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
+
+      {active && (
+        <>
+          <p className="text-[12px] font-bold text-center" style={{ color: FR.label }}>
+            {myTurn
+              ? locked ? `Your word. It starts with ${locked}.` : 'Your word. Any word opens the chain.'
+              : locked ? `${them.name} needs a word starting with ${locked}. It lands here live.` : `${them.name} is opening the chain. It lands here live.`}
+          </p>
+          <div className="w-full" style={{ opacity: myTurn ? 1 : 0.55 }}>
+            <Keyboard onKey={onKey} />
+          </div>
+        </>
+      )}
+      <p className="text-[11.5px] font-bold text-center" style={{ color: FR.label }}>
+        A word scores its letters. No repeats. First to {CHAIN_TARGET} wins.
+      </p>
     </div>
   );
 }

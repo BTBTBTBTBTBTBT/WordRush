@@ -760,35 +760,69 @@ struct NoundleKeyboard: View {
     }
 }
 
-/// Compact ProperNoundle board + keyboard for the VS match screen. Drives a
-/// ProperNoundleVM (built by VSMatchViewModel with isVersus = true) that relays
-/// each guess + completion to the live match. Reuses the solo NoundleBoard /
-/// NoundleKeyboard so the play surface matches the solo game.
-struct ProperNoundleVSBoard: View {
+/// ProperNoundle for the VS match screen (VS polish spec §1): the SOLO play
+/// surface — the solo header (title in red, category chip, letters, clock,
+/// clue) with a small teal VS pill, then the opponent strip slot, then the
+/// solo NoundleBoard / hints row / NoundleKeyboard with the solo spacing.
+/// Drives a ProperNoundleVM (built by VSMatchViewModel with isVersus = true)
+/// that relays each guess + completion to the live match.
+struct ProperNoundleVSBoard<Strip: View>: View {
     @ObservedObject var vm: ProperNoundleVM
+    let onHome: () -> Void
+    @ViewBuilder var strip: () -> Strip
+
     var body: some View {
-        VStack(spacing: 6) {
-            if let p = vm.puzzle {
-                HStack(spacing: 6) {
-                    Text(categoryLabel(p.themeCategory)).font(Brand.caption(11)).foregroundStyle(.white)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(categoryColors[p.themeCategory ?? ""] ?? Color(hex: 0x7C3AED)))
-                    Text("\(vm.answerLen) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                }
-                .padding(.top, 4)
+        VStack(spacing: 8) {
+            HStack(alignment: .top, spacing: 4) {
+                VSGameHomeButton(accent: ModeStyle.accent(.propernoundle), action: onHome)
+                Spacer(minLength: 0)
+                header
+                Spacer(minLength: 0)
+                Color.clear.frame(width: 44, height: 44)
             }
-            // Clue text — the solo view renders this under the header, but the
-            // VS board never did: tapping Clue burned a row and the fetched
-            // clue had nowhere to appear.
-            if let clue = vm.clue {
-                Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
-                    .multilineTextAlignment(.center).padding(.horizontal, 20)
-            }
+            strip()
+            Spacer(minLength: 4)
             NoundleBoard(vm: vm)
             Spacer(minLength: 4)
             if !vm.isFinished { NoundleHints(vm: vm) }
-            NoundleKeyboard(vm: vm)
+            NoundleKeyboard(vm: vm).padding(.bottom, 6)
         }
-        .padding(.horizontal, 10).padding(.bottom, 6)
+        .padding(.horizontal, 10)
+    }
+
+    /// The solo ProperNoundleView header (minus the daily-only number/holiday).
+    private var header: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                VSTagPill()
+            }
+            HStack(spacing: 8) {
+                if let p = vm.puzzle {
+                    Text(categoryLabel(p.themeCategory))
+                        .font(Brand.caption(11)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(categoryColors[p.themeCategory ?? ""] ?? Color(hex: 0x7C3AED)))
+                }
+                Text("\(vm.answerLen) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if !vm.isFinished {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        HStack(spacing: 2) {
+                            Image(systemName: "clock").font(.system(size: 9))
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                        }
+                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted).monospacedDigit()
+                    }
+                }
+            }
+            // The clue lands here once fetched (tapping Clue burns a row).
+            if let clue = vm.clue {
+                Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
+                    .multilineTextAlignment(.center).padding(.horizontal, 8)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.top, 6)
     }
 }

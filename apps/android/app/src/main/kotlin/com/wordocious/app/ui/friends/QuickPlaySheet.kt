@@ -6,8 +6,10 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -151,9 +153,11 @@ fun QuickPlaySheet(
 
             // QUICK GAMES
             FriendsLabel(if (friend?.isOnline(now) == true) "QUICK GAMES · LIVE WHILE THEY'RE ON" else "QUICK GAMES")
-            // Four across (web parity).
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FRIENDLY_KINDS.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f)) { kind = k; error = null } }
+            // Six tiles, 3 across × 2 rows (§9, web parity).
+            FRIENDLY_KINDS.chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f).fillMaxHeight()) { kind = k; error = null } }
+                }
             }
             if (kind == FriendlyKind.COIN) {
                 FriendsLabel("WHAT'S ON THE LINE")

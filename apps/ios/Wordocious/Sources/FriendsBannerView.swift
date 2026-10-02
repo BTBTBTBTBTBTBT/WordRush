@@ -75,12 +75,15 @@ struct FriendsBannerView: View {
             let s = secondsUntilLocalMidnight()
             let clock = String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
             VStack(alignment: .leading, spacing: 4) {
+                // §10 (founder, iOS 220): bigger and glowing — 22/900 ink with a
+                // soft pink glow on the letters only.
                 Text(FriendlyGames.friendsBannerHeadline(input))
-                    .font(Brand.font(16, .black)).tracking(0.4).lineSpacing(3)
+                    .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(2)
                     .foregroundStyle(FriendsKit.ink)
+                    .shadow(color: FriendsKit.solid.opacity(0.55), radius: 8)
                     .fixedSize(horizontal: false, vertical: true)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
+                    .lineLimit(2).minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
                 Text(FriendlyGames.friendsBannerClockLine(input, clock: clock))
                     .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
                     .foregroundStyle(FriendsKit.mid)

@@ -268,95 +268,6 @@ enum VSShareService {
     }
 }
 
-/// Prominent head-to-head FINAL SCORE card — the first thing under the result
-/// headline. Big totals (winner highlighted, loser dimmed), the exact
-/// calculation under each (guesses + time penalty), solve badges, and a
-/// "lowest score wins" footnote. Replaces the old inverted comparison bars,
-/// which read backwards (lower-is-better bars looked like the loser led).
-struct VSScoreCard: View {
-    struct Player {
-        let name: String
-        let score: Double
-        let guesses: Int
-        let timeMs: Double
-        let solved: Bool
-        let isWinner: Bool
-    }
-
-    let me: Player
-    let opponent: Player
-    let isDraw: Bool
-
-    var body: some View {
-        VStack(spacing: 14) {
-            Text("FINAL SCORE").font(Brand.font(10, .heavy)).tracking(1.5).foregroundStyle(Theme.textMuted)
-            HStack(alignment: .top, spacing: 10) {
-                column(me, accent: Color(hex: 0x7C3AED))
-                Text("VS")
-                    .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
-                    .padding(.top, 34)
-                column(opponent, accent: Color(hex: 0xEC4899))
-            }
-            Text("Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving")
-                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(a11ySummary)
-    }
-
-    /// One spoken sentence for the whole score card.
-    private var a11ySummary: String {
-        func side(_ p: Player) -> String {
-            "\(p.name): score \(String(format: "%.2f", p.score)), \(p.guesses) guesses, \(Self.clock(p.timeMs)), \(p.solved ? "solved" : "not solved")"
-        }
-        let outcome = isDraw ? "Draw" : (me.isWinner ? "You won" : "\(opponent.name) won")
-        return "Final score. \(outcome). \(side(me)). Versus. \(side(opponent)). Lowest score wins, but solving always beats not solving."
-    }
-
-    private func column(_ p: Player, accent: Color) -> some View {
-        let highlighted = p.isWinner || isDraw
-        let timePenalty = max(0, p.score - Double(p.guesses))
-        return VStack(spacing: 5) {
-            HStack(spacing: 4) {
-                if p.isWinner && !isDraw {
-                    Image(systemName: "crown.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xF59E0B))
-                }
-                Text(p.name).font(Brand.font(11, .heavy)).foregroundStyle(accent).lineLimit(1)
-                .minimumScaleFactor(0.7)
-            }
-            Text(String(format: "%.2f", p.score))
-                .font(Brand.font(36, .black)).monospacedDigit()
-                .foregroundStyle(highlighted ? accent : Theme.textMuted)
-                .minimumScaleFactor(0.6).lineLimit(1)
-            // The exact calculation, spelled out.
-            Text("\(p.guesses) guesses + \(String(format: "%.2f", timePenalty)) time")
-                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-            Text(Self.clock(p.timeMs))
-                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-            // Solve badge — the tiebreak that actually decides most matches.
-            HStack(spacing: 3) {
-                Image(systemName: p.solved ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 10))
-                Text(p.solved ? "Solved" : "Not solved").font(Brand.font(10, .heavy))
-            }
-            .foregroundStyle(p.solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill((p.solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)).opacity(0.10)))
-        }
-        .frame(maxWidth: .infinity)
-        .opacity(highlighted ? 1 : 0.75)
-    }
-
-    private static func clock(_ ms: Double) -> String {
-        let s = Int((ms / 1000).rounded())
-        return "\(s / 60)m \(s % 60)s"
-    }
-}
-
 /// Final boards WITH letters — yours from local play, the opponent's
 /// reconstructed from the match-end guess log. Single-board modes render the
 /// two boards side-by-side for direct comparison; multi-board modes render
@@ -408,8 +319,7 @@ struct VSFinalBoards: View {
                 gauntletSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899), timeMs: opponentTimeMs)
             }
             .padding(16).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .vsCard(radius: 14)
         }
     }
 
@@ -443,8 +353,7 @@ struct VSFinalBoards: View {
                 recapSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899))
             }
             .padding(16).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .vsCard(radius: 14)
         }
     }
 
@@ -470,11 +379,10 @@ struct VSFinalBoards: View {
                     .font(Brand.font(10, .heavy)).tracking(0.8)
                     .foregroundStyle(accent).lineLimit(1)
                     .minimumScaleFactor(0.7)
-                HStack(spacing: 3) {
-                    Image(systemName: allWon ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))
-                    Text("\(won)/\(boards.count) boards").font(Brand.font(9, .heavy))
-                }
-                .foregroundStyle(allWon ? Color(hex: 0x16A34A) : (won > 0 ? Color(hex: 0xD97706) : Color(hex: 0xDC2626)))
+                Text("\(won)/\(boards.count) BOARDS").font(Brand.font(9, .black)).tracking(0.5)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 7).padding(.vertical, 3)
+                    .background(Capsule().fill(allWon ? VsLobbyKit.purple : Color(hex: 0x64748B)))
             }
             if words.isEmpty {
                 Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
@@ -544,9 +452,11 @@ struct VSFinalBoards: View {
             VStack(spacing: 12) {
                 HStack(alignment: .top, spacing: 16) {
                     side(label: myName, boards: mine, accent: Color(hex: 0x7C3AED), solved: mySolved,
-                         pnRealRows: myFinalPNRows)
+                         pnRealRows: myFinalPNRows,
+                         board: myFinalBoards?.first ?? logBoard(myGuessLog, solved: mySolved))
                     Rectangle().fill(Theme.border).frame(width: 1)
-                    side(label: opponentName, boards: theirs, accent: Color(hex: 0xEC4899), solved: oppSolved)
+                    side(label: opponentName, boards: theirs, accent: Color(hex: 0xEC4899), solved: oppSolved,
+                         board: logBoard(opponentGuessLog, solved: oppSolved))
                 }
                 // Reveal the answer so a missed board isn't a mystery. For
                 // ProperNoundle use the puzzle's display so multi-word answers
@@ -558,13 +468,22 @@ struct VSFinalBoards: View {
                 }
             }
             .padding(16).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .vsCard(radius: 14)
         }
     }
 
+    /// A single-board side rebuilt from its guess log as a solo BoardState, so
+    /// the recap draws with the solo completed-board component.
+    private func logBoard(_ log: [VSGuessLogEntry], solved: Bool) -> BoardState? {
+        guard let solution = solutions.first else { return nil }
+        let words = log.filter { $0.boardIndex == 0 }.map { $0.guess.uppercased() }
+        guard !words.isEmpty else { return nil }
+        return BoardState(solution: solution.uppercased(), guesses: words,
+                          maxGuesses: words.count, status: solved ? .won : .lost)
+    }
+
     private func side(label: String, boards: [Int: [VSResultBoards.EvaluatedRow]], accent: Color, solved: Bool,
-                      pnRealRows: [VSPNRecapRow]? = nil) -> some View {
+                      pnRealRows: [VSPNRecapRow]? = nil, board: BoardState? = nil) -> some View {
         let indices = boards.keys.sorted()
         return VStack(spacing: 8) {
             Text(label.uppercased())
@@ -572,11 +491,10 @@ struct VSFinalBoards: View {
                 .foregroundStyle(accent).lineLimit(1)
                 .minimumScaleFactor(0.7)
             // At-a-glance outcome for this side's boards.
-            HStack(spacing: 3) {
-                Image(systemName: solved ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))
-                Text(solved ? "Solved" : "Not solved").font(Brand.font(9, .heavy))
-            }
-            .foregroundStyle(solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+            Text(solved ? "SOLVED" : "NOT SOLVED").font(Brand.font(9, .black)).tracking(0.5)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 7).padding(.vertical, 3)
+                .background(Capsule().fill(solved ? VsLobbyKit.purple : Color(hex: 0x64748B)))
             if let puzzle = pnPuzzle, let rows = pnRealRows, !rows.isEmpty {
                 // ProperNoundle, MY side with a final-state snapshot: feed the
                 // REAL rows (words + tiles) so hint rows render exactly as they
@@ -604,6 +522,11 @@ struct VSFinalBoards: View {
                                                         maxGuesses: max(1, words.count))
                     }
                 }
+            } else if let board, !board.guesses.isEmpty {
+                // The solo completed board (single boards carry no frame solo).
+                let wordLen = board.solution.count
+                let tile: CGFloat = wordLen <= 5 ? 24 : (wordLen == 6 ? 21 : 18)
+                CompletedMiniBoardView(board: board, tileSize: tile, rowCount: board.guesses.count, framed: false)
             } else {
                 VStack(spacing: 12) {
                     ForEach(indices, id: \.self) { idx in
