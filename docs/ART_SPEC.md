@@ -166,3 +166,49 @@ transparency/contrast settings where the platform exposes them (fall back to the
 
 - Leaderboard / Records / recent-match rows that show a text "Win" / "Loss" chip use the
   `icon3d-badge-w` / `icon3d-badge-l` art at ~18 pt with the same accessibility label.
+
+## 14. Game titles fill the header (founder, 2026-10-02 midday)
+
+Founder: "the individual pages for the game titles … all need to be much larger on the page as
+there is a lot of open space". On every game screen header that shows `art-game-<id>` (§10):
+- Size the art by the AVAILABLE WIDTH between the corner controls (Home / ? / sound), not by a
+  fixed height: width = available width, height follows the aspect ratio, capped at 72 pt
+  (phones land around 56–68 pt). Minimum 44 pt so short names (MUDDLE) don't look tiny — if the
+  width rule gives less than 44 pt height, use 44 and let it center.
+- Tighten the header: remove leftover vertical padding so the art, not empty space, defines the
+  header height (top/bottom padding ≤ 6 pt). The corner buttons stay where they are, vertically
+  centered on the art.
+- Muddle and Gauntlet: Muddle now uses the art too (the compact header grows to fit it);
+  Gauntlet keeps its stage-name text but at the same 72 pt cap is not needed.
+- Guide sheet top art: 56 → 72 pt cap, full sheet width minus 32 pt.
+- Leaderboard / Records Play card art: 40 → 52 pt cap, fill the space left of the Play button.
+
+## 15. Game screens get a soft tint in the game's color
+
+Behind every solo game screen (not VS matches), replace the flat background with
+`PageBackground` (§11) using a per-game tint: a 3-stop diagonal gradient made from the game's
+accent (`accentHex`): stop 1 = accent at 6% over white, stop 2 = accent at 10% over white,
+stop 3 = accent at 4% over #FFF7FB; dark mode: accent at 10% / 14% / 8% over #120D1F. Tiles
+pattern on top at 8% light / 5% dark (quieter than menus). Boards, keyboards and tiles keep
+their own colors and stay fully opaque so play is never affected; card shadows use the game
+accent. Respect reduce transparency/contrast (gradient only).
+
+## 16. Title art motion
+
+Every `art-title-*`, `art-day-*` and `art-game-*` image animates once when its page appears:
+scale 0.94 → 1.03 → 1.0 and opacity 0 → 1 over 420 ms (ease-out, spring-ish), then a very slow
+idle float (translateY 0 → −2 → 0 over 4 s, forever) for page titles and day titles only (not in
+game headers during play). Reduce Motion (OS or in-app toggle): no animation, static.
+
+## 17. Share cards + widgets with the cast
+
+- Share images (the generated result / sweep / profile share cards on each platform: web
+  `lib/share-image.ts` canvas, iOS + Android share renderers): add the page-tint background
+  (home or the game's tint), the game title art (`art-game-<id>`) or `art-title-*` as the
+  header instead of plain text where a game/page name is drawn, and a small cast strip (the ten
+  mascots, ~22 px each) along the bottom above the URL/footer. Keep all numbers/grids/emoji
+  results exactly as they are and legible.
+- Home-screen widgets (iOS WidgetKit, Android app widget): background = home tint gradient
+  (no tiles at widget sizes), the day's host mascot (MASCOT_SPEC §5 / today's day art host) at
+  the corner, the flame icon3d next to the streak, and the W/L badge art for today's result where a
+  result is shown. Widget assets must be bundled in the widget target (copy what's needed).
