@@ -1443,14 +1443,14 @@ struct LeaderboardTab: View {
         // fallback showed their raw keys ("SCRAMBLE", "HUB") with no icon (founder, 2026-09-27).
         let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
-        // ART_SPEC §10: the game's title art (lettering + host, ≈40 pt) stands in for
-        // the name text and the host beside Play.
+        // ART_SPEC §10 / §14: the game's title art (lettering + host, filling the room
+        // left of Play, ≤ 52 pt tall) stands in for the name text and the host beside Play.
         let titleArt = GameTitleArt.forMode(mode)
         return HStack(spacing: 12) {
             if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
             VStack(alignment: .leading, spacing: 2) {
                 if let titleArt {
-                    GameTitleArtView(asset: titleArt.asset, label: titleArt.label, height: 40, maxWidth: 240, alignment: .leading)
+                    GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 52, alignment: .leading)
                 } else {
                     Text(m?.title ?? mode.rawValue).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                         .lineLimit(1).minimumScaleFactor(0.7)

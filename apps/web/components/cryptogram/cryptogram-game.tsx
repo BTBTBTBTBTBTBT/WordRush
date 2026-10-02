@@ -43,6 +43,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Codebreaker (More Games §16): decode a saying written in a substitution
 // cipher. Three letters are given. Letters are pencil — set, change and clear
@@ -324,12 +326,12 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${CRYPTOGRAM_ACCENT}66`, color: CRYPTOGRAM_ACCENT, background: `${CRYPTOGRAM_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <GameBackground mode="CRYPTOGRAM" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="CRYPTOGRAM" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('CRYPTOGRAM')}>
         <GameHomeButton accentColor={CRYPTOGRAM_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="codebreaker" accentColor={CRYPTOGRAM_ACCENT} />
         <SoundToggle accentColor={CRYPTOGRAM_ACCENT} />
@@ -344,7 +346,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -434,6 +436,6 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
           <BottomNav />
         </>
       )}
-    </div>
+    </GameBackground>
   );
 }

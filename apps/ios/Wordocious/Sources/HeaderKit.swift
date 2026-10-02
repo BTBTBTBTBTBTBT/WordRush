@@ -250,6 +250,10 @@ struct HeaderCircleLabel: View {
 /// The game screens' corner controls (44 pt): Home (the back control) and Help.
 struct GameCornerButton: View {
     enum Kind { case home, help }
+    /// The circles' vertical center from the screen's top: 8 pt inset + half the
+    /// 44 pt circle. Game headers center their title art on it (ART_SPEC §14).
+    static let centerY: CGFloat = 30
+
     let kind: Kind
     let action: () -> Void
 

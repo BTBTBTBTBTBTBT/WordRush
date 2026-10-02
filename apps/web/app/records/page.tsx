@@ -166,7 +166,7 @@ function GameHeaderCard({ accent, glyph, title, titleArt = null, sub, right, chi
           <GameTileChip accent={accent}>{glyph}</GameTileChip>
           <div className="flex-1 min-w-0">
             {titleArt ? (
-              <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.playCard} align="left" as="div" priority={false} className="mb-0.5" />
+              <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" priority={false} className="mb-0.5" />
             ) : (
               <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>{title}</div>
             )}

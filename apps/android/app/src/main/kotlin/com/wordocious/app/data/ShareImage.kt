@@ -15,6 +15,7 @@ import android.os.Build
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import com.wordocious.app.R
+import com.wordocious.app.ui.lightArgb
 import com.wordocious.core.BoardState
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
@@ -107,12 +108,13 @@ object ShareImage {
         val height = if (mode == GameMode.OCTORDLE || mode == GameMode.GAUNTLET) 1350 else 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
 
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val won = state.status == GameStatus.WON
         val accent = accentFor(mode)
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
 
         // ── Header (web drawHeader: wordmark@72, mode@+60, meta@+48) ─────────────
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
@@ -124,7 +126,8 @@ object ShareImage {
         p.shader = null
 
         p.textSize = 38f; p.color = accent
-        c.drawText(modeLabel, cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, mode.name, cx)) c.drawText(modeLabel, cx, 152f, p)
 
         val board0 = state.boards[0]
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
@@ -184,7 +187,7 @@ object ShareImage {
 
         // ── Board area (between header and footer) ──────────────────────────────
         val areaTop = headerBottom + 16f
-        val areaBottom = height - 80f
+        val areaBottom = height - 80f - ShareArt.STRIP_BAND
         when {
             mode == GameMode.GAUNTLET -> drawGauntlet(c, p, state, areaTop, areaBottom, black, bold)
             state.boards.size > 1 -> drawMulti(c, state, areaTop, areaBottom, reveal, black)
@@ -201,6 +204,8 @@ object ShareImage {
 
         // ── Footer ───────────────────────────────────────────────────────────────
         p.typeface = bold; p.isFakeBoldText = false; p.textSize = 22f; p.color = FOOT
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -454,10 +459,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFF1E40AF.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -465,7 +471,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("SUDOCIOUS", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "SUDOKU", cx)) c.drawText("SUDOCIOUS", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -488,7 +495,7 @@ object ShareImage {
         // Board card: 720 square, squares gapped 4 with a wider 12 gap between boxes.
         val side = 720f; val pad = 16f; val gap = 4f; val boxGap = 12f
         val cell = (side - pad * 2 - gap * 6 - boxGap * 2) / 9f
-        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f - ShareArt.STRIP_BAND
         val x0 = cx - side / 2f; val y0 = areaTop + (areaBottom - areaTop - side) / 2f
         val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         fill.color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
@@ -507,6 +514,8 @@ object ShareImage {
             c.drawRoundRect(RectF(x, y, x + cell, y + cell), rad, rad, fill)
         }
         p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -521,10 +530,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFFCA8A04.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -532,7 +542,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("STARSWEEP", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "REGIONS", cx)) c.drawText("STARSWEEP", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -555,7 +566,7 @@ object ShareImage {
         val count = maxOf(1, n)
         val side = 720f; val pad = 16f; val gap = 4f
         val cell = (side - pad * 2 - gap * (count - 1)) / count
-        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f - ShareArt.STRIP_BAND
         val x0 = cx - side / 2f; val y0 = areaTop + (areaBottom - areaTop - side) / 2f
         val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         fill.color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
@@ -578,6 +589,8 @@ object ShareImage {
             }
         }
         p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -592,10 +605,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFF0284C7.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -603,7 +617,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("LETTER LADDER", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "LADDER", cx)) c.drawText("LETTER LADDER", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -628,7 +643,7 @@ object ShareImage {
         val rows = ArrayList<Rw>()
         list.forEachIndexed { i, w -> rows.add(Rw(w, if (i > 0) list[i - 1] else null, if (i == 0) "start" else if (hintMask.getOrNull(i) == '1') "hint" else "rung")) }
         if (list.last() != end) rows.add(Rw(end, null, "end"))
-        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f - ShareArt.STRIP_BAND
         val gap = 10f
         val tile = minOf(96f, ((areaBottom - areaTop - 40f) - gap * (rows.size - 1)) / rows.size, (W - 200f - gap * 4) / 5f)
         val boardW = tile * 5 + gap * 4; val boardH = tile * rows.size + gap * (rows.size - 1)
@@ -653,6 +668,8 @@ object ShareImage {
             }
         }
         p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -665,10 +682,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFF4D7C0F.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -676,7 +694,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("SPYGLASS", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "WORDSEARCH", cx)) c.drawText("SPYGLASS", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -699,7 +718,7 @@ object ShareImage {
         val count = maxOf(1, n)
         val side = 720f; val pad = 24f
         val cell = (side - pad * 2) / count
-        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f - ShareArt.STRIP_BAND
         val x0 = cx - side / 2f; val y0 = areaTop + (areaBottom - areaTop - side) / 2f
         val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         fill.color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
@@ -716,6 +735,8 @@ object ShareImage {
         fill.color = 0xFFC4B5FD.toInt()
         for (r in 0 until count) for (col in 0 until count) { val (px, py) = center(r, col); c.drawCircle(px, py, cell * 0.12f, fill) }
         p.typeface = bold; p.textSize = 22f; p.color = FOOT; p.textAlign = Paint.Align.CENTER
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -728,10 +749,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFFC026D3.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -739,7 +761,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("HUBBUB", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "HUB", cx)) c.drawText("HUBBUB", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -761,7 +784,7 @@ object ShareImage {
         }
         val tile = 150f; val gap = 18f
         val clusterH = tile * 3 + gap * 2
-        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f
+        val areaTop = rowTop + rowH + 30f; val areaBottom = height - 80f - ShareArt.STRIP_BAND
         val y0 = areaTop + (areaBottom - areaTop - clusterH - 200f) / 2f
         val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 4f; color = 0xFFD1D5DB.toInt() }
@@ -780,6 +803,8 @@ object ShareImage {
         p.typeface = bold; p.textSize = 30f; p.color = TEXT_MUTED
         c.drawText("$pct% of the maximum", cx, y0 + clusterH + 146f, p)
         p.textSize = 22f; p.color = FOOT
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -793,10 +818,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFF92400E.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -804,7 +830,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("CODEBREAKER", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "CRYPTOGRAM", cx)) c.drawText("CODEBREAKER", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -828,7 +855,7 @@ object ShareImage {
         // Words wrapped whole; the cell size shrinks until the block fits above the headline.
         val words = cipher.split(" ").filter { it.isNotEmpty() }
         val margin = 80f
-        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f - ShareArt.STRIP_BAND
         fun widthOf(w: String, cell: Float, gap: Float): Float =
             w.sumOf { ch -> (if (ch in 'A'..'Z') cell + gap else cell * 0.45f + gap).toDouble() }.toFloat() - gap
         var cell = 64f
@@ -881,10 +908,12 @@ object ShareImage {
         }
 
         p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
-        c.drawText(if (won) "CODE CRACKED" else "ANSWER REVEALED", cx, height - 150f, p)
+        c.drawText(if (won) "CODE CRACKED" else "ANSWER REVEALED", cx, height - 150f - ShareArt.STRIP_BAND, p)
         p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
-        c.drawText(if (checks == 0) "No checks" else "$checks check${if (checks == 1) "" else "s"}", cx, height - 104f, p)
+        c.drawText(if (checks == 0) "No checks" else "$checks check${if (checks == 1) "" else "s"}", cx, height - 104f - ShareArt.STRIP_BAND, p)
         p.textSize = 22f; p.color = FOOT
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -898,10 +927,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFF9F1239.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -909,7 +939,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("KINDRED", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "GROUPS", cx)) c.drawText("KINDRED", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -939,7 +970,7 @@ object ShareImage {
         val rows = solved.size + (if (won) 0 else unsolved.size)
         val dotsH = 60f
         val blockH = rows * barH + (rows - 1).coerceAtLeast(0) * barGap + dotsH
-        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f - ShareArt.STRIP_BAND
         var y = areaTop + (areaBottom - areaTop - blockH) / 2f
         val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         val pip = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -983,10 +1014,12 @@ object ShareImage {
         }
 
         p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
-        c.drawText(if (won) (if (mistakes == 0) "FLAWLESS" else "ALL FOUR GROUPS") else "OUT OF MISTAKES", cx, height - 150f, p)
+        c.drawText(if (won) (if (mistakes == 0) "FLAWLESS" else "ALL FOUR GROUPS") else "OUT OF MISTAKES", cx, height - 150f - ShareArt.STRIP_BAND, p)
         p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
-        c.drawText("${solved.size}/4 groups · $mistakes mistake${if (mistakes == 1) "" else "s"}", cx, height - 104f, p)
+        c.drawText("${solved.size}/4 groups · $mistakes mistake${if (mistakes == 1) "" else "s"}", cx, height - 104f - ShareArt.STRIP_BAND, p)
         p.textSize = 22f; p.color = FOOT
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -1000,10 +1033,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFF475569.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -1011,7 +1045,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("CROSSWORDOCIOUS", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "CROSSWORD", cx)) c.drawText("CROSSWORDOCIOUS", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -1035,7 +1070,7 @@ object ShareImage {
         // The silhouette, centered in the area above the headline; cells shrink to fit the wider axis.
         val cols = maxOf(1, w); val rows = maxOf(1, h)
         val margin = 120f
-        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f - ShareArt.STRIP_BAND
         val gapRatio = 0.08f
         val cell = minOf(
             (W - 2 * margin) / (cols + gapRatio * (cols - 1)),
@@ -1059,10 +1094,12 @@ object ShareImage {
         }
 
         p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
-        c.drawText(if (won) "GRID FINISHED" else "PUZZLE REVEALED", cx, height - 150f, p)
+        c.drawText(if (won) "GRID FINISHED" else "PUZZLE REVEALED", cx, height - 150f - ShareArt.STRIP_BAND, p)
         p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
-        c.drawText(if (checks == 0) "No checks" else "$checks check${if (checks == 1) "" else "s"}", cx, height - 104f, p)
+        c.drawText(if (checks == 0) "No checks" else "$checks check${if (checks == 1) "" else "s"}", cx, height - 104f - ShareArt.STRIP_BAND, p)
         p.textSize = 22f; p.color = FOOT
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -1081,10 +1118,11 @@ object ShareImage {
         val height = 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val accent = 0xFFF97316.toInt()
+        // ART_SPEC §17: the game's §15 tint (+ quiet tiles) behind the card.
+        ShareArt.drawGameTint(context, c, accent)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
         p.typeface = black; p.textSize = 56f
@@ -1092,7 +1130,8 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
         p.textSize = 38f; p.color = accent
-        c.drawText("MUDDLE", cx, 152f, p)
+        // §17 the game's title art in place of its name (the text stays as the fallback).
+        if (!ShareArt.drawGameTitle(context, c, "SCRAMBLE", cx)) c.drawText("MUDDLE", cx, 152f, p)
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val metaText = "$meta · $date"
         val rowTop = 180f; val rowH = 38f; val rowGap = 12f
@@ -1116,7 +1155,7 @@ object ShareImage {
         // The board (web drawScramble): four rows on ONE six-column grid, then the punchline row.
         val emptyFill = 0xFFFFFFFF.toInt(); val ring = 0xFF7C3AED.toInt()
         val lilac = 0xFFF5F3FF.toInt(); val lilacBorder = 0xFFC4B5FD.toInt()
-        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f
+        val areaTop = rowTop + rowH + 40f; val areaBottom = height - 230f - ShareArt.STRIP_BAND
         val areaH = areaBottom - areaTop
         val gap = 10f; val rowGapT = 26f; val cols = 6
         val tile = minOf(84f, floor((W - 200f - gap * (cols - 1)) / cols), floor((areaH - 120f - rowGapT * 5) / 5))
@@ -1163,10 +1202,12 @@ object ShareImage {
         }
 
         p.typeface = black; p.textSize = 56f; p.color = accent; p.textAlign = Paint.Align.CENTER
-        c.drawText(if (won) "MUDDLE SOLVED" else "OUT OF CHECKS", cx, height - 150f, p)
+        c.drawText(if (won) "MUDDLE SOLVED" else "OUT OF CHECKS", cx, height - 150f - ShareArt.STRIP_BAND, p)
         p.typeface = bold; p.textSize = 28f; p.color = TEXT_MUTED
-        c.drawText("$solvedCount/5 solved · $checks check${if (checks == 1) "" else "s"}", cx, height - 104f, p)
+        c.drawText("$solvedCount/5 solved · $checks check${if (checks == 1) "" else "s"}", cx, height - 104f - ShareArt.STRIP_BAND, p)
         p.textSize = 22f; p.color = FOOT
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, height - 40f)
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
@@ -1211,10 +1252,13 @@ object ShareImage {
     fun renderVs(
         context: Context, modeLabel: String, accent: Int,
         isWin: Boolean, isDraw: Boolean, me: VsShareSide, opp: VsShareSide,
+        /** ART_SPEC §17: the battle's mode db key, for its title art under the wordmark. */
+        modeKey: String? = null,
     ): Bitmap {
         val bmp = Bitmap.createBitmap(W, 1080, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
+        // ART_SPEC §17: the §11 VS page tint (+ tiles) behind the card.
+        ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), 0.12f)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
@@ -1227,7 +1271,9 @@ object ShareImage {
         c.drawText("WORDOCIOUS", cx, 128f, p)
         p.shader = null
         p.textSize = 40f; p.color = accent
-        c.drawText(modeLabel, cx, 192f, p)
+        // §17 the mode's title art in place of the "VS <mode>" text (the text stays as the fallback).
+        val modeArt = com.wordocious.app.ui.gameTitleArtResForKey(modeKey)
+        if (modeArt == null || ShareArt.drawArt(context, c, modeArt, cx, 146f, 700f, 66f) == null) c.drawText(modeLabel, cx, 192f, p)
 
         val date = SimpleDateFormat("MMM d, yyyy", Locale.US).format(Date())
         p.typeface = bold; p.textSize = 24f; p.color = TEXT_MUTED
@@ -1268,7 +1314,7 @@ object ShareImage {
         val boardsBlockH = cardH * shownN + 14f * (shownN - 1)
         val headerBlockH = 158f            // name/score/solved block above the boards
         val contentTop = 316f              // below the pill
-        val contentBottom = 990f           // above the footer
+        val contentBottom = 990f - ShareArt.STRIP_BAND // above the cast strip + footer
         val blockH = headerBlockH + boardsBlockH
         val blockTop = contentTop + maxOf(0f, (contentBottom - contentTop - blockH) / 2f)
         val nameBaseline = blockTop + 28f
@@ -1302,6 +1348,8 @@ object ShareImage {
         p.typeface = black; p.textSize = 44f; p.color = TEXT_MUTED
         c.drawText("VS", cx, blockTop + headerBlockH + boardsBlockH / 2f + 15f, p)
 
+        // §17 the cast strip above the footer.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, 1080f - 40f)
         p.typeface = bold; p.textSize = 22f; p.color = FOOT
         c.drawText("wordocious.com", cx, 1080f - 40f, p)
         return bmp

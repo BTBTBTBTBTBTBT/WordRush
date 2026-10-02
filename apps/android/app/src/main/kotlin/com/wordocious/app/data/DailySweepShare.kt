@@ -91,20 +91,28 @@ object DailySweepShare {
         context: Context, rows: List<Row>, totals: DailyCompletionsService.Totals, flawless: Boolean,
         /** Headline override — the More Games Sweep card (founder, 2026-09-26). */
         title: String? = null,
+        /** ART_SPEC §17: the Puzzles card (the ten More Games dailies) heads with the PUZZLES art. */
+        puzzles: Boolean = false,
     ): Bitmap {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
+        // ART_SPEC §17: the home tint (+ tiles) behind the card.
+        ShareArt.drawHomeTint(context, c)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
 
-        // Wordmark
-        p.typeface = black; p.isFakeBoldText = false; p.textSize = 56f
-        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
-        c.drawText("WORDOCIOUS", cx, 92f, p)
-        p.shader = null
+        // §17 the section's whole-cast title art (WORDOCIOUS DAILIES / PUZZLES) in place
+        // of the wordmark; the wordmark stays as the fallback.
+        val headerArt = if (puzzles) R.drawable.art_title_puzzles else R.drawable.art_title_dailies
+        if (ShareArt.drawArt(context, c, headerArt, cx, 20f, W - 200f, 92f) == null) {
+            p.typeface = black; p.isFakeBoldText = false; p.textSize = 56f
+            p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+            c.drawText("WORDOCIOUS", cx, 92f, p)
+            p.shader = null
+        }
+        p.typeface = black; p.isFakeBoldText = false
 
         // Title
         p.textSize = 52f
@@ -125,7 +133,7 @@ object DailySweepShare {
 
         // Rows
         val padH = 90f; val gap = 16f
-        val areaTop = 250f; val areaBottom = H - 80f
+        val areaTop = 250f; val areaBottom = H - 80f - ShareArt.STRIP_BAND
         val n = rows.size
         val rowH = floor((areaBottom - areaTop - gap * (n - 1)) / n)
         for (i in 0 until n) {
@@ -203,7 +211,8 @@ object DailySweepShare {
             p.textAlign = Paint.Align.CENTER
         }
 
-        // Footer
+        // Footer, with the §17 cast strip above it.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, H - 40f)
         p.typeface = bold; p.isFakeBoldText = false; p.textSize = 22f; p.color = FOOT
         c.drawText("wordocious.com", cx, H - 40f, p)
         return bmp
@@ -239,7 +248,7 @@ object DailySweepShare {
         if (rows.isEmpty()) return
         val totals = moreTotalsAsTotals(byMode)
         val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
-        val bitmap = render(context, rows, totals, flawless, title = moreCardTitle(byMode))
+        val bitmap = render(context, rows, totals, flawless, title = moreCardTitle(byMode), puzzles = true)
         val text = if (flawless) "Puzzles Flawless on Wordocious! All ${totals.total} puzzles won."
                    else "Puzzles Sweep on Wordocious! All ${totals.total} puzzles done."
         val uri = writePng(context, bitmap, "wordocious-moregames.png")
@@ -291,7 +300,7 @@ object DailySweepShare {
             val moreTotals = moreTotalsAsTotals(byMode)
             val flawless = com.wordocious.app.ui.moreSweepTier(byMode) == com.wordocious.app.ui.MoreSweepTier.FLAWLESS
             val title = if (wordRows.isEmpty()) headline else moreCardTitle(byMode)
-            writePng(context, render(context, moreRows, moreTotals, flawless, title = title), "wordocious-puzzles.png")?.let(uris::add)
+            writePng(context, render(context, moreRows, moreTotals, flawless, title = title, puzzles = true), "wordocious-puzzles.png")?.let(uris::add)
         }
         val text = "$headline\nwordocious.com"
         ShareEvents.log(if (uris.isNotEmpty()) "image" else "text", "", "home_banner")
@@ -398,7 +407,8 @@ object ProfileShare {
     fun render(context: Context, input: ProfileInput): Bitmap {
         val bmp = Bitmap.createBitmap(S, S, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        c.drawColor(BG)
+        // ART_SPEC §17: the home tint (+ tiles) behind the card.
+        ShareArt.drawHomeTint(context, c)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
@@ -429,7 +439,7 @@ object ProfileShare {
         )
         val padH = 80f; val gap = 24f
         val tileW = (S - padH * 2 - gap) / 2
-        val areaTop = 340f; val areaBottom = (S - 90).toFloat()
+        val areaTop = 340f; val areaBottom = (S - 90).toFloat() - ShareArt.STRIP_BAND
         val tileH = (areaBottom - areaTop - gap * 2) / 3
         for (i in tiles.indices) {
             val col = i % 2; val rowIdx = i / 2
@@ -446,7 +456,8 @@ object ProfileShare {
             c.drawText(tiles[i].second, rect.centerX(), rect.centerY() + 56f, p)
         }
 
-        // Footer
+        // Footer, with the §17 cast strip above it.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, S - 44f, footerTextSize = 24f)
         p.typeface = bold; p.isFakeBoldText = false; p.textSize = 24f; p.color = FOOT
         c.drawText("wordocious.com", cx, S - 44f, p)
         return bmp

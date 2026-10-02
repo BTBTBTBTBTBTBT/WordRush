@@ -1,8 +1,7 @@
 import Image from 'next/image';
 import { CAST, gameHost, mascotSrc, type MascotId } from '@/lib/mascots';
 import { Icon3D } from '@/components/ui/icon3d';
-import { ArtTitle } from '@/components/ui/art-title';
-import { GAME_TITLE_ART_HEIGHT, gameTitleArtForDbKey } from '@/lib/art';
+import { ART_SIZE, GAME_HEADER, GAME_TITLE_ART_HEIGHT, artSrc, gameHeaderArtHeight, gameTitleArtForDbKey } from '@/lib/art';
 
 // The cast components (docs/MASCOT_SPEC.md §0): Mascot(id, size, motion) and
 // CastRow(size, motion). Decorative only: aria-hidden, empty alt, never takes a
@@ -141,10 +140,12 @@ export function BannerHost({ id, crown = false, children }: { id: MascotId; crow
  * §5 game screen title: the game's 30 px host standing at the left of its
  * title, static (no motion during play). Wraps the existing h1 unchanged.
  *
- * ART_SPEC §10: given `label` (the game title, the art's accessible name) and a
- * game with title art, the art (lettering + host in one image) draws instead,
- * ≈38 px tall, fit to the width between the header's corner buttons. Headers
- * too tight for it (Muddle's compact header) pass no label and keep the text.
+ * ART_SPEC §10 + §14: given `label` (the game title, the art's accessible name)
+ * and a game with title art, the art (lettering + host in one image) draws
+ * instead, sized by the width between the header's corner buttons (height
+ * follows the aspect ratio, 44–72 px; lib/art.ts gameHeaderArtHeight). The
+ * header takes `game-art-header` + gameHeaderStyle(mode) so it hugs the art
+ * and the corner buttons center on it. The art pops in once (§16), no float.
  */
 export function GameHostTitle({ mode, label, className = '', children }: {
   mode: string;
@@ -154,9 +155,30 @@ export function GameHostTitle({ mode, label, className = '', children }: {
 }) {
   const art = label ? gameTitleArtForDbKey(mode) : null;
   if (art && label) {
-    // px-14 keeps the art clear of the 44 px corner buttons (left-2 / right-2);
     // `className` is the text title's (e.g. Crosswordocious' px-12), not used here.
-    return <ArtTitle name={art} label={label} height={GAME_TITLE_ART_HEIGHT.header} as="h1" className="px-14" />;
+    const [w, h] = ART_SIZE[art];
+    return (
+      <h1 className="flex justify-center m-0 select-none" style={{ lineHeight: 0, height: gameHeaderArtHeight(art) }}>
+        <Image
+          src={artSrc(art)}
+          alt={label}
+          width={w}
+          height={h}
+          priority
+          draggable={false}
+          sizes={`${Math.ceil((GAME_TITLE_ART_HEIGHT.header * w) / h)}px`}
+          className="block pointer-events-none art-pop"
+          style={{
+            aspectRatio: `${w} / ${h}`,
+            height: '100%',
+            width: 'auto',
+            // Never under the corner buttons, even where the header is narrower than the viewport.
+            maxWidth: `calc(100% - ${GAME_HEADER.clearance * 2}px)`,
+            objectFit: 'contain',
+          }}
+        />
+      </h1>
+    );
   }
   const id = gameHost(mode);
   return (

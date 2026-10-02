@@ -13,7 +13,7 @@ interface SoundToggleProps {
 // HEADER_SPEC §4: a right-side header action, the same soft white circle as
 // every header button; `accentColor` is kept for callers but no longer tints it.
 export function SoundToggle({
-  positionClass = 'absolute top-2 right-2 z-10',
+  positionClass = 'absolute top-[var(--game-corner-top,0.5rem)] right-2 z-10',
 }: SoundToggleProps) {
   const [enabled, setEnabled] = useState(() => isSoundEnabled());
 

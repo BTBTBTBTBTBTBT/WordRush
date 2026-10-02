@@ -19,6 +19,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import com.wordocious.app.ModeGen
 import com.wordocious.app.R
+import com.wordocious.app.ui.lightArgb
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.yesterdayLocalDate
 import io.github.jan.supabase.storage.storage
@@ -83,6 +84,14 @@ object LeaderboardShare {
         // §244/§245: the gold family — pure brags wear the medal identity.
         Variant.FLAWLESS_STREAK, Variant.TROPHY_CASE ->
             Theme(0xFFFFFBEB.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFFD97706.toInt())
+    }
+
+    /** §17 The card's header art: the page the board lives on. */
+    private fun headerArt(v: Variant): Int = when (v) {
+        Variant.VS -> R.drawable.art_title_vs
+        Variant.FRIENDS, Variant.FRIENDS_PODIUM, Variant.WEEKLY_RACE -> R.drawable.art_title_friends
+        Variant.TROPHY_CASE -> R.drawable.art_title_records
+        else -> R.drawable.art_title_leaderboard
     }
 
     private fun label(v: Variant): String = when (v) {
@@ -799,7 +808,13 @@ object LeaderboardShare {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         val th = theme(input.variant)
-        c.drawColor(th.bg)
+        // ART_SPEC §17: the page-tint background (+ tiles) — a single game's board takes
+        // that game's §15 tint, the VS board the VS tint, the rest the home tint.
+        when (input.variant) {
+            Variant.SOLO, Variant.PODIUM, Variant.FRIENDS, Variant.FRIENDS_PODIUM -> ShareArt.drawGameTint(context, c, input.accent)
+            Variant.VS -> ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), 0.12f)
+            else -> ShareArt.drawHomeTint(context, c)
+        }
 
         val black = nunito(context, 900)
         val w800 = nunito(context, 800)
@@ -807,12 +822,16 @@ object LeaderboardShare {
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
 
-        // Wordmark — the established two-tone (violet→pink) treatment.
+        // §17 the page's whole-cast title art (LEADERBOARD / VS BATTLE / FRIENDS / ALL-TIME
+        // RECORDS) as the header; the two-tone wordmark stays as the fallback.
         val wordmarkY = 96f
-        p.typeface = black; p.textSize = 60f
-        p.shader = LinearGradient(cx - 220f, 0f, cx + 220f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
-        c.drawText("WORDOCIOUS", cx, wordmarkY, p)
-        p.shader = null
+        if (ShareArt.drawArt(context, c, headerArt(input.variant), cx, 22f, W - 200f, 104f) == null) {
+            p.typeface = black; p.textSize = 60f
+            p.shader = LinearGradient(cx - 220f, 0f, cx + 220f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+            c.drawText("WORDOCIOUS", cx, wordmarkY, p)
+            p.shader = null
+        }
+        p.typeface = black
 
         // Letterspaced variant label (web letterSpacing: 10px @ 36px ≈ 0.278em).
         val labelY = wordmarkY + 74f
@@ -861,7 +880,7 @@ object LeaderboardShare {
         val panelW = W - panelX * 2
         val areaTop = chipY + chipH + 40f
         val footerY = H - 52f
-        val areaBottom = footerY - 46f
+        val areaBottom = footerY - 46f - ShareArt.STRIP_BAND
         val pad = 16f
         val dividerH = if (input.you != null) 46f else 0f
         val nRows = input.rows.size + (if (input.you != null) 1 else 0)
@@ -907,7 +926,8 @@ object LeaderboardShare {
             }
         }
 
-        // Footer hook.
+        // §17 the cast strip, then the footer hook.
+        ShareArt.drawCastStripAboveFooter(context, c, cx, footerY + 30f, footerTextSize = 29f)
         p.typeface = w800; p.textSize = 29f; p.color = th.footer
         p.textAlign = Paint.Align.CENTER
         c.drawText(input.footer, cx, footerY + 30f, p)

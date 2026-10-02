@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.findRootCoordinates
@@ -109,15 +110,30 @@ private fun rememberHighContrast(): Boolean {
  * [alwaysLight]: the VS and Friends pages are fixed-light designs (white cards, fixed
  * ink) in every theme, so they keep the light stops there too.
  */
-fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modifier = composed {
-    val dark = WTheme.isDark && !alwaysLight
+fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modifier =
+    tintBackground(tint.light, tint.dark, TILE_ALPHA_LIGHT, TILE_ALPHA_DARK, alwaysLight)
+
+/**
+ * The shared tint painter behind §11 pages and §15 game screens: a 3-stop diagonal
+ * gradient across the window ([light] / [dark] stops by the theme) with the tile
+ * pattern on top at [tileLight] / [tileDark] alpha (dropped under the contrast
+ * settings: gradient only).
+ */
+private fun Modifier.tintBackground(
+    light: List<Color>,
+    dark: List<Color>,
+    tileLight: Float,
+    tileDark: Float,
+    alwaysLight: Boolean = false,
+): Modifier = composed {
+    val isDark = WTheme.isDark && !alwaysLight
     val tiles: ImageBitmap = ImageBitmap.imageResource(R.drawable.art_bg_tiles)
     val tileBrush = remember(tiles) { ShaderBrush(ImageShader(tiles, TileMode.Repeated, TileMode.Repeated)) }
     val highContrast = rememberHighContrast()
     var origin by remember { mutableStateOf(Offset.Zero) }
     var rootSize by remember { mutableStateOf(Size.Zero) }
-    val stops = if (dark) tint.dark else tint.light
-    val tileAlpha = if (dark) TILE_ALPHA_DARK else TILE_ALPHA_LIGHT
+    val stops = if (isDark) dark else light
+    val tileAlpha = if (isDark) tileDark else tileLight
     this
         .onGloballyPositioned { c ->
             origin = c.positionInRoot()
@@ -145,6 +161,36 @@ fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modif
         }
 }
 
+// ── §15 Game screens: a soft tint in the game's color ─────────────────────
+
+/** §15 Tiles behind a game: quieter than the menus (8% light / 5% dark). */
+private const val GAME_TILE_ALPHA_LIGHT = 0.08f
+private const val GAME_TILE_ALPHA_DARK = 0.05f
+
+/**
+ * The accent of the solo game on screen (§15), provided by MainScreen around the
+ * game screens; null everywhere else (menus, VS matches, pocket games).
+ */
+val LocalGameTint = compositionLocalOf<Color?> { null }
+
+/**
+ * §15 The game screen background: the game's accent ([LocalGameTint]) as a 3-stop
+ * diagonal gradient (see [TintMath.gameLight] / [TintMath.gameDark]) with the tiles
+ * at 8% / 5%. Boards, keyboards and tiles draw their own opaque fills on top, so
+ * play is never affected. Off a game (no tint provided) it keeps [fallback], the
+ * screen's old flat background.
+ */
+fun Modifier.gameBackground(fallback: Modifier.() -> Modifier): Modifier = composed {
+    val accent = LocalGameTint.current
+    if (accent == null) fallback()
+    else {
+        val argb = accent.toArgb()
+        val light = remember(argb) { TintMath.gameLight(argb).map { Color(it) } }
+        val dark = remember(argb) { TintMath.gameDark(argb).map { Color(it) } }
+        tintBackground(light, dark, GAME_TILE_ALPHA_LIGHT, GAME_TILE_ALPHA_DARK)
+    }
+}
+
 /**
  * §11 One shared page background: [tint] behind [content] (edge to edge), and the
  * tint provided to the cards inside so their shadows lean toward its accent.
@@ -168,15 +214,49 @@ fun PageBackground(
  * older devices draw the platform's neutral shadow.
  */
 internal fun Modifier.pageCardShadow(radius: Dp, fallback: Modifier.() -> Modifier): Modifier = composed {
-    val tint = LocalPageTint.current
-    if (tint == null) fallback()
+    // §15 on a game screen the shadow leans toward the game's accent.
+    val accent = LocalPageTint.current?.accent ?: LocalGameTint.current
+    if (accent == null) fallback()
     else this.shadow(
         elevation = 5.dp,
         shape = RoundedCornerShape(radius),
         clip = false,
         // The platform scales these by its own shadow alphas (spot ≈0.19, ambient ≈0.04),
         // which lands the visible lift at ~11% of the accent.
-        ambientColor = tint.accent.copy(alpha = 0.35f),
-        spotColor = tint.accent.copy(alpha = 0.6f),
+        ambientColor = accent.copy(alpha = 0.35f),
+        spotColor = accent.copy(alpha = 0.6f),
     )
+}
+
+/** §11 [PageTint]'s light stops as ARGB ints (the share cards and the home-screen widget). */
+fun PageTint.lightArgb(): IntArray = light.map { it.toArgb() }.toIntArray()
+
+/**
+ * §15 Pure tint math (ARGB ints, no Android): the per-game gradient stops made from
+ * the game's accent. Light: accent at 6% / 10% over white, 4% over #FFF7FB; dark:
+ * accent at 10% / 14% / 8% over #120D1F. Shared by the game screens and the
+ * share cards (§17) so both paint the same pixels.
+ */
+object TintMath {
+    private const val WHITE = 0xFFFFFFFF.toInt()
+    private const val BLUSH = 0xFFFFF7FB.toInt()
+    private const val NIGHT = 0xFF120D1F.toInt()
+
+    /** [color] at [alpha] over the opaque [base] (a plain source-over blend), opaque result. */
+    fun over(color: Int, alpha: Float, base: Int): Int {
+        fun ch(shift: Int): Int {
+            val c = (color ushr shift) and 0xFF
+            val b = (base ushr shift) and 0xFF
+            return Math.round(c * alpha + b * (1f - alpha)).coerceIn(0, 255)
+        }
+        return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    /** §15 light stops (top-left → bottom-right) for a game [accent]. */
+    fun gameLight(accent: Int): IntArray =
+        intArrayOf(over(accent, 0.06f, WHITE), over(accent, 0.10f, WHITE), over(accent, 0.04f, BLUSH))
+
+    /** §15 dark stops for a game [accent]. */
+    fun gameDark(accent: Int): IntArray =
+        intArrayOf(over(accent, 0.10f, NIGHT), over(accent, 0.14f, NIGHT), over(accent, 0.08f, NIGHT))
 }

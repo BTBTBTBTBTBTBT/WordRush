@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gameCornerCentered
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -694,11 +696,15 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     onEnter = { vm.submit(applyToAll = isApplyToAll) },
                 )(k)
             }
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(WTheme.bg, WTheme.surfaceHover), // #F8F7FF → #F3F0FF
-                ),
-            )
+            // §15 the game's own soft tint (+ quiet tiles) behind the board; off a game
+            // context the old #F8F7FF → #F3F0FF gradient.
+            .gameBackground {
+                background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(WTheme.bg, WTheme.surfaceHover), // #F8F7FF → #F3F0FF
+                    ),
+                )
+            }
             // Keep content below the status bar. The gradient still paints
             // behind it (the inset is applied AFTER the background), but the
             // corner Home/? buttons were colliding with the clock and status
@@ -709,8 +715,10 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
             // Centered gradient mode title + progress + live clock (spec Part 2 Headers)
             val board0 = state.boards[0]
+            // §14 tight header: the title art, not padding, sets its height (≤ 6 dp
+            // above / below); Gauntlet keeps its stepper spacing.
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = if (mode == GameMode.GAUNTLET) 8.dp else 4.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Gauntlet gets a 5-node stepper above the stage name (spec line 102).
@@ -975,7 +983,7 @@ internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
             com.wordocious.app.data.SettingsPref.set(com.wordocious.app.data.SettingsPref.SOUND, enabled)
         },
         contentDescription = if (enabled) "Mute sounds" else "Unmute sounds",
-        modifier = modifier,
+        modifier = modifier.gameCornerCentered(),
         size = GAME_CORNER,
     ) {
         // The 3D sound icon (ART_SPEC §5, ~1.2× the old glyph); muted = faded + desaturated.
@@ -997,7 +1005,7 @@ internal val GAME_CORNER = 44.dp
  */
 @Composable
 internal fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    com.wordocious.app.ui.HeaderCircle(onClick, "Home", modifier, size = GAME_CORNER) {
+    com.wordocious.app.ui.HeaderCircle(onClick, "Home", modifier.gameCornerCentered(), size = GAME_CORNER) {
         Icon(
             androidx.compose.material.icons.Icons.Filled.Home,
             contentDescription = null,
@@ -1011,7 +1019,7 @@ internal fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modi
 @Composable
 internal fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     com.wordocious.app.ui.HeaderIconButton(
-        com.wordocious.app.ui.Icon3DName.HELP, "Help", onClick, modifier, size = GAME_CORNER, iconSize = 26.dp,
+        com.wordocious.app.ui.Icon3DName.HELP, "Help", onClick, modifier.gameCornerCentered(), size = GAME_CORNER, iconSize = 26.dp,
     )
 }
 

@@ -201,7 +201,7 @@ struct LadderView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.ladder))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; LadderBoardView(vm: vm, revealPath: vm.state.status == .lost).padding(.horizontal, 6); result }.padding(.horizontal, 10) }
             } else {
@@ -250,6 +250,8 @@ struct LadderView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.ladder))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("LADDER")
         .swipeToGoBack { dismiss() }
@@ -284,7 +286,7 @@ struct LadderView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("LETTER LADDER").font(Brand.font(24, .black)).foregroundStyle(ladderAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.ladder, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.ladder, inset: 46, centerY: GameCornerButton.centerY)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("Par \(vm.state.par)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -300,7 +302,6 @@ struct LadderView: View {
                 }
             }
         }
-        .padding(.top, 6)
     }
 
     private var result: some View {

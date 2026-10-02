@@ -361,7 +361,7 @@ struct ProperNoundleView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.propernoundle))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.puzzle == nil {
                 Text("No puzzle available").foregroundStyle(Theme.textMuted)
             } else if vm.isFinished {
@@ -423,6 +423,8 @@ struct ProperNoundleView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.propernoundle))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("PROPERNOUNDLE")
         // Left-edge swipe → back to Home (parity with the web back gesture).
@@ -443,7 +445,7 @@ struct ProperNoundleView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.propernoundle, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.propernoundle, inset: 46, centerY: GameCornerButton.centerY)
             HStack(spacing: 8) {
                 if let p = vm.puzzle {
                     Text(categoryLabel(p.themeCategory))
@@ -472,7 +474,6 @@ struct ProperNoundleView: View {
                     .multilineTextAlignment(.center).padding(.horizontal, 20)
             }
         }
-        .padding(.top, 6)
     }
 
     private var hints: some View { NoundleHints(vm: vm) }

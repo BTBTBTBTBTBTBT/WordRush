@@ -314,7 +314,7 @@ struct CrosswordView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.crossword))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView {
                     VStack(spacing: 12) {
@@ -393,6 +393,8 @@ struct CrosswordView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.crossword))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("CROSSWORD")
         .swipeToGoBack { dismiss() }
@@ -429,7 +431,7 @@ struct CrosswordView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("CROSSWORDOCIOUS").font(Brand.font(24, .black)).foregroundStyle(crosswordAccent)
-                .lineLimit(1).minimumScaleFactor(0.6).gameTitleArt(.crossword).padding(.horizontal, 48)
+                .lineLimit(1).minimumScaleFactor(0.6).gameTitleArt(.crossword, centerY: GameCornerButton.centerY).padding(.horizontal, 48)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 48)
             HStack(spacing: 8) {
@@ -449,7 +451,6 @@ struct CrosswordView: View {
             }
             .lineLimit(1).minimumScaleFactor(0.8)
         }
-        .padding(.top, 6)
     }
 
     private var result: some View {

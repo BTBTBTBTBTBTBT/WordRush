@@ -1289,6 +1289,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                                         myName, r.playerScore, isWin, mySolved, logToGrids(myLog, solutions)),
                                     opp = com.wordocious.app.data.ShareImage.VsShareSide(
                                         oppName, r.opponentScore, !isWin && !isDraw, oppSolved, logToGrids(oppLog, solutions)),
+                                    modeKey = vm.mode.name,
                                 )
                                 com.wordocious.app.data.ShareImage.shareVs(context, bmp, payload)
                             } else {

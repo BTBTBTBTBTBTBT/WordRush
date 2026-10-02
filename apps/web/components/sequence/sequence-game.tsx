@@ -33,6 +33,8 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { CompletedBoardsRecap, toRecapBoards } from '@/components/game/completed-mini-board';
 import { SequenceMiniBoard } from './sequence-mini-board';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -265,16 +267,16 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount]);
 
   return (
-    <div
+    <GameBackground
+      mode="SEQUENCE"
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation mode="SEQUENCE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('SEQUENCE')}>
         <GameHomeButton accentColor="#2563eb" />
         <GameGuideButton slug="succession" accentColor="#2563eb" />
         <SoundToggle accentColor="#2563eb" />
@@ -288,7 +290,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
+        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
         {state.status === 'WON' && (
           <div className="mt-1 flex flex-col items-center gap-1">
             <span className="text-green-600 text-xs font-bold">All 4 solved in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
@@ -376,6 +378,6 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       )}
 
       {state.status !== 'PLAYING' && <BottomNav />}
-    </div>
+    </GameBackground>
   );
 }

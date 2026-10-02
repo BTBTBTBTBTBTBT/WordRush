@@ -600,6 +600,13 @@ fun MainScreen() {
       }
 
       // §11 card shadows on the covering pages: the VS pages lean teal, the rest home purple.
+      // §15 a solo game screen gets its game's tint (background + card shadows) and §14 the
+      // header anchor its corner buttons center on; VS matches and pocket games get neither.
+      val soloGameAccent = activeGame?.takeIf {
+          it.engineMode != null && friendlyGameId == null &&
+              vsInvite == null && vsActive == null && vsChallengeCode == null && !vsLobby
+      }?.accent
+      val gameHeaderAnchor = remember(activeGame) { GameHeaderAnchor() }
       if (covered) androidx.compose.runtime.CompositionLocalProvider(
         LocalPageTint provides when {
             friendlyGameId != null -> null // a pocket game screen
@@ -607,6 +614,8 @@ fun MainScreen() {
             activeGame?.engineMode != null -> null // a game screen
             else -> PageTint.HOME // info pages, Pro, Settings, sign-in
         },
+        LocalGameTint provides soloGameAccent,
+        LocalGameHeaderAnchor provides gameHeaderAnchor,
       ) { Box(Modifier.fillMaxSize().zIndex(3f)) {
         val card = activeGame
         val invite = vsInvite

@@ -103,12 +103,13 @@ struct GuideSheet: View {
     private func content(_ g: ModeGuide) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                // The game's title art (lettering + host, ≈56 pt, ART_SPEC §10) over the
+                // The game's title art (lettering + host, the full sheet width minus the
+                // 32 pt padding, ≤ 72 pt tall, ART_SPEC §10 / §14) over the
                 // tagline; without the art, the title text with the host waving hello
                 // beside it (MASCOT_SPEC §5).
                 if let art = GameTitleArt.forMode(mode) {
                     VStack(alignment: .leading, spacing: 6) {
-                        GameTitleArtView(asset: art.asset, label: art.label, height: 56, maxWidth: 360, alignment: .leading)
+                        GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 72, alignment: .leading)
                         Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
                     }

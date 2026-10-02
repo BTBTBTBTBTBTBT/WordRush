@@ -5,6 +5,11 @@ import { getTodayLocal } from './daily-service';
 import { TILE_HEX, WIN_FG, WIN_BG, BOARD_WIN_TINT } from './tile-theme';
 import { MODES } from './modes.generated';
 import { boardToGrid, boardToLetters, MODE_SHARE_GLYPH } from './share-grid';
+import {
+  ART_SIZE, GAME_TILES_OPACITY, PAGE_TILES, PAGE_TINTS, artSrc, gameTint, gameTitleArt,
+  type GameTitleArtName, type TintStops,
+} from './art';
+import { CAST, mascotSrc } from './mascots';
 // The grid helpers live in share-grid.ts so a game screen can use them without
 // pulling this canvas renderer into its first-load JS (founder, 2026-09-29).
 export { boardToGrid, boardToLetters, MODE_SHARE_GLYPH };
@@ -677,6 +682,145 @@ function formatShortDate(d: Date): string {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// The cast on the card (docs/ART_SPEC.md §17): the page tint behind it, the
+// game's title art as its header, and the ten mascots along the bottom
+// above the URL. Every image is optional: when one fails to load (offline,
+// slow) the card draws exactly what it drew before in that spot.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** The game's title art height in the card header (canvas px). */
+const SHARE_TITLE_ART_H = 84;
+/** The cast strip: ten mascots this size (canvas px) with this gap. */
+const CAST_STRIP = { size: 44, gap: 6 } as const;
+/** Bottom room (canvas px) the footer takes: the URL alone, or the cast strip over it. */
+const FOOTER_ROOM = { plain: 80, cast: 128 } as const;
+
+interface ShareArt {
+  /** The seamless letter-tile pattern (art-bg-tiles). */
+  tiles: HTMLImageElement | null;
+  /** The game's title art (art-game-<id>) for result cards. */
+  title: HTMLImageElement | null;
+  titleName: GameTitleArtName | null;
+  /** The ten in WORDOCIOUS order (null where one failed). */
+  cast: Array<HTMLImageElement | null>;
+}
+
+const shareImageCache = new Map<string, Promise<HTMLImageElement | null>>();
+
+/**
+ * Loads an image for the canvas, trying each src in turn when one errors;
+ * null on failure, or once `timeoutMs` passes (a slow network never holds the
+ * share sheet up for long: a timeout doesn't go on to the next src).
+ */
+function loadShareImage(srcs: string[], timeoutMs = 2000): Promise<HTMLImageElement | null> {
+  const key = srcs.join('|');
+  const hit = shareImageCache.get(key);
+  if (hit) return hit;
+  const tryOne = (src: string) => new Promise<{ img: HTMLImageElement | null; timedOut: boolean }>((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => resolve({ img: null, timedOut: true }), timeoutMs);
+    img.onload = () => { clearTimeout(timer); resolve({ img, timedOut: false }); };
+    img.onerror = () => { clearTimeout(timer); resolve({ img: null, timedOut: false }); };
+    img.src = src;
+  });
+  const p = (async () => {
+    for (const src of srcs) {
+      const { img, timedOut } = await tryOne(src);
+      if (img) return img;
+      if (timedOut) break;
+    }
+    return null;
+  })();
+  // A failure is not cached, so the next share tries again.
+  p.then((img) => { if (!img) shareImageCache.delete(key); });
+  shareImageCache.set(key, p);
+  return p;
+}
+
+/** A mascot through the Next image optimizer at strip size (the 512 px PNGs are ~200 KB each), then the raw file. */
+function mascotShareSrcs(src: string): string[] {
+  return [`/_next/image?url=${encodeURIComponent(src)}&w=96&q=75`, src];
+}
+
+/** The catalog title art for a share mode ('QuadWord' → art-game-quordle), or null (sweep, boards, brags). */
+function shareTitleArtName(mode: ShareMode): GameTitleArtName | null {
+  return gameTitleArt(MODES.find((m) => m.dbKey && m.title === mode)?.id);
+}
+
+async function loadShareArt(titleName: GameTitleArtName | null): Promise<ShareArt> {
+  const [tiles, title, ...cast] = await Promise.all([
+    loadShareImage([artSrc(PAGE_TILES.name)]),
+    titleName ? loadShareImage([artSrc(titleName)]) : Promise.resolve(null),
+    ...CAST.map((id) => loadShareImage(mascotShareSrcs(mascotSrc(id)))),
+  ]);
+  return { tiles, title, titleName, cast };
+}
+
+/**
+ * The page tint behind the whole card (§11 / §15): the soft diagonal
+ * gradient (top-left → bottom-right, light stops) with the letter tiles
+ * repeated on top at `tilesOpacity`. Falls back to the flat card color.
+ */
+function drawTintBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  stops: readonly [string, string, string],
+  tiles: HTMLImageElement | null,
+  tilesOpacity: number,
+): void {
+  const g = ctx.createLinearGradient(0, 0, width, height);
+  g.addColorStop(0, stops[0]);
+  g.addColorStop(0.5, stops[1]);
+  g.addColorStop(1, stops[2]);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, width, height);
+  if (!tiles) return;
+  const pattern = ctx.createPattern(tiles, 'repeat');
+  if (!pattern) return;
+  ctx.save();
+  ctx.globalAlpha = tilesOpacity;
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+/** Draws an image fit inside the box (never stretched), centered. */
+function drawImageContain(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  cx: number,
+  top: number,
+  maxW: number,
+  maxH: number,
+  natural?: readonly [number, number],
+): void {
+  const [nw, nh] = natural ?? [img.naturalWidth || img.width, img.naturalHeight || img.height];
+  if (!nw || !nh) return;
+  const scale = Math.min(maxW / nw, maxH / nh);
+  const w = nw * scale;
+  const h = nh * scale;
+  ctx.drawImage(img, cx - w / 2, top + (maxH - h) / 2, w, h);
+}
+
+/** True when at least one mascot loaded, so the strip draws and the footer takes its room. */
+function hasCast(art: ShareArt | null): boolean {
+  return !!art && art.cast.some(Boolean);
+}
+
+/** The ten mascots in a centered row just above the URL line. */
+function drawCastStrip(ctx: CanvasRenderingContext2D, art: ShareArt, width: number, height: number): void {
+  const { size, gap } = CAST_STRIP;
+  const total = CAST.length * size + (CAST.length - 1) * gap;
+  const top = height - FOOTER_ROOM.cast + 12;
+  let x = (width - total) / 2;
+  for (const img of art.cast) {
+    if (img) drawImageContain(ctx, img, x + size / 2, top, size, size);
+    x += size + gap;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Header / footer
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -684,6 +828,7 @@ function drawHeader(
   ctx: CanvasRenderingContext2D,
   input: ShareSingleInput | ShareMultiInput | ShareGauntletInput | ShareSudokuInput | ShareRegionsInput | ShareLadderInput | ShareWordsearchInput | ShareHubInput | ShareCryptogramInput | ShareGroupsInput | ShareCrosswordInput | ShareScrambleInput,
   width: number,
+  art: ShareArt | null = null,
 ): { bottomY: number } {
   // Wordmark
   ctx.save();
@@ -698,21 +843,29 @@ function drawHeader(
   ctx.fillText('WORDOCIOUS', width / 2, wordmarkY);
   ctx.restore();
 
-  // Mode name in mode accent color
-  const modeY = wordmarkY + 60;
-  ctx.font = `900 38px ${SHARE_FONT_STACK}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = MODE_ACCENT[input.mode];
-  const MODE_DISPLAY: Partial<Record<ShareMode, string>> = {
-    Six: 'CLASSIC SIX',
-    Seven: 'CLASSIC SEVEN',
-  };
-  const modeLabel = MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase();
-  ctx.fillText(modeLabel, width / 2, modeY);
+  // Mode name: the game's title art (lettering + host, §17), or the name in
+  // its accent color when the art isn't there.
+  let metaY: number;
+  if (art?.title && art.titleName) {
+    const artTop = wordmarkY + 20;
+    drawImageContain(ctx, art.title, width / 2, artTop, width - 160, SHARE_TITLE_ART_H, ART_SIZE[art.titleName]);
+    metaY = artTop + SHARE_TITLE_ART_H + 34;
+  } else {
+    const modeY = wordmarkY + 60;
+    ctx.font = `900 38px ${SHARE_FONT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = MODE_ACCENT[input.mode];
+    const MODE_DISPLAY: Partial<Record<ShareMode, string>> = {
+      Six: 'CLASSIC SIX',
+      Seven: 'CLASSIC SEVEN',
+    };
+    const modeLabel = MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase();
+    ctx.fillText(modeLabel, width / 2, modeY);
+    metaY = modeY + 48;
+  }
 
   // Metadata line
-  const metaY = modeY + 48;
   const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');
   const dateStr = formatShortDate(date);
   const timeStr = formatTime(input.timeSeconds);
@@ -814,7 +967,8 @@ function drawHeader(
   return { bottomY: metaY + pillBlockHeight };
 }
 
-function drawFooter(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+function drawFooter(ctx: CanvasRenderingContext2D, width: number, height: number, art: ShareArt | null = null): void {
+  if (art && hasCast(art)) drawCastStrip(ctx, art, width, height);
   ctx.font = `700 22px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = FOOT_COLOR;
   ctx.textAlign = 'center';
@@ -1629,6 +1783,9 @@ function drawProfileCard(
     const x = padH + col * (tileW + gap);
     const y = top + row * (tileH + gap);
     drawRoundRect(ctx, x, y, tileW, tileH, 24);
+    // White under the accent wash so the numbers sit on a solid card over the tint (§17).
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
     ctx.fillStyle = accent + '14';
     ctx.fill();
     ctx.strokeStyle = accent + '40';
@@ -1650,6 +1807,7 @@ function drawDailySweepCard(
   input: ShareDailySweepInput,
   width: number,
   height: number,
+  footerRoom: number = FOOTER_ROOM.plain,
 ): void {
   const titleGrad = input.flawless ? SWEEP_GOLD : SWEEP_VIOLET;
 
@@ -1688,7 +1846,7 @@ function drawDailySweepCard(
   ctx.fillText(statsText, width / 2, metaY);
 
   const headerBottom = metaY + 30;
-  const footerTop = height - 80;
+  const footerTop = height - footerRoom;
 
   // Rows — one per daily game.
   const n = input.games.length;
@@ -2231,10 +2389,23 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, width, height);
 
+  // §17: result, sweep and profile cards wear the page tint (home, or the
+  // game's own tint), the game's title art and the cast strip. The
+  // leaderboard card keeps its own variant theme.
+  let art: ShareArt | null = null;
+  if (input.layout !== 'leaderboard') {
+    const isGame = input.layout !== 'daily-sweep' && input.layout !== 'profile';
+    art = await loadShareArt(isGame ? shareTitleArtName(input.mode) : null);
+    const accent = isGame ? MODE_ACCENT[input.mode] : undefined;
+    const tint: TintStops = accent ? gameTint(accent) : PAGE_TINTS.home;
+    drawTintBackground(ctx, width, height, tint.light, art.tiles, accent ? GAME_TILES_OPACITY.light : PAGE_TILES.opacity.light);
+  }
+  const footerRoom = hasCast(art) ? FOOTER_ROOM.cast : FOOTER_ROOM.plain;
+
   // The all-dailies card renders its own multi-mode header + rows + footer.
   if (input.layout === 'daily-sweep') {
-    drawDailySweepCard(ctx, input, width, height);
-    drawFooter(ctx, width, height);
+    drawDailySweepCard(ctx, input, width, height, footerRoom);
+    drawFooter(ctx, width, height, art);
     return new Promise<Blob | null>((resolve) => {
       canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
     });
@@ -2252,17 +2423,17 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   // The profile/stats card renders its own header + tiles + footer (1080²).
   if (input.layout === 'profile') {
     drawProfileCard(ctx, input, width);
-    drawFooter(ctx, width, height);
+    drawFooter(ctx, width, height, art);
     return new Promise<Blob | null>((resolve) => {
       canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
     });
   }
 
   // Header
-  const { bottomY: headerBottom } = drawHeader(ctx, input, width);
+  const { bottomY: headerBottom } = drawHeader(ctx, input, width, art);
 
-  // Footer Y (top edge of footer region)
-  const footerTop = height - 80;
+  // Footer Y (top edge of footer region; higher when the cast strip is drawn)
+  const footerTop = height - footerRoom;
 
   // Body
   if (input.layout === 'single') {
@@ -2292,7 +2463,7 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   }
 
   // Footer
-  drawFooter(ctx, width, height);
+  drawFooter(ctx, width, height, art);
 
   return new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);

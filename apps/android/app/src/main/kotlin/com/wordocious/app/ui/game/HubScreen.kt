@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.gameBackground
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -352,7 +353,7 @@ fun HubScreen(
                     else -> false
                 }
             }
-            .background(WTheme.bg).statusBarsPadding(),
+            .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             HubHeader(session)

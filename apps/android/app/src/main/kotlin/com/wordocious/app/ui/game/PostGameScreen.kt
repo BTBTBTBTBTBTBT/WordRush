@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.gameBackground
 import com.wordocious.app.ui.theme.Nunito
 
 import androidx.compose.foundation.background
@@ -177,7 +178,7 @@ fun PostGameScreen(
     // animated GauntletResultsView — the generic header below reports the FINAL
     // STAGE's boards/guesses, not the run's.
     if (gauntletProgress != null) {
-        Box(modifier = Modifier.fillMaxSize().appBackground().statusBarsPadding()) {
+        Box(modifier = Modifier.fillMaxSize().gameBackground { appBackground() }.statusBarsPadding()) {
             GauntletResultsScreen(
                 g = gauntletProgress, won = won, seed = seed, elapsedSeconds = elapsedSeconds,
                 hintsUsed = hintsUsed, onHome = onBack, onShare = onSharePressed,
@@ -194,7 +195,7 @@ fun PostGameScreen(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().appBackground().statusBarsPadding()) {
+    Box(modifier = Modifier.fillMaxSize().gameBackground { appBackground() }.statusBarsPadding()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp).padding(top = 12.dp, bottom = 24.dp),

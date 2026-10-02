@@ -42,6 +42,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Muddle (More Games §5): unscramble four words; their circled letters spell
 // the punchline that completes the caption under the cartoon. A full word
@@ -258,16 +260,16 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${MUDDLE_ACCENT}66`, color: MUDDLE_ACCENT, background: `${MUDDLE_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <GameBackground mode="SCRAMBLE" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="SCRAMBLE" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-1.5 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('SCRAMBLE', 36)}>
         <GameHomeButton accentColor={MUDDLE_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="muddle" accentColor={MUDDLE_ACCENT} />
         <SoundToggle accentColor={MUDDLE_ACCENT} />
-        <GameHostTitle mode="SCRAMBLE">
+        <GameHostTitle mode="SCRAMBLE" label="Muddle">
           <h1 className="text-xl font-black leading-7" style={{ color: MUDDLE_ACCENT }}>MUDDLE</h1>
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-0.5 text-[11px] leading-none font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -278,7 +280,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '60px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(60) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -374,6 +376,6 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       {finished && void scrambleFinalLetters}
       </>
       )}
-    </div>
+    </GameBackground>
   );
 }

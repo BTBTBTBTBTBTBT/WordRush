@@ -42,8 +42,7 @@ struct GameScreen: View {
     var body: some View {
         GeometryReader { root in
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(mode))  // ART_SPEC §15: the game's soft tint + quiet tiles
 
             VStack(spacing: 0) {
                 // Gauntlet finishes (win OR loss) show the dedicated animated
@@ -203,6 +202,8 @@ struct GameScreen: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(mode))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity(mode.rawValue)
         // Left-edge swipe → back to Home (parity with the web back gesture).
@@ -279,7 +280,7 @@ struct GameScreen: View {
                 .font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .gameTitleArt(mode)
+                .gameTitleArt(mode, centerY: GameCornerButton.centerY)
                 .padding(.horizontal, 52)
             HStack(spacing: 12) {
                 Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -293,7 +294,6 @@ struct GameScreen: View {
                 }
             }
         }
-        .padding(.top, 6)
     }
 
     // MARK: Gauntlet header — 1:1 with web GauntletProgress + GauntletStageHeader

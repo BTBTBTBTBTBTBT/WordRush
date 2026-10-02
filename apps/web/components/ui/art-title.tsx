@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { ART_SIZE, MOMENT_LABEL, artSrc, type ArtName, type MomentName } from '@/lib/art';
+import { ART_SIZE, MOMENT_LABEL, artMotion, artSrc, type ArtMotion, type ArtName, type MomentName } from '@/lib/art';
 
 // Image titles (docs/ART_SPEC.md §1, §2, §6, §8): a page title drawn as art — the
 // lettering with the whole cast on it (art-title-*) or a Leaderboard day title
@@ -7,6 +7,11 @@ import { ART_SIZE, MOMENT_LABEL, artSrc, type ArtName, type MomentName } from '@
 // the heading element the text title used. Sized by width up to `maxWidth`
 // (height follows the file's real aspect ratio, never stretched), or by
 // `height` for the day art. No hooks, so it renders in server components too.
+//
+// §14: `maxHeight` fills the width it has but never draws taller than that
+// (guide sheet top 72, Play card 52). §16: page and day titles pop in once
+// and then float; game title art only pops in (lib/art.ts artMotion, CSS in
+// globals.css); Reduce Motion (OS or in-app) keeps them static.
 
 interface ArtTitleProps {
   name: ArtName;
@@ -16,6 +21,10 @@ interface ArtTitleProps {
   maxWidth?: number;
   /** Fixed rendered height in CSS px instead (width follows the aspect ratio). */
   height?: number;
+  /** Fill the width (up to `maxWidth`) but never taller than this, in CSS px (§14). */
+  maxHeight?: number;
+  /** §16 entrance / idle motion; defaults by name (lib/art.ts artMotion). */
+  motion?: ArtMotion;
   /** Share of the content width to fill (the home PUZZLES header uses ~70%). */
   widthPct?: number;
   align?: 'center' | 'left';
@@ -27,14 +36,16 @@ interface ArtTitleProps {
 }
 
 export function ArtTitle({
-  name, label, maxWidth = 420, height, widthPct = 100, align = 'center', as = 'h1',
-  priority = true, className = '', style,
+  name, label, maxWidth: maxWidthProp = 420, height, maxHeight, widthPct = 100, align = 'center', as = 'h1',
+  priority = true, motion, className = '', style,
 }: ArtTitleProps) {
   const [w, h] = ART_SIZE[name];
   const Tag = as;
+  const maxWidth = maxHeight != null ? Math.min(maxWidthProp, Math.round((maxHeight * w) / h)) : maxWidthProp;
   const imgStyle: React.CSSProperties = height != null
     ? { height, width: 'auto', maxWidth: '100%', objectFit: 'contain' }
     : { width: `${widthPct}%`, maxWidth, height: 'auto' };
+  const move = motion ?? artMotion(name);
   return (
     <Tag
       className={`flex ${align === 'center' ? 'justify-center' : 'justify-start'} m-0 select-none ${className}`}
@@ -49,7 +60,7 @@ export function ArtTitle({
         loading={priority ? undefined : 'lazy'}
         draggable={false}
         sizes={`${height != null ? Math.ceil((height * w) / h) : maxWidth}px`}
-        className="block pointer-events-none"
+        className={`block pointer-events-none ${move === 'none' ? '' : `art-${move}`}`}
         style={{ aspectRatio: `${w} / ${h}`, ...imgStyle }}
       />
     </Tag>

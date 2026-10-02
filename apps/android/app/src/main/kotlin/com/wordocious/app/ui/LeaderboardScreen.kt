@@ -1057,12 +1057,16 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
             if (card != null) ModeGlyph(card, accent, box = 36.dp)
             else Icon3D(Icon3DName.TROPHY, 22.dp)
         }
-        // ART_SPEC §10: the selected game's title art (lettering + host, ≈40 dp) in
-        // place of the game name text and the separate host.
+        // ART_SPEC §10 / §14: the selected game's title art (lettering + host) in place
+        // of the game name text and the separate host, filling the space left of Play
+        // (up to 52 dp tall).
         val titleArt = gameTitleArtResForKey(modeId)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (titleArt != null) {
-                GameTitleArt(titleArt, card?.title ?: gameTitleLabelForKey(modeId), height = GAME_TITLE_ART_CARD_HEIGHT, heading = false)
+                FittedGameTitleArt(
+                    titleArt, card?.title ?: gameTitleLabelForKey(modeId),
+                    maxHeight = GAME_TITLE_ART_CARD_HEIGHT, alignment = Alignment.CenterStart, heading = false,
+                )
             } else Text(
                 card?.title ?: modeId, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,

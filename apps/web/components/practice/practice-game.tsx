@@ -31,6 +31,8 @@ import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { useClassicHints, type PersistedClassicHintState } from '@/hooks/use-classic-hints';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -383,16 +385,16 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
 
   return (
-    <div
+    <GameBackground
+      mode={mode}
       className={`h-screen-stable flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation mode={mode} onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, false, guessesUsed, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle(mode)}>
         {(() => {
           const modeConfig: Record<string, { title: string; label: string; accent: string; gradient: string }> = {
             DUEL:   { title: 'CLASSIC',       label: 'Classic',       accent: '#7c3aed', gradient: 'linear-gradient(135deg, #a78bfa, #ec4899)' },
@@ -418,7 +420,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
           </div>
         )}
@@ -517,6 +519,6 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       )}
 
       {gameComplete && <BottomNav />}
-    </div>
+    </GameBackground>
   );
 }

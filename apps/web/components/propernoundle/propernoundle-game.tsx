@@ -47,6 +47,8 @@ const PRACTICE_STORAGE_KEY = 'wordocious-propernoundle-practice';
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_EMOJI } from './categories';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 type GameMode = 'daily' | 'practice';
 
@@ -729,16 +731,16 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
   );
 
   return (
-    <div
+    <GameBackground
+      mode="PROPERNOUNDLE"
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation mode="PROPERNOUNDLE" onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header — compact, matching other modes */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('PROPERNOUNDLE')}>
         <GameHomeButton accentColor="#dc2626"  href={MORE_HOME_HREF} />
         <GameGuideButton slug="propernoundle" accentColor="#dc2626" />
         <SoundToggle accentColor="#dc2626" />
@@ -768,7 +770,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
           </span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -933,6 +935,6 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
           <BottomNav />
         </>
       )}
-    </div>
+    </GameBackground>
   );
 }

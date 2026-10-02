@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.gameBackground
 import android.app.Activity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -481,7 +482,7 @@ fun MuddleScreen(
                     else -> muddleKeys(k)
                 }
             }
-            .background(WTheme.bg).statusBarsPadding(),
+            .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
             val cartoonH = LocalConfiguration.current.screenHeightDp.dp * CARTOON_SCREEN_FRACTION
@@ -572,15 +573,20 @@ private fun MuddleHeader(session: MuddleSession) {
     val s = session.state
     // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) sit either side.
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 2.dp)) {
-        // The game's host (R, groggy: MASCOT_SPEC §5) at the left of the title, static. It
-        // overhangs the compact 22 dp title line instead of growing the header.
-        Row(Modifier.padding(horizontal = 52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            com.wordocious.app.ui.Mascots.hostFor("SCRAMBLE")?.let {
-                Box(Modifier.size(30.dp, 22.dp), contentAlignment = Alignment.Center) {
-                    com.wordocious.app.ui.Mascot(it, 30.dp, Modifier.wrapContentSize(unbounded = true))
+        // ART_SPEC §14: Muddle uses its title art too (lettering + R, 44–72 dp, filling the
+        // width between the corner buttons); the compact header grows to fit it and the
+        // cartoon band below absorbs the difference. The text + host stays as the fallback.
+        com.wordocious.app.ui.GameHeaderTitle("SCRAMBLE") {
+            // The game's host (R, groggy: MASCOT_SPEC §5) at the left of the title, static. It
+            // overhangs the compact 22 dp title line instead of growing the header.
+            Row(Modifier.padding(horizontal = 52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                com.wordocious.app.ui.Mascots.hostFor("SCRAMBLE")?.let {
+                    Box(Modifier.size(30.dp, 22.dp), contentAlignment = Alignment.Center) {
+                        com.wordocious.app.ui.Mascot(it, 30.dp, Modifier.wrapContentSize(unbounded = true))
+                    }
                 }
+                Text("MUDDLE", fontSize = 20.sp, lineHeight = 22.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1)
             }
-            Text("MUDDLE", fontSize = 20.sp, lineHeight = 22.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 48.dp)) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)

@@ -40,6 +40,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Starsweep (More Games §18b): place one star in every row, column and color
 // region, no two stars touching. Daily 7 × 7 Monday–Wednesday, 8 × 8
@@ -303,15 +305,15 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   );
 
   return (
-    <div
+    <GameBackground
+      mode="REGIONS"
       className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation mode="REGIONS" onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', true, state.mistakes + 1, elapsedSeconds, 1, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', false, state.mistakes + 1, elapsedSeconds, 0, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('REGIONS')}>
         <GameHomeButton accentColor={REGIONS_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="starsweep" accentColor={REGIONS_ACCENT} />
         <SoundToggle accentColor={REGIONS_ACCENT} />
@@ -325,7 +327,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -426,7 +428,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
           <BottomNav />
         </>
       )}
-    </div>
+    </GameBackground>
   );
 }
 

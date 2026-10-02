@@ -39,6 +39,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Spyglass (More Games §17): ten themed words hidden in a 10 × 10 grid, four
 // forward directions in the daily. Tap-start / tap-end or drag to select; a
@@ -229,12 +231,12 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const wordList = renderWordList(state, finished);
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <GameBackground mode="WORDSEARCH" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="WORDSEARCH" onComplete={() => setShowVictory(false)} guesses={state.misses} guessLabel="Misses" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.misses} guessLabel="Misses" boardsSolved={state.found.length} totalBoards={state.words.length} timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('WORDSEARCH')}>
         <GameHomeButton accentColor={WORDSEARCH_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="spyglass" accentColor={WORDSEARCH_ACCENT} />
         <SoundToggle accentColor={WORDSEARCH_ACCENT} />
@@ -249,7 +251,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '104px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(104) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -327,6 +329,6 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
           <BottomNav />
         </>
       )}
-    </div>
+    </GameBackground>
   );
 }

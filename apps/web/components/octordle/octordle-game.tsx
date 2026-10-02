@@ -32,6 +32,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 interface OctordleGameProps {
   initialSeed?: string;
@@ -179,16 +181,16 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   };
 
   return (
-    <div
+    <GameBackground
+      mode="OCTORDLE"
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {showVictory && <VictoryAnimation mode="OCTORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', false, totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('OCTORDLE')}>
         <GameHomeButton accentColor="#7e22ce" />
         <GameGuideButton slug="octoword" accentColor="#7e22ce" />
         <SoundToggle accentColor="#7e22ce" />
@@ -202,7 +204,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
           <span className="text-gray-400 text-xs font-bold">{totalGuesses}/{state.boards[0]?.maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
+        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
         {state.status === 'WON' && (
           <div className="mt-1 flex flex-col items-center gap-1">
             <span className="text-green-600 text-xs font-bold">All 8 solved in {totalGuesses} guesses  ·  {formatTime(elapsedTime)}</span>
@@ -259,6 +261,6 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
       )}
 
       {state.status !== 'PLAYING' && <BottomNav />}
-    </div>
+    </GameBackground>
   );
 }

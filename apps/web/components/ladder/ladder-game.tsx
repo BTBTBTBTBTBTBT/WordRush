@@ -42,6 +42,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Letter Ladder (More Games §15): change one letter at a time from START to
 // END. Rejected entries are free; every accepted word is a move; the budget
@@ -259,12 +261,12 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${LADDER_ACCENT}66`, color: LADDER_ACCENT, background: `${LADDER_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <GameBackground mode="LADDER" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="LADDER" onComplete={() => setShowVictory(false)} guesses={state.moves} guessLabel="Moves" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.moves} guessLabel="Moves" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('LADDER')}>
         <GameHomeButton accentColor={LADDER_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="letter-ladder" accentColor={LADDER_ACCENT} />
         <SoundToggle accentColor={LADDER_ACCENT} />
@@ -278,7 +280,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -348,6 +350,6 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
           <BottomNav />
         </>
       )}
-    </div>
+    </GameBackground>
   );
 }

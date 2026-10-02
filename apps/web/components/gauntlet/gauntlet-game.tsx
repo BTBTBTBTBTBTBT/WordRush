@@ -36,6 +36,7 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { GameBackground } from '@/components/ui/page-background';
 
 function generateSeed(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
@@ -526,9 +527,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   };
 
   return (
-    <div
+    <GameBackground
+      mode="GAUNTLET"
       className={`h-screen-stable flex flex-col relative ${state.status !== GameStatus.PLAYING ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0 relative">
@@ -634,6 +635,6 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         />
       )}
       {xpToast}
-    </div>
+    </GameBackground>
   );
 }

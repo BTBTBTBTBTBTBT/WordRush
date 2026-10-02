@@ -41,6 +41,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Hubbub (More Games §12): seven letters, one required center, words of 4+
 // letters. The game finalizes ONCE — reaching Hubbub (50% of max) is the win,
@@ -463,7 +465,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   );
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${view === 'results' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <GameBackground mode="HUB" className={`h-screen-stable flex flex-col relative ${view === 'results' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
       {/* Victory card (founder, 2026-09-28): the clock is paused under it; the time is the
           moment of the win. "Keep playing" resumes the hunt, "I'm done" ends the puzzle. */}
       {showVictory && <VictoryAnimation mode="HUB" onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points}
@@ -471,7 +473,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('HUB')}>
         <GameHomeButton accentColor={HUB_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="hubbub" accentColor={HUB_ACCENT} />
         <SoundToggle accentColor={HUB_ACCENT} />
@@ -489,7 +491,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
             : <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock>{won && <span className="font-medium opacity-70"> · playing on</span>}</span>}
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -514,6 +516,6 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         // Header only while daily_results is read: no fresh-hive flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : view === 'board' ? boardView : resultsView}
-    </div>
+    </GameBackground>
   );
 }

@@ -646,10 +646,14 @@ private fun AllTimeTab(
             ) {
                 ModeIconBox(selectedMode, accent, box = 36.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    // ART_SPEC §10: the selected game's title art (≈40 dp) in place of its name text.
+                    // ART_SPEC §10 / §14: the selected game's title art in place of its name text,
+                    // filling the card's text column (up to 52 dp tall).
                     val titleArt = if (isSweep) null else gameTitleArtResForKey(selectedMode)
                     if (titleArt != null) {
-                        GameTitleArt(titleArt, recModeTitle(selectedMode), height = GAME_TITLE_ART_CARD_HEIGHT, heading = false)
+                        FittedGameTitleArt(
+                            titleArt, recModeTitle(selectedMode),
+                            maxHeight = GAME_TITLE_ART_CARD_HEIGHT, alignment = Alignment.CenterStart, heading = false,
+                        )
                     } else Text(
                         if (isSweep) "All-Time Sweeps" else recModeTitle(selectedMode),
                         fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1,

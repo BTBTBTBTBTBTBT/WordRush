@@ -35,8 +35,7 @@ struct SolvedPuzzleView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(mode))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if !loaded {
                 CastLoader(label: "LOADING \(ModeStyle.title(mode).uppercased())")
             } else if mode == .gauntlet, let g = gauntlet {
@@ -86,6 +85,8 @@ struct SolvedPuzzleView: View {
         }
         .navigationBarBackButtonHidden(true)
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(mode))
         // Left-edge swipe → back to Home (parity with the web back gesture).
         .swipeToGoBack { dismiss() }
         .task {

@@ -25,7 +25,37 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.composed
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +67,8 @@ import com.wordocious.app.R
 // day titles (§1), the whole-cast page titles (§2), the glossy 3D game icons (§3)
 // and the W / L / ✓ completion badges (§4); second pass: moment lettering (§6),
 // empty / error / done scenes (§7), WELCOME + holiday LEADERBOARD titles (§8) and
-// the pocket game icons (§9); third pass: the game title art (§10). All art lives in res/drawable-nodpi as
+// the pocket game icons (§9); third pass: the game title art (§10), sized to fill the game header
+// (§14), and the title art motion (§16). All art lives in res/drawable-nodpi as
 // WebP. Mirrors the web /art/ assets and the iOS image sets of the same names.
 
 /** §2 page titles: lettering with the whole cast perched on it (≈1080 wide). */
@@ -81,7 +112,7 @@ fun PageTitleArt(
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
         alignment = alignment,
-        modifier = modifier.widthIn(max = maxWidth).fillMaxWidth().semantics { heading() },
+        modifier = modifier.widthIn(max = maxWidth).fillMaxWidth().semantics { heading() }.titleArtMotion(float = true),
     )
 }
 
@@ -143,7 +174,7 @@ fun DayTitleArt(@DrawableRes res: Int, title: String, modifier: Modifier = Modif
             painterResource(res),
             contentDescription = titleCaseLabel(title),
             contentScale = ContentScale.Fit,
-            modifier = Modifier.height(height).semantics { heading() },
+            modifier = Modifier.height(height).semantics { heading() }.titleArtMotion(float = true),
         )
     }
 }
@@ -313,7 +344,7 @@ fun HolidayLeaderboardTitle(holidayTitle: String, modifier: Modifier = Modifier,
             painterResource(R.drawable.art_title_leaderboard),
             contentDescription = null,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.widthIn(max = TITLE_ART_MAX_WIDTH).fillMaxWidth().heightIn(max = artHeight),
+            modifier = Modifier.widthIn(max = TITLE_ART_MAX_WIDTH).fillMaxWidth().heightIn(max = artHeight).titleArtMotion(float = true),
         )
         Text(
             holidayTitle.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp,
@@ -374,38 +405,87 @@ fun gameTitleArtResForKey(dbKey: String?): Int? =
 /** §10 The game title's accessibility label: the catalog title ("Letter Ladder"), else the key. */
 fun gameTitleLabelForKey(dbKey: String): String = com.wordocious.app.ModeGen.byDbKey(dbKey)?.title ?: dbKey
 
-/** §10 Game screen header title art height (≈36–40). */
-val GAME_TITLE_ART_HEADER_HEIGHT: Dp = 38.dp
-/** §10 Guide sheet top art height (≈56). */
-val GAME_TITLE_ART_GUIDE_HEIGHT: Dp = 56.dp
-/** §10 Leaderboard / Records Play card art height (≈40). */
-val GAME_TITLE_ART_CARD_HEIGHT: Dp = 40.dp
+/** §14 Game screen header title art: sized by the width between the corner buttons, 44–72 tall. */
+val GAME_TITLE_ART_HEADER_MAX: Dp = 72.dp
+val GAME_TITLE_ART_HEADER_MIN: Dp = 44.dp
+/** §14 Guide sheet top art cap (was ≈56; full sheet width minus 32). */
+val GAME_TITLE_ART_GUIDE_HEIGHT: Dp = 72.dp
+/** §14 Leaderboard / Records Play card art cap (was ≈40; fills the space left of Play). */
+val GAME_TITLE_ART_CARD_HEIGHT: Dp = 52.dp
+/** §14 The corner buttons' side of a game header (44 dp circle + 8 dp inset). */
+val GAME_HEADER_SIDE: Dp = 52.dp
+
+/** The game title art's height / width when the drawable can't say (≈900 × 210). */
+private const val GAME_TITLE_ART_FALLBACK_RATIO = 0.235f
 
 /**
- * §10 A game's title art at [height], width following the aspect ratio and
- * shrinking (never stretching) to the width it is given. TalkBack reads [label]
- * (the game title), as a heading when [heading].
+ * §14 The title art's height for [availableWidth] at the art's [ratio] (height /
+ * width): the full width, height following the aspect ratio, capped at [max] and
+ * raised to [min] (a short name then overflows its box a little and centers).
+ */
+fun gameTitleArtHeight(availableWidth: Dp, ratio: Float, min: Dp, max: Dp): Dp =
+    (availableWidth * ratio).coerceAtMost(max).coerceAtLeast(min)
+
+/**
+ * §10 / §14 A game's title art filling the width it is given (height following the
+ * aspect ratio, between [minHeight] and [maxHeight]), never stretched. TalkBack reads
+ * [label] (the game title), as a heading when [heading]. §16: pops in once (no idle
+ * float: this art sits in game headers and cards). [onArt] decorates the image
+ * itself (the header reports its center through it, before the pop-in transform).
+ */
+@Composable
+fun FittedGameTitleArt(
+    @DrawableRes res: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    maxHeight: Dp,
+    minHeight: Dp = 0.dp,
+    alignment: Alignment = Alignment.Center,
+    heading: Boolean = true,
+    onArt: Modifier = Modifier,
+) {
+    val painter = painterResource(res)
+    val intrinsic = painter.intrinsicSize
+    val ratio = if (intrinsic.isSpecified && intrinsic.width > 0f && intrinsic.height > 0f) intrinsic.height / intrinsic.width
+        else GAME_TITLE_ART_FALLBACK_RATIO
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = alignment) {
+        val h = gameTitleArtHeight(maxWidth, ratio, minHeight, maxHeight)
+        Image(
+            painter,
+            contentDescription = label,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.requiredSize(h / ratio, h).then(onArt)
+                .semantics { if (heading) heading() }
+                .titleArtMotion(float = false),
+        )
+    }
+}
+
+/**
+ * §10 A game's title art at a fixed [height], width following the aspect ratio and
+ * shrinking (never stretching) to the width it is given. §16: pops in once.
  */
 @Composable
 fun GameTitleArt(
     @DrawableRes res: Int,
     label: String,
     modifier: Modifier = Modifier,
-    height: Dp = GAME_TITLE_ART_HEADER_HEIGHT,
+    height: Dp = GAME_TITLE_ART_HEADER_MIN,
     heading: Boolean = true,
 ) {
     Image(
         painterResource(res),
         contentDescription = label,
         contentScale = ContentScale.Fit,
-        modifier = modifier.height(height).semantics { if (heading) heading() },
+        modifier = modifier.height(height).semantics { if (heading) heading() }.titleArtMotion(float = false),
     )
 }
 
 /**
- * §10 A game screen header's title art, centered between the corner Home / ?
- * buttons (44 dp + 8 each side), for [dbKey]; [fallback] (today's text + host)
- * when the key has no art.
+ * §10 / §14 A game screen header's title art for [dbKey], filling the width between
+ * the corner Home / ? buttons ([GAME_HEADER_SIDE] each side), 44–72 dp tall; the
+ * corner buttons center on it ([gameCornerCentered]). [fallback] (today's text +
+ * host) when the key has no art.
  */
 @Composable
 fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, fallback: @Composable () -> Unit) {
@@ -414,7 +494,106 @@ fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, fallback: @Com
         fallback()
         return
     }
-    Box(modifier.fillMaxWidth().padding(horizontal = 52.dp), contentAlignment = Alignment.Center) {
-        GameTitleArt(res, gameTitleLabelForKey(dbKey))
+    FittedGameTitleArt(
+        res, gameTitleLabelForKey(dbKey),
+        modifier.fillMaxWidth().padding(horizontal = GAME_HEADER_SIDE),
+        maxHeight = GAME_TITLE_ART_HEADER_MAX, minHeight = GAME_TITLE_ART_HEADER_MIN,
+        onArt = Modifier.reportGameHeaderArt(),
+    )
+}
+
+// ── §14 The corner buttons center on the header art ──────────────────────
+
+/**
+ * Where the game header's title art is centered (root px; NaN when no art is
+ * showing), so the corner buttons can center on it. One per game screen, provided
+ * by MainScreen through [LocalGameHeaderAnchor].
+ */
+@Stable
+class GameHeaderAnchor {
+    var artCenterY by mutableFloatStateOf(Float.NaN)
+}
+
+val LocalGameHeaderAnchor = staticCompositionLocalOf<GameHeaderAnchor?> { null }
+
+/** How far a corner button may move to center on the art (up a little, down more). */
+private val CORNER_SHIFT_UP: Dp = 6.dp
+private val CORNER_SHIFT_DOWN: Dp = 24.dp
+
+/** Reports this node's vertical center to the screen's [GameHeaderAnchor]. */
+private fun Modifier.reportGameHeaderArt(): Modifier = composed {
+    val anchor = LocalGameHeaderAnchor.current
+    if (anchor == null) this
+    else {
+        DisposableEffect(anchor) { onDispose { anchor.artCenterY = Float.NaN } }
+        this.onGloballyPositioned { c -> anchor.artCenterY = c.positionInRoot().y + c.size.height / 2f }
+    }
+}
+
+/**
+ * §14 A game corner button (Home / ? / sound): stays in its corner, nudged
+ * vertically so it centers on the header's title art. The nudge is clamped, so a
+ * finished screen's art scrolling away leaves the button at its own spot.
+ */
+fun Modifier.gameCornerCentered(): Modifier = composed {
+    val anchor = LocalGameHeaderAnchor.current
+    if (anchor == null) this
+    else {
+        var natural by remember { mutableFloatStateOf(Float.NaN) }
+        val density = LocalDensity.current
+        val up = with(density) { CORNER_SHIFT_UP.toPx() }
+        val down = with(density) { CORNER_SHIFT_DOWN.toPx() }
+        this.onGloballyPositioned { c -> natural = c.positionInRoot().y + c.size.height / 2f }
+            .offset {
+                val d = anchor.artCenterY - natural
+                IntOffset(0, if (d.isNaN()) 0 else d.coerceIn(-up, down).roundToInt())
+            }
+    }
+}
+
+// ── §16 Title art motion ──────────────────────────────────────────────────
+
+/**
+ * §16 Title art motion: a one-time pop-in when the art first appears (scale 0.94 →
+ * 1.03 → 1.0, opacity 0 → 1, 420 ms, spring-ish ease-out), then — page and day
+ * titles only ([float]) — a very slow idle float (translateY 0 → −2 → 0 over 4 s,
+ * forever; paused while its tab is hidden). Reduce Motion (the in-app toggle or the
+ * system "Remove animations"): static. The pop plays once per page, not again when
+ * a list scrolls the art back into view.
+ */
+@Composable
+fun Modifier.titleArtMotion(float: Boolean): Modifier {
+    if (WTheme.reducedMotion) return this
+    var played by rememberSaveable { mutableStateOf(false) }
+    val scale = remember { Animatable(if (played) 1f else 0.94f) }
+    val alpha = remember { Animatable(if (played) 1f else 0f) }
+    LaunchedEffect(Unit) {
+        if (!played) {
+            launch { alpha.animateTo(1f, tween(260, easing = FastOutSlowInEasing)) }
+            scale.animateTo(
+                1f,
+                keyframes {
+                    durationMillis = 420
+                    0.94f at 0 using FastOutSlowInEasing
+                    1.03f at 260 using FastOutSlowInEasing
+                    1f at 420
+                },
+            )
+            played = true
+        }
+    }
+    val hidden by LocalTabHidden.current
+    val floatY: State<Float>? = if (float && !hidden) {
+        rememberInfiniteTransition(label = "titleFloat").animateFloat(
+            initialValue = 0f, targetValue = -2f,
+            animationSpec = infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+            label = "y",
+        )
+    } else null
+    return this.graphicsLayer {
+        scaleX = scale.value
+        scaleY = scale.value
+        this.alpha = alpha.value
+        translationY = (floatY?.value ?: 0f) * density
     }
 }

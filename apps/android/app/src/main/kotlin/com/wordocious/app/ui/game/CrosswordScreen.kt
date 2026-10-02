@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.gameBackground
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -494,7 +495,7 @@ fun CrosswordScreen(
                     else -> xwKeys(k)
                 }
             }
-            .background(WTheme.bg).statusBarsPadding(),
+            .gameBackground { background(WTheme.bg) }.statusBarsPadding(),
     ) {
         if (session.isFinished) {
             Column(

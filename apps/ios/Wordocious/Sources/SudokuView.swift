@@ -177,7 +177,7 @@ struct SudokuView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.sudoku))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; board.padding(.horizontal, 6); result }.padding(.horizontal, 10) }
             } else {
@@ -223,6 +223,8 @@ struct SudokuView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.sudoku))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("SUDOKU")
         .swipeToGoBack { dismiss() }
@@ -244,7 +246,7 @@ struct SudokuView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text(ModeStyle.title(.sudoku)).font(Brand.font(24, .black)).foregroundStyle(sudokuAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.sudoku, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.sudoku, inset: 46, centerY: GameCornerButton.centerY)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -267,7 +269,6 @@ struct SudokuView: View {
                 }
             }
         }
-        .padding(.top, 6)
     }
 
     /// Pro Unlimited: Easy · Medium · Hard capsules; switching starts a fresh puzzle.

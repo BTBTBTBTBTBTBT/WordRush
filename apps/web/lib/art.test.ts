@@ -6,6 +6,8 @@ import {
   ART_SIZE, DAY_ART, GAME_ART_IDS, GAME_TITLE_ART_HEIGHT, GAME_TITLE_ART_IDS, MOMENT_LABEL, PAGE_SCENES, PAGE_TILES, PAGE_TINTS,
   POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
   isGameArtIcon, onPageShadow, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
+  GAME_HEADER, GAME_TILES_OPACITY, accentCardShadow, artMotion, gameHeaderArtHeight, gameHeaderStyle, gameTint,
+  gameTintForDbKey, gameToastTop, mixOver,
 } from './art';
 import { MODES } from './modes.generated';
 
@@ -168,11 +170,11 @@ describe('game title art (§10)', () => {
     expect(gameTitleArtLabel('art-game-scramble')).toBe('Muddle');
   });
 
-  it('draws at the spec heights', () => {
-    expect(GAME_TITLE_ART_HEIGHT.header).toBeGreaterThanOrEqual(36);
-    expect(GAME_TITLE_ART_HEIGHT.header).toBeLessThanOrEqual(40);
-    expect(GAME_TITLE_ART_HEIGHT.guide).toBe(56);
-    expect(GAME_TITLE_ART_HEIGHT.playCard).toBe(40);
+  it('draws at the spec height caps (§14: larger, sized by width)', () => {
+    expect(GAME_TITLE_ART_HEIGHT.header).toBe(72);
+    expect(GAME_TITLE_ART_HEIGHT.headerMin).toBe(44);
+    expect(GAME_TITLE_ART_HEIGHT.guide).toBe(72);
+    expect(GAME_TITLE_ART_HEIGHT.playCard).toBe(52);
   });
 });
 
@@ -215,5 +217,73 @@ describe('Home section titles (§12)', () => {
     expect(w).toBe(ART_SIZE['art-title-puzzles'][0]);
     expect(w).toBe(ART_SIZE['art-title-wotd'][0]);
     expect(w).toBeGreaterThan(h * 4);
+  });
+});
+
+describe('game titles fill the header (§14)', () => {
+  it('sizes the header art by the room between the corner buttons, 44–72 px', () => {
+    const [w, h] = ART_SIZE['art-game-scramble'];
+    const room = 2 * (GAME_HEADER.side + GAME_HEADER.clearance);
+    expect(GAME_HEADER.pad).toBeLessThanOrEqual(6);
+    expect(GAME_HEADER.clearance).toBeGreaterThanOrEqual(GAME_HEADER.button);
+    expect(gameHeaderArtHeight('art-game-scramble')).toBe(
+      `clamp(44px, calc((100vw - ${room}px) * ${(h / w).toFixed(4)}), 72px)`,
+    );
+  });
+
+  it('centers the corner buttons on the art and moves toasts down by the growth', () => {
+    const style = gameHeaderStyle('QUORDLE') as Record<string, string>;
+    expect(style['--game-art-h']).toBe(gameHeaderArtHeight('art-game-quordle'));
+    expect(style['--game-corner-top']).toBe('calc(6px + (var(--game-art-h) - 44px) / 2)');
+    expect(style['--game-header-shift']).toBe('calc(var(--game-art-h) + -40px)');
+    expect((gameHeaderStyle('SCRAMBLE', 36) as Record<string, string>)['--game-header-shift']).toBe('calc(var(--game-art-h) + -30px)');
+    expect(gameHeaderStyle('VS')).toEqual({});
+    expect(gameToastTop(90)).toBe('calc(90px + var(--game-header-shift, 0px))');
+  });
+
+  it('gives every solo game with a header title art', () => {
+    for (const key of ['DUEL', 'DUEL_6', 'DUEL_7', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'PROPERNOUNDLE', 'SUDOKU',
+      'SCRAMBLE', 'HUB', 'CROSSWORD', 'GROUPS', 'LADDER', 'CRYPTOGRAM', 'WORDSEARCH', 'REGIONS']) {
+      expect(Object.keys(gameHeaderStyle(key)), key).toHaveLength(3);
+    }
+  });
+});
+
+describe('game screen tints (§15)', () => {
+  it('lays the accent over white / #FFF7FB (light) and #120D1F (dark)', () => {
+    expect(mixOver('#000000', 0.5, '#FFFFFF')).toBe('#808080');
+    expect(mixOver('#7c3aed', 0, '#FFF7FB')).toBe('#FFF7FB');
+    expect(mixOver('#7c3aed', 1, '#FFFFFF')).toBe('#7C3AED');
+    const t = gameTint('#ec4899');
+    expect(t.light).toEqual([mixOver('#ec4899', 0.06, '#FFFFFF'), mixOver('#ec4899', 0.1, '#FFFFFF'), mixOver('#ec4899', 0.04, '#FFF7FB')]);
+    expect(t.dark).toEqual([mixOver('#ec4899', 0.1, '#120D1F'), mixOver('#ec4899', 0.14, '#120D1F'), mixOver('#ec4899', 0.08, '#120D1F')]);
+    expect(t.accent).toBe('#ec4899');
+  });
+
+  it('tints every solo game from its catalog accent, tiles quieter than menus', () => {
+    for (const m of MODES) {
+      if (!m.dbKey) continue;
+      expect(gameTintForDbKey(m.dbKey), m.dbKey).toEqual(gameTint(m.accentHex));
+    }
+    expect(gameTintForDbKey('NOPE')).toBeNull();
+    expect(GAME_TILES_OPACITY).toEqual({ light: 0.08, dark: 0.05 });
+    expect(GAME_TILES_OPACITY.light).toBeLessThan(PAGE_TILES.opacity.light);
+    expect(accentCardShadow('#7c3aed')).toBe(pageCardShadow('home'));
+  });
+});
+
+describe('title art motion (§16)', () => {
+  it('floats page and day titles, only pops game titles, leaves moments and scenes alone', () => {
+    expect(artMotion('art-title-friends')).toBe('float');
+    expect(artMotion('art-day-friday')).toBe('float');
+    expect(artMotion('art-game-quordle')).toBe('pop');
+    expect(artMotion('art-moment-victory')).toBe('none');
+    expect(artMotion('art-scene-r-asleep')).toBe('none');
+  });
+
+  it('turns the motion off under Reduce Motion, OS and in-app', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.art-pop, \.art-float \{ animation: none !important; \}/);
+    expect(css).toContain('[data-reduced-motion="true"] .art-float { animation: none !important; }');
   });
 });

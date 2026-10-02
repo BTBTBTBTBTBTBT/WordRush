@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.gameBackground
 import android.app.Activity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -299,7 +300,7 @@ fun SpyglassScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
-    Box(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    Box(Modifier.fillMaxSize().gameBackground { background(WTheme.bg) }.statusBarsPadding()) {
         if (session.isFinished) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 10.dp),

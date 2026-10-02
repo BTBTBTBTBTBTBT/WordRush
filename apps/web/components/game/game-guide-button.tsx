@@ -27,7 +27,7 @@ interface Props {
 export function GameGuideButton({
   slug,
   accentColor = '#7c3aed',
-  positionClass = 'absolute top-2 right-2 z-10',
+  positionClass = 'absolute top-[var(--game-corner-top,0.5rem)] right-2 z-10',
 }: Props) {
   const [open, setOpen] = useState(false);
   const guide = getGuide(slug);
@@ -70,20 +70,28 @@ export function GameGuideButton({
             style={{ background: 'var(--color-bg)', maxHeight: '88vh', transform: `translateY(${dragY}px)` }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Drag handle — also the swipe-to-close grabber */}
-            <div
-              className="pt-2.5 pb-1.5 flex justify-center cursor-grab touch-none"
-              onTouchStart={(e) => { startY.current = e.touches[0].clientY; }}
-              onTouchMove={(e) => {
-                if (startY.current !== null) setDragY(Math.max(0, e.touches[0].clientY - startY.current));
-              }}
-              onTouchEnd={() => {
-                if (dragY > 90) setOpen(false);
-                setDragY(0);
-                startY.current = null;
-              }}
-            >
-              <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }} />
+            {/* Drag handle — also the swipe-to-close grabber. With title art the
+                close X sits at its right so the art gets the full width below. */}
+            <div className="relative">
+              <div
+                className={`${titleArt ? 'pt-2.5 pb-1.5 min-h-[44px] items-start' : 'pt-2.5 pb-1.5'} flex justify-center cursor-grab touch-none`}
+                onTouchStart={(e) => { startY.current = e.touches[0].clientY; }}
+                onTouchMove={(e) => {
+                  if (startY.current !== null) setDragY(Math.max(0, e.touches[0].clientY - startY.current));
+                }}
+                onTouchEnd={() => {
+                  if (dragY > 90) setOpen(false);
+                  setDragY(0);
+                  startY.current = null;
+                }}
+              >
+                <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }} />
+              </div>
+              {titleArt && (
+                <div className="absolute right-4 top-2">
+                  <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />
+                </div>
+              )}
             </div>
 
             {/* The game's host waves hello at the top of its guide (when the
@@ -94,22 +102,27 @@ export function GameGuideButton({
               </div>
             )}
 
-            <div className="flex items-start justify-between gap-2 px-5 pb-2">
-              <div className="min-w-0 flex-1">
-                {titleArt ? (
-                  <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.guide} as="h2" align="left" className="mb-1" />
-                ) : (
+            {titleArt ? (
+              // ART_SPEC §14: the title art spans the sheet (full width minus
+              // 32), up to 72 px tall; the tagline sits under it.
+              <div className="px-4 pb-2">
+                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.guide} maxWidth={2000} as="h2" className="mb-1" />
+                <p className="text-xs font-bold mt-0.5 text-center" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
+              </div>
+            ) : (
+              <div className="flex items-start justify-between gap-2 px-5 pb-2">
+                <div className="min-w-0 flex-1">
                   <h2
                     className="text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text"
                     style={{ backgroundImage: GUIDE_TITLE_GRADIENTS[slug] ?? `linear-gradient(135deg, ${accentColor}, ${accentColor})` }}
                   >
                     {guide.title}
                   </h2>
-                )}
-                <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
+                  <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
+                </div>
+                <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />
               </div>
-              <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />
-            </div>
+            )}
 
             <div className="overflow-y-auto px-5 pb-8 space-y-3">
               <div className="grid grid-cols-2 gap-2">

@@ -389,15 +389,17 @@ extension View {
         }
     }
 
-    /// ART_SPEC §10 game screen headers: the game's title art (lettering + host,
-    /// ≈38 pt tall, fit to the title width) in place of this title text + host.
+    /// ART_SPEC §10 / §14 game screen headers: the game's title art (lettering + host)
+    /// in place of this title text + host, sized by the width between the corner
+    /// controls — height from the aspect ratio, capped at 72 pt, at least a 44 pt slot.
     /// Without the art it stays the text with `.gameHost` beside it. `inset` keeps
-    /// the (wider) art clear of the overlaid corner Home / Help circles in headers
-    /// that don't pad the title themselves.
+    /// the art clear of the overlaid corner Home / Help circles in headers that don't
+    /// pad the title themselves. `centerY` (the corner buttons' center from the
+    /// header's top) drops a short art down so the buttons sit centered on it.
     @ViewBuilder
-    func gameTitleArt(_ mode: GameMode, height: CGFloat = 38, hostSize: CGFloat = 30, inset: CGFloat = 0) -> some View {
+    func gameTitleArt(_ mode: GameMode, hostSize: CGFloat = 30, inset: CGFloat = 0, centerY: CGFloat? = nil) -> some View {
         if let art = GameTitleArt.forMode(mode) {
-            GameTitleArtView(asset: art.asset, label: art.label, height: height)
+            GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 72, minHeight: 44, centerY: centerY)
                 .padding(.horizontal, inset)
         } else {
             gameHost(mode, size: hostSize)

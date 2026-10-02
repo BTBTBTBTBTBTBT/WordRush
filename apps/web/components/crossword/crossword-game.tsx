@@ -42,6 +42,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
+import { GameBackground } from '@/components/ui/page-background';
+import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 
 // Crosswordocious (More Games §13): a themed fill-in sayings crossword. Tap a
 // cell or a clue, type; letters are free to set and clear. Check locks right
@@ -335,12 +337,12 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const capsuleStyle = (dim: boolean, danger = false) => dim ? undefined : danger ? { borderColor: '#dc262666', color: '#dc2626', background: '#dc26260d' } : { borderColor: `${CROSSWORD_ACCENT}66`, color: CROSSWORD_ACCENT, background: `${CROSSWORD_ACCENT}0d` };
 
   return (
-    <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
+    <GameBackground mode="CROSSWORD" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="CROSSWORD" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('CROSSWORD')}>
         <GameHomeButton accentColor={CROSSWORD_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="crosswordocious" accentColor={CROSSWORD_ACCENT} />
         <SoundToggle accentColor={CROSSWORD_ACCENT} />
@@ -356,7 +358,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
         {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '104px' }}>
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(104) }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
@@ -444,6 +446,6 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
           <BottomNav />
         </>
       )}
-    </div>
+    </GameBackground>
   );
 }

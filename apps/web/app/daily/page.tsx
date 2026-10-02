@@ -729,7 +729,7 @@ export default function DailyPage() {
               {/* ART_SPEC §10: the selected game's title art (lettering + host)
                   in place of the game name and the host beside it. */}
               {titleArt ? (
-                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.playCard} align="left" as="div" priority={false} className="mb-0.5" />
+                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" priority={false} className="mb-0.5" />
               ) : (
                 <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>
                   {mode.title}

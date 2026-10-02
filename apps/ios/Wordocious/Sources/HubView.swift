@@ -223,7 +223,7 @@ struct HubView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.hub))  // ART_SPEC §15: the game's soft tint + quiet tiles
             VStack(spacing: 8) {
                 header
                 if vm.showResults { results } else { board }
@@ -275,6 +275,8 @@ struct HubView: View {
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .onChange(of: showOverlay) { vm.setOverlay($0) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.hub))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("HUB")
         .swipeToGoBack { dismiss() }
@@ -303,7 +305,7 @@ struct HubView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("HUBBUB").font(Brand.font(24, .black)).foregroundStyle(hubAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.hub, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.hub, inset: 46, centerY: GameCornerButton.centerY)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("\(vm.state.found.count)/\(vm.state.words.count) words").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -319,7 +321,7 @@ struct HubView: View {
                     }
                 }
             }
-        }.padding(.top, 6)
+        }
     }
 
     private var rankBar: some View {

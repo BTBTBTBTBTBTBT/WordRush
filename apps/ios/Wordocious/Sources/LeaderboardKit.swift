@@ -185,7 +185,8 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
     let title: String
     var sub: String? = nil
     var subSymbol: String? = nil
-    /// ART_SPEC §10: the card's game — its title art (≈40 pt) replaces the name text.
+    /// ART_SPEC §10 / §14: the card's game — its title art (filling the room left of
+    /// the trailing controls, ≤ 52 pt tall) replaces the name text.
     var mode: GameMode? = nil
     @ViewBuilder var right: () -> Right
     @ViewBuilder var extra: () -> Extra
@@ -196,7 +197,7 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
                 ModeIconView(icon: icon, accent: accent, box: 32)
                 VStack(alignment: .leading, spacing: 2) {
                     if let art = mode.flatMap(GameTitleArt.forMode) {
-                        GameTitleArtView(asset: art.asset, label: art.label, height: 40, maxWidth: 240, alignment: .leading)
+                        GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 52, alignment: .leading)
                     } else {
                         Text(title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                             .lineLimit(1).minimumScaleFactor(0.7)

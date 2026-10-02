@@ -4,6 +4,7 @@
 // the true aspect ratio (never stretched). iOS image sets and Android
 // drawable-nodpi carry the same names (docs/design/brand/ship-art.py).
 
+import type { CSSProperties } from 'react';
 import { MODES, MODE_BY_DBKEY } from './modes.generated';
 
 /** Leaderboard day titles (§1), one per weekday, Sunday first (Date#getUTCDay order). */
@@ -186,15 +187,67 @@ export function gameTitleArtLabel(name: GameTitleArtName): string {
   return MODES.find((m) => m.id === id)?.title ?? id;
 }
 
-/** Rendered heights of the game title art (§10), CSS px. */
+/**
+ * Rendered heights of the game title art, CSS px. §14 (founder, 2026-10-02
+ * midday: "much larger on the page"): every place is sized by the width it
+ * has, and these are the height caps.
+ */
 export const GAME_TITLE_ART_HEIGHT = {
-  /** Game screen header: ≈36–40 pt, fit to the width between the corner buttons. */
-  header: 38,
-  /** Guide sheet / guide page top: ≈56 pt. */
-  guide: 56,
-  /** Leaderboard / Records Play card, in place of the host + game name: ≈40 pt. */
-  playCard: 40,
+  /** Game screen header cap: width = the room between the corner buttons, ≤ 72 tall. */
+  header: 72,
+  /** Game screen header floor, so short names (MUDDLE) never look tiny. */
+  headerMin: 44,
+  /** Guide sheet / guide page top: full width minus 32, ≤ 72 tall (§14; was 56). */
+  guide: 72,
+  /** Leaderboard / Records Play card: fills the room left of Play, ≤ 52 tall (§14; was 40). */
+  playCard: 52,
 } as const;
+
+/**
+ * The game screen header around the title art (§14): ≤ 6 px top / bottom
+ * padding, 8 px side padding (px-2), 44 px corner buttons at left-2 / right-2,
+ * and the art keeps `clearance` px clear on each side of the header's content
+ * box (the 44 px button plus 8 px air). Game screens run the full viewport
+ * width, so the room between the buttons is 100vw − 2 × (side + clearance).
+ */
+export const GAME_HEADER = { pad: 6, side: 8, button: 44, clearance: 52 } as const;
+
+/**
+ * A header art's rendered height as CSS (§14): the width between the corner
+ * buttons times the art's aspect ratio, clamped to [headerMin, header].
+ */
+export function gameHeaderArtHeight(name: GameTitleArtName): string {
+  const [w, h] = ART_SIZE[name];
+  const room = 2 * (GAME_HEADER.side + GAME_HEADER.clearance);
+  return `clamp(${GAME_TITLE_ART_HEIGHT.headerMin}px, calc((100vw - ${room}px) * ${(h / w).toFixed(4)}), ${GAME_TITLE_ART_HEIGHT.header}px)`;
+}
+
+/**
+ * The style a game screen header wearing title art takes (§14), with
+ * className `game-art-header` (globals.css: 6 px top / bottom padding):
+ * - `--game-corner-top` drops the corner buttons so they sit vertically
+ *   centered on the art (GameHomeButton / GameGuideButton / SoundToggle read it);
+ * - `--game-header-shift` is how much lower the line under the title now sits
+ *   than it did (`titleBottom`: where the old title ended, px from the header
+ *   top: 46 for the 8 px + 38 px art headers, 34 for Muddle's compact one), so
+ *   absolutely placed toasts keep their spot under the header (gameToastTop).
+ * Games without title art get no change.
+ */
+export function gameHeaderStyle(dbKey: string, titleBottom = 46): CSSProperties {
+  const art = gameTitleArtForDbKey(dbKey);
+  if (!art) return {};
+  const h = gameHeaderArtHeight(art);
+  return {
+    '--game-art-h': h,
+    '--game-corner-top': `calc(${GAME_HEADER.pad}px + (var(--game-art-h) - ${GAME_HEADER.button}px) / 2)`,
+    '--game-header-shift': `calc(var(--game-art-h) + ${GAME_HEADER.pad - titleBottom}px)`,
+  } as CSSProperties;
+}
+
+/** A toast's `top` inside a game header, moved down by the header's growth (§14). */
+export function gameToastTop(px: number): string {
+  return `calc(${px}px + var(--game-header-shift, 0px))`;
+}
 
 /** A game's title art (§10) by db key (DUEL, DUEL_6, SCRAMBLE, …), or null (SWEEP, VS). */
 export function gameTitleArtForDbKey(dbKey: string | null | undefined): GameTitleArtName | null {
@@ -286,9 +339,72 @@ export const PAGE_TILES = { name: 'art-bg-tiles', size: 320, opacity: { light: 0
 
 /** A card's shadow on a tinted page: the tint's accent at 11% alpha, blur 14, y 5. */
 export function pageCardShadow(tint: PageTint): string {
-  const hex = PAGE_TINTS[tint].accent.slice(1);
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return accentCardShadow(PAGE_TINTS[tint].accent);
+}
+
+/** A card's shadow leaning toward any accent (#rrggbb) at 11% alpha, blur 14, y 5. */
+export function accentCardShadow(accentHex: string): string {
+  const [r, g, b] = hexRgb(accentHex);
   return `0 5px 14px rgba(${r},${g},${b},0.11)`;
+}
+
+function hexRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+/** `accent` at `alpha` laid over the opaque `base`, as #RRGGBB. */
+export function mixOver(accentHex: string, alpha: number, baseHex: string): string {
+  const a = hexRgb(accentHex);
+  const b = hexRgb(baseHex);
+  return `#${a.map((c, i) => Math.round(c * alpha + b[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
+
+// ── Game screens: a soft tint in the game's color (§15) ─────────────────────
+
+/** A page background's gradient stops (light + dark) and the accent its card shadows lean toward. */
+export interface TintStops {
+  light: readonly [string, string, string];
+  dark: readonly [string, string, string];
+  accent: string;
+}
+
+/**
+ * A game's tint (§15), made from its accent: light = accent at 6% over white,
+ * 10% over white, 4% over #FFF7FB; dark = accent at 10% / 14% / 8% over #120D1F.
+ */
+export function gameTint(accentHex: string): TintStops {
+  return {
+    light: [mixOver(accentHex, 0.06, '#FFFFFF'), mixOver(accentHex, 0.1, '#FFFFFF'), mixOver(accentHex, 0.04, '#FFF7FB')],
+    dark: [mixOver(accentHex, 0.1, '#120D1F'), mixOver(accentHex, 0.14, '#120D1F'), mixOver(accentHex, 0.08, '#120D1F')],
+    accent: accentHex,
+  };
+}
+
+/** A solo game's tint by its db key (DUEL, QUORDLE, SCRAMBLE, …), or null when unknown. */
+export function gameTintForDbKey(dbKey: string | null | undefined): TintStops | null {
+  const accent = dbKey ? MODE_BY_DBKEY[dbKey]?.accentHex : null;
+  return accent ? gameTint(accent) : null;
+}
+
+/** Game screens draw the tile pattern quieter than menus (§15): 8% light, 5% dark. */
+export const GAME_TILES_OPACITY = { light: 0.08, dark: 0.05 } as const;
+
+// ── Title art motion (§16) ──────────────────────────────────────────────────
+
+/**
+ * How a title art animates when its page appears (§16): page titles
+ * (art-title-*) and day titles (art-day-*) pop in (scale 0.94 → 1.03 → 1,
+ * fade in, 420 ms) then float forever (0 → −2 px → 0 over 4 s); game title art
+ * (art-game-*) only pops in (no float in game headers during play); everything
+ * else (moments, scenes) is left alone. Reduce Motion (OS or the in-app
+ * toggle) turns both off in globals.css.
+ */
+export type ArtMotion = 'float' | 'pop' | 'none';
+export function artMotion(name: string): ArtMotion {
+  if (name.startsWith('art-title-') || name.startsWith('art-day-')) return 'float';
+  if (name.startsWith('art-game-')) return 'pop';
+  return 'none';
 }
 
 /**

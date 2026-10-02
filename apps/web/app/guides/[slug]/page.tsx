@@ -44,8 +44,9 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         {titleArt ? (
           // ART_SPEC §10: the game's title art (lettering + host) replaces the
-          // icon, title text and waving host.
-          <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} height={GAME_TITLE_ART_HEIGHT.guide} align="left" className="mb-1" />
+          // icon, title text and waving host; §14: it fills the content width,
+          // up to 72 px tall.
+          <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.guide} maxWidth={2000} align="left" className="mb-1" />
         ) : (
           <div className="flex items-center gap-2.5 mb-1">
             <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>

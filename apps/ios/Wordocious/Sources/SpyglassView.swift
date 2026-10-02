@@ -188,7 +188,7 @@ struct SpyglassView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.wordsearch))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; SpyglassGridView(vm: vm, revealMissing: vm.state.status == .lost).padding(.horizontal, 6); wordChips; result }.padding(.horizontal, 10) }
             } else {
@@ -238,6 +238,8 @@ struct SpyglassView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.wordsearch))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("WORDSEARCH")
         .swipeToGoBack { dismiss() }
@@ -271,7 +273,7 @@ struct SpyglassView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("SPYGLASS").font(Brand.font(24, .black)).foregroundStyle(spyglassAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.wordsearch, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.wordsearch, inset: 46, centerY: GameCornerButton.centerY)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
@@ -288,7 +290,6 @@ struct SpyglassView: View {
                 }
             }
         }
-        .padding(.top, 6)
     }
 
     /// The word list as chips: struck through when found, accent-ringed when hinted.

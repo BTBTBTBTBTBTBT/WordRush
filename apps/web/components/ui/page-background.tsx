@@ -1,4 +1,4 @@
-import { PAGE_TILES, PAGE_TINTS, artSrc, pageCardShadow, type PageTint } from '@/lib/art';
+import { GAME_TILES_OPACITY, PAGE_TILES, PAGE_TINTS, accentCardShadow, artSrc, gameTintForDbKey, type PageTint, type TintStops } from '@/lib/art';
 
 // "Page tint + tiles" (docs/ART_SPEC.md §11, founder pick 2026-10-02): the one
 // shared page background. It is the page's root element: a soft diagonal
@@ -14,18 +14,28 @@ import { PAGE_TILES, PAGE_TINTS, artSrc, pageCardShadow, type PageTint } from '@
 // their gray labels never sit on a dark tint. Reduce transparency / more
 // contrast drops the tiles and keeps the gradient (globals.css .page-bg).
 // No hooks, so server pages can use it too.
+//
+// §15: solo game screens pass their own `colors` (lib/art.ts gameTint, made
+// from the game's accent) and the quieter `tilesOpacity` (GAME_TILES_OPACITY);
+// boards, keyboards and tiles draw their own opaque colors on top.
 
 interface PageBackgroundProps {
   tint?: PageTint;
   /** 'light' pins the light stops even in the dark theme (light-only pages). */
   scheme?: 'auto' | 'light';
+  /** Custom stops + accent instead of a named tint (§15 game screens). */
+  colors?: TintStops;
+  /** Tile pattern opacity instead of the menus' 12% / 7% (§15 game screens: 8% / 5%). */
+  tilesOpacity?: { light: number; dark: number };
   className?: string;
   style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
-export function PageBackground({ tint = 'home', scheme = 'auto', className = '', style, children }: PageBackgroundProps) {
-  const { light, dark } = PAGE_TINTS[tint];
+export function PageBackground({
+  tint = 'home', scheme = 'auto', colors, tilesOpacity = PAGE_TILES.opacity, className = '', style, children,
+}: PageBackgroundProps) {
+  const { light, dark, accent } = colors ?? PAGE_TINTS[tint];
   const vars = {
     '--page-bg-1': light[0],
     '--page-bg-2': light[1],
@@ -35,14 +45,27 @@ export function PageBackground({ tint = 'home', scheme = 'auto', className = '',
     '--page-bg-dark-3': dark[2],
     '--page-tiles': `url('${artSrc(PAGE_TILES.name)}')`,
     '--page-tiles-size': `${PAGE_TILES.size}px`,
-    '--page-tiles-opacity': String(PAGE_TILES.opacity.light),
-    '--page-tiles-opacity-dark': String(PAGE_TILES.opacity.dark),
-    '--page-card-shadow': pageCardShadow(tint),
+    '--page-tiles-opacity': String(tilesOpacity.light),
+    '--page-tiles-opacity-dark': String(tilesOpacity.dark),
+    '--page-card-shadow': accentCardShadow(accent),
   } as React.CSSProperties;
   return (
-    <div className={className} style={{ ...vars, ...style }} data-page-tint={tint} data-page-scheme={scheme}>
+    <div className={className} style={{ ...vars, ...style }} data-page-tint={colors ? 'game' : tint} data-page-scheme={scheme}>
       <div className="page-bg" aria-hidden="true" />
       {children}
     </div>
   );
+}
+
+/**
+ * A solo game screen's background (docs/ART_SPEC.md §15): PageBackground in
+ * the game's own tint (gameTint of its accent) with the quieter tile pattern,
+ * cards' shadows leaning toward the accent. Not for VS matches. The game's
+ * root element: it takes the className / style the old flat-background div had.
+ */
+export function GameBackground({ mode, ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'tilesOpacity'> & {
+  /** The mode's db key (DUEL, QUORDLE, SCRAMBLE, …). */
+  mode: string;
+}) {
+  return <PageBackground colors={gameTintForDbKey(mode) ?? undefined} tilesOpacity={GAME_TILES_OPACITY} {...rest} />;
 }

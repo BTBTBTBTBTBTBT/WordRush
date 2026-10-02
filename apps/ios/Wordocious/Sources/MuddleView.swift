@@ -317,7 +317,7 @@ struct MuddleView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.scramble))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView {
                     VStack(spacing: 12) {
@@ -365,6 +365,8 @@ struct MuddleView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.scramble))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("SCRAMBLE")
         .swipeToGoBack { dismiss() }
@@ -488,11 +490,13 @@ struct MuddleView: View {
         .accessibilityLabel(label)
     }
 
-    /// Title plus ONE meta line, tight.
+    /// Title plus ONE meta line, tight. The title is the game's art (ART_SPEC §14:
+    /// the compact header grows to fit it), centered on the corner buttons.
     private var header: some View {
         VStack(spacing: 1) {
             Text("MUDDLE").font(Brand.font(20, .black)).foregroundStyle(muddleAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.scramble, size: 24)
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .gameTitleArt(.scramble, hostSize: 24, centerY: GameCornerButton.centerY)
             HStack(spacing: 6) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(11)).foregroundStyle(muddleAccent) }
@@ -510,7 +514,6 @@ struct MuddleView: View {
             }
             .lineLimit(1).minimumScaleFactor(0.75)
         }
-        .padding(.top, 2)
         .padding(.horizontal, 44)
     }
 

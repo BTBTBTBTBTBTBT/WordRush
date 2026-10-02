@@ -32,7 +32,9 @@ function LadderTile({ letter, kind, changed, invalid }: { letter: string; kind: 
       cls = invalid ? 'border-red-400 bg-red-50 text-red-500' : letter ? 'border-gray-400 bg-white text-gray-800' : 'border-gray-300 bg-white text-gray-800';
       break;
     case 'end':
-      cls = 'border-dashed bg-transparent'; style = { borderColor: `${LADDER_ACCENT}88`, color: LADDER_ACCENT }; break;
+      // Opaque in the page color (it used to be see-through onto the flat page) so
+      // the game tint (ART_SPEC §15) never shows through a board tile.
+      cls = 'border-dashed'; style = { background: 'var(--color-bg)', borderColor: `${LADDER_ACCENT}88`, color: LADDER_ACCENT }; break;
     case 'reveal':
       cls = 'border-gray-200 bg-gray-50 text-gray-400'; break;
   }

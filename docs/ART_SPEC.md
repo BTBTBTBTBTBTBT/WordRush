@@ -212,3 +212,25 @@ game headers during play). Reduce Motion (OS or in-app toggle): no animation, st
   (no tiles at widget sizes), the day's host mascot (MASCOT_SPEC §5 / today's day art host) at
   the corner, the flame icon3d next to the streak, and the W/L badge art for today's result where a
   result is shown. Widget assets must be bundled in the widget target (copy what's needed).
+
+## 18. Layout pass from the ChatGPT mockups (docs/design/brand/layouts/home-mockup.png, game-mockup.png)
+
+Founder: "design in a layout with the help of chat design and knock all of this out".
+1. **Background tiles v2.** `art-bg-tiles` is now a 720 px seamless pattern of big glossy,
+   softly blurred letter tiles with opacity BAKED IN. Draw it at 100% in light mode and 60% in
+   dark (menus), and at 55% light / 35% dark on game screens (§15). Tile it at 360 pt per tile.
+2. **Home game cards (WORDOCIOUS DAILIES + PUZZLES grids).** Match the mockup: 2-column grid
+   of white rounded cards (radius 18), a THICK colored top band (10 pt, the game accent,
+   rounded top corners), content in a row: the glossy game icon at 52 pt on the left (no chip
+   box), then the game name (accent color, 900, 16) over the one-line description (secondary
+   ink, 12.5, max 2 lines), and a small chevron at the right. Card height ~84 pt. Keep every
+   existing state exactly: completed W/L badge (top-right corner over the band), Pro lock,
+   free-played dim, result subtitle replacing the description when done, tap targets.
+3. **Floating tab bar.** The bottom tab bar becomes a frosted floating pill: inset 12 pt from
+   the sides and bottom safe area, radius 26, white at 78% with background blur (where the
+   platform supports it; solid white 94% otherwise), soft shadow; selected tab keeps the purple
+   label + a 3 pt purple underline pill under the label. Content gets bottom padding so the
+   last row clears the pill.
+4. **Greeting banner.** The frosted headline strip on Home: white at 72% with blur, radius 22,
+   the host mascot peeking over its top-right edge (already there) — make sure the strip uses
+   the full content width and the headline sits centered when it fits on one line.

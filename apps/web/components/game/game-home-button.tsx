@@ -18,9 +18,10 @@ interface GameHomeButtonProps {
    */
   onClick?: () => void;
   /**
-   * Override positioning. Defaults to `absolute top-2 left-2` which works
-   * for every solo game header. Gauntlet uses `top-1` because its header
-   * sits tighter.
+   * Override positioning. Defaults to top-left at `--game-corner-top` (8 px
+   * when unset): a header wearing game title art sets it so the button sits
+   * vertically centered on the art (ART_SPEC §14, lib/art.ts gameHeaderStyle).
+   * Gauntlet uses `top-1` because its header sits tighter.
    */
   positionClass?: string;
   /**
@@ -40,7 +41,7 @@ interface GameHomeButtonProps {
  */
 export function GameHomeButton({
   onClick,
-  positionClass = 'absolute top-2 left-2 z-10',
+  positionClass = 'absolute top-[var(--game-corner-top,0.5rem)] left-2 z-10',
   href = '/',
 }: GameHomeButtonProps) {
   const className = `${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`;

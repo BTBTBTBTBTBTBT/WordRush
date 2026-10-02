@@ -710,6 +710,37 @@
 }
 [data-reduced-motion="true"] .mascot { animation: none !important; }
 
+/* Title art motion (docs/ART_SPEC.md §16; components/ui/art-title.tsx, lib/art.ts artMotion).
+   pop:   once when the page appears, scale 0.94 → 1.03 → 1 and fade in over 420 ms
+          (ease-out, a little spring). Game title art (art-game-*) only pops.
+   float: the pop, then a very slow idle float, 0 → −2 px → 0 over 4 s, forever
+          (page titles art-title-* and day titles art-day-*).
+   Reduce Motion (OS or the in-app toggle): static, no fade. */
+@keyframes art-pop {
+  0%   { opacity: 0; transform: scale(0.94); }
+  60%  { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes art-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+.art-pop   { animation: art-pop 420ms cubic-bezier(0.2, 0.8, 0.3, 1.15) both; }
+.art-float { animation: art-pop 420ms cubic-bezier(0.2, 0.8, 0.3, 1.15) both, art-float 4s ease-in-out 420ms infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .art-pop, .art-float { animation: none !important; }
+}
+[data-reduced-motion="true"] .art-pop,
+[data-reduced-motion="true"] .art-float { animation: none !important; }
+
+/* Game screen headers wearing title art (docs/ART_SPEC.md §14; lib/art.ts
+   gameHeaderStyle): ≤ 6 px top / bottom padding so the art, not empty space,
+   sets the header's height. */
+.game-art-header {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

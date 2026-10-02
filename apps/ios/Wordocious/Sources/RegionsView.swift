@@ -194,7 +194,7 @@ struct RegionsView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.regions))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView { VStack(spacing: 10) { header; board.padding(.horizontal, 6); result }.padding(.horizontal, 10) }
             } else {
@@ -241,6 +241,8 @@ struct RegionsView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.regions))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("REGIONS")
         .swipeToGoBack { dismiss() }
@@ -262,7 +264,7 @@ struct RegionsView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("STARSWEEP").font(Brand.font(24, .black)).foregroundStyle(regionsAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.regions, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.regions, inset: 46, centerY: GameCornerButton.centerY)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(vm.sizeLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -285,7 +287,6 @@ struct RegionsView: View {
                 }
             }
         }
-        .padding(.top, 6)
     }
 
     /// Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 capsules; switching starts a fresh board.

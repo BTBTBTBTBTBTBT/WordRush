@@ -242,7 +242,7 @@ struct KindredView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .forGame(.groups))  // ART_SPEC §15: the game's soft tint + quiet tiles
             if vm.isFinished {
                 ScrollView {
                     VStack(spacing: 10) {
@@ -344,6 +344,8 @@ struct KindredView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Cards on the game screen lift with the game's accent (ART_SPEC §15).
+        .environment(\.pageTint, .forGame(.groups))
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity("GROUPS")
         .swipeToGoBack { dismiss() }
@@ -381,7 +383,7 @@ struct KindredView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("KINDRED").font(Brand.font(24, .black)).foregroundStyle(kindredAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.groups, inset: 46)
+                .lineLimit(1).minimumScaleFactor(0.7).gameTitleArt(.groups, inset: 46, centerY: GameCornerButton.centerY)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(kindredAccent) }
@@ -398,7 +400,6 @@ struct KindredView: View {
                 }
             }
         }
-        .padding(.top, 6)
     }
 
     private var result: some View {
