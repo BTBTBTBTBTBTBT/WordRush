@@ -298,10 +298,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Box(Modifier.size(64.dp).clip(CircleShape).background(if (avatarUrl != null) Brush.linearGradient(listOf(WTheme.surface, WTheme.surface)) else ProfileAccent.avatarBrush(accent)), contentAlignment = Alignment.Center) {
-                    if (avatarUrl != null) coil.compose.AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                    else Text(avatarEmoji.ifBlank { (username.take(1).ifBlank { "?" }).uppercase() }, fontSize = if (avatarEmoji.isBlank()) 26.sp else 28.sp, fontWeight = FontWeight.Black, color = Color.White)
-                }
+                // ART_SPEC §20: photo in a circle, else the letter tile (live username / accent / emoji).
+                if (avatarUrl != null) coil.compose.AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.size(64.dp).clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                else LetterTileAvatar(username.trim().ifBlank { "?" }, 64.dp, accentHex = accent, emoji = avatarEmoji)
                 Text(username.trim().ifBlank { "username" }, fontSize = 18.sp, fontWeight = FontWeight.Black, color = accentColor)
                 if (featuredName != null) Row(Modifier.background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("★", fontSize = 10.sp, color = accentColor); Text(featuredName.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, color = accentColor)
@@ -313,15 +312,10 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
 
             // Avatar + Change Photo
-            Box(
-                Modifier.size(72.dp).clip(CircleShape).background(if (avatarUrl != null) Brush.linearGradient(listOf(WTheme.surface, WTheme.surface)) else ProfileAccent.avatarBrush(accent)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (avatarUrl != null) {
-                    coil.compose.AsyncImage(model = avatarUrl, contentDescription = "Avatar", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                } else {
-                    Text(avatarEmoji.ifBlank { (profile?.username?.take(2) ?: "P").uppercase() }, fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.White)
-                }
+            if (avatarUrl != null) {
+                coil.compose.AsyncImage(model = avatarUrl, contentDescription = "Avatar", modifier = Modifier.size(72.dp).clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+            } else {
+                LetterTileAvatar(profile?.username ?: "P", 72.dp, accentHex = accent, emoji = avatarEmoji)
             }
             Text(
                 if (uploading) "Uploading…" else "Change Photo", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary,

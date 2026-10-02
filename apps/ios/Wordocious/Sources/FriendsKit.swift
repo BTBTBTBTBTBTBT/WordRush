@@ -244,16 +244,19 @@ struct FriendsPresenceAvatar: View {
     @State private var pulse = false
 
     var body: some View {
+        // §20: the on-now ring follows the avatar — circle around a photo,
+        // rounded square around a letter tile.
+        let tile = AvatarView.showsTile(url)
         AvatarView(url: url, username: username, size: size, emoji: emoji)
             .padding(online && ring ? 3 : 0)
             .background {
                 if online && ring {
                     ZStack {
                         if !Theme.reduceMotion {
-                            Circle().stroke(FriendsKit.green.opacity(0.45), lineWidth: 3)
+                            AvatarOutline(tile: tile).stroke(FriendsKit.green.opacity(0.45), lineWidth: 3)
                                 .scaleEffect(pulse ? 1.18 : 1).opacity(pulse ? 0 : 1)
                         }
-                        Circle().stroke(FriendsKit.green, lineWidth: 2)
+                        AvatarOutline(tile: tile).stroke(FriendsKit.green, lineWidth: 2)
                     }
                 }
             }

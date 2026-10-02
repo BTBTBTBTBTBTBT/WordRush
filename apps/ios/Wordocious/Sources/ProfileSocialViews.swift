@@ -108,10 +108,12 @@ struct TodayRingAvatar: View {
     }
 
     var body: some View {
+        // §20: the progress ring is a rounded square around a letter tile.
+        let tile = AvatarView.showsTile(profile.avatarUrl)
         ZStack {
-            Circle().stroke(Theme.border, lineWidth: 5)
+            AvatarOutline(tile: tile).stroke(Theme.border, lineWidth: 5)
                 .frame(width: 114, height: 114)
-            Circle().trim(from: 0, to: fraction)
+            AvatarOutline(tile: tile).trim(from: 0, to: fraction)
                 .stroke(
                     LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing),

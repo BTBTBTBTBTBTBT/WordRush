@@ -268,3 +268,43 @@ Founder: "design in a layout with the help of chat design and knock all of this 
    the board area starts right after the status line (keep the board's own centering logic for
    tall screens, but the title now occupies the top third that used to be empty). On short
    screens (height < 700 pt) cap the title at 84 pt. VS matches unchanged.
+
+## 20. Initials avatars become letter tiles (founder, 2026-10-02 afternoon)
+
+Founder: "the circles that currently populate a profile pic if no image is uploaded, I want
+those to change to squares matching the initials as if they were letter tiles matching the
+style of the letters we are creating with these mascots."
+
+**Scope.** Every place that draws a player with NO uploaded photo (initials fallback, and the
+chosen-emoji fallback) — profile, edit profile, public profile, leaderboard rows + podium,
+Records, Friends (list, on now, presence, activity feed, today's race, friendly boards,
+quick play), VS (lobby, queue, intro, HUD, results, challenges), invites. Uploaded photos
+stay circles. Bots keep their own art. One shared component per platform so it cannot drift.
+
+**The tile (drawn in code, scales from 20 to 120 pt):**
+- Shape: rounded square, corner radius 24% of size. The tile fills the whole avatar box (no
+  circle clip around it). Any ring / border the circle had becomes a rounded-square stroke at
+  the same radius + stroke width; presence dots and badges sit on the tile's corner.
+- Body (the tile's 3D thickness): full-size rounded square in `edge` = base darkened 22%.
+- Face: rounded square inset 0 on the sides and top, 7% of size up from the bottom (so the
+  edge shows as a thick bottom lip), same corner radius, vertical gradient
+  `light` (base lightened 18%) at the top → `base` at 70% → base darkened 6% at the bottom.
+- Gloss: a white rounded rect over the top 42% of the face, inset 8% from left/right/top,
+  radius 18% of size, white 30% at its top → 0% at its bottom.
+- Letters: the same initials as today (first two characters of the username, uppercased; one
+  if the name has one), white, Nunito Black (900) — web `font-nunito` weight 900, iOS/Android
+  the Nunito already bundled (fall back to the rounded system font, heavy) — centered on the
+  FACE (not the whole box). Size 0.56 × size for one letter, 0.42 × size for two, letter
+  spacing −2%. Soft drop shadow: `edge` at 45% opacity, offset y = 3% of size, blur 2% of
+  size. Emoji fallback: the emoji centered at 0.5 × size, no shadow.
+- Color (`base`): the player's chosen profile accent if they set one (existing
+  personalization wins); otherwise the cast color of their first letter —
+  W #8B2CF5, O #FF2F91, R #8E96A8, D #0A6CFF, C #00B4BE, I #4CC77A, U #9B3DF3, S #F5A623 —
+  and for every other letter the palette
+  [#8B2CF5, #FF9F1A, #0A6CFF, #FF2F91, #00B4BE, #4CC77A, #9B3DF3, #F5A623, #F0782C]
+  indexed by (uppercase char code) mod 9. Non-letters (digits, symbols) use the same mod rule.
+- Dark mode: identical (the tile is its own light source). Accessibility label unchanged.
+- No animation.
+
+Same helper for the color pick on all three platforms; add a small unit test per platform for
+the color map (W → #8B2CF5, O → #FF2F91, A → palette[65 mod 9 = 2] = #0A6CFF, accent wins).

@@ -164,7 +164,8 @@ struct VSMatchIntroView: View {
             // layer, so the ring can never drift off the photo mid-slam.
             ZStack {
                 VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 72)
-                Circle().strokeBorder(.white, lineWidth: 3)
+                // §20: rounded-square ring on a letter tile.
+                AvatarOutline(tile: p.botArt == nil && AvatarView.showsTile(p.avatarUrl)).strokeBorder(.white, lineWidth: 3)
             }
             .frame(width: 72, height: 72)
             .drawingGroup()

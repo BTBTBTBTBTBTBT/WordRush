@@ -66,6 +66,8 @@ fun VsOpponentBar(
     /** Gauntlet: the opponent's current stage name + accent; null elsewhere. */
     stageName: String? = null,
     stageGradient: List<Color> = emptyList(),
+    /** Whose initials the §20 letter tile shows (a race's label is not a username). */
+    avatarName: String = name,
 ) {
     val liveTotalBoards = maxOf(opponent.totalBoards, totalBoards)
     val multi = liveTotalBoards > 1
@@ -83,7 +85,7 @@ fun VsOpponentBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        VsAvatar(name, avatarUrl, size = 36.dp, borderColor = Color.Transparent)
+        VsAvatar(avatarName, avatarUrl, size = 36.dp, borderColor = Color.Transparent)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(

@@ -212,16 +212,13 @@ struct VSPlayerAvatar: View {
     }
 }
 
-/// Initial-letter avatar circle (incoming challenges, rivals).
+/// Name-only avatar (incoming challenges, rivals — no photo in the payload):
+/// the §20 letter tile.
 struct VSInitialAvatar: View {
     let name: String
     var size: CGFloat = 36
-    var tint: Color = VsLobbyKit.ink
     var body: some View {
-        Text(String(name.trimmingCharacters(in: CharacterSet(charactersIn: "@ ")).prefix(1)).uppercased())
-            .font(Brand.font(size * 0.42, .black)).foregroundStyle(tint)
-            .frame(width: size, height: size)
-            .background(Circle().fill(tint.opacity(0.14)))
+        LetterTileAvatar(username: name.trimmingCharacters(in: CharacterSet(charactersIn: "@ ")), size: size)
     }
 }
 

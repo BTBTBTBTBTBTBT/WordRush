@@ -171,6 +171,7 @@ fun TodaysRaceCard(
                             id = me.id, username = me.username ?: "You",
                             avatarUrl = me.avatarUrl, avatarEmoji = me.avatarEmoji, level = me.level,
                         ),
+                        accentHex = if (f == null) me.accentColor else null,
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(1.dp), modifier = Modifier.weight(1f)) {
                         Text(

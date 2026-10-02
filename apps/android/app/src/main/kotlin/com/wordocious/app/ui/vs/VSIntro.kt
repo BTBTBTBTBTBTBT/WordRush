@@ -59,8 +59,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** One intro/header/result player identity. Null avatar → initials circle. */
-data class IntroPlayer(val username: String, val avatarUrl: String?, val level: Int?)
+/** One intro/header/result player identity. Null avatar → letter tile (ART_SPEC §20). */
+data class IntroPlayer(val username: String, val avatarUrl: String?, val level: Int?, val accentHex: String? = null, val avatarEmoji: String? = null)
 
 private const val INTRO_DURATION_MS = 2500L
 
@@ -161,8 +161,12 @@ private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Lon
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.shadow(6.dp, CircleShape, ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))) {
-            VsAvatar(player.username, player.avatarUrl, size = 72.dp, borderWidth = 3.dp, borderColor = Color.White)
+        val avatarShape = if (player.avatarUrl.isNullOrBlank()) com.wordocious.app.ui.letterTileShape(72.dp) else CircleShape
+        Box(Modifier.shadow(6.dp, avatarShape, ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))) {
+            VsAvatar(
+                player.username, player.avatarUrl, size = 72.dp, borderWidth = 3.dp, borderColor = Color.White,
+                emoji = player.avatarEmoji, accentHex = player.accentHex,
+            )
         }
         Text(
             player.username.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep,
@@ -219,11 +223,15 @@ private fun H2HLine(text: String) {
 }
 
 /**
- * Circular avatar: Coil image when avatarUrl is set, else the first two
- * letters of the username on the purple→pink gradient (web IntroAvatar).
+ * Player avatar: a Coil image in a circle when avatarUrl is set, else the
+ * ART_SPEC §20 letter tile (rounded square; the border follows its shape).
  */
 @Composable
-fun VsAvatar(username: String, avatarUrl: String?, size: Dp, borderWidth: Dp = 1.5.dp, borderColor: Color = Color.White.copy(alpha = 0.4f)) {
+fun VsAvatar(
+    username: String, avatarUrl: String?, size: Dp,
+    borderWidth: Dp = 1.5.dp, borderColor: Color = Color.White.copy(alpha = 0.4f),
+    emoji: String? = null, accentHex: String? = null,
+) {
     // Bot art (VS overhaul §9): "bot:<id>" draws the picture in the circle.
     if (avatarUrl?.startsWith("bot:") == true) {
         Box(Modifier.size(size).border(borderWidth, borderColor, CircleShape).clip(CircleShape)) {
@@ -231,25 +239,19 @@ fun VsAvatar(username: String, avatarUrl: String?, size: Dp, borderWidth: Dp = 1
         }
         return
     }
-    val initials = username.ifBlank { "?" }.take(2).uppercase()
-    Box(
-        Modifier.size(size).clip(CircleShape)
-            .background(Brush.linearGradient(listOf(Color(0xFFA855F7), Color(0xFFEC4899))))
-            .border(borderWidth, borderColor, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (!avatarUrl.isNullOrBlank()) {
-            coil.compose.AsyncImage(
-                model = avatarUrl, contentDescription = username,
-                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                contentScale = ContentScale.Crop,
-            )
-        } else {
-            Text(
-                initials, color = Color.White, fontWeight = FontWeight.Black,
-                fontSize = (size.value * 0.35f).sp,
-            )
+    if (avatarUrl.isNullOrBlank()) {
+        Box(Modifier.size(size)) {
+            com.wordocious.app.ui.LetterTileAvatar(username.ifBlank { "?" }, size, accentHex = accentHex, emoji = emoji)
+            Box(Modifier.matchParentSize().border(borderWidth, borderColor, com.wordocious.app.ui.letterTileShape(size)))
         }
+        return
+    }
+    Box(Modifier.size(size).clip(CircleShape).border(borderWidth, borderColor, CircleShape)) {
+        coil.compose.AsyncImage(
+            model = avatarUrl, contentDescription = username,
+            modifier = Modifier.fillMaxSize().clip(CircleShape),
+            contentScale = ContentScale.Crop,
+        )
     }
 }
 

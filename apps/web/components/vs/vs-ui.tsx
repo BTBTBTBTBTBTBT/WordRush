@@ -3,6 +3,7 @@
 import { Swords } from 'lucide-react';
 import { CastLoader, LoadingTip } from '@/components/ui/cast-loader';
 import { PageHeader } from '@/components/ui/page-header';
+import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import type { MascotId } from '@/lib/mascots';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
@@ -67,17 +68,13 @@ export function VsNav({ title, onBack, right, host, art, artLabel }: {
 
 export const vsCardStyle: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow };
 
-/** A player's avatar: their picture, or the initial in a soft circle. */
-export function InitialAvatar({ name, url, size = 34 }: { name: string; url?: string | null; size?: number }) {
+/** A player's avatar: their picture (circle), or their letter tile (ART_SPEC §20). */
+export function InitialAvatar({ name, url, emoji, accent, size = 34 }: { name: string; url?: string | null; emoji?: string | null; accent?: string | null; size?: number }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt={name} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />;
   }
-  return (
-    <span className="rounded-full flex items-center justify-center shrink-0 font-black" style={{ width: size, height: size, background: VS.soft, color: VS.ink, fontSize: size * 0.42 }}>
-      {(name || '?').charAt(0).toUpperCase()}
-    </span>
-  );
+  return <LetterTileAvatar name={name} emoji={emoji} accent={accent} size={size} />;
 }
 
 /** A bot's art in a circle (§9 — never an emoji). */

@@ -353,7 +353,7 @@ struct FriendsPanelView: View {
                                 Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
                                     .font(.system(size: slot.rank == 0 ? 20 : 14))
                                 AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
-                                    .overlay(Circle().stroke(slot.entry.isMe ? FriendsKit.solid : .clear, lineWidth: 2))
+                                    .overlay(AvatarOutline(tile: AvatarView.showsTile(slot.entry.avatarUrl)).stroke(slot.entry.isMe ? FriendsKit.solid : .clear, lineWidth: 2))
                                 Text(slot.entry.username).font(Brand.font(9, .black)).lineLimit(1)
                                     .minimumScaleFactor(0.75)
                                     .foregroundStyle(slot.entry.isMe ? FriendsKit.solid : FriendsKit.ink)

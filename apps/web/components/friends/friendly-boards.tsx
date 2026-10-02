@@ -17,7 +17,7 @@ import { FriendAvatar, SectionLabel } from './friends-ui';
 // only renders the server's state and hands a move up; the screen sends it.
 // Tiles always use our colors: purple = you, amber = them, slate = absent.
 
-export interface Player { name: string; url: string | null; emoji: string | null }
+export interface Player { name: string; url: string | null; emoji: string | null; /** Profile accent for the letter tile (ART_SPEC §20), when known. */ accent?: string | null }
 
 interface BoardProps<S> {
   state: S;
@@ -348,7 +348,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer }
 
   const chip = (p: Player | null, faded = false) => (
     <span className="shrink-0 flex items-center justify-center" style={{ width: 28, opacity: faded ? 0.4 : 1 }}>
-      {p ? <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} size={26} /> : <span style={{ width: 26, height: 26 }} />}
+      {p ? <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} accent={p.accent} size={26} /> : <span style={{ width: 26, height: 26 }} />}
     </span>
   );
 
@@ -609,7 +609,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove }: Board
           const p = mine ? you : them;
           return (
             <div key={wi} className="flex items-center" style={{ gap: 6 }}>
-              <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} size={22} />
+              <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} accent={p.accent} size={22} />
               <div className="flex-1 flex" style={{ gap: 3 }}>
                 {[...w.word].map((ch, i) => {
                   const glow = newest && i === w.word.length - 1;

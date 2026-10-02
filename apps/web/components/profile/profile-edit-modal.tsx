@@ -8,6 +8,7 @@ import { X as XIcon, Check, Pencil, Star, Lock, Globe } from 'lucide-react';
 import { GameArt } from '@/components/ui/game-art';
 import { HeaderBack } from '@/components/ui/page-header';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
+import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import {
   PLATFORMS,
   SocialIcon,
@@ -77,6 +78,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
   const featuredName = featured ? ACHIEVEMENTS.find((a) => a.key === featured)?.name : null;
   const favMode = favoriteMode ? PROFILE_MODES.find((m) => m.dbKey === favoriteMode) : null;
   const avatarUrl = (profile as any).avatar_url as string | null;
+  const avatarEmoji = ((profile as any).avatar_emoji ?? null) as string | null;
 
   const handleSave = async () => {
     setSaving(true);
@@ -157,12 +159,17 @@ export function ProfileEditModal({ open, onClose }: Props) {
 
           {/* Live preview */}
           <div className="rounded-2xl p-4 mb-5 flex flex-col items-center text-center" style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}>
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black text-white overflow-hidden mb-2"
-              style={{ background: `linear-gradient(135deg, ${accentHex}, ${accentDark(accentHex)})` }}
-            >
-              {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : (username.trim().charAt(0).toUpperCase() || '?')}
-            </div>
+            {avatarUrl ? (
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden mb-2"
+                style={{ background: `linear-gradient(135deg, ${accentHex}, ${accentDark(accentHex)})` }}
+              >
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              // No photo: the letter tile (ART_SPEC §20), live with the name + accent being edited.
+              <LetterTileAvatar name={username.trim()} emoji={avatarEmoji} accent={accent} size={64} className="mb-2" />
+            )}
             <div className="text-lg font-black" style={{ color: accentHex }}>{username.trim() || 'username'}</div>
             {featuredName && (
               <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full mt-1" style={{ background: `${accentHex}1a`, color: accentHex }}>
@@ -179,7 +186,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
 
           {/* Avatar */}
           <div className="flex flex-col items-center mb-4">
-            <AvatarUpload size={72} editable />
+            <AvatarUpload size={72} editable accent={accent} />
             <p className="text-[10px] font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>Tap the avatar to upload a photo.</p>
           </div>
 

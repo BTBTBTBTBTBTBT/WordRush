@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { PocketArt } from '@/components/ui/game-art';
+import { LetterTileAvatar, letterTileRadius } from '@/components/ui/letter-tile-avatar';
 import { GAME_ART_FILL } from '@/lib/art';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
@@ -78,33 +79,43 @@ export function GameIconSquare({ kind, size = 34 }: { kind: FriendlyKind; size?:
   );
 }
 
-/** A player's avatar (picture, chosen emoji, or initial) with the green on-now ring + dot. */
-export function FriendAvatar({ name, url, emoji, size = 34, online = false, pulse = false }: {
-  name: string; url?: string | null; emoji?: string | null; size?: number; online?: boolean; pulse?: boolean;
+/**
+ * A player's avatar with the green on-now ring + dot: their picture (circle), or
+ * their letter tile (chosen emoji or initials, ART_SPEC §20) — the ring, pulse
+ * halo and dot then follow the tile's rounded-square corners.
+ */
+export function FriendAvatar({ name, url, emoji, accent, size = 34, online = false, pulse = false }: {
+  name: string; url?: string | null; emoji?: string | null; accent?: string | null; size?: number; online?: boolean; pulse?: boolean;
 }) {
-  const e = emoji?.trim();
   const dot = Math.max(8, Math.round(size * 0.26));
+  const ring = online ? `0 0 0 2px ${FR.online}` : undefined;
+  const tileRadius = letterTileRadius(size);
   return (
     <span className="relative shrink-0 inline-flex" style={{ width: size, height: size }}>
       {online && pulse && (
-        <span className="absolute rounded-full animate-pulse" style={{ inset: -4, background: `${FR.online}33` }} aria-hidden="true" />
+        <span
+          className={`absolute animate-pulse${url ? ' rounded-full' : ''}`}
+          style={{ inset: -4, background: `${FR.online}33`, borderRadius: url ? undefined : tileRadius + 4 }}
+          aria-hidden="true"
+        />
       )}
-      <span
-        className="relative rounded-full overflow-hidden flex items-center justify-center font-black"
-        style={{
-          width: size, height: size, background: FR.soft, color: FR.solid, fontSize: e ? size * 0.5 : size * 0.42,
-          boxShadow: online ? `0 0 0 2px ${FR.online}` : undefined,
-        }}
-      >
-        {url
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={url} alt={name} className="w-full h-full object-cover" />
-          : (e || (name || '?').charAt(0).toUpperCase())}
-      </span>
+      {url ? (
+        <span
+          className="relative rounded-full overflow-hidden flex items-center justify-center"
+          style={{ width: size, height: size, background: FR.soft, boxShadow: ring }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={name} className="w-full h-full object-cover" />
+        </span>
+      ) : (
+        <LetterTileAvatar name={name} emoji={emoji} accent={accent} size={size} shadow={ring} />
+      )}
       {online && (
         <span
           className="absolute rounded-full"
-          style={{ width: dot, height: dot, right: -1, bottom: -1, background: FR.online, boxShadow: '0 0 0 2px #ffffff' }}
+          style={url
+            ? { width: dot, height: dot, right: -1, bottom: -1, background: FR.online, boxShadow: '0 0 0 2px #ffffff' }
+            : { width: dot, height: dot, right: -dot * 0.3, bottom: -dot * 0.3, background: FR.online, boxShadow: '0 0 0 2px #ffffff' }}
           aria-label="On now"
         />
       )}

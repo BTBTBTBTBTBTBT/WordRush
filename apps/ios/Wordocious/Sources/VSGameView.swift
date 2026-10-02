@@ -1595,11 +1595,13 @@ private struct LivePulseAvatar: View {
     @State private var pulse = false
 
     var body: some View {
+        // §20: a letter tile pulses as a rounded square; photos and bots stay round.
+        let tile = botArt == nil && AvatarView.showsTile(url)
         ZStack {
-            Circle().stroke(accent, lineWidth: 2.5).frame(width: 56, height: 56)
+            AvatarOutline(tile: tile).stroke(accent, lineWidth: 2.5).frame(width: 56, height: 56)
                 .scaleEffect(pulse ? 1.45 : 0.95).opacity(pulse ? 0 : 0.7)
             VSPlayerAvatar(url: url, username: name, botArt: botArt, size: 52)
-                .overlay(Circle().strokeBorder(.white, lineWidth: 2.5))
+                .overlay(AvatarOutline(tile: tile).strokeBorder(.white, lineWidth: 2.5))
         }
         .onAppear {
             guard !reduceMotion else { return }

@@ -148,16 +148,9 @@ struct EditProfileView: View {
     }
 
     private var previewAvatar: some View {
-        ZStack {
-            if let url = auth.profile?.avatarUrl {
-                AvatarView(url: url, username: username, size: 64)
-            } else {
-                Circle().fill(LinearGradient(colors: [accentColor, Color(hex: ProfileAccent.darker(ProfileAccent.hex(accent)))], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 64, height: 64)
-                    .overlay(Text(avatarEmoji.isEmpty ? String(username.prefix(1)).uppercased() : avatarEmoji)
-                        .font(Brand.font(avatarEmoji.isEmpty ? 26 : 30, .black)).foregroundStyle(.white))
-            }
-        }
+        // §20: photo circle, else the live letter tile (accent + emoji preview).
+        AvatarView(url: auth.profile?.avatarUrl, username: username, size: 64,
+                   accentHex: accent, emoji: avatarEmoji)
     }
 
     // MARK: - Sections

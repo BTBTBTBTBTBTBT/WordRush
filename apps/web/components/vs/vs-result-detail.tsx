@@ -18,6 +18,7 @@ import {
 import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 import { MomentArt } from '@/components/ui/art-title';
+import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import { resultMoment } from '@/lib/art';
 
 // The solo tile colors (the .tile-* CSS vars — colorblind palette included).
@@ -93,6 +94,8 @@ export interface ResultSide {
   avatarUrl: string | null;
   /** Bot art in a circle instead of the player avatar. */
   isBot?: boolean;
+  /** The player's profile accent for their letter tile (ART_SPEC §20), when known. */
+  accent?: string | null;
   score: number;
   guesses: number;
   timeMs: number;
@@ -131,6 +134,8 @@ export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
           {p.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={p.avatarUrl} alt="" className={`rounded-full shrink-0 ${p.isBot ? 'object-contain bg-white' : 'object-cover'}`} style={{ width: 22, height: 22 }} />
+          ) : !p.isBot ? (
+            <LetterTileAvatar name={p.name} accent={p.accent} size={22} />
           ) : null}
           <span className="text-[11px] font-black uppercase truncate" style={{ color: '#4c1d95', letterSpacing: 0.6 }}>{p.name}</span>
         </div>

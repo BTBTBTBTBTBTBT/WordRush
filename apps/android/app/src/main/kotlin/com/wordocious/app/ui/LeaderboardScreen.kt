@@ -919,37 +919,16 @@ private fun Divider() {
 @Composable
 internal fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String) {
     val url = avatarUrl?.takeIf { it.isNotBlank() }
-    // iOS AvatarView parity (founder, Aug 20: "make the android version look
-    // more like the iphone version") — the fallback is TWO-letter initials in
-    // white on the wordmark gradient (#A78BFA → #EC4899), not a single letter
-    // on a washed flat.
-    Box(
-        Modifier.size(24.dp).clip(CircleShape)
-            .background(
-                if (url == null) {
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        listOf(Color(0xFFA78BFA), Color(0xFFEC4899)),
-                    )
-                } else {
-                    androidx.compose.ui.graphics.SolidColor(Color.Transparent)
-                },
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (url != null) {
-            coil.compose.AsyncImage(
-                model = url, contentDescription = null,
-                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            )
-        } else {
-            val emoji = avatarEmoji?.trim().orEmpty()
-            Text(
-                if (emoji.isNotEmpty()) emoji else username.take(2).uppercase(),
-                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White,
-            )
-        }
+    if (url == null) {
+        // ART_SPEC §20: no photo → the letter tile (emoji or two-letter initials).
+        LetterTileAvatar(username, 24.dp, emoji = avatarEmoji)
+        return
     }
+    coil.compose.AsyncImage(
+        model = url, contentDescription = null,
+        modifier = Modifier.size(24.dp).clip(CircleShape),
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+    )
 }
 
 /** Rank badge (Leaderboard + Records, spec §2.4): numbered gold / silver / bronze

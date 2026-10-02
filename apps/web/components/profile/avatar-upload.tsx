@@ -7,22 +7,31 @@ import { Camera } from 'lucide-react';
 import NextImage from 'next/image';
 import { toast } from '@/hooks/use-toast';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
+import { LetterTileAvatar, letterTileRadius } from '@/components/ui/letter-tile-avatar';
 
 interface AvatarUploadProps {
   size?: number;
   editable?: boolean;
   avatarUrl?: string | null;
   username?: string;
+  /** The shown player's emoji fallback (defaults to the signed-in player's when no username is passed). */
+  emoji?: string | null;
+  /** The shown player's profile accent (defaults to the signed-in player's when no username is passed). */
+  accent?: string | null;
 }
 
-export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }: AvatarUploadProps) {
+export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, emoji, accent }: AvatarUploadProps) {
   const { profile, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const displayUrl = avatarUrl ?? profile?.avatar_url;
+  // An explicit avatarUrl (even null: another player with no photo) wins over the
+  // signed-in player's own photo; omitted = show the signed-in player.
+  const displayUrl = avatarUrl !== undefined ? avatarUrl : profile?.avatar_url;
   const displayName = username ?? profile?.username ?? '?';
-  const initials = displayName.slice(0, 2).toUpperCase();
+  const own = username === undefined ? (profile as { accent_color?: string | null; avatar_emoji?: string | null } | null) : null;
+  const tileAccent = accent !== undefined ? accent : own?.accent_color ?? null;
+  const tileEmoji = emoji !== undefined ? emoji : own?.avatar_emoji ?? null;
 
   const resizeImage = (file: File, maxSize: number): Promise<Blob> =>
     new Promise((resolve, reject) => {
@@ -105,18 +114,16 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
           unoptimized
         />
       ) : (
-        <div
-          className="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-3 border-white/30"
-          style={{ width: size, height: size }}
-        >
-          <span className="text-white font-black" style={{ fontSize: size * 0.35 }}>
-            {initials}
-          </span>
-        </div>
+        // No photo: the letter tile (ART_SPEC §20). (The old circle's `border-3` was a no-op on
+        // Tailwind 3.3 — no width utility — so there is no visible ring to carry over.)
+        <LetterTileAvatar name={displayName} emoji={tileEmoji} accent={tileAccent} size={size} />
       )}
 
       {editable && (
-        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div
+          className={`absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center${displayUrl ? ' rounded-full' : ''}`}
+          style={displayUrl ? undefined : { borderRadius: letterTileRadius(size) }}
+        >
           {uploading ? (
             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (

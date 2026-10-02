@@ -488,7 +488,10 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
         }
         val p = AuthService.profile.value
         val all = if (p != null && friendEntries.isNotEmpty()) {
-            friendEntries + PodiumEntry(p.id, "You", p.avatarUrl, p.avatarEmoji, FriendsService.meDigest?.weekPoints ?: 0, isMe = true)
+            friendEntries + PodiumEntry(
+                p.id, "You", p.avatarUrl, p.avatarEmoji, FriendsService.meDigest?.weekPoints ?: 0, isMe = true,
+                avatarName = p.username ?: "You", accentHex = p.accentColor,
+            )
         } else friendEntries
         all.sortedByDescending { it.pts }
     }
@@ -1020,11 +1023,13 @@ private fun PanelDivider() {
 internal data class PodiumEntry(
     val id: String, val username: String, val avatarUrl: String?,
     val avatarEmoji: String?, val pts: Int, val isMe: Boolean,
+    /** §20 letter tile: initials + accent come from the real profile, not the "You" label. */
+    val avatarName: String = username, val accentHex: String? = null,
 )
 
 @Composable
 private fun PodiumAvatar(e: PodiumEntry) {
-    FriendFace(e.username, e.avatarUrl, e.avatarEmoji, 36.dp, online = false, ring = if (e.isMe) FriendsPink.solid else null)
+    FriendFace(e.avatarName, e.avatarUrl, e.avatarEmoji, 36.dp, online = false, ring = if (e.isMe) FriendsPink.solid else null, accentHex = e.accentHex)
 }
 
 // FRIENDS row (§207 Tier 3) — the compact card on the OWN profile screen
@@ -1090,27 +1095,18 @@ private fun friendversary(f: FriendsService.FriendProfile): Int? {
 
 // Shared with TodaysRace.kt / ActivityFeed.kt (§289/§290) — one avatar idiom.
 @Composable
-internal fun FriendAvatar(f: FriendsService.FriendProfile) {
+internal fun FriendAvatar(f: FriendsService.FriendProfile, accentHex: String? = null) {
     val url = f.avatarUrl?.takeIf { it.isNotBlank() }
-    Box(
-        Modifier.size(32.dp).clip(CircleShape)
-            .background(if (url == null) PURPLE.copy(alpha = 0.13f) else Color.Transparent),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (url != null) {
-            coil.compose.AsyncImage(
-                model = url, contentDescription = f.username,
-                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            )
-        } else {
-            val emoji = f.avatarEmoji?.trim().orEmpty()
-            Text(
-                if (emoji.isNotEmpty()) emoji else f.username.take(1).uppercase(),
-                fontSize = 12.sp, fontWeight = FontWeight.Black, color = PURPLE,
-            )
-        }
+    if (url == null) {
+        // ART_SPEC §20: no photo → the letter tile.
+        LetterTileAvatar(f.username, 32.dp, accentHex = accentHex, emoji = f.avatarEmoji)
+        return
     }
+    coil.compose.AsyncImage(
+        model = url, contentDescription = f.username,
+        modifier = Modifier.size(32.dp).clip(CircleShape),
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+    )
 }
 
 /** "ends Sunday · 2d 04:12:09" — the weekly race's live clock (weeks run Mon-Sun, reset Monday 00:00 local). */

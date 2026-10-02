@@ -455,24 +455,16 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 val sweepSet = com.wordocious.app.ModeGen.sweepModesFor(today)
                 targetDailies.count { it.day == today && it.completed && it.gameMode in sweepSet }
             }
-            TodayRingAvatar(completed = todayCount) {
-                Box(
-                    // iOS AvatarView: no accent set = the wordmark gradient, never a flat gray.
-                    Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (avatarUrl != null) {
-                        coil.compose.AsyncImage(
-                            model = avatarUrl, contentDescription = "Avatar",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        )
-                    } else {
-                        Text(
-                            p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
-                            fontSize = 38.4f.sp, fontWeight = FontWeight.Black, color = Color.White,   // iOS: size * 0.4
-                        )
-                    }
+            // ART_SPEC §20: photo in a circle (round ring), else the letter tile (rounded-square ring).
+            TodayRingAvatar(completed = todayCount, square = avatarUrl == null, avatarSize = 96.dp) {
+                if (avatarUrl != null) {
+                    coil.compose.AsyncImage(
+                        model = avatarUrl, contentDescription = "Avatar",
+                        modifier = Modifier.size(96.dp).clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    )
+                } else {
+                    LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji)
                 }
             }
             if (customAccent) {
@@ -885,23 +877,15 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier.size(96.dp).clip(CircleShape)
-                .background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (avatarUrl != null) {
-                coil.compose.AsyncImage(
-                    model = avatarUrl, contentDescription = "Avatar",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                )
-            } else {
-                Text(
-                    p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
-                    fontSize = 38.4f.sp, fontWeight = FontWeight.Black, color = Color.White,
-                )
-            }
+        if (avatarUrl != null) {
+            coil.compose.AsyncImage(
+                model = avatarUrl, contentDescription = "Avatar",
+                modifier = Modifier.size(96.dp).clip(CircleShape),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            )
+        } else {
+            // ART_SPEC §20: no photo → the letter tile.
+            LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji)
         }
         Spacer(Modifier.height(12.dp))
         if (customAccent) {

@@ -186,7 +186,7 @@ struct VSChallengeResultView: View {
 
     private var h2hCard: some View {
         HStack(spacing: 12) {
-            VSInitialAvatar(name: name, size: 40, tint: VsLobbyKit.purple)
+            VSInitialAvatar(name: name, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text("YOU AND @\(name.uppercased())").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.label)
                 Text(headToHead.map { HeadToHeadService.headToHeadLine(opponentName: name, $0) } ?? "Head-to-head…")

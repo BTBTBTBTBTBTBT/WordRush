@@ -262,6 +262,8 @@ fun VSGameScreen(
                     username = profile?.username ?: "You",
                     avatarUrl = profile?.avatarUrl,
                     level = profile?.level,
+                    accentHex = profile?.accentColor,
+                    avatarEmoji = profile?.avatarEmoji,
                 ),
                 opponent = vm.opponentUserId?.let {
                     IntroPlayer(
@@ -569,6 +571,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                 totalBoards = vm.totalBoards,
                 stageName = oppStageName,
                 stageGradient = oppStageName?.let { gauntletStageGradient(it) } ?: emptyList(),
+                avatarName = vm.race?.challenger?.username ?: vm.opponentName,
             )
         }
 
@@ -838,10 +841,12 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                                 androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
                                 label = "a",
                             )
+                            // ART_SPEC §20: around a letter tile the ring is a concentric rounded square.
+                            val ringShape = if (vm.opponentInfo?.avatarUrl.isNullOrBlank()) RoundedCornerShape(48.dp * 0.24f + 2.dp) else CircleShape
                             Box(
                                 Modifier.size(52.dp)
                                     .graphicsLayer { scaleX = s; scaleY = s; alpha = a }
-                                    .border(2.dp, VsTeal.ink, CircleShape),
+                                    .border(2.dp, VsTeal.ink, ringShape),
                             )
                         }
                         VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 48.dp, borderColor = Color.Transparent)

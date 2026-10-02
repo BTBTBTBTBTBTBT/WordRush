@@ -27,6 +27,7 @@ import { supabase } from '@/lib/supabase-client';
 import { ChallengeResult, ChallengeSent } from './challenge-result';
 import { VsQueueScreen, VsStartingScreen } from './vs-queue';
 import { BotAvatar, InitialAvatar, ModeChip, VsLoadingScreen, VsModeIcon, VsPill } from './vs-ui';
+import { letterTileRadius } from '@/components/ui/letter-tile-avatar';
 import { useVsCounts } from './use-vs-lobby';
 import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
 import { PhotoFinish, type PhotoFinishKind } from '@/components/effects/photo-finish';
@@ -1555,6 +1556,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               username: profile?.username || 'You',
               avatarUrl: (profile as any)?.avatar_url ?? null,
               level: (profile as any)?.level ?? null,
+              emoji: (profile as any)?.avatar_emoji ?? null,
+              accent: (profile as any)?.accent_color ?? null,
             }}
             opponent={opponentUserId ? {
               username: isCpu ? `${opponentInfo?.username ?? 'CPU'} · ${cpuPersona ? tierLabel(cpuPersona.tier) : 'CPU'}` : (opponentInfo?.username ?? '…'),
@@ -1801,7 +1804,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               sub={resultSub}
               why={whyLine}
               outcome={outcome}
-              me={{ name: myName, avatarUrl: (profile as any)?.avatar_url ?? null, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved }}
+              me={{ name: myName, avatarUrl: (profile as any)?.avatar_url ?? null, accent: (profile as any)?.accent_color ?? null, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved }}
               opponent={{ name: oppName, avatarUrl: opponentInfo?.avatarUrl ?? null, isBot: isCpu, score: matchResult.opponentScore ?? matchResult.opponentGuesses, guesses: matchResult.opponentGuesses, timeMs: matchResult.opponentTime, solved: oppSolved }}
             />
           )}
@@ -2014,7 +2017,11 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             <div className="relative flex items-center gap-3 px-4 pt-3">
               {/* Breathing "live" ring signals an active opponent while you wait. */}
               <span className="relative flex items-center justify-center shrink-0" style={{ width: 44, height: 44 }}>
-                <span className="absolute inset-0 rounded-full animate-ping" style={{ border: `2px solid ${VS.ink}`, opacity: 0.35 }} />
+                {/* Circle around a photo / bot; rounded square around a letter tile (ART_SPEC §20). */}
+                <span
+                  className={`absolute inset-0 animate-ping${opponentInfo?.avatarUrl ? ' rounded-full' : ''}`}
+                  style={{ border: `2px solid ${VS.ink}`, opacity: 0.35, borderRadius: opponentInfo?.avatarUrl ? undefined : letterTileRadius(44) }}
+                />
                 {isCpu && opponentInfo?.avatarUrl ? (
                   <BotAvatar src={opponentInfo.avatarUrl} name={oppName} size={44} bg="#ffffff" />
                 ) : (

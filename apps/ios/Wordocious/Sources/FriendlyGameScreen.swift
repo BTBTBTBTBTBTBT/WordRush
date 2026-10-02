@@ -549,10 +549,10 @@ struct FriendlyGameScreen: View {
                             let by = p.guesses[row].by
                             if by == g.me {
                                 AvatarView(url: profile?.avatarUrl, username: profile?.username ?? "You", size: 26, emoji: profile?.avatarEmoji)
-                                    .overlay(Circle().stroke(FriendsKit.purple, lineWidth: 2))
+                                    .overlay(AvatarOutline(tile: AvatarView.showsTile(profile?.avatarUrl)).stroke(FriendsKit.purple, lineWidth: 2))
                             } else {
                                 AvatarView(url: g.opponent.avatarUrl, username: themName, size: 26, emoji: g.opponent.avatarEmoji)
-                                    .overlay(Circle().stroke(FriendsKit.amber, lineWidth: 2))
+                                    .overlay(AvatarOutline(tile: AvatarView.showsTile(g.opponent.avatarUrl)).stroke(FriendsKit.amber, lineWidth: 2))
                             }
                         } else {
                             Circle().fill(Color.white).frame(width: 26, height: 26)

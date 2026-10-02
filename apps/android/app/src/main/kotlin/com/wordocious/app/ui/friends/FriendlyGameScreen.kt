@@ -346,7 +346,7 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
             }
             val turn = if (g.active) whoseTurn(g.state) else null
             Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
-                ScoreSide("YOU", me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, false, score?.get(g.me), turn?.includes(g.me) == true, Modifier.weight(1f))
+                ScoreSide("YOU", me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, false, score?.get(g.me), turn?.includes(g.me) == true, Modifier.weight(1f), accentHex = me?.accentColor)
                 ScoreSide("@${g.opponent.username.uppercase()}", g.opponent.username, g.opponent.avatarUrl, g.opponent.avatarEmoji, theyOn, score?.get(g.me.other), turn?.includes(g.me.other) == true, Modifier.weight(1f))
             }
         }
@@ -359,7 +359,7 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
 }
 
 @Composable
-private fun ScoreSide(label: String, name: String, url: String?, emoji: String?, online: Boolean, score: Int?, toPlay: Boolean, modifier: Modifier) {
+private fun ScoreSide(label: String, name: String, url: String?, emoji: String?, online: Boolean, score: Int?, toPlay: Boolean, modifier: Modifier, accentHex: String? = null) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         // The half whose turn it is wears a small TO PLAY marker (an invisible one keeps both halves level).
         Text(
@@ -367,7 +367,7 @@ private fun ScoreSide(label: String, name: String, url: String?, emoji: String?,
             modifier = Modifier.alpha(if (toPlay) 1f else 0f).clip(RoundedCornerShape(50)).background(FriendsPink.solid)
                 .padding(horizontal = 7.dp, vertical = 2.dp),
         )
-        FriendFace(name, url, emoji, 44.dp, online = online)
+        FriendFace(name, url, emoji, 44.dp, online = online, accentHex = accentHex)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = DEEP, maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (score != null) Text("$score", fontSize = 30.sp, fontWeight = FontWeight.Black, color = DEEP)
     }
@@ -613,7 +613,7 @@ private fun PassBoard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Box(Modifier.size(26.dp), Alignment.Center) {
                     when {
-                        g != null && g.by == me -> FriendFace(profile?.username ?: "You", profile?.avatarUrl, profile?.avatarEmoji, 24.dp, online = false)
+                        g != null && g.by == me -> FriendFace(profile?.username ?: "You", profile?.avatarUrl, profile?.avatarEmoji, 24.dp, online = false, accentHex = profile?.accentColor)
                         g != null -> FriendFace(opp.username, opp.avatarUrl, opp.avatarEmoji, 24.dp, online = false)
                     }
                 }

@@ -180,6 +180,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     name: profile?.username ?? 'You',
     url: profile?.avatar_url ?? null,
     emoji: (profile as { avatar_emoji?: string | null } | null)?.avatar_emoji ?? null,
+    accent: (profile as { accent_color?: string | null } | null)?.accent_color ?? null,
   };
   const them: Player = { name: game.opponent.username, url: game.opponent.avatarUrl, emoji: game.opponent.avatarEmoji };
   const headline = screenHeadline(game);
@@ -193,7 +194,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 
   const half = (label: string, p: Player, isMe: boolean, value: number | null, toPlay: boolean, won: boolean) => (
     <div className="flex-1 flex flex-col items-center gap-1.5" style={{ padding: '12px 8px 14px' }}>
-      <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} size={40} online={!isMe && online} />
+      <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} accent={p.accent} size={40} online={!isMe && online} />
       <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: isMe ? '#4c1d95' : '#92400e', letterSpacing: 0.8 }}>
         {won && <Icon3D name="trophy" size={14} className="shrink-0" />}
         {label}

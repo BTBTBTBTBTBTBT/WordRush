@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { onPageShadow } from '@/lib/art';
+import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 
 // The polished board look shared by the Leaderboard (docs/LEADERBOARD_REDESIGN_SPEC.md §2)
 // and the Records pages (docs/RECORDS_REDESIGN_SPEC.md §2), so the two can never drift:
@@ -31,20 +32,13 @@ export function RankIcon({ rank }: { rank: number }) {
   return <span className="text-xs font-black w-[22px] text-center shrink-0" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
 }
 
-/** §212: photo → emoji → initial, left of every username. */
-export function BoardAvatar({ url, emoji, name, size = 28 }: { url: string | null | undefined; emoji?: string | null; name: string; size?: number }) {
+/** §212: photo (circle) → emoji / initials letter tile (ART_SPEC §20), left of every username. */
+export function BoardAvatar({ url, emoji, name, accent, size = 28 }: { url: string | null | undefined; emoji?: string | null; name: string; accent?: string | null; size?: number }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />;
   }
-  return (
-    <div
-      className="rounded-full flex items-center justify-center font-black shrink-0"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.4), background: '#7c3aed22', color: '#7c3aed' }}
-    >
-      {emoji?.trim() || name.charAt(0).toUpperCase()}
-    </div>
-  );
+  return <LetterTileAvatar name={name} emoji={emoji} accent={accent} size={size} />;
 }
 
 /**

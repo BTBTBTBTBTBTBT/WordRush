@@ -168,9 +168,17 @@ private fun rememberMinutesSince(instant: String?): Long? {
 }
 
 /** Progress ring + "N/total today" capsule wrapped around the avatar — total =
- *  the sweep size from the catalog (Stage 9: 8), never a literal. */
+ *  the sweep size from the catalog (Stage 9: 8), never a literal. [square]
+ *  (ART_SPEC §20): the avatar is a letter tile of [avatarSize], so the ring is a
+ *  concentric rounded square (same stroke) instead of a circle. */
 @Composable
-fun TodayRingAvatar(completed: Int, total: Int = com.wordocious.app.ModeGen.sweep.size, content: @Composable () -> Unit) {
+fun TodayRingAvatar(
+    completed: Int,
+    total: Int = com.wordocious.app.ModeGen.sweep.size,
+    square: Boolean = false,
+    avatarSize: androidx.compose.ui.unit.Dp = 96.dp,
+    content: @Composable () -> Unit,
+) {
     val ringColor = WTheme.primary
     val track = WTheme.border
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(bottom = 6.dp)) {
@@ -178,16 +186,31 @@ fun TodayRingAvatar(completed: Int, total: Int = com.wordocious.app.ModeGen.swee
             val stroke = 5.dp.toPx()
             val arcSize = Size(size.width - stroke, size.height - stroke)
             val topLeft = Offset(stroke / 2f, stroke / 2f)
-            drawArc(
-                color = track, startAngle = -90f, sweepAngle = 360f, useCenter = false,
-                topLeft = topLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round),
-            )
-            if (completed > 0) {
+            val frac = if (completed > 0) completed.coerceAtMost(total).toFloat() / total else 0f
+            if (square) {
+                // Concentric with the tile: its 24% radius plus the gap out to the stroke's center line.
+                val radius = avatarSize.toPx() * 0.24f + (arcSize.width - avatarSize.toPx()) / 2f
+                val path = roundedSquareRingPath(topLeft, arcSize, radius)
+                drawPath(path, track, style = Stroke(stroke, cap = StrokeCap.Round))
+                if (frac > 0f) {
+                    val measure = androidx.compose.ui.graphics.PathMeasure()
+                    measure.setPath(path, false)
+                    val seg = androidx.compose.ui.graphics.Path()
+                    measure.getSegment(0f, measure.length * frac, seg, true)
+                    drawPath(seg, ringColor, style = Stroke(stroke, cap = StrokeCap.Round))
+                }
+            } else {
                 drawArc(
-                    color = ringColor, startAngle = -90f,
-                    sweepAngle = 360f * completed.coerceAtMost(total) / total, useCenter = false,
+                    color = track, startAngle = -90f, sweepAngle = 360f, useCenter = false,
                     topLeft = topLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round),
                 )
+                if (completed > 0) {
+                    drawArc(
+                        color = ringColor, startAngle = -90f,
+                        sweepAngle = 360f * frac, useCenter = false,
+                        topLeft = topLeft, size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round),
+                    )
+                }
             }
         }
         content()
@@ -201,6 +224,26 @@ fun TodayRingAvatar(completed: Int, total: Int = com.wordocious.app.ModeGen.swee
                 .background(ringColor)
                 .padding(horizontal = 8.dp, vertical = 2.dp),
         )
+    }
+}
+
+/** A rounded-square outline that starts at top-center and runs clockwise (so a
+ *  partial segment reads like the circular ring's -90° start). */
+private fun roundedSquareRingPath(topLeft: Offset, size: Size, radius: Float): androidx.compose.ui.graphics.Path {
+    val l = topLeft.x; val t = topLeft.y; val r = l + size.width; val b = t + size.height
+    val rad = radius.coerceIn(0f, minOf(size.width, size.height) / 2f)
+    val d = rad * 2f
+    return androidx.compose.ui.graphics.Path().apply {
+        moveTo((l + r) / 2f, t)
+        lineTo(r - rad, t)
+        arcTo(androidx.compose.ui.geometry.Rect(r - d, t, r, t + d), -90f, 90f, false)
+        lineTo(r, b - rad)
+        arcTo(androidx.compose.ui.geometry.Rect(r - d, b - d, r, b), 0f, 90f, false)
+        lineTo(l + rad, b)
+        arcTo(androidx.compose.ui.geometry.Rect(l, b - d, l + d, b), 90f, 90f, false)
+        lineTo(l, t + rad)
+        arcTo(androidx.compose.ui.geometry.Rect(l, t, l + d, t + d), 180f, 90f, false)
+        close()
     }
 }
 

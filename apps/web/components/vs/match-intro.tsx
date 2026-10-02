@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { playVsStinger } from '@/lib/sounds';
 import type { HeadToHeadRecord } from '@/lib/head-to-head';
 import { VS } from '@/lib/vs-lobby';
+import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import { ModeChip, VsPill } from './vs-ui';
 
 export interface IntroPlayer {
@@ -12,6 +13,9 @@ export interface IntroPlayer {
   level: number | null;
   /** Bot art (contained in a soft circle) instead of a photo. */
   art?: boolean;
+  /** Letter-tile extras (ART_SPEC §20), when known: chosen emoji + profile accent. */
+  emoji?: string | null;
+  accent?: string | null;
 }
 
 interface MatchIntroProps {
@@ -37,7 +41,6 @@ export function headToHeadLine(opponentName: string, h2h: HeadToHeadRecord): str
 }
 
 function IntroAvatar({ player, size = 76 }: { player: IntroPlayer; size?: number }) {
-  const initials = (player.username || '?').slice(0, 2).toUpperCase();
   const ring = '0 0 0 3px #ffffff, 0 6px 16px rgba(76,29,149,0.14)';
   if (player.avatarUrl) {
     return (
@@ -52,11 +55,8 @@ function IntroAvatar({ player, size = 76 }: { player: IntroPlayer; size?: number
       </span>
     );
   }
-  return (
-    <span className="rounded-full flex items-center justify-center shrink-0" style={{ width: size, height: size, background: '#ede9fe', boxShadow: ring }}>
-      <span className="font-black" style={{ fontSize: size * 0.34, color: '#6d28d9' }}>{initials}</span>
-    </span>
-  );
+  // No photo: the letter tile (ART_SPEC §20); the white ring follows its rounded corners.
+  return <LetterTileAvatar name={player.username} emoji={player.emoji} accent={player.accent} size={size} shadow={ring} />;
 }
 
 function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'right' }) {

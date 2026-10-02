@@ -523,7 +523,14 @@ export function FriendsPanel() {
                     className={`flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity ${i === 0 ? '-mt-2' : ''}`}
                   >
                     <span className={i === 0 ? 'text-lg' : 'text-sm'}>{raceStarted ? medal : '🏁'}</span>
-                    <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={i === 0 ? 40 : 34} />
+                    <FriendAvatar
+                      // Your own entry is labeled "You" but its tile shows your real initials + accent (§20).
+                      name={e.me && profile ? profile.username : e.username}
+                      url={e.avatar_url}
+                      emoji={e.avatar_emoji}
+                      accent={e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null}
+                      size={i === 0 ? 40 : 34}
+                    />
                     <span className="text-[9.5px] font-black truncate max-w-[80px]" style={{ color: e.me ? FR.ink : FR.text }}>{e.username}</span>
                     <span className="text-[9.5px] font-bold" style={{ color: FR.label }}>{e.pts.toLocaleString()} pts</span>
                   </Link>

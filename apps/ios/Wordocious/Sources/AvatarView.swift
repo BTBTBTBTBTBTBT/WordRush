@@ -4,24 +4,31 @@ import Supabase
 import UIKit
 #endif
 
-/// Player avatar — shows the uploaded photo (`avatar_url`) if present, else a
-/// gradient circle with the username's initial. Mirrors the web AvatarUpload
-/// fallback. Used on the profile, public profiles, and the edit sheet.
+/// Player avatar — shows the uploaded photo (`avatar_url`) in a circle if
+/// present, else the §20 letter tile (rounded square, initials or the chosen
+/// emoji). Used on the profile, public profiles, boards, Friends and VS.
 struct AvatarView: View {
     let url: String?
     let username: String
     var size: CGFloat = 96
-    /// Personalization (optional): when there's no photo, tint the fallback with
-    /// the player's accent and show their chosen emoji instead of the initial.
+    /// Personalization (optional): when there's no photo, tint the tile with
+    /// the player's accent and show their chosen emoji instead of the initials.
     var accentHex: String? = nil
     var emoji: String? = nil
 
-    // Web parity: two-character initials fallback (avatar-upload.tsx slice(0, 2)).
-    private var initial: String { String(username.prefix(2)).uppercased() }
+    /// True when this avatar draws the letter tile (no usable photo URL), so
+    /// wrappers can switch their ring / border to `AvatarOutline(tile:)`.
+    static func showsTile(_ url: String?) -> Bool { photoURL(url) == nil }
+
+    private static func photoURL(_ url: String?) -> URL? {
+        guard let url, !url.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return URL(string: url)
+    }
 
     var body: some View {
-        Group {
-            if let url, let u = URL(string: url) {
+        if let u = Self.photoURL(url) {
+            // Photos stay circles (§20); the tile stands in while it loads.
+            Group {
                 #if canImport(UIKit)
                 CachedAvatarImage(url: u) { fallback }
                 #else
@@ -32,22 +39,16 @@ struct AvatarView: View {
                     }
                 }
                 #endif
-            } else {
-                fallback
             }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+        } else {
+            fallback
         }
-        .frame(width: size, height: size)
-        .clipShape(Circle())
     }
 
     private var fallback: some View {
-        let emo = emoji?.trimmingCharacters(in: .whitespaces)
-        return Circle()
-            .fill(accentHex != nil
-                  ? AnyShapeStyle(LinearGradient(colors: [ProfileAccent.color(accentHex), Color(hex: ProfileAccent.darker(ProfileAccent.hex(accentHex)))], startPoint: .topLeading, endPoint: .bottomTrailing))
-                  : AnyShapeStyle(Theme.wordmarkGradient))
-            .overlay(Text(emo?.isEmpty == false ? emo! : initial)
-                .font(Brand.title(size * 0.4)).foregroundStyle(.white))
+        LetterTileAvatar(username: username, size: size, accentHex: accentHex, emoji: emoji)
     }
 }
 

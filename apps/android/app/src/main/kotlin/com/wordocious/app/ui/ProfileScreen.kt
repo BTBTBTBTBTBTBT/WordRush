@@ -928,8 +928,8 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
     val tier = levelTier(level)
     val levelProgress = (xp % 1000) / 10f / 100f       // (xp%1000)/10 as a 0..1 fraction
     val xpToNext = 1000 - (xp % 1000)
-    // Two-character initials fallback (web avatar-upload.tsx slice(0, 2) / iOS AvatarView).
-    val initial = (profile?.username?.take(2) ?: "P").uppercase()
+    // Letter-tile name (ART_SPEC §20 takes the first two characters itself).
+    val initial = profile?.username ?: "P"
     val since = memberSince(profile?.createdAt)
     val purple = Color(0xFF7C3AED)
 
@@ -939,22 +939,16 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Avatar — real image (avatar_url) via Coil, else the initial in a gradient circle.
+            // Avatar — real image (avatar_url) via Coil in a circle, else the §20 letter tile.
             val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() }
-            Box(
-                Modifier.size(64.dp).clip(CircleShape)
-                    .background(if (ProfileAccent.isCustom(profile?.accentColor)) ProfileAccent.avatarBrush(profile?.accentColor) else Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (avatarUrl != null) {
-                    coil.compose.AsyncImage(
-                        model = avatarUrl, contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize().clip(CircleShape),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    )
-                } else {
-                    Text(profile?.avatarEmoji?.takeIf { it.isNotBlank() } ?: initial, fontSize = 26.sp, fontWeight = FontWeight.Black, color = Color.White)
-                }
+            if (avatarUrl != null) {
+                coil.compose.AsyncImage(
+                    model = avatarUrl, contentDescription = "Avatar",
+                    modifier = Modifier.size(64.dp).clip(CircleShape),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                )
+            } else {
+                LetterTileAvatar(initial, 64.dp, accentHex = profile?.accentColor, emoji = profile?.avatarEmoji)
             }
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

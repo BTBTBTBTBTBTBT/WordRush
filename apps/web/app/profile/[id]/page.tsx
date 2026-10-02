@@ -74,6 +74,10 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'];
 
+// The today-progress ring around a 112 px letter tile in the 128 px box (viewBox 86): a
+// rounded square concentric with the tile (ART_SPEC §20), starting top-center, clockwise.
+const TODAY_SQUARE_RING = 'M43 2.5 H62.5 A21 21 0 0 1 83.5 23.5 V62.5 A21 21 0 0 1 62.5 83.5 H23.5 A21 21 0 0 1 2.5 62.5 V23.5 A21 21 0 0 1 23.5 2.5 Z';
+
 const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey);
 
 function formatDuration(seconds: number): string {
@@ -452,7 +456,14 @@ export default function PublicProfilePage() {
             className="rounded-2xl p-6 flex flex-col items-center text-center"
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', boxShadow: onPageShadow() }}
           >
-            <AvatarUpload size={96} editable={false} avatarUrl={profile.avatar_url} username={profile.username} />
+            <AvatarUpload
+              size={96}
+              editable={false}
+              avatarUrl={profile.avatar_url ?? null}
+              username={profile.username}
+              emoji={(profile as any).avatar_emoji ?? null}
+              accent={(profile as any).accent_color ?? null}
+            />
 
             {(profile as any).accent_color ? (
               <h1 className="text-3xl font-black mt-3" style={{ color: resolveAccent((profile as any).accent_color) }}>{profile.username}</h1>
@@ -558,7 +569,7 @@ export default function PublicProfilePage() {
         <div className="flex flex-col items-center gap-4 animate-fade-in-up">
           {/* Avatar with today-progress ring + "N/total today" pill */}
           <div className="relative" style={{ width: 128, height: 128 }}>
-            {todayRing && (
+            {todayRing && profile.avatar_url && (
               <svg
                 className="absolute inset-0 w-full h-full"
                 viewBox="0 0 86 86"
@@ -574,12 +585,27 @@ export default function PublicProfilePage() {
                 />
               </svg>
             )}
+            {/* No photo → letter tile (ART_SPEC §20): the today ring becomes a rounded square
+                concentric with the tile, starting at top-center and running clockwise. */}
+            {todayRing && !profile.avatar_url && (
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 86 86" aria-hidden="true">
+                <path d={TODAY_SQUARE_RING} fill="none" strokeWidth={4} stroke="var(--color-border)" />
+                <path
+                  d={TODAY_SQUARE_RING} fill="none" strokeWidth={4} strokeLinecap="round"
+                  stroke="#8B5CF6" pathLength={100} strokeDasharray={100}
+                  strokeDashoffset={100 * (1 - todayRing.done / todayRing.total)}
+                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                />
+              </svg>
+            )}
             <div className="absolute inset-0 flex items-center justify-center">
               <AvatarUpload
                 size={112}
                 editable={false}
-                avatarUrl={profile.avatar_url}
+                avatarUrl={profile.avatar_url ?? null}
                 username={profile.username}
+                emoji={(profile as any).avatar_emoji ?? null}
+                accent={(profile as any).accent_color ?? null}
               />
             </div>
             {todayRing && (

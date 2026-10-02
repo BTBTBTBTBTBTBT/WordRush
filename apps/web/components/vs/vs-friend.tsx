@@ -140,7 +140,7 @@ export function VsFriend() {
                         className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
                         style={{ ...vsCardStyle, boxShadow: on ? `0 0 0 2px ${VS.ink}, ${VS.cardShadow}` : VS.cardShadow }}
                       >
-                        <InitialAvatar name={f.username} url={f.avatar_url} size={34} />
+                        <InitialAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={34} />
                         <span className="flex-1 min-w-0">
                           <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{f.username}</span>
                           <span className="block text-[11px] font-bold truncate" style={{ color: (f.h2hW ?? 0) > (f.h2hL ?? 0) ? VS.ink : VS.label }}>
