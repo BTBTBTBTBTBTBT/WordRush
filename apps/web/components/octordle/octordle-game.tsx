@@ -28,7 +28,9 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
+import { latestGuess } from '@/lib/key-reveal';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
@@ -57,7 +59,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -112,19 +114,21 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
-    if (isShaking) return;
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let guess = currentGuess;
+    if (isShaking) { cutReject(); guess = ''; if (keyDuringReject(key) === 'swallow') return; }
     setError('');
 
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length)); setTimeout(() => setError(''), 1500); return; }
-      if (!isWordValid(currentGuess)) { setError('Not in word list'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length)); setTimeout(() => setError(''), 1500); return; }
-      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length)); setTimeout(() => setError(''), 1500); return; }
+      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); playInvalid(); rejectRow(currentGuess.length); setTimeout(() => setError(''), 1500); return; }
+      if (!isWordValid(currentGuess)) { setError('Not in word list'); playInvalid(); rejectRow(currentGuess.length); setTimeout(() => setError(''), 1500); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); playInvalid(); rejectRow(currentGuess.length); setTimeout(() => setError(''), 1500); return; }
 
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess((prev) => prev.slice(0, -1));
-    } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
+    } else if (guess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
     }
   }, [state, currentGuess, isShaking]);
@@ -261,7 +265,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
       {/* Keyboard — hidden when game is complete */}
       {state.status === 'PLAYING' && (
         <div className="shrink-0 pb-2 px-2">
-          <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} revealDelayMs={REVEAL.end(5)} />
+          <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} revealWord={latestGuess(state.boards)} />
         </div>
       )}
 

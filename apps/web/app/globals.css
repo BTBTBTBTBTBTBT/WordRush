@@ -795,7 +795,11 @@
 /* Content ends above the docked bar (A4): never less than the page's own
    bottom padding, and at least the bar's room (--bottom-nav-h, published by
    BottomNav) plus 16 px while a tab bar is on screen. */
-.pb-tab-clear { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
+/* AS3: an inner scroll view (Home) clears the bar with a trailing spacer, not
+   padding — Safari and Firefox drop the bottom padding of a scrolling flex
+   column, which left Home's last row under the footer. */
+.pb-tab-clear { padding-bottom: 0; }
+.pb-tab-clear::after { content: ''; display: block; flex: none; height: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-20 { padding-bottom: max(5rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-24 { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-32 { padding-bottom: max(8rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
@@ -965,7 +969,7 @@
   border-radius: 22%;
   background: #c9b2f2;
   pointer-events: none;
-  animation: gt-cover 720ms linear var(--gt-d, 0ms) both;
+  animation: gt-cover 220ms linear var(--gt-d, 0ms) both;
 }
 .gt-cover::before {
   content: '';
@@ -994,26 +998,26 @@
 /* type / place a number: 300 ms soft spring, fade in + swell 1.07 */
 .gt-pop { animation: gt-pop 300ms cubic-bezier(0.34, 1.45, 0.64, 1); }
 @keyframes gt-pop { 0% { transform: scale(0.9); opacity: 0.6; } 55% { transform: scale(1.07); opacity: 1; } 100% { transform: scale(1); } }
-/* reveal: each tile turns over in 720 ms (300 ms apart through --gt-d), the color swaps at the half, then a soft glow blooms (900 ms) */
-.gt-flip { animation: gt-flip 720ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both; }
-.gt-flip::before { animation: gt-bloom 900ms ease-out calc(var(--gt-d, 0ms) + 720ms); }
+/* reveal (AQ1): each tile turns over in 220 ms (70 ms apart through --gt-d), the color swaps at the half, then a soft glow blooms (600 ms) */
+.gt-flip { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both; }
+.gt-flip::before { animation: gt-bloom 600ms ease-out calc(var(--gt-d, 0ms) + 220ms); }
 @keyframes gt-flip { 0% { transform: perspective(420px) rotateX(0) scale(1); } 50% { transform: perspective(420px) rotateX(-90deg) scale(1.05); } 100% { transform: perspective(420px) rotateX(0) scale(1); } }
 @keyframes gt-bloom { 0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } 35% { box-shadow: 0 0 16px 3px var(--gt-glow, rgba(124, 58, 237, 0.55)); } 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); } }
-/* not a word: the row nudges (520 ms), its letters turn red with a red glow, then clear right to left (--gt-out-d) */
-.gt-nudge { animation: gt-nudge 520ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+/* not a word: the row nudges (360 ms), its letters turn red with a red glow, then clear right to left (--gt-out-d) */
+.gt-nudge { animation: gt-nudge 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @keyframes gt-nudge { 15%, 85% { transform: translateX(-2px); } 30%, 70% { transform: translateX(5px); } 45%, 55% { transform: translateX(-6px); } }
 .gtile.gt-bad { --gt-glyph: #c2183a; }
-.gtile.gt-bad::before { animation: gt-bad var(--gt-bad-ms, 1000ms) ease-in-out forwards; }
+.gtile.gt-bad::before { animation: gt-bad var(--gt-bad-ms, 700ms) ease-in-out forwards; }
 @keyframes gt-bad { 0% { box-shadow: inset 0 0 0 2.5px #8b5cf6, 0 0 0 0 rgba(240, 67, 95, 0); } 35% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 18px 4px rgba(240, 67, 95, 0.6); } 70% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 10px 2px rgba(240, 67, 95, 0.35); } 100% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 0 0 rgba(240, 67, 95, 0); } }
-.gtile.gt-out > b { animation: gt-outb 220ms cubic-bezier(0.5, 0, 0.75, 0) var(--gt-out-d, 0ms) forwards; }
+.gtile.gt-out > b { animation: gt-outb 160ms cubic-bezier(0.5, 0, 0.75, 0) var(--gt-out-d, 0ms) forwards; }
 @keyframes gt-outb { to { transform: scale(0.4); opacity: 0; } }
-/* win: a hop wave (560 ms each, 90 ms apart through --gt-hop-d) after the reveal */
-.gt-hop { animation: gt-hop 560ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
-.gt-flip.gt-hop { animation: gt-flip 720ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-hop 560ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
+/* win: a hop wave (400 ms each, 60 ms apart through --gt-hop-d) after the reveal */
+.gt-hop { animation: gt-hop 400ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
+.gt-flip.gt-hop { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-hop 400ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
 @keyframes gt-hop { 0% { transform: translateY(0); } 35% { transform: translateY(-34%) scale(1.06, 0.96); } 60% { transform: translateY(4%) scale(0.97, 1.04); } 100% { transform: translateY(0); } }
 /* lose: a wobble, then the row settles a little lower */
-.gt-sink { animation: gt-sink 700ms ease-out var(--gt-sink-d, 0ms) forwards; }
-.gt-flip.gt-sink { animation: gt-flip 720ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-sink 700ms ease-out var(--gt-sink-d, 0ms) forwards; }
+.gt-sink { animation: gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
+.gt-flip.gt-sink { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
 @keyframes gt-sink { 40% { transform: rotate(-4deg); } 70% { transform: rotate(3deg) translateY(3%); } 100% { transform: rotate(0) translateY(2%); filter: saturate(0.7); } }
 /* hint: flips in purple with a gold glow, twice */
 .gtile.gt-hint::before { animation: gt-hint 1.2s ease-in-out 2; }
@@ -1529,7 +1533,7 @@
 [data-theme="dark"] .result-pop { --popup-cream: var(--color-card-base, #252542); }
 .rp-rays { animation: rp-rays 24s linear infinite; }
 @keyframes rp-rays { to { transform: rotate(360deg); } }
-.rp-spring { animation: rp-spring 640ms cubic-bezier(0.3, 1.5, 0.5, 1) both; transform-origin: 50% 100%; }
+.rp-spring { animation: rp-spring 460ms cubic-bezier(0.3, 1.5, 0.5, 1) both; transform-origin: 50% 100%; }
 @keyframes rp-spring { 0% { opacity: 0; transform: scale(0.3) translateY(30%); } 60% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
 .rp-bob { animation: rp-bob 2.6s ease-in-out 700ms infinite; }
 @keyframes rp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
@@ -1689,3 +1693,62 @@ a, button, [role="button"], [data-squish] { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) { .react-burst { display: none; } }
 [data-reduced-motion="true"] .react-burst { display: none; }
 [data-reduced-motion="true"] .candy-badge-pop { animation: none !important; }
+
+/* ── FINISH_SPEC AQ2 · loops pause off-screen and while scrolling
+   (components/providers/motion-pause.tsx; class list = lib/motion-pause.ts LOOP_CLASSES). ── */
+[data-offscreen="true"], [data-offscreen="true"]::before, [data-offscreen="true"]::after { animation-play-state: paused !important; }
+html[data-scrolling="true"] .animate-gradient-x, html[data-scrolling="true"] .animate-gradient-slow, html[data-scrolling="true"] .animate-pulse-slow, html[data-scrolling="true"] .animate-pulse-slow-delayed, html[data-scrolling="true"] .animate-shimmer, html[data-scrolling="true"] .animate-sparkle, html[data-scrolling="true"] .animate-float, html[data-scrolling="true"] .animate-glow-pulse, html[data-scrolling="true"] .animate-blob, html[data-scrolling="true"] .animate-blob-reverse, html[data-scrolling="true"] .animate-title-pulse, html[data-scrolling="true"] .animate-foil-sweep, html[data-scrolling="true"] .animate-banner-shimmer, html[data-scrolling="true"] .mascot-bob, html[data-scrolling="true"] .art-float, html[data-scrolling="true"] .celebrate-glow, html[data-scrolling="true"] .candy-badge-pulse, html[data-scrolling="true"] .champ-in, html[data-scrolling="true"] .loop-wobble, html[data-scrolling="true"] .rp-rays, html[data-scrolling="true"] .rp-bob, html[data-scrolling="true"] .lh-sweep,
+html[data-scrolling="true"] .animate-gradient-x::before, html[data-scrolling="true"] .animate-gradient-slow::before, html[data-scrolling="true"] .animate-pulse-slow::before, html[data-scrolling="true"] .animate-pulse-slow-delayed::before, html[data-scrolling="true"] .animate-shimmer::before, html[data-scrolling="true"] .animate-sparkle::before, html[data-scrolling="true"] .animate-float::before, html[data-scrolling="true"] .animate-glow-pulse::before, html[data-scrolling="true"] .animate-blob::before, html[data-scrolling="true"] .animate-blob-reverse::before, html[data-scrolling="true"] .animate-title-pulse::before, html[data-scrolling="true"] .animate-foil-sweep::before, html[data-scrolling="true"] .animate-banner-shimmer::before, html[data-scrolling="true"] .mascot-bob::before, html[data-scrolling="true"] .art-float::before, html[data-scrolling="true"] .celebrate-glow::before, html[data-scrolling="true"] .candy-badge-pulse::before, html[data-scrolling="true"] .champ-in::before, html[data-scrolling="true"] .loop-wobble::before, html[data-scrolling="true"] .rp-rays::before, html[data-scrolling="true"] .rp-bob::before, html[data-scrolling="true"] .lh-sweep::before,
+html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="true"] .animate-gradient-slow::after, html[data-scrolling="true"] .animate-pulse-slow::after, html[data-scrolling="true"] .animate-pulse-slow-delayed::after, html[data-scrolling="true"] .animate-shimmer::after, html[data-scrolling="true"] .animate-sparkle::after, html[data-scrolling="true"] .animate-float::after, html[data-scrolling="true"] .animate-glow-pulse::after, html[data-scrolling="true"] .animate-blob::after, html[data-scrolling="true"] .animate-blob-reverse::after, html[data-scrolling="true"] .animate-title-pulse::after, html[data-scrolling="true"] .animate-foil-sweep::after, html[data-scrolling="true"] .animate-banner-shimmer::after, html[data-scrolling="true"] .mascot-bob::after, html[data-scrolling="true"] .art-float::after, html[data-scrolling="true"] .celebrate-glow::after, html[data-scrolling="true"] .candy-badge-pulse::after, html[data-scrolling="true"] .champ-in::after, html[data-scrolling="true"] .loop-wobble::after, html[data-scrolling="true"] .rp-rays::after, html[data-scrolling="true"] .rp-bob::after, html[data-scrolling="true"] .lh-sweep::after { animation-play-state: paused !important; }
+/* Long lists skip layout + paint for rows far off-screen. */
+.cv-row { content-visibility: auto; contain-intrinsic-size: auto 64px; }
+
+/* ── FINISH_SPEC AR · LiveHeadline (components/ui/live-headline.tsx): the title-art
+   lettering for dynamic headlines. Per glyph: a gold text-stroke copy + stacked
+   1 px drop-shadows (the 3D edge) BEHIND the gradient fill (background-clip: text),
+   then a white top gloss clipped to the glyph. ── */
+.lh {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  font-weight: 900;
+  font-size: calc(var(--lh-size, 1.5rem) * var(--lh-scale, 1));
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.08em 0.1em 0.16em;
+}
+.lh[data-wrap="true"] { white-space: normal; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lh-inner { display: inline; }
+.lh-w { display: inline-block; white-space: nowrap; }
+.lh-space { white-space: pre-wrap; }
+.lh-ch { position: relative; display: inline-block; animation: lh-pop 340ms cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i, 0) * 25ms); }
+.lh-stroke {
+  color: var(--lh-deep);
+  -webkit-text-stroke: 0.16em var(--lh-outline);
+  paint-order: stroke fill;
+  filter: drop-shadow(0 1px 0 var(--lh-deep)) drop-shadow(0 1px 0 var(--lh-deep)) drop-shadow(0 1px 0 var(--lh-deep)) drop-shadow(0 4px 5px rgba(30, 10, 70, 0.28));
+}
+.lh-fill, .lh-gloss { position: absolute; left: 0; top: 0; color: transparent; -webkit-background-clip: text; background-clip: text; pointer-events: none; }
+.lh-fill { background-image: linear-gradient(180deg, var(--lh-top), var(--lh-bottom)); }
+.lh-gloss {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.25) 38%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(100deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 60%);
+  background-size: 100% 100%, 300% 100%;
+  background-position: 0 0, 150% 0;
+  background-repeat: no-repeat;
+}
+.lh-ch[data-k="number"] { font-size: 1.12em; font-variant-numeric: tabular-nums; }
+.lh-ch[data-k="number"] .lh-stroke { color: var(--lh-num-deep); filter: drop-shadow(0 1px 0 var(--lh-num-deep)) drop-shadow(0 1px 0 var(--lh-num-deep)) drop-shadow(0 1px 0 var(--lh-num-deep)) drop-shadow(0 4px 5px rgba(30, 10, 70, 0.28)); -webkit-text-stroke-color: #fff4c2; }
+.lh-ch[data-k="number"] .lh-fill { background-image: linear-gradient(180deg, var(--lh-num-top), var(--lh-num-bottom)); }
+.lh-ch[data-k="name"] .lh-fill { background-image: linear-gradient(180deg, var(--lh-name-top), var(--lh-name-bottom)); }
+.lh-star { width: 0.78em; height: 0.78em; margin: 0 0.12em; vertical-align: -0.04em; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(146, 64, 14, 0.35)); }
+.lh-sweep .lh-gloss { animation: lh-sweep 6s ease-in-out infinite; animation-delay: calc(1.2s + var(--i, 0) * 30ms); }
+@keyframes lh-pop { 0% { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: none; } }
+@keyframes lh-sweep { 0% { background-position: 0 0, 150% 0; } 14%, 100% { background-position: 0 0, -50% 0; } }
+.lh-calm .lh-ch { animation: none; }
+[data-offscreen="true"] .lh-gloss, html[data-scrolling="true"] .lh-sweep .lh-gloss { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweep .lh-gloss { animation: none !important; } }
+[data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweep .lh-gloss { animation: none !important; }

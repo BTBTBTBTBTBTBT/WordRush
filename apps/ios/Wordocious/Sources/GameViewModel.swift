@@ -395,14 +395,28 @@ final class GameViewModel: ObservableObject {
 
     // MARK: - Input
 
+    /// FINISH_SPEC §AQ1: the rejected (not-a-word) row still showing its red hold.
+    /// Typing a letter over it starts a fresh row at once — the rejection never
+    /// blocks input. Cleared by any edit.
+    private var rejectedEntry: String?
+    /// Bumped on every player keystroke (the board drops the red hold the moment
+    /// the player moves on).
+    @Published private(set) var inputEpoch = 0
+
     func type(_ letter: String) {
-        guard !isFinished, currentInput.count < wordLength else { return }
+        guard !isFinished else { return }
+        if let r = rejectedEntry, currentInput == r { currentInput = "" }
+        rejectedEntry = nil
+        guard currentInput.count < wordLength else { return }
         currentInput += letter.uppercased()
+        inputEpoch &+= 1
     }
 
     func delete() {
+        rejectedEntry = nil
         guard !currentInput.isEmpty else { return }
         currentInput.removeLast()
+        inputEpoch &+= 1
     }
 
     func submit() {
@@ -467,6 +481,8 @@ final class GameViewModel: ObservableObject {
         Feedback.notAWord()
         shakeCount += 1
         let rejected = currentInput
+        // A full row the player can type straight over (a short row keeps its letters).
+        rejectedEntry = rejected.count == wordLength ? rejected : nil
         let still = Theme.reduceMotion
         DispatchQueue.main.asyncAfter(deadline: .now() + (still ? 0.6 : TileMotion.rejectHold)) { [weak self] in
             guard let self else { return }
@@ -479,6 +495,7 @@ final class GameViewModel: ObservableObject {
     /// One letter off the end every 90 ms, stopping the moment the player edits.
     private func clearRejected(expecting expected: String) {
         guard currentInput == expected, !currentInput.isEmpty else { return }
+        rejectedEntry = nil
         currentInput.removeLast()
         let next = currentInput
         guard !next.isEmpty else { return }
@@ -617,11 +634,38 @@ final class GameViewModel: ObservableObject {
     }
 
     private static func merge(_ a: TileState?, _ b: TileState) -> TileState {
-        let rank: (TileState) -> Int = {
-            switch $0 { case .correct: return 3; case .present: return 2; case .absent: return 1; default: return 0 }
+        KeyReveal.merge(a, b)
+    }
+
+    /// FINISH_SPEC §AQ1: every letter's keyboard state with each row limited to its
+    /// landed tiles — `visible(board, row)` = how many of that row's tiles count
+    /// (Int.max for settled rows). Same rules as `keyState(for:)`.
+    func keyStates(visible: (Int, Int) -> Int) -> [String: TileState] {
+        if isSequence {
+            let idx = sequenceActiveIndex
+            guard idx >= 0, let evals = evaluations[safe: idx] else { return [:] }
+            return KeyReveal.letterStates(evals, visible: { visible(idx, $0) })
         }
-        guard let a else { return b }
-        return rank(b) > rank(a) ? b : a
+        var d: [String: TileState] = [:]
+        for board in state.boards {
+            d = KeyReveal.letterStates((board.prefilledGuesses ?? []).map(\.evaluation), into: d)
+        }
+        for (b, boardEvals) in evaluations.enumerated() {
+            d = KeyReveal.letterStates(boardEvals, visible: { visible(b, $0) }, into: d)
+        }
+        return d
+    }
+
+    /// §AQ1: `boardKeyStates()` with each row limited to its landed tiles.
+    func boardKeyStates(visible: (Int, Int) -> Int) -> [[String: TileState]] {
+        state.boards.enumerated().map { i, board in
+            // A board that just finished keeps its colors until its last row lands.
+            let evals = evaluations[safe: i] ?? []
+            let lastLanding = evals.last.map { visible(i, evals.count - 1) < $0.tiles.count } ?? false
+            guard board.status == .playing || lastLanding else { return [:] }
+            let d = KeyReveal.letterStates((board.prefilledGuesses ?? []).map(\.evaluation))
+            return KeyReveal.letterStates(evaluations[safe: i] ?? [], visible: { visible(i, $0) }, into: d)
+        }
     }
 
     /// Use the per-board quadrant keyboard for simultaneous multi-board modes

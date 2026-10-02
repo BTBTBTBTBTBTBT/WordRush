@@ -61,7 +61,9 @@ object CastHeaderAnchor {
 @Composable
 fun rememberCastPainter(id: MascotId, season: String? = null): BitmapPainter {
     val frame = SeasonSkins.frame(id, season)
-    val bitmap: ImageBitmap = ImageBitmap.imageResource(frame.res)
+    // AQ2: the shared decoded figure (every tab's header paints the same ten bitmaps).
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val bitmap: ImageBitmap = remember(frame.res) { ArtBitmaps.get(context, frame.res, 512) } ?: ImageBitmap.imageResource(frame.res)
     val crop = frame.crop
     return remember(bitmap, crop) {
         // Clamp to the decoded bitmap (the crops are in the skin's source coordinates).
@@ -93,6 +95,8 @@ fun LivingCastHeader(
     reportAnchor: Boolean = true,
 ) {
     val hidden by LocalTabHidden.current
+    // AQ2: the idle moves also wait while the page scrolls.
+    val scrolling by LocalScrollActive.current
     val still = WTheme.reducedMotion || !live
     // FINISH_SPEC AD: the idle moves + crown twinkle are ambient — Battery Saver stops them too
     // (the one-shot intro flourish follows Reduce Motion alone).
@@ -112,9 +116,9 @@ fun LivingCastHeader(
         wave.animateTo(IntroFlourish.TOTAL_MS.toFloat(), tween(IntroFlourish.TOTAL_MS, easing = LinearEasing))
         wave.snapTo(-1f)
     }
-    LaunchedEffect(calm, hidden, flourishKey) {
+    LaunchedEffect(calm, hidden, scrolling, flourishKey) {
         acting = null
-        if (calm || hidden) return@LaunchedEffect
+        if (calm || hidden || scrolling) return@LaunchedEffect
         val random = Random(System.nanoTime())
         // The personality moves resume after the flourish.
         if (flourishKey > 0 && reportAnchor) delay(IntroFlourish.TOTAL_MS.toLong())

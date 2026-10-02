@@ -216,7 +216,7 @@ fun FriendsScreen(
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.FRIENDS, alwaysLight = true)
             .verticalScroll(friendsScroll)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // 1. The FRIENDS headline (FINISH_SPEC A6 / C4b / N1): the FRIENDS lettering as a

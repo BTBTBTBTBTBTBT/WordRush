@@ -1,10 +1,10 @@
 import SwiftUI
 import WordociousCore
 
-/// FINISH_SPEC §F2: the cold-start intro. The static launch screen (Info.plist
-/// `UILaunchScreen`: the Home wallpaper color + `launch-w`, the app icon's W mascot,
-/// centered) hands off to this overlay, which starts from exactly that frame:
-/// the W bounces once, glides into the first slot of a centered WORDOCIOUS row
+/// FINISH_SPEC §F2 / §AQ3: the cold-start intro. The static launch screen (Info.plist
+/// `UILaunchScreen`: the Home wallpaper color only — no image, so the system never
+/// shows a second W of a different size or skin) hands off to this overlay on the
+/// same color: the W pops in at the center, glides into the first slot of a centered WORDOCIOUS row
 /// while the other nine cast heroes pop in one after another (60 ms apart, spring),
 /// then the whole row glides up into the Home header's cast row as the backdrop
 /// fades and Home shows underneath. ≤ 1.6 s, tap to skip, cold start only (never on
@@ -98,7 +98,7 @@ private struct ColdStartIntro: View {
     @State private var fade: Double = 1
     @State private var finishing = false
 
-    /// The launch image's size: 512 px @3x.
+    /// The W's size at the center (the old launch image's 512 px @3x).
     private static let launchSize: CGFloat = 512 / 3
     /// The glide lands at 1.55 s; the intro ends exactly then (≤ 1.6 s).
     private static let landing: Double = 1.55
@@ -130,6 +130,9 @@ private struct ColdStartIntro: View {
         // Tap to skip: straight to the landing (step 3), then the flourish.
         .onTapGesture { land() }
         .accessibilityHidden(true)
+        // §AQ3: the clock starts on the first frame shown, so a busy launch never
+        // skips the W's entrance (or lands mid-glide).
+        .onAppear { start = Date() }
         .task {
             if still {
                 // Reduce Motion: a 200 ms crossfade over the real row, no flourish.
@@ -182,7 +185,9 @@ private struct ColdStartIntro: View {
     /// computed header slots only when the real row hasn't reported yet.
     private func targets(size: CGSize, safeTop: CGFloat, origin: CGPoint) -> [(center: CGPoint, side: CGFloat)] {
         let s = LivingCastHeader.figure
-        let fallback = slots(width: size.width, bottom: safeTop + LivingCastHeader.height(pro: AuthService.shared.isProActive))
+        // §AS2: the controls row sits above the cast row now.
+        let fallback = slots(width: size.width,
+                             bottom: safeTop + HeaderControl.tap + 2 + LivingCastHeader.height(pro: AuthService.shared.isProActive))
         return Mascots.cast.enumerated().map { i, m in
             if let f = handoff.frames[m], f.width > 0 {
                 return (CGPoint(x: f.midX - origin.x, y: f.midY - origin.y), f.width)
@@ -213,10 +218,11 @@ private struct ColdStartIntro: View {
         let rowPoint = CGPoint(x: mid.x + (header.center.x - mid.x) * glide, y: mid.y + (header.center.y - mid.y) * glide)
         let rowSide = s + (header.side - s) * glide
         if i == 0 {
-            // W: the launch frame → one bounce (0–0.32 s) → into slot 0 (0.32–0.6 s).
-            let bounce = Keyframes.sample([(0, .identity), (0.38, CastPose(ty: -0.07, sx: 1.08, sy: 1.08)),
-                                           (0.7, CastPose(sx: 0.95, sy: 0.95)), (1, .identity)],
-                                          at: min(1, t / 0.32), easing: .easeInOut)
+            // W: pops in on the launch color (0–0.32 s, the only W on screen) → into
+            // slot 0 (0.32–0.6 s).
+            let bounce = Keyframes.sample([(0, CastPose(sx: 0.55, sy: 0.55)), (0.55, CastPose(ty: -0.04, sx: 1.08, sy: 1.08)),
+                                           (0.8, CastPose(sx: 0.97, sy: 0.97)), (1, .identity)],
+                                          at: min(1, max(0, t) / 0.32), easing: .easeInOut)
             let k = ease((t - 0.32) / 0.28)
             let side = Self.launchSize + (rowSide - Self.launchSize) * k
             let center = CGPoint(x: size.width / 2 + (rowPoint.x - size.width / 2) * k,
@@ -225,6 +231,7 @@ private struct ColdStartIntro: View {
                 .frame(width: side, height: side)
                 .scaleEffect(x: CGFloat(bounce.sx), y: CGFloat(bounce.sy), anchor: .bottom)
                 .offset(y: CGFloat(bounce.ty) * side)
+                .opacity(min(1, max(0, t) / 0.12))
                 .position(center)
         } else {
             // The other nine pop in, 60 ms apart, with a spring.

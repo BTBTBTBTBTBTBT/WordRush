@@ -158,6 +158,8 @@ struct LbResultCard<Delta: View, Footer: View>: View {
     var line: String? = nil
     var points: String? = nil
     var pointsLabel: String = "POINTS"
+    /// FINISH_SPEC §AR: the live headline over the card ("YOU'RE #3 TODAY").
+    var headline: String? = nil
     @ViewBuilder var delta: () -> Delta
     @ViewBuilder var footer: () -> Footer
 
@@ -165,6 +167,10 @@ struct LbResultCard<Delta: View, Footer: View>: View {
         let dark = Theme.isDark
         let ink = dark ? Theme.textSecondary : LbStyle.goldInk
         VStack(spacing: 0) {
+            if let headline {
+                LiveHeadline(text: headline, palette: .leaderboard, size: 20, maxLines: 1, minimumScale: 0.6)
+                    .padding(.horizontal, 14).padding(.top, 10)
+            }
             HStack(alignment: .center, spacing: 12) {
                 VStack(spacing: 0) {
                     Icon3D(.crown, size: 30)
@@ -215,16 +221,17 @@ struct LbResultCard<Delta: View, Footer: View>: View {
 
 extension LbResultCard where Footer == EmptyView {
     init(rank: Int?, ofLine: String, line: String? = nil, points: String? = nil, pointsLabel: String = "POINTS",
-         @ViewBuilder delta: @escaping () -> Delta) {
+         headline: String? = nil, @ViewBuilder delta: @escaping () -> Delta) {
         self.init(rank: rank, ofLine: ofLine, line: line, points: points, pointsLabel: pointsLabel,
-                  delta: delta, footer: { EmptyView() })
+                  headline: headline, delta: delta, footer: { EmptyView() })
     }
 }
 
 extension LbResultCard where Delta == EmptyView, Footer == EmptyView {
-    init(rank: Int?, ofLine: String, line: String? = nil, points: String? = nil, pointsLabel: String = "POINTS") {
+    init(rank: Int?, ofLine: String, line: String? = nil, points: String? = nil, pointsLabel: String = "POINTS",
+         headline: String? = nil) {
         self.init(rank: rank, ofLine: ofLine, line: line, points: points, pointsLabel: pointsLabel,
-                  delta: { EmptyView() }, footer: { EmptyView() })
+                  headline: headline, delta: { EmptyView() }, footer: { EmptyView() })
     }
 }
 

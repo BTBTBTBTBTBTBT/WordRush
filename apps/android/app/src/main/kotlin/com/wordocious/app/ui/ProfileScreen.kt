@@ -440,7 +440,7 @@ fun ProfileScreen(
         modifier = Modifier.fillMaxSize().pageBackground(PageTint.STATS)
             .padding(horizontal = 16.dp),
         state = listState,
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD + 8.dp), // AS3
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -452,7 +452,7 @@ fun ProfileScreen(
         }
 
         // ── A. Header ─────────────────────────────────────────────
-        item {
+        item { Column {
             ProfileHeader(profile, isProActive, onGoPro, onEditProfile, onShare = {
                 profile?.let { pr ->
                     val total = pr.totalWins + pr.totalLosses
@@ -470,7 +470,17 @@ fun ProfileScreen(
                     ))
                 }
             })
-        }
+            // AR: the Stats summary headline in the live lettering (blue → violet, gold numbers).
+            profile?.let { pr ->
+                val total = pr.totalWins + pr.totalLosses
+                if (total > 0) {
+                    LiveHeadline(
+                        statsSummaryHeadline(pr.totalWins, total, pr.currentStreak),
+                        HeadlinePalette.STATS, Modifier.fillMaxWidth().padding(top = 10.dp), maxSize = 22.sp, minSize = 14.sp,
+                    )
+                }
+            }
+        } }
 
         // The "GIFT PRO TO FRIENDS" panel lives on the Friends screen only
         // (founder, 2026-09-26: on the profile it was clutter and a duplicate).
@@ -695,6 +705,13 @@ fun ProfileScreen(
         // (Account actions — Daily Reminders / Sign Out / Delete Account — live
         // in Settings now; removed from the profile page per product direction.)
     }
+}
+
+/** AR the Stats summary headline: "128 WINS · 74% WIN RATE" (+ "· 6 STREAK" while one runs). */
+internal fun statsSummaryHeadline(wins: Int, played: Int, streak: Int): String {
+    val rate = if (played > 0) Math.round(wins * 100f / played) else 0
+    val base = "${"%,d".format(wins)} WIN${if (wins == 1) "" else "S"} · $rate% WIN RATE"
+    return if (streak >= 2) "$base · $streak STREAK" else base
 }
 
 /** The page item's index in the Stats LazyColumn (spacer · STATS headline · player card ·

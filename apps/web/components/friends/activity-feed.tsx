@@ -314,10 +314,9 @@ export function ActivityFeed({ onRematch }: Props) {
                       })}
                       <span className="flex-1" />
                       <span className="text-[10px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>{dayLabel(e.day, today)}</span>
-                      {isGame && pocket ? (
+                      {/* AS5: no View button — the row (or the avatar) opens the profile. */}
+                      {isGame && pocket && (
                         <CandyButton size="sm" color="pink" icon="replay" onClick={(ev) => { ev.stopPropagation(); rematch(e); }}>Rematch</CandyButton>
-                      ) : (
-                        <CandyButton size="sm" color="purple" icon="eye" onClick={(ev) => { ev.stopPropagation(); router.push(href(e)); }} aria-label={`View ${e.me ? 'your stats' : `${e.username}'s profile`}`}>View</CandyButton>
                       )}
                     </div>
                   </div>

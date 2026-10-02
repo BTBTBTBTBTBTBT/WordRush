@@ -151,7 +151,7 @@ export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
           ) : p.isBot ? (
             p.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.avatarUrl} alt="" aria-hidden="true" width={26} height={26} className="rounded-full shrink-0 object-contain" style={{ width: 26, height: 26, background: '#e6f7f4' }} />
+              <img src={p.avatarUrl} alt="" aria-hidden="true" loading="lazy" decoding="async" width={26} height={26} className="rounded-full shrink-0 object-contain" style={{ width: 26, height: 26, background: '#e6f7f4' }} />
             ) : null
           ) : (
             // AN5 / AN6: the player's photo (rounded square) or their mascot.

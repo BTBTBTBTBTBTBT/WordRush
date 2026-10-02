@@ -196,7 +196,8 @@ struct AllTimeRecordsView: View {
             // §C2: the gold result card — your rank, your sweep record, your sweep count.
             LbResultCard(rank: r.rank, ofLine: "OF \(r.total) SWEEPERS",
                          line: mine.map { "\($0.flawlessCount) flawless · best \(formatShortTime($0.bestSweepTime))" },
-                         points: mine.map { "\($0.sweepCount)" }, pointsLabel: "SWEEPS")
+                         points: mine.map { "\($0.sweepCount)" }, pointsLabel: "SWEEPS",
+                         headline: "YOU\u{2019}RE #\(r.rank) ALL-TIME")
         }
         if sweepLoading {
             LeaderboardSkeleton().lbCard()
@@ -545,6 +546,7 @@ struct DailyRecordsView: View {
                                          timeSeconds: $0.timeSeconds, boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
                          },
                          points: mine.map { lbScoreLabels[$0.compositeScore] ?? formatScore($0.compositeScore) },
+                         headline: "YOU\u{2019}RE #\(r.rank) \(friends ? "OF FRIENDS" : "TODAY")",
                          delta: {
                              RankDeltaBadge(mode: mode.rawValue, playType: playType,
                                             pageKey: friends ? "records-daily-friends" : "records-daily", currentRank: r.rank)
@@ -618,7 +620,8 @@ struct DailyRecordsView: View {
                          line: mine.map {
                              "\($0.isFlawless ? "Flawless" : "Swept") · \($0.modesWon)/\(ModeGen.requiredSweepCount(for: day)) won · \(formatShortTime($0.totalTime))"
                          },
-                         points: mine.map { sweepScoreLabels[$0.totalScore] ?? formatScore($0.totalScore) })
+                         points: mine.map { sweepScoreLabels[$0.totalScore] ?? formatScore($0.totalScore) },
+                         headline: "YOU\u{2019}RE #\(r.rank) TODAY")
         }
         LbSectionLabel("TODAY\u{2019}S BOARD").padding(.top, 4).padding(.leading, 4)
         if sweepLoading {

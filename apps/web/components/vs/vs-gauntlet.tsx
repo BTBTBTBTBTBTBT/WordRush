@@ -1,6 +1,8 @@
 'use client';
 
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
+import { latestGuess } from '@/lib/key-reveal';
 import { useReducer, useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { modeColor } from '@/lib/vs-lobby';
 import {
@@ -43,7 +45,7 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET, solutions));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showTransition, setShowTransition] = useState(false);
   const [hasReported, setHasReported] = useState(false);
@@ -153,14 +155,15 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
   const handleKey = useCallback((key: string) => {
     if (state.status !== GameStatus.PLAYING) return;
     if (showTransition) return;
-    if (isShaking) return;
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let guess = currentGuess;
+    if (isShaking) { cutReject(); guess = ''; if (keyDuringReject(key) === 'swallow') return; }
 
     // Invalid entries shake the row like solo, then clear it.
     const reject = (msg: string) => {
       setMessage(msg);
       playInvalid();
-      setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+      rejectRow(currentGuess.length);
       setTimeout(() => setMessage(''), 1500);
     };
 
@@ -182,7 +185,7 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+    } else if (/^[A-Z]$/.test(key) && guess.length < 5) {
       setCurrentGuess(prev => prev + key);
       onTyping?.();
     }
@@ -357,6 +360,7 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
           onKey={handleKey}
           letterStates={letterStates}
           boardLetterStates={boardLetterStates}
+          revealWord={latestGuess(state.boards)}
         />
       </div>
 

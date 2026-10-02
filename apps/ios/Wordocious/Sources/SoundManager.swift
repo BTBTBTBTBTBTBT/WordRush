@@ -222,7 +222,7 @@ enum Haptics {
 
     /// A selection tick (each tile of a reveal).
     static func selection() {
-        run { UISelectionFeedbackGenerator().selectionChanged() }
+        run { selectionGen.selectionChanged(); selectionGen.prepare() }
     }
 
     static func success() { notify(.success) }
@@ -235,12 +235,24 @@ enum Haptics {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { heavy() }
     }
 
+    // FINISH_SPEC §AQ1: one long-lived, prepared generator per style (a fresh
+    // generator per key press spun the Taptic Engine up cold every tap — extra main-
+    // thread work and a late buzz when typing fast).
+    private static var impactGens: [UIImpactFeedbackGenerator.FeedbackStyle: UIImpactFeedbackGenerator] = [:]
+    private static let selectionGen = UISelectionFeedbackGenerator()
+    private static let notifyGen = UINotificationFeedbackGenerator()
+
     private static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        run { UIImpactFeedbackGenerator(style: style).impactOccurred() }
+        run {
+            let g = impactGens[style] ?? UIImpactFeedbackGenerator(style: style)
+            impactGens[style] = g
+            g.impactOccurred()
+            g.prepare()
+        }
     }
 
     private static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        run { UINotificationFeedbackGenerator().notificationOccurred(type) }
+        run { notifyGen.notificationOccurred(type); notifyGen.prepare() }
     }
 
     private static func run(_ body: @escaping () -> Void) {

@@ -229,6 +229,8 @@ fun PageHeader(
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
     /** The page's whole-cast title image (ART_SPEC §2): replaces the text title AND the host. */
     art: TitleArt? = null,
+    /** AR / AS1: draw [title] in the live lettering with this palette (never plain text). */
+    live: HeadlinePalette? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -248,7 +250,8 @@ fun PageHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            PageTitleText(title, Modifier.weight(1f, fill = false), accent, titleSize, titleMaxLines)
+            if (live != null) LiveHeadline(title, live, Modifier.weight(1f), maxSize = titleSize, minSize = 14.sp, maxLines = titleMaxLines)
+            else PageTitleText(title, Modifier.weight(1f, fill = false), accent, titleSize, titleMaxLines)
             if (host != null) TitleHost(host, size = hostSize)
         }
         actions()

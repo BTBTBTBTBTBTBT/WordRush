@@ -415,7 +415,11 @@ struct TintedCard: ViewModifier {
         })
         .clipShape(shape)
         .overlay(shape.stroke(dark ? accent.opacity(0.35) : accent.wash(line), lineWidth: 1.5))
-        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)
+        // §AQ2: the soft shadow is cast by ONE plain shape under the card, not by the
+        // whole card's content (a content shadow re-rasterizes every text run and
+        // icon in an offscreen pass each frame while a list scrolls).
+        .background(shape.fill(dark ? Theme.surface : accent.wash(tint))
+            .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8))
     }
 }
 
@@ -615,7 +619,16 @@ struct GlossyTile: View {
                 }
             }
             .frame(width: width, height: h - lip)
-            .shadow(color: glow.opacity(Double(glowAmount)), radius: s * 0.27 * glowAmount)
+            // §AQ2: only a revealing tile carries the glow (a plain shape's shadow under
+            // the face); a settled / typed / empty tile — hundreds on a multi board —
+            // draws no shadow pass at all. `glow` is fixed per tile, so the structure
+            // never changes mid-animation.
+            .background {
+                if glow != .clear {
+                    faceShape.fill(glow.opacity(Double(glowAmount)))
+                        .shadow(color: glow.opacity(Double(glowAmount)), radius: s * 0.27 * glowAmount)
+                }
+            }
         }
         .frame(width: width, height: h)
     }
@@ -697,30 +710,34 @@ extension GlossyFace {
 // MARK: - §B3 The motion kit
 
 /// The game kit's timings (game-kit.html motion table), shared by every board.
+/// FINISH_SPEC §AQ1: the reveal clock lives in core `RevealTiming` (unit tested) —
+/// ≤ 220 ms flips, ≤ 70 ms apart, a shorter hop, the popup within 1.2 s.
 enum TileMotion {
-    /// Type a letter / place a number: 300 ms soft spring.
-    static let pop: Double = 0.30
-    /// Reveal: each tile turns over in 720 ms, 300 ms apart, color swaps at the half.
-    static let flip: Double = 0.72
-    static let flipStagger: Double = 0.30
+    /// Type a letter / place a number: a quick soft spring (never blocks typing).
+    static let pop: Double = 0.22
+    /// Reveal: each tile turns over in 220 ms, 70 ms apart, color swaps at the half.
+    static let flip: Double = RevealTiming.flip
+    static let flipStagger: Double = RevealTiming.flipStagger
     /// The soft color glow after landing.
-    static let bloom: Double = 0.90
-    /// Not a word: the row nudge, the red glow hold, then letters clear 90 ms apart.
-    static let nudge: Double = 0.52
-    static let rejectHold: Double = 1.0
-    static let rejectStep: Double = 0.09
-    /// Win: a hop wave, 560 ms each, 90 ms apart.
-    static let hop: Double = 0.56
-    static let hopStagger: Double = 0.09
+    static let bloom: Double = RevealTiming.bloom
+    /// Not a word (web REVEAL parity): the 360 ms row nudge, the 700 ms red hold,
+    /// then letters clear 60 ms apart. Typing during the hold replaces the rejected
+    /// row (never blocks input).
+    static let nudge: Double = 0.36
+    static let rejectHold: Double = 0.7
+    static let rejectStep: Double = 0.06
+    /// Win: a hop wave, 400 ms each, 60 ms apart.
+    static let hop: Double = RevealTiming.hop
+    static let hopStagger: Double = RevealTiming.hopStagger
     /// Lose: wobble + sink.
-    static let sink: Double = 0.70
-    static let sinkStagger: Double = 0.06
+    static let sink: Double = RevealTiming.sink
+    static let sinkStagger: Double = RevealTiming.sinkStagger
     /// Hint: a gold glow pulse, twice.
-    static let hintPulse: Double = 1.2
+    static let hintPulse: Double = 0.9
 
     /// How long a `columns`-wide row takes to finish revealing.
     static func rowReveal(columns: Int) -> Double {
-        flip + Double(max(0, columns - 1)) * flipStagger
+        RevealTiming.rowReveal(columns: columns)
     }
 
     static let popFrames: [(Double, CastPose)] = [

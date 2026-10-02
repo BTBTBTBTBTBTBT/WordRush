@@ -18,8 +18,7 @@ import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
 import { MASCOT_LINES } from '@/lib/mascots';
 import { ArtScene } from '@/components/ui/art-scene';
-import { GAME_TITLE_ART_HEIGHT, PAGE_SCENES, gameTitleArtForDbKey, gameTitleArtLabel } from '@/lib/art';
-import { ArtTitle } from '@/components/ui/art-title';
+import { PAGE_SCENES } from '@/lib/art';
 import { GameArt } from '@/components/ui/game-art';
 import { GameTileGlyph } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
@@ -427,7 +426,6 @@ export default function DailyPage() {
   const color = mode.accentColor;
   const Icon = mode.icon;
   // ART_SPEC §10: the Play card's title art (null for Sweep).
-  const titleArt = isSweep ? null : gameTitleArtForDbKey(selectedMode);
   // URL slugs that differ from internal mode ids (mark scrub 2026-08-11):
   // routes wear the display-name slug; ids stay put (they key play limits,
   // saves, and the shared catalog).
@@ -740,8 +738,9 @@ export default function DailyPage() {
 
       {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): up to
           1100 px wide — the day headline + picker keep the 560 column across
-          the top, then two columns: the Play / result / your board cards on the
-          left, TODAY'S BOARD + YESTERDAY'S WINNERS on the right. */}
+          the top, then two columns. AS4: the compact play row, YOUR result and
+          TODAY'S BOARD on the left (first on a phone), then your finished board +
+          YESTERDAY'S WINNERS. */}
       <div className="max-w-lg page-wide mx-auto px-4">
         {/* A6 + C2: the day's title as the headline on the wallpaper, then the
             one game picker card (date · reset clock + ALL-TIME → on top, the
@@ -752,50 +751,29 @@ export default function DailyPage() {
 
         <div className="page-grid-2">
         <div>
-        {/* Play card (C2): tinted in the game's color with its top bar — the
-            title art, "N players today" and a medium candy pill. */}
-        <div className="relative overflow-hidden mb-4" style={softCard(color, { radius: 18 })}>
+        {/* AS4: the play card, compressed to one row — small art, one line, a small
+            candy button (PLAY before today's daily, VIEW BOARD after). */}
+        <div className="relative overflow-hidden mb-3" style={softCard(color, { radius: 16 })}>
           <div aria-hidden="true" style={cardBarStyle(color)} />
-          <div className="flex items-center gap-3" style={{ padding: '10px 12px 12px' }}>
-            {!titleArt && (
-              <GameArt
-                id={isSweep ? 'sweep' : mode.id}
-                size={44}
-                fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              {/* ART_SPEC §10: the selected game's title art (lettering + host). */}
-              {titleArt ? (
-                <ArtTitle name={titleArt} label={gameTitleArtLabel(titleArt)} maxHeight={GAME_TITLE_ART_HEIGHT.playCard} maxWidth={2000} align="left" as="div" level={2} priority={false} motion="none" className="mb-0.5" />
-              ) : (
-                <div className="font-black truncate" style={{ fontSize: 17, color: 'var(--color-text)' }}>
-                  {isSweep ? 'Daily Sweep' : mode.title}
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
-                <Users className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">
-                  {isSweep
-                    ? `${playerCount} swept today`
-                    : `${playerCount} player${playerCount !== 1 ? 's' : ''} today · Daily games only`}
-                </span>
-              </div>
-              {/* §223 microcopy: the sweep board pre-answers "why is a full sweep below
-                  a near-miss" — it ranks by points, not wins. */}
-              {isSweep && (
-                <div className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                  Ranked by total points across all modes
-                </div>
-              )}
+          <div className="flex items-center gap-2.5" style={{ padding: '7px 10px 8px' }}>
+            <GameArt
+              id={isSweep ? 'sweep' : mode.id}
+              size={30}
+              fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+            />
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
+              <span className="font-black truncate" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
+              <span aria-hidden="true">·</span>
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {/* §223: the sweep board ranks by total points across all modes. */}
+                {isSweep ? `${playerCount} swept · ranked by points` : `${playerCount} today`}
+              </span>
             </div>
-            {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
-                no Play button (just complete every sweep daily to appear here). */}
+            {/* Sweep isn't a playable puzzle — no Play button. */}
             {!isSweep && (
-              // FINISH_SPEC A8 / C2: a medium glossy candy pill — VIEW BOARD once
-              // today's daily is done, PLAY before — never the old tall blob.
               <CandyButton
-                size="md"
+                size="sm"
                 color="purple"
                 icon={playedSelected ? 'eye' : 'play'}
                 onClick={handlePlayDaily}
@@ -829,17 +807,6 @@ export default function DailyPage() {
           />
         )}
 
-        {/* Your finished board (§254), collapsible under the result — per-mode
-            only; Sweep has no board. */}
-        {!isSweep && (
-          <SoftCompletedCards>
-            <CompletedDailyBoard modeId={selectedMode} />
-          </SoftCompletedCards>
-        )}
-
-        </div>
-
-        <div>
         {/* TODAY'S BOARD — daily games only (the Play card says so), so an
             Unlimited session never shows here. */}
         <div className="flex items-center justify-between gap-2 mb-2 px-1">
@@ -931,6 +898,17 @@ export default function DailyPage() {
           )}
         </BoardCard>
         </PullToRefresh>
+
+        </div>
+
+        <div>
+        {/* Your finished board (§254), collapsible under the result — per-mode
+            only; Sweep has no board. */}
+        {!isSweep && (
+          <SoftCompletedCards>
+            <CompletedDailyBoard modeId={selectedMode} />
+          </SoftCompletedCards>
+        )}
 
         {/* YESTERDAY'S WINNERS — per-mode top 5, or yesterday's top sweepers;
             collapsible, the same tinted card and rows as today's board. */}

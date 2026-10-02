@@ -1259,6 +1259,7 @@ struct FriendsScreenView: View {
             .padding(.horizontal, Self.sidePadding).padding(.top, 6)
             .padding(.bottom, 16 + (padsForChrome ? chrome.bottomInset : 0))
         }
+        .reportsScrollMotion()   // §AQ2
     }
 
     /// What the old header add-friend circle did: scroll to Add by username and

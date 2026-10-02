@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -597,8 +598,11 @@ fun MainScreen() {
                             val activeTab = tab == selectedTab
                             val tabHidden = remember(tab) { androidx.compose.runtime.derivedStateOf { coveredState.value || selectedTab != tab } }
                             // FINISH_SPEC AG: a centered ~600 dp page column on a tablet (phones untouched).
-                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).contentColumn()) {
-                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
+                            // AQ2: one scroll watcher per tab — ambient loops hold still while any list in it moves.
+                            val scrollWatch = remember(tab) { ScrollActivity() }
+                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).contentColumn()
+                                .nestedScroll(scrollWatch)) {
+                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalScrollActive provides scrollWatch.active, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
                                 when (tab) {
                                     0 -> HomeScreen(
                                         onJoinInvite = { m, code -> vsInvite = m to code },

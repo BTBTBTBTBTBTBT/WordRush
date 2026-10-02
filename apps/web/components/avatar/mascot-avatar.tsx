@@ -105,6 +105,8 @@ export function ProCrown({ size }: { size: number }) {
       src={badgeSrc('pro-crown-sprite')}
       alt=""
       aria-hidden="true"
+      loading="lazy"
+      decoding="async"
       width={c.size}
       height={c.size}
       draggable={false}

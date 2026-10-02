@@ -1,6 +1,7 @@
 'use client';
 
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
@@ -78,7 +79,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const [state, setState] = useState<LadderState | null>(null);
   const [typing, setTyping] = useState('');
   const [invalid, setInvalid] = useState(false);
-  const [shaking, setShaking] = useState(false);
+  const { isShaking: shaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => { setInvalid(false); setTyping(''); });
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
@@ -177,12 +178,12 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
       if (a.type === 'SUBMIT') {
         if (next.reject) {
           flash(REJECT_COPY[next.reject]); haptic('medium'); playInvalid();
-          setInvalid(true); setShaking(true); setTimeout(() => { setInvalid(false); setShaking(false); setTyping(''); }, REVEAL.rejectMs(s.words[0]?.length ?? 5));
+          setInvalid(true); rejectRow(s.words[0]?.length ?? 5);
         } else { setTyping(''); playKeyTap(); }
       } else if (a.type === 'HINT' && next.words.length > s.words.length) { setTyping(''); }
       return next;
     });
-  }, [allowed, flash]);
+  }, [allowed, flash, rejectRow]);
 
   const recordResult = useCallback(() => {
     const elapsedSeconds = getElapsed();
@@ -214,10 +215,13 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
 
   const onKey = useCallback((key: string) => {
     if (!state || state.status !== 'playing') return;
-    if (key === 'ENTER') { if (typing.length === 5) dispatch({ type: 'SUBMIT', word: typing }); else flash('Five letters, please'); return; }
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let word = typing;
+    if (shaking) { cutReject(); word = ''; if (keyDuringReject(key) === 'swallow') return; }
+    if (key === 'ENTER') { if (word.length === 5) dispatch({ type: 'SUBMIT', word }); else flash('Five letters, please'); return; }
     if (key === 'BACK') { setTyping((t) => t.slice(0, -1)); return; }
-    if (/^[A-Z]$/.test(key) && typing.length < 5) setTyping((t) => t + key);
-  }, [state, typing, dispatch, flash]);
+    if (/^[A-Z]$/.test(key) && word.length < 5) setTyping((t) => t + key);
+  }, [state, typing, shaking, cutReject, dispatch, flash]);
   const undo = useCallback(() => { dispatch({ type: 'UNDO' }); setTyping(''); }, [dispatch]);
   const hint = useCallback(() => dispatch({ type: 'HINT' }), [dispatch]);
 

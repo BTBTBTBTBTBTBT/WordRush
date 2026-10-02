@@ -157,7 +157,9 @@ struct FriendsSceneArt: View {
         let still = envReduce || Theme.reduceMotion || !spring
         Group {
             if ArtAsset.exists(asset) {
-                Image(asset).resizable().interpolation(.high).scaledToFit()
+                // §AQ2: the 800–1200 px scene downsampled to its small slot.
+                ArtThumbs.image(asset, points: max(maxWidth ?? 0, height * max(1, ArtAsset.aspect(asset) ?? 1)))
+                    .resizable().interpolation(.high).scaledToFit()
                     .frame(maxWidth: maxWidth, maxHeight: height)
             } else {
                 MascotView(.i, size: height * 0.7, motion: .bob)

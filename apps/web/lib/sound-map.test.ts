@@ -49,7 +49,7 @@ describe('event map (FINISH_SPEC U)', () => {
 
 describe('timing helpers', () => {
   it('staggers reveal flips by REVEAL.stagger', () => {
-    expect(revealFlipDelays(5)).toEqual([0, 300, 600, 900, 1200]);
+    expect(revealFlipDelays(5)).toEqual([0, 70, 140, 210, 280]);
     expect(revealFlipDelays(0)).toEqual([]);
   });
   it('throttles ticks to ≤12 a second', () => {

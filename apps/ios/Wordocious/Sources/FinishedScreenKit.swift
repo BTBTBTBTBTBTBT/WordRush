@@ -131,7 +131,8 @@ struct UnlimitedKeepPlayingCard: View {
             HStack(spacing: 10) {
                 Group {
                     if ArtAsset.exists("art-scene-unlimited-loop") {
-                        Image("art-scene-unlimited-loop").resizable().interpolation(.high).scaledToFit()
+                        ArtThumbs.image("art-scene-unlimited-loop", points: 96)   // §AQ2: slot-sized
+                            .resizable().interpolation(.high).scaledToFit()
                     } else {
                         MascotView(.u, size: 56)
                     }

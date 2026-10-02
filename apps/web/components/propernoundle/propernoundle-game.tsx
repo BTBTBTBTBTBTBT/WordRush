@@ -849,7 +849,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
 
           {/* Keyboard */}
           <div className="shrink-0 pb-2 px-2 pt-1">
-            <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} revealDelayMs={REVEAL.end(answerLength)} />
+            <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} revealWord={guesses[guesses.length - 1]?.word} />
           </div>
         </>
       ) : (

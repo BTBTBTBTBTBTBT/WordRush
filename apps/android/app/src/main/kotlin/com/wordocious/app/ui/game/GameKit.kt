@@ -39,36 +39,52 @@ import com.wordocious.core.TileState
 // keyframes in docs/design/brand/mockups/game-kit.html. Every word game draws its
 // tiles through TileView (this look); number games carry digits on the same tile.
 
-/** B3 the motion kit's timings (ms). Reduce Motion: flips become a quick crossfade, the rest is off. */
+/**
+ * B3 the motion kit's timings (ms). Reduce Motion: flips become a quick crossfade, the rest is off.
+ * FINISH_SPEC AQ1 (founder 10-02: "feels a little slow … when I am trying to go through it fast"):
+ * flips ≤ 220 ms, ≤ 70 ms apart (every board of a multi-board reveal at once), a shorter hop,
+ * the popup within 1.2 s, and a not-a-word reject that never blocks typing (web REVEAL parity: flip 220 / 70, glow 600, hop 400 / 60, wobble 500, nudge 360, reject 700 / 60 / 160).
+ */
 object TileMotion {
     /** Type a letter / place a number: soft spring swell. */
-    const val TYPE_MS = 300
+    const val TYPE_MS = 220
     /** Reveal: each tile turns over in this long… */
-    const val FLIP_MS = 720
+    const val FLIP_MS = 220
     /** …this far apart. */
-    const val FLIP_STAGGER_MS = 300
+    const val FLIP_STAGGER_MS = 70
     /** The soft color glow each revealed tile lands with. */
-    const val BLOOM_MS = 900
+    const val BLOOM_MS = 600
     /** Not a word: the row nudge. */
-    const val NUDGE_MS = 520
-    /** Not a word: the red glow. */
-    const val BAD_MS = 1000
+    const val NUDGE_MS = 360
+    /** Not a word: the red glow (typing during it starts the fresh row at once). */
+    const val BAD_MS = 700
     /** Not a word: the letters clear right to left this far apart… */
-    const val CLEAR_STAGGER_MS = 90
+    const val CLEAR_STAGGER_MS = 60
     /** …each shrinking away in this long. */
-    const val CLEAR_MS = 300
+    const val CLEAR_MS = 160
     /** Win: the hop wave. */
-    const val HOP_MS = 560
-    const val HOP_STAGGER_MS = 90
+    const val HOP_MS = 400
+    const val HOP_STAGGER_MS = 60
     /** Lose: the wobble + sink. */
-    const val SINK_MS = 700
+    const val SINK_MS = 500
     /** Hint: one gold glow pulse (plays twice). */
-    const val HINT_PULSE_MS = 1200
+    const val HINT_PULSE_MS = 900
     /** Reduce Motion: the flip's crossfade. */
     const val REDUCED_FLIP_MS = 160
+    /** AQ1 the longest a finished board holds before the result popup springs in. */
+    const val FINISH_HOLD_MAX_MS = 1200
+
+    /** AQ1 when tile [column] of a revealing row lands (its flip ends) — its keyboard key takes its color then. */
+    fun tileLandsMs(column: Int): Int = column.coerceAtLeast(0) * FLIP_STAGGER_MS + FLIP_MS
+
+    /** AQ1 how many of a [tiles]-wide row's tiles have landed [elapsedMs] after it committed. */
+    fun tilesLanded(elapsedMs: Int, tiles: Int): Int {
+        if (tiles <= 0 || elapsedMs < FLIP_MS) return 0
+        return ((elapsedMs - FLIP_MS) / FLIP_STAGGER_MS + 1).coerceIn(0, tiles)
+    }
 
     /** How long a row of [tiles] takes to reveal (the last tile lands). */
-    fun revealMs(tiles: Int): Int = if (tiles <= 0) 0 else (tiles - 1) * FLIP_STAGGER_MS + FLIP_MS
+    fun revealMs(tiles: Int): Int = if (tiles <= 0) 0 else tileLandsMs(tiles - 1)
 
     /** How long the win hop wave over [tiles] takes. */
     fun hopWaveMs(tiles: Int): Int = if (tiles <= 0) 0 else (tiles - 1) * HOP_STAGGER_MS + HOP_MS
@@ -78,15 +94,14 @@ object TileMotion {
 
     /**
      * How long a live finish holds the board on screen before the result screen: the
-     * final row's reveal, then the win hop wave (or the loss sink), then a beat.
-     * Reduce Motion: a short beat only.
+     * final row's reveal, then (a single-board win) the hop wave, then a beat — never
+     * more than [FINISH_HOLD_MAX_MS] (AQ1; was ~2.4 s). Reduce Motion: a short beat only.
      */
     fun finishHoldMs(tiles: Int, won: Boolean, multiBoard: Boolean, reduced: Boolean): Int = when {
         reduced -> 350
-        multiBoard -> revealMs(tiles) + 350
-        won -> revealMs(tiles) + hopWaveMs(tiles) + 250
-        else -> revealMs(tiles) + SINK_MS + 250
-    }
+        won && !multiBoard -> revealMs(tiles) + hopWaveMs(tiles) + 50
+        else -> revealMs(tiles) + 50
+    }.coerceAtMost(FINISH_HOLD_MAX_MS)
 }
 
 /** B1 one tile's paint: the lip ([edge]), the face gradient, the inner ring, the gloss and the glyph. */

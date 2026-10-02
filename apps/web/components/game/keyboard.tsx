@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { playDelete, playKeyTap } from '@/lib/sounds';
 import { getKeyboardLayout, onKeyboardLayoutChange, type KeyboardLayout } from '@/lib/keyboard-layout';
+import { keyRevealSchedule, keyStatesWith, type KeyStatesLike } from '@/lib/key-reveal';
+import { prefersReducedMotion } from '@/lib/motion';
 
 // Three arrangements of the same keys (§213) — see lib/keyboard-layout.ts.
 // SPACE is decorative: it presses (haptic + sound) but sends nothing.
@@ -32,7 +34,7 @@ const LAYOUT_ROWS: Record<KeyboardLayout, string[][]> = {
 type LetterState = 'correct' | 'present' | 'absent';
 
 // FINISH_SPEC B2: keys are tiles too (globals.css `.kkey`): a lilac lip, a light
-// face and dark purple letters, taking the tile state colors after a reveal;
+// face and dark purple letters, taking the tile state colors as each tile lands (AQ1);
 // Delete is a chunky purple backspace icon; ENTER is 12 px. Every key sinks
 // into its lip and springs back on press (A9, components/ui/squish-host.tsx).
 
@@ -63,28 +65,32 @@ interface KeyboardProps {
    *  confirmed by a Check) fill with the mode accent so the remaining letters
    *  stand out, the way the word games color used keys. letter → CSS color. */
   keyFills?: Record<string, string>;
-  /** B2: hold new key colors until the reveal has landed (ms; 0 = at once). A
+  /** AQ1: the guess being revealed — each key takes its new color as ITS tile
+   *  lands (lib/key-reveal.ts), not after the whole row. Omit = at once. A
    *  reset (fewer colored keys than shown) always applies at once. */
-  revealDelayMs?: number;
+  revealWord?: string;
 }
 
-/** How many colored keys a state set holds (a reset holds fewer). */
-function coloredCount(v: Record<string, LetterState> | Record<string, LetterState>[] | undefined): number {
-  if (!v) return 0;
-  return Array.isArray(v) ? v.reduce((n, m) => n + Object.keys(m).length, 0) : Object.keys(v).length;
-}
-
-/** The letter states the keys show: new colors wait out the reveal (B2). */
-function useRevealed<T extends Record<string, LetterState> | Record<string, LetterState>[] | undefined>(states: T, delay: number): T {
+/** The letter states the keys show: each new color lands with its tile (AQ1). */
+function useRevealed<T extends KeyStatesLike>(states: T, word: string | undefined): T {
   const [shown, setShown] = useState(states);
-  const shownRef = useRef(states);
+  const targetRef = useRef(states);
   useEffect(() => {
-    const apply = () => { shownRef.current = states; setShown(states); };
-    if (!delay || coloredCount(states) < coloredCount(shownRef.current)) { apply(); return; }
-    const t = setTimeout(apply, delay);
-    return () => clearTimeout(t);
-  }, [states, delay]);
-  return delay ? shown : states;
+    const prev = targetRef.current;
+    targetRef.current = states;
+    const steps = keyRevealSchedule(prev, states, word, prefersReducedMotion());
+    if (steps.length === 0 || steps[steps.length - 1].at === 0) { setShown(states); return; }
+    // A reveal still landing from the row before finishes at once (typing fast).
+    setShown(prev);
+    const applied = new Set<string>();
+    const timers = steps.map((step, i) => {
+      step.letters.forEach((l) => applied.add(l));
+      const value = i === steps.length - 1 ? states : keyStatesWith(prev, states, new Set(applied));
+      return setTimeout(() => setShown(value), step.at);
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [states, word]);
+  return word ? shown : states;
 }
 
 function QuadrantKey({
@@ -149,9 +155,9 @@ function QuadrantKey({
 // Memoized (founder, 2026-09-29): the game screens pass stable props (useCallback
 // handlers, memoized letter states), so a tick or a message elsewhere on the
 // screen no longer re-renders every key.
-export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealDelayMs = 0 }: KeyboardProps) {
-  const letterStates = useRevealed(rawLetterStates, revealDelayMs);
-  const boardLetterStates = useRevealed(rawBoardStates, revealDelayMs);
+export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealWord }: KeyboardProps) {
+  const letterStates = useRevealed(rawLetterStates, revealWord);
+  const boardLetterStates = useRevealed(rawBoardStates, revealWord);
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
   const [layout, setLayout] = useState<KeyboardLayout>('standard');
   useEffect(() => {

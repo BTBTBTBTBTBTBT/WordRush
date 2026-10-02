@@ -28,6 +28,7 @@ public enum ArtTitleLabels {
         "privacy": "Privacy",
         "terms": "Terms",
         "vsbattle": "VS Battle",
+        "menu": "Menu",
     ]
 
     /// `art-moment-<key>`: result / celebration lettering.

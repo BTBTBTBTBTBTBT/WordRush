@@ -55,7 +55,7 @@ const art = (name: string) => `/friends/${name}.png`;
 
 function Art({ name, size }: { name: string; size: number }) {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={art(name)} alt={name} width={size} height={size} draggable={false} style={{ width: size, height: size, objectFit: 'contain' }} />;
+  return <img src={art(name)} alt={name} loading="lazy" decoding="async" width={size} height={size} draggable={false} style={{ width: size, height: size, objectFit: 'contain' }} />;
 }
 
 // ── Rock Paper Scissors ─────────────────────────────────────────────────────

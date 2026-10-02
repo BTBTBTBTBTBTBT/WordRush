@@ -22,6 +22,7 @@ import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { ColdStartIntro } from '@/components/providers/cold-start-intro';
 import { SPLASH } from '@/lib/intro';
 import { SquishHost } from '@/components/ui/squish-host';
+import { MotionPause } from '@/components/providers/motion-pause';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
 import { ReferralRedeemer } from '@/components/referrals/referral-redeemer';
@@ -159,6 +160,7 @@ export default function RootLayout({
         <ColdStartIntro />
         {/* A9: everything tappable squishes (one document listener). */}
         <SquishHost />
+        <MotionPause />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>

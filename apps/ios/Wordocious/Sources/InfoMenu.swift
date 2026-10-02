@@ -141,9 +141,15 @@ struct MenuScaffold<Content: View>: View {
                 }
             }
             .padding(.horizontal, 6).padding(.top, 6)
-            if let art {
+            if let art, ArtAsset.exists(art.assetName) || art != .menu {
                 PageHeadline(art, bleed: 0, maxHeight: InfoPageStyle.titleHeight)
                     .padding(.bottom, 8)
+            } else if art == .menu {
+                // FINISH_SPEC §AS1: never a plain-text MENU — the live lettering until
+                // art-title-menu ships (then the art above takes over automatically).
+                LiveHeadline(text: "MENU", palette: .home, size: 34, maxLines: 1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 16).padding(.bottom, 10)
             } else {
                 PageHostTitle(text: title, host: host, size: 22, hostSize: 40)
                     .frame(maxWidth: .infinity)
@@ -198,7 +204,7 @@ struct MenuSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        MenuScaffold("Menu", host: Mascots.help) {
+        MenuScaffold("Menu", host: Mascots.help, art: .menu) {
             ScrollView {
                 VStack(spacing: 8) {
                     ForEach(InfoMenuDestination.allCases) { d in

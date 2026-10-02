@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveHeadline } from '@/components/ui/live-headline';
 import Link from 'next/link';
 import { holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
 import { useCountdown } from '@/hooks/use-countdown';
@@ -117,9 +118,8 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
       ) : holiday ? (
         <h1 className="relative m-0 mb-3 flex flex-col items-center gap-1">
           <PageHeadline name="art-title-leaderboard" label="Leaderboard" as="div" />
-          <span className="font-black uppercase text-center lb-gold-ink" style={{ fontSize: 13, letterSpacing: 1.6, lineHeight: 1.2 }}>
-            {title}
-          </span>
+          {/* FINISH_SPEC AR: the holiday title in live lettering (gold → amber). */}
+          <LiveHeadline text={title} palette="leaderboard" size={18} level={2} />
           {season === 'halloween' && <HalloweenDayProps />}
         </h1>
       ) : (

@@ -78,17 +78,18 @@ struct TodayCard: View {
                 if allDone {
                     HStack(spacing: 8) {
                         SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
-                        Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
-                            .font(Brand.font(16, .black))
-                            .foregroundStyle(Theme.isDark ? Theme.textPrimary : (flawless ? Color(hex: 0xA2560C) : Color(hex: 0x6D28D9)))
+                        // FINISH_SPEC §AR: the day's summary in live lettering (gold on Flawless).
+                        LiveHeadline(text: flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!",
+                                     palette: flawless ? .celebration : .stats, size: 18, maxLines: 1)
                         SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
                     }
                 } else {
                     HStack {
                         FinishLabel("Today · \(dateLabel)", color: Self.blueInk)
                         Spacer()
-                        Text("\(completed) / \(total)")
-                            .softNumber(15, color: Theme.isDark ? nil : Self.blueInk)
+                        // FINISH_SPEC §AR: the Stats summary in live lettering.
+                        LiveHeadline(text: "\(completed)/\(total) PLAYED", palette: .stats, size: 16, maxLines: 1)
+                            .fixedSize()
                             .accessibilityLabel("\(completed) of \(total) dailies played")
                     }
                 }

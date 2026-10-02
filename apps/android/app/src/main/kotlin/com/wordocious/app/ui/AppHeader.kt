@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.semantics.heading
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -79,9 +82,11 @@ fun AppHeader(
         modifier = Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CastTitle(pro = AuthService.isProActive)
-        Spacer(Modifier.height(6.dp))
+        // AS2 (founder 10-02): the controls row (streak · shield · ? · settings) ON TOP, the
+        // WORDOCIOUS cast row under it.
         HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn)
+        Spacer(Modifier.height(4.dp))
+        CastTitle(pro = AuthService.isProActive)
     }
 }
 
@@ -237,26 +242,11 @@ object StreakWeek {
 }
 
 /**
- * Places the popup card just under the anchor (the controls row), centered across
- * the window with the card's own side margins.
- */
-private class UnderAnchor(private val gapPx: Int) : PopupPositionProvider {
-    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
-        val x = ((windowSize.width - popupContentSize.width) / 2).coerceAtLeast(0)
-        val y = (anchorBounds.bottom + gapPx).coerceAtMost((windowSize.height - popupContentSize.height).coerceAtLeast(0))
-        return IntOffset(x, y)
-    }
-}
-
-/** The whole-window dim behind a header popup (tap = dismiss). */
-private object WindowOrigin : PopupPositionProvider {
-    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset = IntOffset.Zero
-}
-
-/**
- * C5 a header popup: the page dims softly and the card sits just under the control
- * row it came from — a colored [header] gradient with the big 3D [icon], a friendly
- * [title] + [subtitle] and a [host] pose, then the body on the [tint].
+ * C5 / AS6 a header popup, presented at the WINDOW level (a full-screen Dialog — it used to
+ * be a Popup anchored inside the header, which on some devices only shaded the header
+ * strip): the whole screen dims (tap = dismiss) and the card springs in centered — a
+ * colored [header] gradient with the big 3D [icon], a friendly [title] + [subtitle] and a
+ * [host] pose, then the scrollable body on the [tint].
  */
 @Composable
 private fun HeaderPopup(
@@ -270,26 +260,32 @@ private fun HeaderPopup(
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
-    // The dim (its own window behind the card).
-    Popup(popupPositionProvider = WindowOrigin, onDismissRequest = onDismiss, properties = PopupProperties(focusable = false)) {
-        Box(Modifier.fillMaxSize().background(Color(0x471E0F3C)).clickableNoRipple(onDismiss))
-    }
-    Popup(
-        popupPositionProvider = remember(density) { UnderAnchor(with(density) { 6.dp.roundToPx() }) },
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true, dismissOnClickOutside = true),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
+        // Our own scrim covers the whole window (the platform dim is turned off).
+        val view = androidx.compose.ui.platform.LocalView.current
+        androidx.compose.runtime.SideEffect {
+            (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.setDimAmount(0f)
+        }
         val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
         LaunchedEffect(Unit) { appear.animateTo(1f, tween(220)) }
         val shape = RoundedCornerShape(24.dp)
-        Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.TopCenter) {
+        Box(
+            Modifier.fillMaxSize()
+                .graphicsLayer { alpha = appear.value }
+                .background(Color(0x661E0F3C))
+                .clickableNoRipple(onDismiss)
+                .systemBarsPadding()
+                .padding(horizontal = 14.dp, vertical = 24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             Column(
                 Modifier.widthIn(max = 440.dp).fillMaxWidth()
                     .graphicsLayer {
-                        alpha = appear.value
-                        val s = 0.94f + 0.06f * appear.value
+                        val s = 0.92f + 0.08f * appear.value
                         scaleX = s; scaleY = s
-                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
                     }
                     // The card's lift (0 18 40 rgba(40,15,80,.35)).
                     .shadow(16.dp, shape, clip = false, ambientColor = Color(0x59280F50), spotColor = Color(0x59280F50))
@@ -317,7 +313,7 @@ private fun HeaderPopup(
                     }
                     CastPose(host.first, host.second, 74.dp, Modifier.align(Alignment.BottomEnd).offset(x = (-8).dp, y = 6.dp))
                 }
-                body()
+                Column(Modifier.fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState())) { body() }
             }
         }
     }
@@ -353,13 +349,42 @@ private fun PopupBody(text: String) {
 private val STREAK_ORANGE = Color(0xFFF5A524)
 private val STREAK_LABEL = Color(0xFFA2560C)
 
-/** C5 the streak popup: warm orange header with the flame and S (trophy), Current + Best, this week. */
+/**
+ * C5 / AS7 the streak popup — ALL the streak info in one place (the Home banner rows no longer
+ * carry their own flames): the daily streak (current + best) and this week; the Wordocious
+ * and Puzzles sweep streaks (regular chips); the flawless streaks in their own gold section
+ * (Wordocious + Puzzles, current + best, shown once ever achieved); the shields and how they
+ * work. Labeled chips with the 3D icons and soft numbers, no emoji.
+ */
 @Composable
 private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Unit) {
     val current = p.dailyLoginStreak
     val best = maxOf(p.bestDailyLoginStreak, current)
     val playedToday = com.wordocious.app.data.DailyCompletionsService.readCache().isNotEmpty()
     val week = remember(current, playedToday) { StreakWeek.days(LocalDate.now(), current, playedToday) }
+    // The rows' current runs paint at once from the banner's day-stamped cache; the bests land after a fetch.
+    val rows = remember { com.wordocious.app.data.HomeStreaksService.cachedRowStreaks() }
+    var summary by remember {
+        mutableStateOf(
+            StreakSummary(
+                wordSweep = rows?.wordSweep ?: 0, puzzlesSweep = rows?.puzzlesSweep ?: 0,
+                wordFlawless = maxOf(rows?.wordFlawless ?: 0, com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak()),
+                wordFlawlessBest = 0, puzzlesFlawless = rows?.puzzlesFlawless ?: 0, puzzlesFlawlessBest = 0,
+            ),
+        )
+    }
+    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+    LaunchedEffect(flagsLoaded) {
+        val keys = MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
+            .mapNotNull { it.dbKey }
+        val sweep = runCatching { com.wordocious.app.data.MatchStatsService.dailySweepStats() }.getOrNull()
+        val puzzles = runCatching { com.wordocious.app.data.HomeStreaksService.puzzleRecords(keys) }.getOrNull()
+        summary = summary.merge(
+            wordSweep = sweep?.currentSweepStreak, wordFlawless = sweep?.currentFlawlessStreak, wordFlawlessBest = sweep?.bestFlawlessStreak,
+            puzzlesSweep = puzzles?.streaks?.sweep, puzzlesFlawless = puzzles?.streaks?.flawless, puzzlesFlawlessBest = puzzles?.totals?.bestFlawless,
+        )
+    }
     HeaderPopup(
         onDismiss = onDismiss,
         tint = Color(0xFFFFF6EA),
@@ -376,8 +401,9 @@ private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Uni
         },
         host = MascotId.S to "trophy",
     ) {
+        StreakSectionLabel("DAILY STREAK")
         Row(
-            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 4.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PopupStatTile("$current", "CURRENT", STREAK_ORANGE, STREAK_LABEL, Modifier.weight(1f))
@@ -385,7 +411,7 @@ private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Uni
         }
         // This week as seven day tiles, filled orange for each day played.
         Row(
-            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 2.dp)
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 2.dp)
                 .semantics { contentDescription = "This week: ${week.count { it }} of 7 days played" },
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -396,7 +422,115 @@ private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Uni
                 }
             }
         }
-        PopupBody("Play any daily puzzle each day to keep your streak going. Miss a day and it resets, unless a streak shield saves it.")
+
+        StreakSectionLabel("SWEEP STREAKS")
+        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StreakChip("WORDOCIOUS", summary.wordSweep, null, gold = false, Modifier.weight(1f)) { Icon3D(Icon3DName.FLAME, 24.dp) }
+            StreakChip("PUZZLES", summary.puzzlesSweep, null, gold = false, Modifier.weight(1f)) { Icon3D(Icon3DName.FLAME, 24.dp) }
+        }
+
+        val flawless = summary.flawlessRows()
+        if (flawless.isNotEmpty()) {
+            StreakSectionLabel("FLAWLESS STREAKS", color = FLAWLESS_LABEL)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                flawless.forEach { r ->
+                    StreakChip(r.label, r.current, r.best, gold = true, Modifier.weight(1f)) {
+                        androidx.compose.foundation.Image(artPainter(com.wordocious.app.R.drawable.art_scene_flawless_star, 26.dp), null, Modifier.size(26.dp))
+                    }
+                }
+                if (flawless.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+
+        StreakSectionLabel("STREAK SHIELDS")
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp)
+                .semantics(mergeDescendants = true) { contentDescription = "${p.streakShields} streak shields" },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            SoftNumber("${p.streakShields}", 22.sp)
+            repeat(minOf(p.streakShields, 4)) { Icon3D(Icon3DName.SHIELD, 28.dp) }
+            Icon3D(Icon3DName.SHIELD, 28.dp, alpha = 0.28f, colorFilter = Icon3DMuted)
+        }
+        PopupBody("Play any daily puzzle each day to keep your streak going. Miss a day and a shield saves it; without one it resets. Earn a free shield at every 7-day milestone; Pro members get 4 each billing period.")
+    }
+}
+
+private val FLAWLESS_GOLD = Color(0xFFF5A524)
+private val FLAWLESS_LABEL = Color(0xFFB45309)
+
+/** AS7 a small caps section label in the streak popup. */
+@Composable
+private fun StreakSectionLabel(text: String, color: Color = STREAK_LABEL) {
+    Text(
+        text, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+        color = if (WTheme.isDark) WTheme.textMuted else color,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 6.dp).semantics { heading() },
+    )
+}
+
+/** AS7 one labeled streak chip: icon, caps label, the current run as a soft number (+ BEST). [gold] = the flawless style. */
+@Composable
+private fun StreakChip(label: String, current: Int, best: Int?, gold: Boolean, modifier: Modifier = Modifier, icon: @Composable () -> Unit) {
+    val accent = if (gold) FLAWLESS_GOLD else STREAK_ORANGE
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier.clip(shape)
+            .background(if (gold) Brush.verticalGradient(listOf(Color(0xFFFFF1C2), Color(0xFFFFE08A))) else Brush.verticalGradient(listOf(accentWash(accent, 0.12f), accentWash(accent, 0.12f))))
+            .border(1.5.dp, accentLine(accent, if (gold) 0.55f else 0.30f), shape)
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$label: $current" + (best?.let { ", best $it" } ?: "")
+            },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        icon()
+        Column {
+            Text(label, fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = if (gold) FLAWLESS_LABEL else STREAK_LABEL, maxLines = 1)
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                SoftNumber("$current", 20.sp)
+                if (best != null) Text("BEST $best", fontSize = 9.5.sp, fontWeight = FontWeight.Black, color = if (gold) FLAWLESS_LABEL else STREAK_LABEL, modifier = Modifier.padding(bottom = 3.dp))
+            }
+        }
+    }
+}
+
+/**
+ * AS7 the streak popup's numbers (pure, unit tested): the sweep runs and the flawless runs
+ * (current + best). A flawless row shows once that streak was ever achieved (current or
+ * best above 0); a never-achieved one is hidden.
+ */
+data class StreakSummary(
+    val wordSweep: Int,
+    val puzzlesSweep: Int,
+    val wordFlawless: Int,
+    val wordFlawlessBest: Int,
+    val puzzlesFlawless: Int,
+    val puzzlesFlawlessBest: Int,
+) {
+    data class FlawlessRow(val label: String, val current: Int, val best: Int)
+
+    /** Fresh fetched values over the cached ones (null = that fetch failed; keep what we had). Best never below current. */
+    fun merge(
+        wordSweep: Int? = null, wordFlawless: Int? = null, wordFlawlessBest: Int? = null,
+        puzzlesSweep: Int? = null, puzzlesFlawless: Int? = null, puzzlesFlawlessBest: Int? = null,
+    ): StreakSummary = copy(
+        wordSweep = wordSweep ?: this.wordSweep,
+        puzzlesSweep = puzzlesSweep ?: this.puzzlesSweep,
+        wordFlawless = wordFlawless ?: this.wordFlawless,
+        wordFlawlessBest = maxOf(wordFlawlessBest ?: this.wordFlawlessBest, wordFlawless ?: this.wordFlawless),
+        puzzlesFlawless = puzzlesFlawless ?: this.puzzlesFlawless,
+        puzzlesFlawlessBest = maxOf(puzzlesFlawlessBest ?: this.puzzlesFlawlessBest, puzzlesFlawless ?: this.puzzlesFlawless),
+    )
+
+    /** The gold flawless rows to show: Wordocious, then Puzzles, each only once ever achieved. */
+    fun flawlessRows(): List<FlawlessRow> = buildList {
+        val wb = maxOf(wordFlawlessBest, wordFlawless)
+        if (wordFlawless > 0 || wb > 0) add(FlawlessRow("WORDOCIOUS FLAWLESS", wordFlawless, wb))
+        val pb = maxOf(puzzlesFlawlessBest, puzzlesFlawless)
+        if (puzzlesFlawless > 0 || pb > 0) add(FlawlessRow("PUZZLES FLAWLESS", puzzlesFlawless, pb))
     }
 }
 

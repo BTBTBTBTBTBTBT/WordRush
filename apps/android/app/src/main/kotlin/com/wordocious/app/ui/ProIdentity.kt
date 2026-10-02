@@ -166,7 +166,7 @@ fun ProCrownSprite(size: Dp, modifier: Modifier = Modifier, tilt: Float = -8f, t
     }
     Box(modifier.requiredSize(size).clearAndSetSemantics { }) {
         Image(
-            painterResource(R.drawable.art_badge_pro_crown_sprite), contentDescription = null,
+            artPainter(R.drawable.art_badge_pro_crown_sprite, size), contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier.requiredSize(size).graphicsLayer { rotationZ = tilt },
         )

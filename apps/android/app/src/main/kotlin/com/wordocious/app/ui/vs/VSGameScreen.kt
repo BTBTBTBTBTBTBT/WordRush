@@ -476,10 +476,29 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     // too, and a mode-only test rendered it as QuadWord with a frozen board.
     val isSequential = game.isSequentialStage
     val useQuadrant = multiBoard && !isSequential
-    val letterStates = if (isSequential)
-        computeCombinedLetterStates(listOf(state.boards[game.activeBoardIndex]))
-    else computeCombinedLetterStates(state.boards)
-    val perBoardStates = if (useQuadrant) computePerBoardLetterStates(state.boards) else null
+    // AQ2: memoized on the state (this body recomposes on every keystroke).
+    val letterStatesNow = remember(state) {
+        if (isSequential) computeCombinedLetterStates(listOf(state.boards[game.activeBoardIndex]))
+        else computeCombinedLetterStates(state.boards)
+    }
+    val perBoardNow = if (useQuadrant) remember(state) { computePerBoardLetterStates(state.boards) } else null
+    // AQ1: keys take their colors tile by tile as the row lands (solo parity).
+    val reducedKeys = WTheme.reducedMotion
+    val revealKey = remember(state) { state.boards.sumOf { it.guesses.size } }
+    val newestRows = remember(state) { com.wordocious.app.ui.game.KeyReveal.newestRows(state.boards, isSequential) }
+    val revealWidth = newestRows.maxOfOrNull { it.size } ?: 0
+    val letterStates = com.wordocious.app.ui.game.rememberTileByTile(letterStatesNow, revealWidth, revealKey, reducedKeys) { base, n ->
+        com.wordocious.app.ui.game.KeyReveal.during(base, letterStatesNow, newestRows, n)
+    }
+    val perBoardStates = perBoardNow?.let { now ->
+        val boardRows = remember(state) {
+            val newest = state.boards.maxOfOrNull { it.guesses.size } ?: 0
+            state.boards.map { b -> if (newest > 0 && b.guesses.size == newest) com.wordocious.app.ui.game.KeyReveal.newestRows(listOf(b), false) else emptyList() }
+        }
+        com.wordocious.app.ui.game.rememberTileByTile(now, revealWidth, revealKey, reducedKeys) { base, n ->
+            now.mapIndexed { i, target -> com.wordocious.app.ui.game.KeyReveal.during(base.getOrElse(i) { emptyMap() }, target, boardRows.getOrElse(i) { emptyList() }, n) }
+        }
+    }
     // ProperNoundle: multi-word names split into word groups exactly like solo
     // (the server's puzzle display first, the seed's puzzle as a fallback;
     // SingleBoard ignores groups that don't add up to the row).

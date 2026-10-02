@@ -33,11 +33,9 @@ struct GameScreen: View {
     /// stagger), matching BoardView's mini/full timing — used to delay the
     /// finished screen so the winning word animates first.
     private var revealDuration: Double {
-        // FINISH_SPEC §B3: every board reveals with the game kit's flip (720 ms,
-        // 300 ms apart) — plus the winning row's hop wave before the card.
-        TileMotion.rowReveal(columns: vm.wordLength)
-            + (vm.status == .won && !vm.isMultiBoard
-               ? TileMotion.hop + Double(max(0, vm.wordLength - 1)) * TileMotion.hopStagger : 0)
+        // FINISH_SPEC §AQ1: the final row's reveal (+ a single-board win's hop
+        // wave), capped so the popup always springs in within 1.2 s.
+        RevealTiming.finishHold(columns: vm.wordLength, winHop: vm.status == .won && !vm.isMultiBoard)
     }
 
     var body: some View {
@@ -215,7 +213,7 @@ struct GameScreen: View {
             // no overlay and no game-over sound). Wait out the final row's flip,
             // then fade in the victory overlay so the winning word animates first.
             if (newValue == .won || newValue == .lost) && (!vm.isGauntlet || newValue == .won) {
-                let delay = Theme.reduceMotion ? 0 : revealDuration + 0.2
+                let delay = Theme.reduceMotion ? 0 : revealDuration
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                     // Web plays success/gameOver when the overlay mounts — i.e.
                     // AFTER the reveal — not at the instant the game finishes.
@@ -226,7 +224,8 @@ struct GameScreen: View {
                     // after the user taps to continue, so it never competes with
                     // the confetti for frames. Web entrance: fade-in-scale
                     // 0.8 → 1.0, 300ms ease-out.
-                    withAnimation(Theme.animation(.easeOut(duration: 0.3))) {
+                    // §AQ1: the popup springs in faster.
+                    withAnimation(Theme.animation(.spring(response: 0.26, dampingFraction: 0.8))) {
                         showVictory = true
                     }
                     // High-point review ask: WIN path only (never a loss) —
@@ -616,14 +615,9 @@ struct StageTransitionOverlay: View {
 
                 if let n = next {
                     if let u = upcoming, let total = totalStages, total > 0 {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("STAGE").font(Brand.font(13, .black)).tracking(1).foregroundStyle(FinishInk.secondary)
-                            Text("\(u)").softNumber(26)
-                            Text("OF").font(Brand.font(13, .black)).tracking(1).foregroundStyle(FinishInk.secondary)
-                            Text("\(total)").softNumber(26)
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Stage \(u) of \(total)")
+                        // FINISH_SPEC §AR: the stage line in live lettering (gold numbers).
+                        LiveHeadline(text: "STAGE \(u) OF \(total)", palette: .home, size: 24, maxLines: 1)
+                            .accessibilityLabel("Stage \(u) of \(total)")
                         dots(total: total, upcoming: u)
                     } else {
                         FinishLabel("Next up", color: Color(hex: 0xB45309))

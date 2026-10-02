@@ -192,7 +192,9 @@ fun Mascot(
 ) {
     val still = mascotStill
     val hidden by LocalTabHidden.current
-    val animated = if (still || hidden || (motion == MascotMotion.BOB && mascotBobStill)) MascotMotion.NONE else motion
+    // AQ2: the idle bob holds still while the page scrolls (one-shot pops / waves still play).
+    val scrolling by LocalScrollActive.current
+    val animated = if (still || hidden || (motion == MascotMotion.BOB && (mascotBobStill || scrolling))) MascotMotion.NONE else motion
     val layer: Modifier = when (animated) {
         MascotMotion.NONE -> Modifier
         MascotMotion.BOB -> Modifier.mascotBob()
@@ -200,7 +202,7 @@ fun Mascot(
         MascotMotion.WAVE -> Modifier.mascotWave()
     }
     Image(
-        painterResource(id.res),
+        artPainter(id.res, size),
         contentDescription = null,
         modifier = modifier.size(size).clearAndSetSemantics { }.then(layer),
     )
@@ -287,7 +289,7 @@ fun CastRow(
     crownWidth: Float = 0.58f,
 ) {
     val still = mascotStill
-    val hidden by LocalTabHidden.current
+    val hidden = ambientMotionPaused()
     val waving = motion == MascotMotion.WAVE && !still && !hidden
     val hopMs = 380
     val period = if (repeats == null) loopMs else staggerMs * (Mascots.cast.size - 1) + hopMs + 40
@@ -323,7 +325,7 @@ fun CastRow(
                     }
                 },
             ) {
-                Image(painterResource(id.res), null, Modifier.size(size))
+                Image(artPainter(id.res, size), null, Modifier.size(size))
                 if (crown && id == MascotId.W) {
                     Icon3D(
                         Icon3DName.CROWN, size * crownWidth,
@@ -436,6 +438,6 @@ fun TitleHost(id: MascotId, modifier: Modifier = Modifier, size: Dp = 40.dp) {
 /** The idle bob for a group (a host plus something it wears); static under reduce motion. */
 @Composable
 fun Modifier.mascotGroupBob(): Modifier {
-    val hidden by LocalTabHidden.current
+    val hidden = ambientMotionPaused()
     return if (mascotBobStill || hidden) this else this.then(Modifier.mascotBob())
 }

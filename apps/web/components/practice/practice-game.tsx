@@ -11,7 +11,8 @@ import { Clock } from 'lucide-react';
 import { CandyButton } from '@/components/ui/candy-button';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { useBoardFit } from '@/hooks/use-board-fit';
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
@@ -62,7 +63,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   );
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -236,31 +237,30 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;
-    if (isShaking) return;
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let guess = currentGuess;
+    if (isShaking) { cutReject(); guess = ''; if (keyDuringReject(key) === 'swallow') return; }
     setMessage('');
 
     if (key === 'ENTER') {
       if (currentGuess.length !== currentBoard.solution.length) {
         setMessage('Not enough letters');
         playInvalid();
-        setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+        rejectRow(currentGuess.length);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
       if (!isValidWord(currentGuess)) {
         setMessage('Not in word list');
         playInvalid();
-        setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+        rejectRow(currentGuess.length);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
       if (currentBoard.guesses.includes(currentGuess.toUpperCase())) {
         setMessage('Already guessed');
         playInvalid();
-        setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+        rejectRow(currentGuess.length);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -268,7 +268,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentGuess.length < currentBoard.solution.length) {
+    } else if (/^[A-Z]$/.test(key) && guess.length < currentBoard.solution.length) {
       setCurrentGuess(prev => prev + key);
     }
   }, [currentGuess, currentBoard.status, isShaking]);
@@ -534,7 +534,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       {/* Keyboard — hidden when game is complete */}
       {!gameComplete && (
         <div className="shrink-0 pb-2 px-2">
-          <Keyboard onKey={handleKey} letterStates={letterStates} revealDelayMs={REVEAL.end(currentBoard.solution.length)} />
+          <Keyboard onKey={handleKey} letterStates={letterStates} revealWord={currentBoard.guesses[currentBoard.guesses.length - 1]} />
         </div>
       )}
 

@@ -174,30 +174,31 @@ struct LeaderboardTab: View {
         // ART_SPEC §10 / §14: the game's title art (lettering + host, filling the room
         // left of Play, ≤ 56 pt tall) stands in for the name text and the host beside Play.
         let titleArt = GameTitleArt.forMode(mode)
-        return HStack(spacing: 10) {
-            if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-            VStack(alignment: .leading, spacing: 2) {
-                if let titleArt {
-                    GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 56, alignment: .leading)
-                } else {
-                    Text(m?.title ?? mode.rawValue).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                }
-                HStack(spacing: 4) {
-                    Image(systemName: "person.2.fill").font(.system(size: 11, weight: .bold))
-                    // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
-                    if loading && playerCount == 0 {
-                        Text("000 players today").font(Brand.font(12, .heavy)).redacted(reason: .placeholder)
-                    } else {
-                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(12, .heavy))
-                    }
-                }.foregroundStyle(FinishInk.secondary)
+        // FINISH_SPEC §AS4: one compact row — small art, one line of text, a small candy button.
+        return HStack(spacing: 8) {
+            if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 26) }
+            if let titleArt {
+                GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 30, maxWidth: 130,
+                                 alignment: .leading)
+                    .fixedSize()
+            } else {
+                Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
-            // §14: the art fills the room left of Play (offered first, ahead of the spacer).
-            .layoutPriority(1)
-            Spacer(minLength: 6)
-            // The selected game's host stands inside the card, beside Play (MASCOT_SPEC §5).
-            if titleArt == nil, let host = Mascots.host(mode) { MascotView(host, size: 44) }
+            HStack(spacing: 4) {
+                Image(systemName: "person.2.fill").font(.system(size: 10, weight: .bold))
+                // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
+                if loading && playerCount == 0 {
+                    Text("000 today").font(Brand.font(11, .heavy)).redacted(reason: .placeholder)
+                } else {
+                    Text("\(playerCount) today").font(Brand.font(11, .heavy))
+                }
+            }
+            .foregroundStyle(FinishInk.secondary)
+            .lineLimit(1).minimumScaleFactor(0.7)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
+            Spacer(minLength: 4)
             // Already finished today's daily for this mode → open the read-only
             // solved board, matching the home cards. The cached completions
             // answer instantly; userRank confirms once the leaderboard loads.
@@ -212,11 +213,11 @@ struct LeaderboardTab: View {
                 // pink→purple VIEW BOARD.
                 CandyLabel(title: played ? "View board" : "Play", symbol: played ? "eye.fill" : "play.fill")
             }
-            .buttonStyle(CandyButtonStyle(variant: played ? .pink : .purple, size: .medium, fullWidth: false))
+            .buttonStyle(CandyButtonStyle(variant: played ? .pink : .purple, size: .small, fullWidth: false))
             .layoutPriority(2)
         }
-        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 10)
-        .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)])
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)], radius: 16, barHeight: 4)
     }
 
     /// The Sweep board's play card in the same family (gold): the glossy broom, the
@@ -300,8 +301,9 @@ struct LeaderboardTab: View {
             // made the page tall enough to cut off (founder screenshot). The
             // measured inset also handles the taller free-tier banner+nav stack
             // that the siblings' magic 72 quietly under-clears.
-            .padding(.bottom, max(72, chrome.bottomInset))
+            .padding(.bottom, 16 + max(56, chrome.bottomInset))   // §AS3: + 16 pt breathing room
         }
+        .reportsScrollMotion()   // §AQ2
         .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
         // Before the first frame: the selected board from the cache with the player's own row
         // (load() repeats this, but only after the render).
@@ -340,12 +342,13 @@ struct LeaderboardTab: View {
     /// The cross-mode Sweep board — players who completed every sweep daily today,
     /// ranked by total composite score. Same card stack as the per-mode board.
     @ViewBuilder private var sweepBoard: some View {
-        sweepCtaCard
+        // §AS4: your rank first, the standings next, the explainer row after them.
         if let r = sweepRank {
             let mine = sweepEntries.first { $0.userId.lowercased() == auth.profile?.id.lowercased() }
             LbResultCard(rank: r.rank, ofLine: "OF \(r.total) TODAY",
                          line: mine.map { sweepResultLine($0, day: LeaderboardService.todayLocal()) },
                          points: mySweepScore.map { sweepScoreLabels[$0] ?? formatScore($0) },
+                         headline: "YOU\u{2019}RE #\(r.rank) TODAY",
                          delta: { rankDelta(r, friends: false) })
         }
 
@@ -382,6 +385,8 @@ struct LeaderboardTab: View {
             }
             .lbCard()
         }
+
+        sweepCtaCard
 
         // Yesterday's Winners — same toggle as the per-mode board, but the
         // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
@@ -457,7 +462,8 @@ struct LeaderboardTab: View {
     }
 
     @ViewBuilder private var perModeBoard: some View {
-        playCtaCard
+        // FINISH_SPEC §AS4: what matters first — YOUR result / rank, then the
+        // standings; the compact play row and the rest follow.
         // §C2: ONE result card — your rank, how you solved it and your points, with the
         // completed-daily dropdown as its footer. Nothing known yet → the dropdown alone.
         modeResult
@@ -529,6 +535,9 @@ struct LeaderboardTab: View {
             .foregroundStyle(FinishInk.secondary)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.top, -6).padding(.trailing, 4)
+
+        // §AS4: the game + Play / View board as ONE compact row under the standings.
+        playCtaCard
 
         HStack(spacing: 8) {
             yesterdayToggle
@@ -674,6 +683,7 @@ struct LeaderboardTab: View {
             }
             LbResultCard(rank: userRank?.rank, ofLine: ofLine, line: line,
                          points: myModeScore.map { lbScoreLabels[$0] ?? formatScore($0) },
+                         headline: userRank.map { "YOU\u{2019}RE #\($0.rank) \(friends ? "OF FRIENDS" : "TODAY")" },
                          delta: { if let r = userRank { rankDelta(r, friends: friends) } },
                          footer: { LbResultFooter { completedCard } })
         } else {

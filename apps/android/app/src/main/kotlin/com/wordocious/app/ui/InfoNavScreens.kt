@@ -103,7 +103,8 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
         containerColor = accentWash(Color(0xFF7C3AED), 0.08f), dragHandle = null,
     ) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        PageHeader("MENU", onClose = onDismiss, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
+        // AS1: "MENU" in the live lettering (until the art-title-menu lettering ships), never plain text.
+        PageHeader("MENU", onClose = onDismiss, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), live = HeadlinePalette.HOME, titleSize = 28.sp)
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             INFO_NAV.forEach { item ->
                 SheetRow(item.accent, item.label, item.subtitle, { onNav(item.route) }) {

@@ -40,9 +40,9 @@ private struct FlipFace: View, Animatable {
     }
 }
 
-/// A just-committed tile that flips open on reveal (FINISH_SPEC §B3): 720 ms each,
-/// 300 ms apart, the color swapping at the half, then a soft color glow (bloom,
-/// 900 ms). A hint tile pulses a gold glow twice instead; the winning row hops in
+/// A just-committed tile that flips open on reveal (FINISH_SPEC §B3, §AQ1): 220 ms
+/// each, 70 ms apart, the color swapping at the half, then a soft color glow (bloom,
+/// 600 ms). A hint tile pulses a gold glow twice instead; the winning row hops in
 /// a wave (`hopAt`); a lost board's last row wobbles and sinks (`sinkAt`).
 /// Reduce Motion: the final face, no motion.
 struct FlipRevealTile: View {
@@ -222,6 +222,12 @@ struct BoardView: View {
         .opacity(seqLocked ? 0.6 : 1)
         .onAppear { if seenGuessCount < 0 { seenGuessCount = board.guesses.count } }
         .onChange(of: vm.shakeCount) { _ in playReject() }
+        // §AQ1: typing over a rejected row drops its red hold at once.
+        .onChange(of: vm.inputEpoch) { _ in
+            guard rejecting else { return }
+            rejecting = false
+            rejectGlow = 0
+        }
     }
 
     /// §B3 "not a word": the letters turn red with a soft red glow for 1 s while the
@@ -293,8 +299,8 @@ struct BoardView: View {
     }
 
     private func revealedRow(_ eval: GuessResult, animate: Bool = false) -> some View {
-        // FINISH_SPEC §B3: one motion kit for every board — each tile turns over in
-        // 720 ms, 300 ms apart; the winning row hops in a wave once it has landed; a
+        // FINISH_SPEC §B3 / §AQ1: one motion kit for every board — each tile turns over
+        // in 220 ms, 70 ms apart (every board of a multi-board game at once); the winning row hops in a wave once it has landed; a
         // lost board's last row wobbles and sinks; a hint row pulses gold.
         let n = eval.tiles.count
         let landed = TileMotion.rowReveal(columns: n)

@@ -107,7 +107,7 @@ fun VsBannerView(
         ) {
             if (heroArt != null) {
                 androidx.compose.foundation.Image(
-                    painterResource(heroArt), contentDescription = null,
+                    com.wordocious.app.ui.artPainter(heroArt, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp), contentDescription = null,
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                     modifier = Modifier.fillMaxWidth().aspectRatio(1200f / 638f).clearAndSetSemantics { },
                 )
@@ -119,7 +119,12 @@ fun VsBannerView(
             ) {
                 Row(Modifier.heightIn(min = 30.dp).padding(end = if (heroArt == null) BANNER_HOST_CLEAR else 0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (gold) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 22.dp)
-                    Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = headInk, maxLines = 2)
+                    // AR: the VS status headline in the live lettering (teal → blue; gold on a gold day).
+                    com.wordocious.app.ui.LiveHeadline(
+                        headline,
+                        if (gold) com.wordocious.app.ui.HeadlinePalette.CELEBRATION else com.wordocious.app.ui.HeadlinePalette.VS,
+                        Modifier.weight(1f), maxSize = 17.sp, minSize = 12.sp, align = androidx.compose.ui.text.style.TextAlign.Start,
+                    )
                 }
                 Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = subInk, modifier = Modifier.padding(end = 4.dp))
             }

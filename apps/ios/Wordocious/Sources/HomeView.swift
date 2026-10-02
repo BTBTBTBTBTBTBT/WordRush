@@ -295,10 +295,11 @@ struct HomeView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 4)
-                        // FINISH_SPEC §A4: the docked tab bar insets the page, so
-                        // the content ends right above it (a small breathing gap).
-                        .padding(.bottom, 20)
+                        // FINISH_SPEC §A4 / §AS3: the content ends clear of the docked
+                        // footer (its measured height + 16 pt) — never covered.
+                        .tabScrollTail()
                     }
+                    .reportsScrollMotion()   // §AQ2: idle loops pause while scrolling
                     // Anything that used to open the More Games sheet scrolls here instead.
                     .onReceive(NotificationCenter.default.publisher(for: TabRouterModel.scrollToTop)) { note in
                         guard note.object as? String == AppTab.home.rawValue else { return }

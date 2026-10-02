@@ -127,10 +127,13 @@ struct ActivityFeedView: View {
         let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         return VStack(alignment: .leading, spacing: 6) {
             row(e, today: today, pose: pose)
-            HStack(spacing: 6) {
-                reactionChips(e)
-                Spacer(minLength: 0)
-                action(e)
+            // §AS5: the chips / Rematch row only when there's something in it.
+            if hasFooter(e) {
+                HStack(spacing: 6) {
+                    reactionChips(e)
+                    Spacer(minLength: 0)
+                    action(e)
+                }
             }
         }
         .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 8)
@@ -212,8 +215,7 @@ struct ActivityFeedView: View {
     }
 
     /// §K1: the small candy action where the moment already has one — Rematch on a
-    /// pocket game (the Rematch reaction's quick play), View on a friend's moment
-    /// (the row's profile door).
+    /// pocket game (the Rematch reaction's quick play).
     @ViewBuilder private func action(_ e: FriendsService.FeedEvent) -> some View {
         if e.type == "game", e.friendlyKind != nil, onRematch != nil {
             Button {
@@ -230,13 +232,9 @@ struct ActivityFeedView: View {
             }
             .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
             .accessibilityLabel("Rematch")
-        } else if !e.me {
-            Button { profileId = e.userId } label: {
-                CandyLabel(title: "View", symbol: "eye.fill")
-            }
-            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
-            .accessibilityLabel("View \(e.username)'s profile")
         }
+        // FINISH_SPEC §AS5: no "View" button — tapping the row (or the avatar) opens
+        // the player's profile, so the rows stay short.
     }
 
     // MARK: §K1 event looks + poses
@@ -307,6 +305,13 @@ struct ActivityFeedView: View {
     }
 
     /// Small chips inside the card, only for reactions that have a count.
+    /// Whether a moment shows its footer row (reaction chips or the Rematch action).
+    private func hasFooter(_ e: FriendsService.FeedEvent) -> Bool {
+        let r = reactions[e.id] ?? .init(counts: [:], mine: [])
+        let chips = options(e).contains { (r.counts[$0.key] ?? 0) > 0 }
+        return chips || (e.type == "game" && e.friendlyKind != nil && onRematch != nil)
+    }
+
     @ViewBuilder private func reactionChips(_ e: FriendsService.FeedEvent) -> some View {
         let r = reactions[e.id] ?? .init(counts: [:], mine: [])
         let shown = options(e).filter { (r.counts[$0.key] ?? 0) > 0 }

@@ -855,3 +855,80 @@ Shown ONCE, right after the FIRST successful Pro purchase (or a gifted week's fi
   crown then drops onto W in the cast header (AA1) with a sparkle; text link "Gift a friend a free week" → T4.
 - Also: update the Pro page / G1 benefit copy to the cast bots ("Battle all ten of the cast" — not
   "Easy, Medium & Hard bots").
+
+## AQ. Speed + smoothness pass (founder 10-02 on iOS 235: "feels a little slow when playing through a puzzle,
+especially when I am trying to go through it fast. The keyboard tiles take a bit to populate the color … it seemed
+to lag a little at parts when going through the menus and scrolling … on the load in screen after closing the app
+and reopening it, the little guy looks duplicative")
+
+AQ1. Fast play (every word game + puzzle input):
+  - Keyboard key colors update AS EACH TILE FLIPS (the key for tile i takes its color when tile i lands), not
+    after the whole row's reveal; never slower than the row.
+  - Input is never blocked by animation: typing during a reveal buffers into the next row (and Enter/Delete work);
+    the reveal can't drop keystrokes. The not-a-word reject also doesn't block typing.
+  - Tighten timings ~30%: flip per tile ≤ 220 ms, stagger ≤ 70 ms (multi-board reveals in parallel, not
+    sequential), win hop shorter; the finish hold before the popup ≤ 1.2 s (was ~2.4 s); popup springs in
+    faster. Reduce Motion: instant colors.
+AQ2. Menus + scrolling smoothness (iOS + Android especially; web too):
+  - Downsample art to its display size (never decode 900–1200 px scenes/poses for a 40 pt thumbnail; use
+    thumbnail/downsampled images or pre-sized assets; cache).
+  - Pause continuous animations (rays, bobbing, living cast header idles, shimmer, confetti) when off-screen or
+    while a list is scrolling; no per-frame state changes in scrolling cells.
+  - Avoid expensive per-cell effects in lists (blur, many shadows, large gradients); rasterize static decorated
+    cards (iOS .drawingGroup / compositingGroup where it helps; Android graphicsLayer); lazy lists everywhere long.
+  - Mascot avatars: use the cached composed bitmap at row size; never re-compose while scrolling.
+  - Measure before/after where possible (iOS: Instruments Time Profiler / os_signpost in the simulator;
+    Android: a Macrobenchmark or at least FrameMetrics/JankStats logging in debug) and report the hotspots fixed.
+AQ3. Launch → intro must be ONE continuous image, never two W's:
+  - iOS: the system launch screen (project.yml UILaunchScreen: LaunchBackground + launch-w) and the first frame
+    of ColdStartIntro must match pixel-for-pixel (same W image, same size, same center), then the intro animates
+    from there — or drop UIImageName so the launch screen is just the background color and the intro owns the W.
+    Pick whichever gives a seamless start. Warm resumes (app returning from background) never replay the intro.
+  - Android: Android 12+ shows the launcher icon on the system splash by default → set the SplashScreen theme
+    (core-splashscreen) icon to a transparent/blank drawable (or the exact first intro frame) and keep the splash
+    background = the intro background, so there's no icon-then-W double. Same warm-resume rule.
+
+## AR. Live lettering for the rotating personalized headlines (founder 10-02: "I love the custom rotating
+personalized headlines … what can we do to style them to the new aesthetic so they're not plain text?" — screenshots:
+Home banner "WARMING UP · 3 DOWN" (flat lilac text) and Friends "OLIVER LEADS TODAY'S RACE" (flat dark text))
+
+One shared `LiveHeadline` component per platform that renders ANY dynamic headline in the title-art lettering
+style, drawn in code (these change all day, so they can't be pre-made art):
+- Font: Nunito Black (already bundled on all three), all caps, tight tracking.
+- Fill: vertical gradient per palette; a thin gold outline (2–3 px stroke drawn behind the fill); a darker
+  3D extrusion underneath (3–4 stacked 1 px offsets down in the palette's deep shade); a soft white gloss on the
+  top ~40% of each glyph (gradient overlay masked to the text); a soft drop shadow.
+- Token styling (split the headline into tokens in code): NUMBERS ("3", "6,976", "#2") render as gold soft
+  numbers with a slightly bigger size; the player's/friend's NAME gets the palette's accent gradient; the "·"
+  separator becomes a tiny gold star sprite (art-badge-icon-star-sprite); the rest is the main lettering.
+- Palettes: Home banner = purple→magenta (gold numbers); Friends race = pink→orange; Leaderboard = gold→amber;
+  VS = teal→blue; Stats = blue→violet; celebrations (DOUBLE SWEEP!, FLAWLESS) = gold with sparkle.
+- Motion: when the headline text changes (and on first show), letters pop in left→right (scale 0.6→1.08→1,
+  25 ms stagger) with a tiny `tick`; idle = a slow gloss sweep every ~6 s. Reduce Motion / calm: no pop, no sweep.
+- Layout: max 2 lines, balanced; auto-shrink to fit before wrapping; never clips the host art (the W on the Home
+  banner, the O1 on the Friends card). Accessibility: plain-text label + header trait.
+- Apply to: the Home banner headline (bannerHeadline), the Friends race headline + its sub-lines' names/numbers,
+  Leaderboard / Records dynamic headlines (e.g. "YOU'RE #3 TODAY"), VS lobby status headline, Stats summary
+  headlines, Gauntlet "STAGE 3 OF 5", finished-screen result strip headline. NOT the widget (keep its chips).
+
+## AS. Founder notes on iOS 235 (10-02 evening) — do with AQ/AR, then the App Store build
+AS1. The menu sheet opened by the "?" button next to Settings shows "MENU" in plain text beside a mascot → give
+     it a lettering title like Settings has: art-title-menu (tonight via ChatGPT, same style as the page titles);
+     until it lands, render "MENU" with LiveHeadline (AR) — never plain text.
+AS2. Header order: move the controls row (streak flame + shield + ? + settings) ABOVE the WORDOCIOUS cast row
+     (controls on top, the cast wordmark below them) on every page that has the header.
+AS3. Home can't scroll to the very bottom — the footer tab bar covers the last content. Add bottom content inset =
+     tab bar height + safe-area bottom (+ 16) on Home and every tab page/scroll view.
+AS4. Leaderboard: the important info is halfway down. Reorder top→bottom: headline, the picker, YOUR result/rank
+     card, the standings (podium + rows), then the rest. Compress the "classic view / play board" card and the
+     "your rank" button into one compact row (smaller art, one line of text, small candy buttons).
+AS5. Friends moments / activity feed: remove the "View" button from every moment row (rows get shorter); tapping
+     the row (or the avatar) opens the player profile as before.
+AS6. The streak flame + shield popups are broken: tapping only shades the top header strip and nothing shows
+     (the popup is presented inside the header's clipped container). Present them from the app root as a
+     full-screen overlay (iOS: from the root view / fullScreenCover-level overlay; Android: a Dialog/Popup at the
+     window level; web: portal to body) so the scrim covers the whole screen and the G2 popup appears.
+AS7. Remove the two small streak flames on the Home banner rows (the "48" on WORDOCIOUS and "9" on PUZZLES).
+     Put ALL streak info, cleanly laid out, in the streak-flame popup: daily streak (current + best), Wordocious
+     sweep streak, Puzzles sweep streak, flawless streaks, shields (count + how they work), and the week strip —
+     labeled chips with our 3D icons, soft numbers, no emoji.

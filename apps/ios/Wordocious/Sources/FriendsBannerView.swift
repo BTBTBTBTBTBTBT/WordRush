@@ -76,11 +76,10 @@ struct FriendsBannerView: View {
             let s = secondsUntilLocalMidnight()
             let clock = String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
             VStack(alignment: .leading, spacing: 4) {
-                Text(FriendlyGames.friendsBannerHeadline(input))
-                    .font(Brand.font(20, .black)).tracking(0.3).lineSpacing(1)
-                    .foregroundStyle(FriendsInk.bannerHead)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineLimit(2).minimumScaleFactor(0.8)
+                // FINISH_SPEC §AR: the race headline in live lettering (pink → orange,
+                // the leader's name in the accent, gold numbers).
+                LiveHeadline(text: FriendlyGames.friendsBannerHeadline(input), palette: .friends, size: 20,
+                             names: [input.leaderName], alignment: .leading, maxLines: 2, minimumScale: 0.8)
                     .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
                     .padding(.trailing, 84)
                 Text(FriendlyGames.friendsBannerClockLine(input, clock: clock))

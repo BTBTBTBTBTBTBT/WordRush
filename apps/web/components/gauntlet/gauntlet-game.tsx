@@ -6,7 +6,9 @@ import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
 import { gameReducer, initializeGame, GameMode, GameStatus, isValidWord, evaluateGuess, getDailySeedDate } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { useBoardFit } from '@/hooks/use-board-fit';
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
+import { latestGuess } from '@/lib/key-reveal';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import Link from 'next/link';
 import { GameHomeButton } from '@/components/game/game-home-button';
@@ -56,7 +58,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   );
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [showTransition, setShowTransition] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   // When a completed session is restored, skip straight to GauntletResults —
@@ -267,14 +269,15 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const handleKey = useCallback((key: string) => {
     if (state.status !== GameStatus.PLAYING) return;
     if (showTransition) return;
-    if (isShaking) return;
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let guess = currentGuess;
+    if (isShaking) { cutReject(); guess = ''; if (keyDuringReject(key) === 'swallow') return; }
 
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setMessage('Not enough letters');
         playInvalid();
-        setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+        rejectRow(currentGuess.length);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -282,8 +285,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       if (!isValidWord(currentGuess)) {
         setMessage('Not in word list');
         playInvalid();
-        setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+        rejectRow(currentGuess.length);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -291,8 +293,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       if (hasDuplicateGuess(state.boards, currentGuess)) {
         setMessage('Already guessed');
         playInvalid();
-        setIsShaking(true);
-        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+        rejectRow(currentGuess.length);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -306,7 +307,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+    } else if (/^[A-Z]$/.test(key) && guess.length < 5) {
       setCurrentGuess(prev => prev + key);
     }
   }, [state, currentGuess, showTransition, isSingleBoard]);
@@ -580,7 +581,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             onKey={handleKey}
             letterStates={letterStates}
             boardLetterStates={boardLetterStates}
-            revealDelayMs={REVEAL.end(5)}
+            revealWord={latestGuess(state.boards)}
           />
         </div>
       )}

@@ -300,7 +300,7 @@ export function VsProperNoundle({
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2 pt-1">
-        <Keyboard onKey={handleKey} letterStates={letterStates} />
+        <Keyboard onKey={handleKey} letterStates={letterStates} revealWord={guesses[guesses.length - 1]?.word} />
       </div>
     </div>
   );

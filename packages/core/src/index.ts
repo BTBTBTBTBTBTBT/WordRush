@@ -28,3 +28,4 @@ export * from './push-copy';
 export * from './avatar-config';
 export * from './friendly-games';
 export * from './leaderboard-title';
+export * from './headline-tokens';

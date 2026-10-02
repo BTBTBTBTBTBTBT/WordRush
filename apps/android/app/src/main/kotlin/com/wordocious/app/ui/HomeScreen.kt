@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -234,7 +235,7 @@ fun HomeScreen(
         ScrollToTopOnReselect(homeScroll) // AJ: Home / re-tap scrolls to the top.
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(homeScroll)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Proportional line boxes for the whole page (see homeTightTextStyle):
@@ -811,8 +812,9 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
  */
 @Composable
 fun LivePulseDot() {
-    val dim = if (WTheme.reducedMotion) {
-        1f
+    // AQ2: alpha applied in the layer (no per-frame recomposition); still while scrolling/hidden.
+    val dim: androidx.compose.runtime.State<Float> = if (WTheme.reducedMotion || ambientMotionPaused()) {
+        remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
     } else {
         val transition = rememberInfiniteTransition(label = "livePulse")
         transition.animateFloat(
@@ -822,9 +824,9 @@ fun LivePulseDot() {
                 RepeatMode.Reverse,
             ),
             label = "dim",
-        ).value
+        )
     }
-    Box(Modifier.size(8.dp).alpha(dim).clip(RoundedCornerShape(4.dp)).background(Color(0xFF22C55E)))
+    Box(Modifier.size(8.dp).graphicsLayer { alpha = dim.value }.clip(RoundedCornerShape(4.dp)).background(Color(0xFF22C55E)))
 }
 
 @Composable

@@ -37,6 +37,7 @@ import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber,
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
+import { headlineTokens } from '../src/headline-tokens';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, nearestAvatarColor, validateAvatar } from '../src/avatar-config';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { currentSeason, levelTier, levelTierLabel } from '../src/level-season';
@@ -780,6 +781,27 @@ export function renderAvatarConfigFixtures() {
   return { colors: AVATAR_COLORS, backdrops: AVATAR_BACKDROPS, defaults, withPhoto, display, nearest, fallback: fb, validate, pro, presets };
 }
 
+// FINISH_SPEC AR: the live-headline token splitter.
+export function renderHeadlineTokenFixtures() {
+  const cases: Array<[string, string[]]> = [
+    ['WARMING UP · 3 DOWN', []],
+    ["OLIVER LEADS TODAY'S RACE", ['Oliver']],
+    ["YOU'RE #3 TODAY", []],
+    ['6,976 POINTS · TOP 85%', []],
+    ['STAGE 3 OF 5', []],
+    ['3/8 DONE IN 3:12', []],
+    ['3RD PLACE · 3D ICONS', []],
+    ['GOOD MORNING, BMT', ['bmt']],
+    ['BEAT ANN MARIE · 2 UP', ['Ann', 'Ann Marie', ' ']],
+    ['GO OLIVERA', ['oliver']],
+    ['OLIVER_22 IS UP 2', ['oliver_22']],
+    ['DOUBLE SWEEP!', []],
+    ['COVID19 X2Y', []],
+    ['', []],
+  ];
+  return { cases: cases.map(([text, names]) => ({ text, names, tokens: headlineTokens(text, names) })) };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -801,6 +823,7 @@ const FILES: Array<[string, unknown]> = [
   ['level-season-fixtures.json', renderLevelSeasonFixtures()],
   ['push-copy-fixtures.json', renderPushCopyFixtures()],
   ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
+  ['headline-tokens-fixtures.json', renderHeadlineTokenFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

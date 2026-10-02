@@ -1,6 +1,7 @@
 'use client';
 
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { modeColor } from '@/lib/vs-lobby';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -43,7 +44,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
   const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode, solutions));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [elapsedTime, setElapsedTime] = useState(0);
   const [hasReported, setHasReported] = useState(false);
 
@@ -117,15 +118,16 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;
-    if (isShaking) return;
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let guess = currentGuess;
+    if (isShaking) { cutReject(); guess = ''; if (keyDuringReject(key) === 'swallow') return; }
     setMessage('');
 
     // Invalid entries shake the row like solo, then clear it.
     const reject = (msg: string) => {
       setMessage(msg);
       playInvalid();
-      setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+      rejectRow(currentGuess.length);
       setTimeout(() => setMessage(''), 1500);
     };
 
@@ -138,7 +140,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentGuess.length < currentBoard.solution.length) {
+    } else if (/^[A-Z]$/.test(key) && guess.length < currentBoard.solution.length) {
       setCurrentGuess(prev => prev + key);
       onTyping?.();
     }
@@ -267,7 +269,7 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2">
-        <Keyboard onKey={handleKey} letterStates={letterStates} />
+        <Keyboard onKey={handleKey} letterStates={letterStates} revealWord={currentBoard.guesses[currentBoard.guesses.length - 1]} />
       </div>
     </div>
   );

@@ -202,18 +202,28 @@ class GameViewModel(
     private val _rejectMessage = MutableStateFlow<String?>(null)
     val rejectMessage: StateFlow<String?> = _rejectMessage.asStateFlow()
     private var rejectJob: kotlinx.coroutines.Job? = null
+    /** AQ1 the full-length rejected entry still on screen (null = none). */
+    private var heldReject: String? = null
     private var toastJob: kotlinx.coroutines.Job? = null
 
     fun typeLetter(c: Char) {
         if (isFinished) return
-        if (_input.value.length >= wordLength) return
         if (!c.isLetter()) return
+        // AQ1: a letter typed while a rejected word is still held starts the fresh row
+        // at once — the reject never blocks typing.
+        val next = entryAfterType(_input.value, c, wordLength, heldReject) ?: return
+        if (heldReject != null && _input.value == heldReject) {
+            rejectJob?.cancel()
+            _invalidWord.value = false
+        }
+        heldReject = null
         _rejectMessage.value = null
-        _input.value = _input.value + c.uppercaseChar()
+        _input.value = next
         refreshLiveInvalid()
     }
 
     fun deleteLetter() {
+        heldReject = null
         if (_input.value.isNotEmpty()) {
             _rejectMessage.value = null
             _input.value = _input.value.dropLast(1)
@@ -324,6 +334,7 @@ class GameViewModel(
         _rejectMessage.value = null
         _state.value = after
         _input.value = ""
+        heldReject = null
         persist()
         // iOS parity: a dark pill flashes the outcome the instant the final guess
         // lands — "Solved!" on a win, the unsolved answer (or "N left unsolved")
@@ -420,6 +431,7 @@ class GameViewModel(
         // flashes "Not enough letters" and leaves the input intact.
         if (mode == GameMode.PROPERNOUNDLE) return
         val rejected = _input.value
+        heldReject = rejected.takeIf { it.length == wordLength }
         rejectJob?.cancel()
         rejectJob = viewModelScope.launch {
             delay(rejectHoldMs(com.wordocious.app.ui.theme.WTheme.reducedMotion).toLong())
@@ -427,6 +439,7 @@ class GameViewModel(
                 _input.value = ""
                 _invalidWord.value = false
             }
+            if (heldReject == rejected) heldReject = null
         }
     }
 
@@ -623,6 +636,17 @@ internal fun properNoundleCategoryLabel(c: String?): String = when (c) {
     else -> (c ?: "general").replaceFirstChar { it.uppercase() }
 }
 
-/** FINISH_SPEC B3 how long a rejected guess holds its red letters (≈1 s; 600 ms under Reduce Motion) before the right-to-left clear. */
+/**
+ * AQ1 the entry after typing [c]: appended while there is room; a full row that is a
+ * still-held rejected word ([heldReject]) is replaced by a fresh row starting with [c];
+ * any other full row ignores the key (null).
+ */
+internal fun entryAfterType(input: String, c: Char, wordLength: Int, heldReject: String?): String? = when {
+    input.length < wordLength -> input + c.uppercaseChar()
+    heldReject != null && input == heldReject -> c.uppercaseChar().toString()
+    else -> null
+}
+
+/** FINISH_SPEC B3 / AQ1 how long a rejected guess holds its red letters (0.7 s; 600 ms under Reduce Motion) before the right-to-left clear. */
 internal fun rejectHoldMs(reduced: Boolean): Int =
     if (reduced) 600 else com.wordocious.app.ui.game.TileMotion.BAD_MS

@@ -3,13 +3,14 @@ import WordociousCore
 
 /// Shared top header across all four tabs (HEADER_SPEC §1; FINISH_SPEC §A3, §A5,
 /// §C1, §C5 — founder 2026-10-02).
-/// Row 1: the living cast header — the ten mascots spelling WORDOCIOUS edge to
-/// edge, one of them playing its move every few seconds (Pro: W wears the crown).
-/// Row 2: the streak / flawless / shield controls on the left and help + settings on
-/// the right, all soft 3D icons drawn bare (no bubbles) with soft numbers, each
-/// squishing on press. The stat controls open the redesigned popups (colored
-/// header, big 3D icon, host character, soft-number tiles), anchored under the row
-/// while the page dims softly.
+/// FINISH_SPEC §AS2: Row 1 (top): the streak / flawless / shield controls on the
+/// left and help + settings on the right, all soft 3D icons drawn bare (no bubbles)
+/// with soft numbers, each squishing on press. Row 2: the living cast header — the
+/// ten mascots spelling WORDOCIOUS edge to edge, one of them playing its move every
+/// few seconds (Pro: W wears the crown). The stat controls open the redesigned
+/// popups (colored header, big 3D icon, host character, soft-number tiles) — §AS6:
+/// presented full-screen from the app root (`HeaderPopupHost`), never inside the
+/// header's own container.
 struct AppHeaderView: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var showMenu = false
@@ -17,14 +18,14 @@ struct AppHeaderView: View {
     @State private var menuDest: InfoMenuDestination?
     @State private var showSettings = false
     @State private var showAuth = false
-    @State private var pop: HeaderPop?
+    /// §AS6: the popups live at the app root (full-screen scrim + card).
+    @ObservedObject private var popups = HeaderPopups.shared
 
-    enum HeaderPop: Equatable { case streak, shield, flawless }
+    typealias HeaderPop = HeaderPopups.Kind
 
     var body: some View {
         VStack(spacing: 0) {
-            LivingCastHeader(pro: auth.isProActive)
-
+            // §AS2: the controls row ABOVE the WORDOCIOUS cast row.
             HStack(spacing: 2) {
                 // Drawn from `headerStreak`/`headerShields`, not from `profile`
                 // directly: the profile row arrives a beat after launch, so gating
@@ -65,16 +66,11 @@ struct AppHeaderView: View {
                 iconControl(.gear, label: "Settings") { showSettings = true }
             }
             .padding(.horizontal, 8)
-            // FINISH_SPEC §N4: the controls row sits 6 pt below the cast row.
-            .padding(.top, 6)
+            .padding(.top, 2)
+
+            LivingCastHeader(pro: auth.isProActive)
         }
         .padding(.bottom, 2)
-        // §C5: the popup hangs under the controls row; the page below dims softly.
-        .overlay(alignment: .bottom) { popLayer }
-        // Draw (and hit-test) the popup layer above the page content below the header.
-        .zIndex(10)
-        .animation(Theme.animation(.spring(response: 0.3, dampingFraction: 0.85)), value: pop)
-        .onChange(of: pop) { if $0 != nil { Feedback.whoosh() } }   // §U: popup open
         .streakBumpFeedback(auth.headerStreak)                      // §U: streak +1
         .sheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
             MenuSheet(selection: $menuSelection).presentationDetents([.large])
@@ -85,7 +81,7 @@ struct AppHeaderView: View {
     }
 
     private func toggle(_ p: HeaderPop) {
-        pop = pop == p ? nil : p
+        popups.toggle(p)
     }
 
     // MARK: - Controls (§A3)
@@ -114,167 +110,11 @@ struct AppHeaderView: View {
         HeaderCircleButton(.icon(icon), size: HeaderControl.tap, label: label, action: action)
     }
 
-    // MARK: - Popups (§C5)
-
-    @ViewBuilder private var popLayer: some View {
-        if let pop {
-            if pop == .flawless {
-                popContainer { card(.flawless, profile: auth.profile) }
-            } else if let p = auth.profile {
-                popContainer { card(pop, profile: p) }
-            }
-        }
-    }
-
-    private func popContainer<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        let width = UIScreen.main.bounds.width
-        return ZStack(alignment: .top) {
-            Color(hex: 0x1E0F3C).opacity(0.28)
-                .frame(width: width * 3, height: 3000)
-                .contentShape(Rectangle())
-                .onTapGesture { pop = nil }
-                .accessibilityLabel("Close")
-                .accessibilityAddTraits(.isButton)
-            content()
-                .frame(width: min(420, width - 28))
-                .padding(.top, 4)
-        }
-        .frame(width: width)
-        .alignmentGuide(.bottom) { d in d[.top] }
-        .transition(.opacity)
-    }
-
-    @ViewBuilder
-    private func card(_ kind: HeaderPop, profile p: Profile?) -> some View {
-        switch kind {
-        case .streak:
-            if let p { streakCard(p) }
-        case .shield:
-            if let p { shieldCard(p) }
-        case .flawless:
-            flawlessCard(MatchStatsService.cachedFlawlessStreak())
-        }
-    }
-
-    private static let warm = Color(hex: 0xF5A524)
-    private static let warmInk = Color(hex: 0xA2560C)
-
-    /// §C5 streak popup: a warm orange header with the big flame, a friendly
-    /// headline and S the speedster (host); Current + Best soft-number tiles; this
-    /// week as seven day tiles; the how-it-works line.
-    private func streakCard(_ p: Profile) -> some View {
-        let streak = p.dailyLoginStreak, best = p.bestDailyLoginStreak
-        let headline = streak == 1 ? "1-day streak!" : "\(streak)-day streak!"
-        let sub = streak > 0 && streak >= best ? "Your best ever. Keep it rolling." : "Play a daily every day to keep it going."
-        return PopCard(tint: Color(hex: 0xFFF6EA),
-                       header: [Color(hex: 0xFFB36B), Color(hex: 0xF5A524), Color(hex: 0xFF8A5C)],
-                       icon: .flame, title: headline, subtitle: sub, host: .s, hostPose: "trophy") {
-            HStack(spacing: 8) {
-                statTile(streak, "CURRENT")
-                statTile(best, "BEST")
-            }
-            .padding(.horizontal, 14).padding(.top, 12)
-            weekRow(streak: streak)
-            popText("Play any daily puzzle each day to keep your streak going. Miss a day and it resets, unless a streak shield saves it.")
-        }
-    }
-
-    /// §C5 shield popup: a purple header with the big shield and U (host); the
-    /// shields as a row of 3D shields (the next one to earn faded).
-    private func shieldCard(_ p: Profile) -> some View {
-        let n = p.streakShields
-        let title = n == 1 ? "1 streak shield" : "\(n) streak shields"
-        let sub = n > 0 ? "Your streak is protected." : "Earn one at your next 7-day milestone."
-        let shown = min(n, 6)
-        return PopCard(tint: Color(hex: 0xF5EFFF),
-                       header: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
-                       icon: .shield, title: title, subtitle: sub, host: .u, hostPose: "lotus") {
-            HStack(spacing: 8) {
-                ForEach(0..<shown, id: \.self) { _ in Icon3D(.shield, size: 40) }
-                // The next one to earn, faded.
-                Icon3D(.shield, size: 40).saturation(0).opacity(0.28)
-                if n > shown {
-                    Text("+\(n - shown)").softNumber(20)
-                }
-            }
-            .padding(.horizontal, 14).padding(.top, 12)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(n) shields")
-            popText("A shield saves your streak if you miss a day. Earn a free one at every 7-day milestone; Pro members get 4 each billing period.")
-        }
-    }
-
-    /// §244 / §C5: the flawless popup in the same family (a gold header, O2 hosts).
-    private func flawlessCard(_ streak: Int) -> some View {
-        PopCard(tint: Color(hex: 0xFFF8E6),
-                header: [Color(hex: 0xFFD166), Color(hex: 0xF5A524), Color(hex: 0xF59E0B)],
-                icon: .trophy, title: "\(streak)-day flawless run!", subtitle: "Every daily won, day after day.",
-                host: .o2, hostPose: "twirl") {
-            HStack(spacing: 8) { statTile(streak, "CURRENT") }
-                .padding(.horizontal, 14).padding(.top, 12)
-            popText("Consecutive days winning all \(DailyCompletionsStore.totalDailyModes) Daily Sweep games. Win every one today to keep it alive.")
-        }
-    }
-
-    /// The popup's closing paragraph.
-    private func popText(_ text: String) -> some View {
-        Text(text)
-            .font(Brand.font(13.5, .bold))
-            .foregroundStyle(Color(hex: 0x5A4A72))
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 16).padding(.top, 10)
-    }
-
-    /// Current / Best: a soft number on a tinted tile with the warm top bar.
-    private func statTile(_ value: Int, _ label: String) -> some View {
-        VStack(spacing: 2) {
-            Text("\(value)").softNumber(28)
-            Text(label).font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(Self.warmInk)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8).padding(.horizontal, 10)
-        .tintedPill(Self.warm, radius: 14)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(label.capitalized) \(value) \(value == 1 ? "day" : "days")")
-    }
-
-    /// This week, Monday first: filled orange for each day the streak covers.
-    private func weekRow(streak: Int) -> some View {
-        let cal = Calendar(identifier: .gregorian)
-        let today = StreakWeek.mondayIndex(weekday: cal.component(.weekday, from: Date()))
-        let played = DailyCompletionsStore.cachedTodayCount() > 0
-        let days = StreakWeek.days(streak: streak, playedToday: played, todayIndex: today)
-        let letters = ["M", "T", "W", "T", "F", "S", "S"]
-        return HStack(spacing: 4) {
-            ForEach(0..<7, id: \.self) { i in
-                VStack(spacing: 2) {
-                    Text(letters[i]).font(Brand.font(10, .black)).foregroundStyle(Self.warmInk)
-                    ZStack {
-                        if days[i] {
-                            RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0xB0650B)).offset(y: 2)
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(LinearGradient(colors: [Color(hex: 0xFFB36B), Self.warm], startPoint: .top, endPoint: .bottom))
-                            Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(.white)
-                        } else {
-                            RoundedRectangle(cornerRadius: 8).fill(Color(red: 1, green: 214 / 255, blue: 160 / 255).opacity(0.45))
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(Color(hex: 0xD97706).opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))
-                        }
-                    }
-                    .frame(height: 26)
-                }
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(.horizontal, 14).padding(.top, 8)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("This week: \(days.filter { $0 }.count) days played")
-    }
 }
 
 /// One §C5 popup: a colored header (gradient, the big 3D icon, a headline and a
 /// subline, the host pose peeking at the right), then its body on a soft tint.
-private struct PopCard<Body: View>: View {
+struct PopCard<Body: View>: View {
     let tint: Color
     let header: [Color]
     let icon: Icon3DName

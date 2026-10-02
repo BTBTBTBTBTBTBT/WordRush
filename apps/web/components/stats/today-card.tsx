@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveHeadline } from '@/components/ui/live-headline';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -83,11 +84,9 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
   const moreDaily = moreModes.filter((m) => m.dailyEligible && m.dbKey);
   const morePlayed = moreDaily.filter((m) => todayDailies.has(m.dbKey as string)).length;
   const moment = bestMomentToday(todayDailies);
-  const dateLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   // C3 cont: Today on a soft blue card (gold on a Flawless day, lavender on a Sweep day).
   const accent = flawless ? GOLD : allDone ? PURPLE : BLUE;
-  const ink = flawless ? '#a2560c' : allDone ? '#5b21b6' : '#2456a8';
   const bar = flawless ? 'linear-gradient(90deg, #f59e0b, #fcd34d)' : allDone ? 'linear-gradient(90deg, #7c3aed, #ec4899)' : 'linear-gradient(90deg, #0a6cff, #60a5fa)';
 
   // The three tinted pills (magenta Puzzles, teal VS, gold Standing) in soft numbers.
@@ -120,10 +119,8 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
                 className="w-full"
               />
             ) : (
-              <>
-                <span className="text-[11px] font-black uppercase tint-ink" style={{ letterSpacing: '0.12em', color: ink }}>Today · {dateLabel}</span>
-                <SoftNum size={15} className="soft-num-auto">{completed} / {total}</SoftNum>
-              </>
+              // FINISH_SPEC AR: the day's summary in live lettering (blue → violet, gold numbers).
+              <LiveHeadline text={`Today · ${completed} of ${total} done`} palette="stats" size={16} align="left" level={3} />
             )}
           </div>
 

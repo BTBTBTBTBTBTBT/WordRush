@@ -1,6 +1,8 @@
 'use client';
 
-import { REVEAL } from '@/lib/tile-motion';
+import { keyDuringReject } from '@/lib/tile-motion';
+import { useRejectRow } from '@/hooks/use-reject-row';
+import { latestGuess } from '@/lib/key-reveal';
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
@@ -24,7 +26,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const { isShaking, reject: rejectRow, cutShort: cutReject } = useRejectRow(() => setCurrentGuess(''));
   const [elapsedTime, setElapsedTime] = useState(0);
   const [hasReported, setHasReported] = useState(false);
   const prevSolvedRef = useRef(0);
@@ -88,15 +90,16 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
-    if (isShaking) return;
+    // AQ1: a key during a not-a-word reject cuts it short; it's never dropped.
+    let guess = currentGuess;
+    if (isShaking) { cutReject(); guess = ''; if (keyDuringReject(key) === 'swallow') return; }
     setError('');
 
     // Invalid entries shake the row like solo, then clear it.
     const reject = (msg: string) => {
       setError(msg);
       playInvalid();
-      setIsShaking(true);
-      setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, REVEAL.rejectMs(currentGuess.length));
+      rejectRow(currentGuess.length);
       setTimeout(() => setError(''), 1500);
     };
 
@@ -115,7 +118,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
+    } else if (guess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess(prev => prev + key);
       onTyping?.();
     }
@@ -202,7 +205,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2 pt-1">
-        <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
+        <Keyboard onKey={handleKeyPress} letterStates={letterStates} revealWord={latestGuess(state.boards)} />
       </div>
     </div>
   );

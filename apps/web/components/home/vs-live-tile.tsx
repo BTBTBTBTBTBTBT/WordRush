@@ -93,7 +93,7 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
             {bot && (
               <div className="flex items-center gap-1 mt-0.5 text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={botArt(bot.id, 'ready')} alt="" aria-hidden="true" width={18} height={18} className="shrink-0" style={{ width: 18, height: 18 }} />
+                <img src={botArt(bot.id, 'ready')} alt="" aria-hidden="true" loading="lazy" decoding="async" width={18} height={18} className="shrink-0" style={{ width: 18, height: 18 }} />
                 <span className="truncate">Bot of the day: {bot.name}</span>
               </div>
             )}

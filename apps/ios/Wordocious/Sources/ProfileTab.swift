@@ -419,11 +419,11 @@ struct ProfileTab: View {
                 )
             }
             .padding(.horizontal, 12).padding(.top, 8)
-            // Generous bottom clearance so the last section always sits above the
-            // custom bottom nav and stays tappable (Account actions live in
-            // Settings now, not here).
-            .padding(.bottom, 72)
+            // §AS3: the last section always ends clear of the docked footer (its
+            // measured height + 16 pt) and stays tappable.
+            .tabScrollTail()
         }
+        .reportsScrollMotion()   // §AQ2: idle loops pause while scrolling
         // select(.vs) swapped to All-time un-animated; once that page is laid out, glide
         // down to its VS section (web: scrollIntoView smooth, block start).
         .onChange(of: vsScrollToken) { _ in

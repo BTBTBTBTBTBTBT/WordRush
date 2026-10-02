@@ -165,12 +165,17 @@ export function PageHeader({
       {back && <HeaderBack kind="back" {...back} />}
       {host && <Mascot id={host} size={hostSize} motion={hostMotion} priority />}
       <div className="flex-1 min-w-0">
-        <TitleTag
-          className="font-black uppercase leading-tight truncate text-transparent bg-clip-text"
-          style={{ fontSize: titleSize, letterSpacing: 0.4, backgroundImage: PAGE_TITLE_GRADIENTS[accent] }}
-        >
-          {title}
-        </TitleTag>
+        {typeof title === 'string' ? (
+          <TitleTag
+            className="font-black uppercase leading-tight truncate text-transparent bg-clip-text"
+            style={{ fontSize: titleSize, letterSpacing: 0.4, backgroundImage: PAGE_TITLE_GRADIENTS[accent] }}
+          >
+            {title}
+          </TitleTag>
+        ) : (
+          // A drawn title (e.g. LiveHeadline) brings its own heading semantics.
+          title
+        )}
         {sub}
       </div>
       {right}

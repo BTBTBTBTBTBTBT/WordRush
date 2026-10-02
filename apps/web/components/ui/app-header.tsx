@@ -15,14 +15,17 @@ import { cachedFlawlessStreak, fetchDailySweepStats } from '@/lib/stats-service'
 import { getTodayLocal } from '@/lib/daily-service';
 import { readLinkReturn } from '@/lib/identity-linking';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
+import { useFlags } from '@/hooks/use-flags';
+import { EMPTY_STREAK_SUMMARY, type StreakSummary } from '@/lib/streak-summary';
 
 // The home header (docs/HEADER_SPEC.md §1; FINISH_SPEC A3, A5, C1, C5), shared
-// by Home, Leaderboard, Records, Stats and Pro. Row 1: the living cast header —
-// the ten heroes spelling WORDOCIOUS edge to edge, one of them playing its
-// move every few seconds (Pro: W wears the crown). Row 2: the soft 3D
-// counters drawn bare (streak, flawless trophies, shields) on the left, help +
-// settings on the right, each with the icon squish. The counters open the
-// streak / shield / flawless popups (C5). Every tap is the same as before.
+// by Home, Leaderboard, Records, Stats and Pro. AS2: Row 1 is the controls —
+// the soft 3D counters drawn bare (streak, flawless trophies, shields) on the
+// left, help + settings on the right, each with the icon squish; Row 2 is the
+// living cast header — the ten heroes spelling WORDOCIOUS edge to edge, one of
+// them playing its move every few seconds (Pro: W wears the crown). The
+// counters open the streak / shield / flawless popups (C5), portaled to <body>
+// full screen (AS6); the streak popup carries every streak (AS7).
 
 export function AppHeader() {
   const { profile, isProActive, isGuest, exitGuest } = useAuth();
@@ -84,6 +87,32 @@ export function AppHeader() {
   const bestStreak = (profile as any)?.best_daily_login_streak ?? 0;
   const isPro = isProActive;
 
+  // AS7: the streak popup shows every run — loaded when it opens.
+  const { isOn: flagOn } = useFlags();
+  const [summary, setSummary] = useState<StreakSummary>(EMPTY_STREAK_SUMMARY);
+  useEffect(() => {
+    if (!streakOpen || !profile?.id) return;
+    let cancelled = false;
+    const uid = profile.id;
+    Promise.all([
+      import('@/lib/stats-service').then((m) => m.fetchDailySweepStats(uid)),
+      import('@/components/home/mode-chrome').then((m) => m.MORE_CARDS.filter((c) => c.dailyEligible && c.dbKey && flagOn(c.flagKey)).map((c) => c.dbKey as string)),
+    ])
+      .then(async ([sweep, keys]) => {
+        const puzzles = await import('@/lib/home-streaks').then((m) => m.fetchPuzzleRecords(uid, keys));
+        if (cancelled) return;
+        setSummary({
+          wordSweep: { current: sweep.currentSweepStreak, best: null },
+          puzzleSweep: { current: puzzles.sweep, best: puzzles.bestSweep },
+          wordFlawless: { current: sweep.currentFlawlessStreak, best: sweep.bestFlawlessStreak },
+          puzzleFlawless: { current: puzzles.flawless, best: puzzles.bestFlawless },
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streakOpen, profile?.id]);
+
   const openStreak = () => {
     setShieldOpen(false);
     setFlawlessOpen(false);
@@ -106,14 +135,8 @@ export function AppHeader() {
     <>
       {/* FINISH_SPEC AG: on desktop web the header is the 560 px centered column, so the cast row stays 90% of it. */}
       <header className="pb-1 page-col" style={{ paddingTop: CAST_ROW.topMargin }}>
-        {/* Row 1: the living cast header — FINISH_SPEC N3: ≈90% of the width,
-            centered, with a soft ground shadow. The link home is the old wordmark's tap. */}
-        <Link href="/" aria-label="Wordocious home" className="block mx-auto" style={{ width: `${CAST_ROW.widthPct}%` }} data-no-squish="">
-          <CastHeader crown={isPro} ground />
-        </Link>
-
-        {/* Row 2 (N4: 6 px under the cast row): the bare 3D counters left, help + settings right. The popups hang under this row. */}
-        <div className="relative flex items-center justify-between gap-2 px-3" style={{ marginTop: CAST_ROW.controlsGap }}>
+        {/* AS2 Row 1: the controls — the bare 3D counters left, help + settings right. */}
+        <div className="relative flex items-center justify-between gap-2 px-3">
           <div className="flex items-center gap-1 min-w-0">
             {/* Guest — prominent Sign In entry (returns to the landing/login). */}
             {isGuest && !profile && (
@@ -144,11 +167,17 @@ export function AppHeader() {
           {profile && (
             <>
               <FlawlessPopup open={flawlessOpen} onClose={() => setFlawlessOpen(false)} streak={flawlessStreak} />
-              <StreakPopup open={streakOpen} onClose={() => setStreakOpen(false)} streak={streak} best={bestStreak} today={today} playedToday={playedToday} />
+              <StreakPopup open={streakOpen} onClose={() => setStreakOpen(false)} streak={streak} best={bestStreak} today={today} playedToday={playedToday} summary={summary} shields={shields} />
               <ShieldPopup open={shieldOpen} onClose={() => setShieldOpen(false)} shields={shields} />
             </>
           )}
         </div>
+        {/* AS2 Row 2: the living cast header (under the controls) — FINISH_SPEC N3: ≈90% of the width,
+            centered, with a soft ground shadow. The link home is the old wordmark's tap. */}
+        <Link href="/" aria-label="Wordocious home" className="block mx-auto" style={{ width: `${CAST_ROW.widthPct}%`, marginTop: CAST_ROW.controlsGap }} data-no-squish="">
+          <CastHeader crown={isPro} ground />
+        </Link>
+
       </header>
 
       <MenuModal open={helpOpen} onClose={() => setHelpOpen(false)} />

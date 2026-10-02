@@ -1,0 +1,263 @@
+{
+  "cases": [
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "WARMING UP "
+        },
+        {
+          "kind": "star",
+          "text": "·"
+        },
+        {
+          "kind": "text",
+          "text": " "
+        },
+        {
+          "kind": "number",
+          "text": "3"
+        },
+        {
+          "kind": "text",
+          "text": " DOWN"
+        }
+      ]
+    },
+    {
+      "text": "OLIVER LEADS TODAY'S RACE",
+      "names": [
+        "Oliver"
+      ],
+      "tokens": [
+        {
+          "kind": "name",
+          "text": "OLIVER"
+        },
+        {
+          "kind": "text",
+          "text": " LEADS TODAY'S RACE"
+        }
+      ]
+    },
+    {
+      "text": "YOU'RE #3 TODAY",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "YOU'RE "
+        },
+        {
+          "kind": "number",
+          "text": "#3"
+        },
+        {
+          "kind": "text",
+          "text": " TODAY"
+        }
+      ]
+    },
+    {
+      "text": "6,976 POINTS · TOP 85%",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "number",
+          "text": "6,976"
+        },
+        {
+          "kind": "text",
+          "text": " POINTS "
+        },
+        {
+          "kind": "star",
+          "text": "·"
+        },
+        {
+          "kind": "text",
+          "text": " TOP "
+        },
+        {
+          "kind": "number",
+          "text": "85%"
+        }
+      ]
+    },
+    {
+      "text": "STAGE 3 OF 5",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "STAGE "
+        },
+        {
+          "kind": "number",
+          "text": "3"
+        },
+        {
+          "kind": "text",
+          "text": " OF "
+        },
+        {
+          "kind": "number",
+          "text": "5"
+        }
+      ]
+    },
+    {
+      "text": "3/8 DONE IN 3:12",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "number",
+          "text": "3/8"
+        },
+        {
+          "kind": "text",
+          "text": " DONE IN "
+        },
+        {
+          "kind": "number",
+          "text": "3:12"
+        }
+      ]
+    },
+    {
+      "text": "3RD PLACE · 3D ICONS",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "number",
+          "text": "3RD"
+        },
+        {
+          "kind": "text",
+          "text": " PLACE "
+        },
+        {
+          "kind": "star",
+          "text": "·"
+        },
+        {
+          "kind": "text",
+          "text": " 3D ICONS"
+        }
+      ]
+    },
+    {
+      "text": "GOOD MORNING, BMT",
+      "names": [
+        "bmt"
+      ],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "GOOD MORNING, "
+        },
+        {
+          "kind": "name",
+          "text": "BMT"
+        }
+      ]
+    },
+    {
+      "text": "BEAT ANN MARIE · 2 UP",
+      "names": [
+        "Ann",
+        "Ann Marie",
+        " "
+      ],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "BEAT "
+        },
+        {
+          "kind": "name",
+          "text": "ANN MARIE"
+        },
+        {
+          "kind": "text",
+          "text": " "
+        },
+        {
+          "kind": "star",
+          "text": "·"
+        },
+        {
+          "kind": "text",
+          "text": " "
+        },
+        {
+          "kind": "number",
+          "text": "2"
+        },
+        {
+          "kind": "text",
+          "text": " UP"
+        }
+      ]
+    },
+    {
+      "text": "GO OLIVERA",
+      "names": [
+        "oliver"
+      ],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "GO OLIVERA"
+        }
+      ]
+    },
+    {
+      "text": "OLIVER_22 IS UP 2",
+      "names": [
+        "oliver_22"
+      ],
+      "tokens": [
+        {
+          "kind": "name",
+          "text": "OLIVER_22"
+        },
+        {
+          "kind": "text",
+          "text": " IS UP "
+        },
+        {
+          "kind": "number",
+          "text": "2"
+        }
+      ]
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "DOUBLE SWEEP!"
+        }
+      ]
+    },
+    {
+      "text": "COVID19 X2Y",
+      "names": [],
+      "tokens": [
+        {
+          "kind": "text",
+          "text": "COVID19 X2Y"
+        }
+      ]
+    },
+    {
+      "text": "",
+      "names": [],
+      "tokens": []
+    }
+  ]
+}

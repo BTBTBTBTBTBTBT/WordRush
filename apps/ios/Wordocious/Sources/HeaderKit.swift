@@ -72,7 +72,7 @@ struct Icon3D: View {
     }
 
     var body: some View {
-        let image = Image(name.assetName)
+        let image = ArtThumbs.image(name.assetName, points: size)   // §AQ2: display-size bitmap
             .resizable()
             .interpolation(.high)
             .scaledToFit()

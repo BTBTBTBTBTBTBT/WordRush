@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LiveHeadline } from '@/components/ui/live-headline';
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
@@ -182,7 +183,7 @@ export function BoardRow({ rank, userId, username, avatarUrl, avatar, isMe, leve
         opacity: dim ? 0.55 : undefined,
       };
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5" style={style}>
+    <div className="cv-row flex items-center gap-2.5 px-3 py-2.5" style={style}>
       <RankIcon rank={rank} />
       <BoardAvatar url={avatarUrl} name={username} userId={userId} level={level} {...avatar} />
       <div className="flex-1 min-w-0">
@@ -281,8 +282,9 @@ export function ResultCard({ rank, ofLine, solved, points, delta }: {
           {rank != null && <SoftNum size={26} style={{ marginTop: -2 }}>#{rank}</SoftNum>}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center flex-wrap text-[13px] font-black lb-gold-ink" style={{ letterSpacing: 1 }}>
-            {rank != null ? ofLine : 'YOUR RESULT'}
+          <div className="flex items-center gap-1">
+            {/* FINISH_SPEC AR: the dynamic rank line in live lettering (gold → amber). */}
+            <LiveHeadline text={rank != null ? ofLine ?? '' : 'YOUR RESULT'} palette="leaderboard" size={15} align="left" level={3} className="flex-1 min-w-0" />
             {delta}
           </div>
           {solved && (

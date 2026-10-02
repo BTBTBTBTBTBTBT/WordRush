@@ -256,9 +256,31 @@ fun stripSentence(won: Boolean, items: List<StripItem>): String =
  * (soft numbers + a tiny label) for guesses · time · points. Scrolls sideways rather
  * than wrap on a very narrow phone. TalkBack reads it as one sentence.
  */
+/** AR the strip's live headline: "SOLVED IN 4 GUESSES" (the first count chip), "SOLVED!", or "SO CLOSE". */
+fun stripHeadline(won: Boolean, items: List<StripItem>): String {
+    if (!won) return "SO CLOSE"
+    val first = items.firstOrNull { it.glyph == StripGlyph.CHECK }
+    return if (first != null) "SOLVED IN ${first.value} ${first.label}".uppercase() else "SOLVED!"
+}
+
 @Composable
-fun ResultStrip(won: Boolean, items: List<StripItem>, modifier: Modifier = Modifier, srText: String = stripSentence(won, items)) {
-    Box(modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = srText }, contentAlignment = Alignment.Center) {
+fun ResultStrip(
+    won: Boolean,
+    items: List<StripItem>,
+    modifier: Modifier = Modifier,
+    srText: String = stripSentence(won, items),
+    /** AR the live headline over the chips (null = chips only). */
+    headline: String? = stripHeadline(won, items),
+) {
+    Column(modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = srText }, horizontalAlignment = Alignment.CenterHorizontally) {
+    if (headline != null) {
+        com.wordocious.app.ui.LiveHeadline(
+            headline,
+            if (won) com.wordocious.app.ui.HeadlinePalette.CELEBRATION else com.wordocious.app.ui.HeadlinePalette.STATS,
+            Modifier.fillMaxWidth(), maxSize = 20.sp, minSize = 13.sp, maxLines = 1,
+        )
+    }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
@@ -267,6 +289,7 @@ fun ResultStrip(won: Boolean, items: List<StripItem>, modifier: Modifier = Modif
             com.wordocious.app.ui.ResultBadge(won, size = 26.dp)
             items.forEach { StripChip(it) }
         }
+    }
     }
 }
 

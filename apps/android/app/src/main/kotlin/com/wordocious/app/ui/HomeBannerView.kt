@@ -196,8 +196,8 @@ fun HomeBannerView(
                 Row(Modifier.padding(end = slots.headlineEndClear.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
                     Box(Modifier.weight(1f)) {
-                        BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited)
-                        BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited)
+                        BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited, name = name)
+                        BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited, name = name)
                     }
                     // Nothing to share before the first finished game (iOS/web parity). Z: the
                     // slot stays (empty) in Unlimited and before the first game.
@@ -370,14 +370,8 @@ private fun BannerGroupRow(
                 fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = ink,
                 modifier = Modifier.weight(1f), maxLines = 1,
             )
-            // Unlimited hides the streaks; a row's flame hides when its run is 0. Z: the flame's
-            // slot stays (invisible, silent) in Unlimited so the line keeps its height.
-            if (flameSlot) {
-                val streak = groupStreak(dailyTier, row.streaks)
-                Box(if (unlimited) Modifier.graphicsLayer { alpha = 0f }.clearAndSetSemantics { } else Modifier) {
-                    StreakFlame(streak, flame = 12.dp, fontSize = 12)
-                }
-            }
+            // AS7 (founder 10-02): no per-row streak flames — every streak lives in the header's
+            // streak popup now. [flameSlot] / [dailyTier] stay for the slot math's callers.
         }
         // Spec sizes (32/28 dp tiles, 7/4 dp gaps) are the ceiling; a narrow phone
         // shrinks the tiles so all of them fit on one line.
@@ -509,8 +503,8 @@ private fun Modifier.bannerGlow(double: Boolean): Modifier = drawBehind {
  */
 @Composable
 internal fun Modifier.bannerShimmer(): Modifier {
-    val hidden by LocalTabHidden.current
-    if (hidden) return this
+    // AQ2: also off while the page scrolls.
+    if (ambientMotionPaused()) return this
     val transition = rememberInfiniteTransition(label = "bannerShimmer")
     val t by transition.animateFloat(
         initialValue = 0f, targetValue = 4000f,
@@ -610,7 +604,7 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
  * hidden one ([active] = false) is silent to screen readers.
  */
 @Composable
-private fun BannerHeadlineLayer(headline: String, double: Boolean, headInk: Color, alpha: Float, active: Boolean) {
+private fun BannerHeadlineLayer(headline: String, double: Boolean, @Suppress("UNUSED_PARAMETER") headInk: Color, alpha: Float, active: Boolean, name: String? = null) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 30.dp)
             .graphicsLayer { this.alpha = alpha }
@@ -619,24 +613,14 @@ private fun BannerHeadlineLayer(headline: String, double: Boolean, headInk: Colo
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (double) Icon3D(Icon3DName.TROPHY, 22.dp)
-        var headScale by remember(headline) { mutableFloatStateOf(1f) }
-        var headFitted by remember(headline) { mutableStateOf(false) }
-        // §18.4 centered in its cell when it fits on one line; two lines read from the start.
-        var headOneLine by remember(headline) { mutableStateOf(true) }
-        val glow = with(LocalDensity.current) { 3.dp.toPx() }
-        Text(
-            headline, fontSize = 22.sp * headScale, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-            lineHeight = 1.15.em, maxLines = 2, overflow = TextOverflow.Clip,
-            textAlign = if (headOneLine) TextAlign.Center else TextAlign.Start,
-            style = if (double) LocalTextStyle.current.merge(TextStyle(color = headInk))
-            else LocalTextStyle.current.merge(
-                TextStyle(brush = WTheme.wordmarkGradient, shadow = Shadow(Color(0xFFEC4899).copy(alpha = 0.25f), Offset.Zero, glow)),
-            ),
-            modifier = Modifier.weight(1f).drawWithContent { if (headFitted) drawContent() },
-            onTextLayout = { r ->
-                headOneLine = r.lineCount <= 1
-                if (r.hasVisualOverflow && headScale > 0.7f) headScale -= 0.05f else headFitted = true
-            },
+        // AR: the live lettering (purple → magenta, gold numbers, the star separator); the
+        // double-flawless gold day takes the celebration palette.
+        LiveHeadline(
+            headline,
+            if (double) HeadlinePalette.CELEBRATION else HeadlinePalette.HOME,
+            Modifier.weight(1f),
+            names = listOfNotNull(name?.takeIf { it.isNotBlank() }),
+            maxSize = 22.sp, minSize = 15.sp, sound = active,
         )
     }
 }

@@ -274,7 +274,8 @@ fun MomentTitle(
 ) {
     Box(modifier.fillMaxWidth(), contentAlignment = alignment) {
         Image(
-            painterResource(art.res),
+            // AQ2: decoded at about its shown width, cached across screens.
+            artPainter(art.res, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp * widthFraction),
             contentDescription = contentDescription,
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxWidth(widthFraction).heightIn(max = maxHeight).semantics { heading() },
@@ -306,7 +307,7 @@ enum class SceneArt(@DrawableRes val res: Int) {
 fun SceneImage(scene: SceneArt, modifier: Modifier = Modifier, height: Dp = 140.dp, maxWidthFraction: Float = 0.6f) {
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Image(
-            painterResource(scene.res),
+            artPainter(scene.res, maxOf(height * 1.6f, maxWidth * maxWidthFraction)),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier.heightIn(max = height).widthIn(max = maxWidth * maxWidthFraction).clearAndSetSemantics { },
@@ -471,7 +472,8 @@ fun FittedGameTitleArt(
     alignment: Alignment = Alignment.Center,
     heading: Boolean = true,
 ) {
-    val painter = painterResource(res)
+    // AQ2: the ~900 px title decoded once at about screen width and shared (mode switches re-use it).
+    val painter = artPainter(res, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp)
     val intrinsic = painter.intrinsicSize
     val ratio = if (intrinsic.isSpecified && intrinsic.width > 0f && intrinsic.height > 0f) intrinsic.height / intrinsic.width
         else GAME_TITLE_ART_FALLBACK_RATIO

@@ -60,6 +60,9 @@ struct WordociousApp: App {
                 // launch screen (cold start only; outside the theme rebuild).
                 // FINISH_SPEC §K1: in-app notices (pushes that arrive while the app is open).
                 .overlay(alignment: .top) { InAppNoticeOverlay() }
+                // FINISH_SPEC §AS6: the header's streak / shield / flawless popups,
+                // full-screen from the root (never clipped inside the header).
+                .overlay { HeaderPopupHost() }
                 .overlay { ColdStartIntroHost() }
                 .background { AchievementUnlockHost() } // FINISH_SPEC §V2: arms the unlock popups (own window).
                 .background { ProWelcomeHost() } // FINISH_SPEC §AP: arms Welcome to Pro (own window).

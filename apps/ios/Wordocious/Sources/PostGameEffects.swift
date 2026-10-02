@@ -227,7 +227,7 @@ struct VictoryOverlay: View {
             hostIn = true; tilesIn = true; shownPoints = target
             return
         }
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) { hostIn = true }
+        withAnimation(.spring(response: 0.36, dampingFraction: 0.6)) { hostIn = true }   // §AQ1: faster
         if !calm {
             withAnimation(.linear(duration: 24).repeatForever(autoreverses: false)) { raysTurn = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {

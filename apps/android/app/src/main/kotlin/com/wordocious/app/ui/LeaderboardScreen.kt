@@ -570,7 +570,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         // their height instead of leaving them pinned to the top.
         val lbListState = androidx.compose.foundation.lazy.rememberLazyListState()
         ScrollToTopOnReselect(lbListState) // AJ: a re-tap of Leaderboard scrolls to the top.
-        LazyColumn(state = lbListState, modifier = Modifier.fillMaxSize().padding(horizontal = LB_SIDE)) {
+        LazyColumn(
+            state = lbListState, modifier = Modifier.fillMaxSize().padding(horizontal = LB_SIDE),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
+        ) {
             // A6: the day title is the page headline — full width, edge to edge, on the wallpaper.
             item(key = "headline") {
                 Box(Modifier.padding(top = 4.dp, bottom = LB_CARD_GAP)) { LeaderboardHeadline(bleed = LB_SIDE) }
@@ -581,21 +584,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords)
                 Spacer(Modifier.height(LB_CARD_GAP))
             }
-            // §2.1 Play card for the selected game. The Sweep board has no single mode to
-            // play, so its card carries the ranking explanation.
-            item(key = "play") {
-                if (isSweep) {
-                    SweepInfoCard(sweepers = playerCount)
-                } else {
-                    ModeInfoCard(
-                        modeId = selectedMode, players = playerCount,
-                        // iOS: cached completions answer instantly; the rank confirms.
-                        played = completions[selectedMode] != null || userRank != null,
-                        onPlay = onPlay,
-                    )
-                }
-                Spacer(Modifier.height(LB_CARD_GAP))
-            }
+            // AS4 (founder 10-02: "the important info is halfway down"): headline · picker ·
+            // YOUR rank card · the compact play row · the standings · then the rest.
             // §2.3 / C2: ONE result card — crown + your rank (true total; shows even when you
             // sit outside the visible top 50), how you solved it, your points. For SWEEP this
             // is your daily-sweep rank.
@@ -613,11 +603,20 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     Spacer(Modifier.height(LB_CARD_GAP))
                 }
             }
-            // §2.2 Your board for this mode (the replay, collapsible), tinted, under the result.
-            if (!isSweep) {
-                item(key = "completed-$selectedMode") {
-                    com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
+            // §2.1 Play card for the selected game. The Sweep board has no single mode to
+            // play, so its card carries the ranking explanation.
+            item(key = "play") {
+                if (isSweep) {
+                    SweepInfoCard(sweepers = playerCount)
+                } else {
+                    ModeInfoCard(
+                        modeId = selectedMode, players = playerCount,
+                        // iOS: cached completions answer instantly; the rank confirms.
+                        played = completions[selectedMode] != null || userRank != null,
+                        onPlay = onPlay,
+                    )
                 }
+                Spacer(Modifier.height(LB_CARD_GAP))
             }
             // §2.4 TODAY'S BOARD: label + Everyone | Friends + the bare 3D share icon.
             item(key = "board-head") {
@@ -782,6 +781,12 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     }
                 }
             }
+            // §2.2 Your board for this mode (the replay, collapsible), tinted, under the result.
+            if (!isSweep) {
+                item(key = "completed-$selectedMode") {
+                    com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
+                }
+            }
             // §2.5 YESTERDAY'S WINNERS (collapsible) — per-mode top 3, or yesterday's
             // top sweepers when the Sweep tile is selected. One cream card: the caps
             // header (chevron + bare share) and, open, the striped rows under it.
@@ -942,42 +947,32 @@ private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) =
     SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, onChange)
 
 /**
- * The play card (FINISH_SPEC C2, mockup `.card` + `.play`): a tinted card in the game's
- * own accent with its top bar; the game's title art on the left with "N players today"
- * under it, and a MEDIUM candy pill on the right — VIEW BOARD (eye) once today's daily
- * is done (the route reconstructs the finished board), else PLAY. Never the old blob.
+ * The play row (FINISH_SPEC C2, compressed by AS4): ONE compact tinted row in the game's
+ * accent — the small game icon, one line ("N players today · daily only") and a SMALL candy
+ * pill: VIEW BOARD (eye) once today's daily is done (the route reconstructs the finished
+ * board), else PLAY.
  */
 @Composable
 private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: (com.wordocious.core.GameMode) -> Unit) {
     val card = modeCardForKey(modeId)
     val accent = card?.accent ?: Color(0xFF7C3AED)
-    LbTintedCard(accent, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp)) {
+    LbTintedCard(accent, bar = false, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 10.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                // ART_SPEC §10 / §14: the selected game's title art (lettering + host).
-                val titleArt = gameTitleArtResForKey(modeId)
-                if (titleArt != null) {
-                    FittedGameTitleArt(
-                        titleArt, card?.title ?: gameTitleLabelForKey(modeId),
-                        maxHeight = GAME_TITLE_ART_CARD_HEIGHT, alignment = Alignment.CenterStart, heading = false,
-                    )
-                } else Text(
-                    card?.title ?: modeTitleForKey(modeId), fontSize = 18.sp, fontWeight = FontWeight.Black, color = lbNameInk(),
-                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
-                Text(
-                    "$players player${if (players != 1) "s" else ""} today",
-                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(), maxLines = 1,
-                )
-                // Founder-approved clarity (iOS parity): this board ranks DAILY games only.
-                Text("Daily games only", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = lbSubInk(), maxLines = 1)
+            gameArtRes(card?.id ?: modeId)?.let { art ->
+                androidx.compose.foundation.Image(artPainter(art, 30.dp), null, Modifier.size(30.dp))
             }
+            // Founder-approved clarity (iOS parity): this board ranks DAILY games only.
+            Text(
+                "${card?.title ?: modeTitleForKey(modeId)} · $players player${if (players != 1) "s" else ""} today · daily only",
+                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(), maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            )
             card?.engineMode?.let { gm ->
                 CandyButton(
-                    text = if (played) "VIEW BOARD" else "PLAY",
+                    text = if (played) "VIEW" else "PLAY",
                     onClick = { onPlay(gm) },
                     color = CandyColor.PURPLE,
-                    size = CandySize.MEDIUM,
+                    size = CandySize.SMALL,
                     icon = if (played) CandyIcon.EYE else CandyIcon.PLAY,
                     contentDescription = if (played) "View your ${card.title} board" else "Play ${card.title}",
                 )
@@ -1034,6 +1029,12 @@ internal fun UserRankCard(
     solvedLine: String? = null,
 ) {
     val top = if (showTopPercent && total > 1) " · TOP ${maxOf(1, Math.round(rank.toDouble() / total * 100).toInt())}%" else ""
+    // AR: the dynamic rank headline in the live lettering (gold → amber, gold numbers).
+    androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    LiveHeadline(
+        rankHeadline(rank, friends, totalNoun), HeadlinePalette.LEADERBOARD,
+        Modifier.fillMaxWidth(), maxSize = 22.sp, minSize = 14.sp, maxLines = 1,
+    )
     LbResultCard(
         rank = rank,
         ofLine = (if (friends) "OF $total FRIENDS" else "OF $total $totalNoun") + top,
@@ -1045,6 +1046,14 @@ internal fun UserRankCard(
             { RankDeltaBadge(mode = mode, playType = playType, pageKey = pageKey, currentRank = rank) }
         } else null,
     )
+    }
+}
+
+/** AR the rank headline: "YOU'RE #3 TODAY", "YOU'RE #2 AMONG FRIENDS", else "YOU'RE #5". */
+internal fun rankHeadline(rank: Int, friends: Boolean, totalNoun: String = "TODAY"): String = when {
+    friends -> "YOU'RE #$rank AMONG FRIENDS"
+    totalNoun.equals("TODAY", ignoreCase = true) -> "YOU'RE #$rank TODAY"
+    else -> "YOU'RE #$rank"
 }
 
 /**

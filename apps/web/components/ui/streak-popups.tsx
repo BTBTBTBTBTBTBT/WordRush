@@ -1,13 +1,15 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, artSrc, poseArt, type PoseArtName } from '@/lib/art';
 import { softPill, softBackground } from '@/lib/soft-surface';
 import { WEEK_LETTERS, streakWeek } from '@/lib/streak-week';
 import { feedback } from '@/lib/sound-events';
+import { EMPTY_STREAK_SUMMARY, flawlessRows, sweepRows, type StreakSummary } from '@/lib/streak-summary';
 
 // The streak + shield popups (docs/FINISH_SPEC.md C5; mockup
 // finishing-touches.html): little celebrations, not plain bubbles. A colored
@@ -16,9 +18,10 @@ import { feedback } from '@/lib/sound-events';
 // streak, U the zen one guards the shields — A7: poses, not the header's
 // heroes); Current + Best in two tinted soft-number tiles; the streak popup
 // shows this week as seven day tiles; the shield popup a row of 3D shields
-// (the next one to earn faded). The page dims softly and the popup hangs just
-// under the header row that holds the tapped control. Escape or a tap outside
-// closes it.
+// (the next one to earn faded). AS6: the popup is portaled to <body> as a
+// full-screen overlay — the scrim covers the whole page and the card sits
+// centered (inside the header's clipped row it only shaded the strip). Escape
+// or a tap outside closes it.
 
 interface PopupShellProps {
   open: boolean;
@@ -47,19 +50,22 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
     ref.current?.focus();
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!open || !mounted) return null;
   const [hw, hh] = ART_SIZE[host];
-  return (
-    <>
-      {/* The page dims softly; a tap anywhere outside closes. */}
-      <div className="fixed inset-0 z-40 animate-fade-in" style={{ background: 'rgba(30, 15, 60, 0.28)' }} onClick={onClose} aria-hidden="true" />
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" style={{ paddingTop: 'max(16px, env(safe-area-inset-top))', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+      {/* The whole page dims; a tap anywhere outside closes. */}
+      <div className="absolute inset-0 animate-fade-in" style={{ background: 'rgba(30, 15, 60, 0.45)' }} onClick={onClose} aria-hidden="true" />
       <div
         ref={ref}
         role="dialog"
+        aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="page-pop absolute left-0 right-0 top-full mt-2 z-50 overflow-hidden animate-fade-in-scale outline-none"
-        style={{ borderRadius: 24, boxShadow: '0 18px 40px rgba(40, 15, 80, 0.35)', background: softBackground(accent, 0.08) }}
+        className="page-pop relative w-full max-w-sm overflow-y-auto animate-fade-in-scale outline-none"
+        style={{ maxHeight: '100%', borderRadius: 24, boxShadow: '0 18px 40px rgba(40, 15, 80, 0.35)', background: softBackground(accent, 0.08) }}
       >
         <div className="relative flex items-center gap-3" style={{ padding: '14px 16px 12px', paddingRight: 92, background: header }}>
           <Icon3D name={icon} size={58} style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))' }} />
@@ -79,7 +85,8 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
         </div>
         {children}
       </div>
-    </>
+    </div>,
+    document.body,
   );
 }
 
@@ -95,7 +102,7 @@ function StatTile({ value, label, accent, ink }: { value: number; label: string;
 
 const BLURB_STYLE: React.CSSProperties = { margin: 0, padding: '8px 16px 14px', fontSize: 13.5, fontWeight: 700, color: 'var(--color-text-secondary)', lineHeight: 1.45 };
 
-export function StreakPopup({ open, onClose, streak, best, today, playedToday }: {
+export function StreakPopup({ open, onClose, streak, best, today, playedToday, summary = EMPTY_STREAK_SUMMARY, shields = 0 }: {
   open: boolean;
   onClose: () => void;
   streak: number;
@@ -104,7 +111,12 @@ export function StreakPopup({ open, onClose, streak, best, today, playedToday }:
   today: string;
   /** A daily is already done today (the run includes today). */
   playedToday: boolean;
+  /** AS7: the sweep + flawless runs (the banner rows no longer show flames). */
+  summary?: StreakSummary;
+  shields?: number;
 }) {
+  const sweeps = sweepRows(summary);
+  const flawless = flawlessRows(summary);
   const week = streakWeek(today, streak, playedToday);
   const isBest = streak > 0 && streak >= best;
   return (
@@ -145,10 +157,81 @@ export function StreakPopup({ open, onClose, streak, best, today, playedToday }:
           </span>
         ))}
       </div>
-      <p style={BLURB_STYLE}>
+      <p style={{ ...BLURB_STYLE, paddingBottom: 6 }}>
         Play any daily puzzle each day to keep your streak going. Miss a day and it resets, unless a streak shield saves it.
       </p>
+
+      {/* AS7: every other streak, labeled chips with soft numbers. Sweeps in the regular style… */}
+      <SectionLabel color="#a2560c">Sweep streaks</SectionLabel>
+      <div className="grid grid-cols-2 gap-2" style={{ padding: '0 14px 4px' }}>
+        {sweeps.map((r) => (
+          <StreakChip key={r.key} icon={<Icon3D name="flame" size={26} />} label={`${r.label} sweep`} current={r.current} best={r.best} accent="#7c3aed" ink="#5b21b6" />
+        ))}
+      </div>
+
+      {/* …flawless runs in gold with the flawless star; a row shows once that run has ever happened. */}
+      {flawless.length > 0 && (
+        <>
+          <SectionLabel color="#92400e">Flawless streaks</SectionLabel>
+          <div className="grid gap-2" style={{ padding: '0 14px 4px', gridTemplateColumns: `repeat(${flawless.length}, minmax(0, 1fr))` }}>
+            {flawless.map((r) => (
+              <StreakChip
+                key={r.key}
+                gold
+                icon={<Image src={artSrc('art-scene-flawless-star')} alt="" aria-hidden="true" width={28} height={32} sizes="28px" style={{ width: 26, height: 'auto' }} />}
+                label={`${r.label} flawless`}
+                current={r.current}
+                best={r.best}
+                accent="#f5a524"
+                ink="#92400e"
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Shields: the count + how they work. */}
+      <SectionLabel color="#5b21b6">Streak shields</SectionLabel>
+      <div className="flex items-center gap-2.5" style={{ ...softPill('#7c3aed', { radius: 14 }), margin: '0 14px', padding: '8px 12px' }}>
+        <Icon3D name="shield" size={30} />
+        <SoftNum size={22} className="soft-num-auto">{shields}</SoftNum>
+        <span className="font-extrabold leading-snug" style={{ fontSize: 11.5, color: 'var(--color-text-secondary)' }}>
+          A shield saves your streak on a missed day. Earn one at every 7-day milestone; Pro gets 4 each billing period.
+        </span>
+      </div>
+      <div style={{ height: 14 }} />
     </PopupShell>
+  );
+}
+
+function SectionLabel({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <div className="font-black uppercase tint-ink" style={{ fontSize: 10.5, letterSpacing: '0.12em', color, padding: '8px 18px 4px' }}>{children}</div>
+  );
+}
+
+/** A labeled streak chip: icon, label, the current run in soft numbers, best under it. */
+function StreakChip({ icon, label, current, best, accent, ink, gold = false }: {
+  icon: React.ReactNode; label: string; current: number; best: number | null; accent: string; ink: string; gold?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 min-w-0"
+      style={{
+        ...softPill(accent, { radius: 14 }),
+        padding: '8px 10px',
+        ...(gold ? { background: 'linear-gradient(180deg, #fff6d6, #ffe7a3)', boxShadow: 'inset 0 0 0 1.5px #f5c542, 0 2px 0 #e0a92a' } : null),
+      }}
+    >
+      <span className="shrink-0 grid place-items-center" style={{ width: 30 }}>{icon}</span>
+      <div className="min-w-0">
+        <div className="font-black uppercase truncate tint-ink" style={{ fontSize: 9.5, letterSpacing: '0.08em', color: ink }}>{label}</div>
+        <div className="flex items-baseline gap-1.5">
+          <SoftNum size={20} className="soft-num-auto">{current}</SoftNum>
+          {best != null && <span className="font-extrabold" style={{ fontSize: 10.5, color: ink }}>best {best}</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 

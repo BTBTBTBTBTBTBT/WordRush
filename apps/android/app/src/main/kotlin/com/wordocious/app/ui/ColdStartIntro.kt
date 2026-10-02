@@ -34,9 +34,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-// FINISH_SPEC F2: the cold-start intro. The OS launch screen (Android 12+ SplashScreen,
-// res/values-v31/themes.xml) shows the W mascot centered on the Home wallpaper's
-// lilac; this overlay picks up from that exact W (cold start only, ≤ 1.6 s, tap to
+// FINISH_SPEC F2: the cold-start intro. AQ3: the OS launch screen (Android 12+ SplashScreen,
+// res/values-v31/themes.xml) is the bare lilac (no icon) and this overlay brings in the only W
+// (cold start only, ≤ 1.6 s, tap to
 // skip): W bounces once, the other nine cast heroes pop in beside it one after another
 // until the row spells WORDOCIOUS, and the whole row glides up and shrinks into the
 // Home header's cast row (CastHeaderAnchor) while Home fades in underneath. Reduce

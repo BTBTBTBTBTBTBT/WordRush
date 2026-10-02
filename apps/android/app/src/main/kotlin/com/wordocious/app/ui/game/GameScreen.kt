@@ -81,20 +81,6 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
     override fun <T : ViewModel> create(modelClass: Class<T>): T = GameViewModel(seed, mode) as T
 }
 
-/**
- * B3 the keyboard's colors trail the board: [value] is shown [waitMs] after it changes
- * (the reveal's length), and at once on first composition.
- */
-@Composable
-internal fun <T> rememberAfterReveal(value: T, waitMs: Int): T {
-    var shown by remember { mutableStateOf(value) }
-    LaunchedEffect(value) {
-        if (waitMs > 0 && shown != value) kotlinx.coroutines.delay(waitMs.toLong())
-        shown = value
-    }
-    return shown
-}
-
 /** Format elapsed seconds as M:SS for the game header. */
 private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
 
@@ -370,11 +356,24 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         }
     }
     val perBoardStatesNow = if (useQuadrant) remember(state) { computePerBoardLetterStates(state.boards) } else null
-    // B3: keys take their new colors only after the last tile of the reveal lands, so the
-    // reveal stays a surprise (Reduce Motion: at once).
-    val revealWait = if (WTheme.reducedMotion) 0 else TileMotion.revealMs(state.boards.firstOrNull()?.solution?.length ?: 5)
-    val keyLetterStates = rememberAfterReveal(letterStates, revealWait)
-    val perBoardStates = perBoardStatesNow?.let { rememberAfterReveal(it, revealWait) }
+    // AQ1: each key takes its color as ITS tile lands (not after the whole row); a fast next
+    // guess snaps the previous row in at once (Reduce Motion: at once).
+    val reducedKeys = WTheme.reducedMotion
+    val revealKey = remember(state) { state.boards.sumOf { it.guesses.size } }
+    val newestRows = remember(state) { KeyReveal.newestRows(state.boards, isSequential) }
+    val revealWidth = newestRows.maxOfOrNull { it.size } ?: 0
+    val keyLetterStates = rememberTileByTile(letterStates, revealWidth, revealKey, reducedKeys) { base, n ->
+        KeyReveal.during(base, letterStates, newestRows, n)
+    }
+    val perBoardStates = perBoardStatesNow?.let { now ->
+        val boardRows = remember(state) {
+            val newest = state.boards.maxOfOrNull { it.guesses.size } ?: 0
+            state.boards.map { b -> if (newest > 0 && b.guesses.size == newest) KeyReveal.newestRows(listOf(b), false) else emptyList() }
+        }
+        rememberTileByTile(now, revealWidth, revealKey, reducedKeys) { base, n ->
+            now.mapIndexed { i, target -> KeyReveal.during(base.getOrElse(i) { emptyMap() }, target, boardRows.getOrElse(i) { emptyList() }, n) }
+        }
+    }
     // ALL multi-board modes (incl. Sequence) apply each guess to every
     // still-PLAYING board — web sequence-game dispatches applyToAll:true and
     // iOS matches. The old !isSequential exception routed guesses to
@@ -1067,6 +1066,10 @@ internal fun SingleBoard(
     // B3: the not-a-word clear keeps a ghost of the rejected letters while they go.
     val (shownGuess, clearOf) = rememberRejectClear(currentGuess, isInvalid, wordLen)
     val clearing = shownGuess != currentGuess
+    // AQ1: each submitted row's evaluation once per board change (not on every keystroke).
+    val rowEvals = remember(board) {
+        board.guesses.indices.map { r -> board.hintEvaluations?.get(r.toString()) ?: evaluateGuess(board.solution, board.guesses[r]) }
+    }
 
     val accent = trayAccent ?: com.wordocious.app.ui.LocalGameTint.current ?: Color(0xFF7C3AED)
     val trayState = when (board.status) {
@@ -1102,7 +1105,7 @@ internal fun SingleBoard(
                 // ghost instead of being re-evaluated into solid ABSENT tiles, and so
                 // a revealed letter lands in its real slot.
                 val hintEval = board.hintEvaluations?.get(rowIdx.toString())
-                val eval = hintEval ?: evaluateGuess(board.solution, board.guesses[rowIdx])
+                val eval = rowEvals[rowIdx]
                 val isLastSubmitted = animateLastRow && rowIdx == lastSubmittedRow && hintEval == null
                 val isFreshHint = animateLastRow && rowIdx == lastSubmittedRow && hintEval != null
                 val celebrate = when {

@@ -39,16 +39,35 @@ class BoardPolishTest {
     }
 
     @Test
-    fun not_a_word_holds_one_second_then_clears_ninety_ms_apart() {
-        assertEquals(1000, TileMotion.BAD_MS)
-        assertEquals(90, TileMotion.CLEAR_STAGGER_MS)
+    fun not_a_word_holds_0_7_seconds_then_clears_sixty_ms_apart() {
+        assertEquals(700, TileMotion.BAD_MS)
+        assertEquals(60, TileMotion.CLEAR_STAGGER_MS)
     }
 }
 
 class RejectHoldTest {
     @Test
-    fun reject_hold_is_a_second_unless_reduced() {
-        assertEquals(1000, com.wordocious.app.rejectHoldMs(false))
+    fun reject_hold_is_0_7_seconds_unless_reduced() {
+        assertEquals(700, com.wordocious.app.rejectHoldMs(false))
         assertEquals(600, com.wordocious.app.rejectHoldMs(true))
+    }
+}
+
+/** AQ1: the not-a-word reject never blocks typing. */
+class TypeDuringRejectTest {
+    @Test
+    fun appends_while_there_is_room() {
+        assertEquals("CRA", com.wordocious.app.entryAfterType("CR", 'a', 5, null))
+    }
+
+    @Test
+    fun a_held_rejected_row_is_replaced_by_the_fresh_letter() {
+        assertEquals("S", com.wordocious.app.entryAfterType("XYZZY", 's', 5, "XYZZY"))
+    }
+
+    @Test
+    fun a_full_row_that_is_not_a_held_reject_ignores_the_key() {
+        assertEquals(null, com.wordocious.app.entryAfterType("CRANE", 's', 5, null))
+        assertEquals(null, com.wordocious.app.entryAfterType("CRANE", 's', 5, "XYZZY"))
     }
 }

@@ -16,7 +16,7 @@ export { tileLook, type TileLook } from '@/lib/tile-motion';
 export interface LetterTileProps {
   letter?: string;
   look: TileLook;
-  /** Reveal this tile: it turns over (720 ms) after `index × 300 ms`, its color swaps at the half, then a glow blooms. */
+  /** Reveal this tile: it turns over (REVEAL.flipMs) after `index × REVEAL.stagger`, its color swaps at the half, then a glow blooms. */
   flipIndex?: number;
   /** Swell in (type a letter / place a number). Defaults to on for typed tiles. */
   pop?: boolean;
@@ -24,7 +24,7 @@ export interface LetterTileProps {
   bad?: boolean;
   /** Position from the right end for the right-to-left clear (0 = rightmost). */
   outIndex?: number;
-  /** Win hop wave: this tile's place in the row (hops after the reveal, 90 ms apart). */
+  /** Win hop wave: this tile's place in the row (hops after the reveal, REVEAL.hopStagger apart). */
   hopIndex?: number;
   /** Tiles in the row (sets when the hop wave starts). */
   rowLength?: number;

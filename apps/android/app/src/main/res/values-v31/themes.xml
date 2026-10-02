@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- FINISH_SPEC F2: the Android 12+ SplashScreen API — the Home wallpaper lilac
-         with the app icon's W mascot centered (no icon circle). The in-app cold-start
-         intro (ColdStartIntro) starts from the same W in the same spot. -->
+    <!-- FINISH_SPEC F2 / AQ3: the Android 12+ SplashScreen API — just the Home wallpaper
+         lilac, NO icon (a transparent drawable; without one the system draws the launcher
+         icon). The in-app cold-start intro (ColdStartIntro) brings in the only W, so the
+         launch reads as one continuous start. A warm start shows the plain lilac, then the
+         app (the intro never replays: ColdStart.played). -->
     <style name="Theme.Wordocious" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/splash_lilac</item>
         <item name="android:statusBarColor">@color/brand_bg</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowSplashScreenBackground">@color/splash_lilac</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_w</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_lilac</item>
     </style>
 </resources>

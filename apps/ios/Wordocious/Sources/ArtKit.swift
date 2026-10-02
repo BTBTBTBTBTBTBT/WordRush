@@ -101,6 +101,8 @@ enum ArtTitleName: String, CaseIterable {
     case guides, strategy, words, faq, privacy, terms
     /// FINISH_SPEC §O1: the lettering-only VS BATTLE Home section title.
     case vsbattle
+    /// FINISH_SPEC §AS1: the MENU sheet title (art-title-menu; LiveHeadline until it ships).
+    case menu
 
     var assetName: String { "art-title-\(rawValue)" }
 
@@ -460,6 +462,9 @@ private struct TitleArtMotion: ViewModifier {
     @State private var opacity: Double
     @State private var settled: Bool
     @State private var start = Date()
+    /// §AQ2: the idle float pauses while a page scrolls / off screen.
+    @ObservedObject private var scroll = ScrollMotion.shared
+    @State private var onScreen = true
 
     init(float: Bool) {
         self.float = float
@@ -475,9 +480,10 @@ private struct TitleArtMotion: ViewModifier {
         if still {
             content
         } else if settled && float && !Motion.calm(envReduceMotion) {   // §AD: no idle float in Low Power Mode
-            TimelineView(.animation(minimumInterval: 1 / 20)) { ctx in
+            TimelineView(.animation(minimumInterval: 1 / 20, paused: scroll.scrolling || !onScreen)) { ctx in
                 content.offset(y: Self.floatOffset(ctx.date.timeIntervalSince(start)))
             }
+            .tracksScrollVisibility($onScreen)
         } else {
             content
                 .scaleEffect(scale)

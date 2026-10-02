@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveHeadline } from '@/components/ui/live-headline';
 import { GauntletStageConfig } from '@wordle-duel/core';
 import { useCallback, useEffect, useRef } from 'react';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -92,11 +93,13 @@ export function StageTransition({ completedStage, nextStage, cleared, totalStage
           <div className="text-[12px] font-black uppercase" style={{ color: ink, letterSpacing: 1.4 }}>
             Stage complete · {completedStage.name}
           </div>
-          {nextStage ? (
-            <SoftNum size={26} as="div">STAGE {done + 1} OF {totalStages}</SoftNum>
-          ) : (
-            <SoftNum size={26} as="div">ALL {totalStages} CLEARED</SoftNum>
-          )}
+          {/* FINISH_SPEC AR: the stage line in live lettering (gold numbers; all cleared celebrates). */}
+          <LiveHeadline
+            text={nextStage ? `STAGE ${done + 1} OF ${totalStages}` : `ALL ${totalStages} CLEARED`}
+            palette={nextStage ? 'leaderboard' : 'celebrate'}
+            size={26}
+            level={2}
+          />
           {/* The 5-dot progress row: cleared stages amber with a W, the next one pulsing. */}
           <div className="flex items-center justify-center gap-2" aria-label={`${done} of ${totalStages} stages cleared`}>
             {dots.map((d, i) => (

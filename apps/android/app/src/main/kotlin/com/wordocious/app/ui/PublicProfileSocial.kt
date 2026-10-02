@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -154,16 +155,17 @@ fun PresenceLine(lastSeenAt: String?) {
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         val dotColor = if (live) Green else WTheme.textMuted
-        val glowAlpha = if (live && !WTheme.reducedMotion) {
+        // AQ2: the glow is read in the draw pass (no per-frame recomposition); still while scrolling.
+        val glowAlpha: androidx.compose.runtime.State<Float> = if (live && !WTheme.reducedMotion && !ambientMotionPaused()) {
             val transition = rememberInfiniteTransition(label = "presence")
             transition.animateFloat(
                 initialValue = 0.25f, targetValue = 0.05f,
                 animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing), RepeatMode.Reverse),
                 label = "presenceGlow",
-            ).value
-        } else if (live) 0.18f else 0f
+            )
+        } else androidx.compose.runtime.remember(live) { androidx.compose.runtime.mutableFloatStateOf(if (live) 0.18f else 0f) }
         Box(contentAlignment = Alignment.Center) {
-            if (glowAlpha > 0f) Box(Modifier.size(13.dp).clip(CircleShape).background(Green.copy(alpha = glowAlpha)))
+            if (live) Box(Modifier.size(13.dp).drawBehind { drawCircle(Green.copy(alpha = glowAlpha.value)) })
             Box(Modifier.size(7.dp).clip(CircleShape).background(dotColor))
         }
         Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)

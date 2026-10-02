@@ -128,6 +128,9 @@ struct MascotView: View {
     @State private var popAngle: Double
     @State private var start = Date()
     @ObservedObject private var power = PowerMode.shared
+    /// §AQ2: the idle bob / wave pauses while a page scrolls and when scrolled off screen.
+    @ObservedObject private var scroll = ScrollMotion.shared
+    @State private var onScreen = true
 
     init(_ id: MascotID, size: CGFloat, motion: MascotMotion = .none) {
         self.id = id
@@ -141,7 +144,7 @@ struct MascotView: View {
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
 
     private var image: some View {
-        Image(id.assetName)
+        ArtThumbs.image(id.assetName, points: size)   // §AQ2: drawn at its display size
             .resizable()
             .interpolation(.high)
             .scaledToFit()
@@ -166,11 +169,11 @@ struct MascotView: View {
                         .rotationEffect(.degrees(popAngle), anchor: .bottom)
                         .onAppear(perform: runPop)
                 case .bob:
-                    TimelineView(.animation(minimumInterval: 1 / 30)) { ctx in
+                    TimelineView(.animation(minimumInterval: 1 / 30, paused: idlePaused)) { ctx in
                         image.offset(y: Self.bobOffset(ctx.date.timeIntervalSince(start)))
                     }
                 case .wave:
-                    TimelineView(.animation(minimumInterval: 1 / 30)) { ctx in
+                    TimelineView(.animation(minimumInterval: 1 / 30, paused: idlePaused)) { ctx in
                         let w = Self.wave(ctx.date.timeIntervalSince(start))
                         image
                             .offset(y: w.y)
@@ -180,9 +183,12 @@ struct MascotView: View {
             }
         }
         .frame(width: size, height: size)
+        .tracksScrollVisibility($onScreen)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
+
+    private var idlePaused: Bool { scroll.scrolling || !onScreen }
 
     private func runPop() {
         guard popScale != 1 || popAngle != 0 else { return }
@@ -225,6 +231,9 @@ struct CastRow: View {
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     @State private var start = Date()
     @State private var done = false
+    /// §AQ2: the endless wave pauses while a page scrolls / off screen.
+    @ObservedObject private var scroll = ScrollMotion.shared
+    @State private var onScreen = true
 
     private static let hopDuration: Double = 0.4
 
@@ -233,7 +242,7 @@ struct CastRow: View {
             if Mascots.reduceMotion(envReduceMotion) || motion == .none || done {
                 row { _ in 0 }
             } else {
-                TimelineView(.animation(minimumInterval: 1 / 30)) { ctx in
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: repeats == nil && (scroll.scrolling || !onScreen))) { ctx in
                     let t = ctx.date.timeIntervalSince(start)
                     row { i in offset(i, t) }
                 }
@@ -245,6 +254,7 @@ struct CastRow: View {
                 }
             }
         }
+        .tracksScrollVisibility($onScreen)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -254,7 +264,7 @@ struct CastRow: View {
             ForEach(Array(Mascots.cast.enumerated()), id: \.element) { i, m in
                 ZStack(alignment: .top) {
                     // FINISH_SPEC §X: the season's skins (Halloween) in the cast loader.
-                    Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
+                    ArtThumbs.image(CastSkin.assetName(for: m), points: size).resizable().interpolation(.high).scaledToFit()
                         .frame(width: size, height: size)
                     if crownOnW && m == .w {
                         // Flawless: W wears the gold crown from the icon set (HEADER_SPEC §2).

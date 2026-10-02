@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC AQ3: the Android 12+ system splash shows NO icon (only the lilac), so the
+     cold-start intro (ColdStartIntro) owns the one and only W — never an icon-then-W double.
+     A transparent 288 dp box (the SplashScreen icon slot). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <size android:width="288dp" android:height="288dp" />
+</shape>

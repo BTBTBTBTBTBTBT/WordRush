@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveHeadline } from '@/components/ui/live-headline';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -47,8 +48,10 @@ function StripChip({ accent, icon, value, label }: { accent: string; icon: React
  * R2: ONE line — the W / L badge · guesses · time · points — compact pills
  * with soft numbers. `srText` keeps the old result sentence for screen readers.
  */
-export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points, srText, className = '' }: {
+export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points, srText, headline, className = '' }: {
   won: boolean;
+  /** FINISH_SPEC AR: the strip's headline in live lettering (default SOLVED! / NOT TODAY). */
+  headline?: string;
   guesses?: ReactNode;
   guessLabel?: string;
   /** Already formatted (0:48). */
@@ -58,12 +61,15 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
   className?: string;
 }) {
   return (
-    <div className={`flex items-center justify-center gap-1.5 flex-nowrap overflow-x-auto ${className}`} style={{ scrollbarWidth: 'none' }}>
+    <div className={`flex flex-col items-center gap-0.5 ${className}`}>
+    <LiveHeadline text={headline ?? (won ? 'SOLVED!' : 'NOT TODAY')} palette={won ? 'celebrate' : 'menu'} size={20} level={2} />
+    <div className="w-full flex items-center justify-center gap-1.5 flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
       <span className="sr-only">{srText}</span>
       <Icon3D name={won ? 'badge-w' : 'badge-l'} size={24} label={won ? 'Won' : 'Lost'} />
       {guesses != null && <StripChip accent="#7c3aed" icon={<Icon3D name="badge-check" size={18} />} value={guesses} label={guessLabel} />}
       {time && <StripChip accent="#2563eb" icon={<ClockGlyph size={17} />} value={time} label="time" />}
       {points != null && <StripChip accent="#f5a524" icon={<Icon3D name="trophy" size={17} />} value={Math.round(points).toLocaleString()} label="pts" />}
+    </div>
     </div>
   );
 }

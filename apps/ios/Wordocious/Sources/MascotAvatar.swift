@@ -57,6 +57,12 @@ struct MascotAvatar: View {
     var alwaysLight: Bool = false
 
     @Environment(\.displayScale) private var displayScale
+    #if canImport(UIKit)
+    /// §AQ2: the composed bitmap once it's rendered — the row swaps to it right
+    /// away (before, a visible row kept the live multi-layer composition until it
+    /// was rebuilt, so lists scrolled the expensive version).
+    @State private var rendered: (key: String, image: UIImage)?
+    #endif
 
     init(config: AvatarConfig, initial: String, size: CGFloat = 40, cached: Bool = true, alwaysLight: Bool = false) {
         self.config = config
@@ -73,13 +79,13 @@ struct MascotAvatar: View {
             #if canImport(UIKit)
             let useCache = cached && s <= 96
             let key = "\(config.cacheKey)|\(initial)|\(Int(s * 4))|\(dark ? 1 : 0)|\(Int(displayScale))"
-            if useCache, let img = MascotImageCache.image(key) {
+            if useCache, let img = rendered?.key == key ? rendered?.image : MascotImageCache.image(key) {
                 Image(uiImage: img).resizable().interpolation(.high).frame(width: s, height: s)
             } else {
                 MascotComposition(config: config, initial: initial, size: s, dark: dark)
                     .onAppear {
                         guard useCache else { return }
-                        MascotImageCache.store(key, scale: displayScale) {
+                        MascotImageCache.store(key, scale: displayScale, done: { img in rendered = (key, img) }) {
                             MascotComposition(config: config, initial: initial, size: s, dark: dark)
                         }
                     }
@@ -107,12 +113,17 @@ enum MascotImageCache {
 
     private static var pending: [(key: String, render: () -> UIImage?)] = []
     private static var queued: Set<String> = []
+    private static var waiters: [String: [(UIImage) -> Void]] = [:]
     private static var draining = false
 
     /// Queue a composition to be rendered into the cache. Renders run a few per
-    /// main-loop turn, so a long list appearing at once never hitches.
-    static func store<V: View>(_ key: String, scale: CGFloat, @ViewBuilder _ content: () -> V) {
-        guard cache.object(forKey: key as NSString) == nil, !queued.contains(key) else { return }
+    /// main-loop turn, so a long list appearing at once never hitches. `done` hands
+    /// the bitmap back so the waiting view swaps to it at once.
+    static func store<V: View>(_ key: String, scale: CGFloat, done: ((UIImage) -> Void)? = nil,
+                               @ViewBuilder _ content: () -> V) {
+        if let hit = cache.object(forKey: key as NSString) { done?(hit); return }
+        if let done { waiters[key, default: []].append(done) }
+        guard !queued.contains(key) else { return }
         let view = content()
         let s = max(1, scale)
         queued.insert(key)
@@ -133,8 +144,11 @@ enum MascotImageCache {
             let batch = pending.prefix(4)
             pending.removeFirst(batch.count)
             for job in batch {
-                if let img = job.render() { cache.setObject(img, forKey: job.key as NSString) }
+                let img = job.render()
+                if let img { cache.setObject(img, forKey: job.key as NSString) }
                 queued.remove(job.key)
+                let ws = waiters.removeValue(forKey: job.key) ?? []
+                if let img { ws.forEach { $0(img) } }
             }
             draining = false
             if !pending.isEmpty { scheduleDrain() }

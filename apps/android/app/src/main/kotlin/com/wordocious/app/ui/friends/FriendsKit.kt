@@ -212,7 +212,7 @@ fun FriendlyGameIcon(kind: FriendlyKind, size: Dp, modifier: Modifier = Modifier
 @Composable
 fun FriendlyGameGlyph(kind: FriendlyKind, size: Dp) {
     Image(
-        painterResource(com.wordocious.app.ui.pocketArtRes(kind)), contentDescription = null,
+        com.wordocious.app.ui.artPainter(com.wordocious.app.ui.pocketArtRes(kind), size), contentDescription = null,
         modifier = Modifier.size(size).clearAndSetSemantics { },
     )
 }
@@ -234,11 +234,12 @@ fun FriendFace(
     /** The pulsing green ring around an online face (off = just the green dot, C4 banner). */
     presenceRing: Boolean = true,
 ) {
-    val pulse = if (online && presenceRing && !WTheme.reducedMotion) {
+    // AQ2: the pulse is read in the draw pass only (no per-frame recomposition of the row),
+    // and holds still while the page scrolls or is hidden.
+    val pulseState: androidx.compose.runtime.State<Float> = if (online && presenceRing && !WTheme.reducedMotion && !com.wordocious.app.ui.ambientMotionPaused()) {
         val t = rememberInfiniteTransition(label = "onNowPulse")
-        val a by t.animateFloat(0.25f, 0.7f, infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "a")
-        a
-    } else 0.45f
+        t.animateFloat(0.25f, 0.7f, infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "a")
+    } else androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(0.45f) }
     // AH/AN: a worn character or saved mascot beats the photo.
     val worn = com.wordocious.app.data.MascotAvatars.wearsMascot(name)
     val url = avatarUrl?.takeIf { it.isNotBlank() && !worn }
@@ -250,7 +251,7 @@ fun FriendFace(
             val grow = 3.dp.toPx()
             // AN6: photo and mascot are both rounded squares, so the glow is too.
             drawRoundRect(
-                FriendsPink.green.copy(alpha = pulse * 0.45f),
+                FriendsPink.green.copy(alpha = pulseState.value * 0.45f),
                 topLeft = androidx.compose.ui.geometry.Offset(-grow, -grow),
                 size = androidx.compose.ui.geometry.Size(this.size.width + 2 * grow, this.size.height + 2 * grow),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(this.size.minDimension * 0.22f + grow),

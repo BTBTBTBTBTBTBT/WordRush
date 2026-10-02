@@ -206,7 +206,7 @@ fun ModeGlyph(card: ModeCard, tint: Color, box: Dp) {
     val art = gameArtRes(card.id)
     if (art != null) {
         androidx.compose.foundation.Image(
-            painterResource(art), contentDescription = null,
+            com.wordocious.app.ui.artPainter(art, box * 0.82f), contentDescription = null, // AQ2: ~900 px art decoded at chip size
             colorFilter = if (tint == Color.White) androidx.compose.ui.graphics.ColorFilter.tint(Color.White) else null,
             modifier = Modifier.size(box * 0.82f),
         )

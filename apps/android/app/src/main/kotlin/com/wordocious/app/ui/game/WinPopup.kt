@@ -339,7 +339,8 @@ fun WinPopupFrame(
             feedbackView,
         )
     }
-    val dur = if (still) 0 else 300
+    // AQ1: the popup springs in faster (was 300 ms).
+    val dur = if (still) 0 else 200
     val scale by animateFloatAsState(if (shown) 1f else 0.8f, tween(dur, easing = EaseOut), label = "winScale")
     val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(dur, easing = EaseOut), label = "winAlpha")
     val host = remember(won, hostKey) {
@@ -460,12 +461,12 @@ private fun StageFront(host: MascotId, won: Boolean, accent: Color, modifier: Mo
     var landed by remember { mutableStateOf(still) }
     LaunchedEffect(still) {
         if (still) { pop.snapTo(1f); landed = true; return@LaunchedEffect }
-        delay(120)
+        delay(60) // AQ1: quicker host spring (was 120 + 560 ms)
         pop.animateTo(1f, keyframes {
-            durationMillis = 560
+            durationMillis = 400
             0.5f at 0 using FastOutSlowInEasing
-            1.06f at 360 using FastOutSlowInEasing
-            1f at 560
+            1.06f at 260 using FastOutSlowInEasing
+            1f at 400
         })
         landed = true
     }
@@ -642,7 +643,7 @@ fun WinStatChip(stat: WinStat, accent: Color, modifier: Modifier = Modifier) {
     val sparkle = remember(stat.value) { Animatable(0f) }
     LaunchedEffect(stat.value, counting) {
         if (!counting) return@LaunchedEffect
-        delay(350)
+        delay(200)
         // Spec U: the points count-up ticks as the number climbs (throttled to ≤ 12/s).
         val ticks = launch {
             androidx.compose.runtime.snapshotFlow { WinPopupMath.countUpAt(target ?: 0, elapsed.value.toLong()) }

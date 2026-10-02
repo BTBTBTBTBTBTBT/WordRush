@@ -64,6 +64,8 @@ export function ProAvatarDecor({ size, radius }: { size: number; radius?: number
         src={badgeSrc('pro-crown-sprite')}
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         width={d.crown.size}
         height={d.crown.size}
         draggable={false}

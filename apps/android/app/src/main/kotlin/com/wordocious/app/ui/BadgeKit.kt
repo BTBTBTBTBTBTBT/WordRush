@@ -319,7 +319,7 @@ object BadgeMoments {
 @Composable
 fun TierBadge(level: Int, size: Dp, modifier: Modifier = Modifier, contentDescription: String? = null) {
     Image(
-        painterResource(BadgeArt.level(levelTier(level))),
+        artPainter(BadgeArt.level(levelTier(level)), size),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
         modifier = modifier.size(size),
@@ -370,7 +370,7 @@ fun LevelBadge(
 @Composable
 fun ProMark(size: Dp = 20.dp, modifier: Modifier = Modifier) {
     Image(
-        painterResource(BadgeArt.PRO),
+        artPainter(BadgeArt.PRO, size),
         contentDescription = "Pro member",
         contentScale = ContentScale.Fit,
         modifier = modifier.size(size),
@@ -403,7 +403,7 @@ fun AchievementBadge(icon: String?, size: Dp, unlocked: Boolean, modifier: Modif
             )
         }
         Image(
-            painterResource(BadgeArt.achievement(icon)),
+            artPainter(BadgeArt.achievement(icon), size),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             colorFilter = if (unlocked) null else GRAYSCALE,

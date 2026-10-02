@@ -198,7 +198,7 @@ export function BotAvatar({ src, size = 36, ring, bg, accent = VS_ACCENT, faded 
       style={{ width: size, height: size, background: bg ?? `radial-gradient(circle at 50% 35%, #ffffff, ${softMix(accent, 0.22)})`, boxShadow: ring ?? `inset 0 0 0 1.5px ${alphaHex(accent, 0.3)}`, opacity: faded ? 0.5 : 1, filter: faded ? 'grayscale(0.6)' : undefined }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" aria-hidden="true" width={Math.round(size * 0.96)} height={Math.round(size * 0.96)} draggable={false} style={{ width: size * 0.96, height: size * 0.96, objectFit: 'contain', marginTop: size * 0.06 }} />
+      <img src={src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={Math.round(size * 0.96)} height={Math.round(size * 0.96)} draggable={false} style={{ width: size * 0.96, height: size * 0.96, objectFit: 'contain', marginTop: size * 0.06 }} />
     </span>
   );
 }
@@ -211,7 +211,7 @@ export function BotPoseAvatar({ id, pose = 'ready', accent, size = 36, ring, fad
 /** A bot's full character in a pose, unframed (intro, results, the Bot of the Day card). Decorative. */
 export function BotFigure({ id, pose = 'ready', size = 96, className = '', style }: { id: string; pose?: BotPose; size?: number; className?: string; style?: React.CSSProperties }) {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={botArt(id, pose)} alt="" aria-hidden="true" width={Math.round(size)} height={Math.round(size)} draggable={false} className={`shrink-0 select-none ${className}`} style={{ width: size, height: size, objectFit: 'contain', filter: 'drop-shadow(0 6px 10px rgba(59,26,120,0.18))', ...style }} />;
+  return <img src={botArt(id, pose)} alt="" aria-hidden="true" decoding="async" width={Math.round(size)} height={Math.round(size)} draggable={false} className={`shrink-0 select-none ${className}`} style={{ width: size, height: size, objectFit: 'contain', filter: 'drop-shadow(0 6px 10px rgba(59,26,120,0.18))', ...style }} />;
 }
 
 /** A bot's line in its own voice: a tinted speech bubble pointing at the character (kind, never mean). */

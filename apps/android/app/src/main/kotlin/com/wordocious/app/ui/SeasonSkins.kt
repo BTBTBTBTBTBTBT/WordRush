@@ -147,7 +147,7 @@ fun HalloweenPropSlot(name: String, size: Dp, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val res = remember(name) { SeasonSkins.propRes(context, name) }
     if (res == 0) return
-    Image(painterResource(res), null, modifier.size(size).clearAndSetSemantics { }, contentScale = ContentScale.Fit)
+    Image(artPainter(res, size), null, modifier.size(size).clearAndSetSemantics { }, contentScale = ContentScale.Fit)
 }
 
 /**
@@ -192,7 +192,7 @@ fun SeasonalCastLoader(label: String?, modifier: Modifier = Modifier, tips: Bool
                         }
                     },
                 ) {
-                    Image(painterResource(SeasonSkins.fullRes(id, season)), null, Modifier.size(22.dp))
+                    Image(artPainter(SeasonSkins.fullRes(id, season), 22.dp), null, Modifier.size(22.dp))
                 }
             }
         }

@@ -122,7 +122,8 @@ struct HomeBannerView: View {
                     // §Z: Unlimited keeps the slot — U in her loop fills it instead.
                     .overlay {
                         if !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
-                            Image("art-scene-unlimited-loop").resizable().interpolation(.high).scaledToFit()
+                            ArtThumbs.image("art-scene-unlimited-loop", points: 130)   // §AQ2: slot-sized
+                                .resizable().interpolation(.high).scaledToFit()
                                 .transition(.opacity)
                         }
                     }
@@ -238,15 +239,10 @@ struct HomeBannerView: View {
         .padding(.top, 12).padding(.trailing, 8).padding(.bottom, 10).padding(.leading, 12)
         // §18.4: frosted over a background blur (solid under Reduce Transparency) —
         // FINISH_SPEC §A1: a lavender frost instead of plain white.
+        // §AQ2: a flat frost — the live material blur re-sampled the page under it on
+        // every frame of a Home scroll for a barely visible difference at 74% lavender.
         .background {
-            if reduceTransparency {
-                Color(hex: 0xF5EEFF).opacity(0.94)
-            } else {
-                ZStack {
-                    Rectangle().fill(.ultraThinMaterial)
-                    Color(hex: 0xF5EEFF).opacity(0.74)
-                }
-            }
+            Color(hex: 0xF5EEFF).opacity(reduceTransparency ? 0.94 : 0.88)
         }
     }
 
@@ -265,16 +261,13 @@ struct HomeBannerView: View {
             if trophy {
                 Icon3D(.trophy, size: 20)
             }
-            // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
-            // violet→pink) with a soft pink glow; the double-flawless gold day keeps its tier ink.
-            Text(headline)
-                .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(0)
-                .foregroundStyle(trophy ? AnyShapeStyle(headInk) : AnyShapeStyle(Theme.wordmarkGradient))
-                .shadow(color: trophy ? .clear : Color(hex: 0xEC4899).opacity(0.25), radius: 3)
-                .multilineTextAlignment(oneLine ? .center : .leading)
+            // FINISH_SPEC §AR: the live lettering (purple → magenta, gold numbers, the
+            // player's name in the accent, "·" as the star); the double-flawless gold
+            // day takes the celebration palette.
+            LiveHeadline(text: headline, palette: trophy ? .celebration : .home, size: 22,
+                         names: [name], alignment: oneLine ? .center : .leading,
+                         maxLines: oneLine ? 1 : 2, minimumScale: oneLine ? 1 : 0.7)
                 .fixedSize(horizontal: oneLine, vertical: true)
-                .lineLimit(oneLine ? 1 : 2)
-                .minimumScaleFactor(oneLine ? 1 : 0.7)
         }
         .frame(maxWidth: .infinity, minHeight: 30, alignment: oneLine ? .center : .leading)
     }
@@ -342,9 +335,8 @@ struct HomeBannerView: View {
 
     private func rowView(_ r: Row, tier: BannerTier, label: String, tile: CGFloat, radius: CGFloat, gap: CGFloat, icon: CGFloat) -> some View {
         let ink = Self.tierInk(tier)
-        // §Z: the flame's slot comes from today's DAILY streak whatever the switch
-        // says; Unlimited only fades it out, so the row keeps its height.
-        let streak = HomeBanner.groupStreak(HomeBanner.groupTier(r.progress), r.streaks)
+        // FINISH_SPEC §AS7: no per-row streak flames — every streak lives in the
+        // header flame's popup.
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(label).font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
@@ -352,17 +344,6 @@ struct HomeBannerView: View {
                     .font(Brand.font(10, .black)).tracking(0.5).foregroundStyle(ink)
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 4)
-                // A row's flame hides at 0 (and in Unlimited).
-                if streak > 0 {
-                    HStack(spacing: 2) {
-                        FlameMark(size: 12)
-                        Text("\(streak)").softNumber(13)
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(streak)-day streak")
-                    .opacity(slots.showsFlames ? 1 : 0)
-                    .accessibilityHidden(!slots.showsFlames)
-                }
             }
             HStack(spacing: gap) {
                 ForEach(r.modes) { m in

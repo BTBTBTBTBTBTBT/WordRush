@@ -190,6 +190,14 @@ struct FinishedCompactHeader: View {
         return out
     }
 
+    /// "SOLVED IN 4" · "ALL 4 SOLVED" · "3 OF 4 SOLVED" · "SO CLOSE".
+    private var stripHeadline: String {
+        if totalBoards > 1 {
+            return boardsSolved == totalBoards ? "ALL \(totalBoards) SOLVED" : "\(boardsSolved) OF \(totalBoards) SOLVED"
+        }
+        return won ? "SOLVED IN \(guessCount)" : "SO CLOSE"
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             // Between the corner Home / Help controls (56 pt clear each side).
@@ -206,6 +214,9 @@ struct FinishedCompactHeader: View {
             }
             .padding(.horizontal, 54)
             .padding(.top, 4)
+            // FINISH_SPEC §AR: the result strip's headline in live lettering.
+            LiveHeadline(text: stripHeadline, palette: .home, size: 20, maxLines: 1, minimumScale: 0.6)
+                .padding(.horizontal, 12)
             FinishedResultStrip(won: won, items: items, points: points)
                 .padding(.horizontal, 4)
         }

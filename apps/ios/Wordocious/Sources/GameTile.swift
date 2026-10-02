@@ -46,7 +46,10 @@ struct GameTileChrome: ViewModifier {
             .clipShape(shape)
             .overlay(shape.stroke(selected ? accent : (dark ? accent.opacity(0.4) : accent.wash(0.34)),
                                   lineWidth: selected ? 2 : 1.5))
-            .shadow(color: accent.opacity(selected ? 0.22 : 0.2), radius: 4, x: 0, y: selected ? 0 : 3)
+            // §AQ2: the shadow comes from one plain shape underneath, not the tile's
+            // whole content (cheap to composite while grids scroll).
+            .background(shape.fill(dark ? Theme.surface : accent.wash(selected ? 0.26 : 0.13))
+                .shadow(color: accent.opacity(selected ? 0.22 : 0.2), radius: 4, x: 0, y: selected ? 0 : 3))
             .overlay {
                 if selected {
                     shape.inset(by: -2.5).stroke(accent.opacity(0.22), lineWidth: 3).allowsHitTesting(false)

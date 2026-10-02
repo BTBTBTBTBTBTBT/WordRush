@@ -417,7 +417,7 @@ private fun MomentRow(
             val counted = keys.filter { key -> (rx.counts[key] ?: 0) > 0 }
             val action: Pair<String, () -> Unit>? = when {
                 isGame && gameKind != null -> "Rematch" to onRematch
-                !e.me -> "View" to { onOpenProfile(e.userId) }
+                // AS5 (founder 10-02): no "View" button — tapping the row opens the profile.
                 else -> null
             }
             if (counted.isNotEmpty() || action != null) {

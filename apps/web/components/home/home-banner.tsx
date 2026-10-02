@@ -2,7 +2,8 @@
 
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { ProPill, UNLIMITED_PEACH } from '@/components/game/finished-kit';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { LiveHeadline } from '@/components/ui/live-headline';
 import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
@@ -12,7 +13,7 @@ import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ART_SIZE, artSrc, isGameArtIcon, onPageShadow } from '@/lib/art';
 import {
-  bannerClockLine, bannerHeadline, groupStatus, groupStreak, groupTier, unlimitedGroupStatus,
+  bannerClockLine, bannerHeadline, groupStatus, groupTier, unlimitedGroupStatus,
   type BannerTier, type GroupProgress,
 } from '@wordle-duel/core';
 import type { DailyCompletion } from '@/lib/daily-service';
@@ -134,7 +135,6 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
 }
 
 const HEAD_SIZE = 22;
-const HEAD_LINE = 1.15;
 
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, clock, onOpen, onShare }: Props) {
   const unlimited = playMode === 'unlimited';
@@ -155,7 +155,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const background = unlimited
     ? 'linear-gradient(135deg, #fce7f3, #ede9fe)'
     : `linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, ${topColor} 0%, ${topColor} 52%, ${bottomColor} 72%, ${bottomColor} 100%)`;
-  const headInk = double ? '#78350f' : '#4c1d95';
   const subInk = double ? '#92400e' : '#6d28d9';
   const shimmer = !unlimited && (wTier !== 'none' || pTier !== 'none');
   // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
@@ -171,30 +170,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const seasonSlot = season === 'halloween' && !tierArt;
   const seasonArt = seasonSlot && seasonArtOk;
 
-  // The headline runs two lines at most at 22px, then steps down (to 70%) rather than
-  // truncating: the web side of iOS minimumScaleFactor / Android's onTextLayout fit.
-  const headRef = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    const el = headRef.current;
-    if (!el) return;
-    const fit = () => {
-      let size = HEAD_SIZE;
-      el.style.fontSize = `${size}px`;
-      while (el.offsetHeight > 2 * size * HEAD_LINE + 1 && size > HEAD_SIZE * 0.7) {
-        size = Math.max(HEAD_SIZE * 0.7, size - 1);
-        el.style.fontSize = `${size}px`;
-      }
-      // ART_SPEC §18.4: a one-line headline sits centered in the strip; two lines stay left.
-      const oneLine = el.offsetHeight <= size * HEAD_LINE * 1.5;
-      el.style.textAlign = oneLine ? 'center' : 'left';
-      if (el.parentElement) el.parentElement.style.justifyContent = oneLine ? 'center' : 'flex-start';
-    };
-    fit();
-    if (typeof ResizeObserver === 'undefined' || !el.parentElement) return;
-    const ro = new ResizeObserver(fit);
-    ro.observe(el.parentElement);
-    return () => ro.disconnect();
-  }, [headline, playMode]);
 
   // Z: fixed-width segments, one font weight in both states; only the thumb slides.
   const segment = (mode: 'daily' | 'unlimited', label: string, width: number) => {
@@ -226,7 +201,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         label={label}
         status={unlimited ? unlimitedGroupStatus(r.unlimitedPlayed) : groupStatus(r.progress)}
         ink={TIER_INK[tier]}
-        streak={content.showStreaks ? groupStreak(tier, r.streaks) : null}
+        // AS7: no row flames — every streak lives in the streak-flame popup.
+        streak={null}
         height={slots.rowHeader}
       />
       <div className="flex" style={{ gap: size === 'lg' ? 7 : 4 }}>
@@ -276,23 +252,17 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
             {/* The old WORDOCIOUS wordmark style (Nunito Black, violet→pink) with a soft pink glow;
                 the double-flawless gold day keeps its tier ink. */}
-            <span
+            {/* FINISH_SPEC AR: the live lettering (purple → magenta, gold numbers; the
+                double-flawless gold day celebrates). Shrinks, then wraps to two lines. */}
+            <LiveHeadline
               key={playMode}
-              ref={headRef}
-              className="font-black mode-xfade"
-              style={{
-                fontSize: HEAD_SIZE, letterSpacing: 0.4, lineHeight: HEAD_LINE,
-                ...(double
-                  ? { color: headInk }
-                  : {
-                      backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-                      WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent',
-                      filter: 'drop-shadow(0 0 3px rgba(236,72,153,0.25))',
-                    }),
-              }}
-            >
-              {headline}
-            </span>
+              text={headline}
+              names={name ? [name] : undefined}
+              palette={double ? 'celebrate' : 'home'}
+              size={HEAD_SIZE}
+              level={2}
+              className="mode-xfade"
+            />
           </div>
           {/* Nothing to share before the first finished game (iOS/Android parity).
               Z: the share box stays reserved (empty) when there is nothing to share. */}

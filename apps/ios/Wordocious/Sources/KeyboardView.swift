@@ -20,22 +20,60 @@ struct KeyboardView: View {
     /// close to the 3-row layouts so tight boards (OctoWord) don't squeeze.
     private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
 
-    /// FINISH_SPEC §B2: keys take their new colors only after the reveal lands,
-    /// so the reveal stays a surprise. The states shown (refreshed one row-reveal
-    /// after each committed guess; instantly on appear, a new stage, or Reduce Motion).
+    /// FINISH_SPEC §B2 + §AQ1: a key takes its new color the moment ITS tile lands
+    /// (tile by tile, never after the whole row), so the reveal stays a surprise
+    /// without the keyboard lagging behind fast play. Instantly on appear, a new
+    /// stage, or Reduce Motion.
     @State private var shownKeys: [String: TileState] = [:]
     @State private var shownBoards: [[String: TileState]] = []
     @State private var primed = false
+    /// Rows still flipping: "board:row" → when the row committed.
+    @State private var flipping: [String: Date] = [:]
+    /// Each board's committed row count at the last refresh.
+    @State private var seenCounts: [Int] = []
 
     /// Committed guesses across boards — changes whenever a row commits.
     private var guessSignature: Int { vm.boards.reduce(0) { $0 + $1.guesses.count } }
 
     private func refreshKeys() {
-        var keys: [String: TileState] = [:]
-        for r in rows { for l in r { if let st = vm.keyState(for: l) { keys[l] = st } } }
-        shownKeys = keys
-        shownBoards = vm.boardKeyStates()
+        let now = Date()
+        let cols = vm.wordLength
+        let open = flipping.filter { RevealTiming.tilesLanded(elapsed: now.timeIntervalSince($0.value), columns: cols) < cols }
+        if open.count != flipping.count { flipping = open }
+        let visible: (Int, Int) -> Int = { b, r in
+            guard let at = open["\(b):\(r)"] else { return Int.max }
+            return RevealTiming.tilesLanded(elapsed: now.timeIntervalSince(at), columns: cols)
+        }
+        if vm.useQuadrantKeyboard {
+            shownBoards = vm.boardKeyStates(visible: visible)
+        } else {
+            shownKeys = vm.keyStates(visible: visible)
+        }
         primed = true
+    }
+
+    /// A row committed: mark each board's new rows as flipping and refresh as each
+    /// of their tiles lands.
+    private func rowsCommitted() {
+        let counts = vm.boards.map(\.guesses.count)
+        let now = Date()
+        for (b, n) in counts.enumerated() {
+            let before = b < seenCounts.count ? seenCounts[b] : n
+            for r in before..<max(before, n) { flipping["\(b):\(r)"] = now }
+        }
+        seenCounts = counts
+        refreshKeys()
+        for i in 0..<vm.wordLength {
+            DispatchQueue.main.asyncAfter(deadline: .now() + RevealTiming.tileLands(column: i) + 0.005) {
+                refreshKeys()
+            }
+        }
+    }
+
+    private func resetKeys() {
+        flipping = [:]
+        seenCounts = vm.boards.map(\.guesses.count)
+        refreshKeys()
     }
 
     var body: some View {
@@ -73,13 +111,11 @@ struct KeyboardView: View {
             }
         }
         .padding(.horizontal, 4)
-        .onAppear { refreshKeys() }
+        .onAppear { resetKeys() }
         .onChange(of: guessSignature) { [old = guessSignature] new in
-            // A new stage / board reset (fewer guesses) or Reduce Motion: now.
-            if new < old || Theme.reduceMotion { refreshKeys(); return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + TileMotion.rowReveal(columns: vm.wordLength)) {
-                refreshKeys()
-            }
+            // A new stage / board reset (fewer guesses) or Reduce Motion: instant colors.
+            if new < old || Theme.reduceMotion { resetKeys(); return }
+            rowsCommitted()
         }
         // Physical keyboard (founder, 2026-09-30) — web parity with every word
         // board's keydown: Enter / Backspace / A–Z, same actions as the keys

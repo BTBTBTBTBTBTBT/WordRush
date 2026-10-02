@@ -125,9 +125,11 @@ fun StageTransitionOverlay(
                     color = ink, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
                     fontFamily = com.wordocious.app.ui.theme.Nunito, textAlign = TextAlign.Center,
                 )
-                com.wordocious.app.ui.SoftNumber(
-                    if (next != null) "STAGE ${done + 1} OF $totalStages" else "ALL $totalStages CLEARED", 26.sp,
-                    Modifier.semantics { heading() },
+                // AR: the stage line in the live lettering (gold numbers).
+                com.wordocious.app.ui.LiveHeadline(
+                    if (next != null) "STAGE ${done + 1} OF $totalStages" else "ALL $totalStages CLEARED",
+                    com.wordocious.app.ui.HeadlinePalette.CELEBRATION,
+                    Modifier.fillMaxWidth(), maxSize = 26.sp, minSize = 16.sp, maxLines = 1,
                 )
                 StageDotsRow(dots, done, totalStages)
                 if (next != null) {

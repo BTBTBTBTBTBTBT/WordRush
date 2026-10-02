@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveHeadline } from '@/components/ui/live-headline';
 import { Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -86,7 +87,6 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
   const clockLine = vsBannerClockLine(input, clock, { free, challengeLeft: incoming ? `${incoming.hoursLeft}H` : undefined });
   const shimmer = battle.result === 'won' || botOfDay.result === 'won';
   const sheen = 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%)';
-  const headInk = gold ? '#78350f' : VS.deep;
   const subInk = gold ? '#92400e' : VS.ink;
 
   const [heroW, heroH] = ART_SIZE['art-scene-vs-faceoff'];
@@ -129,7 +129,8 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
       <div className="relative flex flex-col gap-1" style={{ padding: '10px 12px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
           {gold && <Icon3D name="trophy" size={18} className="shrink-0" />}
-          <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
+          {/* FINISH_SPEC AR: live lettering (teal → blue; gold on a sweep day). */}
+          <LiveHeadline text={headline} palette={gold ? 'celebrate' : 'vs'} names={[name, incoming?.from ?? ''].filter(Boolean)} size={17} align="left" className="flex-1 min-w-0" />
         </div>
         <div className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: subInk }}>{clockLine}</div>
       </div>
