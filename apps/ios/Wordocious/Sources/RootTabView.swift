@@ -379,9 +379,13 @@ extension View {
     func hidesBottomNav() -> some View { modifier(ImmersiveChrome()) }
 }
 
-/// Custom bottom navigation — 1:1 with the web BottomNav.
+/// Custom bottom navigation — 1:1 with the web BottomNav. ART_SPEC §18.3: a
+/// frosted floating pill — inset 12 pt from the sides and above the bottom safe
+/// area, radius 26, the surface at 78% over a background blur (solid 94% under
+/// Reduce Transparency), a soft shadow; the page shows around it.
 private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
     // in D1): pushes were the only signal before — a missed push meant a request
     // nobody saw. Friends overhaul §5: + pocket games waiting on your move.
@@ -397,11 +401,10 @@ private struct BottomNav: View {
             item(.stats, .tabStats, "Stats")
             item(.friends, .tabFriends, "Friends", badge: pendingRequests)
         }
-        .padding(.top, 8)
+        .padding(.top, 8).padding(.bottom, 4)
         .frame(maxWidth: .infinity)
-        // Background fills into the home-indicator safe area; icons stay above.
-        .background(Theme.background, ignoresSafeAreaEdges: .bottom)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1.5) }
+        .background(pill)
+        .padding(.horizontal, 12).padding(.bottom, 12)
         .task {
             await FriendsService.load()
             await FriendlyGamesService.load()
@@ -411,9 +414,25 @@ private struct BottomNav: View {
         .onReceive(NotificationCenter.default.publisher(for: FriendlyGamesService.changed)) { _ in recount() }
     }
 
+    /// The frosted pill behind the tabs (§18.3).
+    private var pill: some View {
+        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+        return ZStack {
+            if reduceTransparency {
+                shape.fill(Theme.surface.opacity(0.94))
+            } else {
+                shape.fill(.ultraThinMaterial)
+                shape.fill(Theme.surface.opacity(0.78))
+            }
+        }
+        .shadow(color: Color(hex: 0x7C3AED).opacity(0.14), radius: 16, x: 0, y: 6)
+        .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
+    }
+
     /// HEADER_SPEC §3: the 3D tab icons at 28 pt. Selected: full color, a −2 pt
-    /// lift and the label in #7c3aed 900; unselected: the icon at 45% opacity and
-    /// 60% saturation with a grey label. Badges stay numeric.
+    /// lift and the label in #7c3aed 900 with a 3 pt purple underline pill under it
+    /// (ART_SPEC §18.3); unselected: the icon at 45% opacity and 60% saturation
+    /// with a grey label. Badges stay numeric.
     private func item(_ t: RootTabView.Tab, _ icon: Icon3DName, _ label: String, badge: Int = 0) -> some View {
         let active = selection == t
         return Button {
@@ -431,7 +450,7 @@ private struct BottomNav: View {
                                 .font(Brand.font(9, .black)).foregroundStyle(.white)
                                 .padding(.horizontal, 4).frame(minWidth: 15, minHeight: 15)
                                 .background(Capsule().fill(Color(hex: 0x7C3AED)))
-                                .overlay(Capsule().stroke(Theme.background, lineWidth: 1.5))
+                                .overlay(Capsule().stroke(Theme.surface, lineWidth: 1.5))
                                 .offset(x: 9, y: -5)
                                 .accessibilityLabel("\(badge) waiting")
                         }
@@ -442,6 +461,10 @@ private struct BottomNav: View {
                     .foregroundStyle(active ? Color(hex: 0x7C3AED) : Theme.textMuted)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                // The selected tab's underline pill (a clear slot otherwise, so no tab shifts).
+                Capsule().fill(active ? Color(hex: 0x7C3AED) : .clear)
+                    .frame(width: 22, height: 3)
+                    .padding(.top, 1)
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, 4)

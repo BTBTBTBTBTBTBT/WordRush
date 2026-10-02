@@ -1147,6 +1147,8 @@ struct VSMatchHeader: View {
             Group {
                 if mode == .gauntlet { gauntletHeader } else { standardHeader }
             }
+            // ART_SPEC §14: the title art takes the whole width between the corners.
+            .layoutPriority(1)
             Spacer(minLength: 0)
             Color.clear.frame(width: 44, height: 44)
         }

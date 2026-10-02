@@ -733,6 +733,48 @@
 [data-reduced-motion="true"] .art-pop,
 [data-reduced-motion="true"] .art-float { animation: none !important; }
 
+/* The floating tab bar (docs/ART_SPEC.md §18.3; components/ui/bottom-nav.tsx):
+   white at 78% with a background blur, solid white 94% where blur isn't
+   supported or transparency is reduced; soft shadow. Dark: the surface ink. */
+.tab-pill {
+  --tab-pill-ring: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 24px rgba(76, 29, 149, 0.14), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .tab-pill {
+  --tab-pill-ring: #252542;
+  background: rgba(37, 37, 66, 0.94);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+/* Content clears the floating pill (§18.3): never less than the page's own
+   bottom padding, and at least the pill's room (--bottom-nav-h, published by
+   BottomNav) plus 16 px while a tab bar is on screen. */
+.pb-tab-clear { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
+.min-h-screen.pb-20 { padding-bottom: max(5rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
+.min-h-screen.pb-24 { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
+.min-h-screen.pb-32 { padding-bottom: max(8rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
+/* The Home banner's frosted headline strip (§18.4): white at 72% with a blur. */
+.banner-frost { background: rgba(255, 255, 255, 0.72); }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tab-pill {
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+  }
+  [data-theme="dark"] .tab-pill { background: rgba(37, 37, 66, 0.78); }
+  .banner-frost {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tab-pill { background: rgba(255, 255, 255, 0.94); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  [data-theme="dark"] .tab-pill { background: rgba(37, 37, 66, 0.94); }
+  .banner-frost { background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
 /* Game screen headers wearing title art (docs/ART_SPEC.md §14; lib/art.ts
    gameHeaderStyle): ≤ 6 px top / bottom padding so the art, not empty space,
    sets the header's height. */

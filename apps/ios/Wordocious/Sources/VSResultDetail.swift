@@ -59,10 +59,11 @@ enum VSResultBoards {
 }
 
 /// VS result share card — same canvas + aesthetic as the daily ShareCardView
-/// (F8F7FF bg, WORDOCIOUS gradient wordmark, accent mode label, Win/Loss pill,
+/// (page-tint bg, WORDOCIOUS gradient wordmark, accent mode label, Win/Loss pill,
 /// tinted board cards, wordocious.com footer), with a head-to-head center:
 /// each player's name, final score (winner crowned + accent, loser dimmed),
 /// solve line, and their color-only boards. Colors only = no daily spoilers.
+/// ART_SPEC §17: the VS page tint behind it and the cast strip above the footer.
 struct VSShareCardView: View {
     struct Side {
         let name: String
@@ -82,7 +83,6 @@ struct VSShareCardView: View {
     let dateStr: String
 
     // Identical palette to ShareCardView.
-    private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
     private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
     private let lossFG = Color(hex: 0xDC2626), lossBG = Color(hex: 0xFEE2E2)
@@ -94,7 +94,7 @@ struct VSShareCardView: View {
 
     var body: some View {
         ZStack {
-            bg
+            ShareArt.Background(tint: .vs)
             VStack(spacing: 0) {
                 // Hero wordmark — the brand is the headline of the share (user
                 // feedback: 56pt read as an afterthought on the 1080 canvas).
@@ -102,7 +102,7 @@ struct VSShareCardView: View {
                     .font(Brand.font(92, .black)).tracking(1)
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 48)
+                    .padding(.top, 36)
                 Text(modeLabel).font(Brand.font(40, .black)).foregroundStyle(accent).padding(.top, 6)
                 // Stats line + result pill (same row shape as the daily card).
                 HStack(spacing: 12) {
@@ -114,7 +114,7 @@ struct VSShareCardView: View {
                         .padding(.horizontal, 16).padding(.vertical, 8)
                         .background(RoundedRectangle(cornerRadius: 10).fill(isDraw ? drawBG : isWin ? winBG : lossBG))
                 }
-                .padding(.top, 18)
+                .padding(.top, 12)
 
                 Spacer()
                 HStack(alignment: .top, spacing: 40) {
@@ -133,8 +133,9 @@ struct VSShareCardView: View {
                 .padding(.horizontal, 50)
                 Spacer()
 
+                ShareArt.CastStrip().padding(.bottom, 6)
                 Text("wordocious.com").font(Brand.font(22, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 40)
+                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 20)
             }
         }
         .frame(width: size.width, height: size.height)

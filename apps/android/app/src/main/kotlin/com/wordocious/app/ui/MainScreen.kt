@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -104,14 +106,20 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val friendsBadge = remember(friendsVersion, activeGames) {
         com.wordocious.app.data.FriendsService.incoming.size + activeGames.count { it.yourTurn }
     }
-    Column(
-        Modifier.fillMaxWidth().background(WTheme.bg),
-    ) {
-        Box(Modifier.fillMaxWidth().height(1.5.dp).background(WTheme.border))
+    // ART_SPEC §18.3 (the ChatGPT home mockup): a floating frosted pill — inset 12 dp
+    // from the sides and the bottom safe area (the root Surface in MainActivity applies
+    // the nav-bar inset app-wide), radius 26, a soft violet shadow. The Scaffold lays
+    // the pages out above it, so the last row always clears the pill and only the
+    // page background shows around it. Compose can't blur what is drawn behind a node,
+    // so the pill takes the spec's no-blur fill: the surface at 94%.
+    val pillShape = RoundedCornerShape(TAB_PILL_CORNER)
+    Box(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp, top = 6.dp)) {
         Row(
-            // Root Surface (MainActivity) now applies the nav-bar inset app-wide;
-            // padding here too would leave a gap above the bar.
-            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
+            Modifier.fillMaxWidth()
+                .shadow(10.dp, pillShape, clip = false, ambientColor = HeaderInk.shadow, spotColor = HeaderInk.shadow)
+                .clip(pillShape)
+                .background(WTheme.surface.copy(alpha = 0.94f))
+                .padding(top = 8.dp, bottom = 5.dp),
         ) {
             TABS.forEachIndexed { i, tab ->
                 val active = selected == i
@@ -157,11 +165,19 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                         fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
                         color = if (active) HeaderInk.tabSelected else WTheme.textMuted,
                     )
+                    // §18.3 the selected tab's 3 dp purple underline pill under its label.
+                    Box(
+                        Modifier.size(width = 18.dp, height = 3.dp).clip(CircleShape)
+                            .background(if (active) HeaderInk.tabSelected else Color.Transparent),
+                    )
                 }
             }
         }
     }
 }
+
+/** §18.3 the floating tab bar pill's corner radius. */
+private val TAB_PILL_CORNER = 26.dp
 
 /**
  * Unlimited seed for a mode — 1:1 port of iOS `resolvedUnlimitedSeed`

@@ -50,7 +50,8 @@ enum ShareService {
             kind: kind, modeLabel: modeLabel, accent: accent, won: won, guesses: guesses,
             maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate(),
             category: category, wordGroups: wordGroups,
-            reveal: reveal, letters: letters, solutionDisplay: solutionDisplay
+            reveal: reveal, letters: letters, solutionDisplay: solutionDisplay,
+            mode: mode
         )
         let renderer = ImageRenderer(content: card)
         renderer.proposedSize = .init(card.size)

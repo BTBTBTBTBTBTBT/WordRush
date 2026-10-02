@@ -38,9 +38,10 @@ import com.wordocious.app.ui.theme.WTheme
 
 // ART_SPEC §11 "page tint + tiles" (founder pick, 2026-10-02 morning): one shared page
 // background behind every tab / page — a soft 3-stop diagonal gradient per tint, the
-// seamless letter-tile pattern (`art_bg_tiles.webp`, 640 px) repeated on top at 12%
-// (light) / 7% (dark), 320 dp per tile, and cards whose shadow leans toward the
-// page's accent. Mirrors the web and iOS PageBackground.
+// seamless letter-tile pattern (`art_bg_tiles.webp`; §18.1 v2: 720 px, opacity baked
+// in) repeated on top at 100% (light) / 60% (dark), 360 dp per tile, and cards whose
+// shadow leans toward the page's accent. §15 game screens use the game's own tint with
+// the tiles at 55% / 35%. Mirrors the web and iOS PageBackground.
 
 /** §11 The page tints: light / dark gradient stops (top-left → bottom-right) + the card-shadow accent. */
 enum class PageTint(val light: List<Color>, val dark: List<Color>, val accent: Color) {
@@ -77,10 +78,14 @@ enum class PageTint(val light: List<Color>, val dark: List<Color>, val accent: C
 /** The tint of the page a composable sits on (null off the tinted pages: game screens, sheets). */
 val LocalPageTint = compositionLocalOf<PageTint?> { null }
 
-/** §11 Tile pattern size on screen: 320 dp per 640 px tile (tiles read ~20–32). */
-private val PAGE_TILE_SIZE: Dp = 320.dp
-private const val TILE_ALPHA_LIGHT = 0.12f
-private const val TILE_ALPHA_DARK = 0.07f
+/**
+ * §18.1 Tile pattern v2: `art_bg_tiles` is a 720 px seamless pattern of big glossy,
+ * softly blurred letter tiles with its opacity BAKED IN — drawn at 360 dp per tile,
+ * 100% in light mode and 60% in dark on the menu pages.
+ */
+private val PAGE_TILE_SIZE: Dp = 360.dp
+private const val TILE_ALPHA_LIGHT = 1f
+private const val TILE_ALPHA_DARK = 0.6f
 
 /**
  * Android's contrast settings (the reduce-transparency / increase-contrast fallback,
@@ -163,9 +168,9 @@ private fun Modifier.tintBackground(
 
 // ── §15 Game screens: a soft tint in the game's color ─────────────────────
 
-/** §15 Tiles behind a game: quieter than the menus (8% light / 5% dark). */
-private const val GAME_TILE_ALPHA_LIGHT = 0.08f
-private const val GAME_TILE_ALPHA_DARK = 0.05f
+/** §15 / §18.1 Tiles behind a game: quieter than the menus (55% light / 35% dark of the baked-in pattern). */
+private const val GAME_TILE_ALPHA_LIGHT = 0.55f
+private const val GAME_TILE_ALPHA_DARK = 0.35f
 
 /**
  * The accent of the solo game on screen (§15), provided by MainScreen around the

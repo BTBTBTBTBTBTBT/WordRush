@@ -767,7 +767,8 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             HStack(alignment: .top, spacing: 4) {
                 VSGameHomeButton(accent: ModeStyle.accent(.propernoundle), action: onHome)
                 Spacer(minLength: 0)
-                header
+                // ART_SPEC §14: the title art takes the whole width between the corners.
+                header.layoutPriority(1)
                 Spacer(minLength: 0)
                 Color.clear.frame(width: 44, height: 44)
             }

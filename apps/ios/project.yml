@@ -114,7 +114,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "227"
+        CURRENT_PROJECT_VERSION: "228"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -145,8 +145,11 @@ targets:
       # Foundation; the extension links no WordociousCore package.
       - path: Sources/Core/HomeBanner.swift
       # The app's asset catalog, so mode chips draw the SAME icons as the
-      # home menu (skull, shield, hands…). 652K total — cheap to duplicate,
-      # and it keeps the icons single-sourced instead of a copied catalog.
+      # home menu (skull, shield, hands…) and the cast art (ART_SPEC §17: the
+      # day host mascot-*, icon3d-flame, icon3d-badge-w / -l) — single-sourced
+      # instead of a copied catalog. NOTE: since the art pass the catalog is
+      # ~20 MB, all of it duplicated into the extension; a slim widget-only
+      # catalog would cut that if app size matters.
       - path: Wordocious/Resources/Assets.xcassets
     info:
       path: WordociousWidget/Info.plist
@@ -165,7 +168,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "227"
+        CURRENT_PROJECT_VERSION: "228"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES

@@ -1258,7 +1258,7 @@ object ShareImage {
         val bmp = Bitmap.createBitmap(W, 1080, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         // ART_SPEC §17: the §11 VS page tint (+ tiles) behind the card.
-        ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), 0.12f)
+        ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), ShareArt.TILE_ALPHA_PAGE)
         val black = nunito(context, true)
         val bold = nunito(context, false)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }

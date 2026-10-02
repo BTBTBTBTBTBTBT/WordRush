@@ -135,6 +135,10 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         size = Math.max(HEAD_SIZE * 0.7, size - 1);
         el.style.fontSize = `${size}px`;
       }
+      // ART_SPEC §18.4: a one-line headline sits centered in the strip; two lines stay left.
+      const oneLine = el.offsetHeight <= size * HEAD_LINE * 1.5;
+      el.style.textAlign = oneLine ? 'center' : 'left';
+      if (el.parentElement) el.parentElement.style.justifyContent = oneLine ? 'center' : 'flex-start';
     };
     fit();
     if (typeof ResizeObserver === 'undefined' || !el.parentElement) return;
@@ -189,9 +193,10 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
     // The home host (W) stands at the strip's right end; Flawless crowns him.
     <BannerHost id={PAGE_HOSTS.home} crown={wTier === 'flawless'}>
     <div
-      className="relative shrink-0 overflow-hidden"
+      className="relative shrink-0 overflow-hidden w-full"
       style={{
-        borderRadius: 16, background,
+        // §18.4: radius 22, the full content width.
+        borderRadius: 22, background,
         boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
       }}
     >
@@ -204,8 +209,9 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         </div>
       )}
 
-      {/* Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious row's glow. */}
-      <div className="relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
+      {/* Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious row's glow.
+          §18.4: white at 72% with a background blur (globals.css .banner-frost). */}
+      <div className="banner-frost relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px' }}>
         <div className="flex items-start gap-1.5" style={{ paddingRight: BANNER_HOST_CLEARANCE - 8 }}>
           <div className="flex-1 flex items-center gap-1.5" style={{ minHeight: 30 }}>
             {double && <Icon3D name="trophy" size={18} className="shrink-0" />}

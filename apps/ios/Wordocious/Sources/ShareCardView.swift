@@ -4,6 +4,9 @@ import WordociousCore
 /// Faithful port of the web share image (lib/share-image.ts) — single, multi,
 /// and gauntlet layouts — rendered to PNG via ImageRenderer. Same palette,
 /// wordmark gradient, mode label, stats line + Win/Loss pill, and footer.
+/// ART_SPEC §17: the game's page tint behind it, the game's title art as the
+/// header (the mode label text when the art is missing), and the cast strip above
+/// the footer; the boards give up ~30 pt so the numbers and grids stay as legible.
 /// One board of a multi-board share: color grid, optional letters (only used
 /// by the "Full results" variant), win/loss, and the answer (drawn under the
 /// board when revealing a loss).
@@ -65,6 +68,8 @@ struct ShareCardView: View {
     var letters: [[String]]? = nil
     /// Answer in display form (ProperNoundle keeps its space) for a lost single board.
     var solutionDisplay: String? = nil
+    /// The game (ART_SPEC §17): its tint behind the card and its title art header.
+    var mode: GameMode? = nil
 
     private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
@@ -81,16 +86,25 @@ struct ShareCardView: View {
         }
     }
 
+    /// §17: the room the title art + cast strip take, given back by the boards.
+    private static let artShrink: CGFloat = 30
+
+    private var titleArt: String? { mode.flatMap(GameTitleArt.forMode)?.asset }
+
     var body: some View {
         ZStack {
-            bg
+            if let mode { ShareArt.Background(tint: .forGame(mode)) } else { bg }
             VStack(spacing: 0) {
                 Text("WORDOCIOUS")
-                    .font(Brand.font(56, .black))
+                    .font(Brand.font(52, .black))
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 44)
-                Text(modeLabel).font(Brand.font(38, .black)).foregroundStyle(accent).padding(.top, 10)
+                    .padding(.top, 28)
+                if titleArt != nil {
+                    ShareArt.title(titleArt).padding(.top, 4)
+                } else {
+                    Text(modeLabel).font(Brand.font(38, .black)).foregroundStyle(accent).padding(.top, 10)
+                }
                 HStack(spacing: 12) {
                     Text(statsText).font(Brand.font(24, .bold)).foregroundStyle(textMuted)
                     // ProperNoundle category pill (web drawCategoryPill — accent
@@ -105,14 +119,15 @@ struct ShareCardView: View {
                         .padding(.horizontal, 16).padding(.vertical, 8)
                         .background(RoundedRectangle(cornerRadius: 10).fill(won ? winBG : lossBG))
                 }
-                .padding(.top, 22)
+                .padding(.top, 14)
 
                 Spacer()
                 body(for: kind)
                 Spacer()
 
+                ShareArt.CastStrip().padding(.bottom, 6)
                 Text("wordocious.com").font(Brand.font(22, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 40)
+                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 20)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -170,13 +185,14 @@ struct ShareCardView: View {
         switch kind {
         case .single(let grid):
             boardCard(grid: grid, letters: reveal ? letters : nil, won: won,
-                      maxSide: reveal && !won ? 716 : 760, groups: wordGroups,
+                      maxSide: (reveal && !won ? 716 : 760) - Self.artShrink, groups: wordGroups,
                       answerCaption: reveal && !won ? solutionDisplay : nil)
         case .multi(let boards, _, _):
             let cols = boards.count <= 4 ? 2 : 4
             // Revealing reserves a caption strip under every board — shrink the
             // board budget so cell+caption keeps the original grid footprint.
-            let side: CGFloat = (boards.count <= 4 ? 380 : 220) - (reveal ? 40 : 0)
+            // §17: the 2 × 2 grid gives ~24 pt back to the title art + cast strip.
+            let side: CGFloat = (boards.count <= 4 ? 356 : 220) - (reveal ? 40 : 0)
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(side), spacing: 24), count: cols), spacing: 24) {
                 ForEach(0..<boards.count, id: \.self) { i in
                     boardCard(grid: boards[i].grid, letters: reveal ? boards[i].letters : nil,

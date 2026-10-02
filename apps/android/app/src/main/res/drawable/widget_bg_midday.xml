@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Midday: solid #f8f7ff, brand frame #a78bfa->#ec4899.
+<!-- Midday (pre-API 31 fallback): the ART_SPEC §11 home tint (#F3EEFF -> #FBEFFF -> #FFF1F7,
+     top-left to bottom-right; no tiles at widget sizes, §17), brand frame #a78bfa->#ec4899.
      Layered like iOS containerBackground: full-bleed FRAME gradient (a shape
      stroke can't be a gradient, so the frame is the bottom layer showing
      through a 2.5dp inset), the theme background gradient, then a 7dp inner
@@ -13,7 +14,7 @@
     </item>
     <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
         <shape android:shape="rectangle">
-            <solid android:color="#F8F7FF" />
+            <gradient android:startColor="#F3EEFF" android:centerColor="#FBEFFF" android:endColor="#FFF1F7" android:angle="315" />
             <corners android:radius="22dp" />
         </shape>
     </item>

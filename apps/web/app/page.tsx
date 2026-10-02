@@ -307,7 +307,7 @@ export default function HomePage() {
     <PageBackground tint="home" className="fixed inset-0 flex flex-col">
       <AppHeader />
 
-      <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-tab-clear" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <PendingInvitesBanner userId={user?.id} />
         <FirstGameCard />
 

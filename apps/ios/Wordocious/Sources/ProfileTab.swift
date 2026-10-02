@@ -1465,6 +1465,8 @@ struct LeaderboardTab: View {
                     }
                 }.foregroundStyle(Theme.textMuted)
             }
+            // §14: the art fills the room left of Play (offered first, ahead of the spacer).
+            .layoutPriority(1)
             Spacer(minLength: 6)
             // The selected game's host stands inside the card, beside Play (MASCOT_SPEC §5).
             if titleArt == nil, let host = Mascots.host(mode) { MascotView(host, size: 44) }

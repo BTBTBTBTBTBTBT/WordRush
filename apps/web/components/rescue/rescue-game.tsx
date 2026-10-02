@@ -189,7 +189,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   return (
     <GameBackground
       mode="RESCUE"
-      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
     >
       {showVictory && <VictoryAnimation mode="RESCUE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, 4, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === 'WON').length, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}

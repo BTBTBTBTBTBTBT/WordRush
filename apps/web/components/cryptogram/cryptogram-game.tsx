@@ -326,7 +326,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${CRYPTOGRAM_ACCENT}66`, color: CRYPTOGRAM_ACCENT, background: `${CRYPTOGRAM_ACCENT}0d` };
 
   return (
-    <GameBackground mode="CRYPTOGRAM" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
+    <GameBackground mode="CRYPTOGRAM" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="CRYPTOGRAM" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}

@@ -54,7 +54,9 @@ enum DailySweepCatalog {
     }
 }
 
-/// 1080×1350 PNG card matching the web all-dailies design.
+/// 1080×1350 PNG card matching the web all-dailies design. ART_SPEC §17: the
+/// home tint behind it and the cast strip above the footer (the rows sit 4 pt
+/// closer and the footer 20 pt lower to make the room).
 struct DailySweepCardView: View {
     let rows: [DailySweepRow]
     let won: Int
@@ -67,7 +69,6 @@ struct DailySweepCardView: View {
     /// "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES" over the same layout.
     var title: String? = nil
 
-    private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
     private let textDark = Color(hex: 0x1A1A2E)
     private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
@@ -81,7 +82,7 @@ struct DailySweepCardView: View {
 
     var body: some View {
         ZStack {
-            bg
+            ShareArt.Background(tint: .home)
             VStack(spacing: 0) {
                 Text("WORDOCIOUS")
                     .font(Brand.font(56, .black))
@@ -101,14 +102,15 @@ struct DailySweepCardView: View {
                     .padding(.top, 14)
 
                 Spacer(minLength: 28)
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     ForEach(rows) { row in rowView(row) }
                 }
                 .padding(.horizontal, 90)
                 Spacer(minLength: 20)
 
+                ShareArt.CastStrip().padding(.bottom, 6)
                 Text("wordocious.com").font(Brand.font(22, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 40)
+                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 20)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -386,12 +388,12 @@ struct ProfileShareInput {
 }
 
 /// 1080×1080 profile stats PNG matching web drawProfileCard (wordmark, accent
-/// username, Level·Tier, a 2×3 grid of stat tiles).
+/// username, Level·Tier, a 2×3 grid of stat tiles). ART_SPEC §17: the home tint
+/// behind it and the cast strip above the footer.
 struct ProfileShareCardView: View {
     let input: ProfileShareInput
     var size: CGSize { CGSize(width: 1080, height: 1080) }
 
-    private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
     private let textDark = Color(hex: 0x1A1A2E)
     private var accent: Color { Color(hex: input.accentHex) }
@@ -409,13 +411,13 @@ struct ProfileShareCardView: View {
 
     var body: some View {
         ZStack {
-            bg
+            ShareArt.Background(tint: .home)
             VStack(spacing: 0) {
                 Text("WORDOCIOUS")
                     .font(Brand.font(50, .black))
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 64)
+                    .padding(.top, 40)
                 Text(input.username)
                     .font(Brand.font(76, .black)).foregroundStyle(accent)
                     .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 80).padding(.top, 18)
@@ -435,8 +437,9 @@ struct ProfileShareCardView: View {
                 .padding(.horizontal, 80)
                 Spacer(minLength: 30)
 
+                ShareArt.CastStrip().padding(.bottom, 6)
                 Text("wordocious.com").font(Brand.font(24, .bold))
-                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 48)
+                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 24)
             }
         }
         .frame(width: size.width, height: size.height)

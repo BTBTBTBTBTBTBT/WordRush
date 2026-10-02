@@ -210,6 +210,8 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
                         .foregroundStyle(Theme.textMuted)
                     }
                 }
+                // §14: the art fills the room left of the controls (offered first, ahead of the spacer).
+                .layoutPriority(1)
                 Spacer(minLength: 6)
                 right()
             }

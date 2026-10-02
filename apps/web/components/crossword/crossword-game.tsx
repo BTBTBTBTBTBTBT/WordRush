@@ -337,7 +337,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const capsuleStyle = (dim: boolean, danger = false) => dim ? undefined : danger ? { borderColor: '#dc262666', color: '#dc2626', background: '#dc26260d' } : { borderColor: `${CROSSWORD_ACCENT}66`, color: CROSSWORD_ACCENT, background: `${CROSSWORD_ACCENT}0d` };
 
   return (
-    <GameBackground mode="CROSSWORD" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}>
+    <GameBackground mode="CROSSWORD" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
       {showVictory && <VictoryAnimation mode="CROSSWORD" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}

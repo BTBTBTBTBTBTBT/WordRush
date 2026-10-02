@@ -25,7 +25,7 @@ interface PageBackgroundProps {
   scheme?: 'auto' | 'light';
   /** Custom stops + accent instead of a named tint (§15 game screens). */
   colors?: TintStops;
-  /** Tile pattern opacity instead of the menus' 12% / 7% (§15 game screens: 8% / 5%). */
+  /** Tile pattern opacity instead of the menus' 100% / 60% (§15 + §18.1 game screens: 55% / 35%). */
   tilesOpacity?: { light: number; dark: number };
   className?: string;
   style?: React.CSSProperties;

@@ -29,6 +29,8 @@ struct HomeBannerView: View {
     let onOpen: (HomeMode) -> Void
     let onShare: () -> Void
 
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     private var unlimited: Bool { playMode == .unlimited }
     private var wTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(word.progress) }
     private var pTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(puzzles.progress) }
@@ -54,7 +56,8 @@ struct HomeBannerView: View {
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        // ART_SPEC §18.4: radius 22, the full content width.
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         let hasPuzzles = !puzzles.modes.isEmpty
         VStack(spacing: 0) {
             strip
@@ -118,24 +121,12 @@ struct HomeBannerView: View {
             let clockLine = HomeBanner.bannerClockLine(word.progress, puzzles.progress, clock: Self.countdown(), unlimited: unlimited)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .top, spacing: 6) {
-                    HStack(spacing: 6) {
-                        if double {
-                            Icon3D(.trophy, size: 20)
-                        }
-                        if unlimited {
-                            Image(systemName: "infinity").font(.system(size: 17, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
-                        }
-                        // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
-                        // violet→pink) with a soft pink glow; the double-flawless gold day keeps its tier ink.
-                        Text(headline)
-                            .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(0)
-                            .foregroundStyle(double ? AnyShapeStyle(headInk) : AnyShapeStyle(Theme.wordmarkGradient))
-                            .shadow(color: double ? .clear : Color(hex: 0xEC4899).opacity(0.25), radius: 3)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.7)
+                    // ART_SPEC §18.4: a headline that fits on one line sits centered;
+                    // one that wraps stays left, two lines, shrinking before a third.
+                    ViewThatFits(in: .horizontal) {
+                        headlineRow(headline, oneLine: true)
+                        headlineRow(headline, oneLine: false)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
                     // The headline keeps clear of the host standing at the strip's right end.
                     .padding(.trailing, Mascots.bannerClearance)
                     if showsShare {
@@ -159,7 +150,41 @@ struct HomeBannerView: View {
             }
         }
         .padding(.top, 12).padding(.trailing, 8).padding(.bottom, 10).padding(.leading, 12)
-        .background(Color.white.opacity(0.5))
+        // §18.4: frosted — white at 72% over a background blur (solid under Reduce Transparency).
+        .background {
+            if reduceTransparency {
+                Color.white.opacity(0.9)
+            } else {
+                ZStack {
+                    Rectangle().fill(.ultraThinMaterial)
+                    Color.white.opacity(0.72)
+                }
+            }
+        }
+    }
+
+    /// The headline (+ the double-flawless trophy / Unlimited's infinity): one line
+    /// centered, or up to two lines left-aligned.
+    private func headlineRow(_ headline: String, oneLine: Bool) -> some View {
+        HStack(spacing: 6) {
+            if double {
+                Icon3D(.trophy, size: 20)
+            }
+            if unlimited {
+                Image(systemName: "infinity").font(.system(size: 17, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
+            }
+            // The headline wears the old WORDOCIOUS wordmark style (Nunito Black,
+            // violet→pink) with a soft pink glow; the double-flawless gold day keeps its tier ink.
+            Text(headline)
+                .font(Brand.font(22, .black)).tracking(0.4).lineSpacing(0)
+                .foregroundStyle(double ? AnyShapeStyle(headInk) : AnyShapeStyle(Theme.wordmarkGradient))
+                .shadow(color: double ? .clear : Color(hex: 0xEC4899).opacity(0.25), radius: 3)
+                .multilineTextAlignment(oneLine ? .center : .leading)
+                .fixedSize(horizontal: oneLine, vertical: true)
+                .lineLimit(oneLine ? 1 : 2)
+                .minimumScaleFactor(oneLine ? 1 : 0.7)
+        }
+        .frame(maxWidth: .infinity, minHeight: 30, alignment: oneLine ? .center : .leading)
     }
 
     private static func countdown() -> String {

@@ -812,7 +812,7 @@ object LeaderboardShare {
         // that game's §15 tint, the VS board the VS tint, the rest the home tint.
         when (input.variant) {
             Variant.SOLO, Variant.PODIUM, Variant.FRIENDS, Variant.FRIENDS_PODIUM -> ShareArt.drawGameTint(context, c, input.accent)
-            Variant.VS -> ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), 0.12f)
+            Variant.VS -> ShareArt.drawTint(context, c, com.wordocious.app.ui.PageTint.VS.lightArgb(), ShareArt.TILE_ALPHA_PAGE)
             else -> ShareArt.drawHomeTint(context, c)
         }
 

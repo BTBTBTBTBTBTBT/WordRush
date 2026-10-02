@@ -15,6 +15,10 @@ import { friendsBadgeCount } from '@/lib/friends-play';
 // HEADER_SPEC §3: the 3D tab icons at 28 px. Selected: full color, a −2 px
 // lift and the label in #7c3aed 900; unselected: 45% opacity, 60% saturation,
 // gray label. The numeric Friends badge stays.
+// ART_SPEC §18.3: a frosted floating pill, inset 12 px from the sides and 12 px
+// above the bottom safe area, radius 26, white at 78% with a background blur
+// (solid white 94% where blur isn't supported; globals.css .tab-pill), soft
+// shadow; the selected tab adds a 3 px purple underline pill under its label.
 const NAV_ITEMS: { href: string; label: string; icon: Icon3DName }[] = [
   { href: '/', label: 'Home', icon: 'tab-home' },
   { href: '/daily', label: 'Leaderboard', icon: 'tab-leaderboard' },
@@ -41,21 +45,27 @@ export function BottomNav() {
     return () => { offFriends(); offGames(); };
   }, [user]);
 
-  // Publish the nav's rendered height as --bottom-nav-h on <html> so the
-  // fixed AdBanner (mounted globally in layout.tsx) can stack directly above
-  // the nav instead of covering it — both are fixed bottom-0 otherwise.
-  // ResizeObserver keeps it fresh across safe-area/orientation changes; the
-  // cleanup resets to 0 on routes that don't render a BottomNav.
+  // Publish the room the nav takes at the bottom of the screen (the floating
+  // pill plus its inset above the safe area) as --bottom-nav-h on <html> so
+  // the fixed AdBanner (mounted globally in layout.tsx) can stack directly
+  // above the nav instead of covering it. ResizeObserver + resize keep it fresh
+  // across safe-area/orientation changes; the cleanup resets to 0 on routes
+  // that don't render a BottomNav.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const root = document.documentElement;
-    const publish = () => root.style.setProperty('--bottom-nav-h', `${el.offsetHeight}px`);
+    const publish = () => {
+      const room = Math.max(el.offsetHeight, Math.round(window.innerHeight - el.getBoundingClientRect().top));
+      root.style.setProperty('--bottom-nav-h', `${room}px`);
+    };
     publish();
     const ro = new ResizeObserver(publish);
     ro.observe(el);
+    window.addEventListener('resize', publish);
     return () => {
       ro.disconnect();
+      window.removeEventListener('resize', publish);
       root.style.setProperty('--bottom-nav-h', '0px');
     };
   }, []);
@@ -63,11 +73,8 @@ export function BottomNav() {
   return (
     <nav
       ref={ref}
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-      style={{
-        backgroundColor: 'var(--color-bg)',
-        borderTop: '1.5px solid var(--color-border)',
-      }}
+      className="tab-pill fixed left-3 right-3 z-40 flex items-center justify-around px-2 py-1"
+      style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)', borderRadius: 26 }}
       aria-label="Main navigation"
     >
       {NAV_ITEMS.map((item) => {
@@ -77,7 +84,7 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center gap-0.5 py-1 px-3 min-w-[60px]"
+            className="flex flex-col items-center gap-0.5 pt-1 pb-0.5 px-3 min-w-[60px]"
             aria-current={isActive ? 'page' : undefined}
             aria-label={item.label}
           >
@@ -95,7 +102,7 @@ export function BottomNav() {
               {item.href === '/friends' && badge > 0 && (
                 <span
                   className="absolute -top-1.5 -right-2.5 flex items-center justify-center rounded-full text-[9px] font-black text-white"
-                  style={{ minWidth: 15, height: 15, padding: '0 4px', backgroundColor: '#7c3aed' /* win purple (founder, Aug 11) */, boxShadow: '0 0 0 2px var(--color-bg)' }}
+                  style={{ minWidth: 15, height: 15, padding: '0 4px', backgroundColor: '#7c3aed' /* win purple (founder, Aug 11) */, boxShadow: '0 0 0 2px var(--tab-pill-ring, var(--color-bg))' }}
                   aria-label={`${badge} waiting on you in Friends`}
                 >
                   {badge > 9 ? '9+' : badge}
@@ -108,6 +115,12 @@ export function BottomNav() {
             >
               {item.label}
             </span>
+            {/* §18.3: the selected tab's 3 px purple underline pill (space kept on every tab). */}
+            <span
+              aria-hidden="true"
+              className="block rounded-full"
+              style={{ width: 18, height: 3, background: '#7c3aed', opacity: isActive ? 1 : 0 }}
+            />
           </Link>
         );
       })}

@@ -1,7 +1,9 @@
 'use client';
 
-import { Infinity as InfinityIcon } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { ChevronRight, Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
+import { GameArt } from '@/components/ui/game-art';
 import { isGameArtIcon, onPageShadow } from '@/lib/art';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
@@ -69,81 +71,143 @@ export function modeCardState(args: {
   return { isDailyDone, isLocked, badge, subtitle };
 }
 
-/** `unlimited`: Pro's Unlimited mode (home redesign, 2026-10-01): no badges, a small infinity mark instead. */
+/** The §18.2 card's measures (docs/ART_SPEC.md): 10 px band, 52 px icon, name 900 / 16, description 12.5. */
+export const MODE_CARD = { radius: 18, band: 10, icon: 52, name: 16, nameMin: 11, desc: 12.5 } as const;
+
+/**
+ * `unlimited`: Pro's Unlimited mode (home redesign, 2026-10-01): no badges, a small infinity mark instead.
+ *
+ * Layout (ART_SPEC §18.2, the founder's ChatGPT mockup): a white card, radius
+ * 18, with a thick 10 px band in the game's accent across its rounded top;
+ * then a row: the glossy game icon at 52 px (no chip box), the game name in
+ * its accent (900, 16; shrinks to fit a long single word) over the one-line
+ * description (secondary ink, 12.5, two lines max), and a small chevron.
+ * Every state is the same as before: the 3D W / L / ✓ badge in the top-right
+ * corner over the band, the Pro lock, the dimmed free-played card, and the
+ * result line in place of the description once played.
+ */
 export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; state: ModeCardState; unlimited?: boolean }) {
   const { isDailyDone, isLocked, badge, subtitle } = state;
   const Icon = card.icon;
+  // The old glyph (lucide / custom / roman numeral), drawn only when the art is missing.
+  const glyph = Icon && isGameArtIcon(Icon)
+    ? null
+    : card.romanNumeral
+    ? <span className="text-[18px] font-black leading-none" style={{ color: card.accentColor }}>{card.romanNumeral}</span>
+    : Icon
+    ? <Icon className="w-7 h-7" style={{ color: card.accentColor }} />
+    : null;
   return (
     <div
-      className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
+      className={`relative cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
       style={{
         // Completed daily: soft tint in the mode's accent color to signal
         // "you've played this one". Fresh/unplayed cards stay white.
-        background: isDailyDone ? `${card.accentColor}0f` : 'var(--color-surface)',
+        // (Over the white card, so it stays opaque on the page tint.)
+        background: isDailyDone
+          ? `linear-gradient(${card.accentColor}0f, ${card.accentColor}0f), var(--color-surface)`
+          : 'var(--color-surface)',
         border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${card.accentColor}66` : 'var(--color-border)'}`,
-        borderRadius: '14px',
+        borderRadius: MODE_CARD.radius,
         // §11: lifts off the page tint with the page's tinted shadow.
         boxShadow: onPageShadow(),
       }}
     >
-      {/* Top accent bar */}
+      {/* Thick top band in the game's accent (§18.2), rounded with the card. */}
       <div
-        className="absolute top-0 left-0 right-0 h-1"
+        aria-hidden="true"
         style={{
+          height: MODE_CARD.band,
           background: isLocked
             ? '#d1d5db'
-            : `linear-gradient(90deg, ${card.accentColor}, ${card.accentColor}88)`,
-          borderRadius: '14px 14px 0 0',
+            : `linear-gradient(90deg, ${card.accentColor}, ${card.accentColor}cc)`,
         }}
       />
 
       {/* Lock icon (only when locked but NOT daily-done — the W/L badge
           takes this slot when the daily is complete) */}
       {isLocked && !isDailyDone ? (
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+        <div className="absolute top-3.5 right-2 flex items-center gap-1">
           <Icon3D name="lock" size={15} label="Locked" />
         </div>
       ) : null}
 
       {unlimited && !isLocked && (
-        <InfinityIcon className="absolute top-2.5 right-2.5 w-4 h-4" style={{ color: card.accentColor }} aria-hidden="true" />
+        <InfinityIcon className="absolute top-3.5 right-2 w-4 h-4" style={{ color: card.accentColor }} aria-hidden="true" />
       )}
 
-      {/* 3D W / L (or ✓) badge in the top-right when today's daily is already on
-          the books (docs/ART_SPEC.md §4: 26 px, same corner as the old 20 px pill). */}
+      {/* 3D W / L (or ✓) badge in the top-right corner over the band when
+          today's daily is already on the books (docs/ART_SPEC.md §4: 26 px). */}
       {isDailyDone && badge && (
-        <Icon3D name={BADGE_ICON[badge]} size={26} label={BADGE_LABEL[badge]} className="absolute top-1.5 right-1.5" />
+        <Icon3D name={BADGE_ICON[badge]} size={26} label={BADGE_LABEL[badge]} className="absolute top-1 right-1.5 z-[1]" />
       )}
 
-      {/* Icon — show mode icon when daily is done (even if locked), show lock
-          only when locked without a result */}
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
-        style={{ background: (isLocked && !isDailyDone) ? '#f3f4f6' : `${card.accentColor}15` }}
-      >
-        {(isLocked && !isDailyDone)
-          ? <Icon3D name="lock" size={20} />
-          : Icon && isGameArtIcon(Icon)
-          ? <Icon className="w-4 h-4" style={{ color: card.accentColor }} />
-          : card.romanNumeral
-          ? <span className="text-[11px] font-black leading-none" style={{ color: card.accentColor }}>{card.romanNumeral}</span>
-          : Icon
-          ? <Icon className="w-4 h-4" style={{ color: card.accentColor }} />
-          : null
-        }
+      <div className="flex items-center gap-2 pl-2 pr-1.5 py-2.5" style={{ minHeight: 84 - MODE_CARD.band }}>
+        {/* Icon — the game's art when daily is done (even if locked); the lock
+            only when locked without a result. */}
+        <div className="shrink-0 flex items-center justify-center" style={{ width: MODE_CARD.icon, height: MODE_CARD.icon }}>
+          {(isLocked && !isDailyDone)
+            ? <Icon3D name="lock" size={30} />
+            : <GameArt id={card.id} size={MODE_CARD.icon} fallback={glyph} />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <FitName color={isLocked ? 'var(--color-text-muted)' : card.accentColor}>{card.title}</FitName>
+          {/* §255: fixed two-line box, so Daily ⇄ Unlimited never reflows the
+              grid (the description wraps; "4 guesses · 27s" doesn't). */}
+          <div
+            className="font-semibold mt-0.5"
+            style={{ fontSize: MODE_CARD.desc, color: 'var(--color-text-secondary)', height: 32, lineHeight: '16px', overflow: 'hidden',
+                     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+          >
+            {subtitle}
+          </div>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-text-muted)' }} aria-hidden="true" />
       </div>
-      <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{card.title}</div>
-      {/* §255: fixed two-line box. In Unlimited this line is the description,
-          which wraps on several cards; in Daily it's "4 guesses · 27s" on one
-          line — so the cards changed height and the whole grid reflowed on
-          every Daily/Unlimited toggle (founder). */}
-      <div
-        className="text-[10px] font-bold"
-        style={{ color: 'var(--color-text-muted)', height: '28px', lineHeight: '14px', overflow: 'hidden',
-                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-      >
-        {subtitle}
-      </div>
+    </div>
+  );
+}
+
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+/**
+ * The game name at 900 / 16 in its color, wrapping at spaces (Letter Ladder),
+ * and shrinking (down to 11) only when one word is wider than the column
+ * (Crosswordocious on a phone).
+ */
+function FitName({ color, children }: { color: string; children: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let lastWidth = -1;
+    const fit = () => {
+      const width = el.clientWidth;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      let size: number = MODE_CARD.name;
+      el.style.overflowWrap = 'normal';
+      el.style.fontSize = `${size}px`;
+      while (size > MODE_CARD.nameMin && el.scrollWidth > width + 0.5) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+      // Still too wide at the floor (a very narrow screen): let the word break.
+      if (el.scrollWidth > width + 0.5) el.style.overflowWrap = 'anywhere';
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [children]);
+  return (
+    <div
+      ref={ref}
+      className="font-black leading-tight"
+      style={{ fontSize: MODE_CARD.name, color }}
+    >
+      {children}
     </div>
   );
 }

@@ -529,7 +529,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   return (
     <GameBackground
       mode="GAUNTLET"
-      className={`h-screen-stable flex flex-col relative ${state.status !== GameStatus.PLAYING ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${state.status !== GameStatus.PLAYING ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}
     >
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0 relative">

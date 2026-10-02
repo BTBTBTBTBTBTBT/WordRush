@@ -16,6 +16,12 @@ import SwiftUI
 // too (project.yml), so the widget's words can never drift from the app's. The
 // old fresh / at-risk / sweep / flawless themes are gone; after 8 pm the headline
 // simply stays the evening greeting. No animation: widgets can't run the shimmer.
+//
+// The cast (ART_SPEC §17): the background is the home page tint (no tiles at widget
+// sizes) with the Sweep / Flawless tier colors blended over it, the day's host
+// (the Leaderboard day title's character) stands in a corner, the 3D flame sits by
+// the streak, and a played chip shows the W / L badge art. The images come from the
+// app's asset catalog, compiled into this target (project.yml).
 
 private let appGroup = "group.com.wordocious.app"
 private let snapshotKey = "widget-snapshot"
@@ -188,6 +194,29 @@ extension Color {
     }
 }
 
+/// ART_SPEC §11's home tint (light stops), top-left → bottom-right.
+private let homeTint = LinearGradient(colors: [Color(widgetHex: "#f3eeff"), Color(widgetHex: "#fbefff"), Color(widgetHex: "#fff1f7")],
+                                      startPoint: .topLeading, endPoint: .bottomTrailing)
+
+/// The day's host: the character on that weekday's Leaderboard title art
+/// (art-day-*: Mon D, Tue I, Wed U, Thu S, Fri O2, Sat O1, Sun O3).
+private func dayHostAsset(_ date: Date) -> String {
+    let hosts = ["o3", "d", "i", "u", "s", "o2", "o1"] // Calendar weekday 1 = Sunday
+    let i = Calendar.current.component(.weekday, from: date) - 1
+    return "mascot-\(hosts[max(0, min(hosts.count - 1, i))])"
+}
+
+/// The day's host mascot, decorative.
+private struct DayHost: View {
+    let date: Date
+    let size: CGFloat
+    var body: some View {
+        Image(dayHostAsset(date)).resizable().interpolation(.high).scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
 private let brandGradient = LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")],
                                            startPoint: .leading, endPoint: .trailing)
 private let lostGray = Color(widgetHex: "#9ca3af")
@@ -318,10 +347,11 @@ private struct ModeCell: View {
         let shape = RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
         ZStack {
             if mode.played {
+                // Today's result as the W / L badge art (ART_SPEC §17) on the chip's color.
                 shape.fill(mode.won ? accent : lostGray)
-                Image(systemName: mode.won ? "checkmark" : "xmark")
-                    .font(.system(size: size * 0.42, weight: .black))
-                    .foregroundStyle(.white)
+                Image(mode.won ? "icon3d-badge-w" : "icon3d-badge-l")
+                    .resizable().interpolation(.high).scaledToFit()
+                    .frame(width: size * 0.78, height: size * 0.78)
             } else {
                 shape.fill(Color.white.opacity(0.72))
                 shape.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
@@ -397,11 +427,16 @@ struct SmallView: View {
                 StreakBadge(streak: snap.streak)
             }
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .lastTextBaseline, spacing: 2) {
-                    Text("\(snap.done)").font(.system(size: 30, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(widgetHex: "#1a1a2e"))
-                    Text("/\(snap.total)").font(.system(size: 15, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(widgetHex: "#6b7280"))
+                HStack(alignment: .center, spacing: 0) {
+                    HStack(alignment: .lastTextBaseline, spacing: 2) {
+                        Text("\(snap.done)").font(.system(size: 30, weight: .black, design: .rounded))
+                            .foregroundStyle(Color(widgetHex: "#1a1a2e"))
+                        Text("/\(snap.total)").font(.system(size: 15, weight: .black, design: .rounded))
+                            .foregroundStyle(Color(widgetHex: "#6b7280"))
+                    }
+                    Spacer(minLength: 2)
+                    // The day's host in the corner (ART_SPEC §17).
+                    DayHost(date: date, size: 34)
                 }
                 Text(snap.headline(at: date))
                     .font(.system(size: 10, weight: .black, design: .rounded)).tracking(0.3)
@@ -444,6 +479,8 @@ struct MediumView: View {
         let headInk = isDoubleFlawless(snap) ? Color(widgetHex: "#78350f") : Color(widgetHex: "#4c1d95")
         VStack(alignment: .leading, spacing: 0) {
             FrostedStrip(top: 9) {
+                // The day's host at the corner (ART_SPEC §17).
+                DayHost(date: date, size: 22)
                 Text(snap.headline(at: date))
                     .font(.system(size: 13, weight: .black, design: .rounded)).tracking(0.3)
                     .foregroundStyle(headInk)
@@ -559,20 +596,28 @@ extension View {
     }
 
     /// iOS 17 requires containerBackground; iOS 16 draws the same background.
-    /// One window, two colors: the Wordocious tier color (top) blends into the
-    /// Puzzles tier color (bottom) under a white sheen, inside the brand gradient
-    /// frame — gold frame + gold halo on a Double Flawless. (containerBackground's
-    /// builder wants a VIEW, which is why this isn't a ShapeStyle.)
+    /// The home page tint (ART_SPEC §17, no tiles at widget sizes); over it, one
+    /// window, two colors: a SWEEP / FLAWLESS Wordocious row's tier color (top)
+    /// blends into the Puzzles row's (bottom) — a row with no tier yet shows the
+    /// tint — under a white sheen, inside the brand gradient frame; gold frame +
+    /// gold halo on a Double Flawless. (containerBackground's builder wants a VIEW,
+    /// which is why this isn't a ShapeStyle.)
     @ViewBuilder
     func containerBackgroundCompat(accessory: Bool, medium: Bool, snap: WSnapshot) -> some View {
-        let top = tierColor(HomeBanner.groupTier(snap.word), none: "#f3f1ff")
-        let bottom = tierColor(snap.puzzleModes.isEmpty ? HomeBanner.groupTier(snap.word) : HomeBanner.groupTier(snap.puzzleProgress),
-                               none: snap.puzzleModes.isEmpty ? "#f3f1ff" : "#eef0ff")
+        let wordTier = HomeBanner.groupTier(snap.word)
+        let puzzleTier = snap.puzzleModes.isEmpty ? wordTier : HomeBanner.groupTier(snap.puzzleProgress)
+        // A row without a tier fades to the OTHER row's color at 0% (not `.clear`, which
+        // would gray the blend's midpoint), so only a Sweep / Flawless row paints.
+        let topInk = tierColor(wordTier == BannerTier.none ? puzzleTier : wordTier, none: "#f3f1ff")
+        let bottomInk = tierColor(puzzleTier == BannerTier.none ? wordTier : puzzleTier, none: "#eef0ff")
+        let top = topInk.opacity(wordTier == BannerTier.none ? 0 : 1)
+        let bottom = bottomInk.opacity(puzzleTier == BannerTier.none ? 0 : 1)
         // Where the blend sits: under the Wordocious row → into the Puzzles row.
         let from: CGFloat = medium ? 0.40 : 0.50
         let to: CGFloat = medium ? 0.58 : 0.75
         let double = isDoubleFlawless(snap)
         let bg = ZStack {
+            homeTint
             LinearGradient(stops: [.init(color: top, location: 0), .init(color: top, location: from),
                                    .init(color: bottom, location: to), .init(color: bottom, location: 1)],
                            startPoint: .top, endPoint: .bottom)

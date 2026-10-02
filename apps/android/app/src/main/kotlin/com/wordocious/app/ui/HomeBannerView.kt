@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -121,7 +122,8 @@ fun HomeBannerView(
     val subInk = if (double) Color(0xFF92400E) else Color(0xFF6D28D9)
     // Exactly one shimmer, Daily only, and only once a row has something to celebrate.
     val shimmer = !unlimited && (wTier != BannerTier.NONE || pTier != BannerTier.NONE) && !WTheme.reducedMotion
-    val shape = RoundedCornerShape(16.dp)
+    // ART_SPEC §18.4: radius 22, the frosted headline strip across the full width.
+    val shape = RoundedCornerShape(22.dp)
 
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
@@ -146,9 +148,11 @@ fun HomeBannerView(
                 }
                 .then(if (shimmer) Modifier.bannerShimmer() else Modifier),
         ) {
-            // Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious row's glow.
+            // Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious
+            // row's glow. ART_SPEC §18.4: white at 72% (the fill under it is a smooth gradient, so
+            // a backdrop blur would change nothing on Android; no platform backdrop blur here).
             Column(
-                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
+                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.72f))
                     .padding(start = 12.dp, top = 12.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -165,16 +169,22 @@ fun HomeBannerView(
                         // its tier ink. Two lines, then it steps down (to 70%) rather than truncating.
                         var headScale by remember(headline) { mutableFloatStateOf(1f) }
                         var headFitted by remember(headline) { mutableStateOf(false) }
+                        // §18.4 centered in its cell when it fits on one line; two lines read from the start.
+                        var headOneLine by remember(headline) { mutableStateOf(true) }
                         val glow = with(LocalDensity.current) { 3.dp.toPx() }
                         Text(
                             headline, fontSize = 22.sp * headScale, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
                             lineHeight = 1.15.em, maxLines = 2, overflow = TextOverflow.Clip,
+                            textAlign = if (headOneLine) TextAlign.Center else TextAlign.Start,
                             style = if (double) LocalTextStyle.current.merge(TextStyle(color = headInk))
                             else LocalTextStyle.current.merge(
                                 TextStyle(brush = WTheme.wordmarkGradient, shadow = Shadow(Color(0xFFEC4899).copy(alpha = 0.25f), Offset.Zero, glow)),
                             ),
-                            modifier = Modifier.drawWithContent { if (headFitted) drawContent() },
-                            onTextLayout = { r -> if (r.hasVisualOverflow && headScale > 0.7f) headScale -= 0.05f else headFitted = true },
+                            modifier = Modifier.weight(1f).drawWithContent { if (headFitted) drawContent() },
+                            onTextLayout = { r ->
+                                headOneLine = r.lineCount <= 1
+                                if (r.hasVisualOverflow && headScale > 0.7f) headScale -= 0.05f else headFitted = true
+                            },
                         )
                     }
                     // Nothing to share before the first finished game (iOS/web parity).

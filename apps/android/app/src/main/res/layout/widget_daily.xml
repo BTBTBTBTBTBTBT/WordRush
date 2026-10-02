@@ -43,7 +43,7 @@
         android:paddingTop="9dp"
         android:paddingBottom="9dp">
 
-        <!-- Frosted header strip: headline (bannerHeadline) .... flame day streak -->
+        <!-- Frosted header strip: the day's host (ART_SPEC §17) · headline (bannerHeadline) .... 3D flame day streak -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -54,6 +54,15 @@
             android:paddingEnd="8dp"
             android:paddingTop="3dp"
             android:paddingBottom="3dp">
+
+            <ImageView
+                android:id="@+id/w_host"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="4dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/mascot_w"
+                android:contentDescription="@null" />
 
             <ImageView
                 android:id="@+id/w_trophy"
@@ -80,10 +89,10 @@
 
             <ImageView
                 android:id="@+id/w_flame"
-                android:layout_width="13dp"
-                android:layout_height="13dp"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
                 android:layout_marginStart="6dp"
-                android:src="@drawable/ic_flame_gold"
+                android:src="@drawable/icon3d_flame"
                 android:contentDescription="@null" />
 
             <TextView
@@ -140,9 +149,9 @@
 
             <ImageView
                 android:id="@+id/w_wrow_flame"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:src="@drawable/ic_flame_gold"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/icon3d_flame"
                 android:contentDescription="@null" />
 
             <TextView
@@ -567,9 +576,9 @@
 
             <ImageView
                 android:id="@+id/w_prow_flame"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:src="@drawable/ic_flame_gold"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/icon3d_flame"
                 android:contentDescription="@null" />
 
             <TextView

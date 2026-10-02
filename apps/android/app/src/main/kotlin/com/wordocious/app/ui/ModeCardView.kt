@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.AllInclusive
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,13 +22,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.ui.theme.WTheme
+
+/** ART_SPEC §18.2 the home game card's geometry (the ChatGPT home mockup). */
+private val MODE_CARD_CORNER = 18.dp
+private val MODE_CARD_BAND = 10.dp
+private val MODE_CARD_ICON = 52.dp
+private val MODE_CARD_MIN_HEIGHT = 84.dp
 
 /**
  * The home-grid mode card, moved verbatim out of HomeScreen.kt (More Games
@@ -55,69 +65,86 @@ internal fun ModeCardView(
     val isDone = completion != null || vsDone
     val doneWon = completion?.completed ?: (vsWon == true)
     // Completed daily: soft tint in the mode's accent + accent border (web parity).
-    // Locked (free user, played today): dimmed 60% + gray border.
+    // Locked (free user, played today): dimmed 60% + gray border. ART_SPEC §18.2: an
+    // untouched card is plain white (no border), as in the mockup.
     val cardBg = if (isDone) card.accent.copy(alpha = 0.06f) else WTheme.surface
-    val cardBorder = if (isLocked) Color(0xFFD1D5DB) else if (isDone) card.accent.copy(alpha = 0.4f) else WTheme.border
+    val cardBorder = if (isLocked) Color(0xFFD1D5DB) else if (isDone) card.accent.copy(alpha = 0.4f) else null
+    val shape = RoundedCornerShape(MODE_CARD_CORNER)
 
-    // Card chrome (icon tile, name, one stat line — a fixed visual like the iOS
-    // grid): capped fontScale so large system text keeps the cards short enough
-    // that ~6 fit per screen, iOS parity.
+    // ART_SPEC §18.2 (the ChatGPT home mockup): a white rounded card (radius 18) under a
+    // THICK 10 dp accent band (the card's clip rounds its top corners), then one row —
+    // the glossy game icon at 52 dp (no chip box), the game name (accent, 900, 16) over
+    // the one-line description (secondary ink, 12.5, max 2 lines), a small chevron at
+    // the right. ~84 dp tall. Capped fontScale so large system text keeps the cards
+    // short enough that ~6 fit per screen, iOS parity.
     CappedFontScale {
     Box(
         modifier = modifier
-            .cardShadow(14.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .heightIn(min = MODE_CARD_MIN_HEIGHT)
+            .cardShadow(MODE_CARD_CORNER)
+            .clip(shape)
             .background(cardBg)
-            .border(1.5.dp, cardBorder, RoundedCornerShape(14.dp))
+            .then(if (cardBorder != null) Modifier.border(1.5.dp, cardBorder, shape) else Modifier)
             .then(if (isLocked) Modifier.alpha(0.6f) else Modifier)
             .clickableNoRipple(onClick),
     ) {
-        // Top accent bar (web h-1 gradient accent → accent88)
-        Box(
-            modifier = Modifier.fillMaxWidth().height(4.dp)
-                .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-                .background(Brush.horizontalGradient(listOf(card.accent, card.accent.copy(alpha = 0.53f)))),
-        )
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Icon box (8x8 rounded, accent @ ~8% bg)
-            Box(
-                modifier = Modifier.size(32.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(card.accent.copy(alpha = 0.08f)),
-                contentAlignment = Alignment.Center,
+        Column {
+            // The thick accent band across the top.
+            Box(Modifier.fillMaxWidth().height(MODE_CARD_BAND).background(card.accent))
+            Row(
+                Modifier.fillMaxWidth().padding(start = 8.dp, end = 6.dp, top = 8.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                ModeGlyph(card, card.accent, box = 32.dp)
+                // The glossy 3D game icon (ART_SPEC §3) on its own; the old glyph only as a fallback.
+                val art = gameArtRes(card.id)
+                if (art != null) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(art), contentDescription = null,
+                        modifier = Modifier.size(MODE_CARD_ICON),
+                    )
+                } else {
+                    Box(Modifier.size(MODE_CARD_ICON), contentAlignment = Alignment.Center) {
+                        ModeGlyph(card, card.accent, box = MODE_CARD_ICON)
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    // One line, shrink-to-fit: "Crosswordocious" wrapped mid-word at a larger font scale.
+                    FitText(card.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = card.accent)
+                    // Completed daily shows guesses · time; else the mode description (web parity).
+                    Text(
+                        subtitleOverride ?: if (completion != null) {
+                            // Through the mode's guess semantics (Sudoku reads "0 mistakes",
+                            // Letter Ladder "Par") — the shared cross-platform formatter.
+                            "${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}"
+                        } else if (vsDone) "Played today" else card.desc,
+                        fontSize = 12.5.sp, lineHeight = 15.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Icon(
+                    androidx.compose.material.icons.Icons.Filled.ChevronRight, contentDescription = null,
+                    tint = WTheme.textMuted, modifier = Modifier.size(18.dp),
+                )
             }
-            Spacer(Modifier.height(8.dp))
-            // One line, shrink-to-fit: "Crosswordocious" wrapped mid-word at a larger font scale.
-            FitText(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            // Completed daily shows guesses · time; else the mode description (web parity).
-            Text(
-                subtitleOverride ?: if (completion != null) {
-                    // Through the mode's guess semantics (Sudoku reads "0 mistakes",
-                    // Letter Ladder "Par") — the shared cross-platform formatter.
-                    "${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}"
-                } else if (vsDone) "Played today" else card.desc,
-                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-            )
         }
 
         if (unlimited && !isLocked) {
+            // Just under the band, above the chevron.
             Icon(
                 androidx.compose.material.icons.Icons.Filled.AllInclusive, contentDescription = null,
                 tint = card.accent,
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 10.dp).size(16.dp),
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 14.dp, end = 8.dp).size(14.dp),
             )
         }
 
         // W/L badge top-right when today's daily is on the books (web parity): the
-        // 3D badge-w / badge-l at 26 dp (ART_SPEC §4), in the old 20 dp pill's corner.
+        // 3D badge-w / badge-l at 26 dp (ART_SPEC §4), §18.2 in the top-right corner
+        // riding over the accent band.
         if (isDone) {
-            // iOS keeps the badge inside the content padding, below the 4pt accent
-            // bar — not flush against the card corner.
             ResultBadge(
                 won = doneWon, size = 26.dp,
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 13.dp, end = 9.dp),
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 6.dp),
             )
         }
 

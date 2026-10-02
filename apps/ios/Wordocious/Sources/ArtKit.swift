@@ -542,11 +542,12 @@ enum PageTint: Equatable {
         }
     }
 
-    /// The tile pattern's opacity on this tint: 12% / 7% on the menus, quieter on
-    /// game screens (§15: 8% / 5%).
+    /// The tile pattern's opacity on this tint. §18: the v2 pattern has its
+    /// opacity baked in — 100% light / 60% dark on the menus, quieter on game
+    /// screens (55% / 35%).
     func tileOpacity(dark: Bool) -> Double {
-        if case .game = self { return dark ? 0.05 : 0.08 }
-        return dark ? 0.07 : 0.12
+        if case .game = self { return dark ? 0.35 : 0.55 }
+        return dark ? 0.6 : 1
     }
 
     /// `accent` at `alpha` composited over the opaque `base` (both 0xRRGGBB).
@@ -570,18 +571,18 @@ extension EnvironmentValues {
     }
 }
 
-/// The shipped seamless letter-tile pattern (`art-bg-tiles`, 640 px) re-scaled so
-/// one tile draws at 320 pt.
+/// The shipped seamless letter-tile pattern (`art-bg-tiles`, §18 v2: 720 px of big
+/// glossy, softly blurred tiles, opacity baked in) re-scaled so one tile draws at 360 pt.
 private enum TilePattern {
     static let image: UIImage? = {
         guard let src = UIImage(named: "art-bg-tiles"), let cg = src.cgImage else { return nil }
-        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 320, orientation: .up)
+        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 360, orientation: .up)
     }()
 }
 
 /// ART_SPEC §11: the page backdrop. A soft diagonal gradient per tint (light or
 /// dark stops from the color scheme), with the letter-tile pattern repeated on top
-/// at 12% (light) / 7% (dark) — 8% / 5% on a game screen (§15) — fixed to the page, edge to edge behind the status
+/// (§18: 100% light / 60% dark — 55% / 35% on a game screen, §15) — fixed to the page, edge to edge behind the status
 /// bar. Reduce Transparency or Increase Contrast → the gradient alone. Decorative.
 struct PageBackground: View {
     let tint: PageTint
@@ -661,15 +662,15 @@ enum ShareArt {
     static let titleArtHeight: CGFloat = 76
     static let titleArtMaxWidth: CGFloat = 820
 
-    /// The letter-tile pattern at its natural 640 px per tile (the card is drawn
-    /// at scale 1 on a 1080 px canvas, the same ratio the pages use on a phone).
+    /// The letter-tile pattern at its natural 720 px per tile (the card is drawn at
+    /// scale 1 on a 1080 px canvas, about the ratio the pages use on a phone).
     fileprivate static let tiles: UIImage? = {
         guard let src = UIImage(named: "art-bg-tiles"), let cg = src.cgImage else { return nil }
         return UIImage(cgImage: cg, scale: 1, orientation: .up)
     }()
 
     /// The card backdrop: the tint's light gradient (top-left → bottom-right) with
-    /// the letter tiles on top at the tint's light opacity (12% menus, 8% games).
+    /// the letter tiles on top at the tint's light opacity (100% menus, 55% games).
     struct Background: View {
         let tint: PageTint
 

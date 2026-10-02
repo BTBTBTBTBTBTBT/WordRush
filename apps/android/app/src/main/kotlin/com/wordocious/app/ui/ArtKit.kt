@@ -516,8 +516,11 @@ class GameHeaderAnchor {
 
 val LocalGameHeaderAnchor = staticCompositionLocalOf<GameHeaderAnchor?> { null }
 
-/** How far a corner button may move to center on the art (up a little, down more). */
-private val CORNER_SHIFT_UP: Dp = 6.dp
+/**
+ * How far a corner button may move down to center on a taller art. Never up: the
+ * shortest art (44 dp) already centers within a few dp of the buttons, and a
+ * finished screen's art scrolling away then just lets the buttons settle back.
+ */
 private val CORNER_SHIFT_DOWN: Dp = 24.dp
 
 /** Reports this node's vertical center to the screen's [GameHeaderAnchor]. */
@@ -540,13 +543,11 @@ fun Modifier.gameCornerCentered(): Modifier = composed {
     if (anchor == null) this
     else {
         var natural by remember { mutableFloatStateOf(Float.NaN) }
-        val density = LocalDensity.current
-        val up = with(density) { CORNER_SHIFT_UP.toPx() }
-        val down = with(density) { CORNER_SHIFT_DOWN.toPx() }
+        val down = with(LocalDensity.current) { CORNER_SHIFT_DOWN.toPx() }
         this.onGloballyPositioned { c -> natural = c.positionInRoot().y + c.size.height / 2f }
             .offset {
                 val d = anchor.artCenterY - natural
-                IntOffset(0, if (d.isNaN()) 0 else d.coerceIn(-up, down).roundToInt())
+                IntOffset(0, if (d.isNaN()) 0 else d.coerceIn(0f, down).roundToInt())
             }
     }
 }

@@ -125,6 +125,22 @@ object Mascots {
         "PROPERNOUNDLE" to MascotId.W,   // proper names, the leader
     )
 
+    /**
+     * ART_SPEC §1 / §17 The host on each weekday's day-title art (`art_day_<weekday>`):
+     * Monday Masters D, Tuesday Titans I, Wednesday Wizards U, Thursday Thunder S,
+     * Friday's Finest O2, Saturday Stars O1, Sunday Superstars O3. The home-screen
+     * widget's corner mascot.
+     */
+    fun dayHost(date: java.time.LocalDate): MascotId = when (date.dayOfWeek) {
+        java.time.DayOfWeek.MONDAY -> MascotId.D
+        java.time.DayOfWeek.TUESDAY -> MascotId.I
+        java.time.DayOfWeek.WEDNESDAY -> MascotId.U
+        java.time.DayOfWeek.THURSDAY -> MascotId.S
+        java.time.DayOfWeek.FRIDAY -> MascotId.O2
+        java.time.DayOfWeek.SATURDAY -> MascotId.O1
+        else -> MascotId.O3 // Sunday
+    }
+
     /** The game's host, or null for keys without one (VS, More, unknown). */
     fun hostFor(dbKey: String?): MascotId? = dbKey?.let { gameHosts[it] }
 

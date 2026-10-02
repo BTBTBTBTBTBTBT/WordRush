@@ -38,7 +38,10 @@ export type TitleArtName =
   // §12: WORDOCIOUS DAILIES, the Home section header above the daily games.
   | 'art-title-dailies';
 
-/** The seamless letter-tile page pattern (§11), 640 px square, transparent. */
+/**
+ * The seamless letter-tile page pattern (§11; v2 §18): 720 px square of big
+ * glossy, softly blurred letter tiles with their opacity baked in.
+ */
 export type BackgroundArtName = 'art-bg-tiles';
 
 /**
@@ -124,19 +127,19 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-day-friday': [853, 591],
   'art-day-saturday': [898, 502],
   'art-title-friends': [996, 249],
-  'art-title-stats': [1080, 254],
+  'art-title-stats': [1080, 257],
   'art-title-records': [1080, 153],
   'art-title-vs': [777, 158],
   'art-title-puzzles': [1080, 201],
   'art-title-wotd': [1080, 173],
   'art-title-settings': [1080, 205],
   'art-title-howto': [1080, 208],
-  'art-title-gopro': [1080, 215],
+  'art-title-gopro': [1080, 218],
   'art-title-moregames': [1080, 212],
   'art-title-welcome': [1042, 233],
   'art-title-leaderboard': [1080, 215],
   'art-title-dailies': [1080, 174],
-  'art-bg-tiles': [640, 640],
+  'art-bg-tiles': [720, 720],
   'art-moment-victory': [880, 180],
   'art-moment-soclose': [899, 179],
   'art-moment-sweep': [609, 150],
@@ -334,8 +337,11 @@ export const PAGE_TINTS: Record<PageTint, {
   vs: { light: ['#E9FBF8', '#ECF6FF', '#F1EEFF'], dark: ['#08201E', '#0E1A2A', '#15142B'], accent: '#0d9488' },
 };
 
-/** The tile pattern: drawn at 320 CSS px per 640 px tile, 12% opaque in light, 7% in dark. */
-export const PAGE_TILES = { name: 'art-bg-tiles', size: 320, opacity: { light: 0.12, dark: 0.07 } } as const;
+/**
+ * The tile pattern (v2, §18.1): its opacity is baked into the file, so menus
+ * draw it at 100% in light and 60% in dark, 360 CSS px per 720 px tile.
+ */
+export const PAGE_TILES = { name: 'art-bg-tiles', size: 360, opacity: { light: 1, dark: 0.6 } } as const;
 
 /** A card's shadow on a tinted page: the tint's accent at 11% alpha, blur 14, y 5. */
 export function pageCardShadow(tint: PageTint): string {
@@ -387,8 +393,8 @@ export function gameTintForDbKey(dbKey: string | null | undefined): TintStops | 
   return accent ? gameTint(accent) : null;
 }
 
-/** Game screens draw the tile pattern quieter than menus (§15): 8% light, 5% dark. */
-export const GAME_TILES_OPACITY = { light: 0.08, dark: 0.05 } as const;
+/** Game screens draw the tile pattern quieter than menus (§15, v2 §18.1): 55% light, 35% dark. */
+export const GAME_TILES_OPACITY = { light: 0.55, dark: 0.35 } as const;
 
 // ── Title art motion (§16) ──────────────────────────────────────────────────
 

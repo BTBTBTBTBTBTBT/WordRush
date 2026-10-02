@@ -179,11 +179,11 @@ describe('game title art (§10)', () => {
 });
 
 describe('page tint + tiles (§11)', () => {
-  it('ships the seamless tile pattern, 640 px square, drawn at 320 px', () => {
-    expect(ART_SIZE['art-bg-tiles']).toEqual([640, 640]);
-    expect(webpSize(pub(artSrc(PAGE_TILES.name)))).toEqual([640, 640]);
-    expect(PAGE_TILES.size).toBe(320);
-    expect(PAGE_TILES.opacity).toEqual({ light: 0.12, dark: 0.07 });
+  it('ships the seamless tile pattern v2 (§18.1), 720 px square, drawn at 360 px, opacity baked in', () => {
+    expect(ART_SIZE['art-bg-tiles']).toEqual([720, 720]);
+    expect(webpSize(pub(artSrc(PAGE_TILES.name)))).toEqual([720, 720]);
+    expect(PAGE_TILES.size).toBe(360);
+    expect(PAGE_TILES.opacity).toEqual({ light: 1, dark: 0.6 });
   });
 
   it('has the five tints with the spec stops, light and dark', () => {
@@ -266,7 +266,7 @@ describe('game screen tints (§15)', () => {
       expect(gameTintForDbKey(m.dbKey), m.dbKey).toEqual(gameTint(m.accentHex));
     }
     expect(gameTintForDbKey('NOPE')).toBeNull();
-    expect(GAME_TILES_OPACITY).toEqual({ light: 0.08, dark: 0.05 });
+    expect(GAME_TILES_OPACITY).toEqual({ light: 0.55, dark: 0.35 });
     expect(GAME_TILES_OPACITY.light).toBeLessThan(PAGE_TILES.opacity.light);
     expect(accentCardShadow('#7c3aed')).toBe(pageCardShadow('home'));
   });

@@ -42,10 +42,15 @@ internal object ShareArt {
     const val GAME_ART_HEIGHT = 76f
     private const val GAME_ART_MAX_WIDTH = 820f
 
-    /** §11 tiles on a share card: ~860 px per tile at 1080 wide (the on-screen 320 dp / 400 dp ratio). */
-    private const val TILE_PX = 864f
-    private const val TILE_ALPHA_HOME = 0.12f
-    private const val TILE_ALPHA_GAME = 0.08f
+    /**
+     * §18.1 tiles on a share card (the v2 pattern, opacity baked in): ~970 px per tile at
+     * 1080 wide (the on-screen 360 dp / 400 dp ratio), 100% on home / page tints, 55% on
+     * a game's tint.
+     */
+    private const val TILE_PX = 972f
+    const val TILE_ALPHA_PAGE = 1f
+    private const val TILE_ALPHA_HOME = TILE_ALPHA_PAGE
+    private const val TILE_ALPHA_GAME = 0.55f
 
     /** §11 the home tint, light. */
     fun homeStops(): IntArray = PageTint.HOME.lightArgb()
