@@ -11,7 +11,7 @@ import type { DailyStanding } from '@/lib/stats-service';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { WIN_FG } from '@/lib/tile-theme';
 import { guessNoun } from '@/lib/mode-stats';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, onPageShadow } from '@/lib/art';
 import { MomentArt } from '@/components/ui/art-title';
 
 // The Stats tab's landing page — "your day in one card" (Stats + Friends
@@ -78,10 +78,10 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
   const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   const cardStyle: React.CSSProperties = flawless
-    ? { background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1.5px solid #f59e0b', borderRadius: '16px' }
+    ? { background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1.5px solid #f59e0b', borderRadius: '16px', boxShadow: onPageShadow() }
     : allDone
-      ? { background: 'linear-gradient(135deg, #f5f3ff, #fce7f3)', border: '1.5px solid #c4b5fd', borderRadius: '16px' }
-      : { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' };
+      ? { background: 'linear-gradient(135deg, #f5f3ff, #fce7f3)', border: '1.5px solid #c4b5fd', borderRadius: '16px', boxShadow: onPageShadow() }
+      : { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() };
 
   const pill = (icon: ReactNode, label: string, value: ReactNode, color: string, onClick?: () => void) => (
     <button

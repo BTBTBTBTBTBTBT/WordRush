@@ -150,3 +150,14 @@ export const Lock3D = icon3dAs('lock');
 export const Bell3D = icon3dAs('bell');
 export const AddFriend3D = icon3dAs('add-friend');
 export const Share3D = icon3dAs('share');
+
+/** Leaderboard / Records / recent-match rows draw their result badge at this size (docs/ART_SPEC.md §13). */
+export const ROW_BADGE_SIZE = 18;
+
+/**
+ * A row's Win / Loss result as the 3D W / L badge art (docs/ART_SPEC.md §13),
+ * in place of the old text chip, with the same words as its accessible name.
+ */
+export function WinLossBadge({ won, size = ROW_BADGE_SIZE, className = '' }: { won: boolean; size?: number; className?: string }) {
+  return <Icon3D name={won ? 'badge-w' : 'badge-l'} size={size} label={won ? 'Win' : 'Loss'} className={className} />;
+}

@@ -22,6 +22,7 @@ import { ChallengeResult } from './challenge-result';
 import { InitialAvatar, ModeChip, TealButton, vsCardStyle } from './vs-ui';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
+import { PageBackground } from '@/components/ui/page-background';
 
 export function VsChallenge({ code }: { code: string }) {
   const router = useRouter();
@@ -46,9 +47,9 @@ export function VsChallenge({ code }: { code: string }) {
   }, [code, loading, user, profile?.id]);
 
   const centered = (node: React.ReactNode) => (
-    <div className="min-h-screen-stable flex items-center justify-center px-5" style={{ backgroundColor: VS.page }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5">
       <div className="w-full max-w-sm text-center p-5 space-y-3" style={{ ...vsCardStyle, borderRadius: 16 }}>{node}</div>
-    </div>
+    </PageBackground>
   );
   const vsHome = <TealButton className="w-full py-3 text-[14px]" onClick={() => router.push('/vs')}>VS Home</TealButton>;
 
@@ -137,7 +138,7 @@ export function VsChallenge({ code }: { code: string }) {
 
   // The intro card (frosted, teal).
   return (
-    <div className="min-h-screen-stable flex items-center justify-center px-5" style={{ backgroundColor: VS.page }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5">
       <div className="w-full max-w-sm overflow-hidden" style={{ borderRadius: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #d5f5ee, #e0f2fe)', boxShadow: '0 4px 14px rgba(15,118,110,0.10)' }}>
         <div className="flex items-center gap-2.5" style={{ padding: '14px 14px 12px', background: 'rgba(255,255,255,0.5)' }}>
           <InitialAvatar name={name} url={challenge.challenger.avatarUrl} size={36} />
@@ -151,6 +152,6 @@ export function VsChallenge({ code }: { code: string }) {
           <button type="button" onClick={() => router.push('/vs')} className="w-full text-[12px] font-black" style={{ color: VS.label }}>Not now</button>
         </div>
       </div>
-    </div>
+    </PageBackground>
   );
 }

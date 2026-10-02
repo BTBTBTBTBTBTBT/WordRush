@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.pageCardShadow
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.CoinFace
 import com.wordocious.core.FriendlyKind
@@ -116,9 +117,9 @@ fun FriendsLabel(text: String, modifier: Modifier = Modifier, color: Color = Fri
     Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = color, modifier = modifier, maxLines = 1)
 }
 
-/** White, radius 14, soft shadow, no border. */
+/** White, radius 14, soft shadow (the page accent on a tinted page, ART_SPEC §11), no border. */
 fun Modifier.friendsCard(radius: Dp = 14.dp): Modifier =
-    this.shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95))
+    this.pageCardShadow(radius) { shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95)) }
         .clip(RoundedCornerShape(radius)).background(Color.White)
 
 /** Solid pink (primary) or soft pink pill. */

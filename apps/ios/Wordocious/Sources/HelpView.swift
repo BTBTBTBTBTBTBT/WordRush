@@ -71,7 +71,7 @@ struct HelpView: View {
                 .padding(.horizontal, 20).padding(.bottom, 20)
             }
         }
-        .background(Theme.surface.ignoresSafeArea())
+        .pageBackground(.home)
         .task { await content.load() }
     }
 

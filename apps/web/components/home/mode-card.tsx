@@ -2,7 +2,7 @@
 
 import { Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, onPageShadow } from '@/lib/art';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
@@ -82,6 +82,8 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
         background: isDailyDone ? `${card.accentColor}0f` : 'var(--color-surface)',
         border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${card.accentColor}66` : 'var(--color-border)'}`,
         borderRadius: '14px',
+        // §11: lifts off the page tint with the page's tinted shadow.
+        boxShadow: onPageShadow(),
       }}
     >
       {/* Top accent bar */}

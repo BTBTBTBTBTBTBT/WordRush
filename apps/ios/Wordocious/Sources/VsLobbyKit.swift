@@ -175,10 +175,11 @@ struct VSSectionLabel: View {
 }
 
 extension View {
-    /// §0 card: white, radius 14, soft purple shadow, no border.
+    /// §0 card: white, radius 14, no border; ART_SPEC §11: its soft shadow is
+    /// tinted toward the page's accent (teal on VS, pink on Friends).
     func vsCard(radius: CGFloat = 14) -> some View {
         background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color.white)
-            .shadow(color: Color(hex: 0x4C1D95).opacity(0.07), radius: 5, x: 0, y: 2))
+            .pageCardShadow())
     }
 }
 
@@ -506,7 +507,7 @@ struct VSLoadingView: View {
         }
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
     }
 }
 

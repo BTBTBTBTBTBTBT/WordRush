@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { Users, ChevronDown, ChevronUp, Play } from 'lucide-react';
-import { Icon3D } from '@/components/ui/icon3d';
+import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -65,6 +65,7 @@ import {
 } from '@/lib/leaderboard-share-flow';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 import { SweepModeDots } from '@/components/leaderboard/sweep-mode-dots';
+import { PageBackground } from '@/components/ui/page-background';
 
 const getMode = modeByKey;
 
@@ -492,15 +493,8 @@ export default function DailyPage() {
                 return h ? ` · ${h}` : '';
               })()}
             </span>
-            <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
-              style={{
-                background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-                color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
-              }}
-            >
-              {entry.completed ? 'Win' : 'Loss'}
-            </span>
+            {/* §13: the W / L badge art in place of the text chip. */}
+            <WinLossBadge won={entry.completed} />
           </>
         }
         score={scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
@@ -713,7 +707,7 @@ export default function DailyPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="leaderboard" className="min-h-screen pb-20">
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
@@ -1062,6 +1056,6 @@ export default function DailyPage() {
         modeName={mode.title}
         onViewPuzzle={() => router.push(`${modeHref}?daily=true`)}
       />
-    </div>
+    </PageBackground>
   );
 }

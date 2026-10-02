@@ -11,8 +11,10 @@ import WordociousCore
 // LEADERBOARD whole-cast titles (§8) and the pocket game icons (§9, drawn by
 // `FriendlyGameIcon` in FriendsKit.swift). Third pass: the game title art (§10, the
 // game headers via `.gameTitleArt` in Mascots.swift, the guide sheet top and the
-// Leaderboard / Records game cards). Art is presentation only: every caller
-// keeps its behavior.
+// Leaderboard / Records game cards). Fourth pass: the page tint + tiles
+// backgrounds and their tinted card shadows (§11, `PageBackground`), the
+// WORDOCIOUS DAILIES title (§12) and the W / L row badges (§13). Art is
+// presentation only: every caller keeps its behavior.
 
 /// Whether an image set ships in the bundle (cached), so a missing piece of art
 /// falls back to the old text / glyph instead of drawing blank.
@@ -75,6 +77,8 @@ enum ArtTitleName: String, CaseIterable {
     /// §8: the whole cast around WELCOME! (sign-in / onboarding) and LEADERBOARD
     /// (the Leaderboard banner on holidays).
     case welcome, leaderboard
+    /// §12: the whole cast around WORDOCIOUS DAILIES (the Home daily games header).
+    case dailies
 
     var assetName: String { "art-title-\(rawValue)" }
 
@@ -94,6 +98,7 @@ enum ArtTitleName: String, CaseIterable {
         case .moregames: return "More Games"
         case .welcome: return "Welcome"
         case .leaderboard: return "Leaderboard"
+        case .dailies: return "Wordocious Dailies"
         }
     }
 }
@@ -339,5 +344,141 @@ struct GameTitleArtView: View {
             .frame(height: height)
             .accessibilityLabel(label)
             .accessibilityAddTraits(.isHeader)
+    }
+}
+
+// MARK: - §11 Page backgrounds (page tint + tiles)
+
+/// The page's tint: picks the background gradient and the accent its cards'
+/// shadows lean toward.
+enum PageTint {
+    /// Home, Settings, Pro, Help / Guides, profile, and the default.
+    case home
+    /// Leaderboard and Records.
+    case leaderboard
+    case stats
+    case friends
+    /// The VS pages.
+    case vs
+
+    /// The diagonal gradient's three stops (top-left → bottom-right).
+    func stops(dark: Bool) -> [Color] {
+        switch (self, dark) {
+        case (.home, false): return [Color(hex: 0xF3EEFF), Color(hex: 0xFBEFFF), Color(hex: 0xFFF1F7)]
+        case (.home, true): return [Color(hex: 0x160F26), Color(hex: 0x1C1231), Color(hex: 0x22122C)]
+        case (.leaderboard, false): return [Color(hex: 0xFFF8E6), Color(hex: 0xFFEFD2), Color(hex: 0xFDE9F2)]
+        case (.leaderboard, true): return [Color(hex: 0x1E1608), Color(hex: 0x23160D), Color(hex: 0x241221)]
+        case (.stats, false): return [Color(hex: 0xEEF4FF), Color(hex: 0xEEEBFF), Color(hex: 0xF4EEFF)]
+        case (.stats, true): return [Color(hex: 0x0E1530), Color(hex: 0x141433), Color(hex: 0x1A1233)]
+        case (.friends, false): return [Color(hex: 0xFFF0F7), Color(hex: 0xFCE7F3), Color(hex: 0xF3E8FF)]
+        case (.friends, true): return [Color(hex: 0x241024), Color(hex: 0x22102A), Color(hex: 0x1A1030)]
+        case (.vs, false): return [Color(hex: 0xE9FBF8), Color(hex: 0xECF6FF), Color(hex: 0xF1EEFF)]
+        case (.vs, true): return [Color(hex: 0x08201E), Color(hex: 0x0E1A2A), Color(hex: 0x15142B)]
+        }
+    }
+
+    /// An opaque header / bar strip over a light-only page (VS, Friends): the
+    /// gradient's top-left stop, so the strip reads as the page.
+    var barColor: Color { stops(dark: false)[0] }
+
+    /// The accent a card's shadow is tinted toward.
+    var accent: Color {
+        switch self {
+        case .home: return Color(hex: 0x7C3AED)
+        case .leaderboard: return Color(hex: 0xF59E0B)
+        case .stats: return Color(hex: 0x2563EB)
+        case .friends: return Color(hex: 0xEC4899)
+        case .vs: return Color(hex: 0x0D9488)
+        }
+    }
+}
+
+private struct PageTintKey: EnvironmentKey {
+    static let defaultValue: PageTint = .home
+}
+
+extension EnvironmentValues {
+    /// The tint of the page a view sits on (set by `.pageBackground`), read by
+    /// the card styles to tint their shadows.
+    var pageTint: PageTint {
+        get { self[PageTintKey.self] }
+        set { self[PageTintKey.self] = newValue }
+    }
+}
+
+/// The shipped seamless letter-tile pattern (`art-bg-tiles`, 640 px) re-scaled so
+/// one tile draws at 320 pt.
+private enum TilePattern {
+    static let image: UIImage? = {
+        guard let src = UIImage(named: "art-bg-tiles"), let cg = src.cgImage else { return nil }
+        return UIImage(cgImage: cg, scale: CGFloat(cg.width) / 320, orientation: .up)
+    }()
+}
+
+/// ART_SPEC §11: the page backdrop. A soft diagonal gradient per tint (light or
+/// dark stops from the color scheme), with the letter-tile pattern repeated on top
+/// at 12% (light) / 7% (dark), fixed to the page, edge to edge behind the status
+/// bar. Reduce Transparency or Increase Contrast → the gradient alone. Decorative.
+struct PageBackground: View {
+    let tint: PageTint
+    /// The VS and Friends pages are drawn light in every theme (their cards and
+    /// ink are fixed light colors), so their backdrop stays on the light stops.
+    var lightOnly = false
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    init(tint: PageTint, lightOnly: Bool = false) {
+        self.tint = tint
+        self.lightOnly = lightOnly
+    }
+
+    var body: some View {
+        let dark = scheme == .dark && !lightOnly
+        ZStack {
+            LinearGradient(colors: tint.stops(dark: dark), startPoint: .topLeading, endPoint: .bottomTrailing)
+            if !reduceTransparency, contrast != .increased, let tile = TilePattern.image {
+                Image(uiImage: tile)
+                    .resizable(resizingMode: .tile)
+                    .opacity(dark ? 0.07 : 0.12)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// §11: draw the page tint + tiles behind this page and tint its cards' shadows.
+    func pageBackground(_ tint: PageTint, lightOnly: Bool = false) -> some View {
+        background(PageBackground(tint: tint, lightOnly: lightOnly))
+            .environment(\.pageTint, tint)
+    }
+
+    /// §11.3: a card's lift off the page tint — a shadow tinted toward the page's
+    /// accent (~11% alpha, radius 14, y 5).
+    func pageCardShadow() -> some View { modifier(PageCardShadow()) }
+}
+
+private struct PageCardShadow: ViewModifier {
+    @Environment(\.pageTint) private var tint
+    func body(content: Content) -> some View {
+        content.shadow(color: tint.accent.opacity(0.11), radius: 14, x: 0, y: 5)
+    }
+}
+
+// MARK: - §13 W / L row badges
+
+/// A Leaderboard / Records / recent-match row's "Win" / "Loss" chip as the 3D badge
+/// art at ~18 pt, keeping the chip's words as its accessibility label.
+struct RowResultBadge: View {
+    let won: Bool
+    var size: CGFloat = 18
+    var label: String? = nil
+
+    var body: some View {
+        Icon3D(won ? .badgeW : .badgeL, size: size, label: label ?? (won ? "Win" : "Loss"))
     }
 }

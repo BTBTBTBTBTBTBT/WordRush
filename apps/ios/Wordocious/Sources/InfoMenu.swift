@@ -128,12 +128,12 @@ struct MenuScaffold<Content: View>: View {
             .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 10)
             content()
         }
-        .background(Theme.background.ignoresSafeArea())
+        .pageBackground(.home)
     }
 }
 
 private var infoCard: some View {
-    RoundedRectangle(cornerRadius: 16).fill(Theme.surface)
+    RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow()
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
 }
 

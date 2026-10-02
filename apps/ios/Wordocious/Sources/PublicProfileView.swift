@@ -42,8 +42,7 @@ struct PublicProfileView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .home)
             if loading {
                 PulsingLoadingText()   // web parity: pulsing "Loading..." text
             } else if notFound || profile == nil {
@@ -360,7 +359,7 @@ struct PublicProfileView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(24)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
 
                 Button { dismiss() } label: {
@@ -520,7 +519,7 @@ struct PublicProfileView: View {
             .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 
@@ -600,6 +599,8 @@ struct PublicProfileView: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        // ART_SPEC §11: the tinted lift sits outside the clip.
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
     }
 
     // MARK: Top words
@@ -619,7 +620,7 @@ struct PublicProfileView: View {
                 }
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         }
     }
@@ -652,7 +653,7 @@ struct PublicProfileView: View {
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 

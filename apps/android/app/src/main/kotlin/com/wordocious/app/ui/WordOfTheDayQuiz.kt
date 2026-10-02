@@ -66,9 +66,35 @@ private sealed interface WotdLoad {
  * "Past words" opens the archive in every state; while the quiz is asking only
  * that link does (a tap on a choice answers), and once answered the whole card
  * opens it again, as it always has.
+ *
+ * ART_SPEC §12: the whole-cast WORD OF THE DAY art is the section header ABOVE the
+ * card (same size / alignment as the PUZZLES header), with "Past words" at the right
+ * of that row; the card keeps its content.
  */
 @Composable
 internal fun WordOfTheDayCard(onPastWords: () -> Unit) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionTitleArt(TitleArt.WOTD, trailing = { PastWordsLink(onPastWords) })
+        WordOfTheDayCardBody(onPastWords)
+    }
+}
+
+/** "Past words ›" — the archive link at the right of the WORD OF THE DAY header row. */
+@Composable
+private fun PastWordsLink(onPastWords: () -> Unit) {
+    CappedFontScale {
+        Row(
+            Modifier.heightIn(min = 32.dp).clickableNoRipple(onPastWords).padding(start = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
+            Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun WordOfTheDayCardBody(onPastWords: () -> Unit) {
     val day = remember { com.wordocious.app.todayLocalDate() }
     val load by produceState<WotdLoad>(
         initialValue = HomeStreaksService.cachedWotd(day)?.let { WotdLoad.Ready(it) } ?: WotdLoad.Loading,
@@ -135,16 +161,7 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         CappedFontScale {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // ART_SPEC §2: the whole-cast WORD OF THE DAY art replaces the label + I host.
-                Box(Modifier.weight(1f).padding(end = 8.dp), contentAlignment = Alignment.CenterStart) {
-                    PageTitleArt(TitleArt.WOTD, maxWidth = 260.dp, alignment = Alignment.CenterStart)
-                }
-                Row(Modifier.clickableNoRipple(onPastWords).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                    Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
-                }
-            }
+            // The WORD OF THE DAY title + "Past words" are the section header above (§12).
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val display = info.word.first().uppercase() + info.word.drop(1).lowercase()
                 Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -227,8 +244,6 @@ private fun WotdSkeleton() {
             .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        SkeletonBlock(height = 10.dp, width = 110.dp, cornerRadius = 5.dp)
-        Spacer(Modifier.height(6.dp))
         SkeletonBlock(height = 16.dp, width = 70.dp, cornerRadius = 6.dp)
         Spacer(Modifier.height(6.dp))
         SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)

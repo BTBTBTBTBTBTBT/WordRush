@@ -109,7 +109,7 @@ struct VSChallengeResultView: View {
             }
             .padding(.horizontal, 16).padding(.bottom, 32)
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
     }
 
     private var window: some View {
@@ -303,7 +303,7 @@ struct VSChallengeSentView: View {
             }
             .padding(.horizontal, 16).padding(.bottom, 32)
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
     }
 
     private var headline: String {
@@ -372,7 +372,7 @@ struct VSChallengeRaceView: View {
                     VSNavBar(title: "CHALLENGE", onBack: { dismiss() }) { EmptyView() }
                     ScrollView { content.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 32) }
                 }
-                .background(VsLobbyKit.page.ignoresSafeArea())
+                .pageBackground(.vs, lightOnly: true)
                 .navigationBarBackButtonHidden(true)
                 .toolbar(.hidden, for: .navigationBar)
             }

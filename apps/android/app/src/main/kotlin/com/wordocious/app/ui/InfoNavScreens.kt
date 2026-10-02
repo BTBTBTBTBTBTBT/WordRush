@@ -262,7 +262,7 @@ private fun OverlayScaffold(
     art: TitleArt? = null,
     content: @Composable () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().background(WTheme.bg)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         // The shared page header (HEADER_SPEC §4).
         PageHeader(title, host = host, onBack = onBack, onClose = onDone, titleMaxLines = 4, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), art = art)

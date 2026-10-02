@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Check, Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, onPageShadow } from '@/lib/art';
 import {
   bannerClockLine, bannerHeadline, groupStatus, groupStreak, groupTier, unlimitedGroupStatus,
   type BannerTier, type GroupProgress,
@@ -192,7 +192,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       className="relative shrink-0 overflow-hidden"
       style={{
         borderRadius: 16, background,
-        boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : '0 4px 14px rgba(76,29,149,0.08)',
+        boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
       }}
     >
       {shimmer && (

@@ -39,8 +39,7 @@ struct ProView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .home)
                 ScrollView {
                     VStack(spacing: 0) {
                         header
@@ -104,7 +103,7 @@ struct ProView: View {
             Text("You're enjoying all Pro benefits!").font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
         }
         .padding(28).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
     }
 
@@ -185,7 +184,7 @@ struct ProView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
@@ -207,7 +206,7 @@ struct ProView: View {
             .disabled(store.purchasingId != nil)
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(best ? Color(hex: 0xFDE68A) : Theme.border, lineWidth: 1.5))
         .overlay(alignment: .topTrailing) {
             if best {

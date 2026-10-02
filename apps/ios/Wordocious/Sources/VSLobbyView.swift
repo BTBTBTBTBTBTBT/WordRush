@@ -119,7 +119,7 @@ struct VSLobbyView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             withAnimation(.easeOut(duration: 0.25)) { kbInset = 0 }
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
         .sheet(isPresented: $showAuth) { AuthView() }
@@ -498,7 +498,7 @@ struct VSLobbyView: View {
             }.buttonStyle(.plain)
         }
         .padding(20)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         .padding(.top, 12)
     }

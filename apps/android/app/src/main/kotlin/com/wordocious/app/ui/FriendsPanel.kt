@@ -186,7 +186,7 @@ fun FriendsScreen(
     }
 
     Column(
-        Modifier.fillMaxSize().background(FriendsPink.page)
+        Modifier.fillMaxSize().pageBackground(PageTint.FRIENDS, alwaysLight = true)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),

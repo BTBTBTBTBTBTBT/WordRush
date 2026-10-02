@@ -95,7 +95,7 @@ fun AuthScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .appBackground()
+            .pageBackground(PageTint.HOME)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -78,7 +78,7 @@ struct NotificationPrefsSheet: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.background.ignoresSafeArea())
+        .pageBackground(.home)
     }
 
     private func toggle(_ key: String, prefs: [String: Bool]) {

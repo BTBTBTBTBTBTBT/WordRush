@@ -25,13 +25,13 @@ struct RecordsTab: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .leaderboard)
                 VStack(spacing: 0) {
                     AppHeaderView()
                     content
                 }
             }
+            .environment(\.pageTint, .leaderboard)
             .toolbar(.hidden, for: .navigationBar)
             // Tapping a record holder / daily-row username opens their public profile
             // (web parity — Records links names to /profile/[id]).
@@ -309,7 +309,7 @@ struct RecordStatCell: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-        .background(shape.fill(mine ? Theme.highlightGold : Theme.surface))
+        .background(shape.fill(mine ? Theme.highlightGold : Theme.surface).pageCardShadow())
         .overlay(shape.strokeBorder(mine ? Color(hex: 0xF59E0B) : Color.clear, lineWidth: 1.5))
         .overlay(alignment: .topTrailing) {
             if mine {
@@ -317,7 +317,6 @@ struct RecordStatCell: View {
                     .padding(10)
             }
         }
-        .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -360,10 +359,8 @@ struct RecordsBoardRow: View {
                     HStack(spacing: 5) {
                         Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                             .lineLimit(1).minimumScaleFactor(0.8)
-                        Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
-                            .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
+                        // ART_SPEC §13: the Win / Loss chip as the 3D badge art.
+                        RowResultBadge(won: entry.completed)
                     }
                 }
             }.buttonStyle(.plain)

@@ -242,8 +242,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .home)
 
                 VStack(spacing: 0) {
                     AppHeaderView()
@@ -256,7 +255,11 @@ struct HomeView: View {
                             // Unlimited / Sweep heroes and the top Word of the Day card.
                             homeBanner
                             if showFirstGameCard { firstGameCard }
-                            sectionHeader("WORDOCIOUS DAILIES")
+                            // ART_SPEC §12: the whole-cast WORDOCIOUS DAILIES art, styled exactly
+                            // like the PUZZLES header below (~70% width, left aligned).
+                            ArtTitle(.dailies, maxWidth: 250)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 2)
                             LazyVGrid(columns: columns, spacing: 8) {
                                 ForEach(wordModes) { mode in card(mode) }
                             }
@@ -611,18 +614,8 @@ struct HomeView: View {
             }.buttonStyle(.plain)
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    /// `host`: a 28 pt cast member just left of the label, static (MASCOT_SPEC §2).
-    private func sectionHeader(_ title: String, host: MascotID? = nil) -> some View {
-        HStack(spacing: 6) {
-            if let host { MascotView(host, size: 28) }
-            Text(title).font(Brand.font(13, .heavy)).tracking(1).foregroundStyle(Theme.textMuted)
-            Spacer()
-        }
-        .padding(.top, 2)
     }
 
     // MARK: - Pro prompt (ports pro-prompt-modal)

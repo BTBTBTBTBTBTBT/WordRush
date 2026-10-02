@@ -38,7 +38,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.background.ignoresSafeArea()
+                PageBackground(tint: .home)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         section("THEME") {
@@ -55,14 +55,14 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 toggleRow("Sound Effects", "Key taps, win/loss jingles", $soundOn)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
                         section("NOTIFICATIONS") {
                             VStack(spacing: 0) {
                                 toggleRow("Daily Reminders", "A nudge to play today's puzzles", $dailyReminder)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
                         section("ACCESSIBILITY") {
@@ -71,7 +71,7 @@ struct SettingsView: View {
                                 Divider().overlay(Theme.border)
                                 toggleRow("Reduced Motion", "Minimize animations", $themeManager.reducedMotion)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
                         // Which providers open this account + link Google / Apple
@@ -96,7 +96,7 @@ struct SettingsView: View {
                                     }
                                 } label: { linkRow("Manage Subscription") }.buttonStyle(.plain)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
                         section("ABOUT") {
@@ -129,7 +129,7 @@ struct SettingsView: View {
                                 }
                                 Button { infoKind = .terms } label: { linkRow("Terms of Service") }.buttonStyle(.plain)
                             }
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                         }
                         if auth.isAuthenticated {
@@ -147,7 +147,7 @@ struct SettingsView: View {
                                 }
                                 .foregroundStyle(Color(hex: 0xDC2626))
                                 .padding(14)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
                             }
                             .buttonStyle(.plain)

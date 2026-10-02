@@ -389,7 +389,7 @@ fun ProfileScreen(
     if (isGuest) {
         // Guest — profile/stats are account-based. Prompt sign-in (web/iOS parity).
         Column(
-            Modifier.fillMaxSize().background(WTheme.bg).padding(32.dp),
+            Modifier.fillMaxSize().pageBackground(PageTint.STATS).padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -409,7 +409,7 @@ fun ProfileScreen(
         // navigationBarsPadding keeps the bottom of the scroll (Sign Out / Delete
         // Account) clear of the system gesture-nav inset; the host Scaffold already
         // reserves the bottom-nav height. Extra 24dp tail matches web's pb-32.
-        modifier = Modifier.fillMaxSize().appBackground()
+        modifier = Modifier.fillMaxSize().pageBackground(PageTint.STATS)
             .padding(horizontal = 16.dp),
         state = listState,
         contentPadding = PaddingValues(bottom = 24.dp),

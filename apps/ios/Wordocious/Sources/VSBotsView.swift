@@ -32,7 +32,7 @@ struct VSBotsView: View {
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
             }
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
         .sheet(isPresented: $showPro) { ProView() }

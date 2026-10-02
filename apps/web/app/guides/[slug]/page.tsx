@@ -8,7 +8,8 @@ import { InfoPageHeader } from '@/components/ui/info-page-header';
 import { Mascot } from '@/components/ui/mascot';
 import { guideHost } from '@/lib/mascots';
 import { ArtTitle } from '@/components/ui/art-title';
-import { GAME_TITLE_ART_HEIGHT, gameTitleArtForGuide, gameTitleArtLabel } from '@/lib/art';
+import { GAME_TITLE_ART_HEIGHT, gameTitleArtForGuide, gameTitleArtLabel, onPageShadow } from '@/lib/art';
+import { PageBackground } from '@/components/ui/page-background';
 
 export function generateStaticParams() {
   return MODE_GUIDES.map((g) => ({ slug: g.slug }));
@@ -23,7 +24,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-const card = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' } as const;
+const card = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() } as const;
 
 export default function GuidePage({ params }: { params: { slug: string } }) {
   const guide = getGuide(params.slug);
@@ -38,7 +39,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
   const titleArt = gameTitleArtForGuide(guide.slug);
 
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="home" className="min-h-screen pb-12">
       <InfoPageHeader title="Guides" backHref="/guides" titleTag="div" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         {titleArt ? (
@@ -131,6 +132,6 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
           </div>
         </div>
       </div>
-    </div>
+    </PageBackground>
   );
 }

@@ -64,7 +64,7 @@ struct HowToPlayView: View {
     @ObservedObject private var service = HowToPlayService.shared
 
     private var card: some View {
-        RoundedRectangle(cornerRadius: 16).fill(Theme.surface)
+        RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow()
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 

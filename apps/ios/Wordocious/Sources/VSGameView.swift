@@ -43,7 +43,7 @@ struct VSGameView: View {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             } else {
-                VsLobbyKit.page.ignoresSafeArea()
+                PageBackground(tint: .vs, lightOnly: true)
             }
 
             switch vm.screen {
@@ -286,7 +286,7 @@ struct VSGameView: View {
             .padding(.horizontal, 20).padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
         .task {
             // This mode's queue, minus yourself, every 5 s while searching.
             while !Task.isCancelled && vm.screen == .queue {
@@ -370,7 +370,7 @@ struct VSGameView: View {
     private var countdownOverlay: some View {
         let accent = ModeStyle.accent(mode)
         return ZStack {
-            VsLobbyKit.page.ignoresSafeArea()
+            PageBackground(tint: .vs, lightOnly: true)
             VSOverlayWordmark()
             VStack(spacing: 18) {
                 Text(vm.countdownLabel)
@@ -585,7 +585,7 @@ struct VSGameView: View {
             .frame(height: 40)
             .frame(maxWidth: .infinity)
             // Opaque under the status bar: scrolled boards never show through it.
-            .background(VsLobbyKit.page.ignoresSafeArea(edges: .top))
+            .background(PageTint.vs.barColor.ignoresSafeArea(edges: .top))
         }
     }
 
@@ -823,7 +823,7 @@ struct VSGameView: View {
             }
             .padding(.horizontal, 10).frame(height: 44)
             // Opaque under the status bar — nothing scrolls up behind the clock.
-            .background(VsLobbyKit.page.ignoresSafeArea(edges: .top))
+            .background(PageTint.vs.barColor.ignoresSafeArea(edges: .top))
         }
     }
 
@@ -1676,7 +1676,7 @@ private struct DailyVsAlreadyPlayed: View {
             }
             .padding(.horizontal, 16).padding(.top, 24).padding(.bottom, 32)
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
     }
 
     private var window: some View {

@@ -10,7 +10,7 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { ArtTitle } from '@/components/ui/art-title';
-import { dayArtName } from '@/lib/art';
+import { dayArtName, onPageShadow } from '@/lib/art';
 
 // The Leaderboard banner (founder, 2026-10-01; docs/LEADERBOARD_REDESIGN_SPEC.md §1):
 // the home / VS / Friends one-window shape in gold-to-lilac. A frosted strip with
@@ -151,7 +151,7 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
       style={{
         borderRadius: 16,
         background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #fef3c7, #ede9fe)',
-        boxShadow: '0 4px 14px rgba(146,64,14,0.10)',
+        boxShadow: onPageShadow('0 4px 14px rgba(146,64,14,0.10)'),
       }}
     >
       {/* Frosted headline strip. */}

@@ -64,7 +64,7 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit 
     // Sign in — guests never see the boards.
     if (!isAuthenticated) {
         Column(
-            Modifier.fillMaxSize().appBackground().padding(32.dp),
+            Modifier.fillMaxSize().pageBackground(PageTint.LEADERBOARD).padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -94,7 +94,7 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit 
     var dailyMode by remember { mutableStateOf("DUEL") }
     var allTimeMode by remember { mutableStateOf("DUEL") }
     Column(
-        modifier = Modifier.fillMaxSize().appBackground(),
+        modifier = Modifier.fillMaxSize().pageBackground(PageTint.LEADERBOARD),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // The Records banner (docs/RECORDS_REDESIGN_SPEC.md §1) now owns the title, the

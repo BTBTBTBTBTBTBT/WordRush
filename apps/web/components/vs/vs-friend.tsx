@@ -21,6 +21,7 @@ import { InitialAvatar, ModeChip, SectionLabel, VsNav, vsCardStyle } from './vs-
 import { PAGE_HOSTS } from '@/lib/mascots';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
+import { PageBackground } from '@/components/ui/page-background';
 
 const MODES = VS_MODE_ORDER as readonly string[];
 
@@ -95,7 +96,7 @@ export function VsFriend() {
   );
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: VS.page }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24">
       <InviteModal open={invite !== null} onClose={() => setInvite(null)} initialMode={mode} initialTab={invite ?? 'link'} />
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav title="CHALLENGE" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={mode} />} />
@@ -194,6 +195,6 @@ export function VsFriend() {
         )}
       </div>
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }

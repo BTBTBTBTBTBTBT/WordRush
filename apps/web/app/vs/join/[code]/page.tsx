@@ -15,6 +15,7 @@ import {
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
+import { PageBackground } from '@/components/ui/page-background';
 
 export default function JoinInvitePage() {
   const params = useParams();
@@ -53,11 +54,11 @@ export default function JoinInvitePage() {
   };
 
   const centered = (node: React.ReactNode) => (
-    <div className="min-h-screen-stable flex items-center justify-center px-5" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="vs" className="min-h-screen-stable flex items-center justify-center px-5">
       <div className="w-full max-w-sm text-center p-6" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}>
         {node}
       </div>
-    </div>
+    </PageBackground>
   );
 
   if (loading || status === 'loading') {

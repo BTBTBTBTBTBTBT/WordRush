@@ -93,12 +93,17 @@ fun Button3D(
     content = content,
 )
 
-/** Subtle card drop-shadow matching the web mode/surface cards. */
+/**
+ * Subtle card drop-shadow matching the web mode/surface cards. On a tinted page
+ * (ART_SPEC §11) the shadow leans toward the page's accent instead.
+ */
 fun Modifier.cardShadow(corner: Dp = 14.dp): Modifier =
-    this.shadow(
-        elevation = 2.dp,
-        shape = RoundedCornerShape(corner),
-        clip = false,
-        ambientColor = Color(0x18000000),
-        spotColor = Color(0x18000000),
-    )
+    this.pageCardShadow(corner) {
+        shadow(
+            elevation = 2.dp,
+            shape = RoundedCornerShape(corner),
+            clip = false,
+            ambientColor = Color(0x18000000),
+            spotColor = Color(0x18000000),
+        )
+    }

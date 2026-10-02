@@ -204,7 +204,7 @@ struct FriendsPanelView: View {
                 }
                 .padding(16)
             }
-            .background(FriendsKit.page.ignoresSafeArea())
+            .pageBackground(.friends, lightOnly: true)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -1092,20 +1092,20 @@ struct FriendsScreenView: View {
                     AppHeaderView()
                     scroll(proxy)
                 }
-                .background(FriendsKit.page.ignoresSafeArea())
+                .pageBackground(.friends, lightOnly: true)
                 // navigationTitle stays for the next push's back label.
                 .navigationTitle("Friends")
                 .toolbar(.hidden, for: .navigationBar)
             } else {
                 scroll(proxy)
-                    .background(FriendsKit.page.ignoresSafeArea())
+                    .pageBackground(.friends, lightOnly: true)
                     // navigationTitle stays for the next push's back label; the
                     // principal item is what renders.
                     .navigationTitle("Friends")
                     .navigationBarTitleDisplayMode(.inline)
                     // §10 (founder, iOS 220): the pinned header is opaque page color —
                     // the list never shows through the title and buttons.
-                    .toolbarBackground(FriendsKit.page, for: .navigationBar)
+                    .toolbarBackground(PageTint.friends.barColor, for: .navigationBar)
                     .toolbarBackground(.visible, for: .navigationBar)
                     .toolbar {
                         ToolbarItem(placement: .principal) {

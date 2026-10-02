@@ -75,7 +75,7 @@ private struct LegacyChartCard<Content: View>: View {
             content
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 }
@@ -472,7 +472,7 @@ struct SevenDayActivityCard: View {
                     }
                 }
                 .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             } else {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty

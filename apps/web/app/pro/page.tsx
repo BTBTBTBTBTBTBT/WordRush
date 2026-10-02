@@ -9,6 +9,8 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
 import { PageHeader } from '@/components/ui/page-header';
+import { PageBackground } from '@/components/ui/page-background';
+import { onPageShadow } from '@/lib/art';
 
 const benefits = [
   { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
@@ -76,7 +78,7 @@ export default function ProPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="home" className="min-h-screen pb-20">
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
@@ -100,6 +102,7 @@ export default function ProPage() {
               background: 'var(--color-surface)',
               border: '1.5px solid #fde68a',
               borderRadius: '16px',
+              boxShadow: onPageShadow(),
             }}
           >
             <div
@@ -126,6 +129,7 @@ export default function ProPage() {
                     background: 'var(--color-surface)',
                     border: '1.5px solid var(--color-border)',
                     borderRadius: '16px',
+                    boxShadow: onPageShadow(),
                   }}
                 >
                   <b.icon className="w-5 h-5 flex-shrink-0" style={{ color: '#d97706' }} />
@@ -144,6 +148,7 @@ export default function ProPage() {
                   background: 'var(--color-surface)',
                   border: '1.5px solid var(--color-border)',
                   borderRadius: '16px',
+                  boxShadow: onPageShadow(),
                 }}
               >
                 <h3 className="text-sm font-extrabold mb-1" style={{ color: 'var(--color-text)' }}>Monthly</h3>
@@ -171,6 +176,7 @@ export default function ProPage() {
                   background: 'var(--color-surface)',
                   border: '1.5px solid #fde68a',
                   borderRadius: '16px',
+                  boxShadow: onPageShadow(),
                 }}
               >
                 <div
@@ -321,6 +327,6 @@ export default function ProPage() {
       </div>
 
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }

@@ -225,7 +225,7 @@ fun HomeScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-    Column(modifier = Modifier.fillMaxSize().appBackground()) {
+    Column(modifier = Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // (Shared AppHeader is rendered by MainScreen above all tabs.)
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -339,12 +339,11 @@ fun HomeScreen(
             // Two sections of the SAME mode card, two across: the Wordocious dailies,
             // then the Puzzles (the old More Games sheet's cards, catalog order, same
             // lock/badge rules). The More Games band and sheet are gone.
-            HomeSectionHeader("WORDOCIOUS DAILIES")
+            // ART_SPEC §2 / §12: each section's header is its whole-cast title art (~70% width,
+            // left aligned) — WORDOCIOUS DAILIES, PUZZLES, then WORD OF THE DAY above its card.
+            SectionTitleArt(TitleArt.DAILIES)
             ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
-            // ART_SPEC §2: the whole-cast PUZZLES art (~70% width, left aligned) is the header.
-            Box(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                PageTitleArt(TitleArt.PUZZLES, Modifier.fillMaxWidth(0.7f), maxWidth = 294.dp, alignment = Alignment.CenterStart)
-            }
+            SectionTitleArt(TitleArt.PUZZLES)
             ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = openCard)
 
             WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
@@ -659,22 +658,12 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
             .clickableNoRipple(onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        // Card-chrome rows (label + word) are capped; the definition below is
-        // NOT — it reflows at the user's full text size, on proportional lines.
-        CappedFontScale {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // ART_SPEC §2: the whole-cast WORD OF THE DAY art replaces the label + I host.
-                Box(Modifier.weight(1f).padding(end = 8.dp), contentAlignment = Alignment.CenterStart) {
-                    PageTitleArt(TitleArt.WOTD, maxWidth = 260.dp, alignment = Alignment.CenterStart)
-                }
-                Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-                Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
-            }
-        }
+        // Card-chrome rows (the word) are capped; the definition below is NOT — it
+        // reflows at the user's full text size, on proportional lines. The WORD OF THE
+        // DAY title + "Past words" sit above the card (ART_SPEC §12, WordOfTheDayCard).
         val w = wotd   // local capture: produceState delegate can't smart-cast
         if (w == null) {
             // Web parity: structural animate-pulse skeleton, not a "…" placeholder.
-            Spacer(Modifier.height(4.dp))
             SkeletonBlock(height = 16.dp, width = 70.dp, cornerRadius = 6.dp)
             Spacer(Modifier.height(6.dp))
             SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)
@@ -914,28 +903,6 @@ internal fun formatCountdown(secs: Long): String {
     val m = (secs % 3600) / 60
     val s = secs % 60
     return "%02d:%02d:%02d".format(h, m, s)
-}
-
-/**
- * Home section header ("WORDOCIOUS DAILIES", "PUZZLES"): the old GAME MODES label
- * style. A [host] (Puzzles: C, MASCOT_SPEC §1–§2) stands just left of it, 28 dp, static.
- */
-@Composable
-private fun HomeSectionHeader(title: String, host: MascotId? = null) {
-    Row(
-        Modifier.padding(top = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        if (host != null) Mascot(host, 28.dp)
-        Text(
-            title,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = WTheme.textMuted,
-            letterSpacing = 1.sp,
-        )
-    }
 }
 
 /**

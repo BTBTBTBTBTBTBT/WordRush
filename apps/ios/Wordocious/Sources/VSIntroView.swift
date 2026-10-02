@@ -67,7 +67,7 @@ struct VSMatchIntroView: View {
     var body: some View {
         ZStack {
             // Opaque VS page — nothing behind (the queue screen) can ghost through.
-            VsLobbyKit.page.ignoresSafeArea()
+            PageBackground(tint: .vs, lightOnly: true)
 
             VSOverlayWordmark()
 

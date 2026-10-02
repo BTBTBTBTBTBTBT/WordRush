@@ -117,6 +117,38 @@
   --key-present: #6aaef0;
 }
 
+/* Page tint + tiles (docs/ART_SPEC.md §11): components/ui/page-background.tsx
+   sets the tint's stops as vars on the page root; this fixed layer paints the
+   diagonal gradient and, on top, the letter-tile pattern behind everything on
+   the page. Dark theme swaps in the dark stops and a fainter pattern, except
+   on light-only pages (data-page-scheme="light"). */
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom right, var(--page-bg-1), var(--page-bg-2), var(--page-bg-3));
+}
+.page-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--page-tiles);
+  background-size: var(--page-tiles-size) var(--page-tiles-size);
+  background-repeat: repeat;
+  opacity: var(--page-tiles-opacity);
+}
+[data-theme="dark"] [data-page-scheme="auto"] > .page-bg {
+  background: linear-gradient(to bottom right, var(--page-bg-dark-1), var(--page-bg-dark-2), var(--page-bg-dark-3));
+}
+[data-theme="dark"] [data-page-scheme="auto"] > .page-bg::after {
+  opacity: var(--page-tiles-opacity-dark);
+}
+/* Reduce transparency / more contrast: the gradient only. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .page-bg::after { display: none; }
+}
+
 /* Tile/keyboard state utilities — the only sanctioned way to color game
    tiles and keys. Backgrounds + borders flow from the vars above. */
 .tile-correct { background-color: var(--tile-correct); border-color: var(--tile-correct-border); }

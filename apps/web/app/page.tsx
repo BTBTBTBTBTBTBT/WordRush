@@ -13,7 +13,8 @@ import { useFlags } from '@/hooks/use-flags';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
-import { ArtTitle } from '@/components/ui/art-title';
+import { PageBackground } from '@/components/ui/page-background';
+import { HomeSectionTitle } from '@/components/home/home-section-title';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
@@ -303,7 +304,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="home" className="fixed inset-0 flex flex-col">
       <AppHeader />
 
       <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -328,17 +329,17 @@ export default function HomePage() {
           }}
         />
 
-        <div className="section-header mt-1 mb-0.5">WORDOCIOUS DAILIES</div>
+        {/* WORDOCIOUS DAILIES and PUZZLES: the whole-cast title art
+            (docs/ART_SPEC.md §2, §12), one header style, ~70% width, left aligned. */}
+        <HomeSectionTitle name="art-title-dailies" label="Wordocious Dailies" />
         {grid(wordCards)}
 
-        {/* PUZZLES: the whole-cast title art (docs/ART_SPEC.md §2), ~70% width, left aligned. */}
-        <div id="puzzles" className="mt-1 mb-0.5" style={{ scrollMarginTop: 12 }}>
-          <ArtTitle name="art-title-puzzles" label="Puzzles" as="h2" widthPct={70} maxWidth={300} align="left" priority={false} />
-        </div>
+        <HomeSectionTitle id="puzzles" name="art-title-puzzles" label="Puzzles" />
         {grid(puzzleCards)}
 
-        {/* Word of the Day, now a quick quiz (see components/home/word-of-the-day.tsx). */}
-        <div className="mt-1"><WordOfTheDay /></div>
+        {/* Word of the Day, now a quick quiz under its own section header
+            (§12; see components/home/word-of-the-day.tsx). */}
+        <WordOfTheDay />
 
         {/* VS Battle — the VS card and the LIVE strip as one full-width tile, last. */}
         {(() => {
@@ -399,6 +400,6 @@ export default function HomePage() {
       {sweepCeleb && (
         <SweepCelebration completions={sweepCeleb} onClose={() => setSweepCeleb(null)} />
       )}
-    </div>
+    </PageBackground>
   );
 }

@@ -4,7 +4,7 @@ import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Users, User, Swords, ChevronDown, ChevronUp } from 'lucide-react';
-import { Icon3D } from '@/components/ui/icon3d';
+import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
@@ -83,6 +83,7 @@ import {
   fetchAllTimeRecordsShared, peekAllTimeRecords, RECORD_LABELS, recordValue, recordLabel,
   PER_MODE_RECORD_TYPES, GLOBAL_RECORD_TYPES, formatRecordTime as formatTime,
 } from '@/lib/records-ui';
+import { PageBackground } from '@/components/ui/page-background';
 
 // Caps section labels (records-redesign §2); the text stays mixed-case in the
 // source so scripts/records-fold.test.ts can still find the sections.
@@ -595,15 +596,8 @@ function RecordsRowStats({ entry, mode, playType }: { entry: LeaderboardEntry; m
           return h ? ` · ${h}` : '';
         })()}
       </span>
-      <span
-        className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
-        style={{
-          background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-          color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
-        }}
-      >
-        {entry.completed ? 'Win' : 'Loss'}
-      </span>
+      {/* §13: the W / L badge art in place of the text chip. */}
+      <WinLossBadge won={entry.completed} />
     </>
   );
 }
@@ -894,7 +888,7 @@ export default function RecordsPage() {
   const setSelectedMode = activeTab === 'daily' ? setDailyMode : setAllTimeMode;
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="leaderboard" className="min-h-screen pb-20">
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
@@ -931,6 +925,6 @@ export default function RecordsPage() {
       </div>
 
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }

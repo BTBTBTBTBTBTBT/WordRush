@@ -3,6 +3,7 @@
 import { Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import type { HomeCard } from './mode-chrome';
+import { onPageShadow } from '@/lib/art';
 
 // VS Battle as a full-width tile at the very bottom of the game area (founder +
 // JP, 2026-09-26): the VS card and the old LIVE strip merged — VS icon and
@@ -39,6 +40,7 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
         background: done ? `${accent}0f` : 'var(--color-surface)',
         border: `1.5px solid ${done ? `${accent}66` : 'var(--color-border)'}`,
         borderRadius: '14px',
+        boxShadow: onPageShadow(),
       }}
       role="group"
       aria-label="VS Battle"

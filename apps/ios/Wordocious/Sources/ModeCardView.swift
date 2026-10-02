@@ -51,6 +51,9 @@ struct ModeCardView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(isDone ? mode.accent.opacity(0.06) : Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderC, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        // ART_SPEC §11: an opaque base (the done tint is translucent, so the page's
+        // tiles never show through) carrying the page-tinted lift, outside the clip.
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
         .opacity(locked ? 0.6 : 1)
     }
 

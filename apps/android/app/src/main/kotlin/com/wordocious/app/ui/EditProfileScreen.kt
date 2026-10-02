@@ -223,7 +223,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
     // / Save. The root fix in MainActivity covers the NAVIGATION bar only —
     // adding status-bar padding there would double the game screens' own
     // 48dp. Reported by the Play tester on the profile editor.
-    Column(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         // The shared page header (HEADER_SPEC §4): Cancel is the white close circle; Save
         // stays the purple text action on the right.

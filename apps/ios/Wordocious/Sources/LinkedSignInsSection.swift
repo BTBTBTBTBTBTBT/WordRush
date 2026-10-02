@@ -34,7 +34,7 @@ struct LinkedSignInsSection: View {
                     providerRow(row)
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
             if let error {
                 Text(error).font(Brand.body(12)).foregroundStyle(Color(hex: 0xDC2626))

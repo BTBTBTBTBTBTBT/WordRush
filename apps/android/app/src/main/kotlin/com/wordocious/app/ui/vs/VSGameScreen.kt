@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.Icon3DName
 import com.wordocious.app.ui.theme.Nunito
@@ -186,9 +188,10 @@ fun VSGameScreen(
     }
 
     // The match keeps the solo screen's page; everything around it is the VS page.
-    val pageBg = if (vm.screen == VSScreen.MATCH) Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover))
-    else Brush.verticalGradient(listOf(VsTeal.page, VsTeal.page))
-    Box(Modifier.fillMaxSize().background(pageBg), contentAlignment = Alignment.Center) {
+    // ART_SPEC §11: the VS pages sit on the VS page tint + tiles.
+    val pageBg = if (vm.screen == VSScreen.MATCH) Modifier.background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))
+    else Modifier.pageBackground(PageTint.VS, alwaysLight = true)
+    Box(Modifier.fillMaxSize().then(pageBg), contentAlignment = Alignment.Center) {
         when (vm.screen) {
             VSScreen.NOT_CONFIGURED -> VsNoticeScreen(
                 icon = { Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsTeal.ink, modifier = Modifier.size(24.dp)) },
@@ -286,7 +289,7 @@ fun VSGameScreen(
 @Composable
 private fun VsLoadingScreen(mode: GameMode, sub: String? = null, botArtId: String? = null) {
     Column(
-        Modifier.fillMaxSize().background(VsTeal.page).statusBarsPadding().navigationBarsPadding().padding(horizontal = 32.dp),
+        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).statusBarsPadding().navigationBarsPadding().padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
@@ -325,7 +328,7 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
     // Private match: surface the shareable code/link so the host can invite a
     // friend (the matchmaker buckets both by the same code). No bot steps in.
     if (inviteCode != null) {
-        Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+        Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
             VsNavBar("PRIVATE MATCH", onBack = onHome) { VsModeChip(vm.mode) }
             Column(
                 Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 20.dp),
@@ -798,7 +801,7 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     }
 
     LazyColumn(
-        Modifier.fillMaxSize().background(VsTeal.page).statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
+        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -1135,7 +1138,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
     val leftBg = if (isDraw) VsPurple.draw else if (isWin) VsPurple.won else VsPurple.plain
     val rightBg = if (isDraw) VsPurple.draw else if (!isWin) VsPurple.won else VsPurple.plain
 
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         ResultTopBar(onHome)
         LazyColumn(
             Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp),
@@ -1384,7 +1387,7 @@ private fun ResultSide(name: String, score: Double, guesses: Int, timeMs: Double
 @Composable
 private fun VsNoticeScreen(icon: @Composable () -> Unit, title: String, body: String?, button: String, onButton: () -> Unit) {
     Box(
-        Modifier.fillMaxSize().background(VsTeal.page).statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
+        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
         Alignment.Center,
     ) {
         Column(
@@ -1402,7 +1405,7 @@ private fun VsNoticeScreen(icon: @Composable () -> Unit, title: String, body: St
 
 @Composable
 private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, onHome: () -> Unit, onGoPro: () -> Unit, onPlayUnlimited: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         VsNavBar("DAILY BATTLE", onBack = onHome)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp),

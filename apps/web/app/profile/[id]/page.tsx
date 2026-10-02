@@ -19,7 +19,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { GameArt } from '@/components/ui/game-art';
-import { Icon3D } from '@/components/ui/icon3d';
+import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { PageHeader } from '@/components/ui/page-header';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -66,9 +66,9 @@ import {
   ARCHETYPE_EMOJI,
 } from '@/components/profile/profile-social';
 import type { Database } from '@/lib/database.types';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, PAGE_SCENES, onPageShadow } from '@/lib/art';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES } from '@/lib/art';
+import { PageBackground } from '@/components/ui/page-background';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -400,15 +400,15 @@ export default function PublicProfilePage() {
   // owner never sees their own teaser card flash before the full page.
   if (loading || (isPrivate && authLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <PageBackground tint="home" className="min-h-screen flex items-center justify-center">
         <div className="text-lg font-black" style={{ color: 'var(--color-text)' }}>Loading...</div>
-      </div>
+      </PageBackground>
     );
   }
 
   if (notFound || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <PageBackground tint="home" className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4 animate-fade-in-scale">
           <ArtScene scene={PAGE_SCENES.notFound} priority />
           <h1 className="text-4xl font-black" style={{ color: 'var(--color-text)' }}>Player not found</h1>
@@ -419,7 +419,7 @@ export default function PublicProfilePage() {
             </Button>
           </Link>
         </div>
-      </div>
+      </PageBackground>
     );
   }
 
@@ -444,13 +444,13 @@ export default function PublicProfilePage() {
       { emoji: '\u{1F949}', count: profile.bronze_medals ?? 0 },
     ];
     return (
-      <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <PageBackground tint="home" className="min-h-screen p-4 pb-24">
         {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
         <PageHeader className="max-w-sm mx-auto" title="Profile" titleTag="div" back={{ href: '/' }} />
         <div className="max-w-sm mx-auto pt-4 space-y-4 animate-fade-in-up">
           <div
             className="rounded-2xl p-6 flex flex-col items-center text-center"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', boxShadow: onPageShadow() }}
           >
             <AvatarUpload size={96} editable={false} avatarUrl={profile.avatar_url} username={profile.username} />
 
@@ -529,7 +529,7 @@ export default function PublicProfilePage() {
           </div>
         </div>
         <BottomNav />
-      </div>
+      </PageBackground>
     );
   }
 
@@ -550,7 +550,7 @@ export default function PublicProfilePage() {
     );
 
   return (
-    <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="home" className="min-h-screen p-4 pb-24">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
         <PageHeader title="Profile" titleTag="div" back={{ href: '/' }} />
@@ -743,7 +743,7 @@ export default function PublicProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div
             className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border)', animationDelay: '0.1s', animationFillMode: 'both' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border)', animationDelay: '0.1s', animationFillMode: 'both', boxShadow: onPageShadow() }}
           >
             <div className="flex items-center gap-3 mb-3">
               <Star className="w-8 h-8" style={{ color: '#d97706' }} fill="currentColor" />
@@ -768,7 +768,7 @@ export default function PublicProfilePage() {
 
           <div
             className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)', animationDelay: '0.2s', animationFillMode: 'both' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)', animationDelay: '0.2s', animationFillMode: 'both', boxShadow: onPageShadow() }}
           >
             <div className="flex items-center gap-3">
               <Icon3D name="trophy" size={32} />
@@ -782,7 +782,7 @@ export default function PublicProfilePage() {
 
           <div
             className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)', animationDelay: '0.3s', animationFillMode: 'both' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)', animationDelay: '0.3s', animationFillMode: 'both', boxShadow: onPageShadow() }}
           >
             <div className="flex items-center gap-3">
               <Icon3D name="flame" size={32} />
@@ -804,7 +804,7 @@ export default function PublicProfilePage() {
 
           <div
             className="rounded-2xl p-6 animate-fade-in-scale"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.4s', animationFillMode: 'both' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.4s', animationFillMode: 'both', boxShadow: onPageShadow() }}
           >
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8" style={{ color: '#2563eb' }} />
@@ -933,7 +933,7 @@ export default function PublicProfilePage() {
         {/* Recent Matches Section */}
         <div
           className="rounded-2xl p-6 animate-fade-in-up"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.6s', animationFillMode: 'both' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.6s', animationFillMode: 'both', boxShadow: onPageShadow() }}
         >
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <Clock className="w-6 h-6" style={{ color: '#2563eb' }} />
@@ -986,9 +986,8 @@ export default function PublicProfilePage() {
 
                     <div className="flex items-center gap-4 flex-shrink-0 text-right">
                       <div>
-                        <div className="font-bold text-sm" style={{ color: isWinner ? 'var(--color-win-text)' : 'var(--color-loss-text)' }}>
-                          {isWinner ? 'Win' : 'Loss'}
-                        </div>
+                        {/* §13: the W / L badge art in place of the Win / Loss text. */}
+                        <WinLossBadge won={isWinner} className="ml-auto" />
                         <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                           {playerTime > 0 ? `${playerTime}s` : '-'}
                         </div>
@@ -1022,6 +1021,6 @@ export default function PublicProfilePage() {
       )}
 
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }

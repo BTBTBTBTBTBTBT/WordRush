@@ -53,7 +53,7 @@ struct VSFriendPage: View {
             }
             if auth.isProActive && tab == .race { cta }
         }
-        .background(VsLobbyKit.page.ignoresSafeArea())
+        .pageBackground(.vs, lightOnly: true)
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
         .sheet(isPresented: $showInvite) { InviteSheet(mode: mode) }
@@ -191,7 +191,7 @@ struct VSFriendPage: View {
             playing = VSIntent.SendTarget(friendIds: ids, link: link)
         }
         .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
-        .background(VsLobbyKit.page.opacity(0.96).ignoresSafeArea(edges: .bottom))
+        .background(PageTint.vs.stops(dark: false)[2].opacity(0.96).ignoresSafeArea(edges: .bottom))
     }
 
     // MARK: LIVE NOW

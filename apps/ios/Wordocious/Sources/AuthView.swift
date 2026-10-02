@@ -37,8 +37,7 @@ struct AuthView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .home)
                 ScrollView {
                     VStack(spacing: 24) {
                         VStack(spacing: 8) {

@@ -2,6 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { HOW_TO_PLAY, type HTPTileColor } from '@/lib/how-to-play-content';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
+import { PageBackground } from '@/components/ui/page-background';
+import { onPageShadow } from '@/lib/art';
 
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
@@ -23,11 +25,11 @@ function TileExample({ letter, color }: { letter: string; color: HTPTileColor })
   );
 }
 
-const cardStyle = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' } as const;
+const cardStyle = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() } as const;
 
 export default function HowToPlayPage() {
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="home" className="min-h-screen pb-12">
       <InfoPageHeader title="How to Play" art="art-title-howto" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Everything you need to know to get started</p>
@@ -97,6 +99,6 @@ export default function HowToPlayPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageBackground>
   );
 }

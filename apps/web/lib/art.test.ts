@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { FRIENDLY_KINDS, leaderboardTitle } from '@wordle-duel/core';
 import {
-  ART_SIZE, DAY_ART, GAME_ART_IDS, GAME_TITLE_ART_HEIGHT, GAME_TITLE_ART_IDS, MOMENT_LABEL, PAGE_SCENES, POCKET_ART_KINDS,
-  artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
-  isGameArtIcon, pocketArtSrc, resultMoment, type ArtName,
+  ART_SIZE, DAY_ART, GAME_ART_IDS, GAME_TITLE_ART_HEIGHT, GAME_TITLE_ART_IDS, MOMENT_LABEL, PAGE_SCENES, PAGE_TILES, PAGE_TINTS,
+  POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
+  isGameArtIcon, onPageShadow, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
 } from './art';
 import { MODES } from './modes.generated';
 
@@ -173,5 +173,47 @@ describe('game title art (§10)', () => {
     expect(GAME_TITLE_ART_HEIGHT.header).toBeLessThanOrEqual(40);
     expect(GAME_TITLE_ART_HEIGHT.guide).toBe(56);
     expect(GAME_TITLE_ART_HEIGHT.playCard).toBe(40);
+  });
+});
+
+describe('page tint + tiles (§11)', () => {
+  it('ships the seamless tile pattern, 640 px square, drawn at 320 px', () => {
+    expect(ART_SIZE['art-bg-tiles']).toEqual([640, 640]);
+    expect(webpSize(pub(artSrc(PAGE_TILES.name)))).toEqual([640, 640]);
+    expect(PAGE_TILES.size).toBe(320);
+    expect(PAGE_TILES.opacity).toEqual({ light: 0.12, dark: 0.07 });
+  });
+
+  it('has the five tints with the spec stops, light and dark', () => {
+    expect(PAGE_TINTS.home.light).toEqual(['#F3EEFF', '#FBEFFF', '#FFF1F7']);
+    expect(PAGE_TINTS.leaderboard.dark).toEqual(['#1E1608', '#23160D', '#241221']);
+    expect(PAGE_TINTS.stats.light).toEqual(['#EEF4FF', '#EEEBFF', '#F4EEFF']);
+    expect(PAGE_TINTS.friends.dark).toEqual(['#241024', '#22102A', '#1A1030']);
+    expect(PAGE_TINTS.vs.light).toEqual(['#E9FBF8', '#ECF6FF', '#F1EEFF']);
+    for (const [tint, t] of Object.entries(PAGE_TINTS)) {
+      for (const c of [...t.light, ...t.dark, t.accent]) expect(c, tint).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(t.light, tint).toHaveLength(3);
+      expect(t.dark, tint).toHaveLength(3);
+    }
+  });
+
+  it('tints card shadows toward the page accent at ~11%, y 5, blur 14', () => {
+    expect(pageCardShadow('home')).toBe('0 5px 14px rgba(124,58,237,0.11)');
+    expect(pageCardShadow('leaderboard')).toBe('0 5px 14px rgba(245,158,11,0.11)');
+    expect(pageCardShadow('stats')).toBe('0 5px 14px rgba(37,99,235,0.11)');
+    expect(pageCardShadow('friends')).toBe('0 5px 14px rgba(236,72,153,0.11)');
+    expect(pageCardShadow('vs')).toBe('0 5px 14px rgba(13,148,136,0.11)');
+    expect(onPageShadow()).toBe('var(--page-card-shadow, none)');
+    expect(onPageShadow('0 1px 2px #000')).toBe('var(--page-card-shadow, 0 1px 2px #000)');
+  });
+});
+
+describe('Home section titles (§12)', () => {
+  it('ships WORDOCIOUS DAILIES as wide as PUZZLES and WORD OF THE DAY', () => {
+    const [w, h] = ART_SIZE['art-title-dailies'];
+    expect(webpSize(pub(artSrc('art-title-dailies')))).toEqual([w, h]);
+    expect(w).toBe(ART_SIZE['art-title-puzzles'][0]);
+    expect(w).toBe(ART_SIZE['art-title-wotd'][0]);
+    expect(w).toBeGreaterThan(h * 4);
   });
 });

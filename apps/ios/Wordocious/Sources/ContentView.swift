@@ -72,7 +72,7 @@ private struct LoadingSkeleton: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background)
+        .pageBackground(.home)
         .onAppear { pulse = true }
     }
 }

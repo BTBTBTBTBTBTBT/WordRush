@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +56,8 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     WELCOME(R.drawable.art_title_welcome, "Welcome"),
     /** §8 the whole cast around LEADERBOARD (holiday banner title slot). */
     LEADERBOARD(R.drawable.art_title_leaderboard, "Leaderboard"),
+    /** §12 the whole cast around WORDOCIOUS DAILIES (Home's daily games section). */
+    DAILIES(R.drawable.art_title_dailies, "Wordocious Dailies"),
 }
 
 /** Title art's widest size (§2: fill the content width up to ~420). */
@@ -78,6 +83,32 @@ fun PageTitleArt(
         alignment = alignment,
         modifier = modifier.widthIn(max = maxWidth).fillMaxWidth().semantics { heading() },
     )
+}
+
+/** §2 / §12 Home section title art: ~70% of the content width, at most this wide. */
+val SECTION_TITLE_ART_MAX_WIDTH: Dp = 294.dp
+private const val SECTION_TITLE_ART_WIDTH_FRACTION = 0.7f
+
+/**
+ * §2 / §12 A Home section header (WORDOCIOUS DAILIES, PUZZLES, WORD OF THE DAY): the
+ * title art at ~70% of the width it is given (max [SECTION_TITLE_ART_MAX_WIDTH]),
+ * left aligned, with an optional [trailing] link at the right of the row (WOTD's
+ * "Past words"). Every section header gets the same size, alignment and spacing.
+ */
+@Composable
+fun SectionTitleArt(
+    art: TitleArt,
+    modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    BoxWithConstraints(modifier.fillMaxWidth().padding(top = 2.dp)) {
+        val artWidth = (maxWidth * SECTION_TITLE_ART_WIDTH_FRACTION).coerceAtMost(SECTION_TITLE_ART_MAX_WIDTH)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            PageTitleArt(art, Modifier.width(artWidth), maxWidth = artWidth, alignment = Alignment.CenterStart)
+            Spacer(Modifier.weight(1f))
+            trailing?.invoke()
+        }
+    }
 }
 
 /**
@@ -145,6 +176,9 @@ fun gameArtRes(modeId: String?): Int? = when (modeId) {
     "regions" -> R.drawable.game_regions
     else -> null
 }
+
+/** §13 The W / L badge in Leaderboard / Records / recent-match rows (was a "Win" / "Loss" text chip). */
+val ROW_RESULT_BADGE_SIZE: Dp = 18.dp
 
 /**
  * §4 A daily result badge: W (won) / L (lost) / ✓ (done, result unknown — [won]

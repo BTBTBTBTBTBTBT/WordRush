@@ -49,7 +49,7 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
         initialValue = com.wordocious.app.data.ContentService.cached()
     ) { value = com.wordocious.app.data.ContentService.load() }
 
-    Column(Modifier.fillMaxSize().background(WTheme.surface)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // Top accent bar (purple → pink → amber)
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         // The shared page header (HEADER_SPEC §4) with the Help host, C the explorer (MASCOT_SPEC §6).
@@ -186,7 +186,7 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     ) { if (fromApi) value = com.wordocious.app.data.ContentService.load() }
     val contentSections = if (kind == "about") content?.about else content?.support
 
-    Column(Modifier.fillMaxSize().background(WTheme.bg)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // Accent bar — matches How to Play / the other menu screens.
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         PageHeader(title, onClose = onDone, titleSize = 20.sp)

@@ -14,11 +14,12 @@ import { FriendsPanel } from '@/components/friends/friends-panel';
 import { InvitePanel } from '@/components/referrals/invite-panel';
 import { useAuth } from '@/lib/auth-context';
 import { FR } from '@/lib/friends-play';
+import { PageBackground } from '@/components/ui/page-background';
 
 export default function FriendsPage() {
   const { user, loading } = useAuth();
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: FR.page }}>
+    <PageBackground tint="friends" scheme="light" className="min-h-screen pb-24">
       <AppHeader />
 
       <main className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
@@ -35,6 +36,6 @@ export default function FriendsPage() {
         )}
       </main>
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }

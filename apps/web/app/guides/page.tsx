@@ -5,6 +5,8 @@ import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
 import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
+import { PageBackground } from '@/components/ui/page-background';
+import { onPageShadow } from '@/lib/art';
 
 export const metadata: Metadata = {
   title: 'Wordocious Mode Guides — Rules, Scoring & Strategy for Every Mode',
@@ -14,14 +16,14 @@ export const metadata: Metadata = {
 
 export default function GuidesIndexPage() {
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="home" className="min-h-screen pb-12">
       <InfoPageHeader title="Mode Guides" art="art-title-howto" artLabel="How to Play" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-sm font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.
         </p>
 
-        <div className="rounded-2xl p-5 mb-6 space-y-3" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        <div className="rounded-2xl p-5 mb-6 space-y-3" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: onPageShadow() }}>
           <h2 className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--color-text)' }}>
             Which mode should you play first?
           </h2>
@@ -87,6 +89,6 @@ export default function GuidesIndexPage() {
           the tile-color basics, then come back here when you want to climb the daily leaderboards.
         </p>
       </div>
-    </div>
+    </PageBackground>
   );
 }

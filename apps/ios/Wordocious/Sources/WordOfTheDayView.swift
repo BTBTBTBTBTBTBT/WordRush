@@ -21,6 +21,7 @@ struct WordOfTheDayView: View {
     /// The ~2.2 s right/wrong beat right after a pick.
     @State private var revealing = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var scheme
 
     private static let letters = ["A", "B", "C"]
     private static let revealNanos: UInt64 = 2_200_000_000
@@ -62,12 +63,20 @@ struct WordOfTheDayView: View {
     }
 
     var body: some View {
-        Group {
-            if let info {
-                content(info)
-            } else {
-                placeholderCard
+        VStack(alignment: .leading, spacing: 8) {
+            header
+            Group {
+                if let info {
+                    content(info)
+                } else {
+                    placeholderCard
+                }
             }
+            // Tappable → the full Word of the Day archive (web parity: the card links
+            // to /words). While the quiz is asking, only "Past words" opens it, so a
+            // near-miss on a choice never jumps to the archive.
+            .contentShape(Rectangle())
+            .onTapGesture { if !isAsking { showWords = true } }
         }
         // Re-fetch when the UTC day rolls over (the Home tab stays alive in the
         // TabView, so a one-shot `if info == nil` would show yesterday's word
@@ -112,11 +121,6 @@ struct WordOfTheDayView: View {
             if !revealing { answer = state.today; streak = state.streak }
             answerLoaded = true
         }
-        // Tappable → the full Word of the Day archive (web parity: the card links
-        // to /words). While the quiz is asking, only "Past words" opens it, so a
-        // near-miss on a choice never jumps to the archive.
-        .contentShape(Rectangle())
-        .onTapGesture { if !isAsking { showWords = true } }
         .sheet(isPresented: $showWords) { WordsView(navTitle: "Word of the Day").presentationDetents([.large]) }
     }
 
@@ -149,19 +153,6 @@ struct WordOfTheDayView: View {
         let pos = q != nil ? (info.quizPartOfSpeech ?? info.partOfSpeech) : info.partOfSpeech
         let showFlame = q != nil && (answer?.correct ?? false) && !revealing && streak > 0
         return VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                // ART_SPEC §2: the whole-cast WORD OF THE DAY title art (it carries the cast,
-                // so I's host spot is gone).
-                ArtTitle(.wotd, maxWidth: 230)
-                Spacer(minLength: 8)
-                Button { showWords = true } label: {
-                    HStack(spacing: 2) {
-                        Text("Past words").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xC4B5FD))
-                        Image(systemName: "chevron.right").font(.system(size: 8, weight: .black)).foregroundStyle(Color(hex: 0xC4B5FD))
-                    }
-                }
-                .buttonStyle(.plain)
-            }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(info.word.prefix(1).uppercased() + info.word.dropFirst().lowercased())
                     .font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
@@ -204,8 +195,32 @@ struct WordOfTheDayView: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    /// ART_SPEC §12: the whole-cast WORD OF THE DAY art as a section header ABOVE the
+    /// card, at the PUZZLES header's size and alignment (~70% width, left aligned),
+    /// with "Past words" as a link at the right of the row.
+    private var header: some View {
+        let link = scheme == .dark ? Color(hex: 0xC4B5FD) : Theme.primary
+        return HStack(alignment: .center, spacing: 8) {
+            ArtTitle(.wotd, maxWidth: 250)
+                .layoutPriority(1)
+            Spacer(minLength: 0)
+            Button { showWords = true } label: {
+                HStack(spacing: 2) {
+                    Text("Past words").font(Brand.font(11, .heavy)).foregroundStyle(link)
+                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .black)).foregroundStyle(link)
+                }
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .fixedSize()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
     }
 
     private func choiceRow(_ i: Int, _ text: String) -> some View {
@@ -257,7 +272,7 @@ struct WordOfTheDayView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 

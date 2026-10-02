@@ -3,6 +3,7 @@
 
 import { BannerGameRows, ResetLine, dayTitle } from './leaderboard-banner';
 import { ArtTitle } from '@/components/ui/art-title';
+import { onPageShadow } from '@/lib/art';
 
 // The Records banner (founder, 2026-10-01; docs/RECORDS_REDESIGN_SPEC.md §1): the
 // Leaderboard banner's one window in lilac-to-gold. A frosted strip with the
@@ -55,7 +56,7 @@ export function RecordsBanner({ tab, onTab, today, recordsCount, selectedMode, o
       style={{
         borderRadius: 16,
         background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #ede9fe, #fef3c7)',
-        boxShadow: '0 4px 14px rgba(76,29,149,0.10)',
+        boxShadow: onPageShadow('0 4px 14px rgba(76,29,149,0.10)'),
       }}
     >
       <div className="relative flex flex-col gap-1.5" style={{ padding: '12px 10px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>

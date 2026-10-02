@@ -56,6 +56,8 @@ struct KitCard<Content: View>: View {
         }
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        // ART_SPEC §11: the tinted lift sits outside the clip.
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 }

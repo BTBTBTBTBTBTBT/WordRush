@@ -23,6 +23,7 @@ import { VS, loadVsMode, modeTitle, todayTileLine, utcDay } from '@/lib/vs-lobby
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { BotAvatar, ModeChip, SectionLabel, SoftPill, TealButton, VsNav, vsCardStyle } from './vs-ui';
 import { PAGE_HOSTS } from '@/lib/mascots';
+import { PageBackground } from '@/components/ui/page-background';
 
 const KIND_BY_BOT: Record<string, CpuKind> = { rook: 'easy', lexi: 'medium', nova: 'hard', adapt: 'adaptive' };
 
@@ -47,7 +48,7 @@ export function VsBots() {
   const nextIndex = rungs.findIndex((r) => r.state === 'next');
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: VS.page }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24">
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav title="BOTS" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
 
@@ -156,6 +157,6 @@ export function VsBots() {
         )}
       </div>
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }

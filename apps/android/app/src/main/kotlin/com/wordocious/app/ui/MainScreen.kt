@@ -434,13 +434,23 @@ fun MainScreen() {
             override val lifecycle get() = mainLifecycleOwner.lifecycle
         }
     }
+    // ART_SPEC §11: the page tint of what shows under the shared header — a page pushed
+    // inside the tab (Records, a public profile) wins over the tab's own tint.
+    val headerTint = when {
+        showRecords -> PageTint.LEADERBOARD
+        publicProfileId != null -> PageTint.HOME
+        else -> tabPageTint(selectedTab)
+    }
     Box(Modifier.fillMaxSize()) {
-      Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab() else Modifier)) {
+      // The page background reaches behind the status bar and the shared header; each tab
+      // and pushed page repaints the same window-anchored pixels behind its own content.
+      Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab() else Modifier).pageBackground(headerTint)) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides (if (covered || realBackOwner == null) inertBackOwner else realBackOwner),
         ) {
             Scaffold(
-                containerColor = WTheme.bg,
+                // Transparent: the page background (§11) shows through; the tab bar keeps its surface.
+                containerColor = Color.Transparent,
                 bottomBar = {
                     // §252: the ad banner that used to sit above the nav is gone. Banner
                     // RPM is pennies and it taxed every screen of a daily-habit game;
@@ -475,7 +485,7 @@ fun MainScreen() {
                             val activeTab = tab == selectedTab
                             val tabHidden = remember(tab) { androidx.compose.runtime.derivedStateOf { coveredState.value || selectedTab != tab } }
                             Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())) {
-                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden) {
+                              androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalPageTint provides tabPageTint(tab)) {
                                 when (tab) {
                                     0 -> HomeScreen(
                                         onJoinInvite = { m, code -> vsInvite = m to code },
@@ -541,7 +551,7 @@ fun MainScreen() {
                         // Global Records tile). Your own records live on the Stats tab (D2 step 3).
                         if (showRecords) {
                             androidx.activity.compose.BackHandler { showRecords = false }
-                            Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
+                            PageBackground(PageTint.LEADERBOARD, Modifier.fillMaxSize().zIndex(2f)) {
                                 RecordsScreen(
                                     onOpenProfile = { publicProfileId = it },
                                     onOpenStats = { showRecords = false; selectedTab = 2 },
@@ -554,7 +564,7 @@ fun MainScreen() {
                         // (ProfileTab.swift:1005-1015), so header + nav + ad banner stay.
                         publicProfileId?.let { pid ->
                             androidx.activity.compose.BackHandler { publicProfileId = null }
-                            Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
+                            PageBackground(PageTint.HOME, Modifier.fillMaxSize().zIndex(2f)) {
                                 PublicProfileScreen(
                                     userId = pid,
                                     onClose = { publicProfileId = null },
@@ -589,7 +599,15 @@ fun MainScreen() {
         }
       }
 
-      if (covered) Box(Modifier.fillMaxSize().zIndex(3f)) {
+      // §11 card shadows on the covering pages: the VS pages lean teal, the rest home purple.
+      if (covered) androidx.compose.runtime.CompositionLocalProvider(
+        LocalPageTint provides when {
+            friendlyGameId != null -> null // a pocket game screen
+            vsInvite != null || vsActive != null || vsChallengeCode != null || vsLobby -> PageTint.VS
+            activeGame?.engineMode != null -> null // a game screen
+            else -> PageTint.HOME // info pages, Pro, Settings, sign-in
+        },
+      ) { Box(Modifier.fillMaxSize().zIndex(3f)) {
         val card = activeGame
         val invite = vsInvite
         val active = vsActive
@@ -877,7 +895,7 @@ fun MainScreen() {
         // controls on Settings, Pro, Edit Profile, Auth and the info screens drew
         // under the system clock — and the top-right ones were often untappable.
         // Paywall and profile-commit surfaces, so this was revenue and lost edits.
-          androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+          androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
             androidx.activity.compose.BackHandler { infoRoute = null }
             when (route) {
                 "help" -> HowToPlayScreen(onDone = { infoRoute = null })
@@ -897,15 +915,23 @@ fun MainScreen() {
         // dismissible, like iOS's AuthView sheet — guest state is untouched, so
         // backing out returns you to the exact tab you were on. On success the
         // auth state flow flips and the root gate re-composes on its own.
-            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
                 AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false })
             }
         } else if (showSettings) {
             androidx.activity.compose.BackHandler { showSettings = false }
-            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
                 SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
             }
         }
-      }
+      } }
     }
+}
+
+/** ART_SPEC §11: each tab's page tint (Home · Leaderboard · Stats · Friends). */
+private fun tabPageTint(tab: Int): PageTint = when (tab) {
+    1 -> PageTint.LEADERBOARD
+    2 -> PageTint.STATS
+    3 -> PageTint.FRIENDS
+    else -> PageTint.HOME
 }

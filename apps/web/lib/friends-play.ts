@@ -25,7 +25,8 @@ export const FR = {
   page: '#f8f7ff',
   label: '#6b7280',
   text: '#1f2937',
-  cardShadow: '0 2px 10px rgba(76,29,149,0.07)',
+  // §11 (docs/ART_SPEC.md): the page's tinted shadow on a PageBackground, else the old one.
+  cardShadow: 'var(--page-card-shadow, 0 2px 10px rgba(76,29,149,0.07))',
   flame: '#c2410c',
   flameFill: '#f59e0b',
   teal: '#0f766e',

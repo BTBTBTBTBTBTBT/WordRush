@@ -272,7 +272,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     var podiumTarget by remember { mutableStateOf<Pair<String, String>?>(null) }   // (day, mode)
 
     Column(
-        Modifier.fillMaxSize().appBackground()
+        Modifier.fillMaxSize().pageBackground(PageTint.HOME)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1083,8 +1083,8 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
             )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            // ART_SPEC §4: the 3D W / L badge in place of the Win / Loss word.
-            ResultBadge(won, 20.dp, contentDescription = if (won) "Win" else "Loss")
+            // ART_SPEC §4 / §13: the 3D W / L badge (~18) in place of the Win / Loss word.
+            ResultBadge(won, ROW_RESULT_BADGE_SIZE, contentDescription = if (won) "Win" else "Loss")
             Text(dateTime, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }

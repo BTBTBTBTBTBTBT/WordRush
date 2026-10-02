@@ -130,7 +130,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     // placeholder + Sign in instead of the live board.
     if (!isAuthenticated) {
         Column(
-            Modifier.fillMaxSize().background(WTheme.bg).padding(32.dp),
+            Modifier.fillMaxSize().pageBackground(PageTint.LEADERBOARD).padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -568,7 +568,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
+    Column(modifier = Modifier.fillMaxSize().pageBackground(PageTint.LEADERBOARD)) {
         // iOS keeps the title, countdown and mode grid INSIDE the scroll
         // container (ProfileTab `content`), so scrolling the board reclaims
         // their height instead of leaving them pinned to the top.
@@ -1251,10 +1251,10 @@ internal fun UserRankCard(
     }
 }
 
-/** A row's daily result: the 3D W / L badge (ART_SPEC §4; was a "Win" / "Loss" text pill). */
+/** A row's daily result: the 3D W / L badge (ART_SPEC §4 / §13; was a "Win" / "Loss" text pill). */
 @Composable
 private fun WinLossPill(completed: Boolean, @Suppress("UNUSED_PARAMETER") abbrev: Boolean = false) {
-    ResultBadge(completed, 18.dp, contentDescription = if (completed) "Win" else "Loss")
+    ResultBadge(completed, ROW_RESULT_BADGE_SIZE, contentDescription = if (completed) "Win" else "Loss")
 }
 
 /** GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP" (completed all 9 but lost ≥1)

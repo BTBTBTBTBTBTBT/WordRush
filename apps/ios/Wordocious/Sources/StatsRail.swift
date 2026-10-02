@@ -93,7 +93,7 @@ struct StatsRail: View {
                     ForEach(items) { it in chip(it, inGrid: true) }
                 }
                 .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                 .transition(.opacity.combined(with: .offset(y: 6)))
             }

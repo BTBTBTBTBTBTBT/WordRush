@@ -607,7 +607,7 @@ struct VSComparisonBars: View {
             }
         }
         .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 

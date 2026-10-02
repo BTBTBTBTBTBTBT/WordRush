@@ -45,7 +45,7 @@ import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
 import { ArtTitle } from '@/components/ui/art-title';
 import { MASCOT_LINES } from '@/lib/mascots';
-import { PAGE_SCENES } from '@/lib/art';
+import { PAGE_SCENES, onPageShadow } from '@/lib/art';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
@@ -69,6 +69,7 @@ import { dailyHref } from '@/lib/mode-routes';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
 import { formatGuessStat } from '@/lib/format';
+import { PageBackground } from '@/components/ui/page-background';
 
 // STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
 // and Records merge into one Stats tab that "flows like butter"). One page:
@@ -368,15 +369,15 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <PageBackground tint="stats" className="min-h-screen flex items-center justify-center">
         <div className="text-lg font-black animate-pulse" style={{ color: 'var(--color-text)' }}>Loading...</div>
-      </div>
+      </PageBackground>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <PageBackground tint="stats" className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--color-text)' }}>Sign in to see your stats</h1>
           <p className="text-sm font-medium mb-5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -397,7 +398,7 @@ export default function StatsPage() {
             </Link>
           </div>
         </div>
-      </div>
+      </PageBackground>
     );
   }
 
@@ -453,7 +454,7 @@ export default function StatsPage() {
   const isGamePage = !!selectedMeta;
 
   return (
-    <div className="min-h-screen pb-32" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <PageBackground tint="stats" className="min-h-screen pb-32">
       <AppHeader />
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
@@ -464,7 +465,7 @@ export default function StatsPage() {
             buttons"): ONE card. Avatar · name · chips on the first row with Edit / Share as
             quiet icon buttons top-right; the level pill + XP bar span the card; Private,
             Go Pro and the dev toggle sit in a single footer row only when they apply. ── */}
-        <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}>
+        <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px', boxShadow: onPageShadow() }}>
           <div className="flex items-start gap-3">
             <AvatarUpload size={64} editable={false} />
             <div className="flex-1 min-w-0">
@@ -1150,7 +1151,7 @@ export default function StatsPage() {
 
       <BottomNav />
       <ProfileEditModal open={editOpen} onClose={() => setEditOpen(false)} />
-    </div>
+    </PageBackground>
   );
 }
 

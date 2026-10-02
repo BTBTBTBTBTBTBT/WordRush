@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -71,7 +73,7 @@ fun VsBotsPage(
     LaunchedEffect(playMode) {
         AuthService.userId?.let { best = MatchStatsService.ghostBestRun(it, playMode.name) }
     }
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         VsNavBar("BOTS", onBack = onBack) { VsModeChip(playMode) }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),

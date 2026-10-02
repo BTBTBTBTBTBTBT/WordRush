@@ -105,7 +105,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var deleting by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
+    Column(modifier = Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // The shared page header (HEADER_SPEC §4) with the page host, R relaxing in
         // his nightcap (MASCOT_SPEC §6); Done is the white close circle.
         PageHeader("SETTINGS", onClose = onDone, closeLabel = "Done", art = TitleArt.SETTINGS) // ART_SPEC §2

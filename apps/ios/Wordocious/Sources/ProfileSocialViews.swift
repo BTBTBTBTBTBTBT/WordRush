@@ -86,7 +86,7 @@ private struct SocialCard: ViewModifier {
         content
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 }
@@ -286,7 +286,7 @@ struct ArchetypeSheet: View {
             }
             .padding(16)
         }
-        .background(Theme.background)
+        .pageBackground(.home)
         .presentationDetents([.medium, .large])
         .task {
             guard let myId = AuthService.shared.profile?.id else { return }
@@ -445,8 +445,7 @@ struct H2HDetailScreen: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .home)
                 ScrollView {
                     VStack(spacing: 8) {
                         (Text("\(h2h.myWins)").foregroundColor(Theme.primary)
@@ -515,8 +514,7 @@ struct GuardedBoardSheet: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .home)
             content
         }
         .presentationDetents([.medium, .large])
@@ -686,8 +684,7 @@ struct MedalHistorySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .home)
                 ScrollView {
                     VStack(spacing: 6) {
                         if medals.isEmpty {
@@ -777,8 +774,7 @@ struct PodiumScreen: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+            PageBackground(tint: .home)
             ScrollView {
                 VStack(spacing: 8) {
                     socialCaption("\(socialModeTitle(request.mode).uppercased()) · \(socialDayLabel(request.day).uppercased())")
@@ -954,7 +950,7 @@ struct StreakCalendarSheet: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Theme.background)
+        .pageBackground(.home)
         .presentationDetents([.medium])
     }
 

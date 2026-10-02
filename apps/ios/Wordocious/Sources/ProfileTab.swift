@@ -175,8 +175,7 @@ struct ProfileTab: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .stats)
                 VStack(spacing: 0) {
                     AppHeaderView()   // shared header (settings now lives here)
                     // §241: during the launch-restore window a returning
@@ -192,6 +191,7 @@ struct ProfileTab: View {
                     }
                 }
             }
+            .environment(\.pageTint, .stats)
             .toolbar(.hidden, for: .navigationBar)
             // The VS lobby's Rivals "See all" → All-time's VS section.
             .onReceive(NotificationCenter.default.publisher(for: StatsJump.openVS)) { _ in
@@ -632,7 +632,7 @@ struct ProfileTab: View {
                 }
             }
             .tint(Theme.primary).padding(14)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
 
             Button { Task { await auth.signOut() } } label: {
@@ -642,7 +642,7 @@ struct ProfileTab: View {
                     Spacer()
                 }
                 .padding(16)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             }.buttonStyle(.plain)
 
@@ -653,7 +653,7 @@ struct ProfileTab: View {
                     Spacer()
                 }
                 .padding(16)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
             }.buttonStyle(.plain).disabled(deleting)
         }
@@ -974,7 +974,7 @@ struct ProfileTab: View {
                 }
             }
             .padding(12).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         }
     }
@@ -1155,7 +1155,7 @@ struct ProfileTab: View {
             }
         }
         .padding(16).frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, style: StrokeStyle(lineWidth: 1.5, dash: [5])))
     }
 
@@ -1249,7 +1249,7 @@ struct ProfileTab: View {
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         // Fetch the per-mode win streak AND the mode's matches aggregate from
         // match history whenever the selected mode OR the play-type toggle
@@ -1379,13 +1379,13 @@ struct LeaderboardTab: View {
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .leaderboard)
                 VStack(spacing: 0) {
                     AppHeaderView()
                     if !auth.isAuthenticated { signedOut } else { content }
                 }
             }
+            .environment(\.pageTint, .leaderboard)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .fullScreenCover(item: $lbGame) { g in
@@ -1946,10 +1946,8 @@ struct LeaderboardTab: View {
                     HStack(spacing: 5) {
                         Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                             .lineLimit(1).minimumScaleFactor(0.8)
-                        Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
-                            .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
+                        // ART_SPEC §13: the Win / Loss chip as the 3D badge art.
+                        RowResultBadge(won: entry.completed)
                     }
                 }
             }.buttonStyle(.plain)

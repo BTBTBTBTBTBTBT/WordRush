@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { ChevronDown, Zap } from 'lucide-react';
-import { WIN_FG } from '@/lib/tile-theme';
 import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { formatGuessStat } from '@/lib/format';
 import type { Database } from '@/lib/database.types';
 import { SceneEmptyState } from '@/components/ui/art-scene';
 import type { SceneName } from '@/lib/art';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, onPageShadow } from '@/lib/art';
+import { WinLossBadge } from '@/components/ui/icon3d';
 
 type Match = Database['public']['Tables']['matches']['Row'];
 
@@ -71,7 +71,7 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
     return (
       <div className="space-y-2">
         {[0, 1, 2, 3, 4].slice(0, limit).map((i) => (
-          <div key={i} className="flex items-center gap-3 p-3 animate-pulse" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
+          <div key={i} className="flex items-center gap-3 p-3 animate-pulse" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: onPageShadow() }}>
             <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: 'var(--color-border)' }} />
             <div className="flex-1 min-w-0 space-y-1.5">
               <div className="h-3 w-20 rounded" style={{ background: 'var(--color-border)' }} />
@@ -123,7 +123,7 @@ function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentN
   const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
   const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
   return (
-    <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
+    <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: onPageShadow() }}>
       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
         {(() => {
           if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
@@ -148,7 +148,8 @@ function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentN
         </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <div className="text-xs font-extrabold" style={{ color: isWinner ? WIN_FG : '#dc2626' }}>{isWinner ? 'Win' : 'Loss'}</div>
+        {/* §13: the W / L badge art in place of the Win / Loss text. */}
+        <WinLossBadge won={isWinner} className="ml-auto" />
         <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
         </div>
@@ -185,7 +186,7 @@ function UnlimitedGroup({ mode, matches, opponentNames, profileId }: { mode: str
   const best = wins.map((m) => m.player1_time).filter((t) => t > 0).reduce((a, b) => Math.min(a, b), Infinity);
   return (
     <div className="space-y-2">
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-3 p-3 text-left" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }} aria-expanded={open}>
+      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-3 p-3 text-left" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: onPageShadow() }} aria-expanded={open}>
         <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
           {cfg?.romanNumeral && !isGameArtIcon(cfg.icon) ? <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
             : cfg?.icon ? (() => { const Icon = cfg.icon!; return <Icon className="w-4 h-4" style={{ color: cfg.color }} />; })()

@@ -33,7 +33,7 @@ struct AnnouncementsBanner: View {
                     }.buttonStyle(.plain)
                 }
                 .padding(12)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
             }
         }

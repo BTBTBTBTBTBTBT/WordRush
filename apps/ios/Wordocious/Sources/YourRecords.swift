@@ -121,6 +121,8 @@ private struct RecordCardShell<Content: View>: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        // ART_SPEC §11: the tinted lift sits outside the clip.
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
     }
 }
 
@@ -426,7 +428,7 @@ struct RecordsHeldRow: View {
                 Text("Daily top-3 finishes").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
             .frame(maxWidth: .infinity, alignment: .leading).padding(14)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
 
             Button {
@@ -441,7 +443,7 @@ struct RecordsHeldRow: View {
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).padding(14)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             }
             .buttonStyle(PressableStyle())

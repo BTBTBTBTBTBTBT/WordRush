@@ -33,7 +33,9 @@ extension View {
     func lbCard() -> some View {
         background(Theme.surface)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
+            // ART_SPEC §11: the lift is tinted toward the page's accent (amber on
+            // Leaderboard / Records), drawn by the backing shape so rows stay crisp.
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.surface).pageCardShadow())
     }
 
     /// Your own row: tinted gold with a 1.5 pt amber ring, inset inside the card.

@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Medal } from 'lucide-react';
-import { Icon3D } from '@/components/ui/icon3d';
+import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import {
   fetchDailyLeaderboard,
   fetchDailySweepLeaderboard,
@@ -107,15 +107,8 @@ function BoardRow({ entry, rank, vs }: { entry: LeaderboardEntry; rank: number; 
                 {entry.guess_count}G · {formatTime(entry.time_seconds)}
                 {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
               </span>
-              <span
-                className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-                style={{
-                  background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-                  color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
-                }}
-              >
-                {entry.completed ? 'Win' : 'Loss'}
-              </span>
+              {/* §13: the W / L badge art in place of the text chip. */}
+              <WinLossBadge won={entry.completed} />
             </>
           )}
         </div>

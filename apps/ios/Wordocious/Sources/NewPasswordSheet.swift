@@ -17,8 +17,7 @@ struct NewPasswordSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
-                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                PageBackground(tint: .home)
                 VStack(spacing: 16) {
                     Wordmark(size: 26).padding(.top, 8)
                     Text("Set a New Password").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)

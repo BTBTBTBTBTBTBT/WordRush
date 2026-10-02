@@ -37,7 +37,7 @@ struct EditProfileView: View {
     private var unlockedDefs: [AchievementDef] { catalog.all.filter { unlocked.contains($0.key) } }
     private var accentColor: Color { ProfileAccent.color(accent) }
     private var card: some View {
-        RoundedRectangle(cornerRadius: 16).fill(Theme.surface)
+        RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow()
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
@@ -86,7 +86,7 @@ struct EditProfileView: View {
                 .padding(16)
             }
         }
-        .background(Theme.background.ignoresSafeArea())
+        .pageBackground(.home)
         .task {
             username = auth.profile?.username ?? ""
             bio = auth.profile?.bio ?? ""

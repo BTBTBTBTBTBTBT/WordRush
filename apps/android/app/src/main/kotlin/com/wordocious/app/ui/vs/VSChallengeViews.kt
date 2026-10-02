@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.Icon3DName
 import androidx.compose.foundation.background
@@ -203,7 +205,7 @@ fun ChallengeResultView(
     val rightBg = if (draw) VsPurple.draw else if (lost) VsPurple.won else VsPurple.plain
     val headline = challengeHeadline(outcome, theirName)
     val margin = vsMargin(mine.core(), theirs.core())
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         ResultTopBar(onClose)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -319,7 +321,7 @@ fun RaceResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -> Un
     val outcome = vm.raceOutcome
     val context = LocalContext.current
     if (mine == null || outcome == null) {
-        Box(Modifier.fillMaxSize().background(VsTeal.page), Alignment.Center) { com.wordocious.app.ui.CastLoader(null) }
+        Box(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true), Alignment.Center) { com.wordocious.app.ui.CastLoader(null) }
         return
     }
     ChallengeResultView(
@@ -345,7 +347,7 @@ fun ChallengeSentScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     val run = vm.myRun
     val state = vm.sendState
     val send = vm.sendLaunch
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         ResultTopBar(onHome)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -443,7 +445,7 @@ fun ChallengeRouteScreen(
         )
         return
     }
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         VsNavBar("CHALLENGE", onBack = onHome) { if (c != null) VsModeChip(mode) }
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),

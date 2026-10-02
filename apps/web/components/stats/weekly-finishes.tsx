@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { Flag } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { ordinal } from '@/lib/weekly-race';
+import { onPageShadow } from '@/lib/art';
 
 // Weekly race finishes on the Stats tab's All-time page (D3.3): the settled
 // weeks from weekly_race_results (owner read via RLS) — how many times you won,
@@ -36,7 +37,7 @@ export function WeeklyFinishesCard({ userId }: { userId: string }) {
   const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
   const f = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   return (
-    <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+    <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() }}>
       <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
       <div className="px-4 pt-3 pb-3">
         <div className="flex items-center gap-2 mb-2">

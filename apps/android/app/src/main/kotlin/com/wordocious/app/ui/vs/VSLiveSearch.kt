@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -127,7 +129,7 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     }
 
     Column(
-        Modifier.fillMaxSize().background(VsTeal.page),
+        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true),
     ) {
         VsNavBar("VS BATTLE", onBack = onCancel, host = com.wordocious.app.ui.Mascots.vs) { VsModeChip(vm.mode) }
         Column(

@@ -50,7 +50,7 @@ struct FriendsQuickPlaySheet: View {
             }
             .padding(.horizontal, 16).padding(.bottom, 24)
         }
-        .background(FriendsKit.page.ignoresSafeArea())
+        .pageBackground(.friends, lightOnly: true)
         .presentationDetents(friend == nil ? [.medium, .large] : [.large])
     }
 

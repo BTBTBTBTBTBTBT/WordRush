@@ -89,7 +89,7 @@ struct GuideSheet: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .background(Theme.background.ignoresSafeArea())
+            .pageBackground(.home)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
@@ -196,7 +196,7 @@ struct GuideSheet: View {
     }
 
     private var card: some View {
-        RoundedRectangle(cornerRadius: 14).fill(Theme.surface)
+        RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow()
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 

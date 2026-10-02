@@ -16,7 +16,8 @@ export const VS = {
   title: 'linear-gradient(90deg, #0d9488, #0891b2)',
   page: '#f8f7ff',
   label: '#6b7280',
-  cardShadow: '0 2px 10px rgba(76,29,149,0.07)',
+  // §11 (docs/ART_SPEC.md): the page's tinted shadow on a PageBackground, else the old one.
+  cardShadow: 'var(--page-card-shadow, 0 2px 10px rgba(76,29,149,0.07))',
 } as const;
 
 /** The mode's display title ("Classic", "QuadWord"…) from its db key. */

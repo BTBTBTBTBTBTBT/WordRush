@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
+import { onPageShadow } from '@/lib/art';
 
 // The polished board look shared by the Leaderboard (docs/LEADERBOARD_REDESIGN_SPEC.md §2)
 // and the Records pages (docs/RECORDS_REDESIGN_SPEC.md §2), so the two can never drift:
@@ -11,7 +12,7 @@ export const MEDAL = ['#f59e0b', '#9ca3af', '#b45309'];
 /** 11 / 900 caps, letter-spacing 1.2 (#6b7280 in light). */
 export const SECTION_LABEL: CSSProperties = { fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: 'var(--color-text-secondary)' };
 /** White card, radius 14, soft shadow, no border. */
-export const SOFT_CARD: CSSProperties = { background: 'var(--color-surface)', borderRadius: 14, boxShadow: '0 2px 10px rgba(26,26,46,0.06)' };
+export const SOFT_CARD: CSSProperties = { background: 'var(--color-surface)', borderRadius: 14, boxShadow: onPageShadow('0 2px 10px rgba(26,26,46,0.06)') };
 /** Your row: soft gold (the token is #fef3c7 in light) with a 1.5 px amber ring. */
 export const YOUR_ROW: CSSProperties = { background: 'var(--color-gold-border-light)', boxShadow: 'inset 0 0 0 1.5px #f59e0b', borderRadius: 10 };
 

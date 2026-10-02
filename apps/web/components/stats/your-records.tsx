@@ -13,7 +13,7 @@ import {
   fetchAllTimeRecordsShared, RECORD_LABELS, recordValue, recordLabel, formatRecordTime, SHIELD_EVERY,
   MyStatCell, type UserStatRow,
 } from '@/lib/records-ui';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, onPageShadow } from '@/lib/art';
 
 // YOUR RECORDS, folded into the Stats tab (Stats + Friends redesign D2 step 3,
 // founder 2026-09-26: the Records tab goes "so long as the information
@@ -98,7 +98,7 @@ export function useYourRecords(userId: string | undefined, stats: UserStatRow[])
   return data.loading && cached ? cached : data;
 }
 
-const card: React.CSSProperties = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' };
+const card: React.CSSProperties = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px', boxShadow: onPageShadow() };
 
 /** Next Up — the next streak shield and your three closest record chases. */
 export function NextUpCard({ dailyStreak, chases }: { dailyStreak: number; chases: Chase[] }) {

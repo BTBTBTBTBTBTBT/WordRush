@@ -33,7 +33,12 @@ export type TitleArtName =
   // Second pass (§8): WELCOME! on the sign-in / signed-out landing, and the
   // LEADERBOARD title holidays show over their HEROES text.
   | 'art-title-welcome'
-  | 'art-title-leaderboard';
+  | 'art-title-leaderboard'
+  // §12: WORDOCIOUS DAILIES, the Home section header above the daily games.
+  | 'art-title-dailies';
+
+/** The seamless letter-tile page pattern (§11), 640 px square, transparent. */
+export type BackgroundArtName = 'art-bg-tiles';
 
 /**
  * Moment lettering (§6): glossy result / celebration headlines drawn in place
@@ -106,7 +111,7 @@ export const GAME_TITLE_ART_IDS = [
 export type GameTitleArtId = (typeof GAME_TITLE_ART_IDS)[number];
 export type GameTitleArtName = `art-game-${GameTitleArtId}`;
 
-export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName;
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -114,8 +119,8 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-day-monday': [900, 692],
   'art-day-tuesday': [900, 540],
   'art-day-wednesday': [900, 750],
-  'art-day-thursday': [900, 482],
-  'art-day-friday': [900, 591],
+  'art-day-thursday': [879, 482],
+  'art-day-friday': [853, 591],
   'art-day-saturday': [898, 502],
   'art-title-friends': [1025, 249],
   'art-title-stats': [1080, 247],
@@ -129,6 +134,8 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-title-moregames': [1080, 215],
   'art-title-welcome': [1080, 197],
   'art-title-leaderboard': [1080, 212],
+  'art-title-dailies': [1080, 175],
+  'art-bg-tiles': [640, 640],
   'art-moment-victory': [880, 180],
   'art-moment-soclose': [899, 179],
   'art-moment-sweep': [609, 150],
@@ -251,4 +258,43 @@ export const POCKET_ART_KINDS: ReadonlySet<string> = new Set(['rps', 'ttt', 'coi
 /** Public path of a pocket game's 3D icon, or null when the kind has none. */
 export function pocketArtSrc(kind: string | null | undefined): string | null {
   return kind && POCKET_ART_KINDS.has(kind) ? artSrc(`game-pocket-${kind}`) : null;
+}
+
+// ── Page backgrounds, "page tint + tiles" (§11) ─────────────────────────────
+
+/** The five page tints: which pages draw which is in components/ui/page-background.tsx. */
+export type PageTint = 'home' | 'leaderboard' | 'stats' | 'friends' | 'vs';
+
+/**
+ * Each tint's soft diagonal gradient (top-left → bottom-right, 3 stops) in
+ * light and dark, and the accent its cards' shadows lean toward.
+ */
+export const PAGE_TINTS: Record<PageTint, {
+  light: readonly [string, string, string];
+  dark: readonly [string, string, string];
+  accent: string;
+}> = {
+  home: { light: ['#F3EEFF', '#FBEFFF', '#FFF1F7'], dark: ['#160F26', '#1C1231', '#22122C'], accent: '#7c3aed' },
+  leaderboard: { light: ['#FFF8E6', '#FFEFD2', '#FDE9F2'], dark: ['#1E1608', '#23160D', '#241221'], accent: '#f59e0b' },
+  stats: { light: ['#EEF4FF', '#EEEBFF', '#F4EEFF'], dark: ['#0E1530', '#141433', '#1A1233'], accent: '#2563eb' },
+  friends: { light: ['#FFF0F7', '#FCE7F3', '#F3E8FF'], dark: ['#241024', '#22102A', '#1A1030'], accent: '#ec4899' },
+  vs: { light: ['#E9FBF8', '#ECF6FF', '#F1EEFF'], dark: ['#08201E', '#0E1A2A', '#15142B'], accent: '#0d9488' },
+};
+
+/** The tile pattern: drawn at 320 CSS px per 640 px tile, 12% opaque in light, 7% in dark. */
+export const PAGE_TILES = { name: 'art-bg-tiles', size: 320, opacity: { light: 0.12, dark: 0.07 } } as const;
+
+/** A card's shadow on a tinted page: the tint's accent at 11% alpha, blur 14, y 5. */
+export function pageCardShadow(tint: PageTint): string {
+  const hex = PAGE_TINTS[tint].accent.slice(1);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return `0 5px 14px rgba(${r},${g},${b},0.11)`;
+}
+
+/**
+ * The shadow a card on a tinted page draws (`boxShadow`), read from the
+ * PageBackground it sits in; outside one it falls back to `fallback`.
+ */
+export function onPageShadow(fallback = 'none'): string {
+  return `var(--page-card-shadow, ${fallback})`;
 }

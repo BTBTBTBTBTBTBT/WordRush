@@ -8,6 +8,7 @@ import type { DailyCompletion } from '@/lib/daily-service';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { WIN_FG } from '@/lib/tile-theme';
 import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
+import { onPageShadow } from '@/lib/art';
 
 // The Stats tab's game rail (Stats + Friends redesign D2, founder 2026-09-26:
 // "I don't want to swipe right through 19 different games … flow like
@@ -153,7 +154,7 @@ export function GameRail({ items, selected, onSelect }: Props) {
       {gridOpen && (
         <div
           className="p-3 animate-fade-in-up"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px', boxShadow: onPageShadow() }}
           role="group"
           aria-label="Every game"
         >

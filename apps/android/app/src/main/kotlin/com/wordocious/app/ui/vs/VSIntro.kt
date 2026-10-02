@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import com.wordocious.app.ui.theme.Nunito
 
 import androidx.compose.animation.core.Animatable
@@ -87,7 +89,7 @@ fun MatchIntro(
     val shape = RoundedCornerShape(18.dp)
 
     Box(
-        Modifier.fillMaxSize().background(VsTeal.page).clickableNoRipple(onDone)
+        Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).clickableNoRipple(onDone)
             .statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {

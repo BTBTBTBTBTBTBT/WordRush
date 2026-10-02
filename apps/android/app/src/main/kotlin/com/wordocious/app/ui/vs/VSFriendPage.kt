@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -69,7 +71,7 @@ fun VsFriendPage(
         AuthService.userId?.let { uid -> rivals = StatsDeepService.rivalries(uid, 50).associateBy { it.opponentId.lowercase() } }
     }
     if (showInvite) InviteSheet { showInvite = false }
-    Column(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         VsNavBar("CHALLENGE", onBack = onBack) { VsModeChip(mode) }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),

@@ -29,6 +29,7 @@ import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
 import { InitialAvatar, SectionLabel, SoftPill, VsModeIcon, VsNav, vsCardStyle } from './vs-ui';
 import { GameSquare } from '@/components/ui/game-tile';
 import { CastLoader } from '@/components/ui/cast-loader';
+import { PageBackground } from '@/components/ui/page-background';
 
 const MODES = VS_MODE_ORDER as readonly string[];
 
@@ -92,7 +93,7 @@ export function VsLobby() {
   const signedOut = isGuest && !profile;
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: VS.page }}>
+    <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24">
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav
           title="VS BATTLE"
@@ -319,7 +320,7 @@ export function VsLobby() {
         )}
       </div>
       <BottomNav />
-    </div>
+    </PageBackground>
   );
 }
 

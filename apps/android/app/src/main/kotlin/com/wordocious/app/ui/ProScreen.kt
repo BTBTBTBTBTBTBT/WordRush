@@ -94,7 +94,7 @@ fun ProScreen(onDone: () -> Unit) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))
+        Modifier.fillMaxSize().pageBackground(PageTint.HOME)
             .verticalScroll(rememberScrollState()),
     ) {
         // The shared header chrome (HEADER_SPEC §4): Close is the white close circle;

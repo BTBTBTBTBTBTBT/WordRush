@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.PageTint
+import com.wordocious.app.ui.pageBackground
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -187,7 +189,7 @@ private fun LobbyMain(
         if (isPro) launch { rivals = StatsDeepService.rivalries(uid, 3) }
     }
 
-    Box(Modifier.fillMaxSize().background(VsTeal.page)) {
+    Box(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         Column(Modifier.fillMaxSize()) {
             // HEADER_SPEC §5: the VS banner's S is the page host; the title row doesn't repeat it.
             // ART_SPEC §2: the whole-cast VS BATTLE art is the title.
