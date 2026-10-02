@@ -11,11 +11,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 POSES = os.path.join(HERE, '..', 'poses')
 
 GAMES = {  # mode id: (host, pose, placement)
-    'practice': ('w', 'cheer', 'end'), 'gauntlet': ('s', 'slide', 'end'),
+    'practice': ('w', 'wave', 'end'), 'gauntlet': ('s', 'slide', 'end'),
     'quordle': ('o1', 'cheer', 'end'), 'octordle': ('d', 'lean', 'end'),
     'sequence': ('i', 'cheer', 'end'), 'rescue': ('c', 'lean', 'end'),
     'six': ('o2', 'cheer', 'end'), 'seven': ('u', 'meditate', 'end'),
-    'propernoundle': ('w', 'lean', 'end'), 'sudoku': ('u', 'spin', 'perch'),
+    'propernoundle': ('w', 'point', 'end'), 'sudoku': ('u', 'spin', 'perch'),
     'scramble': ('r', 'lean', 'end'), 'hub': ('o1', 'lean', 'end'),
     'crossword': ('d', 'sit', 'perch'), 'groups': ('o2', 'lean', 'end'),
     'ladder': ('i', 'lean', 'end'), 'cryptogram': ('c', 'cheer', 'end'),
