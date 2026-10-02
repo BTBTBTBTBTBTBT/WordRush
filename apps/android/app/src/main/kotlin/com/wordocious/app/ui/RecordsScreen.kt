@@ -1,6 +1,5 @@
 package com.wordocious.app.ui
 
-import com.wordocious.app.ui.theme.Nunito
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -21,9 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
@@ -41,13 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.FriendsService
 import com.wordocious.app.data.LeaderboardService
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.async
@@ -64,7 +60,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit = {}) {
     var tab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Daily", "All-Time")
     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
 
     // Signed-out gate (iOS RecordsTab): the whole tab is a crown placeholder +
@@ -99,54 +94,21 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit 
         return
     }
 
+    // Each view keeps its own game pick across Daily ↔ All-Time switches (the views are
+    // disposed on a switch, so the picks live here; web records page parity).
+    var dailyMode by remember { mutableStateOf("DUEL") }
+    var allTimeMode by remember { mutableStateOf("DUEL") }
     Column(
         modifier = Modifier.fillMaxSize().appBackground(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // (Shared AppHeader is above.) Page title per spec: RECORDS gradient.
-        Text(
-            "RECORDS",
-            fontSize = 28.sp, fontWeight = FontWeight.Black,
-            style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        )
-        Text(
-            "The best of the best across Wordocious",
-            fontSize = 12.sp, color = WTheme.textMuted, fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        // Two pill buttons (iOS RecordsTab.toggleButton), not a Material tab strip.
-        // The "You" view folded into the Stats tab (D2 step 3) — see YourRecords.kt.
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            tabs.forEachIndexed { i, title ->
-                val active = tab == i
-                Box(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                        .background(if (active) WTheme.surface else WTheme.surfaceHover)
-                        .border(1.5.dp, if (active) WTheme.primary else WTheme.border, RoundedCornerShape(12.dp))
-                        .clickableNoRipple { tab = i }.padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        title, fontSize = 12.sp, fontWeight = FontWeight.Black,
-                        color = if (active) WTheme.primary else WTheme.textMuted,
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-
-        // The views fill the remaining height; the Stats link stays pinned below.
+        // The Records banner (docs/RECORDS_REDESIGN_SPEC.md §1) now owns the title, the
+        // Daily | All-Time switch and the game picker; each view mounts it at the top of
+        // its own scroll so it scrolls away with the content (Leaderboard parity).
         Box(Modifier.weight(1f)) {
             when (tab) {
-                0 -> DailyRecordsTab(onOpenProfile)
-                1 -> AllTimeTab(onOpenProfile)
+                0 -> DailyRecordsTab(onOpenProfile, onTab = { tab = it }, initialMode = dailyMode, onModeChange = { dailyMode = it })
+                1 -> AllTimeTab(onOpenProfile, onTab = { tab = it }, initialMode = allTimeMode, onModeChange = { allTimeMode = it })
             }
         }
         // D2 step 3 (2026-09-26): your own records live on the Stats tab now.
@@ -160,10 +122,28 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit 
 }
 
 @Composable
-private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
+private fun DailyRecordsTab(
+    onOpenProfile: (String) -> Unit = {},
+    onTab: (Int) -> Unit = {},
+    initialMode: String = "DUEL",
+    onModeChange: (String) -> Unit = {},
+) {
     val userId = AuthService.profile.value?.id
-    var selectedMode by remember { mutableStateOf("DUEL") }
+    var selectedMode by remember { mutableStateOf(initialMode) }
     var playType by remember { mutableStateOf("solo") }
+    // FRIENDS (§207, web records parity): Everyone | Friends — the same board query
+    // restricted to friends ∪ me, dense ranks, no rank window. friendsVersion re-keys
+    // the fetch when the FriendsService cache changes (Leaderboard tab parity).
+    var friendsOnly by remember { mutableStateOf(false) }
+    var friendsVersion by remember { mutableStateOf(FriendsService.version) }
+    LaunchedEffect(userId) { if (userId != null) FriendsService.load() }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val remove = FriendsService.addListener { friendsVersion = FriendsService.version }
+        onDispose { remove() }
+    }
+    /** The board's cache key: the Solo|VS key, plus ":friends" on the Friends board. */
+    fun boardKey(mode: String, day: String, pt: String, friends: Boolean) =
+        LeaderboardService.cacheKey(mode, day, userId, pt) + if (friends && userId != null) ":friends" else ""
     // First frame paints the (disk-backed) cached board, not a skeleton the fetch effect
     // replaces a frame later (founder, 2026-09-29 — LeaderboardScreen parity).
     val seedBoard = remember {
@@ -198,7 +178,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     // cache was only read inside the fetch effect below, a frame later, so the tap frame drew the
     // new header over the previous mode's rows and count. No cached copy → the skeleton at once.
     // Sweep paints the shared sweep cache the Leaderboard tab keeps. The fetch is unchanged.
-    fun paintCachedBoard(mode: String, pt: String) {
+    fun paintCachedBoard(mode: String, pt: String, friends: Boolean = friendsOnly) {
         val day = com.wordocious.app.todayLocalDate()
         if (mode == SWEEP_ID) {
             val c = LeaderboardService.cachedSweep(LeaderboardService.sweepCacheKey(day))
@@ -209,21 +189,23 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
             loading = c == null
             return
         }
-        val c = LeaderboardService.cachedBoard(LeaderboardService.cacheKey(mode, day, userId, pt))
+        val c = LeaderboardService.cachedBoard(boardKey(mode, day, pt, friends))
         entries = c?.entries ?: emptyList()
         playerCount = c?.playerCount ?: 0
         userRank = c?.rank
         rankWindow = c?.rankWindow
         loading = c == null
     }
-    fun select(mode: String = selectedMode, pt: String = playType) {
-        if (mode == selectedMode && pt == playType) return
+    fun select(mode: String = selectedMode, pt: String = playType, friends: Boolean = friendsOnly) {
+        if (mode == selectedMode && pt == playType && friends == friendsOnly) return
         selectedMode = mode
         playType = pt
-        paintCachedBoard(mode, pt)
+        friendsOnly = friends
+        onModeChange(mode)
+        paintCachedBoard(mode, pt, friends)
     }
 
-    LaunchedEffect(selectedMode, playType, tick) {
+    LaunchedEffect(selectedMode, playType, tick, friendsOnly, friendsVersion) {
         val mode = selectedMode
         val pt = playType
         val day = com.wordocious.app.todayLocalDate()
@@ -253,7 +235,8 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         }
         // Stale-while-revalidate: a chip/toggle tap or screen re-entry paints the
         // last-known rows instantly; the skeleton only shows on a true first load.
-        val key = LeaderboardService.cacheKey(mode, day, userId, pt)
+        val friends = friendsOnly && userId != null
+        val key = boardKey(mode, day, pt, friends)
         val cached = LeaderboardService.cachedBoard(key)
         if (cached != null) {
             entries = cached.entries
@@ -266,6 +249,23 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
             entries = emptyList()
             userRank = null
             rankWindow = null
+        }
+        // Friends board (web records parity): one fetch restricted to friends ∪ me holds
+        // the whole board; the rank is the dense index, no count query or rank window.
+        if (friends) {
+            val ids = (FriendsService.friendIds + userId!!.lowercase()).toList()
+            val lbF = LeaderboardService.fetchDailyLeaderboardOrNull(mode, pt, day = day, userIds = ids)
+            ensureActive()
+            if (lbF == null) { loading = false; return@LaunchedEffect }
+            entries = lbF
+            playerCount = lbF.size
+            loading = false
+            val idx = lbF.indexOfFirst { it.userId == userId }
+            val rank = if (idx >= 0) LeaderboardService.RankInfo(idx + 1, lbF.size) else null
+            userRank = rank
+            rankWindow = null
+            LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lbF, lbF.size, rank, null))
+            return@LaunchedEffect
         }
         // Rows + "{n} players today" in parallel — paint the rows the moment they
         // land; the rank line fills in on its own instead of holding the list.
@@ -298,114 +298,113 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank, win))
     }
 
-    // GUARDED valueOf: SWEEP has no `:core` GameMode → the indigo sweep accent.
-    val accent = if (isSweep) SWEEP_ACCENT else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    // GUARDED valueOf: SWEEP has no `:core` GameMode → the sweep gold.
+    val accent = if (isSweep) LB_SWEEP_GOLD else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
 
     // LEADERBOARD SHARE — today's board card (Solo or VS per the toggle).
     val shareContext = androidx.compose.ui.platform.LocalContext.current
     val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     var sharingLb by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ModePickerRow(selectedMode) { select(mode = it) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
         Spacer(Modifier.height(8.dp))
+        RecordsBanner(daily = true, onDaily = { if (!it) onTab(1) }, selected = selectedMode, onSelect = { select(mode = it) })
+        Spacer(Modifier.height(16.dp))
         // §254: the completed-daily dropdown, mounted exactly as the Leaderboard
         // tab mounts it — the founder wants Records to mirror that page. The
         // card renders nothing for a mode not yet played, so no guard beyond
         // Sweep (which has no board).
         if (selectedMode != SWEEP_ID) {
             com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
-            Spacer(Modifier.height(8.dp))
         }
-        // One bordered leaderboard card (iOS DailyRecordsView): accent bar →
-        // mode header (+ Solo|VS toggle) → count/your-rank row → rows.
+        // Per-game board header in the game-tile CARD style: chip, name, "Today",
+        // the player count, the Solo | VS pill and the bare share icon (both
+        // meaningless for the composite Sweep board — hidden there). This view owns
+        // the Solo/VS toggle, so its share is where the VS Battle card comes from.
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp).clip(RoundedCornerShape(16.dp))
-                .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+            Modifier.fillMaxWidth().gameTileChrome(accent, WTheme.surface)
+                .padding(start = 14.dp, end = 10.dp, top = 16.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))))
-            Row(
-                Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                ModeIconBox(selectedMode, accent)
-                Column {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ModeIconBox(selectedMode, accent, box = 36.dp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         if (isSweep) "Daily Sweep" else recModeTitle(selectedMode),
-                        fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                        fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
-                    Text(
-                        if (isSweep) "All ${com.wordocious.app.ModeGen.sweep.size} modes today" else "Today",
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                        val noun = if (isSweep) "sweeper" else "player"
+                        Text(
+                            "$playerCount $noun${if (playerCount == 1) "" else "s"} today" +
+                                if (isSweep) " · all ${com.wordocious.app.ModeGen.sweep.size} modes" else "",
+                            fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1,
+                        )
+                    }
                 }
-                Spacer(Modifier.weight(1f))
-                // Share + Solo|VS toggle (both meaningless for the composite
-                // Sweep board — hidden there). This view owns the Solo/VS
-                // toggle, so its share button is where the VS Battle card
-                // variant comes from (web records page parity).
-                if (!isSweep) {
-                    if (!loading && entries.isNotEmpty()) {
+                if (!isSweep && !loading && entries.isNotEmpty()) {
+                    Box(
+                        Modifier.size(32.dp).clickableNoRipple {
+                            if (!sharingLb) {
+                                sharingLb = true
+                                shareScope.launch {
+                                    try {
+                                        com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
+                                            shareContext, selectedMode, playType,
+                                            entries, rankWindow, userId, userRank,
+                                            friends = friendsOnly && userId != null,
+                                        )
+                                    } finally { sharingLb = false }
+                                }
+                            }
+                        },
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
                             Icons.Filled.Share, "Share leaderboard",
-                            tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
-                            modifier = Modifier.size(14.dp).clickableNoRipple {
-                                if (!sharingLb) {
-                                    sharingLb = true
-                                    shareScope.launch {
-                                        try {
-                                            com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
-                                                shareContext, selectedMode, playType,
-                                                entries, rankWindow, userId, userRank,
-                                            )
-                                        } finally { sharingLb = false }
-                                    }
-                                }
-                            },
-                        )
-                    }
-                    SoloVsToggle(playType) { select(pt = it) }
-                }
-            }
-
-            // Player count + your rank/percentile (web/iOS parity — was missing on Android).
-            Row(
-                Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
-                    val noun = if (isSweep) "sweeper" else "player"
-                    Text("$playerCount $noun${if (playerCount == 1) "" else "s"} today", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-                Spacer(Modifier.weight(1f))
-                (if (isSweep) sweepRank else userRank)?.let { r ->
-                    val rank = r.rank
-                    val total = r.totalPlayers
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text("Your rank:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                        Text("#$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                        // Transient "+N/−N" movement pill (iOS pageKey records-daily).
-                        if (!isSweep) RankDeltaBadge(mode = selectedMode, playType = playType, pageKey = "records-daily", currentRank = rank)
-                        Text(
-                            if (total > 1) "of $total · top ${maxOf(1, Math.round(rank.toDouble() / total * 100).toInt())}%" else "of $total",
-                            fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                            tint = WTheme.textSecondary.copy(alpha = if (sharingLb) 0.4f else 1f),
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }
             }
-
-            HorizontalDivider(color = WTheme.border)
-
+            // Solo | VS + Everyone | Friends (per-mode only — Sweep is solo-only, cross-mode).
+            if (!isSweep) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SoftSegment(listOf("solo" to "Solo", "vs" to "VS"), playType) { select(pt = it) }
+                    if (userId != null) {
+                        SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly) { select(friends = it) }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        // Your rank (+ percentile and the records-daily movement badge) — the new
+        // Leaderboard's gold rank card.
+        (if (isSweep) sweepRank else userRank)?.let { r ->
+            val myPoints = if (isSweep) sweepEntries.firstOrNull { it.userId == userId }?.totalScore
+                else (entries + (rankWindow?.entries ?: emptyList())).firstOrNull { it.userId == userId }?.compositeScore
+            UserRankCard(
+                rank = r.rank, total = r.totalPlayers, mode = selectedMode, points = myPoints,
+                friends = friendsOnly && !isSweep && userId != null,
+                // A friend rank keeps its own movement memory — never compared to a global rank (§207).
+                playType = playType, pageKey = if (friendsOnly && !isSweep) "records-daily-friends" else "records-daily",
+                showTopPercent = true, showDelta = !isSweep,
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+        LbSectionLabel("TODAY’S BOARD", Modifier.padding(start = 2.dp, bottom = 8.dp))
+        Column(Modifier.lbSoftCard()) {
             if (loading) {
                 // Web parity: animate-pulse skeleton rows, not a spinner.
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { LeaderboardSkeleton() }
             } else if (isSweep) {
                 if (sweepEntries.isEmpty()) {
                     Column(Modifier.fillMaxWidth().padding(vertical = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        // The broom brands the CARD HEADER; the body's empty state
-                        // uses the same trophy every other empty board uses (iOS
-                        // sweepCard). Drawing the broom here repeated it twice.
+                        // The broom brands the header; the body's empty state uses the
+                        // same trophy every other empty board uses (iOS sweepCard).
                         Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
                         Spacer(Modifier.height(8.dp))
                         Text("No sweeps yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -431,7 +430,10 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                 Column(Modifier.fillMaxWidth().padding(vertical = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("No results yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (friendsOnly && userId != null) "None of your friends have played yet today" else "No results yet today. Be the first!",
+                        color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    )
                 }
             } else {
                 // iOS's Records row is the same guesses/time + Win/Loss line for
@@ -466,24 +468,22 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         }
         // Yesterday's podium sits below the board card and shows even when today's
         // board is still empty (iOS DailyRecordsView).
-        if (!isSweep) {
-            Column(Modifier.padding(horizontal = 12.dp)) { YesterdayPodium(selectedMode, playType, userId, onOpenProfile) }
-        }
+        if (!isSweep) YesterdayPodium(selectedMode, playType, userId, onOpenProfile)
         Spacer(Modifier.height(24.dp))
     }
 }
 
 /** 32dp accent-tinted mode glyph box — mirrors iOS `ModeIconView(box: 32)`. */
 @Composable
-internal fun ModeIconBox(mode: String, accent: Color) {
-    Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
+internal fun ModeIconBox(mode: String, accent: Color, box: androidx.compose.ui.unit.Dp = 32.dp) {
+    Box(Modifier.size(box).clip(RoundedCornerShape(box / 4)).background(accent.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
         if (mode == SWEEP_ID) {
             Icon(
                 androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null,
-                tint = accent, modifier = Modifier.size(16.dp),
+                tint = accent, modifier = Modifier.size(box / 2),
             )
         } else {
-            pickerGameModeOrNull(mode)?.let { ModeGlyph(it, accent, box = 32.dp) }
+            pickerGameModeOrNull(mode)?.let { ModeGlyph(it, accent, box = box) }
         }
     }
 }
@@ -491,7 +491,8 @@ internal fun ModeIconBox(mode: String, accent: Color) {
 /** Session copy of Records' Yesterday's podium per (yesterday, mode, play type) — paint-only. */
 private val RecordsPodiumCache = mutableMapOf<String, List<LeaderboardService.LeaderboardEntry>>()
 
-/** Yesterday's top-3 for the mode (collapsible). */
+/** Yesterday's top-3 for the mode (collapsible) — the Leaderboard's YESTERDAY'S WINNERS card:
+ *  one soft card, caps header with chevron + bare share, the new board rows (stats, avatars). */
 @Composable
 private fun YesterdayPodium(mode: String, playType: String, userId: String?, onOpenProfile: (String) -> Unit) {
     // Keyed on the selection and seeded from the session copy (yesterday is settled), so a mode or
@@ -499,8 +500,6 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
     val podiumKey = "${com.wordocious.app.yesterdayLocalDate()}:records:$mode:$playType"
     var top3 by remember(mode, playType) { mutableStateOf(RecordsPodiumCache[podiumKey] ?: emptyList()) }
     var open by remember { mutableStateOf(false) }
-    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
-    val medalColors = listOf(Color(0xFFD97706), Color(0xFF9CA3AF), Color(0xFFB45309))
     // iOS rotates the chevron 180° with an animation instead of swapping ▲/▼.
     val chevronRotation by animateFloatAsState(if (open) 180f else 0f, label = "podiumChevron")
     LaunchedEffect(mode, playType) {
@@ -512,24 +511,27 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
     val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     var sharing by remember { mutableStateOf(false) }
     if (top3.isEmpty()) return
-    Column(
-        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-    ) {
+    Spacer(Modifier.height(16.dp))
+    Column(Modifier.lbSoftCard()) {
         Row(
-            Modifier.fillMaxWidth().clickableNoRipple { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
-            Spacer(Modifier.size(5.dp))
-            Text("YESTERDAY'S PODIUM", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, letterSpacing = 0.5.sp)
-            Spacer(Modifier.weight(1f))
+            Row(
+                Modifier.weight(1f).clickableNoRipple { open = !open }.padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                LbSectionLabel("YESTERDAY’S WINNERS")
+                Spacer(Modifier.size(4.dp))
+                Icon(
+                    Icons.Filled.KeyboardArrowDown, if (open) "Collapse" else "Expand", tint = WTheme.textSecondary,
+                    modifier = Modifier.size(16.dp).rotate(chevronRotation),
+                )
+            }
             // Share — only once the podium is open (web parity).
             if (open) {
-                Icon(
-                    Icons.Filled.Share, "Share yesterday's podium",
-                    tint = WTheme.textMuted.copy(alpha = if (sharing) 0.4f else 1f),
-                    modifier = Modifier.size(14.dp).clickableNoRipple {
+                Box(
+                    Modifier.size(32.dp).clickableNoRipple {
                         if (!sharing) {
                             sharing = true
                             shareScope.launch {
@@ -541,59 +543,28 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
                             }
                         }
                     },
-                )
-                Spacer(Modifier.size(8.dp))
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Share, "Share yesterday's podium",
+                        tint = WTheme.textSecondary.copy(alpha = if (sharing) 0.4f else 1f),
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
             }
-            Icon(
-                Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted,
-                modifier = Modifier.size(12.dp).rotate(chevronRotation),
-            )
         }
         if (open) {
-            // iOS rules off the header and separates each podium row; Android drew
-            // the rows flush, so the three winners ran together as one block.
             HorizontalDivider(color = WTheme.border)
             val podiumScoreLabels = tieAwareScoreLabels(top3.map { it.compositeScore })
             top3.forEachIndexed { i, e ->
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(Icons.Filled.MilitaryTech, null, tint = medalColors[minOf(i, 2)], modifier = Modifier.size(20.dp))
-                    Text(e.username ?: "", modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(e.userId) }, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
-                    Text(podiumScoreLabels[e.compositeScore] ?: formatScore(e.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
-                }
-                if (i < top3.size - 1) HorizontalDivider(color = WTheme.border)
-            }
-        }
-    }
-}
-
-/** Solo|VS segmented toggle — icon + accent active state, web records-page parity. */
-@Composable
-private fun SoloVsToggle(playType: String, onSelect: (String) -> Unit) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(8.dp)),
-    ) {
-        listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
-            val active = playType == key
-            Row(
-                modifier = Modifier
-                    .background(if (active) WTheme.primary.copy(alpha = 0.10f) else WTheme.surface)
-                    // No ripple: the Material press ripple washed over the tapped segment after
-                    // it had already turned active (founder, 2026-09-29 — iOS InstantButtonStyle).
-                    .clickableNoRipple { onSelect(key) }
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(
-                    if (key == "solo") Icons.Filled.Person else Icons.Filled.People, null,
-                    tint = if (active) WTheme.primary else WTheme.textMuted, modifier = Modifier.size(14.dp),
+                LeaderboardRow(
+                    // §217: exact (score, time) ties share the rank.
+                    rank = LeaderboardService.competitionRank(top3, i),
+                    entry = e, mode = mode, isCurrentUser = e.userId == userId,
+                    onOpenProfile = onOpenProfile,
+                    scoreLabel = podiumScoreLabels[e.compositeScore],
                 )
-                Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) WTheme.primary else WTheme.textMuted)
+                if (i < top3.size - 1) HorizontalDivider(color = WTheme.border)
             }
         }
     }
@@ -603,13 +574,18 @@ private val GLOBAL_RECORD_TYPES = listOf("longest_streak", "highest_level", "mos
 private val PER_MODE_RECORD_TYPES = listOf("fastest_win", "fewest_guesses", "most_games_played", "longest_streak")
 
 @Composable
-private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
+private fun AllTimeTab(
+    onOpenProfile: (String) -> Unit = {},
+    onTab: (Int) -> Unit = {},
+    initialMode: String = "DUEL",
+    onModeChange: (String) -> Unit = {},
+) {
     // Re-entering the All-time tab (it is disposed on every Daily ↔ All-time switch) paints the
     // session copy on the first frame instead of the card skeleton (founder, 2026-09-29).
     val seedRecords = remember { com.wordocious.app.data.StatsMemo.get<List<LeaderboardService.AllTimeRecord>>("allTimeRecords") }
     var records by remember { mutableStateOf(seedRecords ?: emptyList()) }
     var loading by remember { mutableStateOf(seedRecords == null) }
-    var selectedMode by remember { mutableStateOf("DUEL") }
+    var selectedMode by remember { mutableStateOf(initialMode) }
     val userId = AuthService.profile.value?.id
     // All-time sweep ranking — loaded lazily the first time SWEEP is selected.
     val isSweep = selectedMode == SWEEP_ID
@@ -631,126 +607,111 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
         }
     }
 
-    if (loading) {
-        // Web parity: AllTimeSkeleton pulsing card blocks, not a spinner.
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { CardsSkeleton() }
-        return
-    }
-
     val globalRecords = records.filter { it.gameMode == null && it.recordType in GLOBAL_RECORD_TYPES }
     val modeRecords = records.filter { it.gameMode == selectedMode }
-    // GUARDED valueOf: SWEEP has no `:core` GameMode → keep the neutral primary
-    // accent (indigo is reserved for the tile only).
-    val accent = if (isSweep) SWEEP_ACCENT else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    val accent = if (isSweep) LB_SWEEP_GOLD else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
 
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        // Hall of Fame
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         item {
             Spacer(Modifier.height(8.dp))
-            Text("HALL OF FAME", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-            Spacer(Modifier.height(8.dp))
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                    .background(WTheme.surface).border(1.5.dp, WTheme.goldBorder, RoundedCornerShape(16.dp)),
-            ) {
-                Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(listOf(Color(0xFFF59E0B), WTheme.goldBorder))))
-                Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)) {
-                    GLOBAL_RECORD_TYPES.chunked(2).forEach { rowTypes ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            rowTypes.forEach { rt ->
-                                val rec = globalRecords.find { it.recordType == rt }
-                                Box(Modifier.weight(1f)) {
-                                    StatCell(rt, rec, Color(0xFFD97706), isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile)
-                                }
-                            }
+            RecordsBanner(
+                daily = false, onDaily = { if (it) onTab(0) },
+                selected = selectedMode, onSelect = { selectedMode = it; onModeChange(it) },
+                recordCount = if (loading) null else records.size,
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+        if (loading) {
+            // Web parity: AllTimeSkeleton pulsing card blocks, not a spinner.
+            item { CardsSkeleton() }
+            return@LazyColumn
+        }
+        // HALL OF FAME — each global record its own soft card, two across.
+        item {
+            LbSectionLabel("HALL OF FAME", Modifier.padding(start = 2.dp, bottom = 8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                GLOBAL_RECORD_TYPES.chunked(2).forEach { rowTypes ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowTypes.forEach { rt ->
+                            val rec = globalRecords.find { it.recordType == rt }
+                            HallOfFameCard(
+                                rt, rec, Color(0xFFD97706),
+                                isCurrentUser = userId != null && rec?.holderId == userId,
+                                onOpenProfile = onOpenProfile, modifier = Modifier.weight(1f),
+                            )
                         }
                     }
                 }
             }
         }
-        // By Game Mode
+        // BY GAME MODE — only the game picked in the banner: a game-tile card header,
+        // then its records (or the all-time sweep ranking) in the new row style.
         item {
             Spacer(Modifier.height(20.dp))
-            Text(if (isSweep) "SWEEP RANKING" else "BY GAME MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-            Spacer(Modifier.height(8.dp))
-            ModePickerRow(selectedMode) { selectedMode = it }
-            Spacer(Modifier.height(8.dp))
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                    .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+            LbSectionLabel(if (isSweep) "SWEEP RANKING" else "BY GAME MODE", Modifier.padding(start = 2.dp, bottom = 8.dp))
+            Row(
+                Modifier.fillMaxWidth().gameTileChrome(accent, WTheme.surface)
+                    .padding(start = 14.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))))
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    ModeIconBox(selectedMode, accent)
+                ModeIconBox(selectedMode, accent, box = 36.dp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        if (isSweep) "All-Time Sweeps" else recModeTitle(selectedMode),
+                        fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1,
+                    )
                     if (isSweep) {
-                        Column {
-                            Text("All-Time Sweeps", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                            Text("Most daily sweeps ever", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        // Sweeper count (iOS sweepCard).
+                        val sweepers = sweepRank?.totalPlayers ?: (sweepBoard?.size ?: 0)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                            Text(
+                                "$sweepers sweeper${if (sweepers == 1) "" else "s"} · most daily sweeps ever",
+                                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1,
+                            )
                         }
                     } else {
-                        Text(recModeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                        Text("All-time bests", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
                 }
+            }
+            Spacer(Modifier.height(12.dp))
+            if (isSweep) {
+                // Your all-time sweep standing — the gold rank card.
+                sweepRank?.let { r ->
+                    UserRankCard(rank = r.rank, total = r.totalPlayers, mode = SWEEP_ID, showDelta = false, totalNoun = "SWEEPERS")
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+            Column(Modifier.lbSoftCard()) {
                 if (isSweep) {
-                    // Sweeper count + your all-time sweep rank (iOS sweepCard).
-                    val sweepers = sweepRank?.totalPlayers ?: (sweepBoard?.size ?: 0)
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
-                            Text("$sweepers sweeper${if (sweepers == 1) "" else "s"}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        sweepRank?.let { r ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text("Your rank:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                Text("#${r.rank}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                                Text("of ${r.totalPlayers}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                            }
-                        }
-                    }
                     // All-time sweep ranking — most daily sweeps, tiebreak flawless / best time.
                     val board = sweepBoard
                     when {
                         // Still loading — the same pulsing rows every other board uses.
                         board == null -> Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { LeaderboardSkeleton() }
                         board.isEmpty() -> Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            // iOS uses the trophy glyph at 28 with textMuted @ 50%,
-                            // and 12pt bold copy — not the broom at full strength.
                             Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
                             Spacer(Modifier.height(8.dp))
                             Text("No sweeps yet. Be the first!", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         }
-                        else -> Column {
-                            board.forEachIndexed { i, e ->
-                                AllTimeSweepRow(rank = (e.rank.takeIf { it > 0 }?.toInt()) ?: (i + 1), entry = e, isCurrentUser = userId != null && e.userId == userId, onOpenProfile = onOpenProfile)
-                            }
+                        else -> board.forEachIndexed { i, e ->
+                            AllTimeSweepRow(rank = (e.rank.takeIf { it > 0 }?.toInt()) ?: (i + 1), entry = e, isCurrentUser = userId != null && e.userId == userId, onOpenProfile = onOpenProfile)
+                            if (i < board.size - 1) HorizontalDivider(color = WTheme.border)
                         }
                     }
                 } else if (modeRecords.isEmpty()) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(androidx.compose.material.icons.Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
                         Spacer(Modifier.height(6.dp))
                         Text("No records yet", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                     }
                 } else {
-                    Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)) {
-                        PER_MODE_RECORD_TYPES.chunked(2).forEach { rowTypes ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                rowTypes.forEach { rt ->
-                                    val cands = modeRecords.filter { it.recordType == rt }
-                                    val rec = cands.find { it.playType == "solo" } ?: cands.firstOrNull()
-                                    Box(Modifier.weight(1f)) {
-                                        StatCell(rt, rec, accent, isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile, gameMode = selectedMode)
-                                    }
-                                }
-                            }
-                        }
+                    PER_MODE_RECORD_TYPES.forEachIndexed { i, rt ->
+                        val cands = modeRecords.filter { it.recordType == rt }
+                        val rec = cands.find { it.playType == "solo" } ?: cands.firstOrNull()
+                        RecordRow(rt, rec, accent, isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile, gameMode = selectedMode)
+                        if (i < PER_MODE_RECORD_TYPES.size - 1) HorizontalDivider(color = WTheme.border)
                     }
                 }
             }
@@ -767,46 +728,94 @@ private fun recordHintSuffix(r: LeaderboardService.AllTimeRecord): String {
     return if (h > 0) " · $h hint${if (h == 1) "" else "s"}" else " · No hints"
 }
 
-/** Record stat cell — icon + formatted value + label + holder (me-highlight). Mirrors web StatCell. */
+/** Record values in the banner violet (#4c1d95); the plain text ink on the dark palette. */
 @Composable
-private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, gameMode: String? = null) {
-    val cfg = recordCfgFor(recordType, gameMode ?: record?.gameMode) ?: return
-    val hasRecord = record != null
-    Row(
-        Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .then(
-                if (isCurrentUser && hasRecord)
-                    Modifier.background(WTheme.highlightGold).border(1.dp, WTheme.goldBorder, RoundedCornerShape(8.dp))
-                else Modifier,
-            )
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        val tint = if (hasRecord) accent else WTheme.textMuted
+private fun recordValueInk(): Color =
+    if (WTheme.palette == com.wordocious.app.ui.theme.Palettes.Dark) WTheme.text else Color(0xFF4C1D95)
+
+/** The record's icon in a game-tile chip (crown for the medal record). */
+@Composable
+private fun RecordChip(cfg: RecordCfg, accent: Color, hasRecord: Boolean) {
+    val tint = if (hasRecord) accent else WTheme.textMuted
+    GameTileChip(tint, 32.dp) {
         if (cfg.crown) {
             Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = tint, modifier = Modifier.size(16.dp))
         } else cfg.icon?.let { Icon(it, null, tint = tint, modifier = Modifier.size(16.dp)) }
-        Column(Modifier.weight(1f)) {
-            Text(
-                if (hasRecord) cfg.format(record!!.recordValue.toInt()) + recordHintSuffix(record) else "—",
-                fontSize = 16.sp, fontWeight = FontWeight.Black,
-                color = if (hasRecord) WTheme.text else WTheme.textMuted, lineHeight = 18.sp,
-            )
-            Text(cfg.label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, lineHeight = 12.sp)
-            if (hasRecord) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        record!!.holderUsername ?: "Unknown",
-                        modifier = Modifier.clickableNoRipple { record.holderId?.let(onOpenProfile) },
-                        fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                        color = if (isCurrentUser) Color(0xFFD97706) else accent,
-                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    if (isCurrentUser) Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(10.dp))
-                }
-            }
-        }
     }
 }
 
+/** Holder line: avatar + name (profile tap), a small gold crown on records you hold. */
+@Composable
+private fun RecordHolder(record: LeaderboardService.AllTimeRecord, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit) {
+    Row(
+        Modifier.clickableNoRipple { record.holderId?.let(onOpenProfile) },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        val name = record.holderUsername ?: "Unknown"
+        LbAvatar(record.profiles?.avatarUrl, record.profiles?.avatarEmoji, name)
+        Text(
+            name, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+            color = if (isCurrentUser) Color(0xFFD97706) else WTheme.text,
+            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (isCurrentUser) Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), "Your record", tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
+    }
+}
+
+/** HALL OF FAME card: chip, the record name caps 10 / 900 grey, the value 20 / 900, the holder. */
+@Composable
+private fun HallOfFameCard(
+    recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean,
+    onOpenProfile: (String) -> Unit, modifier: Modifier = Modifier,
+) {
+    val cfg = recordCfgFor(recordType, record?.gameMode) ?: return
+    val shape = RoundedCornerShape(14.dp)
+    Column(
+        modifier.cardShadow(14.dp).clip(shape).background(WTheme.surface)
+            .then(if (isCurrentUser && record != null) Modifier.border(1.5.dp, Color(0xFFF59E0B), shape) else Modifier)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        RecordChip(cfg, accent, record != null)
+        Text(
+            cfg.label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+            color = WTheme.textSecondary, maxLines = 2, lineHeight = 12.sp,
+        )
+        Text(
+            if (record != null) cfg.format(record.recordValue.toInt()) + recordHintSuffix(record) else "—",
+            fontSize = 20.sp, fontWeight = FontWeight.Black, lineHeight = 22.sp,
+            color = if (record != null) recordValueInk() else WTheme.textMuted,
+            maxLines = 1,
+        )
+        if (record != null) RecordHolder(record, isCurrentUser, onOpenProfile)
+    }
+}
+
+/** One per-game record in the new row style: chip, name over holder, the value on the right. */
+@Composable
+private fun RecordRow(
+    recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean,
+    onOpenProfile: (String) -> Unit, gameMode: String,
+) {
+    val cfg = recordCfgFor(recordType, gameMode) ?: return
+    Row(
+        Modifier.lbRowShell(isCurrentUser && record != null),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        RecordChip(cfg, accent, record != null)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                cfg.label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                color = WTheme.textSecondary, maxLines = 1,
+            )
+            if (record != null) RecordHolder(record, isCurrentUser, onOpenProfile)
+        }
+        Text(
+            if (record != null) cfg.format(record.recordValue.toInt()) + recordHintSuffix(record) else "—",
+            fontSize = 15.sp, fontWeight = FontWeight.Black,
+            color = if (record != null) recordValueInk() else WTheme.textMuted,
+            maxLines = 1,
+        )
+    }
+}

@@ -39,17 +39,26 @@ struct AllTimeRecord: Identifiable, Decodable {
 
     /// §254: " · N hints" / " · No hints" on a hint-mode record — the exact
     /// wording the leaderboard rows use, so All-Time and You match them.
-    private var hintsSuffix: String {
+    var hintsSuffix: String {
         guard let h = hintsUsed, let m = gameMode, HINT_BEARING_MODES.contains(m) else { return "" }
         return h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
     }
 
     /// Formats the value per type — ported from RECORD_LABELS in app/records/page.tsx.
     var formattedValue: String {
+        switch recordType {
+        case "fastest_win", "fewest_guesses": return valueText + hintsSuffix
+        default: return valueText
+        }
+    }
+
+    /// The value alone, without the hints suffix (the Hall of Fame cards set the
+    /// hints in a smaller muted run after the big value, web RecordCard parity).
+    var valueText: String {
         let v = Int(recordValue)
         switch recordType {
-        case "fastest_win": return (v < 60 ? "\(v)s" : "\(v / 60)m \(v % 60)s") + hintsSuffix
-        case "fewest_guesses": return RecordCatalog.fewestValue(v, gameMode: gameMode) + hintsSuffix
+        case "fastest_win": return v < 60 ? "\(v)s" : "\(v / 60)m \(v % 60)s"
+        case "fewest_guesses": return RecordCatalog.fewestValue(v, gameMode: gameMode)
         case "most_games_played": return "\(v) games"
         case "longest_streak": return "\(v) wins"
         case "most_gold_medals": return "\(v) golds"

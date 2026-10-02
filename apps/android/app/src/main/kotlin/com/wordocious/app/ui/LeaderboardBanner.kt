@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,15 +67,6 @@ internal fun LeaderboardBanner(
     onSelect: (String) -> Unit,
     onOpenRecords: () -> Unit,
 ) {
-    // The home sections' lists, remote flags honored: the eight Wordocious dailies
-    // (home WORDOCIOUS DAILIES order) and the ten Puzzles (home PUZZLES order).
-    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
-    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
-    val wordCards = MODE_CARDS.filter {
-        !it.homeWide && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded)
-    }
-    val puzzleCards = moreDailyModes(MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) })
-
     val secs by rememberMidnightCountdown()
     // Re-read the day once a minute so the title and date roll over at midnight.
     val minute = secs / 60
@@ -83,69 +76,91 @@ internal fun LeaderboardBanner(
         java.time.LocalDate.parse(day).format(java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US)).uppercase(java.util.Locale.US)
     }
     val glow = with(LocalDensity.current) { 8.dp.toPx() }
-    val shape = RoundedCornerShape(16.dp)
 
+    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE)) {
+        // Frosted strip: the day title, then the date · reset clock and the ALL-TIME door.
+        Column(
+            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
+                .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                title, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
+                color = LB_INK, maxLines = 2,
+                style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "$dateLabel · RESETS IN ${formatCountdown(secs)}",
+                    fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
+                    color = LB_SUB, maxLines = 1, modifier = Modifier.weight(1f),
+                )
+                Text(
+                    "ALL-TIME →", fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+                    color = LB_SUB, maxLines = 1,
+                    modifier = Modifier.clickableNoRipple(onOpenRecords).padding(vertical = 4.dp)
+                        .semantics { contentDescription = "All-time records" },
+                )
+            }
+        }
+        LbGameRows(selected, onSelect, LB_SUB)
+    }
+}
+
+/** The one-window banner chrome shared by the Leaderboard and Records banners: a
+ *  [top] → [bottom] vertical gradient + the white sheen, radius 16, soft gold shadow. */
+@Composable
+internal fun LbBannerShell(top: Color, bottom: Color, content: @Composable ColumnScope.() -> Unit) {
     CappedFontScale {
         Column(
             Modifier.fillMaxWidth()
                 .leaderboardBannerShadow()
-                .clip(shape)
+                .clip(RoundedCornerShape(16.dp))
                 .drawBehind {
-                    drawRect(Brush.verticalGradient(listOf(Color(0xFFFEF3C7), Color(0xFFEDE9FE))))
+                    drawRect(Brush.verticalGradient(listOf(top, bottom)))
                     drawRect(Brush.linearGradient(
                         0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
                         start = Offset.Zero, end = Offset(size.width, size.height),
                     ))
                 },
-        ) {
-            // Frosted strip: the day title, then the date · reset clock and the ALL-TIME door.
-            Column(
-                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                    .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    title, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
-                    color = LB_INK, maxLines = 2,
-                    style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "$dateLabel · RESETS IN ${formatCountdown(secs)}",
-                        fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
-                        color = LB_SUB, maxLines = 1, modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        "ALL-TIME →", fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                        color = LB_SUB, maxLines = 1,
-                        modifier = Modifier.clickableNoRipple(onOpenRecords).padding(vertical = 4.dp)
-                            .semantics { contentDescription = "All-time records" },
-                    )
-                }
-            }
-            // Row 1: WORDOCIOUS + the SWEEP chip, then the eight dailies.
-            Column(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "WORDOCIOUS", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
-                        color = LB_SUB, modifier = Modifier.weight(1f),
-                    )
-                    SweepChip(selected == SWEEP_ID) { onSelect(SWEEP_ID) }
-                }
-                TileRow(wordCards, selected, spec = 38.dp, gap = 7.dp, corner = 10.dp, onSelect = onSelect)
-            }
-            // Row 2: PUZZLES, the ten More Games dailies.
-            Column(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text("PUZZLES", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = LB_SUB)
-                TileRow(puzzleCards, selected, spec = 31.dp, gap = 4.dp, corner = 9.dp, onSelect = onSelect)
-            }
+            content = content,
+        )
+    }
+}
+
+/**
+ * The banner's two game rows (Leaderboard + Records): WORDOCIOUS with the SWEEP chip
+ * over the eight dailies (home WORDOCIOUS DAILIES order), then PUZZLES over the ten
+ * More Games dailies (home PUZZLES order), remote flags honored. Exactly one
+ * selection across both rows and the chip.
+ */
+@Composable
+internal fun LbGameRows(selected: String, onSelect: (String) -> Unit, labelColor: Color) {
+    val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
+    val wordCards = MODE_CARDS.filter {
+        !it.homeWide && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded)
+    }
+    val puzzleCards = moreDailyModes(MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) })
+    Column(
+        Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "WORDOCIOUS", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+                color = labelColor, modifier = Modifier.weight(1f),
+            )
+            SweepChip(selected == SWEEP_ID) { onSelect(SWEEP_ID) }
         }
+        TileRow(wordCards, selected, spec = 38.dp, gap = 7.dp, corner = 10.dp, onSelect = onSelect)
+    }
+    Column(
+        Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("PUZZLES", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = labelColor)
+        TileRow(puzzleCards, selected, spec = 31.dp, gap = 4.dp, corner = 9.dp, onSelect = onSelect)
     }
 }
 
@@ -218,5 +233,85 @@ private fun Modifier.leaderboardBannerShadow(): Modifier = drawBehind {
             maskFilter = android.graphics.BlurMaskFilter(14.dp.toPx() / 2f, android.graphics.BlurMaskFilter.Blur.NORMAL)
         }
         canvas.nativeCanvas.drawRoundRect(0f, dy, size.width, size.height + dy, r, r, paint)
+    }
+}
+
+// ── The Records banner (docs/RECORDS_REDESIGN_SPEC.md §1) ───────────────────
+
+private val REC_INK = Color(0xFF4C1D95)
+private val REC_SUB = Color(0xFF6D28D9)
+
+/**
+ * The all-time Records banner: lilac-to-gold one window (the Leaderboard banner's
+ * chrome and game rows), a frosted strip with the trophy + ALL-TIME RECORDS and the
+ * DAILY | ALL-TIME switch. The sub line reads THE BEST EVER · N RECORDS on All-Time
+ * ([recordCount] null drops the number) and <DAY TITLE> · RESETS IN … on Daily.
+ * Replaces the old RECORDS header, the Daily / All-Time toggle row and the mode grid.
+ */
+@Composable
+internal fun RecordsBanner(
+    daily: Boolean,
+    onDaily: (Boolean) -> Unit,
+    selected: String,
+    onSelect: (String) -> Unit,
+    recordCount: Int? = null,
+) {
+    val secs by rememberMidnightCountdown()
+    val day = remember(secs / 60) { com.wordocious.app.todayLocalDate() }
+    val dayTitle = remember(day) { leaderboardTitle(day, ProperNoundle.holidayNameForDay(day)) }
+    val glow = with(LocalDensity.current) { 8.dp.toPx() }
+    val sub = if (daily) "$dayTitle · RESETS IN ${formatCountdown(secs)}"
+        else if (recordCount != null && recordCount > 0) "THE BEST EVER · $recordCount RECORDS"
+        else "THE BEST EVER"
+
+    LbBannerShell(Color(0xFFEDE9FE), Color(0xFFFEF3C7)) {
+        Column(
+            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
+                .padding(start = 12.dp, top = 12.dp, end = 10.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(
+                    androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
+                    tint = Color(0xFFB45309), modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    "ALL-TIME RECORDS", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
+                    lineHeight = 1.15.em, color = REC_INK, maxLines = 1,
+                    style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    sub, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
+                    color = REC_SUB, maxLines = 2, modifier = Modifier.weight(1f),
+                )
+                RecordsViewSwitch(daily, onDaily)
+            }
+        }
+        LbGameRows(selected, onSelect, REC_SUB)
+    }
+}
+
+/** DAILY | ALL-TIME as the home banner's pill switch: violet 12% track, white selected segment. */
+@Composable
+private fun RecordsViewSwitch(daily: Boolean, onDaily: (Boolean) -> Unit) {
+    Row(Modifier.clip(RoundedCornerShape(50)).background(Color(0xFF7C3AED).copy(alpha = 0.12f)).padding(2.dp)) {
+        listOf(true to "DAILY", false to "ALL-TIME").forEach { (isDaily, label) ->
+            val on = daily == isDaily
+            Box(
+                Modifier.height(26.dp).clip(RoundedCornerShape(50))
+                    .background(if (on) Color.White else Color.Transparent)
+                    .clickableNoRipple { onDaily(isDaily) }
+                    .padding(horizontal = 10.dp)
+                    .semantics { contentDescription = label.lowercase() + if (on) ", selected" else "" },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label, fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                    color = if (on) REC_INK else Color(0xFF7C3AED), maxLines = 1,
+                )
+            }
+        }
     }
 }

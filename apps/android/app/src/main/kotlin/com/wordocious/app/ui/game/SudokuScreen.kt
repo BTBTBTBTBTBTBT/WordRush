@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.cardShadow
 import android.app.Activity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -674,8 +675,7 @@ fun CustomCompletedDailyCard(mode: GameMode) {
     Column(
         // 12dp under the card like every other completed-card variant (the leaderboard relies on
         // the card's own bottom gap; this one sat flush on the rank banner).
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp)).background(WTheme.surface),
     ) {
         Box(Modifier.fillMaxWidth().height(4.dp).background(Brush.horizontalGradient(
             if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA)) else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)))))

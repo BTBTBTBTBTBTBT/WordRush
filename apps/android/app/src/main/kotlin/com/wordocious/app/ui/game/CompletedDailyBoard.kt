@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.cardShadow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -229,8 +230,9 @@ fun CompletedDailyBoard(modeId: String) {
     var expanded by remember { mutableStateOf(false) }
 
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
+            .background(WTheme.surface),
     ) {
         // Top accent bar (green won / gray attempted)
         Box(
@@ -397,8 +399,9 @@ private fun CompletedHeaderFallback(modeId: String, tick: Int) {
 @Composable
 internal fun CompletedHeaderOnlyCard(won: Boolean, summary: String) {
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
+            .background(WTheme.surface),
     ) {
         Box(
             Modifier.fillMaxWidth().height(4.dp).background(
@@ -467,8 +470,9 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
     var expanded by remember { mutableStateOf(false) }
 
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
+            .background(WTheme.surface),
     ) {
         Box(
             Modifier.fillMaxWidth().height(4.dp).background(
@@ -618,8 +622,9 @@ private fun ProperNoundleCompletedDailyCard(
     var expanded by remember { mutableStateOf(false) }
 
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+        // Soft completed-board card (Leaderboard / Records redesign): radius 14, soft shadow, no border.
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).cardShadow(14.dp).clip(RoundedCornerShape(14.dp))
+            .background(WTheme.surface),
     ) {
         Box(
             Modifier.fillMaxWidth().height(4.dp).background(

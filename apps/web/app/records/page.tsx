@@ -3,13 +3,17 @@
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star, Share } from 'lucide-react';
+import { Trophy, Crown, Users, User, Swords, ChevronDown, ChevronUp, Share } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
+import { modeByKey } from '@/components/profile/mode-picker';
+import { RecordsBanner, type RecordsTab } from '@/components/leaderboard/records-banner';
+import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
+import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
+import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { guessRowLabel } from '@/lib/mode-stats';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
@@ -76,14 +80,17 @@ import {
   PER_MODE_RECORD_TYPES, GLOBAL_RECORD_TYPES, formatRecordTime as formatTime,
 } from '@/lib/records-ui';
 
-function RankIcon({ rank }: { rank: number }) {
-  if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
-  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
-  if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#b45309' }} />;
-  return <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
-}
+// Caps section labels (records-redesign §2); the text stays mixed-case in the
+// source so scripts/records-fold.test.ts can still find the sections.
+const CAPS_LABEL: React.CSSProperties = { ...SECTION_LABEL, textTransform: 'uppercase' };
 
-function StatCell({
+/**
+ * One record (records-redesign §2): a soft white card — the record's icon in a
+ * tile chip of the game's color, the record name (caps 10 / 900 gray), the value
+ * big (20 / 900), the holder's avatar + name, and a small gold crown on records
+ * you hold.
+ */
+function RecordCard({
   recordType,
   record,
   accentColor,
@@ -100,46 +107,65 @@ function StatCell({
   const hasRecord = !!record;
 
   return (
-    <div
-      className="flex items-start gap-2.5 p-2 rounded-lg"
-      style={
-        isCurrentUser && hasRecord
-          ? { background: 'var(--color-highlight-gold)', border: '1px solid var(--color-gold-border)' }
-          : { border: '1px solid transparent' }
-      }
-    >
-      <Icon
-        className="w-4 h-4 shrink-0 mt-0.5"
-        style={{ color: hasRecord ? accentColor : 'var(--color-text-muted)' }}
-      />
-      <div className="min-w-0 flex-1">
-        <div
-          className="font-black text-base leading-tight"
-          style={{ color: hasRecord ? 'var(--color-text)' : 'var(--color-text-muted)' }}
-        >
-          {hasRecord ? recordValue(record!.record_type, record!.record_value, record!.game_mode) : '—'}
-          {/* §254: hints on the record cell, same wording as the leaderboard rows. */}
-          {hasRecord && record!.hints_used != null && record!.game_mode && (() => {
-            const h = formatHintsLabel(record!.game_mode, record!.hints_used!);
-            return h ? <span className="font-bold text-xs" style={{ color: 'var(--color-text-muted)' }}> · {h}</span> : null;
-          })()}
-        </div>
-        <div
-          className="text-[10px] font-bold leading-tight mt-0.5"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
+    <div className="relative flex flex-col gap-1.5 p-3" style={isCurrentUser && hasRecord ? { ...SOFT_CARD, ...YOUR_ROW, borderRadius: 14 } : SOFT_CARD}>
+      {isCurrentUser && hasRecord && (
+        <Crown className="absolute top-2.5 right-2.5 w-3.5 h-3.5" style={{ color: '#f59e0b' }} fill="#fde68a" aria-label="Your record" />
+      )}
+      <div className="flex items-center gap-2 min-w-0">
+        <GameTileChip accent={accentColor} width={28}>
+          <Icon className="w-3.5 h-3.5" style={{ color: hasRecord ? accentColor : 'var(--color-text-muted)' }} />
+        </GameTileChip>
+        <span className="text-[10px] font-black uppercase leading-tight min-w-0" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6 }}>
           {config.label}
+        </span>
+      </div>
+      <div className="font-black leading-tight" style={{ fontSize: 20, color: hasRecord ? 'var(--color-record-value)' : 'var(--color-text-muted)' }}>
+        {hasRecord ? recordValue(record!.record_type, record!.record_value, record!.game_mode) : '—'}
+        {/* §254: hints on the record, same wording as the leaderboard rows. */}
+        {hasRecord && record!.hints_used != null && record!.game_mode && (() => {
+          const h = formatHintsLabel(record!.game_mode, record!.hints_used!);
+          return h ? <span className="font-bold text-xs" style={{ color: 'var(--color-text-muted)' }}> · {h}</span> : null;
+        })()}
+      </div>
+      {hasRecord && (
+        <Link
+          href={`/profile/${record!.holder_id}`}
+          className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity"
+        >
+          <BoardAvatar url={record!.holder_avatar_url} name={record!.holder_username || '?'} size={20} />
+          <span className="text-[11px] font-extrabold truncate" style={{ color: isCurrentUser ? '#d97706' : 'var(--color-text)' }}>
+            {record!.holder_username || 'Unknown'}
+          </span>
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** The game-tile CARD header (tint, border, top bar, chip, 15 / 900 name). */
+function GameHeaderCard({ accent, glyph, title, sub, right, children }: {
+  accent: string;
+  glyph: React.ReactNode;
+  title: React.ReactNode;
+  sub?: React.ReactNode;
+  right?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="relative overflow-hidden mb-4" style={gameTileSurface(accent)}>
+      <GameTileBar accent={accent} />
+      <div className="px-3 pt-4 pb-3">
+        <div className="flex items-center gap-3">
+          <GameTileChip accent={accent}>{glyph}</GameTileChip>
+          <div className="flex-1 min-w-0">
+            <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>{title}</div>
+            {sub != null && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{sub}</div>
+            )}
+          </div>
+          {right}
         </div>
-        {hasRecord && (
-          <Link
-            href={`/profile/${record!.holder_id}`}
-            className="text-[10px] font-extrabold leading-tight mt-1 flex items-center gap-1 hover:opacity-80 transition-opacity"
-            style={{ color: isCurrentUser ? '#d97706' : accentColor }}
-          >
-            <span className="truncate">{record!.holder_username || 'Unknown'}</span>
-            {isCurrentUser && <Crown className="w-2.5 h-2.5 shrink-0" />}
-          </Link>
-        )}
+        {children}
       </div>
     </div>
   );
@@ -167,7 +193,7 @@ function AllTimeSkeleton() {
         <div
           key={i}
           className="animate-pulse"
-          style={{ background: 'var(--color-border)', borderRadius: '16px', height: i === 1 ? '140px' : '100px' }}
+          style={{ background: 'var(--color-border)', borderRadius: 14, height: i === 1 ? '140px' : '100px' }}
         />
       ))}
     </div>
@@ -177,8 +203,7 @@ function AllTimeSkeleton() {
 /* ═══════════════════════════════════════════════════════
    DAILY RECORDS VIEW
    ═══════════════════════════════════════════════════════ */
-function DailyRecordsView({ userId }: { userId?: string }) {
-  const [selectedMode, setSelectedMode] = useState('DUEL');
+function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedMode: string }) {
   const [playType, setPlayType] = useState<'solo' | 'vs'>('solo');
   // FRIENDS (§207): All|Friends filter — dense friend ranks, same query
   // restricted to friends∪me. Ghost rows live on /daily (the primary board).
@@ -362,15 +387,9 @@ function DailyRecordsView({ userId }: { userId?: string }) {
     const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
     const det = sweepDetails.get(entry.user_id);
     return (
-      <div
-        key={entry.user_id}
-        className="flex items-center gap-3 px-4 py-2.5"
-        style={{
-          background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
+      <div key={entry.user_id} className="flex items-center gap-3 px-3 py-2.5" style={isCurrentUser ? YOUR_ROW : undefined}>
         <RankIcon rank={rank} />
+        <BoardAvatar url={entry.avatar_url} name={entry.username} />
         {/* §236: same shell as the daily board's sweep row — score on the
             NAME line, stats owning the full width, dots + pill beneath. */}
         <div className="flex-1 min-w-0">
@@ -383,7 +402,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               {entry.username}
               {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
             </Link>
-            <span className="font-black text-xs shrink-0" style={{ color: 'var(--color-text)' }}>
+            <span className="font-black text-[13px] shrink-0 tabular-nums" style={{ color: 'var(--color-text)' }}>
               {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
             </span>
           </div>
@@ -409,153 +428,99 @@ function DailyRecordsView({ userId }: { userId?: string }) {
     );
   };
 
+  // Your rank card's points: your own row on the board in hand.
+  const myPoints = (() => {
+    if (!userId) return null;
+    if (isSweep) {
+      const e = sweepLeaderboard.find((r) => r.user_id === userId);
+      return e ? sweepScoreLabels.get(e.total_score) ?? formatScore(e.total_score) : null;
+    }
+    const e = leaderboard.find((r) => r.user_id === userId);
+    return e ? lbScoreLabels.get(e.composite_score) ?? formatScore(e.composite_score) : null;
+  })();
+
   return (
     <div>
-      {/* Mode Picker */}
-      <div className="mb-3">
-        <ModePicker
-          grid
-          includeSweep
-          showAll={false}
-          selectedMode={selectedMode}
-          // null = a tap on the selected tile (the picker's toggle-off); there is
-          // no All view here, so the tap keeps the mode instead of jumping to Classic.
-          onSelectMode={(m) => { if (m) setSelectedMode(m); }}
-        />
-      </div>
-
       <PullToRefresh onRefresh={loadData} accentColor={color}>
-      {/* Leaderboard Card — no fade on a mode switch: the new board is simply
-          there in the tap's frame (founder, 2026-09-29; iOS/Android parity). */}
-      <div
-        key={`${selectedMode}-${playType}`}
-        className="overflow-hidden"
-        style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
-          borderRadius: '16px',
-        }}
+      {/* Per-game board card (records-redesign §2): the game-tile CARD header
+          with the Solo | VS and Everyone | Friends pills and a bare share icon. */}
+      <GameHeaderCard
+        accent={color}
+        glyph={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+        title={mode.title}
+        sub={
+          <>
+            <Users className="w-3 h-3 shrink-0" />
+            <span className="truncate">
+              {isSweep
+                ? `${playerCount} swept today`
+                : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
+            </span>
+          </>
+        }
+        right={
+          // Share is per-mode only — Sweep has no card design here.
+          !isSweep && !loading && leaderboard.length > 0 ? (
+            <button
+              onClick={handleShareLeaderboard}
+              disabled={sharingLb}
+              aria-label="Share leaderboard"
+              className="p-1 -my-1 shrink-0 active:scale-95 transition-transform"
+              style={{ color: 'var(--color-text-secondary)', opacity: sharingLb ? 0.4 : 1 }}
+            >
+              <Share className="w-4 h-4" />
+            </button>
+          ) : null
+        }
       >
-        {/* Mode accent bar */}
-        <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
-
-        {/* Card header: mode info + solo/vs toggle */}
-        <div className="px-4 pt-3 pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: `${color}15` }}
-              >
-                {mode.romanNumeral ? (
-                  <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
-                ) : Icon ? (
-                  <Icon className="w-4 h-4" style={{ color }} />
-                ) : null}
-              </div>
-              <div>
-                <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
-                  {mode.title}
-                </div>
-                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  Today
-                </div>
-              </div>
-            </div>
-
-            {/* Share + Solo/VS toggle (per-mode only — Sweep is solo-only, cross-mode) */}
-            {!isSweep && (
-            <div className="flex items-center gap-2">
-              {!loading && leaderboard.length > 0 && (
-                <button
-                  onClick={handleShareLeaderboard}
-                  disabled={sharingLb}
-                  aria-label="Share leaderboard"
-                  className="p-1 active:scale-95 transition-transform"
-                  style={{ color: 'var(--color-text-muted)', opacity: sharingLb ? 0.4 : 1 }}
-                >
-                  <Share className="w-3.5 h-3.5" />
-                </button>
-              )}
-              {/* FRIENDS toggle (§207) — same segmented shell as Solo/VS. */}
-              {userId && (
-                <div
-                  className="flex rounded-lg overflow-hidden"
-                  style={{ border: '1.5px solid var(--color-border)' }}
-                >
-                  {([false, true] as const).map((f) => (
-                    <button
-                      key={String(f)}
-                      className="px-3 py-1.5 text-[10px] font-extrabold"
-                      style={{
-                        background: friendsOnly === f ? `${color}15` : 'var(--color-surface)',
-                        color: friendsOnly === f ? color : 'var(--color-text-muted)',
-                      }}
-                      onClick={() => setFriendsOnly(f)}
-                    >
-                      {f ? 'Friends' : 'All'}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div
-                className="flex rounded-lg overflow-hidden"
-                style={{ border: '1.5px solid var(--color-border)' }}
-              >
-                {(['solo', 'vs'] as const).map((t) => (
-                  <button
-                    key={t}
-                    className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold"
-                    style={{
-                      background: playType === t ? `${color}15` : 'var(--color-surface)',
-                      color: playType === t ? color : 'var(--color-text-muted)',
-                    }}
-                    onClick={() => setPlayType(t)}
-                  >
-                    {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
-                    {t === 'solo' ? 'Solo' : 'VS'}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Solo/VS + Friends (per-mode only — Sweep is solo-only, cross-mode). */}
+        {!isSweep && (
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <SegmentedPill
+              label="Solo or VS"
+              accent={color}
+              value={playType}
+              onChange={setPlayType}
+              options={[
+                ['solo', <><User className="w-3 h-3" />Solo</>],
+                ['vs', <><Swords className="w-3 h-3" />VS</>],
+              ] as const}
+            />
+            {/* FRIENDS (§207). */}
+            {userId && (
+              <SegmentedPill
+                label="Everyone or Friends"
+                accent={color}
+                value={friendsOnly}
+                onChange={setFriendsOnly}
+                options={[[false, 'Everyone'], [true, 'Friends']] as const}
+              />
             )}
           </div>
+        )}
+      </GameHeaderCard>
 
-          {/* Player count + user rank */}
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              <Users className="w-3.5 h-3.5" />
-              <span>
-                {isSweep
-                  ? `${playerCount} swept today`
-                  : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
-              </span>
-            </div>
-            {userRank && (
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
-                <span className="font-black text-xs" style={{ color: '#d97706' }}>#{userRank.rank}</span>
-                {!isSweep && <RankDeltaBadge mode={selectedMode} playType={playType} pageKey="records-daily" currentRank={userRank.rank} />}
-                <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  of {userRank.totalPlayers}
-                  {userRank.totalPlayers > 1 && ` · top ${Math.max(1, Math.round((userRank.rank / userRank.totalPlayers) * 100))}%`}
-                </span>
-              </div>
-            )}
-          </div>
+      {/* §254/§255: the completed-daily dropdown, in the soft card style. */}
+      {!isSweep && (
+        <SoftCompletedCards>
+          <CompletedDailyBoard modeId={selectedMode} />
+        </SoftCompletedCards>
+      )}
 
-          {/* §254/§255: the completed-daily dropdown — a full-width block
-              beneath the count/rank row, as on the daily leaderboard page.
-              (First cut mounted it INSIDE that flex row, where it was squeezed
-              between "7 players today" and "Your rank" — founder screenshot.) */}
-          {!isSweep && (
-            <div className="mt-2">
-              <CompletedDailyBoard modeId={selectedMode} />
-            </div>
-          )}
-        </div>
+      {/* Your rank, as on the Leaderboard. */}
+      {userRank && (
+        <YourRankCard
+          rank={userRank.rank}
+          ofLine={`OF ${userRank.totalPlayers} TODAY${userRank.totalPlayers > 1 ? ` · TOP ${Math.max(1, Math.round((userRank.rank / userRank.totalPlayers) * 100))}%` : ''}`}
+          points={myPoints}
+          delta={!isSweep ? <RankDeltaBadge mode={selectedMode} playType={playType} pageKey={friendsOnly && userId ? 'records-daily-friends' : 'records-daily'} currentRank={userRank.rank} /> : null}
+        />
+      )}
 
-        {/* Leaderboard rows */}
+      <div className="mb-2 px-1" style={SECTION_LABEL}>TODAY&apos;S BOARD</div>
+      {/* No fade on a mode switch: the new board is simply there in the tap's
+          frame (founder, 2026-09-29; iOS/Android parity). */}
+      <div key={`${selectedMode}-${playType}`} className="overflow-hidden p-1.5" style={SOFT_CARD}>
         {loading ? (
           <LeaderboardSkeleton />
         ) : isSweep ? (
@@ -580,76 +545,62 @@ function DailyRecordsView({ userId }: { userId?: string }) {
             {leaderboard
               .map((entry, index) => ({ entry, rank: index + 1 }))
               .filter(({ entry }) => !isBlocked(entry.user_id))
-              .map(({ entry, rank }) => {
-              const isCurrentUser = !!userId && entry.user_id === userId;
-              return (
-                <div
+              .map(({ entry, rank }) => (
+                <BoardRow
                   key={entry.user_id}
-                  className="flex items-center gap-3 px-4 py-2.5"
-                  style={{
-                    background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
-                    borderBottom: '1px solid var(--color-border)',
-                  }}
-                >
-                  <RankIcon rank={rank} />
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      href={`/profile/${entry.user_id}`}
-                      className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-                      style={{ color: 'var(--color-text)' }}
-                    >
-                      {entry.username}
-                      {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-                    </Link>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</div>
-                    <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      {playType === 'solo' ? (
-                        <>
-                          <span>
-                            {guessRowLabel(MODE_BY_DBKEY[selectedMode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[selectedMode]?.guessBase ?? 1, entry.guess_count)} · {formatTime(entry.time_seconds)}
-                            {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
-                            {/* §254: hints ride this row exactly as on the daily
-                                leaderboard — the founder wants the two pages to match. */}
-                            {(() => {
-                              const h = formatHintsLabel(selectedMode, entry.hints_used);
-                              return h ? ` · ${h}` : '';
-                            })()}
-                          </span>
-                          <span
-                            className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-                            style={{
-                              background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-                              color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
-                            }}
-                          >
-                            {entry.completed ? 'Win' : 'Loss'}
-                          </span>
-                        </>
-                      ) : (
-                        <>{entry.vs_wins}W / {entry.vs_games}G</>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  rank={rank}
+                  userId={entry.user_id}
+                  username={entry.username}
+                  avatarUrl={entry.avatar_url}
+                  avatarEmoji={entry.avatar_emoji}
+                  isMe={!!userId && entry.user_id === userId}
+                  stats={<RecordsRowStats entry={entry} mode={selectedMode} playType={playType} />}
+                  score={lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
+                />
+              ))}
           </div>
         )}
       </div>
 
       {/* Yesterday's podium */}
-      <YesterdayPodium mode={selectedMode} playType={playType} color={color} userId={userId} />
+      <YesterdayPodium mode={selectedMode} playType={playType} userId={userId} />
       </PullToRefresh>
     </div>
+  );
+}
+
+/** A records row's stats line: solo guesses · time · boards · hints + W/L, or VS W/G. */
+function RecordsRowStats({ entry, mode, playType }: { entry: LeaderboardEntry; mode: string; playType: 'solo' | 'vs' }) {
+  if (playType === 'vs') return <span className="truncate">{entry.vs_wins}W / {entry.vs_games}G</span>;
+  return (
+    <>
+      <span className="truncate">
+        {guessRowLabel(MODE_BY_DBKEY[mode]?.guessSemantics ?? 'guesses', MODE_BY_DBKEY[mode]?.guessBase ?? 1, entry.guess_count)} · {formatTime(entry.time_seconds)}
+        {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
+        {/* §254: hints ride this row exactly as on the daily leaderboard —
+            the founder wants the two pages to match. */}
+        {(() => {
+          const h = formatHintsLabel(mode, entry.hints_used);
+          return h ? ` · ${h}` : '';
+        })()}
+      </span>
+      <span
+        className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
+        style={{
+          background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
+          color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
+        }}
+      >
+        {entry.completed ? 'Win' : 'Loss'}
+      </span>
+    </>
   );
 }
 
 /* ═══════════════════════════════════════════════════════
    YESTERDAY'S PODIUM (collapsible)
    ═══════════════════════════════════════════════════════ */
-function YesterdayPodium({ mode, playType, color, userId }: { mode: string; playType: 'solo' | 'vs'; color: string; userId?: string }) {
+function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: 'solo' | 'vs'; userId?: string }) {
   const [open, setOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [, setLanded] = useState(0);
@@ -671,7 +622,6 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
   const top3 = cachedTop3 ?? [];
   if (cachedTop3 && top3.length === 0) return null;
   const podiumScoreLabels = tieAwareScoreLabels(top3.map((e) => e.composite_score));
-  const medalColor = ['#d97706', '#9ca3af', '#b45309'];
 
   const handleShare = async () => {
     if (sharing) return;
@@ -691,66 +641,68 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
     }
   };
 
+  // Identical to the Leaderboard's YESTERDAY'S WINNERS (records-redesign §2).
   return (
-    <div
-      className="overflow-hidden mt-3"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-    >
-      <div className="w-full flex items-center justify-between px-4 py-2.5">
+    <>
+      <div className="w-full mt-5 mb-2 flex items-center gap-1.5 px-1">
         <button
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-1.5 flex-1 min-w-0"
+          aria-expanded={open}
+          className="flex-1 flex items-center gap-1.5 text-left"
+          style={SECTION_LABEL}
         >
-          <Crown className="w-3.5 h-3.5" style={{ color: '#d97706' }} />
-          <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--color-text)' }}>Yesterday&apos;s Podium</span>
+          YESTERDAY&apos;S WINNERS
+          {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
-        <div className="flex items-center gap-2">
-          {/* Settled-podium share — only once the podium is open. */}
-          {open && top3.length > 0 && (
-            <button
-              onClick={handleShare}
-              disabled={sharing}
-              aria-label="Share yesterday's podium"
-              className="p-1 -my-1 active:scale-95 transition-transform"
-              style={{ color: 'var(--color-text-muted)', opacity: sharing ? 0.4 : 1 }}
-            >
-              <Share className="w-3.5 h-3.5" />
-            </button>
-          )}
-          <button onClick={() => setOpen((o) => !o)} aria-label="Toggle yesterday's podium">
-            <ChevronDown className="w-4 h-4 transition-transform" style={{ color: 'var(--color-text-muted)', transform: open ? 'rotate(180deg)' : 'none' }} />
+        {/* Settled-podium share — only once the podium is open. */}
+        {open && top3.length > 0 && (
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            aria-label="Share yesterday's podium"
+            className="p-1 -my-1 active:scale-95 transition-transform"
+            style={{ color: 'var(--color-text-secondary)', opacity: sharing ? 0.4 : 1 }}
+          >
+            <Share className="w-4 h-4" />
           </button>
-        </div>
+        )}
       </div>
-      {open && !cachedTop3 && (
-        <div style={{ borderTop: '1px solid var(--color-border)' }}>
-          <LeaderboardSkeleton />
+      {open && (
+        <div className="overflow-hidden mb-4 p-1.5" style={SOFT_CARD}>
+          {!cachedTop3 ? (
+            <LeaderboardSkeleton />
+          ) : (
+            top3
+              .map((entry, index) => ({ entry, rank: index + 1 }))
+              .filter(({ entry }) => !isBlocked(entry.user_id))
+              .map(({ entry, rank }) => (
+                <BoardRow
+                  key={entry.user_id}
+                  rank={rank}
+                  userId={entry.user_id}
+                  username={entry.username}
+                  avatarUrl={entry.avatar_url}
+                  avatarEmoji={entry.avatar_emoji}
+                  isMe={!!userId && entry.user_id === userId}
+                  stats={<RecordsRowStats entry={entry} mode={mode} playType={playType} />}
+                  score={podiumScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
+                />
+              ))
+          )}
         </div>
       )}
-      {open && cachedTop3 && (
-        <div style={{ borderTop: '1px solid var(--color-border)' }}>
-          {top3.filter((e) => !isBlocked(e.user_id)).map((e, i, arr) => (
-            <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
-              <Medal className="w-4 h-4 shrink-0" style={{ color: medalColor[i] }} />
-              <Link href={`/profile/${e.user_id}`} className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80" style={{ color: 'var(--color-text)' }}>{e.username}</Link>
-              <span className="font-black text-xs" style={{ color }}>{podiumScoreLabels.get(e.composite_score) ?? formatScore(e.composite_score)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
 /* ═══════════════════════════════════════════════════════
    ALL-TIME RECORDS VIEW
    ═══════════════════════════════════════════════════════ */
-function AllTimeRecordsView({ userId }: { userId?: string }) {
+function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string; selectedMode: string; onCount: (n: number) => void }) {
   // The shared list paints in the first render when it already landed this
   // session — no skeleton frame on every Daily → All-Time switch.
   const [records, setRecords] = useState<AllTimeRecord[]>(() => peekAllTimeRecords() ?? []);
   const [loading, setLoading] = useState(() => peekAllTimeRecords() === null);
-  const [selectedMode, setSelectedMode] = useState('DUEL');
   // §245: one trophy-case card render/upload at a time.
   const [sharingShelf, setSharingShelf] = useState(false);
   const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[] | null>(allTimeSweepCache);
@@ -761,6 +713,10 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+  // The banner's "THE BEST EVER · N RECORDS" — the count of what's loaded.
+  useEffect(() => {
+    if (!loading) onCount(records.length);
+  }, [loading, records.length, onCount]);
 
   // Lazily load the all-time Sweep board the first time SWEEP is selected.
   // The skeleton shows only until the first load; later visits paint the board
@@ -808,98 +764,43 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 
   return (
     <div>
-      {/* Hall of Fame */}
+      {/* Hall of Fame — each record a soft card (records-redesign §2). */}
       <div className="mb-5">
-        <div
-          className="text-[10px] font-black uppercase tracking-wider mb-2"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          Hall of Fame
-        </div>
-        <div
-          className="overflow-hidden"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid var(--color-gold-border)',
-            borderRadius: '16px',
-          }}
-        >
-          <div
-            className="h-[3px]"
-            style={{ background: 'linear-gradient(90deg, #f59e0b, var(--color-gold-border))' }}
-          />
-          <div className="px-4 pt-2 pb-4">
-            <div className="grid grid-cols-2 gap-3">
-              {GLOBAL_RECORD_TYPES.map((rt) => {
-                const record = globalRecords.find((r) => r.record_type === rt);
-                return (
-                  <StatCell
-                    key={rt}
-                    recordType={rt}
-                    record={record}
-                    accentColor="#d97706"
-                    isCurrentUser={!!userId && record?.holder_id === userId}
-                  />
-                );
-              })}
-            </div>
-          </div>
+        <div className="mb-2 px-1" style={CAPS_LABEL}>Hall of Fame</div>
+        <div className="grid grid-cols-2 gap-3">
+          {GLOBAL_RECORD_TYPES.map((rt) => {
+            const record = globalRecords.find((r) => r.record_type === rt);
+            return (
+              <RecordCard
+                key={rt}
+                recordType={rt}
+                record={record}
+                accentColor="#d97706"
+                isCurrentUser={!!userId && record?.holder_id === userId}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* By Game Mode */}
+      {/* By Game Mode — the game picked in the banner: a game-tile CARD header,
+          then its records (or the all-time Sweep board) below. */}
       <div>
-        <div
-          className="text-[10px] font-black uppercase tracking-wider mb-2"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          By Game Mode
-        </div>
+        <div className="mb-2 px-1" style={CAPS_LABEL}>By Game Mode</div>
 
-        <div className="mb-3">
-          <ModePicker
-            grid
-            includeSweep
-            showAll={false}
-            selectedMode={selectedMode}
-            // null = a tap on the selected tile (the picker's toggle-off); there is
-          // no All view here, so the tap keeps the mode instead of jumping to Classic.
-          onSelectMode={(m) => { if (m) setSelectedMode(m); }}
-          />
-        </div>
-
-        <div
+        <GameHeaderCard
           key={selectedMode}
-          className="overflow-hidden"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid var(--color-border)',
-            borderRadius: '16px',
-          }}
-        >
-          <div
-            className="h-[3px]"
-            style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
-          />
-          <div className="flex items-center gap-2.5 px-4 pt-3 pb-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: `${color}15` }}
-            >
-              {mode.romanNumeral ? (
-                <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
-              ) : Icon ? (
-                <Icon className="w-4 h-4" style={{ color }} />
-              ) : null}
-            </div>
-            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
-              {isSweep ? 'Sweep · All-Time' : mode.title}
-            </div>
-          </div>
-          {isSweep ? (
-            // All-time Sweep leaderboard — lifetime sweep count, flawless count,
-            // and best (fastest) sweep time.
-            sweepBoard === null ? (
+          accent={color}
+          glyph={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+          title={isSweep ? 'Sweep · All-Time' : mode.title}
+          sub={isSweep ? 'Lifetime sweeps' : 'All-time bests'}
+        />
+
+        {isSweep ? (
+          // All-time Sweep leaderboard — lifetime sweep count, flawless count,
+          // and best (fastest) sweep time.
+          <div className="overflow-hidden p-1.5" style={SOFT_CARD}>
+            {sweepBoard === null ? (
               <LeaderboardSkeleton />
             ) : sweepBoard.length === 0 ? (
               <div className="py-5 text-center">
@@ -907,79 +808,47 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                 <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
               </div>
             ) : (
-              <div style={{ borderTop: '1px solid var(--color-border)' }}>
-                {/* Service already filters blocked; the RPC rank is authoritative. */}
-                {sweepBoard.map((entry) => {
-                  const isCurrentUser = !!userId && entry.user_id === userId;
-                  return (
-                    <div
-                      key={entry.user_id}
-                      className="flex items-center gap-3 px-4 py-2.5"
-                      style={{
-                        background: isCurrentUser ? 'var(--color-highlight-gold)' : entry.rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
-                        borderBottom: '1px solid var(--color-border)',
-                      }}
-                    >
-                      <RankIcon rank={entry.rank} />
-                      {/* Leaderboard-row shape (Doug's Aug-16 feedback): stats
-                          under the name so the name keeps the flexible width. */}
-                      <div className="flex-1 min-w-0">
-                        <Link
-                          href={`/profile/${entry.user_id}`}
-                          className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-                          style={{ color: 'var(--color-text)' }}
-                        >
-                          {entry.username}
-                          {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-                        </Link>
-                        <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                          {entry.flawless_count} flawless{entry.best_sweep_time ? ` · best ${formatTime(entry.best_sweep_time)}` : ''}
-                        </div>
-                      </div>
-                      <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
-                        {entry.sweep_count} sweep{entry.sweep_count !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )
-          ) : (
-          <div className="px-4 pb-4">
-            {modeRecords.length === 0 ? (
-              <div className="py-5 text-center">
-                <Trophy
-                  className="w-7 h-7 mx-auto mb-1.5"
-                  style={{ color: 'var(--color-text-muted)' }}
+              // Service already filters blocked; the RPC rank is authoritative.
+              sweepBoard.map((entry) => (
+                <BoardRow
+                  key={entry.user_id}
+                  rank={entry.rank}
+                  userId={entry.user_id}
+                  username={entry.username}
+                  avatarUrl={entry.avatar_url}
+                  isMe={!!userId && entry.user_id === userId}
+                  stats={<span className="truncate">{entry.flawless_count} flawless{entry.best_sweep_time ? ` · best ${formatTime(entry.best_sweep_time)}` : ''}</span>}
+                  score={`${entry.sweep_count} sweep${entry.sweep_count !== 1 ? 's' : ''}`}
                 />
-                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>
-                  No records yet
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {PER_MODE_RECORD_TYPES.map((rt) => {
-                  // A mode can have both a solo and a VS record per type; the
-                  // per-mode card represents solo play, so prefer the solo row
-                  // (else fall back to whatever exists). Otherwise e.g. Classic
-                  // "Most Games Played" could show the tiny VS count.
-                  const candidates = modeRecords.filter((r) => r.record_type === rt);
-                  const record = candidates.find((r) => r.play_type === 'solo') ?? candidates[0];
-                  return (
-                    <StatCell
-                      key={rt}
-                      recordType={rt}
-                      record={record}
-                      accentColor={color}
-                      isCurrentUser={!!userId && record?.holder_id === userId}
-                    />
-                  );
-                })}
-              </div>
+              ))
             )}
           </div>
-          )}
-        </div>
+        ) : modeRecords.length === 0 ? (
+          <div className="py-5 text-center" style={SOFT_CARD}>
+            <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+            <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No records yet</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {PER_MODE_RECORD_TYPES.map((rt) => {
+              // A mode can have both a solo and a VS record per type; the
+              // per-mode card represents solo play, so prefer the solo row
+              // (else fall back to whatever exists). Otherwise e.g. Classic
+              // "Most Games Played" could show the tiny VS count.
+              const candidates = modeRecords.filter((r) => r.record_type === rt);
+              const record = candidates.find((r) => r.play_type === 'solo') ?? candidates[0];
+              return (
+                <RecordCard
+                  key={rt}
+                  recordType={rt}
+                  record={record}
+                  accentColor={color}
+                  isCurrentUser={!!userId && record?.holder_id === userId}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -990,7 +859,16 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
    ═══════════════════════════════════════════════════════ */
 export default function RecordsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
+  const [activeTab, setActiveTab] = useState<RecordsTab>('daily');
+  // Each view keeps its own game selection (the banner shows the active one).
+  const [dailyMode, setDailyMode] = useState('DUEL');
+  const [allTimeMode, setAllTimeMode] = useState('DUEL');
+  const [recordsCount, setRecordsCount] = useState<number | null>(() => peekAllTimeRecords()?.length ?? null);
+  // The local day on the client only (the banner's title waits for it).
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => {
+    setToday(getTodayLocal());
+  }, []);
 
   // Load the signed-in user's block list (session-cached) so blocked users'
   // rows can be filtered out of the leaderboard renders below. The state bump
@@ -1000,55 +878,44 @@ export default function RecordsPage() {
     if (user) fetchBlockedIds(user.id).then(() => setBlockedLoaded(true));
   }, [user]);
 
+  const selectedMode = activeTab === 'daily' ? dailyMode : allTimeMode;
+  const setSelectedMode = activeTab === 'daily' ? setDailyMode : setAllTimeMode;
+
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-4 animate-fade-in-up">
-          <h1
-            className="text-3xl font-black bg-clip-text text-transparent tracking-tight"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-            }}
-          >
-            RECORDS
-          </h1>
-          <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            The best of the best across Wordocious · <Link href="/daily" style={{ color: '#7c3aed' }}>today&apos;s boards</Link>
-          </p>
-        </div>
-
-        {/* Daily / All-Time / You Toggle */}
-        <div className="flex gap-2 mb-5">
-          {([['daily', 'Daily'], ['alltime', 'All-Time']] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className="flex-1 py-2.5 rounded-xl text-xs font-extrabold"
-              style={{
-                background: activeTab === key ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-                border: activeTab === key ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                color: activeTab === key ? '#7c3aed' : 'var(--color-text-muted)',
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        {/* The Records banner (records-redesign §1): title, sub line, the
+            DAILY | ALL-TIME switch and the game rows. Replaces the old header,
+            toggle row and mode picker. */}
+        <div className="mb-4">
+          <RecordsBanner
+            tab={activeTab}
+            onTab={setActiveTab}
+            today={today}
+            recordsCount={recordsCount}
+            selectedMode={selectedMode}
+            onSelect={setSelectedMode}
+          />
         </div>
 
         {/* Tab Content */}
         {activeTab === 'daily' ? (
-          <DailyRecordsView key="daily" userId={user?.id} />
+          <DailyRecordsView key="daily" userId={user?.id} selectedMode={dailyMode} />
         ) : (
-          <AllTimeRecordsView key="alltime" userId={user?.id} />
+          <AllTimeRecordsView key="alltime" userId={user?.id} selectedMode={allTimeMode} onCount={setRecordsCount} />
         )}
 
-        {/* D2 step 3 (2026-09-26): your own records live on the Stats tab now. */}
-        <Link href="/stats?view=all-time" className="block text-center text-[11px] font-black mt-6" style={{ color: '#7c3aed' }}>
-          Your personal records → Stats
-        </Link>
+        <div className="flex flex-col items-center gap-2 mt-6">
+          <Link href="/daily" className="text-[11px] font-black" style={{ color: '#7c3aed' }}>
+            Today&apos;s boards → Leaderboard
+          </Link>
+          {/* D2 step 3 (2026-09-26): your own records live on the Stats tab now. */}
+          <Link href="/stats?view=all-time" className="text-[11px] font-black" style={{ color: '#7c3aed' }}>
+            Your personal records → Stats
+          </Link>
+        </div>
       </div>
 
       <BottomNav />

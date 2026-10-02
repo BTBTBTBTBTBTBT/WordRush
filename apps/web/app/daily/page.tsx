@@ -16,6 +16,7 @@ import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
 import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
+import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
@@ -106,31 +107,6 @@ const NO_STREAKS = new Map<string, number>();
 // Layout effect on the client (applies ?mode= before the first paint), plain
 // effect on the server (where layout effects warn and do nothing).
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
-
-// Leaderboard redesign (docs/LEADERBOARD_REDESIGN_SPEC.md §2): medal discs for
-// 1–3 (gold / silver / bronze), the plain number after.
-const MEDAL = ['#f59e0b', '#9ca3af', '#b45309'];
-
-function RankIcon({ rank }: { rank: number }) {
-  if (rank >= 1 && rank <= 3) {
-    return (
-      <span
-        className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0"
-        style={{ background: MEDAL[rank - 1], boxShadow: `0 1px 4px ${MEDAL[rank - 1]}66` }}
-      >
-        {rank}
-      </span>
-    );
-  }
-  return <span className="text-xs font-black w-[22px] text-center shrink-0" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
-}
-
-// Section labels and cards (spec §2): 11 / 900 caps, letter-spacing 1.2; white
-// cards, radius 14, soft shadow, no borders.
-const SECTION_LABEL: React.CSSProperties = { fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: 'var(--color-text-secondary)' };
-// Your row: soft gold with a 1.5 px amber ring (the token is #fef3c7 in light).
-const YOUR_ROW: React.CSSProperties = { background: 'var(--color-gold-border-light)', boxShadow: 'inset 0 0 0 1.5px #f59e0b', borderRadius: 10 };
-const SOFT_CARD: React.CSSProperties = { background: 'var(--color-surface)', borderRadius: 14, boxShadow: '0 2px 10px rgba(26,26,46,0.06)' };
 
 function LeaderboardSkeleton() {
   return (
@@ -466,18 +442,9 @@ export default function DailyPage() {
 
   // §212: photo → emoji → initial, left of every username — the boards
   // wear faces, not just names.
+  // §212: photo → emoji → initial, left of every username.
   const lbAvatar = (avatarUrl: string | null, avatarEmoji: string | null | undefined, username: string) =>
-    avatarUrl ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
-    ) : (
-      <div
-        className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0"
-        style={{ background: '#7c3aed22', color: '#7c3aed' }}
-      >
-        {avatarEmoji?.trim() || username.charAt(0).toUpperCase()}
-      </div>
-    );
+    <BoardAvatar url={avatarUrl} emoji={avatarEmoji} name={username} />;
 
   // §216: on the FRIENDS board, the week's points leader wears the crown.
   const crownId = (() => {
@@ -492,30 +459,21 @@ export default function DailyPage() {
   // One row of the leaderboard — shared by the top-50 list and the
   // "your neighborhood" rank window so they can never drift apart visually.
   const renderLbRow = (entry: LeaderboardEntry, rank: number, scoreLabels = lbScoreLabels) => {
-    const isCurrentUser = user && entry.user_id === user.id;
+    const isCurrentUser = !!user && entry.user_id === user.id;
     return (
-      <div
+      // Doug's Aug-16 feedback: name on top, stats underneath, score alone on
+      // the right — the name gets the row's flexible width.
+      <BoardRow
         key={entry.user_id}
-        className="flex items-center gap-3 px-3 py-2.5"
-        style={isCurrentUser ? YOUR_ROW : undefined}
-      >
-        <RankIcon rank={rank} />
-        {lbAvatar(entry.avatar_url, entry.avatar_emoji, entry.username)}
-        {/* Doug's Aug-16 feedback: the stats line lived under the SCORE, so the
-            right column's width was set by the widest stats string and names
-            truncated at ~5 chars. Name on top, stats underneath, score alone
-            on the right — the name now gets the row's flexible width. */}
-        <div className="flex-1 min-w-0">
-          <Link
-            href={`/profile/${entry.user_id}`}
-            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-            style={{ color: 'var(--color-text)' }}
-          >
-            {entry.username}
-            {entry.user_id === crownId && <span> 👑</span>}
-            {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-          </Link>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        rank={rank}
+        userId={entry.user_id}
+        username={entry.username}
+        avatarUrl={entry.avatar_url}
+        avatarEmoji={entry.avatar_emoji}
+        isMe={isCurrentUser}
+        nameSuffix={entry.user_id === crownId ? <span> 👑</span> : null}
+        stats={
+          <>
             <span className="truncate">
               {/* More Games §11: the number reads through the mode's semantics —
                   "0 Mistakes", "5 Checks", "Par", "Hubbub" — never a bare "Guesses". */}
@@ -535,25 +493,25 @@ export default function DailyPage() {
             >
               {entry.completed ? 'Win' : 'Loss'}
             </span>
-          </div>
-        </div>
-        <div className="font-black text-[13px] text-right shrink-0 tabular-nums" style={{ color: 'var(--color-text)' }}>
-          {scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
-        </div>
-        {/* Friends board: one-tap canned taunt on any friend's row (§207). */}
-        {friendsOnly && user && !isCurrentUser && (
-          <button
-            onClick={() =>
-              setTauntTarget({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url, level: 0 })
-            }
-            aria-label={`Taunt ${entry.username}`}
-            className="p-1 -mr-1 active:scale-95 transition-transform"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
-            <Bell className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
+          </>
+        }
+        score={scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
+        trailing={
+          // Friends board: one-tap canned taunt on any friend's row (§207).
+          friendsOnly && user && !isCurrentUser ? (
+            <button
+              onClick={() =>
+                setTauntTarget({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url, level: 0 })
+              }
+              aria-label={`Taunt ${entry.username}`}
+              className="p-1 -mr-1 active:scale-95 transition-transform"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              <Bell className="w-3.5 h-3.5" />
+            </button>
+          ) : null
+        }
+      />
     );
   };
 
@@ -809,45 +767,20 @@ export default function DailyPage() {
 
         {/* Your rank (spec §2.3): big numerals, medal tint for the top 3. */}
         {userRank && (
-          <div
-            className="flex items-center gap-3 px-4 py-3 mb-4"
-            style={{
-              background: 'linear-gradient(135deg, var(--color-gold-border-light), var(--color-highlight-gold))',
-              borderRadius: 14,
-              boxShadow: '0 2px 10px rgba(146,64,14,0.10)',
-            }}
-          >
-            <span
-              className="font-black leading-none tabular-nums"
-              style={{
-                fontSize: 34,
-                color: userRank.rank <= 3 ? MEDAL[userRank.rank - 1] : '#d97706',
-                textShadow: userRank.rank <= 3 ? `0 0 10px ${MEDAL[userRank.rank - 1]}66` : undefined,
-              }}
-            >
-              #{userRank.rank}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center text-[11px] font-black" style={{ color: '#d97706', letterSpacing: 1 }}>
-                YOUR RANK
-                <RankDeltaBadge
-                  mode={selectedMode}
-                  playType="solo"
-                  pageKey={friendsOnly ? 'daily-friends' : 'daily'}
-                  currentRank={userRank.rank}
-                />
-              </div>
-              <div className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6 }}>
-                OF {userRank.totalPlayers}{friendsOnly && !isSweep ? ' FRIENDS' : ''} TODAY
-              </div>
-            </div>
-            {myPoints != null && (
-              <div className="text-right shrink-0">
-                <div className="font-black tabular-nums" style={{ fontSize: 17, color: 'var(--color-text)' }}>{myPoints}</div>
-                <div className="text-[9px] font-black" style={{ color: 'var(--color-text-secondary)', letterSpacing: 1 }}>POINTS</div>
-              </div>
-            )}
-          </div>
+          <YourRankCard
+            rank={userRank.rank}
+            ofLine={`OF ${userRank.totalPlayers}${friendsOnly && !isSweep ? ' FRIENDS' : ''} TODAY`}
+            points={myPoints}
+            delta={
+              <RankDeltaBadge
+                mode={selectedMode}
+                playType="solo"
+                // The friends board keeps its own rank history (SWEEP is always global).
+                pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
+                currentRank={userRank.rank}
+              />
+            }
+          />
         )}
 
         {/* TODAY'S BOARD (spec §2.4) — daily games only (the Play card says so),
@@ -857,27 +790,13 @@ export default function DailyPage() {
           <div className="flex items-center gap-2">
             {/* Everyone | Friends — a soft pill segmented control. */}
             {!isSweep && user && (
-              <div role="group" aria-label="Everyone or Friends" className="flex" style={{ padding: 2, borderRadius: 999, background: `${color}14` }}>
-                {([false, true] as const).map((f) => {
-                  const on = friendsOnly === f;
-                  return (
-                    <button
-                      key={String(f)}
-                      onClick={() => setFriendsOnly(f)}
-                      aria-pressed={on}
-                      className="text-[10.5px] font-black"
-                      style={{
-                        height: 24, padding: '0 10px', borderRadius: 999, letterSpacing: 0.3,
-                        background: on ? 'var(--color-surface)' : 'transparent',
-                        color: on ? color : 'var(--color-text-muted)',
-                        boxShadow: on ? '0 1px 3px rgba(26,26,46,0.12)' : undefined,
-                      }}
-                    >
-                      {f ? 'Friends' : 'Everyone'}
-                    </button>
-                  );
-                })}
-              </div>
+              <SegmentedPill
+                label="Everyone or Friends"
+                accent={color}
+                value={friendsOnly}
+                onChange={setFriendsOnly}
+                options={[[false, 'Everyone'], [true, 'Friends']] as const}
+              />
             )}
             {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
               <button

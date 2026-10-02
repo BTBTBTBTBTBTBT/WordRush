@@ -3,12 +3,21 @@ import Supabase
 import WordociousCore
 
 /// All-time "hall of records" from Supabase all_time_records.
-/// Mirrors app/records/page.tsx: RECORDS header + Daily | All-Time toggle (the
-/// global views only — your own records fold into the Stats tab, D2 step 3).
+/// Mirrors app/records/page.tsx. Records redesign (founder, 2026-10-01; spec
+/// docs/RECORDS_REDESIGN_SPEC.md): the Records banner (ALL-TIME RECORDS, the
+/// DAILY | ALL-TIME pill switch and the shared game rows) replaces the old header,
+/// toggle row and mode picker; everything below wears the Leaderboard's look
+/// (LeaderboardKit). Your own records fold into the Stats tab (D2 step 3).
 struct RecordsTab: View {
     @EnvironmentObject private var auth: AuthService
     @State private var tab: RecordsSubTab = .daily   // web default
     @State private var showAuth = false
+    // Each view keeps its own game pick (web parity: dailyMode / allTimeMode);
+    // the banner shows the active view's.
+    @State private var dailyMode: GameMode = .duel
+    @State private var dailySweep = false
+    @State private var allTimeMode: GameMode = .duel
+    @State private var allTimeSweep = false
     @Environment(\.dismiss) private var dismiss
 
     enum RecordsSubTab { case daily, allTime }
@@ -40,23 +49,10 @@ struct RecordsTab: View {
             .sheet(isPresented: $showAuth) { AuthView() }
         } else {
             ScrollView {
-                VStack(spacing: 16) {
-                    VStack(spacing: 3) {
-                        Text("RECORDS").font(Brand.font(28, .black))
-                            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                        Text("The best of the best across Wordocious")
-                            .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
-                    }
-                    .padding(.top, 6)
-
-                    HStack(spacing: 8) {
-                        toggleButton("Daily", .daily)
-                        toggleButton("All-Time", .allTime)
-                    }
-
+                VStack(spacing: 12) {
                     switch tab {
-                    case .daily:   DailyRecordsView()
-                    case .allTime: AllTimeRecordsView()
+                    case .daily:   DailyRecordsView(tab: $tab, mode: $dailyMode, isSweep: $dailySweep)
+                    case .allTime: AllTimeRecordsView(tab: $tab, mode: $allTimeMode, isSweep: $allTimeSweep)
                     }
 
                     // D2 step 3 (2026-09-26): your own records live on the Stats tab now.
@@ -71,7 +67,7 @@ struct RecordsTab: View {
                     .buttonStyle(.plain)
                     .padding(.top, 8)
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 16).padding(.top, 8)
                 // Nav clearance + the ad banner's height when it's mounted
                 // (free accounts) — without the banner share, "Your Trophy
                 // Shelf"'s last rows hid under the ad and couldn't scroll up.
@@ -79,98 +75,74 @@ struct RecordsTab: View {
             }
         }
     }
-
-    private func toggleButton(_ label: String, _ value: RecordsSubTab) -> some View {
-        let active = tab == value
-        return Button { tab = value } label: {
-            Text(label).font(Brand.font(12, .heavy))
-                .foregroundStyle(active ? Theme.primary : Theme.textMuted)
-                .frame(maxWidth: .infinity).padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-        }
-        .buttonStyle(InstantButtonStyle())   // no pressed fade on the new selection (founder, 2026-09-29)
-    }
 }
 
-/// All-Time records — Hall of Fame (global) + By Game Mode (mode picker).
+/// The Sweep board's accent on Records (matches the banner's gold SWEEP chip).
+private let recordsSweepAccent = Color(hex: 0xF59E0B)
+
+/// All-Time records — Hall of Fame (global) + By Game Mode (the game picked in the banner).
 struct AllTimeRecordsView: View {
     @EnvironmentObject private var auth: AuthService
+    @Binding var tab: RecordsTab.RecordsSubTab
+    @Binding var mode: GameMode
+    // Sweep chip — the all-time sweep ranking (lifetime sweep totals).
+    @Binding var isSweep: Bool
     /// Session copy of the last fetch: re-opening All-Time paints it in the first frame and
     /// revalidates underneath (founder, 2026-09-29: the card skeleton showed on every open).
     private static var cachedRecords: [AllTimeRecord]?
     @State private var records: [AllTimeRecord] = Self.cachedRecords ?? []
-    @State private var mode: GameMode = .duel
     @State private var loading = Self.cachedRecords == nil
-    // Sweep tile — the all-time sweep ranking (lifetime sweep totals).
-    @State private var isSweep = false
     @State private var sweepEntries: [AllTimeSweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
     @State private var sweepLoading = false
-    private let sweepAccent = Color(hex: 0x4F46E5)
 
     /// Every daily-recordable mode (sweep tiles + More Games titles) — lookup
     /// only, for the picked mode's title/icon/accent.
     private let pickerModes: [HomeMode] = (homeModes + moreModes).filter { $0.dbKey != nil }
     private var myId: String? { auth.profile?.id }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if loading { CardsSkeleton() } else {   // web parity: AllTimeSkeleton card blocks
-                // Hall of Fame
-                Text("HALL OF FAME").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                VStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 2).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Theme.goldBorder], startPoint: .leading, endPoint: .trailing)).frame(height: 3)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        ForEach(RecordCatalog.global, id: \.self) { rt in
-                            RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
-                        }
-                    }
-                    .padding(16)
-                }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                // Clip so the 3pt top accent bar's square corners don't poke
-                // past the card's rounded corners.
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.goldBorder, lineWidth: 1.5))
+    private var modeSelection: Binding<GameMode> {
+        Binding(get: { mode }, set: { new in instantly { mode = new } })
+    }
 
-                // By Game Mode
-                Text(isSweep ? "SWEEP RANKING" : "BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                HModePicker(selected: $mode, isSweep: sweepSelection)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            RecordsBannerView(tab: $tab, selected: modeSelection, isSweep: sweepSelection,
+                              recordsCount: loading ? nil : records.count)
+            if loading { CardsSkeleton() } else {   // web parity: AllTimeSkeleton card blocks
+                // Hall of Fame — each record a soft card.
+                LbSectionLabel("HALL OF FAME").padding(.top, 4)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                    ForEach(RecordCatalog.global, id: \.self) { rt in
+                        RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
+                    }
+                }
+
+                // By Game Mode — only the game picked in the banner.
+                LbSectionLabel("BY GAME MODE").padding(.top, 8)
                 if isSweep {
-                    sweepCard
+                    sweepSection
                 } else {
-                let m = pickerModes.first { $0.dbKey == mode.rawValue }
-                VStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 2).fill((m?.accent ?? Theme.primary)).frame(height: 3)
-                    HStack(spacing: 10) {
-                        if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-                        Text(m?.title ?? mode.rawValue).font(Brand.headline(16)).foregroundStyle(Theme.textPrimary)
-                        Spacer()
-                    }.padding(.horizontal, 12).padding(.top, 10)
+                    let m = pickerModes.first { $0.dbKey == mode.rawValue }
+                    let accent = m?.accent ?? ModeStyle.accent(mode)
+                    LbGameHeaderCard(accent: accent, icon: m?.icon ?? .symbol("trophy"),
+                                     title: m?.title ?? mode.rawValue, sub: "All-time bests")
+                        .id(mode)
                     if RecordCatalog.perMode.contains(where: { modeRecord($0) != nil }) {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                             ForEach(RecordCatalog.perMode, id: \.self) { rt in
-                                RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId, gameMode: mode.rawValue)
+                                RecordStatCell(type: rt, record: modeRecord(rt), accent: accent, isMe: modeRecord(rt)?.holderId == myId, gameMode: mode.rawValue)
                             }
                         }
-                        .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
                     } else {
                         // Web parity (records page): trophy + "No records yet" instead of a dash grid.
-                        VStack(spacing: 8) {
-                            Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-                            Text("No records yet").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 24)
+                        emptyCard("No records yet")
                     }
-                }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                // Clip the 3pt top accent bar to the card's rounded corners.
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                 }
             }
         }
+        // Re-entering All-Time with Sweep picked: the cached ranking in the first frame.
+        .onAppear { if isSweep { paintCachedSweep() } }
         .task {
             // Same single fetch per open as before; a cached copy is already on screen.
             if let fresh = try? await RecordsService.fetchAll() { records = fresh; Self.cachedRecords = fresh }
@@ -180,7 +152,16 @@ struct AllTimeRecordsView: View {
         .task(id: "sweep-\(isSweep)") { if isSweep { await loadSweep() } }
     }
 
-    /// The Sweep tile paints the cached ranking in the same transaction as the selection
+    private func emptyCard(_ text: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 28)
+        .lbCard()
+    }
+
+    /// The Sweep chip paints the cached ranking in the same transaction as the selection
     /// (founder, 2026-09-29: one frame of "No sweeps yet" before loadSweep ran).
     private var sweepSelection: Binding<Bool> {
         Binding(get: { isSweep }, set: { on in instantly { isSweep = on; if on { paintCachedSweep() } } })
@@ -198,76 +179,42 @@ struct AllTimeRecordsView: View {
         }
     }
 
-    /// The all-time sweep-ranking card — players ranked by lifetime sweep count
-    /// (sweeps · flawless · best sweep time). Same indigo card shell as daily.
-    private var sweepCard: some View {
+    /// The all-time sweep ranking — players ranked by lifetime sweep count
+    /// (sweeps · flawless · best sweep time): header card, your rank, the board.
+    @ViewBuilder private var sweepSection: some View {
         let total = sweepRank?.total ?? sweepEntries.count
-        return VStack(spacing: 0) {
-            LinearGradient(colors: [sweepAccent, sweepAccent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
-
-            HStack(spacing: 10) {
-                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("All-Time Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                    Text("Most daily sweeps ever").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
-
-            HStack {
-                HStack(spacing: 4) {
-                    Image(systemName: "person.2.fill").font(.system(size: 11))
-                    Text("\(total) sweeper\(total == 1 ? "" : "s")").font(Brand.font(10, .bold))
-                }.foregroundStyle(Theme.textMuted)
-                Spacer()
-                if let r = sweepRank {
-                    (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
-                     + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706))
-                     + Text(" of \(r.total)").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
-                }
-            }
-            .padding(.horizontal, 14).padding(.bottom, 8)
-
-            Divider().overlay(Theme.border)
-
-            if sweepLoading {
-                LeaderboardSkeleton()
-            } else if sweepEntries.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-                    Text("No sweeps yet. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                }
-                .frame(maxWidth: .infinity).padding(.vertical, 30)
-            } else {
+        LbGameHeaderCard(accent: recordsSweepAccent, icon: .asset("broom"), title: "Sweep · All-Time",
+                         sub: "Most daily sweeps ever · \(total) sweeper\(total == 1 ? "" : "s")", subSymbol: "person.2.fill")
+        if let r = sweepRank {
+            let mine = sweepEntries.first { $0.userId == myId }
+            LbRankCard(rank: r.rank, ofLine: "OF \(r.total) SWEEPERS",
+                       points: mine.map { "\($0.sweepCount)" }, pointsLabel: "SWEEPS")
+        }
+        if sweepLoading {
+            LeaderboardSkeleton()
+        } else if sweepEntries.isEmpty {
+            emptyCard("No sweeps yet. Be the first!")
+        } else {
+            VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
                     allTimeSweepRow(e.rank, e)
-                    if idx < sweepEntries.count - 1 { Divider().overlay(Theme.border) }
+                    if idx < sweepEntries.count - 1 { LbDivider() }
                 }
             }
-        }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-    }
-
-    @ViewBuilder private func allTimeRankIcon(_ rank: Int) -> some View {
-        switch rank {
-        case 1: Image(systemName: "crown.fill").foregroundStyle(Color(hex: 0xD97706))
-        case 2: Image(systemName: "medal.fill").foregroundStyle(Theme.textMuted)
-        case 3: Image(systemName: "medal.fill").foregroundStyle(Color(hex: 0xB45309))
-        default: Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 20)
+            .padding(.vertical, 4)
+            .lbCard()
         }
     }
 
     private func allTimeSweepRow(_ rank: Int, _ e: AllTimeSweepEntry) -> some View {
         let isMe = e.userId == myId
         return HStack(spacing: 12) {
-            allTimeRankIcon(rank).frame(width: 22)
+            LbRankBadge(rank: rank).frame(width: 22)
+            AvatarView(url: e.avatarUrl, username: e.username, size: 24)
             // Doug's Aug-16 feedback (leaderboard row shape): stats under the
             // name so the name keeps the row's flexible width.
             NavigationLink(value: e.userId) {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -275,11 +222,12 @@ struct AllTimeRecordsView: View {
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }
             }.buttonStyle(.plain)
-            Spacer()
+            Spacer(minLength: 6)
             Text("\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s")").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                .lineLimit(1).fixedSize()
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .youRow(isMe)
     }
 
     private func loadSweep() async {
@@ -313,7 +261,9 @@ struct AllTimeRecordsView: View {
     }
 }
 
-/// A single record stat — ports StatCell in records/page.tsx.
+/// A single record as a soft card (records redesign §2, web RecordCard): the game's
+/// tile chip with the record glyph, the record name in caps, the value big, the holder's
+/// avatar + name, and a small gold crown (plus your-row tint) on records you hold.
 struct RecordStatCell: View {
     let type: String
     let record: AllTimeRecord?
@@ -322,40 +272,120 @@ struct RecordStatCell: View {
     /// The card's mode (per-mode grid) — titles the fewest-guesses cell through
     /// its guess semantics even while the record itself is still nil.
     var gameMode: String? = nil
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         let meta = RecordCatalog.labels[type]
         let has = record != nil
-        return HStack(alignment: .top, spacing: 8) {
-            Image(systemName: meta?.symbol ?? "rosette").font(.system(size: 14))
-                .foregroundStyle(has ? accent : Theme.textMuted).padding(.top, 2)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(record?.formattedValue ?? "—").font(Brand.font(16, .black))
-                    .foregroundStyle(has ? Theme.textPrimary : Theme.textMuted)
-                Text(RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                if has {
-                    NavigationLink(value: record?.holderId ?? "") {
-                        HStack(spacing: 3) {
-                            Text(record?.holderUsername ?? "Unknown").font(Brand.font(10, .heavy)).lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                                .foregroundStyle(isMe ? Color(hex: 0xD97706) : accent)
-                            if isMe { Image(systemName: "crown.fill").font(.system(size: 8)).foregroundStyle(Color(hex: 0xD97706)) }
-                        }.padding(.top, 2)
-                    }.buttonStyle(.plain)
+        let mine = isMe && has
+        let valueInk = scheme == .dark ? Color(hex: 0xC4B5FD) : Color(hex: 0x4C1D95)
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8).fill(accent.opacity(0.08))
+                    Image(systemName: meta?.symbol ?? "rosette").font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(has ? accent : Theme.textMuted)
                 }
+                .frame(width: 28, height: 28)
+                Text(RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode).uppercased())
+                    .font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(Theme.textSecondary)
+                    .lineLimit(2).minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: mine ? 16 : 0)
+            }
+            // §254: hints on the record, same wording as the leaderboard rows, set small.
+            (Text(record?.valueText ?? "—").font(Brand.font(20, .black)).foregroundColor(has ? valueInk : Theme.textMuted)
+             + Text(record?.hintsSuffix ?? "").font(Brand.font(12, .bold)).foregroundColor(Theme.textMuted))
+                .lineLimit(2).minimumScaleFactor(0.7)
+            if let record {
+                NavigationLink(value: record.holderId) {
+                    HStack(spacing: 6) {
+                        AvatarView(url: record.profiles.avatarUrl, username: record.holderUsername, size: 20)
+                        Text(record.holderUsername).font(Brand.font(11, .heavy)).lineLimit(1).minimumScaleFactor(0.7)
+                            .foregroundStyle(mine ? Color(hex: 0xD97706) : Theme.textPrimary)
+                    }
+                }.buttonStyle(.plain)
             }
             Spacer(minLength: 0)
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(isMe && has ? Theme.highlightGold : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(isMe && has ? Theme.goldBorder : Color.clear, lineWidth: 1))
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+        .background(shape.fill(mine ? Theme.highlightGold : Theme.surface))
+        .overlay(shape.strokeBorder(mine ? Color(hex: 0xF59E0B) : Color.clear, lineWidth: 1.5))
+        .overlay(alignment: .topTrailing) {
+            if mine {
+                Image(systemName: "crown.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xF59E0B))
+                    .padding(10).accessibilityLabel("Your record")
+            }
+        }
+        .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
     }
 }
 
-/// Daily records — leaderboard with mode picker + solo/vs toggle.
+/// A Records board row — exactly the new Leaderboard row: medal disc, avatar, name over
+/// the stats line (guesses · time · boards · hints, Win/Loss pill), points at the right,
+/// your row tinted with the amber ring. Shared by the Daily board and yesterday's podium.
+struct RecordsBoardRow: View {
+    let rank: Int
+    let entry: LeaderboardEntry
+    let mode: GameMode
+    let isMe: Bool
+    let score: String
+
+    private var line: String {
+        // Web parity: "Ns"/"Nm Ns" time + multi-board fraction + a Win/Loss pill.
+        let t = formatShortTime(Int(entry.timeSeconds))
+        // Through the mode's guess semantics (ModeStats.guessRowLabel — the same
+        // call the daily leaderboard row in ProfileTab makes): "0 Mistakes", "Par".
+        let meta = ModeGen.byDbKey(mode.rawValue)
+        var line = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: entry.guessCount)) · \(t)"
+        if entry.totalBoards > 1 { line += " · \(entry.boardsSolved)/\(entry.totalBoards)" }
+        // §254: hints ride this row exactly as on the daily leaderboard row
+        // (ProfileTab) — the founder wants the two pages to match.
+        if HINT_BEARING_MODES.contains(mode.rawValue), let h = entry.hintsUsed {
+            line += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
+        }
+        return line
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            LbRankBadge(rank: rank).frame(width: 22)
+            AvatarView(url: entry.profiles.avatarUrl, username: entry.username,
+                       size: 24, emoji: entry.profiles.avatarEmoji)
+            NavigationLink(value: entry.userId) {
+                VStack(alignment: .leading, spacing: 2) {
+                    (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 5) {
+                        Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                        Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
+                            .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
+                    }
+                }
+            }.buttonStyle(.plain)
+            Spacer(minLength: 6)
+            Text(score).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                .lineLimit(1).fixedSize()
+        }
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .youRow(isMe)
+    }
+}
+
+/// Daily records — today's board for the game picked in the banner, with Solo | VS and
+/// Everyone | Friends.
 struct DailyRecordsView: View {
     @EnvironmentObject private var auth: AuthService
-    @State private var mode: GameMode = .duel
+    @Binding var tab: RecordsTab.RecordsSubTab
+    @Binding var mode: GameMode
+    // Sweep chip — the cross-mode "completed every sweep daily today" board.
+    @Binding var isSweep: Bool
     @State private var playType = "solo"
     @State private var entries: [LeaderboardEntry] = []
     @State private var userRank: (rank: Int, total: Int)?
@@ -364,8 +394,6 @@ struct DailyRecordsView: View {
     @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
     @State private var loading = false
     @State private var reloadToken = 0
-    // Sweep tile — the cross-mode "completed every sweep daily today" board.
-    @State private var isSweep = false
     @State private var sweepEntries: [SweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
     @State private var sweepLoading = false
@@ -374,6 +402,11 @@ struct DailyRecordsView: View {
     @State private var sweepDetails: [String: LeaderboardService.SweepDetails] = [:]
     // §248: current flawless streaks for FLAWLESS rows — the ×N pills.
     @State private var flawlessStreaks: [String: Int] = [:]
+    // FRIENDS (§207; records redesign, web/Android parity): Everyone | Friends —
+    // the same query restricted to friends ∪ me, ranks 1…N, per-mode only (the
+    // Sweep board, yesterday's podium and All-Time stay unfiltered).
+    @State private var friendsOnly = false
+    @State private var friendsVersion = 0
     // TIE-AWARE score display (web parity): rows sharing a whole number on the
     // same board render the decimals that rank them.
     private var lbScoreLabels: [Double: String] { tieAwareScoreLabels(entries.map(\.compositeScore)) }
@@ -382,14 +415,20 @@ struct DailyRecordsView: View {
     // button is where the VS Battle card variant comes from. Sweep has no
     // card design (web records/page.tsx parity).
     @State private var sharingLb = false
-    private let sweepAccent = Color(hex: 0x4F46E5)
 
-    private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
+    /// Every daily-recordable mode — lookup only (the picked mode's title/icon/accent).
+    private let pickerModes: [HomeMode] = (homeModes + moreModes).filter { $0.dbKey != nil }
+    private var accent: Color { pickerModes.first { $0.dbKey == mode.rawValue }?.accent ?? ModeStyle.accent(mode) }
+    /// The Friends board is live only for a signed-in player.
+    private var friends: Bool { friendsOnly && auth.profile?.id != nil }
 
-    /// The default board paints from the cache in the FIRST frame (founder, 2026-09-29: opening
+    /// The picked board paints from the cache in the FIRST frame (founder, 2026-09-29: opening
     /// Records showed "No results yet today" for a frame before load() ran).
-    init() {
-        let key = LeaderboardCache.key(mode: .duel, userId: AuthService.shared.profile?.id, playType: "solo")
+    init(tab: Binding<RecordsTab.RecordsSubTab>, mode: Binding<GameMode>, isSweep: Binding<Bool>) {
+        _tab = tab
+        _mode = mode
+        _isSweep = isSweep
+        let key = LeaderboardCache.key(mode: mode.wrappedValue, userId: AuthService.shared.profile?.id, playType: "solo")
         if let c = LeaderboardCache.shared[key] {
             _entries = State(initialValue: c.entries)
             _userRank = State(initialValue: c.userRank)
@@ -399,9 +438,9 @@ struct DailyRecordsView: View {
         }
     }
 
-    /// Mode, Solo|VS and Sweep selections paint their cached board in the same transaction as
-    /// the selection (the LeaderboardTab fix, founder 2026-09-29) — never the previous board's
-    /// rows and rank under the new header for a frame.
+    /// Mode, Solo|VS, Everyone|Friends and Sweep selections paint their cached board in the
+    /// same transaction as the selection (the LeaderboardTab fix, founder 2026-09-29) — never
+    /// the previous board's rows and rank under the new header for a frame.
     private var modeSelection: Binding<GameMode> {
         Binding(get: { mode }, set: { new in instantly { mode = new; paintCached() } })
     }
@@ -409,8 +448,11 @@ struct DailyRecordsView: View {
         Binding(get: { isSweep }, set: { on in instantly { isSweep = on; if on { paintCachedSweep() } } })
     }
 
+    private var cacheKey: String {
+        LeaderboardCache.key(mode: mode, userId: auth.profile?.id, playType: playType) + (friends ? ":friends" : "")
+    }
+
     private func paintCached() {
-        let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id, playType: playType)
         if let cached = LeaderboardCache.shared[cacheKey] {
             entries = cached.entries
             userRank = cached.userRank
@@ -438,203 +480,171 @@ struct DailyRecordsView: View {
         }
     }
 
-    private var shareButton: some View {
-        Button {
-            guard !sharingLb else { return }
-            sharingLb = true
-            Task {
-                await LeaderboardShareFlow.shareDaily(
-                    mode: mode, playType: playType,
-                    entries: entries, rankWindow: rankWindow,
-                    userId: auth.profile?.id, userRank: userRank)
-                sharingLb = false
-            }
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.textMuted)
+    private func share() {
+        guard !sharingLb else { return }
+        sharingLb = true
+        Task {
+            await LeaderboardShareFlow.shareDaily(
+                mode: mode, playType: playType,
+                entries: entries, rankWindow: rankWindow,
+                userId: auth.profile?.id, userRank: userRank,
+                friends: friends)
+            sharingLb = false
         }
-        .buttonStyle(.plain)
-        .opacity(sharingLb ? 0.4 : 1)
-        .accessibilityLabel("Share leaderboard")
     }
 
-    /// Custom inline Solo|VS toggle matching the web (icon + accent active state),
-    /// replacing the iOS segmented control.
-    private var soloVsToggle: some View {
-        HStack(spacing: 0) {
-            ForEach(["solo", "vs"], id: \.self) { t in
-                let active = playType == t
-                Button { instantly { playType = t; paintCached() } } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: t == "solo" ? "person.fill" : "flag.2.crossed.fill").font(.system(size: 12))
-                        Text(t == "solo" ? "Solo" : "VS").font(Brand.font(10, .heavy))
-                    }
-                    .foregroundStyle(active ? accent : Theme.textMuted)
-                    .padding(.horizontal, 14).padding(.vertical, 6)
-                    .background(active ? accent.opacity(0.08) : Theme.surface)
-                }.buttonStyle(InstantButtonStyle())
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
-        .fixedSize()
+    private func topPercent(_ r: (rank: Int, total: Int)) -> String {
+        r.total > 1 ? " · TOP \(max(1, Int((Double(r.rank) / Double(r.total) * 100).rounded())))%" : ""
     }
 
     var body: some View {
-        let m = homeModes.first { $0.dbKey == mode.rawValue }
-        let total = userRank?.total ?? entries.count
-        return VStack(spacing: 10) {
-            HModePicker(selected: modeSelection, isSweep: sweepSelection)
-
-            // §254: the completed-daily dropdown, mounted exactly as the daily
-            // leaderboard (ProfileTab) mounts it — the founder wants Records to
-            // mirror that page. .id(mode) → a fresh card per mode, same reason
-            // as there: never the previous mode's board under a new header.
-            if !isSweep { if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) } }
-
-            if isSweep {
-                sweepCard
-            } else {
-            // Single leaderboard card: accent bar → header (mode + Today + toggle)
-            // → player-count/your-rank row → rows. Mirrors records/page.tsx.
-            VStack(spacing: 0) {
-                LinearGradient(colors: [accent, accent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
-
-                HStack(spacing: 10) {
-                    if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                        Text("Today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                    Spacer()
-                    if !loading && !entries.isEmpty { shareButton }
-                    soloVsToggle
-                }
-                .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
-
-                HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.2.fill").font(.system(size: 11))
-                        Text("\(total) player\(total == 1 ? "" : "s") today").font(Brand.font(10, .bold))
-                    }.foregroundStyle(Theme.textMuted)
-                    Spacer()
-                    if let r = userRank {
-                        HStack(spacing: 3) {
-                            (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
-                             + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706)))
-                            // Transient "+N/−N" movement pill (web parity, pageKey records-daily).
-                            RankDeltaBadge(mode: mode.rawValue, playType: playType, pageKey: "records-daily", currentRank: r.rank)
-                            Text(r.total > 1 ? " of \(r.total) · top \(max(1, Int((Double(r.rank) / Double(r.total) * 100).rounded())))%" : " of \(r.total)")
-                                .font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
-                        }
-                    }
-                }
-                .padding(.horizontal, 14).padding(.bottom, 8)
-
-                Divider().overlay(Theme.border)
-
-                if loading {
-                    LeaderboardSkeleton()   // web parity: animate-pulse rows
-                } else if entries.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-                        Text("No results yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 30)
-                } else {
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
-                        dailyRow(idx + 1, e)
-                        if idx < entries.count - 1 { Divider().overlay(Theme.border) }
-                    }
-                    if let win = rankWindow {
-                        Divider().overlay(Theme.border)
-                        Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity).padding(.vertical, 4)
-                        Divider().overlay(Theme.border)
-                        ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, e in
-                            dailyRow(win.startRank + idx, e)
-                            if idx < win.entries.count - 1 { Divider().overlay(Theme.border) }
-                        }
-                    }
-                }
-            }
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-
-            YesterdayPodiumCard(mode: mode, playType: playType, accent: accent)
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            RecordsBannerView(tab: $tab, selected: modeSelection, isSweep: sweepSelection)
+            if isSweep { sweepBoard } else { modeBoard }
         }
-        .task(id: "\(mode.rawValue)-\(playType)-\(reloadToken)") { await load() }
+        // Re-entering Daily with Sweep picked: the cached board in the first frame.
+        .onAppear { if isSweep { paintCachedSweep() } }
+        .task(id: "\(mode.rawValue)-\(playType)-\(friendsOnly)-\(friendsVersion)-\(reloadToken)") { await load() }
         .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
+        .task { if auth.isAuthenticated { await FriendsService.load() } }
+        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
+            friendsVersion = FriendsService.version
+        }
         .onDailyRecorded { reloadToken += 1 }
     }
 
-    /// The daily-sweep card — same card shell as the per-mode leaderboard (accent
-    /// bar → header → your-rank row → rows), but indigo and filled with sweep rows.
-    private var sweepCard: some View {
-        let total = sweepRank?.total ?? sweepEntries.count
-        return VStack(spacing: 0) {
-            LinearGradient(colors: [sweepAccent, sweepAccent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
+    // MARK: Per-game board
 
-            HStack(spacing: 10) {
-                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Daily Sweep").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                    Text("All \(ModeGen.sweep.count) modes today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+    @ViewBuilder private var modeBoard: some View {
+        let m = pickerModes.first { $0.dbKey == mode.rawValue }
+        let total = userRank?.total ?? entries.count
+        // Per-game board card: the game-tile CARD header with the Solo | VS and
+        // Everyone | Friends pills and a bare share icon.
+        LbGameHeaderCard(
+            accent: accent, icon: m?.icon ?? .symbol("trophy"), title: m?.title ?? mode.rawValue,
+            sub: "\(total) player\(total == 1 ? "" : "s") today", subSymbol: "person.2.fill",
+            right: {
+                if !loading && !entries.isEmpty {
+                    LbShareButton(busy: sharingLb, label: "Share leaderboard", action: share)
                 }
-                Spacer()
-            }
-            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
+            },
+            extra: {
+                HStack(spacing: 8) {
+                    LbPillSwitch(options: [.init(value: "solo", label: "Solo", symbol: "person.fill"),
+                                           .init(value: "vs", label: "VS", symbol: "flag.2.crossed.fill")],
+                                 value: playType, accent: accent) { t in
+                        instantly { playType = t; paintCached() }
+                    }
+                    if auth.isAuthenticated {
+                        LbPillSwitch(options: [.init(value: false, label: "Everyone"), .init(value: true, label: "Friends")],
+                                     value: friendsOnly, accent: accent) { f in
+                            instantly { friendsOnly = f; paintCached() }
+                        }
+                    }
+                }
+            })
+            .id(mode)
 
-            HStack {
-                HStack(spacing: 4) {
-                    Image(systemName: "person.2.fill").font(.system(size: 11))
-                    Text("\(total) sweeper\(total == 1 ? "" : "s") today").font(Brand.font(10, .bold))
-                }.foregroundStyle(Theme.textMuted)
-                Spacer()
-                if let r = sweepRank {
-                    HStack(spacing: 3) {
-                        (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
-                         + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706)))
-                        Text(r.total > 1 ? " of \(r.total) · top \(max(1, Int((Double(r.rank) / Double(r.total) * 100).rounded())))%" : " of \(r.total)")
-                            .font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+        // §254: the completed-daily dropdown, mounted exactly as the daily
+        // leaderboard (ProfileTab) mounts it (now the soft card). .id(mode) → a
+        // fresh card per mode: never the previous mode's board under a new header.
+        if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
+
+        // Your rank, as on the Leaderboard. The friends board keeps its own
+        // movement history (never compared against the global rank).
+        if let r = userRank {
+            let mine = (entries + (rankWindow?.entries ?? [])).first { $0.userId == auth.profile?.id }
+            LbRankCard(rank: r.rank,
+                       ofLine: friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY\(topPercent(r))",
+                       points: mine.map { lbScoreLabels[$0.compositeScore] ?? formatScore($0.compositeScore) }) {
+                RankDeltaBadge(mode: mode.rawValue, playType: playType,
+                               pageKey: friends ? "records-daily-friends" : "records-daily", currentRank: r.rank)
+            }
+        }
+
+        LbSectionLabel("TODAY\u{2019}S BOARD").padding(.top, 4)
+        if loading {
+            LeaderboardSkeleton()   // web parity: animate-pulse rows
+        } else if entries.isEmpty {
+            emptyCard(friends ? "None of your friends have played yet today" : "No results yet today. Be the first!")
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
+                    boardRow(idx + 1, e)
+                    if idx < entries.count - 1 { LbDivider() }
+                }
+                if let win = rankWindow {
+                    LbDivider()
+                    Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
+                        .frame(maxWidth: .infinity).padding(.vertical, 4)
+                    LbDivider()
+                    ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, e in
+                        boardRow(win.startRank + idx, e)
+                        if idx < win.entries.count - 1 { LbDivider() }
                     }
                 }
             }
-            .padding(.horizontal, 14).padding(.bottom, 8)
-
-            Divider().overlay(Theme.border)
-
-            if sweepLoading {
-                LeaderboardSkeleton()
-            } else if sweepEntries.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-                    Text("No sweeps yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                }
-                .frame(maxWidth: .infinity).padding(.vertical, 30)
-            } else {
-                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
-                    sweepRow(e.rank, e)
-                    if idx < sweepEntries.count - 1 { Divider().overlay(Theme.border) }
-                }
-            }
+            .padding(.vertical, 4)
+            .lbCard()
         }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+
+        YesterdayPodiumCard(mode: mode, playType: playType)
     }
 
-    // §232: daily-board parity (founder ask, Aug 24) — this row wore a bare
-    // "time · X/9" while the leaderboard's sweep section had the §223 words +
-    // dot strip. Same shape as ProfileTab's sweepRow now: stats under the name,
-    // the SweepModeDots strip with the FLAWLESS/SWEEP pill riding it (§227).
+    private func boardRow(_ rank: Int, _ e: LeaderboardEntry) -> some View {
+        RecordsBoardRow(rank: rank, entry: e, mode: mode, isMe: e.userId == auth.profile?.id,
+                        score: lbScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore))
+    }
+
+    private func emptyCard(_ text: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 30).padding(.horizontal, 16)
+        .lbCard()
+    }
+
+    // MARK: Sweep board
+
+    /// The daily-sweep board — the same stack as the per-mode board (header card,
+    /// your rank, TODAY'S BOARD), filled with sweep rows. Everyone only.
+    @ViewBuilder private var sweepBoard: some View {
+        let total = sweepRank?.total ?? sweepEntries.count
+        LbGameHeaderCard(accent: recordsSweepAccent, icon: .asset("broom"), title: "Daily Sweep",
+                         sub: "All \(ModeGen.sweep.count) modes today · \(total) sweeper\(total == 1 ? "" : "s")",
+                         subSymbol: "person.2.fill")
+        if let r = sweepRank {
+            let mine = sweepEntries.first { $0.userId == auth.profile?.id }
+            LbRankCard(rank: r.rank, ofLine: "OF \(r.total) TODAY\(topPercent(r))",
+                       points: mine.map { sweepScoreLabels[$0.totalScore] ?? formatScore($0.totalScore) })
+        }
+        LbSectionLabel("TODAY\u{2019}S BOARD").padding(.top, 4)
+        if sweepLoading {
+            LeaderboardSkeleton()
+        } else if sweepEntries.isEmpty {
+            emptyCard("No sweeps yet today. Be the first!")
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
+                    sweepRow(e.rank, e)
+                    if idx < sweepEntries.count - 1 { LbDivider() }
+                }
+            }
+            .padding(.vertical, 4)
+            .lbCard()
+        }
+    }
+
+    // §232: daily-board parity (founder ask, Aug 24) — the same shape as
+    // ProfileTab's sweepRow: stats under the name, the SweepModeDots strip with
+    // the FLAWLESS/SWEEP pill riding it (§227).
     private func sweepRow(_ rank: Int, _ e: SweepEntry) -> some View {
         let isMe = e.userId == auth.profile?.id
         return HStack(spacing: 12) {
-            rankIcon(rank).frame(width: 22)
+            LbRankBadge(rank: rank).frame(width: 22)
+            AvatarView(url: e.avatarUrl, username: e.username, size: 24)
             // §236: score rides the name line; the stats line owns the width.
             NavigationLink(value: e.userId) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -661,8 +671,8 @@ struct DailyRecordsView: View {
                 }
             }.buttonStyle(.plain)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .youRow(isMe)
     }
 
     private func loadSweep() async {
@@ -697,58 +707,30 @@ struct DailyRecordsView: View {
         SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank, details: details))
     }
 
-    @ViewBuilder private func rankIcon(_ rank: Int) -> some View {
-        switch rank {
-        case 1: Image(systemName: "crown.fill").foregroundStyle(Color(hex: 0xD97706))
-        case 2: Image(systemName: "medal.fill").foregroundStyle(Theme.textMuted)
-        case 3: Image(systemName: "medal.fill").foregroundStyle(Color(hex: 0xB45309))
-        default: Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 20)
-        }
-    }
-
-    private func dailyRow(_ rank: Int, _ e: LeaderboardEntry) -> some View {
-        let isMe = e.userId == auth.profile?.id
-        // Web parity: "Ns"/"Nm Ns" time + multi-board fraction + a Win/Loss pill.
-        let t = formatShortTime(Int(e.timeSeconds))
-        // Through the mode's guess semantics (ModeStats.guessRowLabel — the same
-        // call the daily leaderboard row in ProfileTab makes): "0 Mistakes", "Par".
-        let meta = ModeGen.byDbKey(mode.rawValue)
-        var line = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
-        if e.totalBoards > 1 { line += " · \(e.boardsSolved)/\(e.totalBoards)" }
-        // §254: hints ride this row exactly as on the daily leaderboard row
-        // (ProfileTab) — the founder wants the two pages to match.
-        if HINT_BEARING_MODES.contains(mode.rawValue), let h = e.hintsUsed {
-            line += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
-        }
-        return HStack(spacing: 12) {
-            rankIcon(rank).frame(width: 22)
-            NavigationLink(value: e.userId) {
-                (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }.buttonStyle(.plain)
-            Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(lbScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                HStack(spacing: 5) {
-                    Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    Text(e.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
-                        .foregroundStyle(e.completed ? Theme.winText : Theme.lossText)
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(e.completed ? Theme.winBG : Theme.lossBG))
-                }
-            }
-        }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
-    }
-
     private func load() async {
         // P3: same L1/L2/L3 treatment as LeaderboardTab.load() —
         // stale-while-revalidate cache paint, rows painted the moment the
         // fetch lands (rank banner fills in after), index fast-path rank.
-        let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id, playType: playType)
+        let cacheKey = self.cacheKey
         paintCached()
+
+        // FRIENDS board: one fetch restricted to friends ∪ me holds the whole
+        // board — ranks 1…N, no rank query or neighborhood window.
+        if friends, let uid = auth.profile?.id {
+            let ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
+            let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, playType: playType, userIds: ids)
+            guard !Task.isCancelled else { return }
+            guard let fetched = fetchedOpt else { loading = false; return }
+            entries = fetched
+            loading = false
+            let rank: (rank: Int, total: Int)? = fetched
+                .firstIndex { $0.userId.lowercased() == uid.lowercased() }
+                .map { (rank: $0 + 1, total: fetched.count) }
+            userRank = rank
+            rankWindow = nil
+            LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: fetched.count, userRank: rank, rankWindow: nil)
+            return
+        }
 
         let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, playType: playType)
         // .task(id:) cancels on mode/playType switch — bail before assigning
@@ -780,11 +762,12 @@ struct DailyRecordsView: View {
     }
 }
 
-/// Yesterday's top-3 for the selected mode (collapsible) — Records daily tab.
+/// Yesterday's top finishers for the selected mode (collapsible) — Records daily view.
+/// Identical to the Leaderboard's YESTERDAY'S WINNERS: caps label + chevron, the bare
+/// share icon, and full rows (avatar, stats line, points) in a soft card. Unfiltered.
 struct YesterdayPodiumCard: View {
     let mode: GameMode
     let playType: String
-    let accent: Color
     @EnvironmentObject private var auth: AuthService
     /// Settled podiums by "day:mode:playType" — session-lived (yesterday never changes), so a
     /// mode switch shows THAT mode's podium at once, never the previous mode's rows under the
@@ -798,27 +781,27 @@ struct YesterdayPodiumCard: View {
     @State private var open = false
     @State private var sharing = false
     private var podiumScoreLabels: [Double: String] { tieAwareScoreLabels(top3.map(\.compositeScore)) }
-    private let medalColors = [Color(hex: 0xD97706), Color(hex: 0x9CA3AF), Color(hex: 0xB45309)]
 
     var body: some View {
         Group {
             // Unknown yet → keep the header row in place (a skeleton under it when open) rather
-            // than collapsing the card and popping it back in.
+            // than collapsing the section and popping it back in.
             if known == nil || !top3.isEmpty {
-                VStack(spacing: 0) {
-                    // Header split into sibling buttons (web parity) so the
-                    // share icon is independently tappable next to the toggle.
-                    HStack {
-                        Button { withAnimation { open.toggle() } } label: {
-                            HStack(spacing: 5) {
-                                Image(systemName: "crown.fill").font(.system(size: 11)).foregroundStyle(Color(hex: 0xD97706))
-                                Text("YESTERDAY'S PODIUM").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(Theme.textPrimary)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Button { open.toggle() } label: {
+                            HStack(spacing: 6) {
+                                LbSectionLabel("YESTERDAY\u{2019}S WINNERS")
+                                Image(systemName: open ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textMuted)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }.buttonStyle(.plain)
+                            .padding(.vertical, 6).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        Spacer(minLength: 4)
                         // Settled-podium share — only once the podium is open with rows.
                         if open && !top3.isEmpty {
-                            Button {
+                            LbShareButton(busy: sharing, label: "Share yesterday's podium") {
                                 guard !sharing else { return }
                                 sharing = true
                                 Task {
@@ -827,42 +810,25 @@ struct YesterdayPodiumCard: View {
                                         top3: top3, userId: auth.profile?.id)
                                     sharing = false
                                 }
-                            } label: {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(Theme.textMuted)
                             }
-                            .buttonStyle(.plain)
-                            .opacity(sharing ? 0.4 : 1)
-                            .accessibilityLabel("Share yesterday's podium")
-                            .padding(.trailing, 6)
                         }
-                        Button { withAnimation { open.toggle() } } label: {
-                            Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted).rotationEffect(.degrees(open ? 180 : 0))
-                        }.buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
                     if open && known == nil {
-                        Divider().overlay(Theme.border)
-                        VStack(spacing: 8) { ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 20, cornerRadius: 6) } }
-                            .padding(.horizontal, 14).padding(.vertical, 10)
+                        LeaderboardSkeleton()
                     } else if open {
-                        Divider().overlay(Theme.border)
-                        ForEach(Array(top3.enumerated()), id: \.element.id) { i, e in
-                            HStack(spacing: 12) {
-                                Image(systemName: "medal.fill").foregroundStyle(medalColors[min(i, 2)]).frame(width: 20)
-                                NavigationLink(value: e.userId) { Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.7) }.buttonStyle(.plain)
-                                Spacer()
-                                Text(podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(accent)
+                        VStack(spacing: 0) {
+                            ForEach(Array(top3.enumerated()), id: \.element.id) { i, e in
+                                RecordsBoardRow(rank: i + 1, entry: e, mode: mode,
+                                                isMe: e.userId == auth.profile?.id,
+                                                score: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore))
+                                if i < top3.count - 1 { LbDivider() }
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 8)
-                            if i < top3.count - 1 { Divider().overlay(Theme.border) }
                         }
+                        .padding(.vertical, 4)
+                        .lbCard()
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.top, 4)
             }
         }
         .task(id: key) {

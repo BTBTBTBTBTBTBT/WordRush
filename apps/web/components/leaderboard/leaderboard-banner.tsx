@@ -16,38 +16,45 @@ import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 // and the date · reset clock, then the eight Wordocious games (home WORDOCIOUS
 // order, + the SWEEP chip) and the ten Puzzles (home PUZZLES order) as rows of
 // icon-only game squares. Exactly one selection across both rows and the chip.
+// The Records banner (docs/RECORDS_REDESIGN_SPEC.md §1) reuses the rows and clock.
 
 const INK = '#78350f';
 const MID = '#92400e';
 const GOLD = '#f59e0b';
+const NBSP = ' ';
 
 function pad(n: number) {
   return n.toString().padStart(2, '0');
 }
 
-/** `OCT 2 · RESETS IN 02:06:43` — its own component so only this line ticks. */
-function ResetLine({ today }: { today: string | null }) {
+/** `<lead> · RESETS IN 02:06:43` — its own component so only this line ticks. */
+export function ResetLine({ lead }: { lead: string | null }) {
   const secs = useCountdown(getSecondsUntilMidnightLocal);
-  if (!today) return <span>&nbsp;</span>;
-  const date = new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-  if (secs == null) return <span>{date}</span>;
+  if (!lead) return <span>{NBSP}</span>;
+  if (secs == null) return <span>{lead}</span>;
   const clock = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor((secs % 3600) / 60))}:${pad(secs % 60)}`;
-  return <span>{date} · RESETS IN <span className="tabular-nums">{clock}</span></span>;
+  return <span>{lead} · RESETS IN <span className="tabular-nums">{clock}</span></span>;
 }
 
-interface Props {
-  /** The player's local YYYY-MM-DD; null until hydrated (the title waits for it). */
-  today: string | null;
+/** The day's title (core leaderboardTitle; "<HOLIDAY> HEROES" on a holiday). */
+export function dayTitle(today: string): string {
+  return leaderboardTitle(today, holidayTitle(holidayKeyForDay(today, HOLIDAY_TABLE)));
+}
+
+/**
+ * The banner's two game rows — WORDOCIOUS (+ the SWEEP chip) over PUZZLES, in
+ * the home order — shared by the Leaderboard and Records banners. `ink` colors
+ * the row labels.
+ */
+export function BannerGameRows({ selectedMode, onSelect, ink = MID }: {
   selectedMode: string;
   onSelect: (dbKey: string) => void;
-}
-
-export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
+  ink?: string;
+}) {
   const { isOn: flagOn } = useFlags();
   // The home page's two lists, same filters (app/page.tsx).
   const wordCards = MODE_CARDS.filter((c) => flagOn(c.flagKey) && !c.homeWide && c.dbKey);
   const puzzleCards = MORE_CARDS.filter((c) => c.dailyEligible && c.dbKey && flagOn(c.flagKey));
-  const title = today ? leaderboardTitle(today, holidayTitle(holidayKeyForDay(today, HOLIDAY_TABLE))) : ' ';
   const sweepOn = selectedMode === 'SWEEP';
 
   const row = (cards: HomeCard[], tile: number, gap: number, glyph: number) => (
@@ -81,29 +88,11 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
   );
 
   const label = (text: string) => (
-    <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: MID }}>{text}</span>
+    <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: ink }}>{text}</span>
   );
 
   return (
-    <div
-      className="relative shrink-0 overflow-hidden"
-      style={{
-        borderRadius: 16,
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #fef3c7, #ede9fe)',
-        boxShadow: '0 4px 14px rgba(146,64,14,0.10)',
-      }}
-    >
-      {/* Frosted headline strip. */}
-      <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
-        <h1 className="font-black" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: INK, textShadow: '0 0 8px rgba(245,158,11,0.55)' }}>
-          {title}
-        </h1>
-        <div className="flex items-center gap-2 font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: MID }}>
-          <span className="flex-1 min-w-0 truncate"><ResetLine today={today} /></span>
-          <Link href="/records" className="shrink-0 font-black active:opacity-60" style={{ color: MID }}>ALL-TIME →</Link>
-        </div>
-      </div>
-
+    <>
       <div className="relative flex flex-col gap-2" style={{ padding: '10px 12px 6px' }}>
         <div className="flex items-center gap-1.5">
           <span className="flex-1">{label('WORDOCIOUS')}</span>
@@ -131,6 +120,44 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         {label('PUZZLES')}
         {row(puzzleCards, 31, 4, 13)}
       </div>
+    </>
+  );
+}
+
+interface Props {
+  /** The player's local YYYY-MM-DD; null until hydrated (the title waits for it). */
+  today: string | null;
+  selectedMode: string;
+  onSelect: (dbKey: string) => void;
+}
+
+export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
+  const title = today ? dayTitle(today) : NBSP;
+  const date = today
+    ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+    : null;
+
+  return (
+    <div
+      className="relative shrink-0 overflow-hidden"
+      style={{
+        borderRadius: 16,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, #fef3c7, #ede9fe)',
+        boxShadow: '0 4px 14px rgba(146,64,14,0.10)',
+      }}
+    >
+      {/* Frosted headline strip. */}
+      <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+        <h1 className="font-black" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: INK, textShadow: '0 0 8px rgba(245,158,11,0.55)' }}>
+          {title}
+        </h1>
+        <div className="flex items-center gap-2 font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: MID }}>
+          <span className="flex-1 min-w-0 truncate"><ResetLine lead={date} /></span>
+          <Link href="/records" className="shrink-0 font-black active:opacity-60" style={{ color: MID }}>ALL-TIME →</Link>
+        </div>
+      </div>
+
+      <BannerGameRows selectedMode={selectedMode} onSelect={onSelect} />
     </div>
   );
 }

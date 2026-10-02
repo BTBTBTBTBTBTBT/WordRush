@@ -24,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
@@ -52,6 +51,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
@@ -690,7 +691,6 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
                                     scoreLabel = sweepScoreLabels[entry.totalScore],
-                                    restyled = true,
                                     details = sweepDetails[entry.userId],
                                     day = com.wordocious.app.todayLocalDate(),
                                     flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
@@ -765,7 +765,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     }
                                 } else null,
                                 scoreLabel = lbScoreLabels[entry.compositeScore],
-                                crownId = crownId, restyled = true,
+                                crownId = crownId,
                             )
                             if (index < entries.size - 1) Divider()
                         }
@@ -785,7 +785,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     rank = win.startRank + index, entry = entry, mode = selectedMode,
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
-                                    scoreLabel = lbScoreLabels[entry.compositeScore], restyled = true,
+                                    scoreLabel = lbScoreLabels[entry.compositeScore],
                                 )
                                 if (index < win.entries.size - 1) Divider()
                             }
@@ -904,7 +904,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     entry = e, mode = selectedMode,
                                     isCurrentUser = e.userId == userId,
                                     onOpenProfile = onOpenProfile,
-                                    scoreLabel = yLbScoreLabels[e.compositeScore], restyled = true,
+                                    scoreLabel = yLbScoreLabels[e.compositeScore],
                                 )
                                 if (i < yesterday.size - 1) Divider()
                             }
@@ -925,7 +925,7 @@ private fun Divider() {
 
 /** §212: photo → emoji → initial, left of every username (web lbAvatar twin). */
 @Composable
-private fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String) {
+internal fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String) {
     val url = avatarUrl?.takeIf { it.isNotBlank() }
     // iOS AvatarView parity (founder, Aug 20: "make the android version look
     // more like the iphone version") — the fallback is TWO-letter initials in
@@ -960,12 +960,11 @@ private fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String)
     }
 }
 
-/** Rank icon — Crown (#1 gold), Medal (#2 muted / #3 bronze), else "N". Web parity.
- *  [discs] (the Leaderboard redesign, spec §2.4): numbered gold / silver / bronze
+/** Rank badge (Leaderboard + Records, spec §2.4): numbered gold / silver / bronze
  *  discs for 1–3, the plain number after. */
 @Composable
-private fun RankIcon(rank: Int, discs: Boolean = false) {
-    val medal = if (discs) medalColor(rank) else null
+private fun RankIcon(rank: Int) {
+    val medal = medalColor(rank)
     if (medal != null) {
         Box(
             Modifier.size(22.dp).clip(CircleShape)
@@ -976,39 +975,20 @@ private fun RankIcon(rank: Int, discs: Boolean = false) {
         }
         return
     }
-    if (discs) {
-        Box(Modifier.width(22.dp), contentAlignment = Alignment.Center) {
-            Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, maxLines = 1, softWrap = false)
-        }
-        return
-    }
-    when (rank) {
-        1 -> Icon(
-            androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),
-            null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp),
-        )
-        // WorkspacePremium is the rosette-medal glyph — visually the twin of
-        // iOS's medal.fill / web's lucide Medal; MilitaryTech read as a
-        // different icon set on Doug's screenshots.
-        2 -> Icon(Icons.Filled.WorkspacePremium, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
-        3 -> Icon(Icons.Filled.WorkspacePremium, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
-        // width(), NOT size(): a 20dp SQUARE constrained the height too, so a
-        // 3-digit rank wrapped to a second line that was then clipped — rank
-        // 425 displayed as "42". iOS uses .frame(width: 20) for exactly this.
-        else -> Box(Modifier.width(20.dp), contentAlignment = Alignment.Center) {
-            // iOS renders the bare number here — no "#" prefix.
-            Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
-        }
+    // width(), NOT size(): a square constrained the height too, so a 3-digit rank
+    // wrapped and clipped (425 read as "42"). iOS uses .frame(width:) for this.
+    Box(Modifier.width(22.dp), contentAlignment = Alignment.Center) {
+        Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, maxLines = 1, softWrap = false)
     }
 }
 
 /** The redesign's card shell (spec §2): surface, radius 14, the soft card shadow, no border. */
-private fun Modifier.lbSoftCard(): Modifier =
+internal fun Modifier.lbSoftCard(): Modifier =
     this.fillMaxWidth().cardShadow(14.dp).clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
 
 /** Section label: 11 / 900, letter-spacing 1.2, #6b7280. */
 @Composable
-private fun LbSectionLabel(text: String, modifier: Modifier = Modifier) {
+internal fun LbSectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
         color = WTheme.textSecondary, maxLines = 1, modifier = modifier,
@@ -1017,16 +997,22 @@ private fun LbSectionLabel(text: String, modifier: Modifier = Modifier) {
 
 /** Everyone | Friends (§207 toggle) as a soft pill segmented control. */
 @Composable
-private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) {
+private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) =
+    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, onChange)
+
+/** A soft pill segmented control (Leaderboard / Records): violet track, white selected segment. */
+@Composable
+internal fun <T> SoftSegment(options: List<Pair<T, String>>, selected: T, onChange: (T) -> Unit) {
     val accent = Color(0xFF7C3AED)
     Row(Modifier.clip(RoundedCornerShape(50)).background(accent.copy(alpha = 0.10f)).padding(2.dp)) {
-        listOf(false to "Everyone", true to "Friends").forEach { (f, label) ->
-            val on = friendsOnly == f
+        options.forEach { (value, label) ->
+            val on = selected == value
             Box(
                 Modifier.height(24.dp).clip(RoundedCornerShape(50))
                     .background(if (on) WTheme.surface else Color.Transparent)
-                    .clickableNoRipple { onChange(f) }
-                    .padding(horizontal = 10.dp),
+                    .clickableNoRipple { onChange(value) }
+                    .padding(horizontal = 10.dp)
+                    .semantics { contentDescription = label + if (on) ", selected" else "" },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -1208,7 +1194,7 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
 }
 
 /** Medal tints for ranks 1–3 (gold / silver / bronze); null past the podium. */
-private fun medalColor(rank: Int): Color? = when (rank) {
+internal fun medalColor(rank: Int): Color? = when (rank) {
     1 -> Color(0xFFF59E0B)
     2 -> Color(0xFF9CA3AF)
     3 -> Color(0xFFB45309)
@@ -1218,7 +1204,16 @@ private fun medalColor(rank: Int): Color? = when (rank) {
 /** §2.3 Your rank: a soft gold card — the rank in big numerals (medal-tinted on the
  *  podium), OF N TODAY (or friends), the movement badge, and your points. */
 @Composable
-private fun UserRankCard(rank: Int, total: Int, mode: String, friends: Boolean = false, points: Double? = null) {
+internal fun UserRankCard(
+    rank: Int, total: Int, mode: String, friends: Boolean = false, points: Double? = null,
+    playType: String = "solo",
+    pageKey: String = if (friends) "daily-friends" else "daily",
+    /** Records: "OF N TODAY · TOP 5%" (the old rank line's percentile). */
+    showTopPercent: Boolean = false,
+    /** false hides the movement badge (the Records sweep boards never had one). */
+    showDelta: Boolean = true,
+    totalNoun: String = "TODAY",
+) {
     val ink = medalColor(rank) ?: Color(0xFFD97706)
     Row(
         modifier = Modifier.fillMaxWidth()
@@ -1237,14 +1232,15 @@ private fun UserRankCard(rank: Int, total: Int, mode: String, friends: Boolean =
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("YOUR RANK", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = WTheme.textSecondary)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                val top = if (showTopPercent && total > 1) " · TOP ${maxOf(1, Math.round(rank.toDouble() / total * 100).toInt())}%" else ""
                 Text(
-                    if (friends) "OF $total FRIENDS" else "OF $total TODAY",
+                    (if (friends) "OF $total FRIENDS" else "OF $total $totalNoun") + top,
                     fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = WTheme.text, maxLines = 1,
                 )
                 // Transient "+N/−N" movement pill since you last looked (web parity).
                 // Friends mode keeps its own memory — a friend-rank must never
                 // compare against a stored global rank (§207).
-                RankDeltaBadge(mode = mode, playType = "solo", pageKey = if (friends) "daily-friends" else "daily", currentRank = rank)
+                if (showDelta) RankDeltaBadge(mode = mode, playType = playType, pageKey = pageKey, currentRank = rank)
             }
         }
         if (points != null) {
@@ -1324,15 +1320,13 @@ internal fun SweepRow(
     day: String = com.wordocious.app.todayLocalDate(),
     // §248: current flawless streak — the pill reads "FLAWLESS ×4" when >= 2.
     flawlessStreak: Int = 0,
-    /** The Leaderboard redesign's row look (medal discs, ringed own row); Records keeps the classic row. */
-    restyled: Boolean = false,
 ) {
     Row(
-        modifier = Modifier.lbRowShell(isCurrentUser, rank, restyled),
+        modifier = Modifier.lbRowShell(isCurrentUser),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RankIcon(rank, discs = restyled)
+        RankIcon(rank)
         // §212: faces on the sweep boards too (RPCs have no emoji column).
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         // Same shape as LeaderboardRow (Doug's Aug-16 feedback): stats under
@@ -1433,13 +1427,8 @@ private fun SweepModeDots(details: LeaderboardService.SweepDetails?, day: String
 /** One all-time sweep row — total sweeps over "N flawless · {time}". */
 @Composable
 internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEntry, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
-    val bg = when {
-        isCurrentUser -> WTheme.highlightGold
-        rank <= 3 -> WTheme.surfaceAlt
-        else -> Color.Transparent
-    }
     Row(
-        modifier = Modifier.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = Modifier.lbRowShell(isCurrentUser),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1475,19 +1464,10 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
 }
 
 /**
- * A board row's shell. Classic (Records): gold wash on your row, a soft tint on the
- * podium. Restyled (Leaderboard, spec §2.4): plain rows; your row tinted #fef3c7
- * inside a 1.5 dp #f59e0b ring, inset so the ring clears the card edge.
+ * A board row's shell (Leaderboard + Records, spec §2.4): plain rows; your row tinted
+ * #fef3c7 inside a 1.5 dp #f59e0b ring, inset so the ring clears the card edge.
  */
-private fun Modifier.lbRowShell(isCurrentUser: Boolean, rank: Int, restyled: Boolean): Modifier {
-    if (!restyled) {
-        val bg = when {
-            isCurrentUser -> WTheme.highlightGold
-            rank <= 3 -> WTheme.surfaceAlt
-            else -> Color.Transparent
-        }
-        return this.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp)
-    }
+internal fun Modifier.lbRowShell(isCurrentUser: Boolean): Modifier {
     if (!isCurrentUser) return this.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)
     val shape = RoundedCornerShape(10.dp)
     return this.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp)
@@ -1496,13 +1476,13 @@ private fun Modifier.lbRowShell(isCurrentUser: Boolean, rank: Int, restyled: Boo
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null, crownId: String? = null, restyled: Boolean = false) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null, crownId: String? = null) {
     Row(
-        modifier = Modifier.lbRowShell(isCurrentUser, rank, restyled),
+        modifier = Modifier.lbRowShell(isCurrentUser),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RankIcon(rank, discs = restyled)
+        RankIcon(rank)
         // §212: photo → emoji → initial, left of every username — the boards
         // wear faces, not just names (web lbAvatar parity).
         LbAvatar(entry.profiles?.avatarUrl, entry.profiles?.avatarEmoji, entry.username ?: "Player")
@@ -1615,7 +1595,7 @@ private fun YesterdaySweepRow(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RankIcon(entry.rank.toInt(), discs = true)
+        RankIcon(entry.rank.toInt())
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         Column(
             Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },

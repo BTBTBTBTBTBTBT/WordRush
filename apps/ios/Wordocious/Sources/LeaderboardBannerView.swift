@@ -14,45 +14,16 @@ struct LeaderboardBannerView: View {
     @Binding var isSweep: Bool
     let onAllTime: () -> Void
 
-    @ObservedObject private var flags = FlagsService.shared
-
     private static let head = Color(hex: 0x78350F)
     private static let sub = Color(hex: 0x92400E)
     private static let gold = Color(hex: 0xF59E0B)
 
-    /// WORDOCIOUS DAILIES — the home order (core tiles, flag-gated, the wide VS / More tiles excluded).
-    private var wordModes: [HomeMode] {
-        homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }
-    }
-    /// PUZZLES — the home order (the More Games dailies behind their flags; menu.more switches the row off).
-    private var puzzleModes: [HomeMode] {
-        guard homeModes.contains(where: { $0.id == "more" && flags.isOn($0.flagKey) }) else { return [] }
-        return moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) })
-    }
-
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-        let puzzles = puzzleModes
         VStack(spacing: 0) {
             strip
-            wordRow
-                .padding(.top, 10).padding(.horizontal, 12).padding(.bottom, puzzles.isEmpty ? 12 : 6)
-            if !puzzles.isEmpty {
-                puzzleRow(puzzles)
-                    .padding(.top, 8).padding(.horizontal, 12).padding(.bottom, 12)
-            }
+            BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
         }
-        .frame(maxWidth: .infinity)
-        .background {
-            ZStack {
-                LinearGradient(colors: [Color(hex: 0xFEF3C7), Color(hex: 0xEDE9FE)], startPoint: .top, endPoint: .bottom)
-                // The same white sheen as home.
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
-        }
-        .clipShape(shape)
-        .shadow(color: Color(hex: 0x92400E).opacity(0.10), radius: 7, x: 0, y: 4)
+        .bannerWindow(top: Color(hex: 0xFEF3C7), bottom: Color(hex: 0xEDE9FE), shadow: Color(hex: 0x92400E))
     }
 
     // MARK: Frosted strip
@@ -60,13 +31,10 @@ struct LeaderboardBannerView: View {
     private var strip: some View {
         // Ticks once a second for the reset clock; the title and date flip at local midnight.
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            let day = LeaderboardService.todayLocal()
-            let holiday = HolidayTitles.title(holidayKeyForDay(day, table: HolidayTable.bundled))
-            let left = secondsUntilLocalMidnight()
-            let clock = String(format: "%02d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60)
+            let clock = Self.resetClock()
             let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
             VStack(alignment: .leading, spacing: 4) {
-                Text(leaderboardTitle(day, holiday))
+                Text(Self.todayTitle())
                     .font(Brand.font(22, .black)).tracking(0.4)
                     .foregroundStyle(Self.head)
                     .shadow(color: Self.gold.opacity(0.55), radius: 8)
@@ -95,10 +63,150 @@ struct LeaderboardBannerView: View {
         .background(Color.white.opacity(0.5))
     }
 
+    /// Today's title (core leaderboardTitle on the player's local day, with the
+    /// app's holiday-of-the-day name) — shared with the Records banner.
+    static func todayTitle() -> String {
+        let day = LeaderboardService.todayLocal()
+        return leaderboardTitle(day, HolidayTitles.title(holidayKeyForDay(day, table: HolidayTable.bundled)))
+    }
+
+    /// hh:mm:ss to local midnight.
+    static func resetClock() -> String {
+        let left = secondsUntilLocalMidnight()
+        return String(format: "%02d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60)
+    }
+}
+
+/// The Records banner (founder, 2026-10-01; spec docs/RECORDS_REDESIGN_SPEC.md §1; web
+/// components/leaderboard/records-banner.tsx): the Leaderboard banner's one window in
+/// lilac-to-gold. A frosted strip with the trophy + ALL-TIME RECORDS, the sub line
+/// (Daily: the day's title · reset clock; All-Time: THE BEST EVER · N RECORDS) and the
+/// DAILY | ALL-TIME pill switch, then the same two game rows as the Leaderboard banner.
+/// Replaces the old RECORDS header, the Daily / All-Time toggle row and the mode picker.
+struct RecordsBannerView: View {
+    @Binding var tab: RecordsTab.RecordsSubTab
+    @Binding var selected: GameMode
+    @Binding var isSweep: Bool
+    /// The all-time records count once loaded (All-Time sub line); nil omits the number.
+    var recordsCount: Int? = nil
+
+    private static let head = Color(hex: 0x4C1D95)
+    private static let sub = Color(hex: 0x6D28D9)
+
+    var body: some View {
+        VStack(spacing: 0) {
+            strip
+            BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
+        }
+        .bannerWindow(top: Color(hex: 0xEDE9FE), bottom: Color(hex: 0xFEF3C7), shadow: Color(hex: 0x4C1D95))
+    }
+
+    private var strip: some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "trophy.fill").font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(Color(hex: 0xB45309))
+                    Text("ALL-TIME RECORDS")
+                        .font(Brand.font(22, .black)).tracking(0.4)
+                        .foregroundStyle(Self.head)
+                        .shadow(color: Color(hex: 0xF59E0B).opacity(0.55), radius: 8)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .accessibilityAddTraits(.isHeader)
+                }
+                .frame(minHeight: 30)
+                Group {
+                    if tab == .daily {
+                        // Ticks once a second for the reset clock.
+                        TimelineView(.periodic(from: .now, by: 1)) { _ in
+                            Text("\(LeaderboardBannerView.todayTitle()) · RESETS IN \(LeaderboardBannerView.resetClock())")
+                        }
+                    } else {
+                        Text(recordsCount.map { "THE BEST EVER · \($0) RECORD\($0 == 1 ? "" : "S")" } ?? "THE BEST EVER")
+                    }
+                }
+                .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
+                .foregroundStyle(Self.sub)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            tabSwitch
+        }
+        .padding(.top, 12).padding(.leading, 12).padding(.trailing, 10).padding(.bottom, 10)
+        .background(Color.white.opacity(0.5))
+    }
+
+    /// DAILY | ALL-TIME as the home-banner pill switch (white selected segment, violet track).
+    private var tabSwitch: some View {
+        HStack(spacing: 0) {
+            segment(.daily, "DAILY")
+            segment(.allTime, "ALL-TIME")
+        }
+        .padding(2)
+        .background(Capsule().fill(Color(hex: 0x7C3AED).opacity(0.12)))
+        .fixedSize()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Daily or All-Time")
+    }
+
+    private func segment(_ t: RecordsTab.RecordsSubTab, _ label: String) -> some View {
+        let on = tab == t
+        return Button { if tab != t { instantly { tab = t } } } label: {
+            Text(label)
+                .font(Brand.font(10.5, .black)).tracking(0.6)
+                .foregroundStyle(on ? Self.head : Color(hex: 0x7C3AED))
+                .padding(.horizontal, 10).frame(height: 26)
+                .background(Capsule().fill(on ? Color.white : Color.clear))
+                .lineLimit(1).fixedSize()
+                .contentShape(Capsule())
+        }
+        .buttonStyle(InstantButtonStyle())
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}
+
+/// The two game rows shared by the Leaderboard and Records banners (spec §1 of
+/// docs/LEADERBOARD_REDESIGN_SPEC.md / docs/RECORDS_REDESIGN_SPEC.md): WORDOCIOUS
+/// (the eight sweep dailies, home order) with the SWEEP chip, then PUZZLES (the ten
+/// More Games dailies, home order), as icon-only square game tiles. Exactly one
+/// selection across both rows and the chip.
+struct BannerGameRows: View {
+    @Binding var selected: GameMode
+    @Binding var isSweep: Bool
+    /// Row-label ink (amber on the Leaderboard, violet on Records).
+    let ink: Color
+
+    @ObservedObject private var flags = FlagsService.shared
+
+    private static let sub = Color(hex: 0x92400E)
+    private static let gold = Color(hex: 0xF59E0B)
+
+    /// WORDOCIOUS DAILIES — the home order (core tiles, flag-gated, the wide VS / More tiles excluded).
+    private var wordModes: [HomeMode] {
+        homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }
+    }
+    /// PUZZLES — the home order (the More Games dailies behind their flags; menu.more switches the row off).
+    private var puzzleModes: [HomeMode] {
+        guard homeModes.contains(where: { $0.id == "more" && flags.isOn($0.flagKey) }) else { return [] }
+        return moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) })
+    }
+
+    var body: some View {
+        let puzzles = puzzleModes
+        VStack(spacing: 0) {
+            wordRow
+                .padding(.top, 10).padding(.horizontal, 12).padding(.bottom, puzzles.isEmpty ? 12 : 6)
+            if !puzzles.isEmpty {
+                puzzleRow(puzzles)
+                    .padding(.top, 8).padding(.horizontal, 12).padding(.bottom, 12)
+            }
+        }
+    }
+
     // MARK: Rows
 
     private func label(_ text: String) -> some View {
-        Text(text).font(Brand.font(10, .black)).tracking(1).foregroundStyle(Self.sub)
+        Text(text).font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
     }
 
     private var wordRow: some View {
@@ -157,6 +265,23 @@ struct LeaderboardBannerView: View {
         .buttonStyle(InstantButtonStyle())
         .accessibilityLabel(m.title)
         .accessibilityAddTraits(active ? .isSelected : [])
+    }
+}
+
+extension View {
+    /// The banner window shared by the Leaderboard and Records banners: a vertical
+    /// two-color gradient + the home white sheen, radius 16, soft shadow, no border.
+    func bannerWindow(top: Color, bottom: Color, shadow: Color) -> some View {
+        frame(maxWidth: .infinity)
+            .background {
+                ZStack {
+                    LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+                    LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: shadow.opacity(0.10), radius: 7, x: 0, y: 4)
     }
 }
 

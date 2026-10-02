@@ -1275,7 +1275,7 @@ struct LeaderboardTab: View {
     /// Owned by RootTabView so tab gestures can pop it to root.
     @Binding var path: [String]
     @State private var mode: GameMode = .duel
-    // Sweep tile (HModePicker cell after the sweep modes) — the cross-mode
+    // Sweep chip (the banner's SWEEP pill, LeaderboardBannerView) — the cross-mode
     // "completed every sweep daily" board.
     @State private var isSweep = false
     @State private var sweepEntries: [SweepEntry] = []
@@ -1493,23 +1493,12 @@ struct LeaderboardTab: View {
         .gameTile(accent: accent)
     }
 
-    /// Section label (spec §2): 11 / 900, letter-spacing 1.2, muted.
-    private func sectionLabel(_ text: String) -> some View {
-        Text(text).font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(Theme.textMuted)
-            .lineLimit(1).fixedSize()
-    }
+    /// Section label (spec §2) — the shared LbSectionLabel.
+    private func sectionLabel(_ text: String) -> some View { LbSectionLabel(text) }
 
     /// The bare share icon used by every board header.
     private func shareIcon(busy: Bool, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.textMuted)
-                .frame(width: 30, height: 30).contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .opacity(busy ? 0.4 : 1)
-        .accessibilityLabel(label)
+        LbShareButton(busy: busy, label: label, action: action)
     }
 
     /// "YESTERDAY’S WINNERS" + chevron (the collapsible toggle).
@@ -1629,7 +1618,7 @@ struct LeaderboardTab: View {
             VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, entry in
                     sweepRow(rank: entry.rank, entry: entry)
-                    if idx < sweepEntries.count - 1 { lbDivider }
+                    if idx < sweepEntries.count - 1 { LbDivider() }
                 }
             }
             .padding(.vertical, 4)
@@ -1667,7 +1656,7 @@ struct LeaderboardTab: View {
                 VStack(spacing: 0) {
                     ForEach(Array(yesterdaySweep.enumerated()), id: \.element.id) { idx, entry in
                         yesterdaySweepRow(entry)
-                        if idx < yesterdaySweep.count - 1 { lbDivider }
+                        if idx < yesterdaySweep.count - 1 { LbDivider() }
                     }
                 }
                 .padding(.vertical, 4)
@@ -1725,28 +1714,14 @@ struct LeaderboardTab: View {
         HStack(alignment: .center, spacing: 8) {
             sectionLabel("TODAY\u{2019}S BOARD")
             Spacer(minLength: 4)
-            // FRIENDS toggle (§207) — Everyone | Friends, a soft pill segmented control.
+            // FRIENDS toggle (§207) — Everyone | Friends, the shared soft pill segmented control.
+            // Everyone|Friends repaints its cached board in the same transaction (founder,
+            // 2026-09-29: a frame of the global rows and "of N" under "Friends").
             if auth.isAuthenticated {
-                let accent = ModeStyle.accent(mode)
-                HStack(spacing: 0) {
-                    ForEach([false, true], id: \.self) { f in
-                        // Everyone|Friends repaints its cached board in the same transaction (founder,
-                        // 2026-09-29: a frame of the global rows and "of N" under "Friends").
-                        Button { if friendsOnly != f { instantly { friendsOnly = f; paintCachedBoard() } } } label: {
-                            Text(f ? "Friends" : "Everyone")
-                                .font(Brand.font(10, .heavy))
-                                .foregroundStyle(friendsOnly == f ? accent : Theme.textMuted)
-                                .padding(.horizontal, 10).frame(height: 24)
-                                .background(Capsule().fill(friendsOnly == f ? Theme.surface : Color.clear)
-                                    .shadow(color: friendsOnly == f ? Color.black.opacity(0.08) : .clear, radius: 2, x: 0, y: 1))
-                                .contentShape(Capsule())
-                        }
-                        .buttonStyle(InstantButtonStyle())
-                        .accessibilityAddTraits(friendsOnly == f ? .isSelected : [])
-                    }
+                LbPillSwitch(options: [.init(value: false, label: "Everyone"), .init(value: true, label: "Friends")],
+                             value: friendsOnly, accent: ModeStyle.accent(mode)) { f in
+                    instantly { friendsOnly = f; paintCachedBoard() }
                 }
-                .padding(2)
-                .background(Capsule().fill(Theme.textMuted.opacity(0.12)))
             }
             if !loading && !entries.isEmpty {
                 shareIcon(busy: sharingLb, label: "Share leaderboard") {
@@ -1774,7 +1749,7 @@ struct LeaderboardTab: View {
                 VStack(spacing: 0) {
                     ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
                         ghostRow(f)
-                        if idx < ghostFriends.count - 1 { lbDivider }
+                        if idx < ghostFriends.count - 1 { LbDivider() }
                     }
                 }
                 .padding(.vertical, 4)
@@ -1806,25 +1781,25 @@ struct LeaderboardTab: View {
                 ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
                     // §217: exact (score, time) ties share the rank.
                     row(rank: LeaderboardService.competitionRank(entries, idx), entry: entry)
-                    if idx < entries.count - 1 { lbDivider }
+                    if idx < entries.count - 1 { LbDivider() }
                 }
                 // "Your neighborhood" — rows around the user's rank when
                 // they placed past the top 50 (web daily page parity).
                 if let win = rankWindow {
-                    lbDivider
+                    LbDivider()
                     Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
                         .frame(maxWidth: .infinity).padding(.vertical, 4)
-                    lbDivider
+                    LbDivider()
                     ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
                         row(rank: win.startRank + idx, entry: entry)
-                        if idx < win.entries.count - 1 { lbDivider }
+                        if idx < win.entries.count - 1 { LbDivider() }
                     }
                 }
                 // FRIENDS ghost rows — friends who haven't played this
                 // mode today, muted, with the taunt bell (§207).
                 if friendsOnly {
                     ForEach(ghostFriends) { f in
-                        lbDivider
+                        LbDivider()
                         ghostRow(f)
                     }
                 }
@@ -1873,18 +1848,13 @@ struct LeaderboardTab: View {
                     ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
                         // §217: exact (score, time) ties share the rank.
                         row(rank: LeaderboardService.competitionRank(yesterday, idx), entry: entry, scoreLabels: yLbScoreLabels)
-                        if idx < yesterday.count - 1 { lbDivider }
+                        if idx < yesterday.count - 1 { LbDivider() }
                     }
                 }
                 .padding(.vertical, 4)
                 .lbCard()
             }
         }
-    }
-
-    /// Row separator inside the soft cards (inset, hairline).
-    private var lbDivider: some View {
-        Divider().overlay(Theme.border.opacity(0.6)).padding(.horizontal, 14)
     }
 
     /// The player's own points on the selected board (their row, else today's cached result).
@@ -1918,79 +1888,22 @@ struct LeaderboardTab: View {
     }
 
 
-    /// Your rank (spec §2.3): a soft gold card — the rank in big numerals (medal
-    /// tint for the top 3), "OF N TODAY" (or friends), and your points.
+    /// Your rank (spec §2.3): the shared soft gold card — big numerals (medal tint
+    /// for the top 3), "OF N TODAY" (or friends), the movement badge and your points.
     private func rankBanner(_ r: (rank: Int, total: Int), points: String? = nil) -> some View {
         let friends = friendsOnly && !isSweep
-        let ink = Color(hex: 0x92400E)
-        return HStack(alignment: .center, spacing: 12) {
-            Text("#\(r.rank)")
-                .font(Brand.font(34, .black)).monospacedDigit()
-                .foregroundStyle(Self.medalInk(r.rank) ?? Color(hex: 0x78350F))
-                .lineLimit(1).minimumScaleFactor(0.6)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("YOUR RANK").font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
-                HStack(spacing: 4) {
-                    Text(friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY")
-                        .font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(Color(hex: 0x78350F))
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                    // Transient "+N/−N" movement pill since you last looked (web parity).
-                    // Friends mode keeps its own memory — a friend-rank must never
-                    // compare against a stored global rank.
-                    RankDeltaBadge(mode: mode.rawValue, playType: "solo",
-                                   pageKey: friends ? "daily-friends" : "daily",
-                                   currentRank: r.rank)
-                }
-            }
-            Spacer(minLength: 6)
-            if let points {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(points).font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0x78350F))
-                        .lineLimit(1).fixedSize()
-                    Text("POINTS").font(Brand.font(9, .black)).tracking(1).foregroundStyle(ink)
-                }
-            }
-        }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 14).fill(
-            LinearGradient(colors: [Color(hex: 0xFEF3C7), Color(hex: 0xFFFBEB)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .shadow(color: Color(hex: 0x92400E).opacity(0.10), radius: 6, x: 0, y: 2)
-        .accessibilityElement(children: .combine)
-    }
-
-    /// Medal colors for ranks 1–3 (gold / silver / bronze discs); nil after.
-    private static func medal(_ rank: Int) -> Color? {
-        switch rank {
-        case 1: return Color(hex: 0xF59E0B)
-        case 2: return Color(hex: 0x9CA3AF)
-        case 3: return Color(hex: 0xCD7F32)
-        default: return nil
-        }
-    }
-    /// Deeper medal ink for the big rank numerals on the gold card.
-    private static func medalInk(_ rank: Int) -> Color? {
-        switch rank {
-        case 1: return Color(hex: 0xD97706)
-        case 2: return Color(hex: 0x6B7280)
-        case 3: return Color(hex: 0xB45309)
-        default: return nil
+        return LbRankCard(rank: r.rank, ofLine: friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY", points: points) {
+            // Transient "+N/−N" movement pill since you last looked (web parity).
+            // Friends mode keeps its own memory — a friend-rank must never
+            // compare against a stored global rank.
+            RankDeltaBadge(mode: mode.rawValue, playType: "solo",
+                           pageKey: friends ? "daily-friends" : "daily",
+                           currentRank: r.rank)
         }
     }
 
     /// Medal discs for 1–3, the plain number after.
-    @ViewBuilder
-    private func rankIcon(_ rank: Int) -> some View {
-        if let c = Self.medal(rank) {
-            Text("\(rank)").font(Brand.font(11, .black)).foregroundStyle(.white)
-                .frame(width: 22, height: 22)
-                .background(Circle().fill(c))
-                .shadow(color: c.opacity(0.35), radius: 2, x: 0, y: 1)
-        } else {
-            Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
-                .lineLimit(1).minimumScaleFactor(0.6).frame(width: 22)
-        }
-    }
+    private func rankIcon(_ rank: Int) -> some View { LbRankBadge(rank: rank) }
 
     private func row(rank: Int, entry: LeaderboardEntry, scoreLabels: [Double: String]? = nil) -> some View {
         let isMe = entry.userId == auth.profile?.id
@@ -2528,10 +2441,7 @@ struct SweepModeDots: View {
         .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
 }
 
-/// Shared mode picker — the sweep modes (+ Sweep, + a More chip once a More Games title is enabled) laid out 5-across on one screen
-/// (no horizontal scroll), matching the Profile "Today's Dailies" arrangement.
-/// Selecting a mode highlights it in the mode's accent color.
-/// No pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
+/// Selector buttons (banner game tiles, pill switches): no pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
 /// newly selected tile read as unselected for ~0.15 s after every tap (founder, 2026-09-29).
 struct InstantButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View { configuration.label.contentShape(Rectangle()) }
@@ -2542,103 +2452,6 @@ struct InstantButtonStyle: ButtonStyle {
 @MainActor func instantly(_ body: () -> Void) {
     var t = Transaction(); t.disablesAnimations = true
     withTransaction(t, body)
-}
-
-struct HModePicker: View {
-    @Binding var selected: GameMode
-    // Parallel selection flag for the Sweep tile — GameMode can't hold SWEEP, so
-    // the picker tracks it alongside `selected` (untouched for the real cells).
-    // Defaults to a constant binding so the Home-grid / non-sweep call sites keep
-    // compiling unchanged; only the sweep-aware screens pass a live binding.
-    @Binding var isSweep: Bool
-    // The sweep modes (More Games §18): the grid cannot hold every daily mode in
-    // its 5-over-N layout, so the non-sweep dailies sit behind ONE "More" chip
-    // that opens the sectioned More Games list. Today every daily mode is in
-    // the sweep, so the chip is hidden and the grid is unchanged (5-over-5).
-    private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.sweep }
-    @ObservedObject private var flags = FlagsService.shared
-    private var morePickerModes: [HomeMode] { moreModes.filter { $0.dailyEligible && $0.dbKey != nil && flags.isOn($0.flagKey) } }
-    private let spacing: CGFloat = 8
-    // Sweep tile accent — indigo, used ONLY here (leaderboard/records sweep board).
-    private let sweepAccent = Color(hex: 0x4F46E5)
-    @State private var showMore = false
-
-    init(selected: Binding<GameMode>, isSweep: Binding<Bool> = .constant(false)) {
-        _selected = selected
-        _isSweep = isSweep
-    }
-
-    // Short labels so each cell fits 5-across without truncating; the catalog's
-    // shortTitle covers any mode not pinned here.
-    private let shortTitles: [String: String] = [
-        "practice": "Classic", "quordle": "Quad", "octordle": "Octo", "sequence": "Succ",
-        "rescue": "Deliv", "six": "Six", "seven": "Seven", "gauntlet": "Gauntlet", "propernoundle": "Proper",
-    ]
-    private func shortTitle(_ m: HomeMode) -> String { shortTitles[m.id] ?? ModeGen.byId(m.id)?.shortTitle ?? m.title }
-
-    /// Cells in order: sweep modes, the Sweep tile, then the More chip if needed.
-    private enum Cell: Identifiable {
-        case mode(HomeMode), sweep, more
-        var id: String { switch self { case .mode(let m): return m.id; case .sweep: return "SWEEP"; case .more: return "MORE" } }
-    }
-    private var cells: [Cell] {
-        var out: [Cell] = modes.map { .mode($0) } + [.sweep]
-        if !morePickerModes.isEmpty { out.append(.more) }
-        return out
-    }
-    var body: some View {
-        // Square game tiles (docs/GAME_TILE_STYLE.md), 5 across; a partial last
-        // row keeps its cells at 1/5 width, left-aligned.
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: 5), spacing: spacing) {
-            ForEach(cells) { c in
-                switch c {
-                case .mode(let m): cell(m)
-                case .sweep: sweepCell()
-                case .more: moreCell()
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .sheet(isPresented: $showMore) {
-            MoreModePickerSheet { gm in isSweep = false; selected = gm }
-                .presentationDetents([.large])
-        }
-    }
-
-    private func cell(_ m: HomeMode) -> some View {
-        let active = !isSweep && m.dbKey == selected.rawValue
-        return Button {
-            isSweep = false
-            selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected
-        } label: {
-            GameTileSquare(accent: m.accent, label: shortTitle(m), selected: active) { chip in
-                ModeIconView(icon: m.icon, accent: m.accent, box: chip)
-            }
-        }.buttonStyle(InstantButtonStyle())
-    }
-
-    /// The "Sweep" tile — leaderboard/records only, never the Home grid.
-    private func sweepCell() -> some View {
-        Button { isSweep = true } label: {
-            GameTileSquare(accent: sweepAccent, label: "Sweep", selected: isSweep) { chip in
-                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: chip)
-            }
-        }.buttonStyle(InstantButtonStyle())
-    }
-
-    /// The "More" chip: opens the More Games list. When one of those modes is
-    /// selected the chip wears that mode's icon, title and accent so the grid
-    /// still shows what the screen is filtered to.
-    private func moreCell() -> some View {
-        let picked = isSweep ? nil : morePickerModes.first { $0.dbKey == selected.rawValue }
-        let accent = picked?.accent ?? sweepAccent
-        let active = picked != nil
-        return Button { showMore = true } label: {
-            GameTileSquare(accent: accent, label: picked.map(shortTitle) ?? "More", selected: active) { chip in
-                ModeIconView(icon: picked?.icon ?? .symbol("square.grid.2x2"), accent: accent, box: chip)
-            }
-        }.buttonStyle(InstantButtonStyle())
-    }
 }
 
 @ViewBuilder
@@ -2697,22 +2510,3 @@ struct FlawlessBannerFooter: View {
 }
 
 
-/// Leaderboard redesign (spec §2): the soft white card — radius 14, soft shadow, no border.
-/// Your own row: tinted gold with a 1.5 pt amber ring, inset inside the card.
-private extension View {
-    func lbCard() -> some View {
-        background(Theme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
-    }
-
-    @ViewBuilder func youRow(_ isMe: Bool) -> some View {
-        if isMe {
-            background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.highlightGold))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(hex: 0xF59E0B), lineWidth: 1.5))
-                .padding(.horizontal, 4)
-        } else {
-            padding(.horizontal, 4)
-        }
-    }
-}

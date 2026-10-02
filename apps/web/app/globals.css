@@ -24,6 +24,8 @@
   --color-loss-bg: #fee2e2;
   --color-win-text: #7c3aed;
   --color-loss-text: #dc2626;
+  /* Records redesign: the big Hall of Fame / record values (#4c1d95 per spec). */
+  --color-record-value: #4c1d95;
 
   /* Royal tile palette — single source for board/keyboard state colors.
      Colorblind mode and themes override these vars; components use the
@@ -59,6 +61,7 @@
   --color-loss-bg: #450a0a;
   --color-win-text: #a78bfa;
   --color-loss-text: #f87171;
+  --color-record-value: #c4b5fd;
 
   /* Dark tiles keep the Royal fills but pick up lighter borders (parity with
      the old bg-green-500/border-green-400 dark treatment). */

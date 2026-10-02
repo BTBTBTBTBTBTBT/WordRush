@@ -157,9 +157,9 @@ struct CompletedDailyCard: View {
                         }
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                // The soft completed-board card (Leaderboard / Records redesign): radius 14,
+                // soft shadow, no border.
+                .lbCard()
             }
         }
         .onDailyRecorded { reloadToken += 1 }
