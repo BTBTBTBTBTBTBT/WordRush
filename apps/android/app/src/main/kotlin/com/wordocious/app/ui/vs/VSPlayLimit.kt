@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,12 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wordocious.app.R
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.theme.WTheme
 
@@ -59,10 +55,8 @@ fun VSDailyLimitModal(onGoPro: () -> Unit, onClose: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Icon(
-                painterResource(R.drawable.ic_swords), null,
-                tint = WTheme.textMuted, modifier = Modifier.size(44.dp),
-            )
+            // Played-today limit: U's all-done scene (ART_SPEC §7).
+            com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.ALL_DONE, height = 110.dp)
             Text("Daily VS Used", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Text(
                 "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",

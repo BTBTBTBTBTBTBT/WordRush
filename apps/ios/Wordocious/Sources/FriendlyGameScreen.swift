@@ -29,6 +29,9 @@ struct FriendlyGameScreen: View {
         _game = State(initialValue: initial)
     }
 
+    /// The load error for a game that no longer exists (its scene is O3 not found).
+    private static let goneLine = "This game isn't here anymore."
+
     private var kind: FriendlyKind? { game?.kind }
     private var themName: String { game?.opponent.username ?? "Friend" }
     private var themOnline: Bool { game.flatMap { FriendsKit.friend($0.opponent.id) }?.isOnline() ?? false }
@@ -62,8 +65,9 @@ struct FriendlyGameScreen: View {
             } else if let loadError {
                 Spacer()
                 VStack(spacing: 12) {
-                    // R for the error screen (MASCOT_SPEC §6).
-                    MascotView(Mascots.offline, size: 96, motion: .bob)
+                    // O3 when the game is gone, R unplugged for any other error
+                    // (MASCOT_SPEC §6, ART_SPEC §7).
+                    SceneArt(loadError == Self.goneLine ? .notFound : .unplugged)
                     Text(loadError).font(Brand.font(15, .black)).foregroundStyle(FriendsKit.ink).multilineTextAlignment(.center)
                     Button { dismiss() } label: { FriendsPill(title: "FRIENDS", solid: false) }.buttonStyle(.plain)
                 }
@@ -101,7 +105,7 @@ struct FriendlyGameScreen: View {
     private func refresh() async {
         switch await FriendlyGamesService.get(gameId) {
         case .success(let g): apply(g)
-        case .failure(.message(let m)): if game == nil { loadError = m == "Not found" ? "This game isn't here anymore." : m }
+        case .failure(.message(let m)): if game == nil { loadError = m == "Not found" ? Self.goneLine : m }
         case .failure: if game == nil { loadError = "Could not load the game." }
         }
     }
@@ -176,12 +180,16 @@ struct FriendlyGameScreen: View {
 
     private var topBar: some View {
         ZStack {
-            Text((game?.title ?? "").uppercased())
-                .font(Brand.font(19, .black)).tracking(0.4)
-                .foregroundStyle(LinearGradient(colors: kind.map(FriendsKit.gradient) ?? FriendsKit.titleGradient,
-                                                startPoint: .leading, endPoint: .trailing))
-                .lineLimit(1).minimumScaleFactor(0.7)
-                .padding(.horizontal, 48)
+            HStack(spacing: 6) {
+                // ART_SPEC §9: the pocket game's 3D icon beside its title.
+                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 26, glow: false) }
+                Text((game?.title ?? "").uppercased())
+                    .font(Brand.font(19, .black)).tracking(0.4)
+                    .foregroundStyle(LinearGradient(colors: kind.map(FriendsKit.gradient) ?? FriendsKit.titleGradient,
+                                                    startPoint: .leading, endPoint: .trailing))
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .padding(.horizontal, 48)
             HStack {
                 HeaderCircleButton(.symbol("xmark"), label: "Close") {
                     if game?.isActive == true { confirmClose = true } else { dismiss() }

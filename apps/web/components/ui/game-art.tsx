@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { GAME_ART_FILL, gameArtSrc } from '@/lib/art';
+import { GAME_ART_FILL, gameArtSrc, pocketArtSrc } from '@/lib/art';
 
 // The glossy 3D game icons (docs/ART_SPEC.md §3): public/art/game-<mode id>.webp,
 // 256 px square, in each game's own color. One web path draws them: MODE_CHROME's
@@ -23,9 +23,21 @@ interface GameArtProps {
   style?: React.CSSProperties;
 }
 
-export function GameArt({ id, size, fallback = null, className = '', style }: GameArtProps) {
+export function GameArt({ id, ...rest }: GameArtProps) {
+  return <ArtIcon src={gameArtSrc(id)} {...rest} />;
+}
+
+/**
+ * A Friends pocket game's 3D icon (docs/ART_SPEC.md §9):
+ * public/art/game-pocket-<kind>.webp, keyed by the core friendly-game kind,
+ * same rules as GameArt (decorative, old glyph as the fallback).
+ */
+export function PocketArt({ kind, ...rest }: Omit<GameArtProps, 'id'> & { kind: string }) {
+  return <ArtIcon src={pocketArtSrc(kind)} {...rest} />;
+}
+
+function ArtIcon({ src, size, fallback = null, className = '', style }: Omit<GameArtProps, 'id'> & { src: string | null }) {
   const [failed, setFailed] = useState(false);
-  const src = gameArtSrc(id);
   if (!src || failed) return <>{fallback}</>;
   return (
     <Image

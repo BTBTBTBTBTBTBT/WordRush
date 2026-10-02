@@ -48,6 +48,9 @@ import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine, INTRO_DURATION_MS } from './match-intro';
 import { FinalBoards, VsResultWindow, logSolved, type EvaluatedRow } from './vs-result-detail';
 import { ResultHost } from '@/components/ui/mascot';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
+import { MomentArt } from '@/components/ui/art-title';
 import { vsResultHost } from '@/lib/mascots';
 import { OpponentLiveBoards } from './opponent-mini-board';
 import {
@@ -1694,7 +1697,6 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     const isDraw = winner === 'draw';
     const myName = profile?.username || 'You';
     const oppName = opponentInfo?.username || 'Opponent';
-    const headlineText = isWin ? 'YOU WIN!' : isDraw ? 'IT’S A DRAW' : `${oppName.toUpperCase()} WINS`;
 
     // Solve status decides most matches (solving beats score), so spell it out —
     // the loser often has "better" numbers, which reads as a mistake otherwise.
@@ -1796,7 +1798,6 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {matchResult && (
             <VsResultWindow
               modeIcon={<VsModeIcon mode={mode} size={14} />}
-              headline={headlineText}
               sub={resultSub}
               why={whyLine}
               outcome={outcome}
@@ -1877,7 +1878,11 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 </p>
               )}
               {cpuMilestone ? (
-                <p className="text-[13px] font-black flex items-center justify-center gap-1" style={{ color: '#b45309' }}><Icon3D name="flame" size={18} /> {cpuMilestone}-win bot streak!</p>
+                // STREAK! lettering over the milestone (docs/ART_SPEC.md §6).
+                <div className="flex flex-col items-center gap-0.5">
+                  <MomentArt moment="streak" as="div" maxHeight={56} widthPct={60} />
+                  <p className="text-[13px] font-black" style={{ color: '#b45309' }}>{cpuMilestone}-win bot streak</p>
+                </div>
               ) : cpuStreak > 0 ? (
                 <p className="text-[11.5px] font-extrabold" style={{ color: VS.label }}>Bot win streak: {cpuStreak}</p>
               ) : null}
@@ -2261,6 +2266,8 @@ function DailyVsAlreadyPlayed({
       style={{ backgroundColor: VS.page, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="text-center space-y-5 max-w-sm w-full px-5 py-6">
+        {/* U, all done for today (docs/ART_SPEC.md §7). */}
+        <ArtScene scene={PAGE_SCENES.allDone} height={120} className="animate-fade-in-scale" />
         {/* Headline */}
         <div className="space-y-1 animate-fade-in-scale">
           <div className="text-[11px] font-black uppercase" style={{ color: VS.ink, letterSpacing: 1.2 }}>

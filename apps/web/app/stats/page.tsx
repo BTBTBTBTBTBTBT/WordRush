@@ -44,7 +44,8 @@ import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
 import { ArtTitle } from '@/components/ui/art-title';
-import { MASCOT_LINES, PAGE_HOSTS } from '@/lib/mascots';
+import { MASCOT_LINES } from '@/lib/mascots';
+import { PAGE_SCENES } from '@/lib/art';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
@@ -633,7 +634,7 @@ export default function StatsPage() {
                   the full history stays on All-time. Same rows, same stats. */}
               <SectionHeader label="Today's Games" accent="#2563eb" />
               {/* Founder, 2026-09-27: every game played TODAY (daily and unlimited), no cap, no "See all" — the full history lives on All-time. */}
-              <RecentMatchesList matches={todaysMatches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} groupUnlimited emptyText={MASCOT_LINES.statsEmpty} emptyHost={PAGE_HOSTS.stats} />
+              <RecentMatchesList matches={todaysMatches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} groupUnlimited emptyText={MASCOT_LINES.statsEmpty} emptyScene={PAGE_SCENES.stats} />
             </>
           )}
 

@@ -8,9 +8,8 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
-import { Mascot } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
-import { isGameArtIcon } from '@/lib/art';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES, isGameArtIcon } from '@/lib/art';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -44,8 +43,8 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
             color: '#92400e',
           }}
         >
-          {/* U (zen, floating): all done for today. */}
-          <Mascot id={PAGE_HOSTS.allDone} size={28} />
+          {/* U, all done for today (docs/ART_SPEC.md §7), small enough for the strip. */}
+          <ArtScene scene={PAGE_SCENES.allDone} height={48} maxWidthPct={30} center={false} />
           All {SWEEP_MODES.length} dailies done — Sweep complete! <Icon3D name="trophy" size={18} />
         </div>
       )}

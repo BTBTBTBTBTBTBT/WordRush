@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { type ReactNode } from 'react';
-import { Sparkles, Zap, Swords, TrendingUp, LayoutGrid, Star, Timer } from 'lucide-react';
+import { Zap, Swords, TrendingUp, LayoutGrid, Star, Timer } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import type { ModeMeta } from '@/lib/modes.generated';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
@@ -12,6 +12,7 @@ import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { WIN_FG } from '@/lib/tile-theme';
 import { guessNoun } from '@/lib/mode-stats';
 import { isGameArtIcon } from '@/lib/art';
+import { MomentArt } from '@/components/ui/art-title';
 
 // The Stats tab's landing page — "your day in one card" (Stats + Friends
 // redesign D2, founder 2026-09-26): the eight sweep tiles with today's W/L,
@@ -101,21 +102,14 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
       <div className="p-3" style={cardStyle}>
         <div className="flex items-center justify-between mb-2 px-0.5">
           {allDone ? (
-            <div className="flex items-center gap-2 mx-auto">
-              {flawless ? (
-                <>
-                  <Icon3D name="trophy" size={20} />
-                  <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}>FLAWLESS VICTORY!</span>
-                  <Icon3D name="trophy" size={20} />
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
-                  <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>DAILY SWEEP!</span>
-                  <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
-                </>
-              )}
-            </div>
+            // FLAWLESS! / SWEEP! lettering (docs/ART_SPEC.md §6), sized for the card's header row.
+            <MomentArt
+              moment={flawless ? 'flawless' : 'sweep'}
+              label={flawless ? 'Flawless Victory!' : 'Daily Sweep!'}
+              as="div"
+              maxHeight={40}
+              className="w-full"
+            />
           ) : (
             <>
               <span className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>Today · {dateLabel}</span>

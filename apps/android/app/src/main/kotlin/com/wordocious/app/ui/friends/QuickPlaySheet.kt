@@ -222,7 +222,7 @@ private fun GameTile(kind: FriendlyKind, selected: Boolean, modifier: Modifier, 
     GameTileSquare(
         accent = kind.color, label = kind.title, selected = selected, modifier = modifier,
         surface = Color.White, labelColor = GameTileStyle.INK, onClick = onClick,
-    ) { chip -> FriendlyGameGlyph(kind, chip * 0.56f) }
+    ) { chip -> FriendlyGameGlyph(kind, chip * 0.82f) }
 }
 
 private val TEAL = Color(0xFF0F766E)

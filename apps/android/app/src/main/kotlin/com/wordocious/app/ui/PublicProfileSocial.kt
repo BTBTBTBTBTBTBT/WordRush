@@ -487,9 +487,9 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
                         fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
                     )
                 }
-                is ProfileService.BoardFetch.Unavailable -> MascotEmptyState(
-                    // Error states get R (MASCOT_SPEC §6).
-                    Mascots.offline, "This board isn't available.", size = 72.dp, color = WTheme.textMuted,
+                is ProfileService.BoardFetch.Unavailable -> SceneEmptyState(
+                    // A missing board gets O3's not-found scene (ART_SPEC §7).
+                    SceneArt.NOT_FOUND, "This board isn't available.", height = 110.dp, color = WTheme.textMuted,
                 )
                 is ProfileService.BoardFetch.Ready -> Column(
                     Modifier.verticalScroll(rememberScrollState()).heightIn(max = 440.dp),

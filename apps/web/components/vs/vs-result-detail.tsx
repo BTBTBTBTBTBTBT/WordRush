@@ -17,6 +17,8 @@ import {
 } from '@/components/game/completed-mini-board';
 import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
+import { MomentArt } from '@/components/ui/art-title';
+import { resultMoment } from '@/lib/art';
 
 // The solo tile colors (the .tile-* CSS vars — colorblind palette included).
 const TILE_BG: Record<string, string> = {
@@ -101,12 +103,12 @@ export interface ResultSide {
  * The live / bot result window in the HOME palette (VS polish §2), the same
  * one-window look as the challenge result: split halves (the winner's half
  * #ebd6fd, the other #e2e6ff; a draw both #ece8ff), a frosted strip with the
- * caps headline, the mode icon + deciding margin, then per side the name, the
+ * YOU WIN! / YOU LOSE / DRAW lettering (docs/ART_SPEC.md §6), the mode icon +
+ * deciding margin, then per side the name, the
  * score in big numerals and its calculation, the time and a Solved chip.
  */
-export function VsResultWindow({ modeIcon, headline, sub, why, me, opponent, outcome }: {
+export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
   modeIcon: React.ReactNode;
-  headline: string;
   /** "CLASSIC · 1 FEWER GUESS" */
   sub: string;
   /** Plain-English reason (forfeits, solve vs no solve). */
@@ -154,7 +156,7 @@ export function VsResultWindow({ modeIcon, headline, sub, why, me, opponent, out
         </div>
       )}
       <div className="relative flex flex-col gap-1 text-center" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
-        <span className="font-black" style={{ fontSize: 22, letterSpacing: 0.5, lineHeight: 1.15, color: '#4c1d95' }}>{headline}</span>
+        <MomentArt moment={resultMoment(outcome)} as="div" />
         <span className="flex items-center justify-center gap-1.5">
           <span className="flex items-center justify-center shrink-0" style={{ width: 16, height: 16 }}>{modeIcon}</span>
           <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>{sub}</span>

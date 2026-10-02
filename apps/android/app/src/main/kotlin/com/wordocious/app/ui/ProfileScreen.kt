@@ -488,7 +488,7 @@ fun ProfileScreen(
                         TodayGamesList(
                             matches = recentMatches, opponentNames = opponentNames, userId = userId,
                             loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
-                            emptyHost = Mascots.stats, emptyText = Mascots.statsEmptyLine,
+                            emptyScene = SceneArt.NO_STATS, emptyText = Mascots.statsEmptyLine,
                         )
                         }
 
@@ -608,7 +608,7 @@ fun ProfileScreen(
                                 // The newest 50 — the list also carries all of today for Today's Games.
                                 matches = recentMatches.take(50), opponentNames = opponentNames, userId = userId,
                                 loading = loading, limit = 5,
-                                emptyHost = Mascots.stats, emptyText = Mascots.statsEmptyLine,
+                                emptyScene = SceneArt.NO_STATS, emptyText = Mascots.statsEmptyLine,
                             )
                         }
 
@@ -2005,7 +2005,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!s.hasData) {
-                MascotEmptyState(Mascots.stats, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), size = 72.dp, color = WTheme.textMuted)
+                SceneEmptyState(SceneArt.NO_STATS, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), height = 110.dp, color = WTheme.textMuted)
             } else {
                 val cells = buildList<Triple<String, String, Any>> {
                     // The four base cells always render — an em dash where the
@@ -2102,7 +2102,7 @@ private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, o
             if (!isPro) {
                 ProLockedTeaser("Pro Feature", onGoPro)
             } else if (bars.isEmpty()) {
-                MascotEmptyState(Mascots.stats, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), size = 72.dp, color = WTheme.textMuted)
+                SceneEmptyState(SceneArt.NO_STATS, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), height = 110.dp, color = WTheme.textMuted)
             } else {
                 Text("Win Rate by Mode", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 bars.forEach { b -> ProBarRow(b.label, "${b.winRate}%", b.winRate.toFloat() / 100f, Color(0xFFFACC15)) }

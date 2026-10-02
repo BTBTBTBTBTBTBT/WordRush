@@ -395,8 +395,8 @@ private fun DailyRecordsTab(
             } else if (isSweep) {
                 if (sweepEntries.isEmpty()) {
                     Column(Modifier.fillMaxWidth().padding(vertical = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        // An empty board gets R, sleepy in his nightcap (MASCOT_SPEC §2, §6).
-                        Mascot(Mascots.empty, 96.dp, motion = MascotMotion.BOB)
+                        // An empty board gets R asleep (ART_SPEC §7 scene).
+                        SceneImage(SceneArt.ASLEEP)
                         Spacer(Modifier.height(8.dp))
                         Text("No sweeps yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
@@ -419,8 +419,8 @@ private fun DailyRecordsTab(
             } else if (entries.isEmpty()) {
                 // Web parity (records page): trophy + "No results yet today. Be the first!"
                 Column(Modifier.fillMaxWidth().padding(vertical = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    // An empty board gets R (MASCOT_SPEC §2, §6).
-                    Mascot(Mascots.empty, 96.dp, motion = MascotMotion.BOB)
+                    // An empty board gets R asleep (ART_SPEC §7 scene).
+                    SceneImage(SceneArt.ASLEEP)
                     Spacer(Modifier.height(8.dp))
                     Text(
                         if (friendsOnly && userId != null) "None of your friends have played yet today" else "No results yet today. Be the first!",
@@ -681,7 +681,7 @@ private fun AllTimeTab(
                         // Still loading — the same pulsing rows every other board uses.
                         board == null -> Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { LeaderboardSkeleton() }
                         board.isEmpty() -> Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Mascot(Mascots.empty, 96.dp, motion = MascotMotion.BOB)
+                            SceneImage(SceneArt.ASLEEP)
                             Spacer(Modifier.height(8.dp))
                             Text("No sweeps yet. Be the first!", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         }
@@ -692,7 +692,7 @@ private fun AllTimeTab(
                     }
                 } else if (modeRecords.isEmpty()) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Mascot(Mascots.empty, 96.dp, motion = MascotMotion.BOB)
+                        SceneImage(SceneArt.ASLEEP)
                         Spacer(Modifier.height(6.dp))
                         Text("No records yet", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                     }

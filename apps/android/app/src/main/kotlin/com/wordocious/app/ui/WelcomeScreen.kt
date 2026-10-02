@@ -74,8 +74,9 @@ fun WelcomeScreen() {
             Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
 
             Column(Modifier.padding(horizontal = 24.dp).padding(top = 20.dp, bottom = 20.dp)) {
-                // Wordmark + tagline
+                // Wordmark + tagline, under the whole cast around WELCOME! (ART_SPEC §8).
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    PageTitleArt(TitleArt.WELCOME, Modifier.padding(bottom = 8.dp))
                     Text(
                         "WORDOCIOUS", fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
                         style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)), fontFamily = Nunito),

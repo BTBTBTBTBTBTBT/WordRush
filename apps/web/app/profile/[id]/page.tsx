@@ -67,6 +67,8 @@ import {
 } from '@/components/profile/profile-social';
 import type { Database } from '@/lib/database.types';
 import { isGameArtIcon } from '@/lib/art';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -408,6 +410,7 @@ export default function PublicProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
         <div className="text-center space-y-4 animate-fade-in-scale">
+          <ArtScene scene={PAGE_SCENES.notFound} priority />
           <h1 className="text-4xl font-black" style={{ color: 'var(--color-text)' }}>Player not found</h1>
           <p style={{ color: 'var(--color-text-muted)' }}>This profile doesn't exist or may have been removed.</p>
           <Link href="/">

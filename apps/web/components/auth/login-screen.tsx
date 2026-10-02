@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { ArtTitle } from '@/components/ui/art-title';
 import { validateUsername } from '@wordle-duel/core';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -97,12 +98,14 @@ export function LoginScreen() {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center px-6"
+      className="fixed inset-0 flex flex-col items-center overflow-y-auto px-6 py-6"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      <div className="w-full max-w-sm space-y-6">
-        {/* Branding */}
+      {/* my-auto centers the column and lets it scroll when the WELCOME! art makes it taller than a short screen. */}
+      <div className="w-full max-w-sm space-y-6 my-auto">
+        {/* Branding: the whole cast around WELCOME! (docs/ART_SPEC.md §8) over the wordmark. */}
         <div className="text-center space-y-2">
+          <ArtTitle name="art-title-welcome" label="Welcome" as="div" maxWidth={320} />
           <h1
             className="text-3xl font-black tracking-tight"
             style={{

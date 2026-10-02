@@ -6,7 +6,11 @@ import WordociousCore
 // new images (web components/ui/art, Android ui/ArtKit.kt): the Leaderboard day
 // titles (§1), the whole-cast page titles (§2), the glossy 3D game icons (§3) and
 // the W / L / ✓ completion badges (§4). The extra UI icons (§5) join the Icon3D set
-// in HeaderKit.swift. Art is presentation only: every caller keeps its behavior.
+// in HeaderKit.swift. Second pass: the moment lettering (§6), the empty / error /
+// done scenes (§7, drawn by `MascotMessage` in Mascots.swift), the WELCOME! and
+// LEADERBOARD whole-cast titles (§8) and the pocket game icons (§9, drawn by
+// `FriendlyGameIcon` in FriendsKit.swift). Art is presentation only: every caller
+// keeps its behavior.
 
 /// Whether an image set ships in the bundle (cached), so a missing piece of art
 /// falls back to the old text / glyph instead of drawing blank.
@@ -66,6 +70,9 @@ struct DayTitleArtView: View {
 /// `art-title-<page>`: page lettering with the whole cast perched on it.
 enum ArtTitleName: String, CaseIterable {
     case friends, stats, records, vs, puzzles, wotd, settings, howto, gopro, moregames
+    /// §8: the whole cast around WELCOME! (sign-in / onboarding) and LEADERBOARD
+    /// (the Leaderboard banner on holidays).
+    case welcome, leaderboard
 
     var assetName: String { "art-title-\(rawValue)" }
 
@@ -83,6 +90,8 @@ enum ArtTitleName: String, CaseIterable {
         case .howto: return "How to Play"
         case .gopro: return "Go Pro"
         case .moregames: return "More Games"
+        case .welcome: return "Welcome"
+        case .leaderboard: return "Leaderboard"
         }
     }
 }
@@ -162,5 +171,136 @@ struct ResultBadge: View {
         case .loss: Icon3D(.badgeL, size: size, label: "Lost")
         case .done: Icon3D(.badgeCheck, size: size, label: "Played")
         }
+    }
+}
+
+// MARK: - §6 Moment lettering
+
+/// `art-moment-<name>`: glossy result / celebration lettering (≈900 wide).
+enum MomentArt: String, CaseIterable {
+    case victory, soclose, sweep, flawless, youwin, youlose, draw, newrecord, streak
+
+    var assetName: String { "art-moment-\(rawValue)" }
+
+    /// The words on the art (its accessibility label).
+    var label: String {
+        switch self {
+        case .victory: return "Victory!"
+        case .soclose: return "So close!"
+        case .sweep: return "Sweep!"
+        case .flawless: return "Flawless!"
+        case .youwin: return "You win!"
+        case .youlose: return "You lose"
+        case .draw: return "Draw"
+        case .newrecord: return "New record!"
+        case .streak: return "Streak!"
+        }
+    }
+
+    var isAvailable: Bool { ArtAsset.exists(assetName) }
+}
+
+/// A result / celebration headline as lettering art: ~70% of the card width
+/// (`maxWidth`), at most ≈72 pt tall, never stretched, labeled with its words as a
+/// header. Falls back to the caller's text headline when the image is missing.
+struct MomentLettering<Fallback: View>: View {
+    let moment: MomentArt
+    var maxWidth: CGFloat
+    var maxHeight: CGFloat
+    let fallback: Fallback
+
+    init(_ moment: MomentArt, maxWidth: CGFloat = 250, maxHeight: CGFloat = 72,
+         @ViewBuilder fallback: () -> Fallback) {
+        self.moment = moment
+        self.maxWidth = maxWidth
+        self.maxHeight = maxHeight
+        self.fallback = fallback()
+    }
+
+    var body: some View {
+        if moment.isAvailable {
+            Image(moment.assetName)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(maxWidth: maxWidth, maxHeight: maxHeight)
+                .accessibilityLabel(moment.label)
+                .accessibilityAddTraits(.isHeader)
+        } else {
+            fallback
+        }
+    }
+}
+
+// MARK: - §7 Scenes (empty / error / done)
+
+/// `art-scene-<name>`: one cast member with a prop (≈600 wide), decorative.
+enum ArtScene: String, CaseIterable {
+    /// Empty lists / boards ("nobody's on yet", empty leaderboard / friends feeds).
+    case asleep = "r-asleep"
+    /// Offline / failed-to-load / error screens.
+    case unplugged = "r-unplugged"
+    /// All dailies done / played-today limit / "fresh puzzles in …".
+    case allDone = "u-alldone"
+    /// Profile-not-found and missing-item states.
+    case notFound = "o3-notfound"
+    /// Empty Friends ("add a friend") states and the invite sheet header.
+    case invite = "i-invite"
+    /// Stats empty ("play a game and I'll crunch the numbers").
+    case noStats = "d-nostats"
+
+    var assetName: String { "art-scene-\(rawValue)" }
+
+    /// The scene's character, drawn alone when the art is missing.
+    var host: MascotID {
+        switch self {
+        case .asleep, .unplugged: return .r
+        case .allDone: return .u
+        case .notFound: return .o3
+        case .invite: return .i
+        case .noStats: return .d
+        }
+    }
+
+    var isAvailable: Bool { ArtAsset.exists(assetName) }
+}
+
+/// A scene at ~140 pt tall (≈60% of a phone's width at most), never stretched,
+/// hidden from VoiceOver. Falls back to the scene's character alone (a plain
+/// `MascotView`) when the image is missing.
+struct SceneArt: View {
+    let scene: ArtScene
+    var height: CGFloat = 140
+    var fallbackSize: CGFloat = 96
+    var fallbackMotion: MascotMotion = .bob
+
+    init(_ scene: ArtScene, height: CGFloat = 140, fallbackSize: CGFloat = 96, fallbackMotion: MascotMotion = .bob) {
+        self.scene = scene
+        self.height = height
+        self.fallbackSize = fallbackSize
+        self.fallbackMotion = fallbackMotion
+    }
+
+    var body: some View {
+        if scene.isAvailable {
+            Image(scene.assetName)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(maxWidth: height * 1.6, maxHeight: height)
+                .accessibilityHidden(true)
+        } else {
+            MascotView(scene.host, size: fallbackSize, motion: fallbackMotion)
+        }
+    }
+}
+
+// MARK: - §9 Pocket game icons
+
+extension FriendlyKind {
+    /// `game-pocket-<kind>`: the glossy 3D pocket game icon (256 sq), when it ships.
+    var pocketArt: String? {
+        let name = "game-pocket-\(rawValue)"
+        return ArtAsset.exists(name) ? name : nil
     }
 }

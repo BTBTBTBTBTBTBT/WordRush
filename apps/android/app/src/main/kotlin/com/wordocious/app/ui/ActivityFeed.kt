@@ -225,10 +225,14 @@ fun ActivityFeed(
                         }
                     }
                 }
-                list.isEmpty() -> Text(
-                    "Quiet week so far — a game, a sweep, a medal or a record from anyone in your circle shows up here.",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.wordocious.app.ui.friends.FriendsPink.sub, fontFamily = Nunito,
-                )
+                list.isEmpty() -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // An empty feed gets R asleep (ART_SPEC §7).
+                    SceneImage(SceneArt.ASLEEP, height = 110.dp)
+                    Text(
+                        "Quiet week so far — a game, a sweep, a medal or a record from anyone in your circle shows up here.",
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.wordocious.app.ui.friends.FriendsPink.sub, fontFamily = Nunito,
+                    )
+                }
                 else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val shown = if (expanded) list else list.take(8)
                     shown.forEach { e ->
@@ -310,7 +314,7 @@ private fun MomentRow(
                     ),
                 )
                 when {
-                    gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 18.dp)
+                    gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 20.dp)
                     line?.crown == true -> Icon3D(Icon3DName.CROWN, 20.dp)
                     line?.icon3d != null -> Icon3D(line.icon3d, 20.dp)
                     line?.icon != null -> Icon(line.icon, null, tint = line.tint, modifier = Modifier.size(16.dp))

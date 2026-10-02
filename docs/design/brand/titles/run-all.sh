@@ -23,6 +23,9 @@ done <<'LIST'
 1790926243029-d6tvoy cyan sweep-flawless-win
 1790926428997-65mmzj cyan lose-draw-record-streak
 1790927432006-uogvfe cyan welcome-leaderboard
+1790927888029-wbv3fq cyan gt1
+1790928085033-9uusxk cyan gt2
+1790928282050-f4amxk cyan gt3
 LIST
 python3 split-lines.py records-vs-keyed.png records,vs >/dev/null
 python3 split-lines.py puzzles-wotd-keyed.png puzzles,wotd >/dev/null
@@ -32,4 +35,7 @@ python3 split-lines.py victory-close-keyed.png victory,soclose >/dev/null
 python3 split-lines.py sweep-flawless-win-keyed.png sweep,flawless,youwin >/dev/null
 python3 split-lines.py lose-draw-record-streak-keyed.png youlose,draw,newrecord,streak >/dev/null
 python3 split-lines.py welcome-leaderboard-keyed.png welcome,leaderboard >/dev/null
+python3 split-lines.py gt1-keyed.png gt-practice,gt-quordle,gt-octordle >/dev/null
+python3 split-lines.py gt2-keyed.png gt-gauntlet,gt-propernoundle,gt-scramble >/dev/null
+python3 split-lines.py gt3-keyed.png gt-hub,gt-groups,gt-cryptogram >/dev/null
 echo

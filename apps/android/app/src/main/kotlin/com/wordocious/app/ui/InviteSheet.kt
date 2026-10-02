@@ -97,6 +97,9 @@ fun InviteSheet(onDismiss: () -> Unit) {
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(20.dp))
                 .padding(20.dp),
         ) {
+            // I's invite scene heads the sheet (ART_SPEC §7).
+            SceneImage(SceneArt.INVITE, height = 96.dp)
+            Spacer(Modifier.size(8.dp))
             // Header row: gradient title + close.
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {

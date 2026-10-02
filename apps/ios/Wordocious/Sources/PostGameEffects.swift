@@ -136,11 +136,15 @@ struct VictoryOverlay: View {
                     } else {
                         MascotView(Mascots.loss, size: 80)
                     }
-                    Text(won ? "VICTORY!" : "GAME OVER")
-                        .font(Brand.font(36, .black))
-                        .foregroundStyle(won
-                            ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)], startPoint: .leading, endPoint: .trailing))
-                            : AnyShapeStyle(Color(hex: 0xF87171)))
+                    // ART_SPEC §6: VICTORY! / SO CLOSE! lettering under the host
+                    // (the old text headline is the fallback).
+                    MomentLettering(won ? .victory : .soclose) {
+                        Text(won ? "VICTORY!" : "GAME OVER")
+                            .font(Brand.font(36, .black))
+                            .foregroundStyle(won
+                                ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)], startPoint: .leading, endPoint: .trailing))
+                                : AnyShapeStyle(Color(hex: 0xF87171)))
+                    }
 
                     if let sol = solution {
                         Text(sol.uppercased()).font(Brand.font(22, .black)).tracking(2).foregroundStyle(Theme.textPrimary)

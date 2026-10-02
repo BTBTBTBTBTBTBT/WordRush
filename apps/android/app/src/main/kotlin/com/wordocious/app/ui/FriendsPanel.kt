@@ -287,7 +287,7 @@ fun FriendsScreen(
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { k ->
                         // The home mode card's tile (docs/GAME_TILE_STYLE.md): accent wash, top bar,
-                        // the outline icon in the accent on its soft chip.
+                        // the 3D pocket game art (ART_SPEC §9) on its soft chip.
                         GameTileCard(
                             accent = k.color, title = k.title, sub = k.sub,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -299,7 +299,7 @@ fun FriendsScreen(
                                     scope.launch { addRequester.bringIntoView() }
                                 } else quickPlay = QuickPlayRequest(null, k)
                             },
-                        ) { FriendlyGameGlyph(k, 18.dp) }
+                        ) { FriendlyGameGlyph(k, 26.dp) }
                     }
                 }
             }
@@ -705,8 +705,8 @@ private fun YourFriendsSection(
         }
         if (friends.isEmpty()) {
             Column(Modifier.fillMaxWidth().friendsCard().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                // No friends yet: I, growing your circle, says the line (MASCOT_SPEC §6).
-                MascotEmptyState(Mascots.addFriends, Mascots.addFriendLine, size = 72.dp, color = FriendsPink.sub)
+                // No friends yet: I's invite scene above the line (ART_SPEC §7).
+                SceneEmptyState(SceneArt.INVITE, Mascots.addFriendLine, height = 120.dp, color = FriendsPink.sub)
                 Text(
                     "1. Add friends below by username, or from the Add Friend button on any player's profile.",
                     fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub, fontFamily = Nunito,

@@ -154,7 +154,7 @@ struct AllTimeRecordsView: View {
 
     private func emptyCard(_ text: String) -> some View {
         // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1).
-        MascotMessage(host: Mascots.empty, line: text)
+        MascotMessage(scene: .asleep, line: text)
         .frame(maxWidth: .infinity).padding(.vertical, 20)
         .lbCard()
     }
@@ -596,7 +596,7 @@ struct DailyRecordsView: View {
 
     private func emptyCard(_ text: String) -> some View {
         // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1).
-        MascotMessage(host: Mascots.empty, line: text)
+        MascotMessage(scene: .asleep, line: text)
         .frame(maxWidth: .infinity).padding(.vertical, 20).padding(.horizontal, 16)
         .lbCard()
     }

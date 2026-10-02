@@ -11,6 +11,8 @@ import { SevenIcon } from '@/components/ui/seven-icon';
 import { DAILY_MODES } from '@/lib/modes.generated';
 import { GameArt } from '@/components/ui/game-art';
 import { Icon3D } from '@/components/ui/icon3d';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 
 interface ModeOption {
   id: string;
@@ -166,6 +168,9 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
         style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
       >
         <HeaderBack kind="close" onClick={() => { reset(); onClose(); }} size={32} className="absolute top-3 right-3" />
+
+        {/* I with the invite (docs/ART_SPEC.md §7), kept a little short so the sheet fits small screens. */}
+        <ArtScene scene={PAGE_SCENES.addFriend} height={100} className="mb-2" />
 
         {/* Branded title — matches the gradient treatment used for the
             site wordmark and mode headers. */}

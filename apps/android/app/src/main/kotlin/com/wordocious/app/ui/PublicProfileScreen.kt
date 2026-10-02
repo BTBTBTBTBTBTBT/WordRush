@@ -403,6 +403,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                // O3's not-found scene (ART_SPEC §7).
+                SceneImage(SceneArt.NOT_FOUND)
                 Text("Player not found", fontSize = 28.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 Text(
                     "This profile doesn't exist or may have been removed.",

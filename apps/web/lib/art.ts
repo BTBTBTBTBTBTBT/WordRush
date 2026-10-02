@@ -27,9 +27,71 @@ export type TitleArtName =
   | 'art-title-settings'
   | 'art-title-howto'
   | 'art-title-gopro'
-  | 'art-title-moregames';
+  | 'art-title-moregames'
+  // Second pass (§8): WELCOME! on the sign-in / signed-out landing, and the
+  // LEADERBOARD title holidays show over their HEROES text.
+  | 'art-title-welcome'
+  | 'art-title-leaderboard';
 
-export type ArtName = DayArtName | TitleArtName;
+/**
+ * Moment lettering (§6): glossy result / celebration headlines drawn in place
+ * of the text, each with the words it says as its accessible name.
+ */
+export const MOMENT_LABEL = {
+  victory: 'Victory!',
+  soclose: 'So close!',
+  sweep: 'Sweep!',
+  flawless: 'Flawless!',
+  youwin: 'You win!',
+  youlose: 'You lose',
+  draw: 'Draw',
+  newrecord: 'New record!',
+  streak: 'Streak!',
+} as const;
+export type MomentName = keyof typeof MOMENT_LABEL;
+export type MomentArtName = `art-moment-${MomentName}`;
+
+/** A head-to-head result's lettering (VS, bot, challenge): YOU WIN! / YOU LOSE / DRAW. */
+export function resultMoment(outcome: 'win' | 'loss' | 'draw'): MomentName {
+  return outcome === 'win' ? 'youwin' : outcome === 'loss' ? 'youlose' : 'draw';
+}
+
+/**
+ * Scenes for empty / error / done states (§7): one character with a prop.
+ * Decorative; the state's one-line voice text stays under it.
+ */
+export type SceneName =
+  /** Empty lists / boards ("nobody's on yet"). */
+  | 'r-asleep'
+  /** Offline, failed to load, error screens. */
+  | 'r-unplugged'
+  /** All dailies done, played-today limit, "fresh puzzles in …". */
+  | 'u-alldone'
+  /** 404, profile / invite / item not found. */
+  | 'o3-notfound'
+  /** Empty Friends ("add a friend"), invite sheet header. */
+  | 'i-invite'
+  /** Stats with no games yet. */
+  | 'd-nostats';
+export type SceneArtName = `art-scene-${SceneName}`;
+
+/** Which scene each empty / error / done state draws (§7), beside PAGE_HOSTS. */
+export const PAGE_SCENES = {
+  /** Empty lists and boards: "nobody's on yet", no results, no records. */
+  empty: 'r-asleep',
+  /** Offline, failed to load, the error screen. */
+  offline: 'r-unplugged',
+  /** All done for today / played-today limit. */
+  allDone: 'u-alldone',
+  /** 404, player / invite / challenge / game not found. */
+  notFound: 'o3-notfound',
+  /** Empty Friends: "Add a friend and the race begins.", invite sheet. */
+  addFriend: 'i-invite',
+  /** Stats with no games yet. */
+  stats: 'd-nostats',
+} as const satisfies Record<string, SceneName>;
+
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -50,6 +112,23 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-title-howto': [1080, 195],
   'art-title-gopro': [1080, 217],
   'art-title-moregames': [1080, 215],
+  'art-title-welcome': [1080, 197],
+  'art-title-leaderboard': [1080, 212],
+  'art-moment-victory': [880, 180],
+  'art-moment-soclose': [899, 179],
+  'art-moment-sweep': [609, 150],
+  'art-moment-flawless': [826, 149],
+  'art-moment-youwin': [789, 157],
+  'art-moment-youlose': [707, 139],
+  'art-moment-draw': [540, 156],
+  'art-moment-newrecord': [898, 139],
+  'art-moment-streak': [647, 146],
+  'art-scene-r-asleep': [373, 302],
+  'art-scene-r-unplugged': [347, 287],
+  'art-scene-u-alldone': [404, 292],
+  'art-scene-o3-notfound': [374, 298],
+  'art-scene-i-invite': [291, 340],
+  'art-scene-d-nostats': [332, 277],
 };
 
 /** Public path of a title / day / game / icon art file. */
@@ -92,4 +171,16 @@ export function gameArtSrc(id: string | null | undefined): string | null {
  */
 export function isGameArtIcon(icon: unknown): boolean {
   return typeof icon === 'function' && typeof (icon as { gameArtId?: unknown }).gameArtId === 'string';
+}
+
+/**
+ * Friends pocket game icons (§9): public/art/game-pocket-<kind>.webp, 256 px
+ * square, keyed by the core friendly-game kind. Same size rules as the game
+ * icons (§3); a kind missing here keeps its old glyph.
+ */
+export const POCKET_ART_KINDS: ReadonlySet<string> = new Set(['rps', 'ttt', 'coin', 'pass', 'ghost', 'chain']);
+
+/** Public path of a pocket game's 3D icon, or null when the kind has none. */
+export function pocketArtSrc(kind: string | null | undefined): string | null {
+  return kind && POCKET_ART_KINDS.has(kind) ? artSrc(`game-pocket-${kind}`) : null;
 }

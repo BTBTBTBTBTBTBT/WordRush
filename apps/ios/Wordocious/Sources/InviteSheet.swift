@@ -38,9 +38,11 @@ struct InviteSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Header — gradient title + subtitle + X close (matches web modal)
+                // Header — I's invite scene (ART_SPEC §7) over the gradient title +
+                // subtitle, X close (matches web modal)
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
+                        if ArtScene.invite.isAvailable { SceneArt(.invite, height: 110).padding(.bottom, 4) }
                         Text("INVITE A FRIEND")
                             .font(Brand.font(24, .black))
                             .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))

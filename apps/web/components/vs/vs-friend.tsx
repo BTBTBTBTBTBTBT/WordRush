@@ -19,7 +19,8 @@ import { InviteModal } from '@/components/invites/invite-modal';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { InitialAvatar, ModeChip, SectionLabel, VsNav, vsCardStyle } from './vs-ui';
 import { PAGE_HOSTS } from '@/lib/mascots';
-import { Mascot } from '@/components/ui/mascot';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 
 const MODES = VS_MODE_ORDER as readonly string[];
 
@@ -124,7 +125,7 @@ export function VsFriend() {
                     <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: VS.ink }} /></div>
                   ) : ordered.length === 0 ? (
                     <div className="p-3 flex flex-col items-center gap-2 text-center text-[12.5px] font-bold" style={{ ...vsCardStyle, color: '#4b5563' }}>
-                      <Mascot id={PAGE_HOSTS.addFriend} size={96} motion="bob" />
+                      <ArtScene scene={PAGE_SCENES.addFriend} />
                       No friends yet. Send a link, or add friends from the Friends tab.
                     </div>
                   ) : ordered.map((f) => {

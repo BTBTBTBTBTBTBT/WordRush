@@ -7,8 +7,8 @@ import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { formatGuessStat } from '@/lib/format';
 import type { Database } from '@/lib/database.types';
-import { MascotEmptyState } from '@/components/ui/mascot';
-import type { MascotId } from '@/lib/mascots';
+import { SceneEmptyState } from '@/components/ui/art-scene';
+import type { SceneName } from '@/lib/art';
 import { isGameArtIcon } from '@/lib/art';
 
 type Match = Database['public']['Tables']['matches']['Row'];
@@ -52,8 +52,8 @@ interface Props {
   onSeeAll?: () => void;
   /** Empty-state line (Today: "No games yet today…"). */
   emptyText?: string;
-  /** A host over the empty-state line (docs/MASCOT_SPEC.md §2, §6). */
-  emptyHost?: MascotId;
+  /** A scene over the empty-state line (docs/ART_SPEC.md §7; MASCOT_SPEC §6). */
+  emptyScene?: SceneName;
   /** Today's Games: fold each game's Unlimited replays into one expandable row (founder, 2026-09-29). */
   groupUnlimited?: boolean;
 }
@@ -65,7 +65,7 @@ export function isPlayedToday(createdAt: string): boolean {
   return d.toDateString() === new Date().toDateString();
 }
 
-export function RecentMatchesList({ matches, opponentNames, profileId, loading, limit = 5, onSeeAll, emptyText = 'No games played yet.', emptyHost, groupUnlimited = false }: Props) {
+export function RecentMatchesList({ matches, opponentNames, profileId, loading, limit = 5, onSeeAll, emptyText = 'No games played yet.', emptyScene, groupUnlimited = false }: Props) {
   const [showAll, setShowAll] = useState(false);
   if (loading) {
     return (
@@ -87,7 +87,7 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
     );
   }
   if (matches.length === 0) {
-    if (emptyHost) return <MascotEmptyState id={emptyHost} line={emptyText} className="py-6" />;
+    if (emptyScene) return <SceneEmptyState scene={emptyScene} line={emptyText} className="py-6" />;
     return <div className="text-center py-8 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{emptyText}</div>;
   }
   const shown = showAll && !onSeeAll ? matches : matches.slice(0, limit);

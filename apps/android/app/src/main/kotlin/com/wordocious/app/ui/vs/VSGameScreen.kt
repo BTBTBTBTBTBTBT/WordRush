@@ -60,6 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1073,7 +1074,7 @@ private fun GauntletSpectatorStage(idx: Int, opponent: OpponentProgressState, wo
 /**
  * The live / bot result (VS polish §2) in the home palette, like the
  * challenge result: a split window (winner's half lavender; draw both pale),
- * the frosted strip with YOU WIN! / <NAME> WINS / IT'S A DRAW and the deciding
+ * the frosted strip with the YOU WIN! / YOU LOSE / DRAW moment art and the deciding
  * margin, each side's score, the score rule, REMATCH (solid purple), HOME and
  * SHARE (soft), the bot tally below, then the final boards.
  */
@@ -1113,7 +1114,13 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
         else if (oppSolved && mySolved) "Both solved — $oppName won on score"
         else "Neither solved — $oppName won on progress"
     }
-    val headline = when { isDraw -> "IT’S A DRAW"; isWin -> "YOU WIN!"; else -> "${headName.uppercase()} WINS" }
+    // Moment lettering (ART_SPEC §6): YOU WIN! / YOU LOSE / DRAW; TalkBack keeps the winner's name.
+    val headlineArt = when {
+        isDraw -> com.wordocious.app.ui.MomentArt.DRAW
+        isWin -> com.wordocious.app.ui.MomentArt.YOU_WIN
+        else -> com.wordocious.app.ui.MomentArt.YOU_LOSE
+    }
+    val headlineLabel = when { isDraw -> "It’s a draw"; isWin -> "You win!"; else -> "You lose, $headName wins" }
     // The deciding margin (core vsMargin) — only when core's reading of the
     // numbers agrees with the server's verdict (forfeits / timeouts don't).
     val margin: String? = vm.result?.let { r ->
@@ -1158,10 +1165,11 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                             Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Row(Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR - 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
-                                Text(headline, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, maxLines = 2)
-                            }
+                            com.wordocious.app.ui.MomentTitle(
+                                headlineArt, Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR - 4.dp),
+                                widthFraction = 0.8f, maxHeight = 60.dp, contentDescription = headlineLabel,
+                                alignment = Alignment.CenterStart,
+                            )
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Box(Modifier.size(18.dp), Alignment.Center) { com.wordocious.app.ui.ModeGlyph(vm.mode, modeAccent(vm.mode), 18.dp) }
                                 Text(
@@ -1209,9 +1217,13 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         vm.photoFinish?.let { pf -> PhotoFinishStamp(pf == "clutch") }
                         vm.cpuMilestone?.let { m ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 18.dp)
-                                Text("$m-win bot streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
+                            // Streak milestone: the STREAK! moment lettering (ART_SPEC §6) over the count.
+                            Column(
+                                Modifier.semantics(mergeDescendants = true) { },
+                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                com.wordocious.app.ui.MomentTitle(com.wordocious.app.ui.MomentArt.STREAK, widthFraction = 0.5f, maxHeight = 48.dp)
+                                Text("$m-win bot streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
                             }
                         }
                             ?: run { if (vm.cpuStreak > 0) Text("Bot win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub) }
@@ -1419,14 +1431,13 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // Today's daily VS outcome — W/L pill (the user asked for an explicit result here).
+                    // Played today: U's all-done scene (ART_SPEC §7).
+                    com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.ALL_DONE, height = 110.dp)
+                    // Moment lettering (ART_SPEC §6): YOU WIN! / YOU LOSE.
                     won?.let {
-                        Text(
-                            if (it) "YOU WON" else "YOU LOST",
-                            fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-                            color = if (it) Color.White else Color(0xFF475569),
-                            modifier = Modifier.clip(RoundedCornerShape(50))
-                                .background(if (it) VsPurple.ink else Color(0xFFE2E8F0))
-                                .padding(horizontal = 14.dp, vertical = 5.dp),
+                        com.wordocious.app.ui.MomentTitle(
+                            if (it) com.wordocious.app.ui.MomentArt.YOU_WIN else com.wordocious.app.ui.MomentArt.YOU_LOSE,
+                            widthFraction = 0.6f, maxHeight = 52.dp,
                         )
                     }
                     if (answer.isNotEmpty()) {
@@ -1479,9 +1490,8 @@ private fun VSLimitUpsellModal(onGoPro: () -> Unit, onClose: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.size(48.dp).clip(CircleShape).background(VsTeal.soft), Alignment.Center) {
-                Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsTeal.ink, modifier = Modifier.size(24.dp))
-            }
+            // Played-today limit: U's all-done scene (ART_SPEC §7).
+            com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.ALL_DONE, height = 110.dp)
             Text("DAILY VS USED", fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep)
             Text(
                 "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",

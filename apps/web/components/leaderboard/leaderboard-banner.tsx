@@ -9,8 +9,6 @@ import { useFlags } from '@/hooks/use-flags';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
-import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
 import { ArtTitle } from '@/components/ui/art-title';
 import { dayArtName } from '@/lib/art';
 
@@ -139,11 +137,10 @@ interface Props {
 
 export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
   const title = today ? dayTitle(today) : NBSP;
-  // The weekday's title art (docs/ART_SPEC.md §1); a holiday keeps the text title.
+  // The weekday's title art (docs/ART_SPEC.md §1). A holiday shows the whole
+  // cast around LEADERBOARD with "<HOLIDAY> HEROES" as a small caps subtitle (§8).
   const holiday = today ? holidayTitle(holidayKeyForDay(today, HOLIDAY_TABLE)) : null;
-  // Until the local day is known, hold the art's slot (holidays are rare) so it doesn't jump.
-  const showArt = !holiday;
-  const art = today && showArt ? dayArtName(today) : null;
+  const art = today && !holiday ? dayArtName(today) : null;
   const date = today
     ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
     : null;
@@ -160,17 +157,22 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
       {/* Frosted headline strip. */}
       <div
         className="relative flex flex-col gap-1"
-        style={{ padding: showArt ? '10px 12px 10px' : `12px ${BANNER_HOST_CLEARANCE}px 10px 12px`, background: 'rgba(255,255,255,0.5)' }}
+        style={{ padding: '10px 12px 10px', background: 'rgba(255,255,255,0.5)' }}
       >
         {art ? (
           // One designed graphic per weekday, its host drawn in (so no banner host).
           <ArtTitle name={art} label={title} height={ART_HEIGHT} />
-        ) : showArt ? (
-          <div aria-hidden="true" style={{ height: ART_HEIGHT }} />
-        ) : (
-          <h1 className="font-black" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: INK, textShadow: '0 0 8px rgba(245,158,11,0.55)' }}>
-            {title}
+        ) : holiday ? (
+          // The whole cast carries the holiday too, so no banner host here either.
+          <h1 className="flex flex-col items-center gap-1 m-0">
+            <ArtTitle name="art-title-leaderboard" label="Leaderboard" as="div" className="w-full" />
+            <span className="font-black uppercase text-center" style={{ fontSize: 11, letterSpacing: 1.4, lineHeight: 1.2, color: INK }}>
+              {title}
+            </span>
           </h1>
+        ) : (
+          // Until the local day is known, hold the art's slot so it doesn't jump.
+          <div aria-hidden="true" style={{ height: ART_HEIGHT }} />
         )}
         <div className="flex items-center gap-2 font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: MID }}>
           <span className="flex-1 min-w-0 truncate"><ResetLine lead={date} /></span>
@@ -182,7 +184,6 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
     </div>
   );
 
-  // The Leaderboard host (O2, the spotlight star) stands beside a text title
-  // (a holiday, or before the day is known); the day art carries its own host.
-  return showArt ? card : <BannerHost id={PAGE_HOSTS.leaderboard}>{card}</BannerHost>;
+  // Every title is art with its host(s) drawn in, so the banner host (O2) stays off.
+  return card;
 }

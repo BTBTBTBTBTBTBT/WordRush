@@ -32,7 +32,17 @@ export default function GlobalError({
         }}
       >
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>😵</div>
+          {/* R, unplugged (docs/ART_SPEC.md §7). A plain <img>: this screen
+              renders without the app's layout, CSS or image pipeline. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/art/art-scene-r-unplugged.webp"
+            alt=""
+            aria-hidden="true"
+            width={169}
+            height={140}
+            style={{ display: 'block', margin: '0 auto 1rem', width: 169, maxWidth: '60%', height: 'auto' }}
+          />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '0 0 0.5rem', color: '#1f2937' }}>
             Something went wrong
           </h1>

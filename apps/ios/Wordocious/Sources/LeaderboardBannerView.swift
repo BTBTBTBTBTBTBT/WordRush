@@ -24,9 +24,10 @@ struct LeaderboardBannerView: View {
             BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
         }
         .bannerWindow(top: Color(hex: 0xFEF3C7), bottom: Color(hex: 0xEDE9FE), shadow: Color(hex: 0x92400E))
-        if DayTitleArt.forTitle(Self.todayTitle()) != nil {
-            // ART_SPEC §1: the day art carries its own host, so O2 steps aside
-            // (same top inset, so the page doesn't shift between days).
+        if Self.hasTitleArt(Self.todayTitle()) {
+            // ART_SPEC §1 / §8: the day art (or the holiday's whole-cast LEADERBOARD
+            // art) carries its own hosts, so O2 steps aside (same top inset, so the
+            // page doesn't shift between days).
             window.padding(.top, 12)
         } else {
             // The cast (docs/MASCOT_SPEC.md §1): O2 in the spotlight beside the day's title.
@@ -46,6 +47,18 @@ struct LeaderboardBannerView: View {
                 if let art = DayTitleArt.forTitle(title) {
                     // ART_SPEC §1: the weekday's title art (lettering + that day's host).
                     DayTitleArtView(asset: art.asset, label: art.label)
+                } else if ArtAsset.exists(ArtTitleName.leaderboard.assetName) {
+                    // ART_SPEC §8: a holiday shows the whole cast around LEADERBOARD
+                    // with the holiday title ("<HOLIDAY> HEROES") as a small caps subtitle.
+                    VStack(spacing: 2) {
+                        DayTitleArtView(asset: ArtTitleName.leaderboard.assetName,
+                                        label: ArtTitleName.leaderboard.label, maxHeight: 96)
+                        Text(title)
+                            .font(Brand.font(11, .black)).tracking(1.2)
+                            .foregroundStyle(Self.head)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity)
+                    }
                 } else {
                     // A holiday ("<HOLIDAY> HEROES") keeps the text treatment.
                     Text(title)
@@ -84,6 +97,12 @@ struct LeaderboardBannerView: View {
     static func todayTitle() -> String {
         let day = LeaderboardService.todayLocal()
         return leaderboardTitle(day, HolidayTitles.title(holidayKeyForDay(day, table: HolidayTable.bundled)))
+    }
+
+    /// Whether the title slot shows art: a weekday's day art, or on a holiday the
+    /// whole-cast LEADERBOARD art (ART_SPEC §1 / §8).
+    static func hasTitleArt(_ title: String) -> Bool {
+        DayTitleArt.forTitle(title) != nil || ArtAsset.exists(ArtTitleName.leaderboard.assetName)
     }
 
     /// hh:mm:ss to local midnight.

@@ -538,8 +538,8 @@ struct GuardedBoardSheet: View {
             }.padding(24)
         case .failed:
             VStack(spacing: 10) {
-                // R for the offline / error screen (MASCOT_SPEC §6).
-                MascotView(Mascots.offline, size: 96, motion: .bob)
+                // R unplugged for the offline / error screen (MASCOT_SPEC §6, ART_SPEC §7).
+                SceneArt(.unplugged)
                 Text("Couldn't load this board").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
                 Text(Mascots.offlineLine).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
             }.padding(24)

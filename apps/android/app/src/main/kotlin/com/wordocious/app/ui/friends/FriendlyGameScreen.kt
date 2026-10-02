@@ -203,8 +203,8 @@ fun FriendlyGameScreen(
             Box(Modifier.fillMaxSize(), Alignment.Center) {
                 if (notFound) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Error screens get R (MASCOT_SPEC §6).
-                        com.wordocious.app.ui.Mascot(com.wordocious.app.ui.Mascots.offline, 96.dp, motion = com.wordocious.app.ui.MascotMotion.BOB)
+                        // A missing game gets O3's not-found scene (ART_SPEC §7).
+                        com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.NOT_FOUND)
                         Text("This game isn't available.", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
                         PinkPill("FRIENDS", solid = false, onClick = onFriends)
                     }

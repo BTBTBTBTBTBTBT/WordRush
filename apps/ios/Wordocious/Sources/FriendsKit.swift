@@ -166,6 +166,9 @@ struct GhostOutline: Shape {
 /// game's color, glowing in the same color. `tinted` draws the game-tile chip
 /// instead (docs/GAME_TILE_STYLE.md): the outline in the game's color on a soft
 /// chip of it (accent at ~8%, radius 8 at 32 pt), no glow.
+/// ART_SPEC §9: when its `game-pocket-<kind>` art ships, the glossy 3D icon fills a
+/// soft chip of the game's color instead (same size; the art never sits on its
+/// own solid color, where it would melt in). The outline is the fallback.
 struct FriendlyGameIcon: View {
     let kind: FriendlyKind
     var size: CGFloat = 40
@@ -174,6 +177,20 @@ struct FriendlyGameIcon: View {
 
     var body: some View {
         let color = FriendsKit.color(kind)
+        if let art = kind.pocketArt {
+            ZStack {
+                RoundedRectangle(cornerRadius: size * (tinted ? 0.25 : 0.28), style: .continuous)
+                    .fill(color.opacity(tinted ? 0.08 : 0.14))
+                GameArtImage(asset: art, size: size * 0.94)
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+        } else {
+            outline(color)
+        }
+    }
+
+    private func outline(_ color: Color) -> some View {
         ZStack {
             if tinted {
                 RoundedRectangle(cornerRadius: size * 0.25).fill(color.opacity(0.08))

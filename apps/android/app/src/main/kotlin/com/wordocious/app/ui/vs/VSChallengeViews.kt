@@ -231,8 +231,18 @@ fun ChallengeResultView(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Row(Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR + 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
-                            Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, modifier = Modifier.weight(1f), maxLines = 2)
+                            // Moment lettering (ART_SPEC §6): YOU WIN! / YOU LOSE / DRAW; TalkBack
+                            // reads the full headline ("YOU BEAT DOUG’S RUN!"), which shares too.
+                            com.wordocious.app.ui.MomentTitle(
+                                when (outcome) {
+                                    VsOutcome.WIN -> com.wordocious.app.ui.MomentArt.YOU_WIN
+                                    VsOutcome.LOSS -> com.wordocious.app.ui.MomentArt.YOU_LOSE
+                                    VsOutcome.DRAW -> com.wordocious.app.ui.MomentArt.DRAW
+                                },
+                                Modifier.weight(1f), widthFraction = 0.85f, maxHeight = 56.dp,
+                                contentDescription = com.wordocious.app.ui.titleCaseLabel(headline),
+                                alignment = Alignment.CenterStart,
+                            )
                             Box(Modifier.size(36.dp).clickableNoRipple { onShare(headline) }, Alignment.Center) {
                                 Icon3D(Icon3DName.SHARE, 23.dp, contentDescription = "Share", modifier = Modifier)
                             }
@@ -348,8 +358,8 @@ fun ChallengeSentScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                     Text("Sending your run…", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
                 }
                 is SendState.Failed -> {
-                    // Error screens get R (MASCOT_SPEC §6).
-                    com.wordocious.app.ui.Mascot(com.wordocious.app.ui.Mascots.offline, 96.dp, motion = com.wordocious.app.ui.MascotMotion.BOB)
+                    // Error screens get R unplugged (ART_SPEC §7).
+                    com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.UNPLUGGED)
                     Text("COULDN’T SEND", fontSize = 22.sp, fontWeight = FontWeight.Black, color = VsPurple.deep)
                     Text(state.message, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
                     PurpleButton("TRY AGAIN") { vm.retrySend() }
@@ -441,9 +451,9 @@ fun ChallengeRouteScreen(
         ) {
             Spacer(Modifier.height(12.dp))
             when {
-                error != null -> SimpleCard(error!!, onHome)
+                error != null -> SimpleCard(error!!, onHome, com.wordocious.app.ui.SceneArt.UNPLUGGED)
                 l == null || c == null -> com.wordocious.app.ui.CastLoader(null)
-                l.expired && !l.isMine -> SimpleCard("This challenge has expired", onHome)
+                l.expired && !l.isMine -> SimpleCard("This challenge has expired", onHome, com.wordocious.app.ui.SceneArt.NOT_FOUND)
                 l.isMine -> {
                     VsCard {
                         VsSectionLabel("YOUR CHALLENGE")
@@ -467,13 +477,10 @@ fun ChallengeRouteScreen(
 }
 
 @Composable
-private fun SimpleCard(text: String, onHome: () -> Unit) {
+private fun SimpleCard(text: String, onHome: () -> Unit, scene: com.wordocious.app.ui.SceneArt) {
     VsCard(padding = 18.dp) {
-        // Errors and expired links get R (MASCOT_SPEC §6).
-        com.wordocious.app.ui.Mascot(
-            com.wordocious.app.ui.Mascots.offline, 72.dp,
-            Modifier.align(Alignment.CenterHorizontally), motion = com.wordocious.app.ui.MascotMotion.BOB,
-        )
+        // Errors get R unplugged, expired links O3's not-found scene (ART_SPEC §7).
+        com.wordocious.app.ui.SceneImage(scene, height = 120.dp)
         Text(text, fontSize = 16.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         VsTealButton("VS HOME", Modifier.fillMaxWidth(), onClick = onHome)
     }

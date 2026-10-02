@@ -21,8 +21,15 @@ struct WelcomeView: View {
                                startPoint: .leading, endPoint: .trailing).frame(height: 6)
                 VStack(spacing: 0) {
                     VStack(spacing: 2) {
-                        Wordmark(size: 24)
-                        Text("Welcome to Wordocious").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                        if ArtAsset.exists(ArtTitleName.welcome.assetName) {
+                            // ART_SPEC §8: the whole cast around WELCOME! (labeled
+                            // "Welcome") over the wordmark.
+                            ArtTitle(.welcome, maxWidth: 312).padding(.bottom, 6)
+                            Wordmark(size: 22)
+                        } else {
+                            Wordmark(size: 24)
+                            Text("Welcome to Wordocious").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                        }
                     }
                     .padding(.top, 20).padding(.bottom, 16)
 

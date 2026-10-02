@@ -6,7 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,17 +27,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -107,19 +101,6 @@ val FriendlyKind.sub: String get() = when (this) {
     FriendlyKind.CHAIN -> "Last letter starts the next"
 }
 
-// Lucide "ghost" and "link" outlines on the same 24-unit grid (§9).
-private val GHOST_GLYPH by lazy {
-    PathParser().parsePathString(
-        "M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z",
-    ).toPath()
-}
-private val CHAIN_GLYPH by lazy {
-    PathParser().parsePathString(
-        "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" +
-            "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
-    ).toPath()
-}
-
 /** The ChatGPT art (§0): res/drawable-nodpi/friends_<name>.png. */
 fun rpsArt(pick: RpsPick): Int = when (pick) {
     RpsPick.ROCK -> R.drawable.friends_rock
@@ -177,69 +158,27 @@ fun PinkButton(text: String, modifier: Modifier = Modifier, solid: Boolean = tru
 }
 
 /**
- * A pocket game's OUTLINE icon (§0): a white 2.4 stroke in a colored rounded
- * square with a glow in the same color. RPS = scissors, Tic-Tac-Tile = hash,
- * Call It = a coin (two concentric circles + a short vertical line), Pass the
- * Puzzle = two opposing arrows, Ghost = a ghost, Word Chain = a chain link.
+ * A pocket game's icon (ART_SPEC §9): the glossy 3D `game_pocket_<kind>` art (rock
+ * fist, X+O, star coin, puzzle piece, little ghost, chain links) filling a soft chip
+ * in the game's accent, like the §3 game icons. Decorative.
  */
 @Composable
 fun FriendlyGameIcon(kind: FriendlyKind, size: Dp, modifier: Modifier = Modifier) {
-    val c = kind.color
-    val shape = RoundedCornerShape(size * 0.28f)
     Box(
-        modifier.size(size)
-            .shadow(size * 0.18f, shape, ambientColor = c.copy(alpha = 0.6f), spotColor = c.copy(alpha = 0.6f))
-            .clip(shape).background(c),
+        modifier.size(size).clip(RoundedCornerShape(size * 0.28f)).background(kind.color.copy(alpha = 0.14f)),
         Alignment.Center,
     ) {
-        Canvas(Modifier.size(size * 0.56f)) { drawGameGlyph(kind, Color.White) }
+        FriendlyGameGlyph(kind, size * 0.86f)
     }
 }
 
-/** A pocket game's outline glyph in its own accent, for the soft chip of a game tile (docs/GAME_TILE_STYLE.md). */
+/** A pocket game's 3D art alone (§9), for the soft chip of a game tile (docs/GAME_TILE_STYLE.md); ~0.82 of the chip. */
 @Composable
 fun FriendlyGameGlyph(kind: FriendlyKind, size: Dp) {
-    val c = kind.color
-    Canvas(Modifier.size(size)) { drawGameGlyph(kind, c) }
-}
-
-/** The outline glyph on a 24-unit grid, scaled to the canvas. */
-fun DrawScope.drawGameGlyph(kind: FriendlyKind, color: Color) {
-    val u = size.minDimension / 24f
-    val stroke = Stroke(width = 2.4f * u, cap = StrokeCap.Round, join = StrokeJoin.Round)
-    fun line(x1: Float, y1: Float, x2: Float, y2: Float) =
-        drawLine(color, Offset(x1 * u, y1 * u), Offset(x2 * u, y2 * u), strokeWidth = 2.4f * u, cap = StrokeCap.Round)
-    fun circle(cx: Float, cy: Float, r: Float) = drawCircle(color, r * u, Offset(cx * u, cy * u), style = stroke)
-    when (kind) {
-        FriendlyKind.RPS -> {
-            circle(6f, 6f, 3f); circle(6f, 18f, 3f)
-            line(20f, 4f, 8.12f, 15.88f); line(14.47f, 14.48f, 20f, 20f); line(8.12f, 8.12f, 12f, 12f)
-        }
-        FriendlyKind.TTT -> {
-            line(4f, 9f, 20f, 9f); line(4f, 15f, 20f, 15f); line(10f, 3f, 8f, 21f); line(16f, 3f, 14f, 21f)
-        }
-        FriendlyKind.COIN -> {
-            circle(12f, 12f, 9.5f); circle(12f, 12f, 5.5f); line(12f, 9.5f, 12f, 14.5f)
-        }
-        FriendlyKind.PASS -> {
-            val p = Path().apply {
-                moveTo(8f * u, 3f * u); lineTo(4f * u, 7f * u); lineTo(8f * u, 11f * u)
-                moveTo(4f * u, 7f * u); lineTo(20f * u, 7f * u)
-                moveTo(16f * u, 21f * u); lineTo(20f * u, 17f * u); lineTo(16f * u, 13f * u)
-                moveTo(20f * u, 17f * u); lineTo(4f * u, 17f * u)
-            }
-            drawPath(p, color, style = stroke)
-        }
-        FriendlyKind.GHOST, FriendlyKind.CHAIN -> {
-            // The path is in grid units: scale the canvas so the 2.4 stroke scales with it.
-            withTransform({ scale(u, u, Offset.Zero) }) {
-                drawPath(
-                    if (kind == FriendlyKind.GHOST) GHOST_GLYPH else CHAIN_GLYPH, color,
-                    style = Stroke(width = 2.4f, cap = StrokeCap.Round, join = StrokeJoin.Round),
-                )
-            }
-        }
-    }
+    Image(
+        painterResource(com.wordocious.app.ui.pocketArtRes(kind)), contentDescription = null,
+        modifier = Modifier.size(size).clearAndSetSemantics { },
+    )
 }
 
 /**

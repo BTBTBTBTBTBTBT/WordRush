@@ -117,15 +117,24 @@ struct VSChallengeResultView: View {
         let draw = outcome.outcome == .draw
         let mineBg = draw ? Color(hex: 0xECE8FF) : (won ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
         let theirBg = draw ? Color(hex: 0xECE8FF) : (lost ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
+        // ART_SPEC §6: YOU WIN! / YOU LOSE / DRAW lettering in place of the text
+        // headline (centered, the share button kept on the right); text is the fallback.
+        let moment: MomentArt = won ? .youwin : (lost ? .youlose : .draw)
         return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Image("swords").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
-                    Text(VsLobby.challengeHeadline(outcome.outcome, from: name))
-                        .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if moment.isAvailable {
+                        MomentLettering(moment) { EmptyView() }
+                            .frame(maxWidth: .infinity)
+                            .padding(.leading, 42)
+                    } else {
+                        Image("swords").renderingMode(.template).resizable().scaledToFit()
+                            .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
+                        Text(VsLobby.challengeHeadline(outcome.outcome, from: name))
+                            .font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                            .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     ShareLink(item: VsChallengeService.shareURL(code), message: Text(shareText)) {
                         Icon3D(.share, size: 22).frame(width: 34, height: 34)
                     }
@@ -474,9 +483,9 @@ struct VSChallengeRaceView: View {
             Text("Your run: \(c.run.summary)").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
             let results = sent?.results ?? []
             if results.isEmpty {
-                // R: quiet in here (MASCOT_SPEC §1), kept small inside the card.
+                // R asleep: quiet in here (MASCOT_SPEC §1, ART_SPEC §7), kept small inside the card.
                 HStack(spacing: 8) {
-                    MascotView(Mascots.empty, size: 40, motion: .bob)
+                    SceneArt(.asleep, height: 56, fallbackSize: 40)
                     Text("Nobody has raced it yet.").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.label)
                 }
             } else {

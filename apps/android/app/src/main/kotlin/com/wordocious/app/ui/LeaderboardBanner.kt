@@ -74,21 +74,26 @@ internal fun LeaderboardBanner(
     val title = remember(day) { leaderboardTitle(day, holiday) }
     // ART_SPEC §1: the weekday's day-title art (it carries its own host); holidays keep the text.
     val dayArt = remember(day) { dayTitleArtRes(day, holiday) }
+    // ART_SPEC §8: on a holiday the whole-cast LEADERBOARD art fills the slot, the
+    // `<HOLIDAY> HEROES` text under it as a small caps subtitle.
+    val holidayArt = dayArt == null && !holiday.isNullOrBlank()
     val dateLabel = remember(day) {
         java.time.LocalDate.parse(day).format(java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US)).uppercase(java.util.Locale.US)
     }
     val glow = with(LocalDensity.current) { 8.dp.toPx() }
 
-    // The banner's own O2 host is dropped while the day art shows (the art has its host).
-    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE), host = if (dayArt != null) null else Mascots.leaderboard) {
+    // The banner's own O2 host is dropped while the day / holiday art shows (the art has its cast).
+    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE), host = if (dayArt != null || holidayArt) null else Mascots.leaderboard) {
         // Frosted strip: the day title, then the date · reset clock and the ALL-TIME door.
         Column(
             Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
-                .padding(start = 12.dp, top = if (dayArt != null) 8.dp else 12.dp, end = 12.dp, bottom = 10.dp),
+                .padding(start = 12.dp, top = if (dayArt != null || holidayArt) 8.dp else 12.dp, end = 12.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             if (dayArt != null) {
                 DayTitleArt(dayArt, title, height = 110.dp)
+            } else if (holidayArt) {
+                HolidayLeaderboardTitle(title, artHeight = 96.dp, subtitleColor = LB_INK)
             } else {
                 Text(
                     title, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,

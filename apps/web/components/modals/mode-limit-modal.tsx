@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 
 import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { Mascot } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 import Link from 'next/link';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
@@ -58,9 +58,9 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
             aria-modal="true"
             aria-label={`${modeName} daily limit reached`}
           >
-            {/* U (zen, floating): all done for today, new puzzles at midnight. */}
+            {/* U, all done for today, new puzzles at midnight (docs/ART_SPEC.md §7). */}
             <div className="flex justify-center mb-2">
-              <Mascot id={PAGE_HOSTS.allDone} size={72} motion="bob" />
+              <ArtScene scene={PAGE_SCENES.allDone} />
             </div>
             <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>
               {modeName} — Played Today

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Sparkles, X as XIcon } from 'lucide-react';
+import { X as XIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { haptic } from '@/lib/haptics';
 import { playSuccess } from '@/lib/sounds';
@@ -14,6 +14,7 @@ import { MODE_SHARE_GLYPH } from '@/lib/share-grid';
 import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
 import { CastRow } from '@/components/ui/mascot';
+import { MomentArt } from '@/components/ui/art-title';
 
 // One-time full-screen celebration shown when the player completes every daily
 // in the current sweep. Two distinct treatments (NOT the per-game victory
@@ -81,10 +82,6 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
       };
     });
   }, [flawless]);
-
-  const titleGradient = flawless
-    ? 'linear-gradient(135deg, #fbbf24, #d97706, #b45309)'
-    : `linear-gradient(135deg, ${sweepA}, ${sweepB})`;
 
   const handleShare = async () => {
     if (sharing) return;
@@ -164,19 +161,13 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
             <div className="flex justify-center mb-2">
               <CastRow size={26} motion="wave" hop={14} stagger={60} duration={1000} iterations={2} crownW={flawless} />
             </div>
-            <div className="flex items-center justify-center gap-2">
-              {flawless
-                ? <Icon3D name="trophy" size={28} />
-                : <Sparkles className="w-6 h-6" style={{ color: more ? '#4f46e5' : '#7c3aed' }} />}
-              <h2
-                className="text-3xl font-black text-transparent bg-clip-text"
-                style={{ backgroundImage: titleGradient }}
-              >
-                {title}
-              </h2>
-              {flawless
-                ? <Icon3D name="trophy" size={28} />
-                : <Sparkles className="w-6 h-6" style={{ color: more ? '#6366f1' : '#ec4899' }} />}
+            {/* SWEEP! / FLAWLESS! lettering (docs/ART_SPEC.md §6) under a small DAILY /
+                PUZZLES kicker; the full title ("DAILY SWEEP!", "PUZZLES FLAWLESS!") is its name. */}
+            <div className="flex flex-col items-center gap-0.5">
+              <span aria-hidden="true" className="text-[11px] font-black uppercase" style={{ letterSpacing: 1.4, color: flawless ? '#b45309' : sweepInk }}>
+                {more ? 'Puzzles' : 'Daily'}
+              </span>
+              <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} />
             </div>
 
             <p className="text-xs font-extrabold mt-1" style={{ color: flawless ? '#b45309' : sweepInk }}>

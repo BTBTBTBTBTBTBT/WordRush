@@ -440,9 +440,9 @@ struct FriendsPanelView: View {
                         }
                     } else if incoming.isEmpty && outgoing.isEmpty {
                         // Teaching empty state: explain the whole loop (Tier 1, Aug 11),
-                        // under I and its one line (MASCOT_SPEC §6).
+                        // under I's invite scene and its one line (MASCOT_SPEC §6, ART_SPEC §7).
                         VStack(alignment: .leading, spacing: 5) {
-                            MascotMessage(host: Mascots.addFriends, line: Mascots.addFriendLine, size: 72,
+                            MascotMessage(scene: .invite, line: Mascots.addFriendLine, size: 72,
                                           font: Brand.font(13, .black), color: FriendsKit.ink)
                                 .frame(maxWidth: .infinity).padding(.bottom, 6)
                             Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")

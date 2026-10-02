@@ -2,24 +2,38 @@ package com.wordocious.app.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.R
 
 // The art pass (founder 2026-10-02 night; spec docs/ART_SPEC.md): the Leaderboard
 // day titles (§1), the whole-cast page titles (§2), the glossy 3D game icons (§3)
-// and the W / L / ✓ completion badges (§4). All art lives in res/drawable-nodpi as
+// and the W / L / ✓ completion badges (§4); second pass: moment lettering (§6),
+// empty / error / done scenes (§7), WELCOME + holiday LEADERBOARD titles (§8) and
+// the pocket game icons (§9). All art lives in res/drawable-nodpi as
 // WebP. Mirrors the web /art/ assets and the iOS image sets of the same names.
 
 /** §2 page titles: lettering with the whole cast perched on it (≈1080 wide). */
@@ -34,6 +48,10 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     HOWTO(R.drawable.art_title_howto, "How to Play"),
     GOPRO(R.drawable.art_title_gopro, "Go Pro"),
     MOREGAMES(R.drawable.art_title_moregames, "More Games"),
+    /** §8 the whole cast around WELCOME! at the top of sign-in / onboarding. */
+    WELCOME(R.drawable.art_title_welcome, "Welcome"),
+    /** §8 the whole cast around LEADERBOARD (holiday banner title slot). */
+    LEADERBOARD(R.drawable.art_title_leaderboard, "Leaderboard"),
 }
 
 /** Title art's widest size (§2: fill the content width up to ~420). */
@@ -141,4 +159,144 @@ fun ResultBadge(won: Boolean?, size: Dp = 26.dp, modifier: Modifier = Modifier, 
         },
         size, modifier, contentDescription = contentDescription,
     )
+}
+
+// ── Second pass (ART_SPEC §6–§9) ──────────────────────────────────────────
+
+/**
+ * §6 Moment lettering (≈900 wide, glossy): gold for wins, purple-pink for SO CLOSE /
+ * DRAW, slate for YOU LOSE, fire for STREAK. [label] is the words TalkBack reads.
+ */
+enum class MomentArt(@DrawableRes val res: Int, val label: String) {
+    VICTORY(R.drawable.art_moment_victory, "Victory!"),
+    SO_CLOSE(R.drawable.art_moment_soclose, "So close!"),
+    SWEEP(R.drawable.art_moment_sweep, "Sweep!"),
+    FLAWLESS(R.drawable.art_moment_flawless, "Flawless!"),
+    YOU_WIN(R.drawable.art_moment_youwin, "You win!"),
+    YOU_LOSE(R.drawable.art_moment_youlose, "You lose"),
+    DRAW(R.drawable.art_moment_draw, "Draw"),
+    NEW_RECORD(R.drawable.art_moment_newrecord, "New record!"),
+    STREAK(R.drawable.art_moment_streak, "Streak!"),
+}
+
+/**
+ * §6 A moment headline image in place of the text headline: [widthFraction] of the
+ * width it is given (~70% of the card), at most [maxHeight] tall, aspect kept.
+ * TalkBack reads [contentDescription] (the words) as a heading.
+ */
+@Composable
+fun MomentTitle(
+    art: MomentArt,
+    modifier: Modifier = Modifier,
+    widthFraction: Float = 0.7f,
+    maxHeight: Dp = 72.dp,
+    contentDescription: String = art.label,
+    alignment: Alignment = Alignment.Center,
+) {
+    Box(modifier.fillMaxWidth(), contentAlignment = alignment) {
+        Image(
+            painterResource(art.res),
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxWidth(widthFraction).heightIn(max = maxHeight).semantics { heading() },
+        )
+    }
+}
+
+/** §7 Scenes for empty / error / done states (≈600 wide, one character with a prop). */
+enum class SceneArt(@DrawableRes val res: Int) {
+    /** Empty lists / boards ("nobody's on yet", empty leaderboard / friends feeds). */
+    ASLEEP(R.drawable.art_scene_r_asleep),
+    /** Offline / failed-to-load / error screens. */
+    UNPLUGGED(R.drawable.art_scene_r_unplugged),
+    /** All dailies done / played-today limit / "fresh puzzles in …". */
+    ALL_DONE(R.drawable.art_scene_u_alldone),
+    /** Profile-not-found, missing-item states. */
+    NOT_FOUND(R.drawable.art_scene_o3_notfound),
+    /** Empty Friends ("add a friend") states and the invite sheet header. */
+    INVITE(R.drawable.art_scene_i_invite),
+    /** Stats empty ("play a game and I'll crunch the numbers"). */
+    NO_STATS(R.drawable.art_scene_d_nostats),
+}
+
+/**
+ * §7 A scene image, [height] tall (~140), never wider than [maxWidthFraction] of the
+ * width it is given, aspect kept. Decorative (hidden from TalkBack).
+ */
+@Composable
+fun SceneImage(scene: SceneArt, modifier: Modifier = Modifier, height: Dp = 140.dp, maxWidthFraction: Float = 0.6f) {
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Image(
+            painterResource(scene.res),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.heightIn(max = height).widthIn(max = maxWidth * maxWidthFraction).clearAndSetSemantics { },
+        )
+    }
+}
+
+/**
+ * §7 The empty-state component (MASCOT_SPEC §6 with its scene): the [scene] above
+ * one short line in the host's voice. [content] adds the screen's existing action.
+ */
+@Composable
+fun SceneEmptyState(
+    scene: SceneArt,
+    says: String,
+    modifier: Modifier = Modifier,
+    height: Dp = 140.dp,
+    color: Color = WTheme.textSecondary,
+    content: (@Composable () -> Unit)? = null,
+) {
+    Column(
+        modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SceneImage(scene, height = height)
+        Text(says, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = color, textAlign = TextAlign.Center)
+        content?.invoke()
+    }
+}
+
+/**
+ * §8 The holiday Leaderboard title: the whole-cast LEADERBOARD art with the holiday
+ * title (`<HOLIDAY> HEROES`) as a small caps subtitle under it. One heading for
+ * TalkBack ("Leaderboard, Halloween Heroes").
+ */
+@Composable
+fun HolidayLeaderboardTitle(holidayTitle: String, modifier: Modifier = Modifier, artHeight: Dp = 96.dp, subtitleColor: Color = WTheme.textSecondary) {
+    Column(
+        modifier.fillMaxWidth().clearAndSetSemantics {
+            contentDescription = "Leaderboard, ${titleCaseLabel(holidayTitle)}"
+            heading()
+        },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Image(
+            painterResource(R.drawable.art_title_leaderboard),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.widthIn(max = TITLE_ART_MAX_WIDTH).fillMaxWidth().heightIn(max = artHeight),
+        )
+        Text(
+            holidayTitle.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp,
+            color = subtitleColor, maxLines = 1, textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * §9 The glossy 3D pocket game icon for a friendly-game kind (256 sq):
+ * rock fist, X+O, star coin, puzzle piece, little ghost, chain links.
+ */
+@DrawableRes
+fun pocketArtRes(kind: com.wordocious.core.FriendlyKind): Int = when (kind) {
+    com.wordocious.core.FriendlyKind.RPS -> R.drawable.game_pocket_rps
+    com.wordocious.core.FriendlyKind.TTT -> R.drawable.game_pocket_ttt
+    com.wordocious.core.FriendlyKind.COIN -> R.drawable.game_pocket_coin
+    com.wordocious.core.FriendlyKind.PASS -> R.drawable.game_pocket_pass
+    com.wordocious.core.FriendlyKind.GHOST -> R.drawable.game_pocket_ghost
+    com.wordocious.core.FriendlyKind.CHAIN -> R.drawable.game_pocket_chain
 }

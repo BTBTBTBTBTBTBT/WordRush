@@ -1,6 +1,5 @@
 package com.wordocious.app.ui
 
-import com.wordocious.app.ui.theme.Nunito
 
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -27,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
@@ -47,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,8 +82,6 @@ fun SweepCelebration(
                 else (if (more) MoreSweepTier.SWEEP.title else "DAILY SWEEP!")
     val noun = if (more) "More Games puzzles" else "daily puzzles"
 
-    val titleColors = if (flawless) listOf(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFB45309))
-                      else listOf(sweepA, sweepB)
     val cardGrad = if (flawless) listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7))
                    else if (more) listOf(Color(0xFFEEF2FF), Color(0xFFE0E7FF)) else listOf(Color(0xFFFAF5FF), Color(0xFFFCE7F3))
     val barGrad = if (flawless) listOf(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFFBBF24))
@@ -159,16 +154,11 @@ fun SweepCelebration(
                         crown = flawless,
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (flawless) Icon3D(Icon3DName.TROPHY, 30.dp)
-                    else Icon(Icons.Filled.AutoAwesome, null,
-                        tint = if (more) Color(0xFF4F46E5) else Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
-                    Text(title, fontSize = if (more) 22.sp else 26.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                        style = TextStyle(brush = Brush.linearGradient(titleColors), fontFamily = Nunito))
-                    if (flawless) Icon3D(Icon3DName.TROPHY, 30.dp)
-                    else Icon(Icons.Filled.AutoAwesome, null,
-                        tint = if (more) Color(0xFF6366F1) else Color(0xFFEC4899), modifier = Modifier.size(22.dp))
-                }
+                // Moment lettering (ART_SPEC §6): SWEEP! / FLAWLESS!, read as the full title.
+                MomentTitle(
+                    if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
+                    contentDescription = titleCaseLabel(title),
+                )
                 Text(
                     if (flawless) "All ${totals.total} $noun won today" else "All ${totals.total} $noun completed today",
                     fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accentText,

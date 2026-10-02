@@ -7,6 +7,7 @@ import { haptic } from '@/lib/haptics';
 import { playSuccess } from '@/lib/sounds';
 import { victoryHost } from '@/lib/mascots';
 import { Mascot } from '@/components/ui/mascot';
+import { MomentArt } from '@/components/ui/art-title';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
@@ -77,13 +78,8 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
           />
 
           <div className="px-5 pt-6 pb-4">
-            {/* VICTORY header */}
-            <h2
-              className="text-4xl font-black text-transparent bg-clip-text"
-              style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899, #fbbf24)' }}
-            >
-              VICTORY!
-            </h2>
+            {/* VICTORY! lettering (docs/ART_SPEC.md §6). */}
+            <MomentArt moment="victory" />
 
             {/* Single solution word */}
             {solution && (

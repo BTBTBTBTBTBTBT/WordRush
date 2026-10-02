@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { leaderboardTitle } from '@wordle-duel/core';
-import { ART_SIZE, DAY_ART, GAME_ART_IDS, artSrc, dayArtName, gameArtSrc, isGameArtIcon } from './art';
+import { FRIENDLY_KINDS, leaderboardTitle } from '@wordle-duel/core';
+import {
+  ART_SIZE, DAY_ART, GAME_ART_IDS, MOMENT_LABEL, PAGE_SCENES, POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc,
+  isGameArtIcon, pocketArtSrc, resultMoment, type ArtName,
+} from './art';
 import { MODES } from './modes.generated';
 
 // The art pass (docs/ART_SPEC.md): every name the web table knows has its file
@@ -77,5 +80,48 @@ describe('3D UI icons (§0, §4, §5)', () => {
       expect(fs.existsSync(file), file).toBe(true);
       expect(webpSize(file)).toEqual([256, 256]);
     }
+  });
+});
+
+describe('second pass (§6–§9)', () => {
+  it('lists every art-* file in public/art (none shipped without a recorded size)', () => {
+    const files = fs.readdirSync(pub('/art')).filter((f) => f.startsWith('art-') && f.endsWith('.webp'));
+    for (const f of files) expect(Object.keys(ART_SIZE), f).toContain(f.replace(/\.webp$/, ''));
+  });
+
+  it('has moment lettering for every label (§6), ≈900 wide and wider than tall', () => {
+    for (const m of Object.keys(MOMENT_LABEL)) {
+      const name = `art-moment-${m}` as ArtName;
+      const [w, h] = ART_SIZE[name];
+      expect(w, name).toBeGreaterThan(h * 2);
+      expect(fs.existsSync(pub(artSrc(name))), name).toBe(true);
+    }
+    expect(resultMoment('win')).toBe('youwin');
+    expect(resultMoment('loss')).toBe('youlose');
+    expect(resultMoment('draw')).toBe('draw');
+  });
+
+  it('has a scene for every empty / error / done state (§7)', () => {
+    for (const scene of Object.values(PAGE_SCENES)) {
+      const name = `art-scene-${scene}` as ArtName;
+      expect(ART_SIZE[name], name).toBeDefined();
+      expect(fs.existsSync(pub(artSrc(name))), name).toBe(true);
+    }
+  });
+
+  it('ships the WELCOME! and LEADERBOARD titles (§8)', () => {
+    expect(ART_SIZE['art-title-welcome']).toBeDefined();
+    expect(ART_SIZE['art-title-leaderboard']).toBeDefined();
+  });
+
+  it('has a pocket game icon for every friendly kind (§9), 256 px square', () => {
+    for (const k of FRIENDLY_KINDS) {
+      expect(POCKET_ART_KINDS.has(k), k).toBe(true);
+      const file = pub(pocketArtSrc(k) as string);
+      expect(fs.existsSync(file), file).toBe(true);
+      expect(webpSize(file)).toEqual([256, 256]);
+    }
+    expect(pocketArtSrc('nope')).toBeNull();
+    expect(pocketArtSrc(undefined)).toBeNull();
   });
 });

@@ -845,16 +845,22 @@ struct VSGameView: View {
         let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         let mineBg = isDraw ? Color(hex: 0xECE8FF) : (isWin ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
         let theirBg = isDraw ? Color(hex: 0xECE8FF) : (isLoss ? Color(hex: 0xEBD6FD) : Color(hex: 0xE2E6FF))
+        // ART_SPEC §6: YOU WIN! / YOU LOSE / DRAW lettering in place of the text
+        // headline (a loss or forfeit reads YOU LOSE); the text row is the fallback.
+        let moment: MomentArt = isWin ? .youwin : (isDraw ? .draw : .youlose)
         return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Image("swords").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
-                    Text(headline)
-                        .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                MomentLettering(moment) {
+                    HStack(spacing: 8) {
+                        Image("swords").renderingMode(.template).resizable().scaledToFit()
+                            .frame(width: 18, height: 18).foregroundStyle(VsLobbyKit.purple)
+                        Text(headline)
+                            .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleInk)
+                            .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .frame(maxWidth: .infinity)
                 HStack(spacing: 6) {
                     if let h = VsLobbyKit.home(mode) {
                         BannerGlyph(icon: h.icon, ink: h.accent, accent: h.accent, solid: false, size: 18)
@@ -942,9 +948,18 @@ struct VSGameView: View {
                     .multilineTextAlignment(.center)
             }
             if let m = vm.cpuMilestone {
-                HStack(spacing: 4) {
-                    Icon3D(.flame, size: 18)
-                    Text("\(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                // ART_SPEC §6: the streak milestone gets the STREAK! lettering over
+                // its count line (the flame + text alone is the fallback).
+                if MomentArt.streak.isAvailable {
+                    VStack(spacing: 2) {
+                        MomentLettering(.streak, maxWidth: 200, maxHeight: 56) { EmptyView() }
+                        Text("\(m)-win bot streak").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                    }
+                } else {
+                    HStack(spacing: 4) {
+                        Icon3D(.flame, size: 18)
+                        Text("\(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                    }
                 }
             } else if vm.cpuStreak > 0 {
                 Text("Bot win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.sub)

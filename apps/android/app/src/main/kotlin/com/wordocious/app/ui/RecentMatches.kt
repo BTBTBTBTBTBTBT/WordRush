@@ -60,8 +60,8 @@ fun RecentMatchesList(
     onSeeAll: (() -> Unit)? = null,
     /** Empty-state line (Today: "No games yet today…"). */
     emptyText: String = "No games played yet.",
-    /** A host to say [emptyText] (Stats: D, MASCOT_SPEC §6); null keeps the plain line. */
-    emptyHost: MascotId? = null,
+    /** A scene above [emptyText] (Stats: D's no-stats scene, ART_SPEC §7); null keeps the plain line. */
+    emptyScene: SceneArt? = null,
 ) {
     var showAll by remember { mutableStateOf(false) }
     if (loading) {
@@ -69,8 +69,8 @@ fun RecentMatchesList(
         return
     }
     if (matches.isEmpty()) {
-        if (emptyHost != null) {
-            MascotEmptyState(emptyHost, emptyText, Modifier.padding(vertical = 12.dp), color = WTheme.textMuted)
+        if (emptyScene != null) {
+            SceneEmptyState(emptyScene, emptyText, Modifier.padding(vertical = 12.dp), color = WTheme.textMuted)
             return
         }
         Text(
@@ -222,8 +222,8 @@ private fun playedOn(createdAt: String, zone: java.time.ZoneId, day: java.time.L
 fun TodayGamesList(
     matches: List<ProfileService.RecentMatch>, opponentNames: Map<String, String>, userId: String?,
     loading: Boolean, showUnlimited: Boolean,
-    /** A host for the empty state (Stats: D saying its line, MASCOT_SPEC §6). */
-    emptyHost: MascotId? = null,
+    /** A scene for the empty state (Stats: D's no-stats scene, ART_SPEC §7). */
+    emptyScene: SceneArt? = null,
     emptyText: String = "No games yet today — play a daily to start the list.",
 ) {
     val today = java.time.LocalDate.now()
@@ -234,8 +234,8 @@ fun TodayGamesList(
         return
     }
     if (rows.isEmpty()) {
-        if (emptyHost != null) {
-            MascotEmptyState(emptyHost, emptyText, Modifier.padding(vertical = 12.dp), color = WTheme.textMuted)
+        if (emptyScene != null) {
+            SceneEmptyState(emptyScene, emptyText, Modifier.padding(vertical = 12.dp), color = WTheme.textMuted)
             return
         }
         Text(

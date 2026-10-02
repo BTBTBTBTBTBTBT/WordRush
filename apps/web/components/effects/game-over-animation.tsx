@@ -6,6 +6,7 @@ import { playGameOver } from '@/lib/sounds';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { useWordDefinitions } from '@/hooks/use-word-definitions';
 import { Mascot } from '@/components/ui/mascot';
+import { MomentArt } from '@/components/ui/art-title';
 import { PAGE_HOSTS } from '@/lib/mascots';
 
 interface GameOverAnimationProps {
@@ -62,13 +63,8 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
           />
 
           <div className="px-5 pt-6 pb-4">
-            {/* NICE TRY header */}
-            <h2
-              className="text-4xl font-black text-transparent bg-clip-text"
-              style={{ backgroundImage: 'linear-gradient(135deg, #f87171, #ef4444, #b91c1c)' }}
-            >
-              NICE TRY!
-            </h2>
+            {/* SO CLOSE! lettering (docs/ART_SPEC.md §6); the answer reveal stays under it. */}
+            <MomentArt moment="soclose" />
 
             {/* Single solution word */}
             {solution && (

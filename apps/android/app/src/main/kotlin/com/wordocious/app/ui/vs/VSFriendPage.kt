@@ -103,11 +103,11 @@ fun VsFriendPage(
                 if (!loaded) {
                     Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { com.wordocious.app.ui.CastLoader(null) }
                 } else if (friends.isEmpty()) {
-                    // I, growing your circle (MASCOT_SPEC §6).
-                    com.wordocious.app.ui.MascotEmptyState(
-                        com.wordocious.app.ui.Mascots.addFriends,
+                    // I's invite scene (ART_SPEC §7).
+                    com.wordocious.app.ui.SceneEmptyState(
+                        com.wordocious.app.ui.SceneArt.INVITE,
                         "No friends yet — add some on the Friends tab, or send a link.",
-                        size = 72.dp, color = VsTeal.sub,
+                        height = 120.dp, color = VsTeal.sub,
                     )
                 }
                 friends.forEach { f ->

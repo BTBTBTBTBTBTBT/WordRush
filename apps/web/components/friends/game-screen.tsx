@@ -9,9 +9,11 @@ import { FRIENDLY_TITLES, whoseTurn, type FriendlyMove } from '@wordle-duel/core
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
-import { FR, KIND_GRADIENT, TILE, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
+import { FR, KIND_COLOR, KIND_GRADIENT, TILE, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
-import { FriendAvatar, Sheet } from './friends-ui';
+import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 import { ResultHost } from '@/components/ui/mascot';
 import { pocketResultHost } from '@/lib/mascots';
 
@@ -128,11 +130,15 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const topBar = (
     <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
       <HeaderBack kind="close" onClick={close} className="absolute left-0" />
-      <span
-        className="font-black uppercase text-center px-10"
-        style={{ fontSize: 19, letterSpacing: 0.3, backgroundImage: gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}
-      >
-        {title}
+      {/* The pocket game's 3D icon beside its title (docs/ART_SPEC.md §9). */}
+      <span className="flex items-center gap-1.5 px-10 min-w-0">
+        {game && <GameGlyph kind={game.kind} size={16} color={KIND_COLOR[game.kind]} />}
+        <span
+          className="font-black uppercase text-center"
+          style={{ fontSize: 19, letterSpacing: 0.3, backgroundImage: gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}
+        >
+          {title}
+        </span>
       </span>
     </div>
   );
@@ -150,6 +156,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       <Shell>
         {topBar}
         <div className="text-center py-10 space-y-3">
+          <ArtScene scene={PAGE_SCENES.notFound} />
           <p className="text-sm font-bold" style={{ color: FR.label }}>This game isn&apos;t here anymore.</p>
           <button type="button" onClick={() => router.push('/friends')} className="px-5 py-2.5 text-[13px] font-black rounded-full" style={{ background: FR.soft, color: FR.mid }}>FRIENDS</button>
         </div>

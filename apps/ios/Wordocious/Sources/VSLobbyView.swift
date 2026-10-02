@@ -520,8 +520,13 @@ struct VSLobbyView: View {
             ZStack {
                 Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { onClose() }
                 VStack(spacing: 14) {
-                    Image("swords").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 44, height: 44).foregroundStyle(Theme.textMuted)
+                    // ART_SPEC §7: the played-today limit is U's all-done scene.
+                    if ArtScene.allDone.isAvailable {
+                        SceneArt(.allDone, height: 120)
+                    } else {
+                        Image("swords").renderingMode(.template).resizable().scaledToFit()
+                            .frame(width: 44, height: 44).foregroundStyle(Theme.textMuted)
+                    }
                     Text("Daily VS Used").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
                     Text("You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.")
                         .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)

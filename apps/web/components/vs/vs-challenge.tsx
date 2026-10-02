@@ -20,6 +20,8 @@ import { VS, modeTitle, raceTarget, sentStatus, type SentChallenge } from '@/lib
 import { VsGame } from './vs-game';
 import { ChallengeResult } from './challenge-result';
 import { InitialAvatar, ModeChip, TealButton, vsCardStyle } from './vs-ui';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 
 export function VsChallenge({ code }: { code: string }) {
   const router = useRouter();
@@ -67,6 +69,7 @@ export function VsChallenge({ code }: { code: string }) {
   if (!lookup || !lookup.ok) {
     return centered(
       <>
+        <ArtScene scene={PAGE_SCENES.notFound} />
         <div className="text-[15px] font-black" style={{ color: VS.deep }}>{lookup && !lookup.ok ? lookup.error : 'Challenge not found'}</div>
         {vsHome}
       </>,

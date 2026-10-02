@@ -354,29 +354,7 @@ fun CastLoader(
     }
 }
 
-/**
- * An empty state (§2, §6): a 96 dp host bobbing above one short line in the
- * host's voice. [content] adds the screen's existing action under the line.
- */
-@Composable
-fun MascotEmptyState(
-    id: MascotId,
-    says: String,
-    modifier: Modifier = Modifier,
-    size: Dp = 96.dp,
-    color: Color = WTheme.textSecondary,
-    content: (@Composable () -> Unit)? = null,
-) {
-    Column(
-        modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Mascot(id, size, motion = MascotMotion.BOB)
-        Text(says, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = color, textAlign = TextAlign.Center)
-        content?.invoke()
-    }
-}
+// Empty states draw their ART_SPEC §7 scene: SceneEmptyState in ArtKit.kt.
 
 /**
  * A game screen's title with its host (MASCOT_SPEC §5): the 30 dp host stands at

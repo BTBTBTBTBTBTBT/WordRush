@@ -70,8 +70,8 @@ struct SolvedPuzzleView: View {
                 }
             } else {
                 VStack(spacing: 12) {
-                    // R for the error screen (MASCOT_SPEC §6).
-                    MascotView(Mascots.offline, size: 96, motion: .bob)
+                    // R unplugged for the error screen (MASCOT_SPEC §6, ART_SPEC §7).
+                    SceneArt(.unplugged)
                     Text("Couldn't load your solved puzzle").font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                     Button("Home") { dismiss() }.font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
                 }

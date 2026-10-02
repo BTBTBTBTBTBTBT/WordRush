@@ -108,6 +108,8 @@ fun AuthScreen(
                 HeaderBackButton(onDismiss, close = true)
             }
         }
+        // The whole cast around WELCOME! heads sign-in (ART_SPEC §8).
+        PageTitleArt(TitleArt.WELCOME, Modifier.padding(bottom = 12.dp))
         // Wordmark
         Text(
             "WORDOCIOUS",

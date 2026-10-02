@@ -11,6 +11,7 @@ import { SevenIcon } from '@/components/ui/seven-icon';
 import { LadderIcon } from '@/components/ui/ladder-icon';
 import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
 import { GameArt } from '@/components/ui/game-art';
+import { ArtTitle } from '@/components/ui/art-title';
 import { MODES as CATALOG } from '@/lib/modes.generated';
 import dynamic from 'next/dynamic';
 // Loaded on the "Sign in" tap only (founder, 2026-09-29).
@@ -117,6 +118,8 @@ export function Landing() {
 
       {/* Hero */}
       <section className="text-center px-6 pt-8 pb-10 max-w-2xl mx-auto">
+        {/* The whole cast around WELCOME! (docs/ART_SPEC.md §8). */}
+        <ArtTitle name="art-title-welcome" label="Welcome" as="div" maxWidth={420} className="mb-3" />
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={wordmarkStyle}>WORDOCIOUS</h1>
         <p className="text-base font-bold mb-2" style={{ color: 'var(--color-text)' }}>
           Daily word games. Eight on the home screen, ten more behind one tile.

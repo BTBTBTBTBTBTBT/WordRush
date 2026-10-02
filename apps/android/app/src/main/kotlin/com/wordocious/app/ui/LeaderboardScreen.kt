@@ -712,8 +712,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 .padding(vertical = 40.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            // R on an empty board; I (growing your circle) on an empty Friends board (MASCOT_SPEC §6).
-                            Mascot(if (friendsOnly) Mascots.addFriends else Mascots.empty, 96.dp, motion = MascotMotion.BOB)
+                            // R asleep on an empty board; I's invite scene on an empty Friends board (ART_SPEC §7).
+                            SceneImage(if (friendsOnly) SceneArt.INVITE else SceneArt.ASLEEP)
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 if (friendsOnly) Mascots.addFriendLine else "No daily results yet. Be the first!",
@@ -1278,9 +1278,9 @@ private fun SweepPill(flawless: Boolean, streak: Int = 0) {
  *  as on the per-mode empty board — not the broom. */
 @Composable
 private fun EmptyBoardCard(message: String) {
-    // An empty board gets R, sleepy in his nightcap (MASCOT_SPEC §2, §6).
-    MascotEmptyState(
-        Mascots.empty, message, Modifier.lbSoftCard().padding(vertical = 28.dp, horizontal = 16.dp),
+    // An empty board gets R asleep (ART_SPEC §7 scene).
+    SceneEmptyState(
+        SceneArt.ASLEEP, message, Modifier.lbSoftCard().padding(vertical = 28.dp, horizontal = 16.dp),
         color = WTheme.textMuted,
     )
 }

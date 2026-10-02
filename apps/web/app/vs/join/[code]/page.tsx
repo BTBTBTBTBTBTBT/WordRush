@@ -13,6 +13,8 @@ import {
   type MatchInvite,
 } from '@/lib/invite-service';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 
 export default function JoinInvitePage() {
   const params = useParams();
@@ -79,7 +81,7 @@ export default function JoinInvitePage() {
     );
   }
 
-  if (status === 'notfound') return centered(<p className="text-sm font-black" style={{ color: '#dc2626' }}>Invite not found.</p>);
+  if (status === 'notfound') return centered(<><ArtScene scene={PAGE_SCENES.notFound} className="mb-3" /><p className="text-sm font-black" style={{ color: '#dc2626' }}>Invite not found.</p></>);
   if (status === 'expired') return centered(<p className="text-sm font-black" style={{ color: '#dc2626' }}>This invite has expired.</p>);
   if (status === 'closed') return centered(<p className="text-sm font-black" style={{ color: 'var(--color-text-muted)' }}>This invite is no longer active.</p>);
 

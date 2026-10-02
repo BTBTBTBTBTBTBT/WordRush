@@ -9,6 +9,8 @@ import type { HeadToHeadRecord } from '@/lib/head-to-head';
 import { InitialAvatar, VsModeIcon } from './vs-ui';
 import { ResultHost } from '@/components/ui/mascot';
 import { vsResultHost } from '@/lib/mascots';
+import { MomentArt } from '@/components/ui/art-title';
+import { resultMoment } from '@/lib/art';
 
 // The async challenge screens in the HOME palette (VS overhaul §3 + §5, canvas
 // board AA phone 4): the race result (YOU vs @DOUG over one split window, the
@@ -117,11 +119,13 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
           <div className="relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
             <div className="flex items-center gap-1.5">
               <Swords className="w-[18px] h-[18px] shrink-0" style={{ color: '#7c3aed' }} />
-              <span className="flex-1 font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: '#4c1d95' }}>{challengeHeadline(outcome, them.name)}</span>
+              {/* YOU WIN! / YOU LOSE / DRAW lettering (docs/ART_SPEC.md §6), the race line under it. */}
+              <MomentArt moment={resultMoment(outcome)} as="div" widthPct={85} className="flex-1 min-w-0" />
               <button type="button" onClick={onShare} aria-label="Share the result" className="shrink-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
                 <Icon3D name="share" size={24} />
               </button>
             </div>
+            <span className="text-center font-black" style={{ fontSize: 12.5, letterSpacing: 0.4, lineHeight: 1.2, color: '#4c1d95' }}>{challengeHeadline(outcome, them.name)}</span>
             <div className="flex items-center gap-1.5">
               <ModeGlyph mode={mode} />
               <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>

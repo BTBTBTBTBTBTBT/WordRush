@@ -45,8 +45,11 @@ struct ActivityFeedView: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let events {
                     if events.isEmpty {
-                        Text("Quiet week so far — a sweep, a medal, a record or a game won from anyone in your circle shows up here.")
-                            .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                        // R asleep over the quiet feed (ART_SPEC §7).
+                        MascotMessage(scene: .asleep,
+                                      line: "Quiet week so far — a sweep, a medal, a record or a game won from anyone in your circle shows up here.",
+                                      color: FriendsKit.label)
+                            .frame(maxWidth: .infinity)
                     } else {
                         let today = FriendsService.localDay()
                         ForEach(expanded ? events : Array(events.prefix(Self.shown))) { e in

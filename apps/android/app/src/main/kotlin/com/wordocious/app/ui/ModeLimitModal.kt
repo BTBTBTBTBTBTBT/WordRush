@@ -56,8 +56,8 @@ fun ModeLimitModal(
                 .background(WTheme.surface).clickableNoRipple {}.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // "All done for today, come back later": U, the calm one (MASCOT_SPEC §1).
-            Mascot(Mascots.allDone, 72.dp, motion = MascotMotion.BOB)
+            // "All done for today, come back later": U's all-done scene (ART_SPEC §7).
+            SceneImage(SceneArt.ALL_DONE, height = 120.dp)
             Spacer(Modifier.height(8.dp))
             Text("$modeName — Played Today", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center)
             Spacer(Modifier.height(4.dp))

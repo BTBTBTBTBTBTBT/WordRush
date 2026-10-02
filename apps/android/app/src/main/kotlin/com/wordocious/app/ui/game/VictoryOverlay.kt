@@ -53,7 +53,7 @@ import kotlin.random.Random
 /**
  * Victory / game-over celebration overlay (spec line 150). Shown for a game that
  * finished LIVE this session, before the post-game stats screen. Dim backdrop +
- * confetti, a card with the 6pt accent bar, big VICTORY!/GAME OVER title, the
+ * confetti, a card with the 6pt accent bar, the VICTORY!/SO CLOSE! moment art, the
  * solution (single) or board count (multi), stat blocks, tap-to-continue.
  */
 @Composable
@@ -103,7 +103,7 @@ fun VictoryOverlay(
     ) {
         if (won && !WTheme.reducedMotion) ConfettiView()
 
-        // The game's host pops above VICTORY; R stands, static, above GAME OVER
+        // The game’s host pops above VICTORY!; R stands, static, above SO CLOSE!
         // (MASCOT_SPEC §3, §5). Its feet rest on the card, clear of the headline.
         com.wordocious.app.ui.ResultHostBox(won, mode.name, Modifier.widthIn(max = 380.dp).padding(24.dp)) { hostInset ->
         Column(
@@ -124,15 +124,10 @@ fun VictoryOverlay(
                 Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (won) {
-                    Text(
-                        "VICTORY!",
-                        fontSize = 36.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24))), fontFamily = Nunito),
-                    )
-                } else {
-                    Text("GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black, color = Color(0xFFF87171))
-                }
+                // Moment lettering (ART_SPEC §6): VICTORY! on a win, SO CLOSE! on a loss.
+                com.wordocious.app.ui.MomentTitle(
+                    if (won) com.wordocious.app.ui.MomentArt.VICTORY else com.wordocious.app.ui.MomentArt.SO_CLOSE,
+                )
                 Spacer(Modifier.height(8.dp))
                 if (!multi) {
                     // ProperNoundle answers are stored normalized ("TAYLORSWIFT");

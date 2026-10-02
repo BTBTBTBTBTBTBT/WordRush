@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { PocketArt } from '@/components/ui/game-art';
+import { GAME_ART_FILL } from '@/lib/art';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
 
@@ -33,8 +35,8 @@ function CoinOutline({ size, color, stroke }: { size: number; color: string; str
   );
 }
 
-/** The game's outline icon: RPS scissors · Tic-Tac-Tile hash · Call It coin · Pass the Puzzle opposing arrows · Ghost ghost · Word Chain chain link. */
-export function GameGlyph({ kind, size = 16, color = '#ffffff', stroke = 2.4 }: { kind: FriendlyKind; size?: number; color?: string; stroke?: number }) {
+/** The game's old outline icon: RPS scissors · Tic-Tac-Tile hash · Call It coin · Pass the Puzzle opposing arrows · Ghost ghost · Word Chain chain link. */
+function OutlineGlyph({ kind, size, color, stroke }: { kind: FriendlyKind; size: number; color: string; stroke: number }) {
   const props = { width: size, height: size, color, strokeWidth: stroke, 'aria-hidden': true } as const;
   switch (kind) {
     case 'rps': return <Scissors {...props} />;
@@ -46,15 +48,32 @@ export function GameGlyph({ kind, size = 16, color = '#ffffff', stroke = 2.4 }: 
   }
 }
 
-/** White outline icon in the game's colored rounded square, glowing in the same color. */
+/**
+ * The game's glossy 3D icon (docs/ART_SPEC.md §9: game-pocket-<kind>, rock
+ * fist · X+O · star coin · puzzle piece · little ghost · chain links). `size`
+ * is the old outline glyph's slot; the art fills its chip at GAME_ART_FILL
+ * times it (same rule as the game icons, §3). The outline glyph stays as the
+ * fallback when the art is missing. Decorative.
+ */
+export function GameGlyph({ kind, size = 16, color = '#ffffff', stroke = 2.4 }: { kind: FriendlyKind; size?: number; color?: string; stroke?: number }) {
+  return (
+    <PocketArt
+      kind={kind}
+      size={Math.round(size * GAME_ART_FILL)}
+      fallback={<OutlineGlyph kind={kind} size={size} color={color} stroke={stroke} />}
+    />
+  );
+}
+
+/** The game's 3D icon filling a rounded chip in its color's tint (the outline fallback draws in that color). */
 export function GameIconSquare({ kind, size = 34 }: { kind: FriendlyKind; size?: number }) {
   const color = KIND_COLOR[kind];
   return (
     <span
       className="flex items-center justify-center shrink-0"
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: color, boxShadow: `0 0 10px ${color}66` }}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: `${color}1f` }}
     >
-      <GameGlyph kind={kind} size={Math.round(size * 0.5)} />
+      <GameGlyph kind={kind} size={Math.round(size * 0.5)} color={color} />
     </span>
   );
 }

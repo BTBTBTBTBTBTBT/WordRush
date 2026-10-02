@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
@@ -26,7 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.ModeGen
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.data.StatsDeepService
-import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 
@@ -125,28 +122,12 @@ fun TodayCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (allDone) {
-                // Flanking trophy/sparkle glyphs + gradient banner text (the old Today's Dailies card).
-                val iconSize = 15.dp
-                Row(
-                    Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                ) {
-                    if (flawless) Icon3D(Icon3DName.TROPHY, 22.dp)
-                    else Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(iconSize))
-                    Text(
-                        if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
-                        fontSize = 16.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(
-                            fontFamily = Nunito,
-                            brush = Brush.linearGradient(
-                                if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309))
-                                else listOf(Color(0xFFA78BFA), Color(0xFFEC4899)),
-                            ),
-                        ),
-                    )
-                    if (flawless) Icon3D(Icon3DName.TROPHY, 22.dp)
-                    else Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFFEC4899), modifier = Modifier.size(iconSize))
-                }
+                // Moment lettering (ART_SPEC §6): FLAWLESS! / SWEEP!, read as the full title.
+                MomentTitle(
+                    if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
+                    widthFraction = 0.6f, maxHeight = 40.dp,
+                    contentDescription = if (flawless) "Flawless victory!" else "Daily sweep!",
+                )
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("TODAY · ${dateLabel.uppercase()}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)

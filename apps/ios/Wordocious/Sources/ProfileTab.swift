@@ -420,7 +420,7 @@ struct ProfileTab: View {
                 SectionHeader("Today's Games", accent: Color(hex: 0x2563EB))
                 TodayGamesList(entries: todayEntries, profileId: p.id, opponentNames: opponentNames,
                                loading: recentLoading && recentMatches.isEmpty,
-                               emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats)
+                               emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats, emptyScene: .noStats)
             }
         }
     }
@@ -939,7 +939,7 @@ struct ProfileTab: View {
             SectionHeader("Recent Matches", accent: Color(hex: 0x2563EB))
             RecentMatchesList(matches: recentMatches, profileId: p.id, opponentNames: opponentNames,
                               loading: recentLoading, limit: 5,
-                              emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats)
+                              emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats, emptyScene: .noStats)
         }
     }
 
@@ -1618,7 +1618,7 @@ struct LeaderboardTab: View {
         if sweepLoading {
             LeaderboardSkeleton()
         } else if sweepEntries.isEmpty {
-            MascotMessage(host: Mascots.empty, line: "No sweeps yet today. Be the first!")
+            MascotMessage(scene: .asleep, line: "No sweeps yet today. Be the first!")
                 .frame(maxWidth: .infinity).padding(.vertical, 28)
             .lbCard()
         } else {
@@ -1763,8 +1763,9 @@ struct LeaderboardTab: View {
                 .lbCard()
             } else {
                 VStack(spacing: 8) {
-                    // The cast (MASCOT_SPEC §6): I grows the circle; R says it's quiet in here.
-                    MascotMessage(host: friendsOnly ? Mascots.addFriends : Mascots.empty,
+                    // The cast (MASCOT_SPEC §6, ART_SPEC §7): I's invite scene grows the
+                    // circle; R asleep says it's quiet in here.
+                    MascotMessage(scene: friendsOnly ? .invite : .asleep,
                                   line: friendsOnly ? Mascots.addFriendLine : "No daily results yet. Be the first!")
                     // Tier 2 (Aug 11): the empty Friends board is the
                     // best recruiting surface in the app — use it.

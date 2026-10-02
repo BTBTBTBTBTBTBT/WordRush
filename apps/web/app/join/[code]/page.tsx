@@ -6,6 +6,8 @@ import { Gift } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { logLandingVisit } from '@/lib/landing-visits';
+import { ArtScene } from '@/components/ui/art-scene';
+import { PAGE_SCENES } from '@/lib/art';
 
 // Referral landing — wordocious.com/join/<CODE>. Modeled on vs/join/[code]
 // (same centered card) but for the Pro gift-trial program. Signed-out
@@ -81,7 +83,7 @@ export default function JoinReferralPage() {
   if (loading || status === 'loading') {
     return centered(<p className="text-sm font-bold animate-pulse" style={{ color: 'var(--color-text-muted)' }}>Loading invite…</p>);
   }
-  if (status === 'notfound') return centered(<p className="text-sm font-black" style={{ color: '#dc2626' }}>Invite not found.</p>);
+  if (status === 'notfound') return centered(<><ArtScene scene={PAGE_SCENES.notFound} className="mb-3" /><p className="text-sm font-black" style={{ color: '#dc2626' }}>Invite not found.</p></>);
   if (status === 'expired') return centered(<p className="text-sm font-black" style={{ color: '#dc2626' }}>This invite has expired — ask your friend for a fresh one.</p>);
   if (status === 'used') return centered(<p className="text-sm font-black" style={{ color: 'var(--color-text-muted)' }}>This invite was already used — ask your friend for a fresh one.</p>);
 

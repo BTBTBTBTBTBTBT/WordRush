@@ -913,8 +913,13 @@ struct ModeLimitModal: View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { onClose() }
             VStack(spacing: 0) {
-                Icon3D(.lock, size: 52) // ART_SPEC §5
-                    .padding(.bottom, 12)
+                // ART_SPEC §7: the played-today limit is U's all-done scene
+                // (the §5 lock is its fallback).
+                if ArtScene.allDone.isAvailable {
+                    SceneArt(.allDone, height: 120).padding(.bottom, 10)
+                } else {
+                    Icon3D(.lock, size: 52).padding(.bottom, 12)
+                }
                 Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center).padding(.bottom, 4)
                 Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.")

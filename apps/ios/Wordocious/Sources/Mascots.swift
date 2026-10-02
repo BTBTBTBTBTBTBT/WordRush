@@ -330,6 +330,8 @@ struct ResultHost: View {
 // MARK: - Empty / error states
 
 /// A host centered above one short line (empty and error states, §2 / §6).
+/// With a `scene` (ART_SPEC §7) the scene art (~140 pt tall) stands in for the
+/// plain host, the voice line kept under it; a missing image falls back to `host`.
 struct MascotMessage: View {
     let host: MascotID
     let line: String
@@ -337,14 +339,29 @@ struct MascotMessage: View {
     var motion: MascotMotion = .bob
     var font: Font = Brand.font(12, .bold)
     var color: Color = Theme.textMuted
+    var scene: ArtScene? = nil
+    var sceneHeight: CGFloat = 140
 
     var body: some View {
         VStack(spacing: 8) {
-            MascotView(host, size: size, motion: motion)
+            if let scene {
+                SceneArt(scene, height: sceneHeight, fallbackSize: size, fallbackMotion: motion)
+            } else {
+                MascotView(host, size: size, motion: motion)
+            }
             Text(line).font(font).foregroundStyle(color)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+extension MascotMessage {
+    /// ART_SPEC §7: a scene above the line (its character is the fallback host).
+    init(scene: ArtScene, line: String, size: CGFloat = 96, motion: MascotMotion = .bob,
+         font: Font = Brand.font(12, .bold), color: Color = Theme.textMuted, sceneHeight: CGFloat = 140) {
+        self.init(host: scene.host, line: line, size: size, motion: motion, font: font, color: color,
+                  scene: scene, sceneHeight: sceneHeight)
     }
 }
 

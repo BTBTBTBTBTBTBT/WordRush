@@ -138,6 +138,8 @@ struct PublicProfileView: View {
 
     private var notFoundView: some View {
         VStack(spacing: 16) {
+            // O3 searching for the missing profile (ART_SPEC §7).
+            SceneArt(.notFound)
             Text("Player not found").font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
             Text("This profile doesn't exist or may have been removed.")
                 .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)

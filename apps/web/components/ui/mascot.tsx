@@ -106,15 +106,8 @@ export function CastRow({
   );
 }
 
-/** §2 empty state: a 96 px host bobbing over its one-line voice. */
-export function MascotEmptyState({ id, line, size = 96, className = '' }: { id: MascotId; line: string; size?: number; className?: string }) {
-  return (
-    <div className={`flex flex-col items-center gap-2 text-center ${className}`}>
-      <Mascot id={id} size={size} motion="bob" />
-      <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{line}</p>
-    </div>
-  );
-}
+// §2/§6 empty states draw a scene now (docs/ART_SPEC.md §7):
+// components/ui/art-scene.tsx SceneEmptyState.
 
 /** Right padding a banner's headline keeps so the host never covers it. */
 export const BANNER_HOST_CLEARANCE = 68;

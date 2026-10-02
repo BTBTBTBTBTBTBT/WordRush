@@ -1,7 +1,7 @@
 import Image from 'next/image';
-import { ART_SIZE, artSrc, type ArtName } from '@/lib/art';
+import { ART_SIZE, MOMENT_LABEL, artSrc, type ArtName, type MomentName } from '@/lib/art';
 
-// Image titles (docs/ART_SPEC.md §1, §2): a page title drawn as art — the
+// Image titles (docs/ART_SPEC.md §1, §2, §6, §8): a page title drawn as art — the
 // lettering with the whole cast on it (art-title-*) or a Leaderboard day title
 // (art-day-*). The image carries the title text as its accessible name, inside
 // the heading element the text title used. Sized by width up to `maxWidth`
@@ -53,5 +53,41 @@ export function ArtTitle({
         style={{ aspectRatio: `${w} / ${h}`, ...imgStyle }}
       />
     </Tag>
+  );
+}
+
+interface MomentArtProps {
+  moment: MomentName;
+  /** Accessible name; defaults to the words drawn (MOMENT_LABEL). */
+  label?: string;
+  /** Tallest it draws, in CSS px (§6: ≈72). */
+  maxHeight?: number;
+  /** Share of the card width to fill (§6: ~70%). */
+  widthPct?: number;
+  as?: 'h1' | 'h2' | 'div';
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+/**
+ * Moment lettering (docs/ART_SPEC.md §6): a result / celebration headline
+ * (VICTORY!, SO CLOSE!, YOU WIN!, SWEEP!, …) drawn as art in place of its
+ * text, ~70% of the card width and never taller than `maxHeight` (the width
+ * cap keeps the aspect ratio), inside the heading element the text used, with
+ * the words as its accessible name. The game's host pop stays above it.
+ */
+export function MomentArt({ moment, label, maxHeight = 72, widthPct = 70, as = 'h2', className = '', style }: MomentArtProps) {
+  const name = `art-moment-${moment}` as const;
+  const [w, h] = ART_SIZE[name];
+  return (
+    <ArtTitle
+      name={name}
+      label={label ?? MOMENT_LABEL[moment]}
+      maxWidth={Math.round((maxHeight * w) / h)}
+      widthPct={widthPct}
+      as={as}
+      className={className}
+      style={style}
+    />
   );
 }
