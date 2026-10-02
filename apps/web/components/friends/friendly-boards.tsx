@@ -1,0 +1,402 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import {
+  PASS_MAX_GUESSES, whoseTurn,
+  type CoinFace, type CoinState, type FriendlyMove, type PassState, type RpsPick, type RpsState, type Side, type TttState,
+} from '@wordle-duel/core';
+import { Keyboard } from '@/components/game/keyboard';
+import { FR, TILE, otherSide, passKeyStates, tileState, tttThreats } from '@/lib/friends-play';
+import { FriendAvatar, SectionLabel } from './friends-ui';
+
+// The four pocket-game boards (Friends overhaul §4, canvas board AE). Each one
+// only renders the server's state and hands a move up; the screen sends it.
+// Tiles always use our colors: purple = you, amber = them, slate = absent.
+
+export interface Player { name: string; url: string | null; emoji: string | null }
+
+interface BoardProps<S> {
+  state: S;
+  me: Side;
+  you: Player;
+  them: Player;
+  active: boolean;
+  busy: boolean;
+  /** Bumps when a new round / flip arrives, so the reveal animates once. */
+  revealKey: number;
+  onMove: (move: FriendlyMove) => Promise<boolean>;
+}
+
+const PICKS: RpsPick[] = ['rock', 'paper', 'scissors'];
+const art = (name: string) => `/friends/${name}.png`;
+
+function Art({ name, size }: { name: string; size: number }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={art(name)} alt={name} width={size} height={size} draggable={false} style={{ width: size, height: size, objectFit: 'contain' }} />;
+}
+
+// ── Rock Paper Scissors ─────────────────────────────────────────────────────
+
+export function RpsBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<RpsState>) {
+  const theirSide = otherSide(me);
+  const theirPick = state.picks[theirSide] as string | undefined;
+  const myPick = state.picks[me];
+  const [pending, setPending] = useState<RpsPick | null>(null);
+  const last = state.rounds[state.rounds.length - 1];
+  // A fresh round result flips over for a moment; once the match is over it stays.
+  const [revealing, setRevealing] = useState(false);
+  useEffect(() => {
+    if (!revealKey) return;
+    setRevealing(true);
+    const t = setTimeout(() => setRevealing(false), 2600);
+    return () => clearTimeout(t);
+  }, [revealKey]);
+  // My pick landed (or the round resolved and reset the picks): drop the optimistic one.
+  useEffect(() => { setPending(null); }, [myPick, state.rounds.length]);
+  const showReveal = !!last && (revealing || !active);
+  const THEM = them.name.toUpperCase();
+  const chosen = myPick ?? pending;
+
+  const pick = async (p: RpsPick) => {
+    if (!active || busy || myPick || pending) return;
+    setPending(p);
+    const ok = await onMove({ kind: 'rps', pick: p });
+    if (!ok) setPending(null);
+  };
+
+  const revealCard = (side: Side, label: string) => {
+    const p = last![side];
+    const won = last!.winner === side;
+    const glow = side === me ? TILE.you : TILE.them;
+    return (
+      <div className="flex flex-col items-center gap-1.5">
+        <div
+          key={`${revealKey}-${side}`}
+          className="flex items-center justify-center"
+          style={{
+            width: 104, height: 118, borderRadius: 16, background: '#ffffff',
+            boxShadow: won ? `0 0 0 2px ${glow}, 0 0 18px ${glow}99` : FR.cardShadow,
+            animation: revealing ? 'friends-flip 0.45s ease-out both' : undefined,
+          }}
+        >
+          <Art name={p} size={78} />
+        </div>
+        <span className="text-[10px] font-black uppercase" style={{ color: won ? glow : FR.label, letterSpacing: 0.8 }}>
+          {label}{won ? ' · WON' : ''}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {showReveal ? (
+        <div className="flex items-start justify-center gap-4">
+          {revealCard(me, 'YOU')}
+          {revealCard(theirSide, them.name)}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-1.5">
+          <div
+            className="flex items-center justify-center"
+            style={{ width: 104, height: 118, borderRadius: 16, background: 'linear-gradient(135deg, #fce7f3, #ede9fe)', boxShadow: FR.cardShadow }}
+            aria-label={theirPick ? `${them.name} picked` : `${them.name} has not picked`}
+          >
+            <span className="font-black" style={{ fontSize: 46, color: FR.ink, opacity: theirPick ? 1 : 0.35 }}>?</span>
+          </div>
+          {active && (theirPick
+            ? <span className="text-[11px] font-black" style={{ color: FR.online, letterSpacing: 0.6 }}>✓ {THEM} PICKED</span>
+            : <span className="text-[11px] font-black" style={{ color: FR.label, letterSpacing: 0.6 }}>{THEM} IS PICKING</span>)}
+          {last && (
+            <span className="flex items-center gap-1 text-[10.5px] font-bold" style={{ color: FR.label }}>
+              Last round: <Art name={last[me]} size={18} /> vs <Art name={last[theirSide]} size={18} />
+              {last.winner === null ? ' · tie' : last.winner === me ? ' · you won' : ` · ${them.name} won`}
+            </span>
+          )}
+        </div>
+      )}
+
+      {active && (
+        <>
+          <div className="w-full"><SectionLabel>Your pick</SectionLabel></div>
+          <div className="flex justify-center gap-2.5">
+            {PICKS.map((p) => {
+              const sel = chosen === p;
+              const locked = !!chosen || busy;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => pick(p)}
+                  disabled={locked && !sel}
+                  aria-pressed={sel}
+                  aria-label={p}
+                  className="flex flex-col items-center justify-center gap-1 transition-transform active:scale-95"
+                  style={{
+                    width: 104, height: 118, borderRadius: 16,
+                    background: sel ? TILE.you : '#ffffff',
+                    boxShadow: sel ? '0 0 16px rgba(124,58,237,0.55)' : FR.cardShadow,
+                    opacity: locked && !sel ? 0.5 : 1,
+                  }}
+                >
+                  <Art name={p} size={70} />
+                  <span className="text-[11px] font-black uppercase" style={{ color: sel ? '#ffffff' : FR.text, letterSpacing: 0.6 }}>{p}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[12px] font-bold" style={{ color: FR.label }}>
+            {chosen ? `Locked in. ${theirPick ? 'Flipping…' : `Waiting on ${them.name}.`}` : 'Both picks flip at once.'}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Tic-Tac-Tile ────────────────────────────────────────────────────────────
+
+function Cross() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+    </svg>
+  );
+}
+function Ring() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" aria-hidden="true">
+      <circle cx="12" cy="12" r="6.5" />
+    </svg>
+  );
+}
+
+export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<TttState>) {
+  const [pendingCell, setPendingCell] = useState<number | null>(null);
+  const myTurn = active && whoseTurn(state) === me;
+  const sig = `${state.board.join(',')}|${state.games.length}`;
+  useEffect(() => { setPendingCell(null); }, [sig]);
+  const board = [...state.board];
+  if (pendingCell !== null && !board[pendingCell]) board[pendingCell] = me;
+  const threats = myTurn && pendingCell === null ? tttThreats(state.board, me) : [];
+
+  const tap = async (i: number) => {
+    if (!myTurn || busy || pendingCell !== null || state.board[i]) return;
+    setPendingCell(i);
+    const ok = await onMove({ kind: 'ttt', cell: i });
+    if (!ok) setPendingCell(null);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="grid grid-cols-3" style={{ gap: 10 }}>
+        {board.map((m, i) => {
+          const mine = m === me;
+          const theirs = !!m && !mine;
+          const threat = threats.includes(i);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => tap(i)}
+              disabled={!myTurn || !!m}
+              aria-label={m ? (mine ? 'Your tile' : `${them.name}'s tile`) : `Empty tile ${i + 1}`}
+              className="flex items-center justify-center transition-transform active:scale-95"
+              style={{
+                width: 98, height: 98, borderRadius: 16,
+                background: mine ? TILE.you : theirs ? TILE.them : '#ffffff',
+                boxShadow: mine ? '0 0 12px rgba(124,58,237,0.45)' : theirs ? '0 0 12px rgba(245,158,11,0.45)' : threat ? '0 0 14px rgba(124,58,237,0.35)' : FR.cardShadow,
+                outline: threat ? `2px dashed ${TILE.you}` : undefined,
+                outlineOffset: threat ? -6 : undefined,
+                cursor: myTurn && !m ? 'pointer' : 'default',
+              }}
+            >
+              {mine ? <Cross /> : theirs ? <Ring /> : null}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-4 text-[11px] font-black" style={{ letterSpacing: 0.8 }}>
+        <span className="flex items-center gap-1.5" style={{ color: TILE.you }}>
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: TILE.you }} /> YOU · X
+        </span>
+        <span className="flex items-center gap-1.5 uppercase" style={{ color: '#b45309' }}>
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: TILE.them }} /> {them.name} · O
+        </span>
+      </div>
+      {active && !myTurn && (
+        <p className="text-[12px] font-bold" style={{ color: FR.label }}>{them.name}&apos;s move. It lands here live.</p>
+      )}
+    </div>
+  );
+}
+
+// ── Call It ─────────────────────────────────────────────────────────────────
+
+export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<CoinState>) {
+  const last = state.rounds[state.rounds.length - 1];
+  const face: CoinFace = last ? last.flip : 'heads';
+  const myCall = active && whoseTurn(state) === me;
+  const [calling, setCalling] = useState<CoinFace | null>(null);
+  const THEM = them.name.toUpperCase();
+
+  const call = async (c: CoinFace) => {
+    if (!myCall || busy || calling) return;
+    setCalling(c);
+    await onMove({ kind: 'coin', call: c });
+    setCalling(null);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div
+        key={revealKey}
+        style={{ width: 150, height: 150, animation: revealKey ? 'friends-coin-spin 1.1s cubic-bezier(.2,.7,.3,1) both' : undefined }}
+      >
+        <Art name={face} size={150} />
+      </div>
+      <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6 }}>
+        {last
+          ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}`
+          : 'No flips yet'}
+      </p>
+
+      {active && (
+        <>
+          <div className="w-full"><SectionLabel>{myCall ? 'Your call' : `${THEM} calls`}</SectionLabel></div>
+          {myCall ? (
+            <div className="w-full grid grid-cols-2 gap-2.5">
+              {(['heads', 'tails'] as CoinFace[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => call(c)}
+                  disabled={busy || calling !== null}
+                  className="py-3 text-[15px] font-black uppercase rounded-[14px] transition-transform active:scale-[0.98] disabled:opacity-60"
+                  style={c === 'heads'
+                    ? { background: TILE.you, color: '#ffffff', boxShadow: '0 0 12px rgba(124,58,237,0.4)', letterSpacing: 0.8 }
+                    : { background: '#ede9fe', color: '#6d28d9', letterSpacing: 0.8 }}
+                >
+                  {calling === c ? 'Flipping…' : c}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[12px] font-bold" style={{ color: FR.label }}>{them.name} calls this one. You&apos;ll see it land live.</p>
+          )}
+        </>
+      )}
+
+      <div className="w-full"><SectionLabel>What&apos;s on the line</SectionLabel></div>
+      <span className="self-start px-3 flex items-center text-[12px] font-black rounded-full" style={{ height: 30, background: FR.soft, color: FR.ink }}>
+        {state.stake}
+      </span>
+    </div>
+  );
+}
+
+// ── Pass the Puzzle ─────────────────────────────────────────────────────────
+
+const PASS_TILE = 44;
+
+function passTileStyle(st: 'correct' | 'present' | 'absent'): React.CSSProperties {
+  if (st === 'correct') return { background: TILE.you, color: '#ffffff', boxShadow: '0 0 6px rgba(124,58,237,0.45)' };
+  if (st === 'present') return { background: TILE.them, color: '#ffffff' };
+  return { background: TILE.absent, color: '#475569' };
+}
+
+export function PassBoard({ state, me, you, them, active, busy, onMove, answer }: BoardProps<PassState> & { answer: string | null }) {
+  const [input, setInput] = useState('');
+  const [hint, setHint] = useState<string | null>(null);
+  const myTurn = active && whoseTurn(state) === me;
+  const keyStates = passKeyStates(state.guesses);
+
+  const submit = async () => {
+    if (!myTurn || busy) return;
+    if (input.length < 5) { setHint('Five letters, please'); return; }
+    const ok = await onMove({ kind: 'pass', word: input });
+    if (ok) setInput('');
+  };
+
+  const onKey = (key: string) => {
+    setHint(null);
+    if (!myTurn) { setHint(`It's ${them.name}'s guess`); return; }
+    if (key === 'ENTER') { void submit(); return; }
+    if (key === 'BACK') { setInput((v) => v.slice(0, -1)); return; }
+    if (/^[A-Z]$/.test(key)) setInput((v) => (v.length < 5 ? v + key : v));
+  };
+
+  // Physical keyboard on desktop.
+  useEffect(() => {
+    if (!active) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if (e.key === 'Enter') onKey('ENTER');
+      else if (e.key === 'Backspace') onKey('BACK');
+      else if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  });
+
+  const chip = (p: Player | null, faded = false) => (
+    <span className="shrink-0 flex items-center justify-center" style={{ width: 28, opacity: faded ? 0.4 : 1 }}>
+      {p ? <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} size={26} /> : <span style={{ width: 26, height: 26 }} />}
+    </span>
+  );
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-col" style={{ gap: 5 }}>
+        {Array.from({ length: PASS_MAX_GUESSES }, (_, r) => {
+          const g = state.guesses[r];
+          const current = !g && r === state.guesses.length && active;
+          const who = g ? (g.by === me ? you : them) : current ? (myTurn ? you : them) : null;
+          return (
+            <div key={r} className="flex items-center" style={{ gap: 6 }}>
+              {chip(who, current && !myTurn)}
+              <div className="flex" style={{ gap: 5 }}>
+                {Array.from({ length: 5 }, (_, i) => {
+                  const letter = g ? g.word[i] : current && myTurn ? input[i] ?? '' : '';
+                  const style: React.CSSProperties = g
+                    ? passTileStyle(tileState(g.tiles[i] ?? 'ABSENT'))
+                    : { background: '#ffffff', color: FR.text, boxShadow: letter ? `0 0 0 2px #c4b5fd` : current ? '0 0 0 1.5px #ede9fe, 0 1px 3px rgba(76,29,149,0.08)' : '0 1px 3px rgba(76,29,149,0.08)' };
+                  return (
+                    <span
+                      key={i}
+                      className="flex items-center justify-center font-black uppercase"
+                      style={{ width: PASS_TILE, height: PASS_TILE, borderRadius: 8, fontSize: 20, ...style }}
+                    >
+                      {letter}
+                    </span>
+                  );
+                })}
+              </div>
+              <span style={{ width: 28 }} />
+            </div>
+          );
+        })}
+      </div>
+
+      {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
+      {answer && (
+        <p className="text-[12px] font-black uppercase" style={{ color: FR.ink, letterSpacing: 0.8 }}>
+          The word was <span style={{ color: TILE.you, letterSpacing: 2 }}>{answer}</span>
+        </p>
+      )}
+      {active && (
+        <>
+          <p className="text-[12px] font-bold" style={{ color: FR.label }}>
+            {myTurn ? 'Your guess. Then it passes to ' + them.name + '.' : `${them.name} is guessing. The board fills in live.`}
+          </p>
+          <div className="w-full" style={{ opacity: myTurn ? 1 : 0.55 }}>
+            <Keyboard onKey={onKey} letterStates={keyStates} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

@@ -54,15 +54,14 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
   };
 
   return (
-    <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}>
-      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
+    <div className="overflow-hidden" style={{ background: '#ffffff', borderRadius: 14, boxShadow: '0 2px 10px rgba(76,29,149,0.07)' }}>
       <div className="px-4 pt-3 pb-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
-            <Flag className="w-4 h-4" style={{ color: '#7c3aed' }} />
-            <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Today&apos;s Race</span>
+            <Flag className="w-4 h-4" style={{ color: '#db2777' }} />
+            <span className="text-[11px] font-black uppercase" style={{ color: '#6b7280', letterSpacing: 1.2 }}>Today&apos;s Race</span>
           </div>
-          <span className="text-[10px] font-black" style={{ color: anyPoints ? '#7c3aed' : 'var(--color-text-muted)' }}>{status}</span>
+          <span className="text-[10px] font-black" style={{ color: anyPoints ? '#9d174d' : '#6b7280' }}>{status}</span>
         </div>
         <div className="space-y-1.5">
           {rows.map((r) => {
@@ -73,9 +72,9 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
               <div
                 key={r.id}
                 className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl"
-                style={{ background: r.me ? '#7c3aed10' : 'transparent', border: r.me ? '1px solid #c4b5fd' : '1px solid transparent' }}
+                style={{ background: r.me ? '#fce7f3' : 'transparent', boxShadow: r.me ? '0 0 0 2px #db2777' : undefined }}
               >
-                <span className="w-6 shrink-0 text-center text-[11px] font-black" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="w-6 shrink-0 text-center text-[11px] font-black" style={{ color: '#6b7280' }}>
                   {medal ?? `${r.rank}`}
                 </span>
                 <Link href={rowHref} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
@@ -83,10 +82,10 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                     ? <Avatar f={f} />
                     : <Avatar f={{ id: me.id, username: me.username, avatar_url: me.avatar_url, avatar_emoji: me.avatar_emoji, level: me.level }} />}
                   <span className="flex-1 min-w-0">
-                    <span className="block text-xs font-extrabold truncate" style={{ color: r.me ? '#7c3aed' : 'var(--color-text)' }}>
+                    <span className="block text-xs font-extrabold truncate" style={{ color: r.me ? '#831843' : '#1f2937' }}>
                       {r.me ? 'You' : r.username}
                     </span>
-                    <span className="block text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
+                    <span className="block text-[10px] font-bold truncate" style={{ color: '#6b7280' }}>
                       {r.points > 0
                         ? `${r.points.toLocaleString()} pts · ${r.played}/${SWEEP_MODES.length} dailies`
                         : "hasn't played today"}
@@ -100,17 +99,17 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                         onClick={() => onTaunt(f)}
                         aria-label={`Nudge ${f.username}`}
                         className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform shrink-0"
-                        style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+                        style={{ background: '#fce7f3' }}
                       >
-                        <Bell className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                        <Bell className="w-3.5 h-3.5" style={{ color: '#9d174d' }} />
                       </button>
                     )}
                     <button
                       onClick={() => challenge(f)}
                       disabled={challenging !== null}
                       aria-label={`Challenge ${f.username} to a VS Battle`}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black shrink-0 active:scale-95 transition-transform"
-                      style={{ background: '#ec489915', border: '1.5px solid #ec4899', color: '#ec4899', opacity: challenging && challenging !== f.id ? 0.5 : 1 }}
+                      className="flex items-center gap-1 px-2.5 rounded-full text-[10.5px] font-black shrink-0 active:scale-95 transition-transform"
+                      style={{ height: 28, background: '#fce7f3', color: '#9d174d', opacity: challenging && challenging !== f.id ? 0.5 : 1 }}
                     >
                       <Swords className="w-3 h-3" /> {challenging === f.id ? 'Sending…' : 'Challenge'}
                     </button>
@@ -120,7 +119,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
             );
           })}
         </div>
-        <p className="text-[9px] font-bold mt-2 text-center" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[9px] font-bold mt-2 text-center" style={{ color: '#6b7280' }}>
           Today&apos;s points across every daily · Challenge = a private Classic battle, free for friends
         </p>
       </div>

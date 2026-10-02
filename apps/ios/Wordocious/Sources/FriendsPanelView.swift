@@ -1,15 +1,24 @@
 import SwiftUI
 import WordociousCore
 
-/// FRIENDS (§207) — the Friends card on the OWN profile: friends list with
-/// counts, incoming requests (accept/decline), and the Add-by-username field.
-/// Native port of components/friends/friends-panel.tsx, wearing the same card
-/// shell as the neighboring InvitePanelView.
+/// The Friends tab, top to bottom (Friends overhaul, founder 2026-10-01; spec
+/// docs/FRIENDS_REDESIGN_SPEC.md §2): the Friends banner (on now + today's
+/// race), INVITES, YOUR TURN (pocket games in play), PLAY WITH FRIENDS (the
+/// four pocket games), THIS WEEK'S RACE, YOUR FRIENDS (presence, friend
+/// streaks, one action each), MOMENTS (with reactions) and Add by username.
+/// Same look as the home and VS pages (FriendsKit). Started life as the §207
+/// friends card (components/friends/friends-panel.tsx twin); every earlier
+/// action — taunts, Challenge, shield gifts, Unfriend, the weekly podium —
+/// lives on in the new sections.
 struct FriendsPanelView: View {
+    /// The header's add-friend icon: a fresh id focuses the username field.
+    var focusAdd: UUID? = nil
+
     @State private var version = 0
     @State private var username = ""
     @State private var sending = false
     @State private var note: String?
+    @State private var addNote: String?
     @State private var inviteNote: String?
     @FocusState private var fieldFocused: Bool
     // Typeahead (Aug 11): 2+ letters → matching users, so invites go to the
@@ -40,429 +49,81 @@ struct FriendsPanelView: View {
     @State private var resolvingShare = false
     private struct ShareInvite: Identifiable { let id = UUID(); let text: String; let url: URL }
 
+    // Friends overhaul: the quick-play sheet, the game screen, the full
+    // Today's Race sheet and Race my run (the VS Friend page, Pro).
+    struct QuickPlay: Identifiable { let id = UUID(); let friend: FriendsService.FriendProfile?; let kind: FriendlyKind }
+    struct OpenGame: Identifiable { let id: String; let initial: FriendlyGameView? }
+    @State private var quickPlay: QuickPlay?
+    @State private var openGame: OpenGame?
+    @State private var showRace = false
+    @State private var raceRunFriend: String?
+    @State private var showPro = false
+    @State private var gamesVersion = 0
+
     var body: some View {
         let _ = version
+        let _ = gamesVersion
         let friends = FriendsService.friends
         let incoming = FriendsService.incoming
         let outgoing = FriendsService.outgoingProfiles
 
-        // Two cards (founder ask, Aug 17): requests in flight moved out of the
-        // FRIENDS box into their own INVITES card — the roster reads finished
-        // even while invites are pending.
-        VStack(spacing: 14) {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "person.2.fill").font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(hex: 0x7C3AED))
-                Text("FRIENDS")
-                    .font(Brand.font(16, .black)).tracking(0.3)
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                if !friends.isEmpty {
-                    Text("\(friends.count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
-                }
-                Spacer()
-                // §216: one-tap nudge for everyone who hasn't played today
-                // (server still enforces 1 taunt per friend per day).
-                let slackers = friends.filter { $0.playedToday == 0 && !isNewFriend($0) }
-                if !slackers.isEmpty {
-                    Button {
-                        Task {
-                            var n = 0
-                            for f in slackers {
-                                let outcome = await FriendsService.taunt(
-                                    friendId: f.id, tauntId: "slowpoke",
-                                    day: LeaderboardService.todayLocal())
-                                if outcome == .sent { n += 1 }
-                            }
-                            note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s") 🔔" : "Everyone already nudged today"
-                        }
-                    } label: {
-                        Text("🔔 Nudge slackers").font(Brand.font(10, .bold))
-                            .foregroundStyle(Color(hex: 0x7C3AED))
-                            .padding(.horizontal, 8).padding(.vertical, 5)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-                    }.buttonStyle(.plain)
-                }
-                // D3.5 (§294): per-event notification prefs (race, challenges,
-                // nudges, moments) — the bell at the header's trailing edge.
-                NotificationPrefsButton()
+        VStack(alignment: .leading, spacing: 18) {
+            if let p = AuthService.shared.profile {
+                FriendsBannerView(friends: friends, me: p, meDigest: FriendsService.meDigest,
+                                  onFace: { quickPlay = QuickPlay(friend: $0, kind: .rps) },
+                                  onRace: { showRace = true })
             }
-
-            // §289: TODAY'S RACE — you and every friend ranked by today's
-            // points, Challenge and the bell on every friend row. Sits above
-            // the weekly podium; it replaced §216's "topped N of M" strip.
-            if !friends.isEmpty, let p = AuthService.shared.profile {
-                TodaysRaceCard(
-                    friends: friends, me: p, meDigest: FriendsService.meDigest,
-                    challenging: challenging,
-                    onTaunt: { tauntTarget = $0 },
-                    onChallenge: { challenge($0) })
+            if !incoming.isEmpty || !outgoing.isEmpty {
+                invitesCard
             }
-
-            // Weekly race podium (§212, always-on since §216) — who owns the
-            // week among your circle; medals wait for the first score.
-            if !podium.isEmpty {
-                VStack(spacing: 4) {
-                    // §218 (founder ask): the podium is the WEEKLY race, but
-                    // bare "pts" read as today's score — name the window and
-                    // when it closes.
-                    HStack {
-                        Text("THIS WEEK'S RACE").font(Brand.font(9, .black)).tracking(0.8)
-                            .foregroundStyle(Theme.textMuted)
-                        Spacer()
-                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            Text(FriendsPanelView.weekEndsLabel(at: ctx.date))
-                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                                .monospacedDigit()
-                        }
-                        // §234: share the race — the sweep-board touchpoint
-                        // (muted glyph at the header's trailing edge), only
-                        // once someone has actually scored this week.
-                        if raceStarted {
-                            Button {
-                                guard !sharingRace else { return }
-                                sharingRace = true
-                                LeaderboardShareFlow.shareWeeklyRace(
-                                    friends: friends,
-                                    meDigest: FriendsService.meDigest,
-                                    username: AuthService.shared.profile?.username)
-                                sharingRace = false
-                            } label: {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Theme.textMuted)
-                            }
-                            .buttonStyle(.plain)
-                            .opacity(sharingRace ? 0.4 : 1)
-                            .accessibilityLabel("Share weekly race")
-                        }
-                    }
-                    // D3.3 (§294) — the Sunday finish, settled server-side on
-                    // the first visit of the week: "You finished 2nd of 6".
-                    // Stable all week; the Stats tab tallies them.
-                    if let r = FriendsService.lastWeek {
-                        lastWeekBanner(r)
-                    }
-                    // §232: Monday's answer — last week's settled winner.
-                    // §238: the line unfolds into the settled-week history.
-                    if let lw = lastWeekWinner {
-                        let history = pastWeeks
-                        Button {
-                            if history.count > 1 { withAnimation(.easeInOut(duration: 0.15)) { showPastWeeks.toggle() } }
-                        } label: {
-                            HStack(spacing: 3) {
-                                Text("Last week: 👑 \(lw.name) · \(lw.pts.formatted()) pts")
-                                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                                if history.count > 1 {
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 8, weight: .bold))
-                                        .foregroundStyle(Theme.textMuted)
-                                        .rotationEffect(.degrees(showPastWeeks ? 180 : 0))
-                                }
-                                Spacer(minLength: 0)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        if showPastWeeks {
-                            ForEach(history.filter { $0.k > 0 }, id: \.k) { wk in
-                                Text("\(FriendsPanelView.pastWeekLabel(wk.k)): 👑 \(wk.name) · \(wk.pts.formatted()) pts")
-                                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.leading, 4)
-                            }
-                        }
-                    }
-                    HStack(alignment: .bottom, spacing: 22) {
-                        ForEach(podiumOrder, id: \.entry.id) { slot in
-                            // §225: podium columns open profiles too — same door
-                            // as the friend rows below.
-                            NavigationLink(value: slot.entry.id) {
-                                VStack(spacing: 2) {
-                                    Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
-                                        .font(.system(size: slot.rank == 0 ? 20 : 14))
-                                    AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
-                                    // §225: 9pt + scale floor so ~14 characters fit
-                                    // before truncation ("TheRealMich..." complaint).
-                                    Text(slot.entry.username).font(Brand.font(9, .black)).lineLimit(1)
-                                        .minimumScaleFactor(0.75)
-                                        .foregroundStyle(slot.entry.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
-                                        .frame(maxWidth: 76)
-                                    Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.top, slot.rank == 0 ? 0 : 8)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    // §238: everyone past the medals, ranked. Score stays
-                    // fixedSize and the name truncates — the §236 lesson.
-                    if standings.count > 3 {
-                        VStack(spacing: 4) {
-                            ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
-                                NavigationLink(value: e.id) {
-                                    HStack(spacing: 8) {
-                                        Text(FriendsPanelView.ordinal(i + 4))
-                                            .font(Brand.font(10, .black)).foregroundStyle(Theme.textMuted)
-                                            .frame(width: 28, alignment: .trailing)
-                                        Text(e.username)
-                                            .font(Brand.font(10, .heavy)).lineLimit(1)
-                                            .foregroundStyle(e.isMe ? Color(hex: 0x7C3AED) : Theme.textPrimary)
-                                        Spacer(minLength: 4)
-                                        Text("\(e.pts.formatted()) pts")
-                                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                                            .fixedSize()
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.top, 2)
-                        .padding(.horizontal, 8)
-                    }
-                    if !raceStarted {
-                        Text("Race resets Mondays — first daily takes the lead.")
-                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                }
-                .padding(.vertical, 4)
+            if !FriendlyGamesService.active.isEmpty {
+                yourTurnSection
             }
-
-            // Friends list — rows into their profiles (H2H lives there).
-            if friends.isEmpty {
-                if !FriendsService.loaded {
-                    // Roster not fetched yet (cold launch): hold the rows' place instead of
-                    // flashing the no-friends teaching copy at a player who has friends
-                    // (founder, 2026-09-29).
-                    VStack(spacing: 10) {
-                        ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
-                    }
-                } else if incoming.isEmpty && outgoing.isEmpty {
-                    // Teaching empty state: explain the whole loop (Tier 1, Aug 11).
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
-                        Text("2. Requests you send and receive land right here.")
-                        Text("3. Once a friend accepts, flip the leaderboard to FRIENDS for your own private race.")
-                    }
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(friends) { f in
-                        // §225: the WHOLE row is the door to the profile — the
-                        // old link stopped at the username, so most of the row
-                        // animated on tap but went nowhere (founder screenshot).
-                        // The bell/Say-hi Buttons nest inside the label; their
-                        // taps win over the link, so taunting never navigates.
-                        NavigationLink(value: f.id) {
-                            HStack(spacing: 10) {
-                                AvatarView(url: f.avatar_url, username: f.username, size: 30, emoji: f.avatar_emoji)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    HStack(spacing: 6) {
-                                        Text(f.username).font(Brand.font(12, .heavy))
-                                            .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                                        // §216: the week's leader wears the crown.
-                                        if f.id == crownId { Text("👑").font(.system(size: 11)) }
-                                        if isNewFriend(f) {
-                                            Text("NEW").font(Brand.font(8, .black))
-                                                .foregroundStyle(Color(hex: 0x7C3AED))
-                                                .padding(.horizontal, 4).padding(.vertical, 2)
-                                                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x7C3AED).opacity(0.13)))
-                                        }
-                                        // §216: friendversary chip on milestone days.
-                                        if let days = friendversary(f) {
-                                            Text("🎉 \(days) DAYS").font(Brand.font(8, .black))
-                                                .foregroundStyle(Color(hex: 0xEC4899))
-                                                .padding(.horizontal, 4).padding(.vertical, 2)
-                                                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xEC4899).opacity(0.13)))
-                                        }
-                                        // §244: a live flawless streak taunts the row.
-                                        if (f.flawlessStreak ?? 0) >= 2 {
-                                            Text("🏆 ×\(f.flawlessStreak ?? 0)").font(Brand.font(8, .black))
-                                                .foregroundStyle(Color(hex: 0xB45309))
-                                                .padding(.horizontal, 4).padding(.vertical, 2)
-                                                .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xF59E0B).opacity(0.13)))
-                                        }
-                                    }
-                                    // §212: today's progress, streak, rivalry — the live row.
-                                    if let played = f.playedToday {
-                                        Text(statusLine(f, played: played))
-                                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
-                                    }
-                                }
-                                Spacer()
-                                if isNewFriend(f) {
-                                    Button {
-                                        Task {
-                                            let outcome = await FriendsService.taunt(
-                                                friendId: f.id, tauntId: "hi",
-                                                day: LeaderboardService.todayLocal())
-                                            note = outcome == .sent ? "👋 sent to \(f.username)!"
-                                                : outcome == .alreadySent ? "Already said hi today" : "Could not send"
-                                        }
-                                    } label: {
-                                        Text("👋 Say hi").font(Brand.font(10, .bold))
-                                            .foregroundStyle(Color(hex: 0x7C3AED))
-                                            .padding(.horizontal, 8).padding(.vertical, 5)
-                                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
-                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-                                    }.buttonStyle(.plain)
-                                } else {
-                                    // §225: fixed-width slot — bell or empty air —
-                                    // so "Lvl N" hangs in one clean column (founder:
-                                    // TheRealMichael's bell-less "Lvl 44" floated left).
-                                    ZStack {
-                                        if f.playedToday == 0 {
-                                            // Slacker bell — one-tap taunt (§207 picker).
-                                            Button { tauntTarget = f } label: {
-                                                Image(systemName: "bell.fill").font(.system(size: 12, weight: .bold))
-                                                    .foregroundStyle(Color(hex: 0x7C3AED))
-                                                    .frame(width: 26, height: 26)
-                                                    .background(Circle().fill(Theme.surfaceAlt))
-                                                    .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-                                            }.buttonStyle(.plain)
-                                        } else {
-                                            Color.clear
-                                        }
-                                    }
-                                    .frame(width: 32, height: 26)
-                                }
-                                Text("Lvl \(f.level)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                                // §225: chevron so the row reads as tappable.
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(Theme.textMuted)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        // §225: long-press menu — Unfriend used to live only on a
-                        // profile page these rows couldn't even reach.
-                        .contextMenu {
-                            Button { profileTarget = f.id } label: {
-                                Label("View Profile", systemImage: "person.crop.circle")
-                            }
-                            Button { tauntTarget = f } label: {
-                                Label("Taunt", systemImage: "bell")
-                            }
-                            // §289: a private Classic VS Battle, pushed to them.
-                            Button { challenge(f) } label: {
-                                Label("Challenge ⚔️", image: "swords")
-                            }
-                            .disabled(challenging != nil)
-                            // D3.4 (§294): gift one of your streak shields
-                            // (once per friend per week) — only when you hold one.
-                            if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
-                                Button { giftShield(f) } label: {
-                                    Label("🛡️ Gift a shield", systemImage: "shield")
-                                }
-                                .disabled(gifting != nil)
-                            }
-                            Button(role: .destructive) { unfriendTarget = f } label: {
-                                Label("Unfriend", systemImage: "person.badge.minus")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Add by username — exact match, same lookup as VS invites.
-            HStack(spacing: 8) {
-                TextField("Add by username", text: $username)
-                    .font(Brand.font(12, .bold))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($fieldFocused)
-                    .padding(.horizontal, 12).padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceAlt))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                    .onSubmit { add() }
-                Button(action: add) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
-                        Text("Add").font(Brand.font(12, .black))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12).padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 12)
-                        .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }
-                .buttonStyle(.plain)
-                .disabled(sending || username.trimmingCharacters(in: .whitespaces).isEmpty)
-                .opacity(sending || username.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
-            }
-            // Typeahead results — tap sends to that exact account (by id).
-            if !suggestions.isEmpty {
-                VStack(spacing: 6) {
-                    ForEach(suggestions) { u in
-                        Button {
-                            guard !sending else { return }
-                            sending = true
-                            suggestions = []
-                            Task {
-                                let outcome = await FriendsService.request(addresseeId: u.id)
-                                switch outcome {
-                                case .accepted: note = "You're now friends! 🎉"; username = ""
-                                case .pending: note = "Request sent to \(u.username) 🤝"; username = ""
-                                case .failed(let msg): note = msg
-                                }
-                                sending = false
-                            }
-                        } label: {
-                            HStack(spacing: 10) {
-                                AvatarView(url: u.avatar_url, username: u.username, size: 30, emoji: u.avatar_emoji)
-                                Text(u.username).font(Brand.font(12, .heavy))
-                                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                                Spacer()
-                                Text("Lvl \(u.level)").font(Brand.font(10, .bold))
-                                    .foregroundStyle(Theme.textMuted)
-                                Image(systemName: "person.badge.plus")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Color(hex: 0x7C3AED))
-                            }
-                            .padding(.horizontal, 10).padding(.vertical, 7)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceAlt))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            // §225: not everyone knows their username — hand them a profile
-            // link instead. Message + separate URL, the ActivityShareSheet
-            // convention, so the sheet previews the site icon.
-            // §289: a Pro player's OPEN referral code is the better door — the
-            // friend lands with 7 days of Pro — so the link resolves first.
             if AuthService.shared.profile != nil {
-                Button { shareInviteLink() } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "square.and.arrow.up").font(.system(size: 10, weight: .semibold))
-                        Text("Share invite link").font(Brand.font(10, .bold))
-                    }
-                    .foregroundStyle(Theme.textMuted)
-                }
-                .buttonStyle(.plain)
-                .disabled(resolvingShare)
-                .opacity(resolvingShare ? 0.5 : 1)
+                playWithFriendsSection
             }
-            if let note {
-                Text(note).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+            if !podium.isEmpty {
+                weeklyRaceSection
+            }
+            yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)
+            if AuthService.shared.profile != nil {
+                // §290 + §6: the circle's moments, with reactions and game moments.
+                ActivityFeedView(onRematch: { kind, friendId in
+                    if let f = FriendsKit.friend(friendId) { quickPlay = QuickPlay(friend: f, kind: kind) }
+                })
+            }
+            addFriendSection.id("add-friend")
+        }
+        .task {
+            // Presence and games come and go while the tab is open: refresh
+            // the digest (stale-while-revalidate) and the game list each minute.
+            while !Task.isCancelled {
+                await FriendsService.load()
+                await FriendlyGamesService.load()
+                try? await Task.sleep(nanoseconds: 60_000_000_000)
             }
         }
-        .padding(20)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-
-        if !incoming.isEmpty || !outgoing.isEmpty {
-            invitesCard
-        }
-        }
-        .task { await FriendsService.load() }
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
             version = FriendsService.version
         }
+        .onReceive(NotificationCenter.default.publisher(for: FriendlyGamesService.changed)) { _ in
+            gamesVersion += 1
+        }
+        .onChange(of: focusAdd) { _ in fieldFocused = true }
         .sheet(item: $tauntTarget) { target in tauntSheet(target) }
         .sheet(item: $shareInvite) { item in ActivityShareSheet(text: item.text, url: item.url) }
+        .sheet(item: $quickPlay) { q in
+            FriendsQuickPlaySheet(
+                friend: q.friend, kind: q.kind,
+                onStarted: { g in after { openGame = OpenGame(id: g.id, initial: g) } },
+                onVSBattle: { f in after { challenge(f) } },
+                onRaceMyRun: { f in after { if AuthService.shared.isProActive { raceRunFriend = f.id } else { showPro = true } } })
+        }
+        .sheet(isPresented: $showRace) { todaysRaceSheet }
+        .sheet(isPresented: $showPro) { ProView() }
+        .fullScreenCover(item: $openGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { g in
+            FriendlyGameScreen(gameId: g.id, initial: g.initial)
+        }
         // §289: the challenger lands in the private lobby with the code —
         // the same VSGameView(mode:inviteCode:) cover a pending-invite accept
         // and the /vs/join universal link use (RootTabView, VSLobbyView).
@@ -496,6 +157,12 @@ struct FriendsPanelView: View {
             set: { if !$0 { profileTarget = nil } })) {
             if let id = profileTarget { PublicProfileView(userId: id) }
         }
+        // Race my run (§3): the VS Friend page with this friend preselected.
+        .navigationDestination(isPresented: Binding(
+            get: { raceRunFriend != nil },
+            set: { if !$0 { raceRunFriend = nil } })) {
+            if let id = raceRunFriend { VSFriendPage(mode: VsLobbyKit.selectedMode, preselected: [id]) }
+        }
         .onChange(of: username) { q in
             searchTask?.cancel()
             let query = q.trimmingCharacters(in: .whitespaces)
@@ -512,141 +179,578 @@ struct FriendsPanelView: View {
         }
     }
 
-    /// INVITES card — requests in flight (incoming + sent), split out of the
-    /// FRIENDS card so the roster reads finished (founder ask, Aug 17).
-    /// Renders only when something is actually pending.
+    /// Run after a sheet finishes dismissing (presenting mid-dismissal drops it).
+    private func after(_ action: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: action)
+    }
+
+    // MARK: Today's Race sheet (§2.2 — tap the banner's race row)
+
+    private var todaysRaceSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("TODAY'S RACE").font(Brand.font(20, .black)).tracking(0.4)
+                        .foregroundStyle(LinearGradient(colors: FriendsKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+                        .frame(maxWidth: .infinity)
+                    if let p = AuthService.shared.profile {
+                        TodaysRaceCard(
+                            friends: FriendsService.friends, me: p, meDigest: FriendsService.meDigest,
+                            challenging: challenging,
+                            onTaunt: { f in showRace = false; after { tauntTarget = f } },
+                            onChallenge: { f in showRace = false; after { challenge(f) } })
+                            .padding(12).vsCard(radius: 14)
+                    }
+                }
+                .padding(16)
+            }
+            .background(FriendsKit.page.ignoresSafeArea())
+            .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showRace = false }.font(Brand.font(14, .black)).tint(FriendsKit.solid)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: YOUR TURN (§2.4)
+
+    private var yourTurnSection: some View {
+        let games = FriendlyGamesService.active
+        let mine = games.filter(\.yourTurn).count
+        return VStack(alignment: .leading, spacing: 8) {
+            FriendsSectionHeader(title: "YOUR TURN") {
+                if mine > 0 {
+                    Text("\(mine)").font(Brand.font(11, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).frame(height: 20)
+                        .background(Capsule().fill(FriendsKit.solid))
+                }
+            }
+            VStack(spacing: 8) {
+                ForEach(games) { g in
+                    Button { openGame = OpenGame(id: g.id, initial: g) } label: {
+                        HStack(spacing: 12) {
+                            FriendlyGameIcon(kind: g.kind, size: 40)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(g.title) vs @\(g.opponent.username)").font(Brand.font(13, .black))
+                                    .foregroundStyle(Color(hex: 0x111827)).lineLimit(1).minimumScaleFactor(0.8)
+                                Text(g.line).font(Brand.font(11, .heavy)).foregroundStyle(FriendsKit.solid).lineLimit(1)
+                            }
+                            Spacer(minLength: 6)
+                            if g.yourTurn { FriendsPill(title: "PLAY") } else { FriendsPill(title: "WAITING", solid: false) }
+                        }
+                        .padding(12)
+                        .vsCard(radius: 14)
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+            }
+        }
+    }
+
+    // MARK: PLAY WITH FRIENDS (§2.5)
+
+    private var playWithFriendsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FriendsSectionHeader(title: "PLAY WITH FRIENDS") {
+                Text("TAP A GAME, PICK A FRIEND").font(Brand.font(9.5, .black)).tracking(0.8)
+                    .foregroundStyle(FriendsKit.solid).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(FriendlyKind.allCases) { k in
+                    Button { quickPlay = QuickPlay(friend: nil, kind: k) } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            FriendlyGameIcon(kind: k, size: 40)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(k.title).font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x111827))
+                                    .lineLimit(1).minimumScaleFactor(0.75)
+                                Text(FriendsKit.sub(k)).font(Brand.font(10.5, .bold)).foregroundStyle(FriendsKit.label)
+                                    .lineLimit(1).minimumScaleFactor(0.75)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .vsCard(radius: 14)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel("\(k.title), \(FriendsKit.sub(k))")
+                }
+            }
+        }
+    }
+
+    // MARK: THIS WEEK'S RACE (§2.6 — the weekly podium, restyled)
+
+    private var weeklyRaceSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FriendsSectionHeader(title: "THIS WEEK'S RACE") {
+                // §218: name the window and when it closes; §226 live clock.
+                TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                    Text(FriendsPanelView.weekEndsLabel(at: ctx.date).uppercased())
+                        .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(FriendsKit.label)
+                        .monospacedDigit().lineLimit(1)
+                }
+                // §234: share the race once someone has actually scored this week.
+                if raceStarted {
+                    Button {
+                        guard !sharingRace else { return }
+                        sharingRace = true
+                        LeaderboardShareFlow.shareWeeklyRace(
+                            friends: FriendsService.friends,
+                            meDigest: FriendsService.meDigest,
+                            username: AuthService.shared.profile?.username)
+                        sharingRace = false
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(FriendsKit.solid)
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(sharingRace ? 0.4 : 1)
+                    .accessibilityLabel("Share weekly race")
+                }
+            }
+            VStack(spacing: 6) {
+                // D3.3 (§294) — the Sunday finish, settled server-side.
+                if let r = FriendsService.lastWeek {
+                    lastWeekBanner(r)
+                }
+                // §232/§238: Monday's answer — last week's winner, unfolding into history.
+                if let lw = lastWeekWinner {
+                    let history = pastWeeks
+                    Button {
+                        if history.count > 1 { withAnimation(.easeInOut(duration: 0.15)) { showPastWeeks.toggle() } }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text("Last week: 👑 \(lw.name) · \(lw.pts.formatted()) pts")
+                                .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                            if history.count > 1 {
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(FriendsKit.label)
+                                    .rotationEffect(.degrees(showPastWeeks ? 180 : 0))
+                            }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    if showPastWeeks {
+                        ForEach(history.filter { $0.k > 0 }, id: \.k) { wk in
+                            Text("\(FriendsPanelView.pastWeekLabel(wk.k)): 👑 \(wk.name) · \(wk.pts.formatted()) pts")
+                                .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, 4)
+                        }
+                    }
+                }
+                HStack(alignment: .bottom, spacing: 22) {
+                    ForEach(podiumOrder, id: \.entry.id) { slot in
+                        // §225: podium columns open profiles too.
+                        NavigationLink(value: slot.entry.id) {
+                            VStack(spacing: 2) {
+                                Text(raceStarted ? ["🥇", "🥈", "🥉"][slot.rank] : "🏁")
+                                    .font(.system(size: slot.rank == 0 ? 20 : 14))
+                                AvatarView(url: slot.entry.avatarUrl, username: slot.entry.username, size: 34, emoji: slot.entry.avatarEmoji)
+                                    .overlay(Circle().stroke(slot.entry.isMe ? FriendsKit.solid : .clear, lineWidth: 2))
+                                Text(slot.entry.username).font(Brand.font(9, .black)).lineLimit(1)
+                                    .minimumScaleFactor(0.75)
+                                    .foregroundStyle(slot.entry.isMe ? FriendsKit.solid : FriendsKit.ink)
+                                    .frame(maxWidth: 76)
+                                Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(FriendsKit.label)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, slot.rank == 0 ? 0 : 8)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                // §238: everyone past the medals, ranked.
+                if standings.count > 3 {
+                    VStack(spacing: 4) {
+                        ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
+                            NavigationLink(value: e.id) {
+                                HStack(spacing: 8) {
+                                    Text(FriendsPanelView.ordinal(i + 4))
+                                        .font(Brand.font(10, .black)).foregroundStyle(FriendsKit.label)
+                                        .frame(width: 28, alignment: .trailing)
+                                    Text(e.username)
+                                        .font(Brand.font(10, .heavy)).lineLimit(1)
+                                        .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsKit.ink)
+                                    Spacer(minLength: 4)
+                                    Text("\(e.pts.formatted()) pts")
+                                        .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                                        .fixedSize()
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.top, 2)
+                    .padding(.horizontal, 8)
+                }
+                if !raceStarted {
+                    Text("Race resets Mondays — first daily takes the lead.")
+                        .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                }
+            }
+            .padding(14)
+            .vsCard(radius: 14)
+        }
+    }
+
+    // MARK: YOUR FRIENDS (§2.7)
+
+    @ViewBuilder
+    private func yourFriendsSection(_ friends: [FriendsService.FriendProfile],
+                                    incoming: [FriendsService.FriendProfile],
+                                    outgoing: [FriendsService.FriendProfile]) -> some View {
+        // §216: one-tap nudge for everyone who hasn't played today
+        // (server still enforces 1 taunt per friend per day).
+        let slackers = friends.filter { $0.playedToday == 0 && !isNewFriend($0) }
+        VStack(alignment: .leading, spacing: 8) {
+            FriendsSectionHeader(title: friends.isEmpty ? "YOUR FRIENDS" : "YOUR FRIENDS · \(friends.count)") {
+                if !slackers.isEmpty {
+                    Button {
+                        Task {
+                            var n = 0
+                            for f in slackers {
+                                let outcome = await FriendsService.taunt(
+                                    friendId: f.id, tauntId: "slowpoke",
+                                    day: LeaderboardService.todayLocal())
+                                if outcome == .sent { n += 1 }
+                            }
+                            note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s") 🔔" : "Everyone already nudged today"
+                        }
+                    } label: {
+                        Text("Nudge all who haven't played").font(Brand.font(10.5, .black))
+                            .foregroundStyle(FriendsKit.solid).lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            if friends.isEmpty {
+                Group {
+                    if !FriendsService.loaded {
+                        // Roster not fetched yet (cold launch): hold the rows' place instead of
+                        // flashing the no-friends teaching copy (founder, 2026-09-29).
+                        VStack(spacing: 10) {
+                            ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
+                        }
+                    } else if incoming.isEmpty && outgoing.isEmpty {
+                        // Teaching empty state: explain the whole loop (Tier 1, Aug 11).
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
+                            Text("2. Requests you send and receive land in INVITES.")
+                            Text("3. Once a friend accepts, race them today, play pocket games and trade streaks.")
+                        }
+                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    } else {
+                        Text("Your friends land here once they accept.")
+                            .font(Brand.font(12, .bold)).foregroundStyle(FriendsKit.label)
+                    }
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .vsCard(radius: 14)
+            } else {
+                // On now first, then by the most recent presence.
+                let sorted = friends.sorted { a, b in
+                    let ao = a.isOnline(), bo = b.isOnline()
+                    if ao != bo { return ao }
+                    return (FriendsService.ms(a.lastSeenAt) ?? 0) > (FriendsService.ms(b.lastSeenAt) ?? 0)
+                }
+                VStack(spacing: 0) {
+                    ForEach(sorted) { f in
+                        friendRow(f)
+                        if f.id != sorted.last?.id { Divider().padding(.leading, 58) }
+                    }
+                }
+                .vsCard(radius: 14)
+            }
+            if let note {
+                Text(note).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.label)
+                    .padding(.horizontal, 2)
+            }
+        }
+    }
+
+    private func friendRow(_ f: FriendsService.FriendProfile) -> some View {
+        let online = f.isOnline()
+        let line = f.presenceLine() ?? FriendsKit.todayLine(f)
+        // §225: the WHOLE row is the door to the profile; the pill Button nests
+        // inside the label and its tap wins over the link.
+        return NavigationLink(value: f.id) {
+            HStack(spacing: 10) {
+                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 36, online: online, ring: false)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text("@\(f.username)").font(Brand.font(13, .black))
+                            .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
+                        // §216: the week's leader wears the crown.
+                        if f.id == crownId { Text("👑").font(.system(size: 11)) }
+                        if isNewFriend(f) {
+                            Text("NEW").font(Brand.font(8, .black))
+                                .foregroundStyle(FriendsKit.solid)
+                                .padding(.horizontal, 4).padding(.vertical, 2)
+                                .background(RoundedRectangle(cornerRadius: 4).fill(FriendsKit.soft))
+                        }
+                        // §216: friendversary chip on milestone days.
+                        if let days = friendversary(f) {
+                            Text("🎉 \(days) DAYS").font(Brand.font(8, .black))
+                                .foregroundStyle(FriendsKit.solid)
+                                .padding(.horizontal, 4).padding(.vertical, 2)
+                                .background(RoundedRectangle(cornerRadius: 4).fill(FriendsKit.soft))
+                        }
+                    }
+                    Text(line).font(Brand.font(11, .heavy))
+                        .foregroundStyle(online ? FriendsKit.green : FriendsKit.label).lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                if let n = f.friendStreak, n > 0 {
+                    HStack(spacing: 2) {
+                        FlameMark(size: 11)
+                        Text("\(n)").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(n)-day friend streak")
+                }
+                actionPill(f, online: online)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        // §225: long-press menu — profile, taunt, challenge, gift, unfriend.
+        .contextMenu {
+            Button { profileTarget = f.id } label: {
+                Label("View Profile", systemImage: "person.crop.circle")
+            }
+            Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: {
+                Label("Play a game", systemImage: "gamecontroller")
+            }
+            Button { tauntTarget = f } label: {
+                Label("Taunt", systemImage: "bell")
+            }
+            // §289: a private Classic VS Battle, pushed to them.
+            Button { challenge(f) } label: {
+                Label("Challenge ⚔️", image: "swords")
+            }
+            .disabled(challenging != nil)
+            // D3.4 (§294): gift one of your streak shields — only when you hold one.
+            if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
+                Button { giftShield(f) } label: {
+                    Label("🛡️ Gift a shield", systemImage: "shield")
+                }
+                .disabled(gifting != nil)
+            }
+            Button(role: .destructive) { unfriendTarget = f } label: {
+                Label("Unfriend", systemImage: "person.badge.minus")
+            }
+        }
+    }
+
+    /// On now → Play (quick-play sheet); played today → Challenge (the free
+    /// live VS challenge); hasn't played → Nudge (the taunt picker).
+    @ViewBuilder private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
+        if online {
+            Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: { FriendsPill(title: "Play") }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Play with \(f.username)")
+        } else if (f.playedToday ?? 0) > 0 {
+            Button { challenge(f) } label: {
+                FriendsPill(title: challenging == f.id ? "Sending…" : "Challenge", solid: false)
+            }
+            .buttonStyle(.plain)
+            .disabled(challenging != nil)
+            .opacity(challenging != nil && challenging != f.id ? 0.5 : 1)
+            .accessibilityLabel("Challenge \(f.username) to a VS Battle")
+        } else {
+            Button { tauntTarget = f } label: { FriendsPill(title: "Nudge", solid: false) }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Nudge \(f.username)")
+        }
+    }
+
+    // MARK: Add by username (§2.9)
+
+    private var addFriendSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FriendsSectionHeader(title: "ADD A FRIEND")
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    TextField("Add by username", text: $username)
+                        .font(Brand.font(13, .bold))
+                        .foregroundStyle(Color(hex: 0x111827))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .focused($fieldFocused)
+                        .padding(.horizontal, 12).frame(height: 40)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.page))
+                        .onSubmit { add() }
+                    Button(action: add) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
+                            Text("ADD").font(Brand.font(12, .black)).tracking(0.5)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14).frame(height: 40)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.solid))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(sending || username.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .opacity(sending || username.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
+                }
+                // Typeahead results — tap sends to that exact account (by id).
+                if !suggestions.isEmpty {
+                    VStack(spacing: 6) {
+                        ForEach(suggestions) { u in
+                            Button {
+                                guard !sending else { return }
+                                sending = true
+                                suggestions = []
+                                Task {
+                                    let outcome = await FriendsService.request(addresseeId: u.id)
+                                    switch outcome {
+                                    case .accepted: addNote = "You're now friends! 🎉"; username = ""
+                                    case .pending: addNote = "Request sent to \(u.username) 🤝"; username = ""
+                                    case .failed(let msg): addNote = msg
+                                    }
+                                    sending = false
+                                }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    AvatarView(url: u.avatar_url, username: u.username, size: 30, emoji: u.avatar_emoji)
+                                    Text(u.username).font(Brand.font(12, .heavy))
+                                        .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
+                                    Spacer()
+                                    Text("Lvl \(u.level)").font(Brand.font(10, .bold))
+                                        .foregroundStyle(FriendsKit.label)
+                                    Image(systemName: "person.badge.plus")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(FriendsKit.solid)
+                                }
+                                .padding(.horizontal, 10).padding(.vertical, 7)
+                                .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.page))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                // §225/§289: the invite link (a Pro player's open referral first).
+                if AuthService.shared.profile != nil {
+                    Button { shareInviteLink() } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "square.and.arrow.up").font(.system(size: 10, weight: .semibold))
+                            Text("Share invite link").font(Brand.font(11, .black))
+                        }
+                        .foregroundStyle(FriendsKit.solid)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(resolvingShare)
+                    .opacity(resolvingShare ? 0.5 : 1)
+                }
+                if let addNote {
+                    Text(addNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.label)
+                }
+            }
+            .padding(14)
+            .vsCard(radius: 14)
+        }
+    }
+
+    // MARK: INVITES (§2.3 — the existing card, restyled)
+
+    /// Requests in flight (incoming + sent). Renders only when something is pending.
     @ViewBuilder private var invitesCard: some View {
         let incoming = FriendsService.incoming
         let outgoing = FriendsService.outgoingProfiles
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "paperplane.fill").font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color(hex: 0x7C3AED))
-                Text("INVITES")
-                    .font(Brand.font(16, .black)).tracking(0.3)
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                Text("\(incoming.count + outgoing.count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
-                Spacer()
+        VStack(alignment: .leading, spacing: 8) {
+            FriendsSectionHeader(title: "INVITES") {
+                Text("\(incoming.count + outgoing.count)").font(Brand.font(11, .black)).foregroundStyle(.white)
+                    .padding(.horizontal, 8).frame(height: 20)
+                    .background(Capsule().fill(FriendsKit.solid))
             }
-
-            // Incoming requests first — they're the actionable part.
-            if !incoming.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("FRIEND REQUESTS").font(Brand.font(9, .black)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
-                    ForEach(incoming) { r in
-                        HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
-                            NavigationLink(value: r.id) {
-                                Text(r.username).font(Brand.font(12, .heavy))
-                                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                            }.buttonStyle(.plain)
-                            Spacer()
-                            Button { Task { await FriendsService.accept(requesterId: r.id) } } label: {
-                                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(.white).frame(width: 26, height: 26)
-                                    .background(Circle().fill(Color(hex: 0x7C3AED)))
-                            }.buttonStyle(.plain)
-                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
-                                Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Theme.textMuted).frame(width: 26, height: 26)
-                                    .background(Circle().fill(Theme.surfaceAlt))
-                                    .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-                            }.buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-
-            // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
-            if !outgoing.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("SENT — WAITING").font(Brand.font(9, .black)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
-                    ForEach(outgoing) { r in
-                        HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
-                            NavigationLink(value: r.id) {
-                                // foregroundColor (not Style): Text concatenation
-                                // needs the pre-iOS-17 modifier.
-                                (Text(r.username).font(Brand.font(12, .heavy)).foregroundColor(Theme.textPrimary)
-                                    + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
-                                    .lineLimit(1)
-                            }.buttonStyle(.plain)
-                            Spacer()
-                            // §212: the invite usually died unseen — re-push, 1/24h.
-                            Button {
-                                Task {
-                                    switch await FriendsService.remind(addresseeId: r.id) {
-                                    case .reminded: inviteNote = "Reminder sent to \(r.username) 🔔"
-                                    case .already: inviteNote = "Already reminded today"
-                                    case .failed: inviteNote = "Could not remind"
-                                    }
+            VStack(alignment: .leading, spacing: 12) {
+                // Incoming requests first — they're the actionable part.
+                if !incoming.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("FRIEND REQUESTS").font(Brand.font(9.5, .black)).tracking(0.8)
+                            .foregroundStyle(FriendsKit.label)
+                        ForEach(incoming) { r in
+                            HStack(spacing: 10) {
+                                AvatarView(url: r.avatar_url, username: r.username, size: 32, emoji: r.avatar_emoji)
+                                NavigationLink(value: r.id) {
+                                    Text("@\(r.username)").font(Brand.font(13, .black))
+                                        .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
+                                }.buttonStyle(.plain)
+                                Spacer()
+                                Button { Task { await FriendsService.accept(requesterId: r.id) } } label: {
+                                    FriendsPill(title: "Accept")
+                                }.buttonStyle(.plain)
+                                Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(FriendsKit.label).frame(width: 28, height: 28)
+                                        .background(Circle().fill(Color(hex: 0xF3F4F6)))
                                 }
-                            } label: {
-                                Text(withinDay(r.remindedAt) ? "Reminded" : "Remind").font(Brand.font(10, .bold))
-                                    .foregroundStyle(Color(hex: 0x7C3AED))
-                                    .padding(.horizontal, 8).padding(.vertical, 5)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x7C3AED).opacity(0.09)))
-                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Decline \(r.username)")
                             }
-                            .buttonStyle(.plain)
-                            .disabled(withinDay(r.remindedAt))
-                            .opacity(withinDay(r.remindedAt) ? 0.55 : 1)
-                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
-                                Text("Cancel").font(Brand.font(10, .bold))
-                                    .foregroundStyle(Theme.textMuted)
-                                    .padding(.horizontal, 8).padding(.vertical, 5)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceAlt))
-                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
-                            }.buttonStyle(.plain)
                         }
                     }
                 }
-            }
 
-            if let inviteNote {
-                // Transient confirmation — the row's "Reminded" pill carries the
-                // durable state, so this clears itself (founder: it "just
-                // lingered"). 2.5s matches the Android panel; tap dismisses.
-                // .task(id:) restarts the timer per note and cancels on change.
-                Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
-                    .onTapGesture { self.inviteNote = nil }
-                    .task(id: inviteNote) {
-                        try? await Task.sleep(nanoseconds: 2_500_000_000)
-                        if !Task.isCancelled { self.inviteNote = nil }
+                // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
+                if !outgoing.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("SENT — WAITING").font(Brand.font(9.5, .black)).tracking(0.8)
+                            .foregroundStyle(FriendsKit.label)
+                        ForEach(outgoing) { r in
+                            HStack(spacing: 10) {
+                                AvatarView(url: r.avatar_url, username: r.username, size: 32, emoji: r.avatar_emoji)
+                                NavigationLink(value: r.id) {
+                                    (Text("@\(r.username)").font(Brand.font(13, .black)).foregroundColor(Color(hex: 0x111827))
+                                        + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(FriendsKit.label))
+                                        .lineLimit(1)
+                                }.buttonStyle(.plain)
+                                Spacer()
+                                // §212: the invite usually died unseen — re-push, 1/24h.
+                                Button {
+                                    Task {
+                                        switch await FriendsService.remind(addresseeId: r.id) {
+                                        case .reminded: inviteNote = "Reminder sent to \(r.username) 🔔"
+                                        case .already: inviteNote = "Already reminded today"
+                                        case .failed: inviteNote = "Could not remind"
+                                        }
+                                    }
+                                } label: {
+                                    FriendsPill(title: withinDay(r.remindedAt) ? "Reminded" : "Remind", solid: false)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(withinDay(r.remindedAt))
+                                .opacity(withinDay(r.remindedAt) ? 0.55 : 1)
+                                Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                    FriendsPill(title: "Cancel", solid: false, muted: true)
+                                }.buttonStyle(.plain)
+                            }
+                        }
                     }
-            }
-        }
-        .padding(20)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-    }
+                }
 
-    /// "5/8 today · 2,116 pts · 🔥12 · you lead 7–4" — the row's engagement
-    /// digest (§212; §238 wording). The denominator is the current Daily
-    /// Sweep size (web parity: SWEEP_MODES.length), never a literal.
-    private func statusLine(_ f: FriendsService.FriendProfile, played: Int) -> String {
-        var parts: [String] = []
-        if played > 0 {
-            var lead = "\(played)/\(DailyCompletionsStore.totalDailyModes) today"
-            // §225: show the score, not just the count — todayPoints already
-            // rides the §216 digest. formatted() = grouping separators.
-            // §238: points ride right after the count so "N pts" clearly
-            // belongs to "today"; streak follows.
-            if let pts = f.todayPoints, pts > 0 { lead += " · \(pts.formatted()) pts" }
-            if let s = f.streak, s > 0 { lead += " · 🔥\(s)" }
-            parts.append(lead)
-        } else {
-            parts.append("hasn't played today")
+                if let inviteNote {
+                    // Transient confirmation — clears itself after 2.5 s (tap dismisses).
+                    Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsKit.label)
+                        .onTapGesture { self.inviteNote = nil }
+                        .task(id: inviteNote) {
+                            try? await Task.sleep(nanoseconds: 2_500_000_000)
+                            if !Task.isCancelled { self.inviteNote = nil }
+                        }
+                }
+            }
+            .padding(14)
+            .vsCard(radius: 14)
         }
-        // §238 (founder: "18–7 you doesn't really make sense"): the rivalry
-        // record now says who's ahead in plain words.
-        let w = f.h2hW ?? 0, l = f.h2hL ?? 0
-        if w + l > 0 {
-            parts.append(w == l ? "tied \(w)–\(l)" : w > l ? "you lead \(w)–\(l)" : "they lead \(l)–\(w)")
-        }
-        return parts.joined(separator: " · ")
     }
 
     /// Taunt picker — the leaderboard sheet's twin (§207 fixed phrases).
@@ -949,56 +1053,72 @@ struct FriendsPanelView: View {
         Task {
             let outcome = await FriendsService.request(username: name)
             switch outcome {
-            case .accepted: note = "You're now friends! 🎉"; username = ""
-            case .pending: note = "Request sent 🤝"; username = ""
-            case .failed(let msg): note = msg
+            case .accepted: addNote = "You're now friends! 🎉"; username = ""
+            case .pending: addNote = "Request sent 🤝"; username = ""
+            case .failed(let msg): addNote = msg
             }
             sending = false
             try? await Task.sleep(nanoseconds: 2_500_000_000)
-            note = nil
+            addNote = nil
         }
     }
 }
 
 
-/// FRIENDS (Tier 3, Aug 11) — the dedicated friends screen: the panel with a
-/// whole screen to breathe. Pushed from the profile's compact row, and
-/// presented as a sheet from the empty Friends board CTA.
+
+/// FRIENDS — the Friends tab (D1, 2026-09-26) and the dedicated friends
+/// screen pushed from the profile / presented from the empty Friends board.
+/// Friends overhaul §2.1: FRIENDS in the pink→violet gradient, the bell (the
+/// notification prefs) and an add-friend icon that jumps to Add by username.
 struct FriendsScreenView: View {
-    // §218: pushed views don't inherit the root's safeAreaInset, so without
-    // this the BottomNav covered the tail of the gift-Pro card (the same
-    // cutoff PublicProfileView fixed) — pad by the reported chrome height.
-    // As the Friends TAB root (D1, 2026-09-26) the inset already applies: false.
+    // §218: pushed views don't inherit the root's safeAreaInset, so pad by the
+    // reported chrome height (the tab root needs it too — see RootTabView).
     var padsForChrome = true
     @ObservedObject private var chrome = ChromeVisibility.shared
+    @State private var focusAdd: UUID?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                FriendsPanelView()
-                // §290: the circle's last seven days — sweeps, medals, records.
-                ActivityFeedView()
-                // §212: recruiting and friending are the same motion — the
-                // gift-Pro panel lives here too.
-                InvitePanelView()
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 18) {
+                    FriendsPanelView(focusAdd: focusAdd)
+                    // §212: recruiting and friending are the same motion — the
+                    // gift-Pro panel lives here too.
+                    InvitePanelView()
+                }
+                .padding(.horizontal, 16).padding(.top, 6)
+                .padding(.bottom, 16 + (padsForChrome ? chrome.bottomInset : 0))
             }
-            .padding(16)
-            .padding(.bottom, padsForChrome ? chrome.bottomInset : 0)
-        }
-        .background(Theme.background.ignoresSafeArea())
-        // navigationTitle stays for the next push's back label; the principal
-        // item is what renders. §225 (founder): the plain black system title
-        // clashed with the chrome — wear the SETTINGS idiom instead (Brand
-        // caps in the wordmark gradient).
-        .navigationTitle("Friends")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text("FRIENDS").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
+            .background(FriendsKit.page.ignoresSafeArea())
+            // navigationTitle stays for the next push's back label; the
+            // principal item is what renders.
+            .navigationTitle("Friends")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("FRIENDS").font(Brand.font(20, .black)).tracking(0.4)
+                        .foregroundStyle(LinearGradient(colors: FriendsKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+                }
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    NotificationPrefsButton()
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("add-friend", anchor: .center) }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
+                    } label: {
+                        Image(systemName: "person.badge.plus")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(FriendsKit.solid)
+                            .frame(width: 28, height: 28)
+                            .background(Circle().fill(FriendsKit.soft))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Add a friend")
+                }
             }
         }
     }
 }
+
 
 /// Compact "FRIENDS (N) →" row for the profile page — the door to
 /// FriendsScreenView, wearing the pending-request badge.

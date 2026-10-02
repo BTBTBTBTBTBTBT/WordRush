@@ -40,6 +40,8 @@ export interface FeedEvent {
   value?: number | null;
   /** Pocket games: 'win' or 'draw', and the final score from the winner's side ("2–1"). */
   score?: string | null;
+  /** Pocket games: the game kind ('rps' | 'ttt' | 'coin' | 'pass'). */
+  gameKind?: string | null;
 }
 
 function shiftDay(d: string, delta: number): string {
@@ -153,7 +155,7 @@ export async function GET(req: NextRequest) {
     const score = sc ? `${sc[leadSide]}–${sc[leadSide === 'a' ? 'b' : 'a']}` : null;
     events.push({
       id: `game-${g.id}`, ...person(lead), day: (g.updated_at as string).slice(0, 10), at: g.updated_at, type: 'game',
-      kind: winner ? 'win' : 'draw', gameTitle: FRIENDLY_TITLES[g.kind as FriendlyKind] ?? null,
+      kind: winner ? 'win' : 'draw', gameKind: g.kind, gameTitle: FRIENDLY_TITLES[g.kind as FriendlyKind] ?? null,
       otherName: otherId === me ? 'you' : who.get(otherId)?.username ?? 'a friend', otherId,
       score: g.status === 'resigned' ? 'by resignation' : g.kind === 'pass' ? null : score,
     });

@@ -5,6 +5,9 @@ import WordociousCore
 /// Universal-link router (applinks:wordocious.com — see Wordocious.entitlements
 /// and apps/web/public/.well-known/apple-app-site-association).
 ///
+/// Push urls route here too (PushRegistration): /friends/games/<id> opens a
+/// Friends pocket game, /friends the Friends tab (no universal link needed).
+///
 /// v1 claims /vs/join/<code> and (VS overhaul, 2026-10-01) /vs/challenge/<code>:
 /// a VS invite's or challenge's recipient usually has the app,
 /// so opening it natively beats Safari. Referral links (/join/<code>) are
@@ -41,6 +44,13 @@ final class DeepLink: ObservableObject {
         let mode: GameMode
     }
     @Published var vsLive: VSLiveLink?
+    /// A pocket game with a friend (/friends/games/<id>, the push url): the game screen.
+    struct FriendlyGameLink: Identifiable {
+        let id: String
+    }
+    @Published var friendlyGame: FriendlyGameLink?
+    /// "/friends" (a reaction push): land on the Friends tab. A fresh id per request.
+    @Published var friendsRequest: UUID?
     /// A widget tap: open TODAY'S daily for this mode (wordocious://daily/<MODE>).
     @Published var dailyMode: GameMode?
     /// "Show me the More Games" (wordocious://puzzles, legacy wordocious://more):
@@ -96,6 +106,17 @@ final class DeepLink: ObservableObject {
         // VS live ping: wordocious.com/vs/live/<MODE> → that mode's live search.
         if parts.count == 3, parts[0] == "vs", parts[1] == "live" {
             if let mode = GameMode(rawValue: parts[2].uppercased()) { vsLive = VSLiveLink(mode: mode) }
+            return true
+        }
+
+        // Friends pocket game (push url /friends/games/<id>) → its game screen.
+        if parts.count == 3, parts[0] == "friends", parts[1] == "games" {
+            friendlyGame = FriendlyGameLink(id: parts[2])
+            return true
+        }
+        // A Friends push (/friends) → the Friends tab.
+        if parts.count == 1, parts[0] == "friends" {
+            friendsRequest = UUID()
             return true
         }
 

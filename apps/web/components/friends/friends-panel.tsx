@@ -1,43 +1,42 @@
 'use client';
 
-// FRIENDS (§207) — the Friends card on the OWN profile page: friends list
-// with counts, incoming requests (Accept / Decline), and the Add-by-username
-// field. Same card shell + type scale as the referral InvitePanel next to it.
+// THE FRIENDS TAB (Friends overhaul, founder-approved 2026-10-01; spec
+// docs/FRIENDS_REDESIGN_SPEC.md §2). Top to bottom: the FRIENDS header (bell =
+// notification prefs, add-friend jumps to Add by username), the Friends banner
+// (ON NOW + TODAY'S RACE, the full race in a sheet), INVITES, YOUR TURN, PLAY
+// WITH FRIENDS, THIS WEEK'S RACE, YOUR FRIENDS (presence, friend streak, one
+// action pill), MOMENTS with reactions, and Add by username + share link. The
+// page adds the InvitePanel under it. Earlier history: §207 (friends card),
+// §212/§216/§225/§232/§238 (rows, weekly race), D3 (Today's Race, feed).
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Users, UserPlus, Check, X, Bell, Send, ChevronRight, ChevronDown, MoreHorizontal, Share } from 'lucide-react';
+import { Users, UserPlus, Check, X, Send, ChevronDown, MoreHorizontal, Share, Crown } from 'lucide-react';
+import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
 import { SWEEP_MODES } from '@/lib/modes.generated';
-import { TodaysRace } from './todays-race';
-import { NotificationPrefs } from './notification-prefs';
-import { getLastWeekResult, giftShield } from '@/lib/friends-service';
 import { ordinal as ordinalOf } from '@/lib/weekly-race';
-import { challengeFriend } from '@/lib/friends-service';
 import { vsHrefForMode } from '@/lib/invite-service';
 import { supabase } from '@/lib/supabase-client';
 import {
-  loadFriends,
-  friendsLoaded,
-  getFriends,
-  getIncoming,
-  getOutgoing,
-  acceptFriend,
-  declineFriend,
-  requestFriend,
-  onFriendsChange,
-  searchUsers,
-  isFriend,
-  hasRequested,
-  getMeDigest,
-  remindFriend,
-  removeFriend,
-  sendTaunt,
-  type FriendProfile,
+  loadFriends, friendsLoaded, getFriends, getIncoming, getOutgoing, acceptFriend, declineFriend, requestFriend,
+  onFriendsChange, searchUsers, isFriend, hasRequested, getMeDigest, remindFriend, removeFriend, sendTaunt,
+  getLastWeekResult, giftShield, challengeFriend, type FriendProfile,
 } from '@/lib/friends-service';
+import { getActiveGames, loadGames, onGamesChange, type GameView } from '@/lib/friendly-games-client';
+import {
+  FR, KIND_SUB, bannerModel, bestFriendStreak, friendAction, friendLine, midnightClock, nobodyOnLine, onNow,
+  raceChips, sortActiveGames,
+} from '@/lib/friends-play';
+import { TodaysRace } from './todays-race';
+import { NotificationPrefs } from './notification-prefs';
+import { ActivityFeed } from './activity-feed';
+import { FriendsBanner } from './friends-banner';
+import { QuickPlaySheet } from './quick-play-sheet';
+import { FlameCount, FriendAvatar, GameIconSquare, Pill, SectionLabel, Sheet, cardStyle } from './friends-ui';
 
 /** Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11). */
 function isNewFriend(f: FriendProfile): boolean {
@@ -60,22 +59,15 @@ function agoShort(iso?: string): string {
 const withinDay = (iso?: string | null): boolean =>
   !!iso && Date.now() - Date.parse(iso) < 24 * 60 * 60 * 1000;
 
+/** Small avatar used by Today's Race and older callers. */
 export function Avatar({ f }: { f: FriendProfile }) {
-  if (f.avatar_url) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={f.avatar_url} alt={f.username} className="w-8 h-8 rounded-full object-cover" />;
-  }
-  // Chosen emoji beats the initial (Aug 11 — profile-avatar parity).
-  const emoji = f.avatar_emoji?.trim();
-  return (
-    <div
-      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black"
-      style={{ background: '#7c3aed22', color: '#7c3aed' }}
-    >
-      {emoji || f.username.charAt(0).toUpperCase()}
-    </div>
-  );
+  return <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={32} />;
 }
+
+type SheetState =
+  | { type: 'play'; friend: FriendProfile | null; kind: FriendlyKind }
+  | { type: 'race' }
+  | null;
 
 export function FriendsPanel() {
   const { user, profile, isProActive } = useAuth();
@@ -85,26 +77,20 @@ export function FriendsPanel() {
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [inviteNote, setInviteNote] = useState<string | null>(null);
-  // The note is a transient confirmation — the row's "Reminded" pill carries
-  // the durable state, so this clears itself (founder: it "just lingered").
-  // 2.5s matches the Android panel's existing auto-dismiss.
+  const addRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     if (!inviteNote) return;
     const t = setTimeout(() => setInviteNote(null), 2500);
     return () => clearTimeout(t);
   }, [inviteNote]);
-  // Typeahead (Aug 11): type 2+ letters → matching users, so invites go to
-  // the right Carlie instead of a blind exact-match fire.
   const [suggestions, setSuggestions] = useState<FriendProfile[]>([]);
-  // §212: one-tap taunts from friend rows (same picker as the leaderboard).
   const [tauntTarget, setTauntTarget] = useState<FriendProfile | null>(null);
   const [tauntStatus, setTauntStatus] = useState<string | null>(null);
-  // §225: per-row kebab menu — unfriending used to be reachable only from
-  // the friend's profile page, so it effectively didn't exist. The menu
-  // puts View profile / Taunt / Unfriend one quiet tap away.
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [unfriendTarget, setUnfriendTarget] = useState<FriendProfile | null>(null);
-  // Any click outside the open menu dismisses it (menu clicks stopPropagation).
+  const [sheet, setSheet] = useState<SheetState>(null);
+  const [challenging, setChallenging] = useState<string | null>(null);
+  const [games, setGames] = useState<GameView[]>(() => getActiveGames());
   useEffect(() => {
     if (!menuFor) return;
     const close = () => setMenuFor(null);
@@ -112,15 +98,23 @@ export function FriendsPanel() {
     return () => document.removeEventListener('click', close);
   }, [menuFor]);
 
-  // True once the first friends read has settled (loaded or failed). Until then
-  // the panel holds a skeleton where the race and roster go — it used to show the
-  // no-friends "1. Add friends…" steps for a beat on a first visit, then swap in
-  // the race, podium and roster (founder, 2026-09-29).
   const [settled, setSettled] = useState(() => friendsLoaded());
   useEffect(() => {
     if (!user) return;
     loadFriends().then(() => { setSettled(true); force((v) => v + 1); });
     return onFriendsChange(() => force((v) => v + 1));
+  }, [user]);
+
+  // Live while the tab is open and visible: games every 15 s (your turn moves to
+  // the top), the friends digest every 60 s (ON NOW follows the heartbeats).
+  useEffect(() => {
+    if (!user) return;
+    const off = onGamesChange(() => setGames([...getActiveGames()]));
+    void loadGames(true);
+    const visible = () => document.visibilityState === 'visible';
+    const g = setInterval(() => { if (visible()) void loadGames(true); }, 15_000);
+    const f = setInterval(() => { if (visible()) void loadFriends(true); }, 60_000);
+    return () => { off(); clearInterval(g); clearInterval(f); };
   }, [user]);
 
   useEffect(() => {
@@ -140,32 +134,46 @@ export function FriendsPanel() {
     return () => { stale = true; clearTimeout(t); };
   }, [username]);
 
-  // §218/§226/§232 (hooks above the early return — they were below it): when the weekly race closes — weeks run Mon–Sun, reset Monday
-  // 00:00 local (same boundary as weekStart in the friends digest). Now a
-  // LIVE clock (founder: a static "4d" carried no urgency) — "4d 07:23:45",
-  // "ends tonight · 07:23:45" on the last day, ticking like the daily timer.
-  const [, tickRace] = useState(0);
+  // One clock for the banner (to local midnight), the weekly race and presence.
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => tickRace((v) => v + 1), 1000);
+    const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // §234: busy-guard for the weekly-race share button (same discipline as
-  // every other share button — a double-tap must not fire two share sheets).
   const [sharingRace, setSharingRace] = useState(false);
-
-  // §238: the "Last week" line unfolds into the settled-week history.
   const [showPastWeeks, setShowPastWeeks] = useState(false);
+
+  const friends = user ? getFriends() : [];
+  const sortedGames = useMemo(() => sortActiveGames(games), [games]);
+
+  const openPlay = useCallback((friend: FriendProfile | null, kind: FriendlyKind = 'rps') => {
+    setSheet({ type: 'play', friend, kind });
+  }, []);
+
+  const jumpToAdd = useCallback(() => {
+    addRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => addRef.current?.focus(), 350);
+  }, []);
 
   if (!user) return null;
 
-  const friends = getFriends();
   const incoming = getIncoming();
   const outgoing = getOutgoing();
   const pending = !settled && !friendsLoaded();
-
-  // Weekly race podium (§212): me + friends by this week's daily points.
   const meDigest = getMeDigest();
+  const myId = profile?.id ?? user.id;
+  const myName = profile?.username ?? 'You';
+
+  // ── Banner ────────────────────────────────────────────────────────────────
+  const online = onNow(friends, now);
+  const { rows: todayRows, input: bannerInput } = bannerModel(
+    friends,
+    { id: myId, username: myName, todayPoints: meDigest?.todayPoints ?? 0, playedToday: meDigest?.playedToday ?? 0 },
+    online.map((f) => f.username),
+  );
+
+  // ── Weekly race (§212/§216/§232/§238) ─────────────────────────────────────
   const standings = (() => {
     if (friends.length === 0) return [];
     const entries = friends.map((f) => ({
@@ -180,20 +188,13 @@ export function FriendsPanel() {
         level: profile.level ?? 0, pts: meDigest?.weekPoints ?? 0, me: true,
       });
     }
-    // Always on (§216): a Monday-morning zero-point podium still shows the
-    // race — medals wait for the first score (see raceStarted below).
     entries.sort((a, b) => b.pts - a.pts);
     return entries;
   })();
-  // §238 (founder: "see the rankings of 4th, 5th, 6th"): the podium keeps
-  // its three medals; everyone else gets a ranked row beneath it.
   const podium = standings.slice(0, 3);
   const raceStarted = standings.some((e) => e.pts > 0);
+  const crownId = raceStarted ? podium[0].id : null;
 
-  // §234 (founder: a brag card for the weekly race): a timestamped card of the
-  // current standings + how long is left. The card uses the sharer's REAL
-  // username — the panel's 'You' row would read as a stranger on someone
-  // else's phone.
   const shareRace = async () => {
     if (sharingRace) return;
     setSharingRace(true);
@@ -201,12 +202,7 @@ export function FriendsPanel() {
       await shareWeeklyRaceCard({
         friends,
         me: profile
-          ? {
-              id: profile.id,
-              username: profile.username,
-              weekPoints: meDigest?.weekPoints ?? 0,
-              todayPoints: meDigest?.todayPoints,
-            }
+          ? { id: profile.id, username: profile.username, weekPoints: meDigest?.weekPoints ?? 0, todayPoints: meDigest?.todayPoints }
           : null,
       });
     } finally {
@@ -214,23 +210,15 @@ export function FriendsPanel() {
     }
   };
 
-  // §216: the week's leader wears the crown on roster rows (and on the
-  // friends leaderboard) — only once someone has actually scored.
-  const crownId = raceStarted ? podium[0].id : null;
-
-  // §232: Monday's question — "who won last week?" — answered in place.
-  // lastWeekPoints is the settled previous week from the digest.
   const lastWeek = (() => {
     const entries = friends.map((f) => ({ name: f.username, pts: f.lastWeekPoints ?? 0 }));
-    if (profile) entries.push({ name: 'You', pts: (meDigest as { lastWeekPoints?: number } | null)?.lastWeekPoints ?? 0 });
+    if (profile) entries.push({ name: 'You', pts: meDigest?.lastWeekPoints ?? 0 });
     entries.sort((a, b) => b.pts - a.pts);
     return entries[0] && entries[0].pts > 0 ? entries[0] : null;
   })();
 
-  // §238: winner per settled week, oldest weeks trimmed to the ones anyone
-  // scored in. k indexes pastWeekPoints — 0 = last week, 1 = two weeks ago…
   const pastWeeks = (() => {
-    const meArr = (meDigest as { pastWeekPoints?: number[] } | null)?.pastWeekPoints ?? [];
+    const meArr = meDigest?.pastWeekPoints ?? [];
     const len = Math.max(0, meArr.length, ...friends.map((f) => f.pastWeekPoints?.length ?? 0));
     const out: Array<{ k: number; name: string; pts: number }> = [];
     for (let k = 0; k < len; k++) {
@@ -242,8 +230,6 @@ export function FriendsPanel() {
     return out;
   })();
 
-  // §238: "Aug 10–16" — the local Mon–Sun range of the week k+1 Mondays back
-  // (same local week boundary as weekStart everywhere else).
   const pastWeekLabel = (k: number): string => {
     const mon = new Date();
     mon.setHours(0, 0, 0, 0);
@@ -254,7 +240,6 @@ export function FriendsPanel() {
     return `${f(mon)}–${f(sun)}`;
   };
 
-  // §238: 4th/5th/…/21st/22nd — the ranked rows under the podium.
   const ordinal = (n: number): string => {
     const v = n % 100;
     if (v >= 11 && v <= 13) return `${n}th`;
@@ -262,19 +247,18 @@ export function FriendsPanel() {
   };
 
   const weekEndsLabel = (() => {
-    const now = new Date();
-    const end = new Date(now);
-    const dow = now.getDay(); // 0 Sun … 6 Sat
-    end.setDate(now.getDate() + (dow === 0 ? 1 : 8 - dow)); // next Monday
+    const cur = new Date(now);
+    const end = new Date(cur);
+    const dow = cur.getDay();
+    end.setDate(cur.getDate() + (dow === 0 ? 1 : 8 - dow));
     end.setHours(0, 0, 0, 0);
-    const secs = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+    const secs = Math.max(0, Math.floor((end.getTime() - cur.getTime()) / 1000));
     const d = Math.floor(secs / 86400);
     const clock = [Math.floor((secs % 86400) / 3600), Math.floor((secs % 3600) / 60), secs % 60]
       .map((n) => String(n).padStart(2, '0')).join(':');
     return d >= 1 ? `ends Sunday · ${d}d ${clock}` : `ends tonight · ${clock}`;
   })();
 
-  // §216: friendversary chip on milestone days.
   const friendversary = (f: FriendProfile): number | null => {
     if (!f.since) return null;
     const t = Date.parse(f.since);
@@ -283,8 +267,7 @@ export function FriendsPanel() {
     return [7, 30, 100, 365].includes(days) ? days : null;
   };
 
-  // §216: one tap nudges every friend who hasn't played today (server still
-  // enforces 1 taunt per friend per day).
+  // §216: one tap nudges every friend who hasn't played today.
   const slackers = friends.filter((f) => f.playedToday === 0 && !isNewFriend(f));
   const nudgeAll = async () => {
     let n = 0;
@@ -307,15 +290,23 @@ export function FriendsPanel() {
     setNote(r.sent ? `👋 sent to ${f.username}!` : r.alreadySent ? 'Already said hi today' : 'Could not send');
   };
 
-  // §225: typing a username assumes the friend is already here — the share
-  // link is the door for friends who aren't on Wordocious yet. Native share
-  // sheet where the platform has one, clipboard + transient note elsewhere.
+  const challenge = async (f: FriendProfile) => {
+    if (challenging) return;
+    setChallenging(f.id);
+    try {
+      const r = await challengeFriend(f.id, 'DUEL');
+      if ('error' in r) { setNote(r.error); return; }
+      setNote(`Challenge sent to ${f.username} ⚔️`);
+      router.push(`${vsHrefForMode('DUEL')}?inviteCode=${r.code}`);
+    } finally {
+      setChallenging(null);
+    }
+  };
+
   const shareInvite = async () => {
-    const myId = profile?.id ?? user.id;
     let text = `Add me on Wordocious — I'm ${profile?.username ?? ''}`.trim();
     let url = `https://wordocious.com/profile/${myId}`;
-    // D3 (2026-09-26): a Pro player's open referral code is the better door —
-    // the friend lands with 7 days of Pro and the inviter earns the reward.
+    // D3: a Pro player's open referral code is the better door.
     if (isProActive) {
       try {
         const { data } = await (supabase as any)
@@ -339,7 +330,7 @@ export function FriendsPanel() {
     }
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
-      setNote('Link copied'); // auto-dismisses in 2.5s (§224)
+      setNote('Link copied');
     } catch {
       setNote('Could not copy link');
     }
@@ -351,9 +342,8 @@ export function FriendsPanel() {
     setSending(true);
     try {
       const r = await requestFriend({ username: name });
-      if ('error' in r) {
-        setNote(r.error);
-      } else {
+      if ('error' in r) setNote(r.error);
+      else {
         setNote(r.status === 'accepted' ? 'You’re now friends! 🎉' : 'Request sent 🤝');
         setUsername('');
       }
@@ -362,353 +352,355 @@ export function FriendsPanel() {
     }
   };
 
-  return (
-    // Two cards (founder ask, Aug 17): requests in flight moved out of the
-    // FRIENDS box into their own INVITES card — the roster reads finished
-    // even while invites are pending.
-    <div className="space-y-3.5">
-    <div
-      className="p-5 space-y-4"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
+  const myTurnCount = sortedGames.filter((g) => g.yourTurn).length;
+  const menuItem = (label: string, onClick: () => void, color: string = FR.text) => (
+    <button
+      onClick={onClick}
+      className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
+      style={{ color, borderTop: '1px solid #f1f5f9' }}
     >
-      <div className="flex items-center gap-2">
-        <Users className="w-5 h-5" style={{ color: '#7c3aed' }} />
-        <h3
-          className="text-base font-black tracking-tight text-transparent bg-clip-text"
-          style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-        >
-          FRIENDS
-        </h3>
-        {friends.length > 0 && (
-          <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>
-            {friends.length}
-          </span>
-        )}
-        {/* §216: one-tap nudge for everyone who hasn't played today. */}
-        {slackers.length > 0 && (
-          <button
-            onClick={nudgeAll}
-            aria-label="Nudge all friends who haven't played today"
-            className="ml-auto text-[10px] font-bold px-2 py-1 rounded-lg"
-            style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
-          >
-            🔔 Nudge slackers
-          </button>
-        )}
-        {/* D3.5: per-event notification prefs (race, challenges, nudges, moments). */}
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="space-y-3.5">
+      {/* 1. Header */}
+      <div className="flex items-center gap-2" style={{ minHeight: 44 }}>
+        <h1 className="flex-1 text-[22px] font-black text-transparent bg-clip-text" style={{ backgroundImage: FR.title, letterSpacing: 0.4 }}>FRIENDS</h1>
         <NotificationPrefs />
+        <button
+          type="button"
+          onClick={jumpToAdd}
+          aria-label="Add a friend"
+          className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{ background: '#ffffff', boxShadow: FR.cardShadow }}
+        >
+          <UserPlus className="w-4 h-4" style={{ color: FR.solid }} />
+        </button>
       </div>
 
-      {pending && (
-        <div className="space-y-2 animate-pulse" aria-hidden>
-          {[0, 1, 2].map((i) => <div key={i} className="h-10 rounded-xl" style={{ background: 'var(--color-border)' }} />)}
-        </div>
+      {/* 2. Friends banner */}
+      {pending ? (
+        <div className="animate-pulse" style={{ height: 196, borderRadius: 16, background: 'linear-gradient(180deg, #fce7f3, #ede9fe)' }} aria-hidden />
+      ) : (
+        <FriendsBanner
+          input={bannerInput}
+          clock={midnightClock(new Date(now))}
+          online={online}
+          nobodyLine={nobodyOnLine(friends, now)}
+          chips={raceChips(todayRows)}
+          streak={bestFriendStreak(friends)}
+          onFace={(f) => openPlay(f)}
+          onRace={() => setSheet({ type: 'race' })}
+          onAddFriend={jumpToAdd}
+        />
       )}
 
-      {/* TODAY'S RACE (D3, 2026-09-26): ranked by today's points, challenge from any row. */}
-      <TodaysRace
-        friends={friends}
-        me={profile ? {
-          id: profile.id, username: profile.username, avatar_url: profile.avatar_url ?? null,
-          avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
-          level: profile.level ?? 0, todayPoints: meDigest?.todayPoints ?? 0, playedToday: meDigest?.playedToday ?? 0,
-        } : null}
-        onTaunt={(f) => setTauntTarget(f)}
-        onNote={setNote}
-      />
+      {/* 3. INVITES (only with requests in flight) */}
+      {(incoming.length > 0 || outgoing.length > 0) && (
+        <>
+          <SectionLabel>
+            Invites
+            <span className="px-1.5 rounded-full text-[10px] font-black text-white" style={{ background: FR.solid, letterSpacing: 0 }}>{incoming.length + outgoing.length}</span>
+          </SectionLabel>
+          <div style={cardStyle}>
+            {incoming.map((r, i) => (
+              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}>
+                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
+                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Wants to be friends</span>
+                </Link>
+                <button
+                  onClick={() => acceptFriend(r.id)}
+                  aria-label={`Accept ${r.username}`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: FR.solid, color: '#ffffff' }}
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => declineFriend(r.id)}
+                  aria-label={`Decline ${r.username}`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: FR.soft, color: FR.mid }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {outgoing.map((r, i) => (
+              <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderTop: i === 0 && incoming.length === 0 ? undefined : '1px solid #f1f5f9' }}>
+                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>@{r.username}</span>
+                  <span className="block text-[11px] font-bold" style={{ color: FR.label }}>Sent · waiting {agoShort(r.requestedAt)}</span>
+                </Link>
+                <Pill
+                  disabled={withinDay(r.remindedAt)}
+                  label={`Remind ${r.username}`}
+                  onClick={async () => {
+                    const res = await remindFriend(r.id);
+                    setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
+                  }}
+                >
+                  {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
+                </Pill>
+                <button
+                  onClick={() => declineFriend(r.id)}
+                  aria-label={`Cancel request to ${r.username}`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: '#f1f5f9', color: FR.label }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {inviteNote && (
+            <p className="text-xs font-extrabold cursor-pointer px-1" style={{ color: FR.label }} onClick={() => setInviteNote(null)}>{inviteNote}</p>
+          )}
+        </>
+      )}
 
-      {/* Weekly race podium (§212) — who owns the week among your circle. */}
+      {/* 4. YOUR TURN (only with active games) */}
+      {sortedGames.length > 0 && (
+        <>
+          <SectionLabel>
+            Your turn
+            {myTurnCount > 0 && (
+              <span className="px-1.5 rounded-full text-[10px] font-black text-white" style={{ background: FR.solid, letterSpacing: 0 }}>{myTurnCount}</span>
+            )}
+          </SectionLabel>
+          <div className="space-y-2">
+            {sortedGames.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => router.push(`/friends/games/${g.id}`)}
+                className="w-full flex items-center gap-3 p-3 text-left transition-transform active:scale-[0.99]"
+                style={cardStyle}
+              >
+                <GameIconSquare kind={g.kind} size={36} />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[13px] font-black truncate" style={{ color: FR.text }}>{g.title} vs @{g.opponent.username}</span>
+                  <span className="block text-[11.5px] font-extrabold truncate" style={{ color: FR.solid }}>{g.line}</span>
+                </span>
+                <span
+                  className="shrink-0 px-3 flex items-center text-[11px] font-black rounded-full"
+                  style={{ height: 28, background: g.yourTurn ? FR.solid : FR.soft, color: g.yourTurn ? '#ffffff' : FR.mid }}
+                >
+                  {g.yourTurn ? 'PLAY' : 'WAITING'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* 5. PLAY WITH FRIENDS */}
+      <SectionLabel right={<span className="text-[10px] font-black" style={{ color: FR.label, letterSpacing: 0.8 }}>TAP A GAME, PICK A FRIEND</span>}>
+        Play with friends
+      </SectionLabel>
+      <div className="grid grid-cols-2 gap-2">
+        {FRIENDLY_KINDS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => {
+              if (friends.length === 0) { setNote('Add a friend first, then pick a game'); jumpToAdd(); return; }
+              openPlay(friends.length === 1 ? friends[0] : null, k);
+            }}
+            className="flex flex-col items-start gap-1.5 p-3 text-left transition-transform active:scale-[0.97]"
+            style={{ ...cardStyle, minHeight: 104 }}
+          >
+            <GameIconSquare kind={k} size={34} />
+            <span className="text-[13px] font-black" style={{ color: FR.text }}>{FRIENDLY_TITLES[k]}</span>
+            <span className="font-bold" style={{ fontSize: 10.5, lineHeight: 1.3, color: '#4b5563' }}>{KIND_SUB[k]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* 6. THIS WEEK'S RACE (§212) */}
       {podium.length > 0 && (
-        <div>
-          {/* §218 (founder ask): the podium is the WEEKLY race, but bare "pts"
-              read as today's score — name the window and when it closes. */}
-          <div className="flex items-center justify-between text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <span className="font-black uppercase tracking-wider">This week&apos;s race</span>
-            <span className="flex items-center gap-1.5">
+        <>
+          <SectionLabel right={
+            <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: FR.label }}>
               <span>{weekEndsLabel}</span>
-              {/* §234: share the race — only once it has points (a zero board
-                  isn't a brag; the builder returns null for it anyway). */}
               {raceStarted && (
                 <button
                   onClick={shareRace}
                   disabled={sharingRace}
                   aria-label="Share weekly race"
                   className="p-1 -my-1 active:scale-95 transition-transform"
-                  style={{ color: 'var(--color-text-muted)', opacity: sharingRace ? 0.4 : 1 }}
+                  style={{ color: FR.label, opacity: sharingRace ? 0.4 : 1 }}
                 >
                   <Share className="w-3.5 h-3.5" />
                 </button>
               )}
             </span>
-          </div>
-          {/* D3.3 — the Sunday finish, settled server-side on the first visit of the
-              week: "You finished 2nd of 6". Stable all week; the Stats tab tallies them. */}
-          {(() => {
-            const r = getLastWeekResult();
-            if (!r) return null;
-            const win = r.rank === 1;
-            return (
-              <div
-                className="flex items-center gap-2 px-3 py-2 mt-1 mb-1"
-                style={{ background: win ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : 'var(--color-bg)', border: `1.5px solid ${win ? '#f59e0b' : 'var(--color-border)'}`, borderRadius: '12px' }}
-              >
-                <span className="text-base">{win ? '👑' : '🏁'}</span>
-                <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : 'var(--color-text)' }}>
-                  Last week you finished <b>{ordinalOf(r.rank)} of {r.circleSize}</b> · {r.points.toLocaleString()} pts
-                  {!win && r.winnerName ? <span style={{ color: 'var(--color-text-muted)' }}> · 👑 {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
-                </span>
-              </div>
-            );
-          })()}
-          {/* §232: Monday's answer — last week's settled winner. §238: the
-              line unfolds into the whole settled-week history. */}
-          {lastWeek && (
-            <button
-              type="button"
-              onClick={() => pastWeeks.length > 1 && setShowPastWeeks((v) => !v)}
-              className="flex items-center gap-1 text-[10px] font-bold mt-0.5"
-              style={{ color: 'var(--color-text-muted)', cursor: pastWeeks.length > 1 ? 'pointer' : 'default' }}
-            >
-              <span>Last week: 👑 {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts</span>
-              {pastWeeks.length > 1 && (
-                <ChevronDown
-                  className="w-3 h-3 transition-transform"
-                  style={{ transform: showPastWeeks ? 'rotate(180deg)' : 'none' }}
-                />
-              )}
-            </button>
-          )}
-          {showPastWeeks && pastWeeks.filter((w) => w.k > 0).map((w) => (
-            <div key={w.k} className="text-[10px] font-bold mt-0.5 pl-1" style={{ color: 'var(--color-text-muted)' }}>
-              {pastWeekLabel(w.k)}: 👑 {w.name} · {w.pts.toLocaleString()} pts
-            </div>
-          ))}
-          <div className="flex items-end justify-center gap-5 py-2">
-            {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
-              const e = podium[i];
-              const medal = ['🥇', '🥈', '🥉'][i];
+          }>This week&apos;s race</SectionLabel>
+          <div className="p-3" style={cardStyle}>
+            {(() => {
+              const r = getLastWeekResult();
+              if (!r) return null;
+              const win = r.rank === 1;
               return (
-                // §225: podium columns are doors to the profiles too — same
-                // dead-tap complaint as the roster rows below.
-                <Link
-                  key={e.id}
-                  href={e.me ? '/profile' : `/profile/${e.id}`}
-                  className={`flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity ${i === 0 ? '-mt-2' : ''}`}
+                <div
+                  className="flex items-center gap-2 px-3 py-2 mb-1"
+                  style={{ background: win ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f8f7ff', borderRadius: 12 }}
                 >
-                  {/* Medals wait for the first score of the week (§216). */}
-                  <span className={i === 0 ? 'text-lg' : 'text-sm'}>{raceStarted ? medal : '🏁'}</span>
-                  <Avatar f={e as unknown as FriendProfile} />
-                  {/* §225: 9px + 80px fits ~14 chars before the ellipsis —
-                      "TheRealMich..." at 10px/72px cut the founder's name. */}
-                  <span className="text-[9px] font-black truncate max-w-[80px]"
-                    style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
-                    {e.username}
+                  <span className="text-base">{win ? '👑' : '🏁'}</span>
+                  <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : FR.text }}>
+                    Last week you finished <b>{ordinalOf(r.rank)} of {r.circleSize}</b> · {r.points.toLocaleString()} pts
+                    {!win && r.winnerName ? <span style={{ color: FR.label }}> · 👑 {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
                   </span>
-                  <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    {e.pts.toLocaleString()} pts
-                  </span>
-                </Link>
+                </div>
               );
-            })}
-          </div>
-          {/* §238: everyone past the medals, ranked. Score is shrink-0 and
-              the name truncates — the §236 sweep-row lesson. */}
-          {standings.length > 3 && (
-            <div className="space-y-1 mt-1">
-              {standings.slice(3).map((e, i) => (
-                <Link
-                  key={e.id}
-                  href={e.me ? '/profile' : `/profile/${e.id}`}
-                  className="flex items-center gap-2 px-2 hover:opacity-80 transition-opacity"
-                >
-                  <span className="text-[10px] font-black w-7 shrink-0 text-right" style={{ color: 'var(--color-text-muted)' }}>
-                    {ordinal(i + 4)}
-                  </span>
-                  <span className="text-[10px] font-extrabold truncate flex-1 min-w-0"
-                    style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
-                    {e.username}
-                  </span>
-                  <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>
-                    {e.pts.toLocaleString()} pts
-                  </span>
-                </Link>
-              ))}
+            })()}
+            {lastWeek && (
+              <button
+                type="button"
+                onClick={() => pastWeeks.length > 1 && setShowPastWeeks((v) => !v)}
+                className="flex items-center gap-1 text-[10px] font-bold mt-0.5"
+                style={{ color: FR.label, cursor: pastWeeks.length > 1 ? 'pointer' : 'default' }}
+              >
+                <span>Last week: 👑 {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts</span>
+                {pastWeeks.length > 1 && (
+                  <ChevronDown className="w-3 h-3 transition-transform" style={{ transform: showPastWeeks ? 'rotate(180deg)' : 'none' }} />
+                )}
+              </button>
+            )}
+            {showPastWeeks && pastWeeks.filter((w) => w.k > 0).map((w) => (
+              <div key={w.k} className="text-[10px] font-bold mt-0.5 pl-1" style={{ color: FR.label }}>
+                {pastWeekLabel(w.k)}: 👑 {w.name} · {w.pts.toLocaleString()} pts
+              </div>
+            ))}
+            <div className="flex items-end justify-center gap-5 py-2">
+              {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
+                const e = podium[i];
+                const medal = ['🥇', '🥈', '🥉'][i];
+                return (
+                  <Link
+                    key={e.id}
+                    href={e.me ? '/profile' : `/profile/${e.id}`}
+                    className={`flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity ${i === 0 ? '-mt-2' : ''}`}
+                  >
+                    <span className={i === 0 ? 'text-lg' : 'text-sm'}>{raceStarted ? medal : '🏁'}</span>
+                    <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={i === 0 ? 40 : 34} />
+                    <span className="text-[9.5px] font-black truncate max-w-[80px]" style={{ color: e.me ? FR.ink : FR.text }}>{e.username}</span>
+                    <span className="text-[9.5px] font-bold" style={{ color: FR.label }}>{e.pts.toLocaleString()} pts</span>
+                  </Link>
+                );
+              })}
             </div>
-          )}
-          {!raceStarted && (
-            <p className="text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              Race resets Mondays — first daily takes the lead.
-            </p>
-          )}
-        </div>
+            {standings.length > 3 && (
+              <div className="space-y-1 mt-1">
+                {standings.slice(3).map((e, i) => (
+                  <Link key={e.id} href={e.me ? '/profile' : `/profile/${e.id}`} className="flex items-center gap-2 px-2 hover:opacity-80 transition-opacity">
+                    <span className="text-[10px] font-black w-7 shrink-0 text-right" style={{ color: FR.label }}>{ordinal(i + 4)}</span>
+                    <span className="text-[10px] font-extrabold truncate flex-1 min-w-0" style={{ color: e.me ? FR.ink : FR.text }}>{e.username}</span>
+                    <span className="text-[10px] font-bold shrink-0" style={{ color: FR.label }}>{e.pts.toLocaleString()} pts</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+            {!raceStarted && (
+              <p className="text-center text-[10px] font-bold" style={{ color: FR.label }}>Race resets Mondays — first daily takes the lead.</p>
+            )}
+          </div>
+        </>
       )}
 
-      {/* §216's "topped N of M" bar retired: the ranked Today's Race card above says it. */}
-
-      {/* Friends list (§212) — live rows: today's progress, streak, H2H
-          record, say-hi on NEW friendships, taunt bell for slackers. */}
-      {friends.length > 0 ? (
-        <div className="space-y-2.5">
-          {friends.map((f) => {
-            const played = f.playedToday ?? undefined;
-            // §238 (founder: "18–7 you doesn't really make sense"): the
-            // rivalry record now says who's ahead in plain words.
-            const w = f.h2hW ?? 0, l = f.h2hL ?? 0;
-            const record = w + l > 0
-              ? (w === l ? `tied ${w}–${l}` : w > l ? `you lead ${w}–${l}` : `they lead ${l}–${w}`)
-              : null;
+      {/* 7. YOUR FRIENDS */}
+      <SectionLabel right={slackers.length > 0 ? (
+        <button
+          type="button"
+          onClick={nudgeAll}
+          aria-label="Nudge all friends who haven't played today"
+          className="text-[11px] font-black"
+          style={{ color: FR.solid }}
+        >
+          Nudge all who haven&apos;t played
+        </button>
+      ) : undefined}>
+        Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
+      </SectionLabel>
+      {pending ? (
+        <div className="space-y-2 animate-pulse" aria-hidden>
+          {[0, 1, 2].map((i) => <div key={i} className="h-12 rounded-xl" style={{ background: '#ffffff' }} />)}
+        </div>
+      ) : friends.length > 0 ? (
+        <div style={cardStyle}>
+          {friends.map((f, i) => {
+            const line = friendLine(f, now, SWEEP_MODES.length);
+            const action = friendAction(f, now);
             return (
-              // §225 (founder's dead-tap report): the WHOLE row navigates to
-              // the friend's profile, not just the name — taps on the Lvl
-              // label or the gaps used to go nowhere. Real controls (bell,
-              // say-hi, kebab) handle themselves and stop the row tap.
               <div
                 key={f.id}
-                className="flex items-center gap-2.5 cursor-pointer"
+                className="relative flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
+                style={{ borderTop: i === 0 ? undefined : '1px solid #f1f5f9' }}
                 onClick={(e) => {
                   if ((e.target as HTMLElement).closest('a,button')) return;
                   router.push(`/profile/${f.id}`);
                 }}
               >
                 <Link href={`/profile/${f.id}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <Avatar f={f} />
+                  <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={36} online={line.online} />
                   <span className="flex-1 min-w-0">
-                    <span className="block text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
-                      {f.username}
-                      {/* §216: the week's leader wears the crown. */}
-                      {f.id === crownId && <span className="ml-1"> 👑</span>}
-                      {/* §244: a live flawless streak taunts the row. */}
-                      {(f.flawlessStreak ?? 0) >= 2 && (
-                        <span className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
-                          style={{ background: '#f59e0b22', color: '#b45309' }}>
-                          🏆 ×{f.flawlessStreak}
-                        </span>
-                      )}
+                    <span className="flex items-center gap-1 text-[13px] font-black truncate" style={{ color: FR.text }}>
+                      <span className="truncate">@{f.username}</span>
+                      {f.id === crownId && <Crown className="w-3.5 h-3.5 shrink-0" style={{ color: '#f59e0b' }} fill="#f59e0b" aria-label="Leads the week" />}
                       {isNewFriend(f) && (
-                        <span
-                          className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
-                          style={{ background: '#7c3aed22', color: '#7c3aed' }}
-                        >
-                          NEW
-                        </span>
+                        <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>NEW</span>
                       )}
-                      {/* §216: friendversary chip on milestone days. */}
                       {friendversary(f) !== null && (
-                        <span
-                          className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
-                          style={{ background: '#ec489922', color: '#ec4899' }}
-                        >
-                          🎉 {friendversary(f)} DAYS
-                        </span>
+                        <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>🎉 {friendversary(f)} DAYS</span>
                       )}
                     </span>
-                    {played !== undefined && (
-                      <span className="block text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
-                        {/* §225: show the score, not just the count — the
-                            digest already ships todayPoints (§216). */}
-                        {played > 0
-                          ? `${played}/${SWEEP_MODES.length} today · ${(f.todayPoints ?? 0).toLocaleString()} pts${f.streak ? ` · 🔥${f.streak}` : ''}`
-                          : "hasn't played today"}
-                        {record ? ` · ${record}` : ''}
-                      </span>
-                    )}
+                    <span className="block text-[11px] font-bold truncate" style={{ color: line.online ? FR.online : FR.label }}>{line.text}</span>
                   </span>
                 </Link>
-                {isNewFriend(f) && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); sayHi(f); }}
-                    aria-label={`Say hi to ${f.username}`}
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg"
-                    style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
-                  >
-                    👋 Say hi
-                  </button>
+                <FlameCount days={f.friendStreak ?? 0} />
+                {action === 'play' && <Pill solid onClick={() => openPlay(f)} label={`Play with ${f.username}`}>Play</Pill>}
+                {action === 'challenge' && (
+                  <Pill onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`}>
+                    {challenging === f.id ? 'Sending…' : 'Challenge'}
+                  </Pill>
                 )}
-                {/* §225: fixed-width slot whether or not the bell renders
-                    (friends who already played show none), so the Lvl labels
-                    line up in a clean column instead of jittering per row. */}
-                <span className="w-7 shrink-0 flex justify-center">
-                  {played === 0 && !isNewFriend(f) && (
-                    <button
-                      // stopPropagation: a bell tap taunts, it never navigates.
-                      onClick={(e) => { e.stopPropagation(); setTauntTarget(f); }}
-                      aria-label={`Taunt ${f.username}`}
-                      className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                      style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
-                    >
-                      <Bell className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-                    </button>
-                  )}
-                </span>
-                <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>
-                  Lvl {f.level}
-                </span>
-                {/* §225: the chevron is the "this row goes somewhere" cue. */}
-                <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
-                {/* §225 kebab: View profile / Taunt / Unfriend — unfriending
-                    finally reachable without hunting for the profile page. */}
+                {action === 'nudge' && <Pill onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</Pill>}
                 <span className="relative shrink-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuFor((m) => (m === f.id ? null : f.id)); }}
                     aria-label={`More options for ${f.username}`}
-                    className="w-6 h-6 flex items-center justify-center rounded-lg hover:opacity-80 transition-opacity"
+                    className="w-6 h-7 flex items-center justify-center rounded-lg hover:opacity-80 transition-opacity"
                   >
-                    <MoreHorizontal className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+                    <MoreHorizontal className="w-4 h-4" style={{ color: FR.label }} />
                   </button>
                   {menuFor === f.id && (
                     <div
-                      className="absolute right-0 top-7 z-40 w-36 overflow-hidden"
-                      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+                      className="absolute right-0 top-8 z-40 w-40 overflow-hidden"
+                      style={{ background: '#ffffff', borderRadius: 12, boxShadow: '0 8px 24px rgba(15,23,42,0.16)' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         onClick={() => { setMenuFor(null); router.push(`/profile/${f.id}`); }}
                         className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-                        style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                        style={{ color: FR.text }}
                       >
                         View profile
                       </button>
-                      <button
-                        onClick={() => { setMenuFor(null); setTauntTarget(f); }}
-                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-                        style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
-                      >
-                        Taunt
-                      </button>
-                      <button
-                        onClick={async () => {
-                          setMenuFor(null);
-                          const r = await challengeFriend(f.id, 'DUEL');
-                          if ('error' in r) { setNote(r.error); return; }
-                          setNote(`Challenge sent to ${f.username} ⚔️`);
-                          router.push(`${vsHrefForMode('DUEL')}?inviteCode=${r.code}`);
-                        }}
-                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-                        style={{ color: '#ec4899', borderBottom: '1px solid var(--color-border)' }}
-                      >
-                        Challenge ⚔️
-                      </button>
-                      {/* D3.4: gift one of your streak shields (once per friend per week). */}
-                      {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && (
-                        <button
-                          onClick={async () => {
-                            setMenuFor(null);
-                            const r = await giftShield(f.id);
-                            setNote('error' in r ? r.error : `🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left`);
-                          }}
-                          className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-                          style={{ color: '#0d9488', borderBottom: '1px solid var(--color-border)' }}
-                        >
-                          🛡️ Gift a shield
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { setMenuFor(null); setUnfriendTarget(f); }}
-                        className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
-                        style={{ color: '#dc2626' }}
-                      >
-                        Unfriend
-                      </button>
+                      {menuItem('Play a quick game', () => { setMenuFor(null); openPlay(f); }, FR.solid)}
+                      {menuItem('Challenge ⚔️', () => { setMenuFor(null); void challenge(f); }, FR.solid)}
+                      {menuItem('Taunt', () => { setMenuFor(null); setTauntTarget(f); })}
+                      {isNewFriend(f) && menuItem('👋 Say hi', () => { setMenuFor(null); void sayHi(f); })}
+                      {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && menuItem('🛡️ Gift a shield', async () => {
+                        setMenuFor(null);
+                        const r = await giftShield(f.id);
+                        setNote('error' in r ? r.error : `🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left`);
+                      }, '#0d9488')}
+                      {menuItem('Unfriend', () => { setMenuFor(null); setUnfriendTarget(f); }, '#dc2626')}
                     </div>
                   )}
                 </span>
@@ -717,109 +709,125 @@ export function FriendsPanel() {
           })}
         </div>
       ) : (
-        !pending && incoming.length === 0 && outgoing.length === 0 && (
-          <div className="space-y-1.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <p>1. Add friends below by username, or from the <span style={{ color: '#7c3aed' }}>Add Friend</span> button on any player&apos;s profile.</p>
+        !pending && (
+          <div className="p-4 space-y-1.5 text-xs font-bold" style={{ ...cardStyle, color: FR.label }}>
+            <p>1. Add friends below by username, or from the <span style={{ color: FR.solid }}>Add Friend</span> button on any player&apos;s profile.</p>
             <p>2. Requests you send and receive land right here.</p>
-            <p>3. Once a friend accepts, flip the leaderboard to <span style={{ color: '#7c3aed' }}>FRIENDS</span> for your own private race.</p>
+            <p>3. Once a friend accepts, race them every day and play quick games together.</p>
           </div>
         )
       )}
+      {note && <p className="text-xs font-extrabold px-1" style={{ color: FR.mid }}>{note}</p>}
 
-      {/* Add by username — exact match, same lookup as VS invites. */}
-      <div className="flex items-center gap-2">
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-          placeholder="Add by username"
-          className="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs font-bold outline-none"
-          style={{
-            background: 'var(--color-surface-hover)',
-            border: '1.5px solid var(--color-border)',
-            color: 'var(--color-text)',
-          }}
-        />
+      {/* 8. MOMENTS */}
+      <ActivityFeed
+        onRematch={(kind, friendId) => {
+          const f = friends.find((x) => x.id === friendId) ?? null;
+          if (f) openPlay(f, kind);
+        }}
+      />
+
+      {/* 9. Add by username + share invite link */}
+      <SectionLabel><Users className="w-3.5 h-3.5" /> Add a friend</SectionLabel>
+      <div className="p-3 space-y-2.5" style={cardStyle}>
+        <div className="flex items-center gap-2">
+          <input
+            ref={addRef}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            placeholder="Add by username"
+            aria-label="Add by username"
+            className="flex-1 min-w-0 px-3 py-2 text-[13px] font-bold outline-none"
+            style={{ background: '#f8fafc', borderRadius: 10, color: FR.text }}
+          />
+          <button
+            onClick={handleAdd}
+            disabled={sending || !username.trim()}
+            aria-label="Send friend request"
+            className="px-4 py-2 rounded-full text-[12px] font-black text-white disabled:opacity-50 flex items-center gap-1.5"
+            style={{ background: FR.solid }}
+          >
+            <UserPlus className="w-3.5 h-3.5" /> ADD
+          </button>
+        </div>
+        {suggestions.length > 0 && (
+          <div className="space-y-1">
+            {suggestions.map((u) => (
+              <button
+                key={u.id}
+                onClick={async () => {
+                  if (sending) return;
+                  setSending(true);
+                  setSuggestions([]);
+                  try {
+                    const r = await requestFriend({ addresseeId: u.id });
+                    if ('error' in r) setNote(r.error);
+                    else {
+                      setNote(r.status === 'accepted' ? 'You’re now friends! 🎉' : `Request sent to ${u.username} 🤝`);
+                      setUsername('');
+                    }
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-left hover:opacity-80 transition-opacity"
+                style={{ background: '#f8f7ff' }}
+              >
+                <FriendAvatar name={u.username} url={u.avatar_url} emoji={u.avatar_emoji} size={30} />
+                <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: FR.text }}>{u.username}</span>
+                <span className="text-[10px] font-bold" style={{ color: FR.label }}>Lvl {u.level}</span>
+                <UserPlus className="w-3.5 h-3.5" style={{ color: FR.solid }} />
+              </button>
+            ))}
+          </div>
+        )}
         <button
-          onClick={handleAdd}
-          disabled={sending || !username.trim()}
-          aria-label="Send friend request"
-          className="px-3 py-2 rounded-xl text-xs font-black text-white btn-3d disabled:opacity-50 flex items-center gap-1.5"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
+          onClick={shareInvite}
+          className="flex items-center gap-1.5 text-[11px] font-black hover:opacity-80 transition-opacity"
+          style={{ color: FR.mid }}
         >
-          <UserPlus className="w-3.5 h-3.5" /> Add
+          <Send className="w-3.5 h-3.5" /> Share invite link
         </button>
       </div>
-      {/* §225: the invite door for friends who aren't on Wordocious yet —
-          typing a username only works once they already have an account. */}
-      <button
-        onClick={shareInvite}
-        className="flex items-center gap-1.5 text-[10px] font-bold hover:opacity-80 transition-opacity"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        <Send className="w-3.5 h-3.5" /> Share invite link
-      </button>
-      {/* Typeahead results — tap sends to that exact account (by id). */}
-      {suggestions.length > 0 && (
-        <div className="space-y-1">
-          {suggestions.map((u) => (
-            <button
-              key={u.id}
-              onClick={async () => {
-                if (sending) return;
-                setSending(true);
-                setSuggestions([]);
-                try {
-                  const r = await requestFriend({ addresseeId: u.id });
-                  if ('error' in r) setNote(r.error);
-                  else {
-                    setNote(r.status === 'accepted' ? 'You’re now friends! 🎉' : `Request sent to ${u.username} 🤝`);
-                    setUsername('');
-                  }
-                } finally {
-                  setSending(false);
-                }
-              }}
-              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-left hover:opacity-80 transition-opacity"
-              style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
-            >
-              <Avatar f={u} />
-              <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
-                {u.username}
-              </span>
-              <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Lvl {u.level}
-              </span>
-              <UserPlus className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-            </button>
-          ))}
-        </div>
+
+      {/* Sheets + modals */}
+      {sheet?.type === 'play' && (
+        <QuickPlaySheet
+          friends={friends}
+          friend={sheet.friend}
+          kind={sheet.kind}
+          onClose={() => setSheet(null)}
+          onNote={setNote}
+        />
       )}
-      {note && (
-        <p className="text-xs font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{note}</p>
+      {sheet?.type === 'race' && (
+        <Sheet onClose={() => setSheet(null)} label="Today's race">
+          <TodaysRace
+            friends={friends}
+            me={profile ? {
+              id: profile.id, username: profile.username, avatar_url: profile.avatar_url ?? null,
+              avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
+              level: profile.level ?? 0, todayPoints: meDigest?.todayPoints ?? 0, playedToday: meDigest?.playedToday ?? 0,
+            } : null}
+            onTaunt={(f) => setTauntTarget(f)}
+            onNote={setNote}
+          />
+        </Sheet>
       )}
 
-      {/* Taunt picker — same modal as the friends leaderboard (§207). */}
       {tauntTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.45)' }}
           onClick={() => { setTauntTarget(null); setTauntStatus(null); }}
         >
-          <div
-            className="w-full max-w-sm overflow-hidden"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <p className="text-xs font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Taunt {tauntTarget.username}
-              </p>
+          <div className="w-full max-w-sm overflow-hidden" style={{ background: '#ffffff', borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3">
+              <p className="text-[11px] font-black uppercase" style={{ color: FR.label, letterSpacing: 1.2 }}>Nudge {tauntTarget.username}</p>
             </div>
             {tauntStatus ? (
-              <div className="p-6 text-center text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
-                {tauntStatus}
-              </div>
+              <div className="p-6 text-center text-sm font-extrabold" style={{ color: FR.text }}>{tauntStatus}</div>
             ) : (
               <div>
                 {FRIEND_TAUNTS.map((t) => (
@@ -827,16 +835,12 @@ export function FriendsPanel() {
                     key={t.id}
                     onClick={() => fireTaunt(t.id)}
                     className="w-full text-left px-4 py-3 text-xs font-extrabold transition-colors hover:opacity-80"
-                    style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                    style={{ color: FR.text, borderTop: '1px solid #f1f5f9' }}
                   >
                     {t.text}
                   </button>
                 ))}
-                <button
-                  onClick={() => setTauntTarget(null)}
-                  className="w-full px-4 py-3 text-xs font-extrabold"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
+                <button onClick={() => setTauntTarget(null)} className="w-full px-4 py-3 text-xs font-extrabold" style={{ color: FR.label, borderTop: '1px solid #f1f5f9' }}>
                   Cancel
                 </button>
               </div>
@@ -845,40 +849,26 @@ export function FriendsPanel() {
         </div>
       )}
 
-      {/* §225: unfriend confirm — a mis-tap on a destructive menu item
-          shouldn't cost a friendship (re-adding takes a whole new request
-          round trip). Same modal shell as the taunt picker above. */}
       {unfriendTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.45)' }}
           onClick={() => setUnfriendTarget(null)}
         >
-          <div
-            className="w-full max-w-sm overflow-hidden"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+          <div className="w-full max-w-sm overflow-hidden" style={{ background: '#ffffff', borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
+            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: FR.text }}>
               Unfriend {unfriendTarget.username}? You can re-add them anytime.
             </p>
-            <div className="flex" style={{ borderTop: '1px solid var(--color-border)' }}>
-              <button
-                onClick={() => setUnfriendTarget(null)}
-                className="flex-1 px-4 py-3 text-xs font-extrabold"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Cancel
-              </button>
+            <div className="flex" style={{ borderTop: '1px solid #f1f5f9' }}>
+              <button onClick={() => setUnfriendTarget(null)} className="flex-1 px-4 py-3 text-xs font-extrabold" style={{ color: FR.label }}>Cancel</button>
               <button
                 onClick={async () => {
                   const f = unfriendTarget;
                   setUnfriendTarget(null);
-                  // Optimistic mutator — the roster refreshes via onFriendsChange.
                   await removeFriend(f.id);
                 }}
                 className="flex-1 px-4 py-3 text-xs font-black"
-                style={{ color: '#dc2626', borderLeft: '1px solid var(--color-border)' }}
+                style={{ color: '#dc2626', borderLeft: '1px solid #f1f5f9' }}
               >
                 Unfriend
               </button>
@@ -887,130 +877,12 @@ export function FriendsPanel() {
         </div>
       )}
     </div>
-
-    {/* INVITES card — requests in flight (incoming + sent), split out of the
-        FRIENDS card so the roster reads finished (founder ask, Aug 17).
-        Renders only when something is actually pending. */}
-    {(incoming.length > 0 || outgoing.length > 0) && (
-      <div
-        className="p-5 space-y-4"
-        style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
-      >
-        <div className="flex items-center gap-2">
-          <Send className="w-4 h-4" style={{ color: '#7c3aed' }} />
-          <h3
-            className="text-base font-black tracking-tight text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-          >
-            INVITES
-          </h3>
-          <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>
-            {incoming.length + outgoing.length}
-          </span>
-        </div>
-
-        {/* Incoming requests first — they're the actionable part. */}
-        {incoming.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-              Friend requests
-            </p>
-            {incoming.map((r) => (
-              <div key={r.id} className="flex items-center gap-2.5">
-                <Avatar f={r} />
-                <Link
-                  href={`/profile/${r.id}`}
-                  className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  {r.username}
-                </Link>
-                <button
-                  onClick={() => acceptFriend(r.id)}
-                  aria-label={`Accept ${r.username}`}
-                  className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: '#7c3aed', color: '#ffffff' }}
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => declineFriend(r.id)}
-                  aria-label={`Decline ${r.username}`}
-                  className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Sent requests — the loop's missing feedback (Tier 1, Aug 11):
-            sending a request now visibly puts something here, with a cancel. */}
-        {outgoing.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-              Sent — waiting
-            </p>
-            {outgoing.map((r) => (
-              <div key={r.id} className="flex items-center gap-2.5">
-                <Avatar f={r} />
-                <Link
-                  href={`/profile/${r.id}`}
-                  className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  {r.username}{' '}
-                  <span className="font-bold text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                    · {agoShort(r.requestedAt)}
-                  </span>
-                </Link>
-                {/* §212: the invite usually died unseen — re-push, 1/24h. */}
-                <button
-                  onClick={async () => {
-                    const res = await remindFriend(r.id);
-                    setInviteNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
-                  }}
-                  disabled={withinDay(r.remindedAt)}
-                  aria-label={`Remind ${r.username}`}
-                  className="text-[10px] font-bold px-2 py-1 rounded-lg disabled:opacity-50"
-                  style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
-                >
-                  {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
-                </button>
-                <button
-                  onClick={() => declineFriend(r.id)}
-                  aria-label={`Cancel request to ${r.username}`}
-                  className="text-[10px] font-bold px-2 py-1 rounded-lg"
-                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
-                >
-                  Cancel
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {inviteNote && (
-          <p
-            className="text-xs font-extrabold cursor-pointer"
-            style={{ color: 'var(--color-text-muted)' }}
-            onClick={() => setInviteNote(null)}
-          >
-            {inviteNote}
-          </p>
-        )}
-      </div>
-    )}
-    </div>
   );
 }
 
-
 /**
  * Compact "Friends (N) →" row for the profile page (Tier 3, Aug 11) — the
- * full card moved to /friends; this is the door, with the request badge.
+ * full tab lives at /friends; this is the door, with the request badge.
  */
 export function FriendsRowLink() {
   const { user } = useAuth();
@@ -1022,33 +894,18 @@ export function FriendsRowLink() {
   }, [user]);
   if (!user) return null;
   const count = getFriends().length;
-  const pending = getIncoming().length;
+  const pendingCount = getIncoming().length;
   return (
-    <Link
-      href="/friends"
-      className="flex items-center gap-2.5 p-4 hover:opacity-90 transition-opacity"
-      style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
-    >
-      <Users className="w-5 h-5" style={{ color: '#7c3aed' }} />
-      <span
-        className="text-base font-black tracking-tight text-transparent bg-clip-text"
-        style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-      >
-        FRIENDS
-      </span>
-      {count > 0 && (
-        <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{count}</span>
-      )}
-      {pending > 0 && (
-        <span
-          className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
-          style={{ background: '#dc2626', color: '#fff' }}
-          aria-label={`${pending} pending friend requests`}
-        >
-          {pending}
+    <Link href="/friends" className="flex items-center gap-2.5 p-4 hover:opacity-90 transition-opacity" style={cardStyle}>
+      <Users className="w-5 h-5" style={{ color: FR.solid }} />
+      <span className="text-base font-black tracking-tight text-transparent bg-clip-text" style={{ backgroundImage: FR.title }}>FRIENDS</span>
+      {count > 0 && <span className="text-xs font-black" style={{ color: FR.label }}>{count}</span>}
+      {pendingCount > 0 && (
+        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: FR.solid, color: '#fff' }} aria-label={`${pendingCount} pending friend requests`}>
+          {pendingCount}
         </span>
       )}
-      <span className="ml-auto text-sm font-black" style={{ color: '#7c3aed' }}>→</span>
+      <span className="ml-auto text-sm font-black" style={{ color: FR.solid }}>→</span>
     </Link>
   );
 }

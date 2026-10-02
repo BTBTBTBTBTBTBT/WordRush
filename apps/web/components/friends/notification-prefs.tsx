@@ -13,9 +13,9 @@ import { supabase } from '@/lib/supabase-client';
 
 export const PUSH_CATEGORIES = [
   { key: 'race', label: 'Race finish & overtakes', hint: "Monday's recap and when a friend passes you" },
-  { key: 'challenge', label: 'Challenges', hint: 'A friend challenges you to a VS Battle' },
+  { key: 'challenge', label: 'Challenges & games', hint: 'VS challenges, and your turn in a quick game' },
   { key: 'nudge', label: 'Nudges & taunts', hint: 'The canned one-liners' },
-  { key: 'feed', label: 'Moments', hint: 'Shield gifts and other circle moments' },
+  { key: 'feed', label: 'Moments', hint: 'Reactions, shield gifts and other circle moments' },
 ] as const;
 export type PushCategory = typeof PUSH_CATEGORIES[number]['key'];
 
@@ -49,23 +49,23 @@ export function NotificationPrefs() {
   };
 
   return (
-    <div ref={ref} className="relative ml-auto">
+    <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Friends notification settings"
         aria-expanded={open}
-        className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-        style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+        className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+        style={{ background: '#ffffff', boxShadow: '0 2px 10px rgba(76,29,149,0.07)' }}
       >
-        {anyOff ? <BellOff className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} /> : <Bell className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}
+        {anyOff ? <BellOff className="w-4 h-4" style={{ color: '#6b7280' }} /> : <Bell className="w-4 h-4" style={{ color: '#db2777' }} />}
       </button>
       {open && (
         <div
           className="absolute right-0 top-8 z-40 w-64 p-3 space-y-2"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+          style={{ background: '#ffffff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(15,23,42,0.16)' }}
         >
-          <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Friends notifications</div>
+          <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#6b7280' }}>Friends notifications</div>
           {PUSH_CATEGORIES.map((c) => {
             const on = prefs[c.key] !== false;
             return (
@@ -78,19 +78,19 @@ export function NotificationPrefs() {
               >
                 <span
                   className="w-8 h-4.5 rounded-full relative shrink-0 transition-colors"
-                  style={{ background: on ? '#7c3aed' : 'var(--color-border)', height: 18 }}
+                  style={{ background: on ? '#db2777' : '#e5e7eb', height: 18 }}
                   aria-hidden="true"
                 >
                   <span className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-all" style={{ left: on ? 16 : 2 }} />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>{c.label}</span>
-                  <span className="block text-[9px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>{c.hint}</span>
+                  <span className="block text-[11px] font-extrabold" style={{ color: '#1f2937' }}>{c.label}</span>
+                  <span className="block text-[9px] font-bold truncate" style={{ color: '#6b7280' }}>{c.hint}</span>
                 </span>
               </button>
             );
           })}
-          <p className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Friend requests always come through.</p>
+          <p className="text-[9px] font-bold" style={{ color: '#6b7280' }}>Friend requests always come through.</p>
         </div>
       )}
     </div>

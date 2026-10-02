@@ -237,6 +237,8 @@ struct SpyglassView: View {
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .hidesBottomNav()
+        // Friends "On now · in <game>" (spec §1): the game on screen.
+        .presenceActivity("WORDSEARCH")
         .swipeToGoBack { dismiss() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.state.status) { s in

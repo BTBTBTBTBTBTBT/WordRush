@@ -274,6 +274,8 @@ struct HubView: View {
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
         .onChange(of: showOverlay) { vm.setOverlay($0) }
         .hidesBottomNav()
+        // Friends "On now · in <game>" (spec §1): the game on screen.
+        .presenceActivity("HUB")
         .swipeToGoBack { dismiss() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.state.status) { s in

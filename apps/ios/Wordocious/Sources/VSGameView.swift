@@ -167,6 +167,8 @@ struct VSGameView: View {
         // the bottom safe area — pushing the keyboard's bottom row off-screen.
         // Solo games hide it via fullScreenCover; mirror that here.
         .hidesBottomNav()
+        // Friends "On now · in <game>" (spec §1): the game on screen.
+        .presenceActivity(mode.rawValue)
         .onAppear {
             // Free users watch the game-start ad before matchmaking begins.
             if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.start() } }

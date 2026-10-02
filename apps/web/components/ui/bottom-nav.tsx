@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Home, Trophy, BarChart3, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { loadFriends, getIncoming, onFriendsChange } from '@/lib/friends-service';
+import { loadGames, getActiveGames, onGamesChange } from '@/lib/friendly-games-client';
+import { friendsBadgeCount } from '@/lib/friends-play';
 
 // D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile
 // and Records merge into Stats; Friends gets its own tab. iOS RootTabView and
@@ -23,12 +25,17 @@ export function BottomNav() {
   // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
   // in D1): pushes were the only signal before — a missed push meant a request
   // nobody ever saw.
+  // Friends overhaul §5: the badge = pending requests + pocket games where it's your turn.
   const { user } = useAuth();
-  const [pendingRequests, setPendingRequests] = useState(0);
+  const [badge, setBadge] = useState(0);
   useEffect(() => {
-    if (!user) { setPendingRequests(0); return; }
-    loadFriends().then(() => setPendingRequests(getIncoming().length));
-    return onFriendsChange(() => setPendingRequests(getIncoming().length));
+    if (!user) { setBadge(0); return; }
+    const sync = () => setBadge(friendsBadgeCount(getIncoming().length, getActiveGames()));
+    loadFriends().then(sync);
+    loadGames().then(sync);
+    const offFriends = onFriendsChange(sync);
+    const offGames = onGamesChange(sync);
+    return () => { offFriends(); offGames(); };
   }, [user]);
 
   // Publish the nav's rendered height as --bottom-nav-h on <html> so the
@@ -79,12 +86,14 @@ export function BottomNav() {
                 fill={isActive ? '#7c3aed' : 'none'}
                 aria-hidden="true"
               />
-              {item.href === '/friends' && pendingRequests > 0 && (
+              {item.href === '/friends' && badge > 0 && (
                 <span
-                  className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full"
-                  style={{ backgroundColor: '#7c3aed' /* win purple (founder, Aug 11) */ }}
-                  aria-label={`${pendingRequests} pending friend requests`}
-                />
+                  className="absolute -top-1.5 -right-2.5 flex items-center justify-center rounded-full text-[9px] font-black text-white"
+                  style={{ minWidth: 15, height: 15, padding: '0 4px', backgroundColor: '#7c3aed' /* win purple (founder, Aug 11) */, boxShadow: '0 0 0 2px var(--color-bg)' }}
+                  aria-label={`${badge} waiting on you in Friends`}
+                >
+                  {badge > 9 ? '9+' : badge}
+                </span>
               )}
             </span>
             <span

@@ -54,9 +54,9 @@ data class PushCategory(val key: String, val label: String, val hint: String)
 
 val PUSH_CATEGORIES = listOf(
     PushCategory("race", "Race finish & overtakes", "Monday's recap and when a friend passes you"),
-    PushCategory("challenge", "Challenges", "A friend challenges you to a VS Battle"),
+    PushCategory("challenge", "Challenges & games", "VS challenges, and your turn in a quick game"),
     PushCategory("nudge", "Nudges & taunts", "The canned one-liners"),
-    PushCategory("feed", "Moments", "Shield gifts and other circle moments"),
+    PushCategory("feed", "Moments", "Reactions, shield gifts and other circle moments"),
 )
 
 private val PREFS_PURPLE = Color(0xFF7C3AED)

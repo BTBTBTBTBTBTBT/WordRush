@@ -33,6 +33,9 @@ object DeepLinkRouter {
     /** A widget chip asked for this mode's daily (wordocious://daily/KEY —
      *  iOS DeepLink.swift's daily route); MainScreen consumes and clears it. */
     val dailyMode = MutableStateFlow<GameMode?>(null)
+    /** A Friends pocket game to open (/friends/games/<id> — the push url, Friends
+     *  overhaul §7); MainScreen opens the game screen and clears it. */
+    val friendlyGame = MutableStateFlow<String?>(null)
 
     /** Returns true when the URI was ours (vs/join, auth/reset, auth/confirm,
      *  or the widget's wordocious://daily/KEY). */
@@ -54,6 +57,14 @@ object DeepLinkRouter {
 
         if (parts.size == 3 && parts[0] == "vs" && parts[1] == "challenge") {
             vsChallenge.value = parts[2].uppercase()
+            return true
+        }
+
+        // Push only (the manifest doesn't claim /friends/games): a pocket game's screen.
+        if (parts.size == 3 && parts[0] == "friends" && parts[1] == "games") {
+            val id = parts[2]
+            if (!Regex("^[0-9a-fA-F-]{36}$").matches(id)) return false
+            friendlyGame.value = id.lowercase()
             return true
         }
 
@@ -102,11 +113,11 @@ object DeepLinkRouter {
     /**
      * A tapped push: the system-drawn FCM notification hands the launcher the
      * message's data as intent extras, so the server's `url` arrives here
-     * (e.g. "/vs/challenge/ABCD2345", "/vs/live/DUEL"). Only the VS routes are handled; any
-     * other url just opens the app.
+     * (e.g. "/vs/challenge/ABCD2345", "/vs/live/DUEL", "/friends/games/<id>"). Only the
+     * VS and pocket-game routes are handled; any other url just opens the app.
      */
     fun handlePushUrl(url: String?): Boolean {
-        val path = url?.trim()?.takeIf { it.startsWith("/vs/") } ?: return false
+        val path = url?.trim()?.takeIf { it.startsWith("/vs/") || it.startsWith("/friends/games/") } ?: return false
         return handle(Uri.parse("https://wordocious.com$path"))
     }
 }

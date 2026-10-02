@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import WordociousCore
 
 /// FRIENDS (bible §207) — iOS twin of apps/web/lib/friends-service.ts.
 ///
@@ -29,7 +30,34 @@ enum FriendsService {
         var h2hW: Int?
         var h2hL: Int?
         var remindedAt: String?
+        // Friends overhaul (2026-10-01, additive): the app heartbeat for "On
+        // now", the title of the game on their screen, and the days in a row
+        // you BOTH finished a daily.
+        var lastSeenAt: String?
+        var activity: String?
+        var friendStreak: Int?
+
+        /// Heartbeat under two minutes old (core isOnline).
+        func isOnline(now: Date = Date()) -> Bool {
+            FriendlyGames.isOnline(lastSeenMs: FriendsService.ms(lastSeenAt), nowMs: FriendsService.ms(now))
+        }
+
+        /// "On now · in Muddle" / "Here 12 min ago" / nil (core presenceLine).
+        func presenceLine(now: Date = Date()) -> String? {
+            FriendlyGames.presenceLine(lastSeenMs: FriendsService.ms(lastSeenAt), activity: activity, nowMs: FriendsService.ms(now))
+        }
     }
+
+    /// Epoch milliseconds of an ISO timestamp (nil when absent/unparseable).
+    static func ms(_ iso: String?) -> Int? {
+        guard let iso else { return nil }
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let d = f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso) else { return nil }
+        return ms(d)
+    }
+
+    static func ms(_ date: Date) -> Int { Int((date.timeIntervalSince1970 * 1000).rounded()) }
 
     struct MeDigest: Decodable, Equatable {
         let playedToday: Int; let weekPoints: Int; var todayPoints: Int?; var lastWeekPoints: Int?
@@ -309,6 +337,46 @@ enum FriendsService {
         /// D3.4 (§294) — the other party of a `gift` (the shield's recipient).
         var otherName: String?
         var otherId: String?
+        /// Pocket-game moments (`type: game`): "2–1", "by resignation" or nil.
+        var score: String?
+        /// Pocket-game moments: rps | ttt | coin | pass.
+        var gameKind: String?
+
+        /// The pocket game of a game moment (gameKind, else its title).
+        var friendlyKind: FriendlyKind? {
+            gameKind.flatMap(FriendlyKind.init(rawValue:)) ?? gameTitle.flatMap(FriendlyKind.init(title:))
+        }
+    }
+
+    /// One moment's reactions: counts per emoji key and the caller's own keys.
+    struct MomentReactions: Decodable, Equatable {
+        var counts: [String: Int]
+        var mine: [String]
+    }
+
+    /// The feed with its reactions (Friends overhaul §6). nil on any failure.
+    static func fetchFeedWithReactions() async -> (events: [FeedEvent], reactions: [String: MomentReactions])? {
+        guard let url = URL(string: "https://wordocious.com/api/friends/feed?day=\(localDay())") else { return nil }
+        struct FeedPayload: Decodable { let events: [FeedEvent]; var reactions: [String: MomentReactions]? }
+        let req = await PublicProfileService.authedRequest(url)
+        guard let (data, resp) = try? await Net.api.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let payload = try? JSONDecoder().decode(FeedPayload.self, from: data)
+        else { return nil }
+        return (payload.events, payload.reactions ?? [:])
+    }
+
+    /// Toggle one reaction on a moment — POST /api/friends/react {momentId,
+    /// ownerId, emoji, on}; emoji keys clap|fire|wow|grr|rematch.
+    @discardableResult
+    static func react(momentId: String, ownerId: String, emoji: String, on: Bool) async -> Bool {
+        guard let url = URL(string: "https://wordocious.com/api/friends/react") else { return false }
+        var req = await PublicProfileService.authedRequest(url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["momentId": momentId, "ownerId": ownerId, "emoji": emoji, "on": on] as [String: Any])
+        guard let (_, resp) = try? await Net.api.data(for: req) else { return false }
+        return (resp as? HTTPURLResponse)?.statusCode == 200
     }
 
     /// D3.4 (§294): send a friend one of YOUR streak shields — POST

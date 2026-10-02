@@ -308,6 +308,12 @@ struct RootTabView: View {
         }
         // A More Games / Puzzles link lands on Home, which scrolls to PUZZLES.
         .onReceive(deepLink.$puzzlesRequest) { req in if req != nil { tab = .home } }
+        // A Friends push (/friends) lands on the Friends tab.
+        .onReceive(deepLink.$friendsRequest) { req in if req != nil { tab = .friends } }
+        // A pocket-game push (/friends/games/<id>) → that game's screen.
+        .fullScreenCover(item: $deepLink.friendlyGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { link in
+            FriendlyGameScreen(gameId: link.id)
+        }
         // Universal-link VS invite → straight into the private match, exactly
         // like accepting a pending-invite banner (VSGameView handles the rest).
         .fullScreenCover(item: $deepLink.vsInvite) { inv in
@@ -378,8 +384,11 @@ private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
     // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
     // in D1): pushes were the only signal before — a missed push meant a request
-    // nobody saw.
+    // nobody saw. Friends overhaul §5: + pocket games waiting on your move.
     @State private var pendingRequests = 0
+    private func recount() {
+        pendingRequests = FriendsService.incoming.count + FriendlyGamesService.yourTurnCount
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -393,10 +402,13 @@ private struct BottomNav: View {
         // Background fills into the home-indicator safe area; icons stay above.
         .background(Theme.background, ignoresSafeAreaEdges: .bottom)
         .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1.5) }
-        .task { await FriendsService.load(); pendingRequests = FriendsService.incoming.count }
-        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
-            pendingRequests = FriendsService.incoming.count
+        .task {
+            await FriendsService.load()
+            await FriendlyGamesService.load()
+            recount()
         }
+        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in recount() }
+        .onReceive(NotificationCenter.default.publisher(for: FriendlyGamesService.changed)) { _ in recount() }
     }
 
     private func item(_ t: RootTabView.Tab, _ icon: String, _ label: String, badge: Int = 0) -> some View {
@@ -411,8 +423,14 @@ private struct BottomNav: View {
                     .font(.system(size: 20)).foregroundStyle(color)
                     .overlay(alignment: .topTrailing) {
                         if badge > 0 {
-                            Circle().fill(Color(hex: 0x7C3AED)).frame(width: 8, height: 8)   // win purple (founder, Aug 11)
-                                .offset(x: 5, y: -3)
+                            // Win purple (founder, Aug 11); §5 shows the count.
+                            Text(badge > 9 ? "9+" : "\(badge)")
+                                .font(Brand.font(9, .black)).foregroundStyle(.white)
+                                .padding(.horizontal, 4).frame(minWidth: 15, minHeight: 15)
+                                .background(Capsule().fill(Color(hex: 0x7C3AED)))
+                                .overlay(Capsule().stroke(Theme.background, lineWidth: 1.5))
+                                .offset(x: 9, y: -5)
+                                .accessibilityLabel("\(badge) waiting")
                         }
                     }
                 Text(label).font(Brand.font(10, .heavy)).foregroundStyle(color).lineLimit(1)

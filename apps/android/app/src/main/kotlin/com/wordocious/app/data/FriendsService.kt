@@ -51,7 +51,22 @@ object FriendsService {
         val h2hW: Int? = null,
         val h2hL: Int? = null,
         val remindedAt: String? = null,
-    )
+        // Friends overhaul (2026-10-01, additive): the "on now" heartbeat
+        // (profiles.last_seen_at), the game on their screen as a title, and the
+        // days in a row you BOTH finished a daily.
+        val lastSeenAt: String? = null,
+        val activity: String? = null,
+        val friendStreak: Int? = null,
+    ) {
+        /** Epoch ms of the last heartbeat, or null. */
+        val lastSeenMs: Long? get() = lastSeenAt?.let { iso ->
+            runCatching { java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli() }
+                .recoverCatching { java.time.Instant.parse(iso).toEpochMilli() }
+                .getOrNull()
+        }
+        /** Core isOnline: a heartbeat under two minutes old. */
+        fun isOnline(nowMs: Long = System.currentTimeMillis()): Boolean = com.wordocious.core.isOnline(lastSeenMs, nowMs)
+    }
 
     @Serializable
     data class MeDigest(
@@ -366,10 +381,42 @@ object FriendsService {
         val value: Int? = null,
         val otherName: String? = null,
         val otherId: String? = null,
+        /** Pocket-game moments (Friends overhaul): "2–1", "by resignation" or null. */
+        val score: String? = null,
+        /** Pocket-game moments: rps | ttt | coin | pass (the icon and Rematch). */
+        val gameKind: String? = null,
     )
 
+    /** Reactions on one moment (§6): counts per emoji key and the keys I set. */
     @Serializable
-    private data class FeedPayload(val events: List<FeedEvent> = emptyList())
+    data class Reactions(val counts: Map<String, Int> = emptyMap(), val mine: List<String> = emptyList())
+
+    @Serializable
+    private data class FeedPayload(
+        val events: List<FeedEvent> = emptyList(),
+        val reactions: Map<String, Reactions> = emptyMap(),
+    )
+
+    /** The feed with its reactions (§6), or null on any failure. */
+    suspend fun fetchFeedWithReactions(day: String = localDay()): Pair<List<FeedEvent>, Map<String, Reactions>>? {
+        val resp = api("GET", "/api/friends/feed?day=$day") ?: return null
+        if (resp.first != 200) return null
+        return runCatching { json.decodeFromString<FeedPayload>(resp.second) }.getOrNull()?.let { it.events to it.reactions }
+    }
+
+    /**
+     * Toggle one reaction on a moment (§6): emoji keys clap|fire|wow|grr|rematch;
+     * ownerId = the moment's userId (the server pushes them on a fresh one).
+     */
+    suspend fun react(momentId: String, ownerId: String, emoji: String, on: Boolean): Boolean {
+        val body = kotlinx.serialization.json.buildJsonObject {
+            put("momentId", kotlinx.serialization.json.JsonPrimitive(momentId))
+            put("ownerId", kotlinx.serialization.json.JsonPrimitive(ownerId))
+            put("emoji", kotlinx.serialization.json.JsonPrimitive(emoji))
+            put("on", kotlinx.serialization.json.JsonPrimitive(on))
+        }.toString()
+        return api("POST", "/api/friends/react", body)?.first == 200
+    }
 
     /** The last seven days of your circle's moments, newest first (§290). Empty on any failure. */
     suspend fun fetchFeed(day: String = localDay()): List<FeedEvent> {
@@ -380,7 +427,7 @@ object FriendsService {
     }
 
     /** (statusCode, bodyText) or null — the ReferralService apiPost shape. */
-    private suspend fun api(method: String, path: String, body: String? = null): Pair<Int, String>? =
+    internal suspend fun api(method: String, path: String, body: String? = null): Pair<Int, String>? =
         withContext(Dispatchers.IO) {
             runCatching {
                 val token = client.auth.currentSessionOrNull()?.accessToken ?: return@withContext null

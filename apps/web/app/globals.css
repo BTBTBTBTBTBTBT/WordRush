@@ -481,7 +481,18 @@
   .animate-pf-sweep { animation: pf-sweep 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
   .animate-pf-speed { animation: pf-speed 0.7s ease-out forwards; }
   .animate-pf-stamp { animation: pf-stamp 1.8s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
-  @media (prefers-reduced-motion: reduce) {
+  /* Friends pocket games (2026-10-01): RPS picks flip over together; the Call It coin spins and lands. */
+@keyframes friends-flip {
+  0%   { transform: perspective(600px) rotateY(90deg); opacity: 0.4; }
+  100% { transform: perspective(600px) rotateY(0deg); opacity: 1; }
+}
+@keyframes friends-coin-spin {
+  0%   { transform: perspective(700px) rotateY(0deg) translateY(0); }
+  45%  { transform: perspective(700px) rotateY(900deg) translateY(-26px); }
+  100% { transform: perspective(700px) rotateY(1440deg) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
     .animate-pf-flash, .animate-pf-sweep, .animate-pf-speed { display: none; }
     .animate-pf-stamp { animation: none; opacity: 1; transform: rotate(-6deg); }
   }

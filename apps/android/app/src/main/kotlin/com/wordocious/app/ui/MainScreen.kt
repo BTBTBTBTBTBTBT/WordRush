@@ -46,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -102,7 +103,21 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
         onDispose { remove() }
     }
     androidx.compose.runtime.LaunchedEffect(Unit) { com.wordocious.app.data.FriendsService.load() }
-    val pendingRequests = remember(friendsVersion) { com.wordocious.app.data.FriendsService.incoming.size }
+    // Friends overhaul §5: the badge = pending requests + pocket games where it's your turn.
+    // The games list refreshes every minute while the app is in the foreground.
+    val navLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        navLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                if (com.wordocious.app.data.AuthService.userId != null) com.wordocious.app.data.FriendlyGamesService.load()
+                kotlinx.coroutines.delay(60_000)
+            }
+        }
+    }
+    val activeGames by com.wordocious.app.data.FriendlyGamesService.active.collectAsState()
+    val friendsBadge = remember(friendsVersion, activeGames) {
+        com.wordocious.app.data.FriendsService.incoming.size + activeGames.count { it.yourTurn }
+    }
     Column(
         Modifier.fillMaxWidth().background(WTheme.bg),
     ) {
@@ -136,12 +151,19 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                                 tab.label, tint = tint, modifier = Modifier.size(20.dp),
                             )
                         }
-                        // Pending friend requests → dot on the Friends icon.
-                        if (tab.label == "Friends" && pendingRequests > 0) {
+                        // Pending requests + your-turn games → a count on the Friends icon.
+                        if (tab.label == "Friends" && friendsBadge > 0) {
                             Box(
-                                Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-3).dp)
-                                    .size(8.dp).clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
-                            )
+                                Modifier.align(Alignment.TopEnd).offset(x = 9.dp, y = (-5).dp)
+                                    .size(width = if (friendsBadge > 9) 20.dp else 15.dp, height = 15.dp)
+                                    .clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    if (friendsBadge > 99) "99+" else "$friendsBadge",
+                                    fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1,
+                                )
+                            }
                         }
                     }
                     Text(tab.label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1)
@@ -241,6 +263,8 @@ fun MainScreen() {
     var vsActive by remember { mutableStateOf<com.wordocious.app.ui.vs.VsRoute?>(null) }
     // A challenge code to race (/vs/challenge/<code>: lobby card, code field, push, app link).
     var vsChallengeCode by remember { mutableStateOf<String?>(null) }
+    // A Friends pocket game on screen (Friends overhaul §4; push url /friends/games/<id>).
+    var friendlyGameId by remember { mutableStateOf<String?>(null) }
     // Bumped to open Stats → All-time → VS (the lobby's Rivals "See all").
     var statsVsJump by remember { mutableIntStateOf(0) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
@@ -330,6 +354,23 @@ fun MainScreen() {
             }
         }
     }
+    // Pocket-game pushes (/friends/games/<id>, Friends overhaul §7) open the game screen.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        com.wordocious.app.data.DeepLinkRouter.friendlyGame.collect { id ->
+            if (id != null) {
+                com.wordocious.app.data.DeepLinkRouter.friendlyGame.value = null
+                activeGame = null; activeSeed = null
+                vsActive = null; vsInvite = null; vsChallengeCode = null; vsLobby = false
+                friendlyGameId = id
+            }
+        }
+    }
+    // Friends overhaul §1: the heartbeat names the game on screen (its db key) or nothing.
+    androidx.compose.runtime.LaunchedEffect(activeGame, vsActive, vsInvite) {
+        com.wordocious.app.data.PresenceService.setActivity(
+            activeGame?.engineMode?.name ?: vsActive?.mode?.name ?: vsInvite?.first?.name,
+        )
+    }
     // Widget chip taps (wordocious://daily/KEY via DeepLinkRouter) open that
     // mode's daily — same launch state as the home grid / leaderboard Play CTA
     // (null seed = today's daily). One-shot: consume and clear.
@@ -396,7 +437,7 @@ fun MainScreen() {
     // wins; they re-register in tree order once uncovered) and pause pollers via LocalTabHidden.
     val coveredState = remember {
         androidx.compose.runtime.derivedStateOf {
-            vsInvite != null || vsActive != null || vsLobby || vsChallengeCode != null || activeGame?.engineMode != null ||
+            friendlyGameId != null || vsInvite != null || vsActive != null || vsLobby || vsChallengeCode != null || activeGame?.engineMode != null ||
                 infoRoute != null || showSignIn || showSettings
         }
     }
@@ -492,11 +533,18 @@ fun MainScreen() {
                                         vsJumpRequest = statsVsJump,
                                     )
                                     3 -> FriendsScreen(
-                                        // Tab root: "Back" returns to Stats until D3 restyles the page.
-                                        onClose = { selectedTab = 2 },
                                         onOpenProfile = { publicProfileId = it },
-                                        // D3: a Challenge from Today's Race opens the private lobby with its code.
+                                        // D3: a Challenge (the free live VS Battle) opens the private lobby with its code.
                                         onJoinInvite = { m, code -> vsInvite = m to code },
+                                        // Friends overhaul §4: a pocket game's screen.
+                                        onOpenGame = { friendlyGameId = it },
+                                        // §3 "Race my run": the VS Friend page with this friend picked (Pro).
+                                        onRaceRun = { friendId ->
+                                            if (com.wordocious.app.data.AuthService.isProActive) {
+                                                vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Friend(friendId)
+                                                vsLobby = true
+                                            } else infoRoute = "pro"
+                                        },
                                     )
                                 }
                               }
@@ -561,7 +609,16 @@ fun MainScreen() {
         val invite = vsInvite
         val active = vsActive
         val route = infoRoute
-        if (invite != null) {
+        val friendly = friendlyGameId
+        if (friendly != null) {
+            // The game screen owns Back (it confirms leaving an active game).
+            com.wordocious.app.ui.friends.FriendlyGameScreen(
+                gameId = friendly,
+                onClose = { friendlyGameId = null },
+                onFriends = { friendlyGameId = null; publicProfileId = null; showRecords = false; selectedTab = 3 },
+                onOpenGame = { friendlyGameId = it },
+            )
+        } else if (invite != null) {
             val (inviteMode, code) = invite
             androidx.activity.compose.BackHandler { vsInvite = null }
             com.wordocious.app.ui.vs.VSGameScreen(

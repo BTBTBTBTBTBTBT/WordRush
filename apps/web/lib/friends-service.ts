@@ -32,6 +32,10 @@ export interface FriendProfile {
   h2hW?: number;
   h2hL?: number;
   remindedAt?: string | null;
+  /** Friends overhaul (additive): the app heartbeat ("On now"), the game title on their screen, days in a row you both played. */
+  lastSeenAt?: string | null;
+  activity?: string | null;
+  friendStreak?: number;
 }
 
 /** Local YYYY-MM-DD — the same day boundary every daily surface uses. */
@@ -268,25 +272,36 @@ export interface FeedEvent {
   me: boolean;
   day: string;
   at: string;
-  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless' | 'gift';
+  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless' | 'gift' | 'game';
   otherName?: string | null;
   otherId?: string | null;
   kind?: string;
   gameMode?: string | null;
   gameTitle?: string | null;
   value?: number | null;
+  /** Pocket-game moments: "2–1", "by resignation" or null. */
+  score?: string | null;
 }
 
-/** The last seven days of your circle's sweeps, medals and records (D3). */
-export async function fetchFriendsFeed(): Promise<FeedEvent[]> {
+/** Fixed-emoji reactions on the shown moments: counts per key and my own picks. */
+export type FeedReactions = Record<string, { counts: Record<string, number>; mine: string[] }>;
+
+/** The last seven days of your circle's sweeps, medals, records and pocket games (D3 + Friends overhaul §6). */
+export async function fetchFriendsFeed(): Promise<{ events: FeedEvent[]; reactions: FeedReactions } | null> {
   try {
     const res = await fetch(`/api/friends/feed?day=${localDay()}`, { headers: await profileApiHeaders() });
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     const json = await res.json();
-    return (json.events ?? []) as FeedEvent[];
+    return { events: (json.events ?? []) as FeedEvent[], reactions: (json.reactions ?? {}) as FeedReactions };
   } catch {
-    return [];
+    return null;
   }
+}
+
+/** Toggle one reaction on a moment (spec §6). ownerId = the moment's userId (they get a push). */
+export async function reactToMoment(momentId: string, ownerId: string, emoji: string, on: boolean): Promise<boolean> {
+  const res = await post('/api/friends/react', { momentId, ownerId, emoji, on });
+  return !!res?.ok;
 }
 
 /** Challenge a friend to a private VS Battle (D3): a targeted invite + a push to them.

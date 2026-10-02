@@ -100,5 +100,10 @@ class WordociousMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
         // Notification-payload messages are drawn by the system; nothing to do.
+        // Friends overhaul §5: a pocket-game push that lands while the app is open
+        // refreshes the games list, so the Friends tab badge counts the new turn.
+        if (message.data["url"]?.startsWith("/friends/games/") == true) {
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch { FriendlyGamesService.load() }
+        }
     }
 }

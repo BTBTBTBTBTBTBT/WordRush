@@ -11,9 +11,9 @@ enum PushCategories {
     struct Category: Identifiable { let key: String; let label: String; let hint: String; var id: String { key } }
     static let all: [Category] = [
         .init(key: "race", label: "Race finish & overtakes", hint: "Monday's recap and when a friend passes you"),
-        .init(key: "challenge", label: "Challenges", hint: "A friend challenges you to a VS Battle"),
+        .init(key: "challenge", label: "Challenges & games", hint: "VS challenges, and your turn in a quick game"),
         .init(key: "nudge", label: "Nudges & taunts", hint: "The canned one-liners"),
-        .init(key: "feed", label: "Moments", hint: "Shield gifts and other circle moments"),
+        .init(key: "feed", label: "Moments", hint: "Reactions, shield gifts and other circle moments"),
     ]
 
     static func anyOff(_ prefs: [String: Bool]?) -> Bool {

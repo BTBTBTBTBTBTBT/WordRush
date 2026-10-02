@@ -222,6 +222,8 @@ struct GameScreen: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()
+        // Friends "On now · in <game>" (spec §1): the game on screen.
+        .presenceActivity(mode.rawValue)
         // Left-edge swipe → back to Home (parity with the web back gesture).
         .swipeToGoBack { dismiss() }
         // Safety net: if the player leaves a fully-cleared Gauntlet run before
