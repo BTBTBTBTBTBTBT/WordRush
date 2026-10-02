@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
+import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
 
 export const metadata: Metadata = {
   title: 'Wordocious Mode Guides — Rules, Scoring & Strategy for Every Mode',
@@ -62,9 +63,11 @@ export default function GuidesIndexPage() {
             <Link
               key={g.slug}
               href={`/guides/${g.slug}`}
-              className="flex items-center justify-between p-4 transition-transform hover:scale-[1.01]"
-              style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+              className="relative overflow-hidden flex items-center justify-between p-4 transition-transform hover:scale-[1.01]"
+              // One game-tile style (docs/GAME_TILE_STYLE.md): the home card's tint, border and top bar.
+              style={gameTileSurface(g.accent)}
             >
+              <GameTileBar accent={g.accent} />
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5">
                   <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${g.accent}15` }}>

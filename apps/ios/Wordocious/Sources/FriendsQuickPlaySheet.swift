@@ -129,18 +129,11 @@ struct FriendsQuickPlaySheet: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
                     Button { withAnimation(.easeOut(duration: 0.12)) { kind = k; error = nil } } label: {
-                        VStack(spacing: 6) {
-                            FriendlyGameIcon(kind: k, size: 36, glow: kind == k)
-                            Text(k.title).font(Brand.font(10.5, .black)).foregroundStyle(Color(hex: 0x111827))
-                                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
-                                .fixedSize(horizontal: false, vertical: true)
+                        // The square game tile (docs/GAME_TILE_STYLE.md); the picked game is selected.
+                        GameTileSquare(accent: FriendsKit.color(k), label: k.title, selected: kind == k,
+                                       light: true) { chip in
+                            FriendlyGameIcon(kind: k, size: chip, tinted: true)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 80, alignment: .top)
-                        .padding(.vertical, 10).padding(.horizontal, 4)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white)
-                            .shadow(color: Color(hex: 0x4C1D95).opacity(0.07), radius: 5, x: 0, y: 2))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(kind == k ? FriendsKit.solid : .clear, lineWidth: 2))
                     }
                     .buttonStyle(PressableStyle())
                     .accessibilityLabel("\(k.title), \(FriendsKit.sub(k))")

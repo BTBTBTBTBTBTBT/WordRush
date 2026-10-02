@@ -196,6 +196,13 @@ fun FriendlyGameIcon(kind: FriendlyKind, size: Dp, modifier: Modifier = Modifier
     }
 }
 
+/** A pocket game's outline glyph in its own accent, for the soft chip of a game tile (docs/GAME_TILE_STYLE.md). */
+@Composable
+fun FriendlyGameGlyph(kind: FriendlyKind, size: Dp) {
+    val c = kind.color
+    Canvas(Modifier.size(size)) { drawGameGlyph(kind, c) }
+}
+
 /** The outline glyph on a 24-unit grid, scaled to the canvas. */
 fun DrawScope.drawGameGlyph(kind: FriendlyKind, color: Color) {
     val u = size.minDimension / 24f

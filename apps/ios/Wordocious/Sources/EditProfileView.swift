@@ -212,11 +212,17 @@ struct EditProfileView: View {
                 chip("None", selected: favoriteMode == nil) { favoriteMode = nil }
                 ForEach(dailyModes) { m in
                     Button { favoriteMode = m.dbKey } label: {
-                        ModeIconView(icon: m.icon, accent: m.accent, box: 36)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(m.accent, lineWidth: favoriteMode == m.dbKey ? 2 : 0))
+                        // Square game tile (docs/GAME_TILE_STYLE.md).
+                        GameTileSquare(accent: m.accent, label: ModeGen.byId(m.id)?.shortTitle ?? m.title,
+                                       selected: favoriteMode == m.dbKey, side: 58) { chip in
+                            ModeIconView(icon: m.icon, accent: m.accent, box: chip)
+                        }
                     }.buttonStyle(.plain)
+                    .accessibilityLabel(m.title)
+                    .accessibilityAddTraits(favoriteMode == m.dbKey ? .isSelected : [])
                 }
             }
+            .padding(.horizontal, 4).padding(.vertical, 6)
         }
     }
 

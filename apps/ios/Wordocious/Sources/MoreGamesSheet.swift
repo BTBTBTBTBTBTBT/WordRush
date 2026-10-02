@@ -41,8 +41,8 @@ struct MoreModePickerSheet: View {
             Spacer()
             Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5)))
+        .padding(12).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
+        // The shared game-tile chrome (docs/GAME_TILE_STYLE.md) on the row layout.
+        .gameTile(accent: m.accent)
     }
 }

@@ -163,24 +163,31 @@ struct GhostOutline: Shape {
 }
 
 /// A pocket game's icon: a white 2.4-stroke outline in a rounded square of the
-/// game's color, glowing in the same color.
+/// game's color, glowing in the same color. `tinted` draws the game-tile chip
+/// instead (docs/GAME_TILE_STYLE.md): the outline in the game's color on a soft
+/// chip of it (accent at ~8%, radius 8 at 32 pt), no glow.
 struct FriendlyGameIcon: View {
     let kind: FriendlyKind
     var size: CGFloat = 40
     var glow = true
+    var tinted = false
 
     var body: some View {
         let color = FriendsKit.color(kind)
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous).fill(color)
-                .shadow(color: glow ? color.opacity(0.5) : .clear, radius: size * 0.14, y: 2)
-            glyph.foregroundStyle(.white)
+            if tinted {
+                RoundedRectangle(cornerRadius: size * 0.25).fill(color.opacity(0.08))
+            } else {
+                RoundedRectangle(cornerRadius: size * 0.28, style: .continuous).fill(color)
+                    .shadow(color: glow ? color.opacity(0.5) : .clear, radius: size * 0.14, y: 2)
+            }
+            glyph(ink: tinted ? color : .white).foregroundStyle(tinted ? color : .white)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
 
-    @ViewBuilder private var glyph: some View {
+    @ViewBuilder private func glyph(ink: Color) -> some View {
         let g = size * 0.5
         switch kind {
         case .rps:
@@ -188,17 +195,17 @@ struct FriendlyGameIcon: View {
         case .ttt:
             Image(systemName: "number").font(.system(size: g * 0.9, weight: .semibold))
         case .coin:
-            CoinOutline().stroke(Color.white, style: StrokeStyle(lineWidth: max(1.6, size * 0.06), lineCap: .round))
+            CoinOutline().stroke(ink, style: StrokeStyle(lineWidth: max(1.6, size * 0.06), lineCap: .round))
                 .frame(width: g, height: g)
         case .pass:
             Image(systemName: "arrow.left.arrow.right").font(.system(size: g * 0.85, weight: .semibold))
         case .ghost:
             let lw = max(1.6, size * 0.06)
             ZStack {
-                GhostOutline().stroke(Color.white, style: StrokeStyle(lineWidth: lw, lineCap: .round, lineJoin: .round))
+                GhostOutline().stroke(ink, style: StrokeStyle(lineWidth: lw, lineCap: .round, lineJoin: .round))
                 HStack(spacing: max(1, g * 0.25 - lw * 1.3)) {
-                    Circle().fill(Color.white).frame(width: lw * 1.3, height: lw * 1.3)
-                    Circle().fill(Color.white).frame(width: lw * 1.3, height: lw * 1.3)
+                    Circle().fill(ink).frame(width: lw * 1.3, height: lw * 1.3)
+                    Circle().fill(ink).frame(width: lw * 1.3, height: lw * 1.3)
                 }
                 .offset(y: -g / 12)
             }

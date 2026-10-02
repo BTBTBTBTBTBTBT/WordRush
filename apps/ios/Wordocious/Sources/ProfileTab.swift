@@ -517,15 +517,15 @@ struct ProfileTab: View {
                     ForEach(vsModes) { m in
                         let active = m.dbKey == vsMode.rawValue
                         Button { if let gm = m.mode { Haptics.tap(); vsMode = gm } } label: {
-                            Text(ModeGen.byId(m.id)?.shortTitle ?? m.title).font(Brand.font(10, .heavy))
-                                .foregroundStyle(active ? m.accent : Theme.textMuted)
-                                .padding(.horizontal, 10).padding(.vertical, 5)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(active ? m.accent.opacity(0.08) : Theme.surface))
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+                            // Square game tile (docs/GAME_TILE_STYLE.md).
+                            GameTileSquare(accent: m.accent, label: ModeGen.byId(m.id)?.shortTitle ?? m.title,
+                                           selected: active, side: 56) { chip in
+                                ModeIconView(icon: m.icon, accent: m.accent, box: chip)
+                            }
                         }.buttonStyle(PressableStyle())
                     }
                 }
-                .padding(.horizontal, 1)
+                .padding(.horizontal, 4).padding(.vertical, 6)
             }
             HStack(spacing: 4) {
                 ForEach(["vs", "vs_cpu"], id: \.self) { t in
@@ -2544,89 +2544,57 @@ struct HModePicker: View {
         if !morePickerModes.isEmpty { out.append(.more) }
         return out
     }
-    private var rows: [[Cell]] {
-        let all = cells
-        return stride(from: 0, to: all.count, by: 5).map { Array(all[$0..<min($0 + 5, all.count)]) }
-    }
-
     var body: some View {
-        let rowCount = CGFloat(rows.count)
-        GeometryReader { geo in
-            let w = (geo.size.width - spacing * 4) / 5
-            VStack(spacing: spacing) {
-                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                    HStack(spacing: spacing) {
-                        ForEach(row) { c in
-                            switch c {
-                            case .mode(let m): cell(m, w)
-                            case .sweep: sweepCell(w)
-                            case .more: moreCell(w)
-                            }
-                        }
-                        // A partial last row keeps its cells at 1/5 width, left-aligned.
-                        if row.count < 5 { Spacer(minLength: 0) }
-                    }
+        // Square game tiles (docs/GAME_TILE_STYLE.md), 5 across; a partial last
+        // row keeps its cells at 1/5 width, left-aligned.
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: 5), spacing: spacing) {
+            ForEach(cells) { c in
+                switch c {
+                case .mode(let m): cell(m)
+                case .sweep: sweepCell()
+                case .more: moreCell()
                 }
             }
-            .frame(maxWidth: .infinity)
         }
-        .frame(height: 52 * rowCount + spacing * (rowCount - 1))
+        .frame(maxWidth: .infinity)
         .sheet(isPresented: $showMore) {
             MoreModePickerSheet { gm in isSweep = false; selected = gm }
                 .presentationDetents([.large])
         }
     }
 
-    private func cell(_ m: HomeMode, _ w: CGFloat) -> some View {
+    private func cell(_ m: HomeMode) -> some View {
         let active = !isSweep && m.dbKey == selected.rawValue
         return Button {
             isSweep = false
             selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected
         } label: {
-            VStack(spacing: 4) {
-                ModeIconView(icon: m.icon, accent: m.accent, box: 26)
-                Text(shortTitle(m)).font(Brand.font(9, .heavy))
-                    .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            GameTileSquare(accent: m.accent, label: shortTitle(m), selected: active) { chip in
+                ModeIconView(icon: m.icon, accent: m.accent, box: chip)
             }
-            .frame(width: w, height: 52)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
         }.buttonStyle(InstantButtonStyle())
     }
 
     /// The "Sweep" tile — leaderboard/records only, never the Home grid.
-    private func sweepCell(_ w: CGFloat) -> some View {
+    private func sweepCell() -> some View {
         Button { isSweep = true } label: {
-            VStack(spacing: 4) {
-                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 26)
-                Text("Sweep").font(Brand.font(9, .heavy))
-                    .foregroundStyle(isSweep ? sweepAccent : Theme.textMuted).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            GameTileSquare(accent: sweepAccent, label: "Sweep", selected: isSweep) { chip in
+                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: chip)
             }
-            .frame(width: w, height: 52)
-            .background(RoundedRectangle(cornerRadius: 12).fill(isSweep ? sweepAccent.opacity(0.08) : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(isSweep ? sweepAccent : Theme.border, lineWidth: 1.5))
         }.buttonStyle(InstantButtonStyle())
     }
 
     /// The "More" chip: opens the More Games list. When one of those modes is
     /// selected the chip wears that mode's icon, title and accent so the grid
     /// still shows what the screen is filtered to.
-    private func moreCell(_ w: CGFloat) -> some View {
+    private func moreCell() -> some View {
         let picked = isSweep ? nil : morePickerModes.first { $0.dbKey == selected.rawValue }
         let accent = picked?.accent ?? sweepAccent
         let active = picked != nil
         return Button { showMore = true } label: {
-            VStack(spacing: 4) {
-                ModeIconView(icon: picked?.icon ?? .symbol("square.grid.2x2"), accent: accent, box: 26)
-                Text(picked.map(shortTitle) ?? "More").font(Brand.font(9, .heavy))
-                    .foregroundStyle(active ? accent : Theme.textMuted).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            GameTileSquare(accent: accent, label: picked.map(shortTitle) ?? "More", selected: active) { chip in
+                ModeIconView(icon: picked?.icon ?? .symbol("square.grid.2x2"), accent: accent, box: chip)
             }
-            .frame(width: w, height: 52)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? accent.opacity(0.08) : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? accent : Theme.border, lineWidth: 1.5))
         }.buttonStyle(InstantButtonStyle())
     }
 }

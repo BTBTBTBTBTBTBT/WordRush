@@ -66,6 +66,7 @@ import { MODES, MODE_BY_DBKEY, SWEEP_MODES, MORE_GAME_MODES } from '@/lib/modes.
 import { sweepModesFor } from '@/lib/daily-modes';
 import { dailyHref } from '@/lib/mode-routes';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
+import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
 import { formatGuessStat } from '@/lib/format';
 
 // STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
@@ -1079,22 +1080,22 @@ export default function StatsPage() {
 
               {/* Per-game VS board: pick the word game, People or Bots. */}
               <div className="flex items-center gap-2">
-                <div className="flex-1 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                {/* Square game tiles (docs/GAME_TILE_STYLE.md) at 56 px. */}
+                <div className="flex-1 flex gap-1.5 overflow-x-auto py-1.5 -my-1.5 px-1 -mx-1" style={{ scrollbarWidth: 'none' }}>
                   {vsModes.map((m) => {
                     const active = vsMode === m.dbKey;
                     return (
-                      <button
+                      <GameSquare
                         key={m.id}
+                        accent={m.accentHex}
+                        selected={active}
+                        size={56}
+                        glyph={<GameTileGlyph accent={m.accentHex} icon={MODE_CHROME[m.id]?.icon} romanNumeral={m.romanNumeral} />}
+                        label={m.shortTitle}
+                        aria-label={m.title}
+                        aria-pressed={active}
                         onClick={() => setVsMode(m.dbKey as string)}
-                        className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold"
-                        style={{
-                          background: active ? `${m.accentHex}15` : 'var(--color-surface)',
-                          border: active ? `1.5px solid ${m.accentHex}` : '1.5px solid var(--color-border)',
-                          color: active ? m.accentHex : 'var(--color-text-muted)',
-                        }}
-                      >
-                        {m.shortTitle}
-                      </button>
+                      />
                     );
                   })}
                 </div>

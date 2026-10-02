@@ -82,6 +82,7 @@ import com.wordocious.app.data.FriendlyGamesService
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.friends.FlameCount
 import com.wordocious.app.ui.friends.FriendFace
+import com.wordocious.app.ui.friends.FriendlyGameGlyph
 import com.wordocious.app.ui.friends.FriendlyGameIcon
 import com.wordocious.app.ui.friends.FriendsBannerView
 import com.wordocious.app.ui.friends.FriendsLabel
@@ -89,6 +90,7 @@ import com.wordocious.app.ui.friends.FriendsPink
 import com.wordocious.app.ui.friends.PinkPill
 import com.wordocious.app.ui.friends.QuickPlayRequest
 import com.wordocious.app.ui.friends.QuickPlaySheet
+import com.wordocious.app.ui.friends.color
 import com.wordocious.app.ui.friends.friendsCard
 import com.wordocious.app.ui.friends.sub
 import com.wordocious.app.ui.theme.Nunito
@@ -272,19 +274,20 @@ fun FriendsScreen(
             FRIENDLY_KINDS.chunked(3).forEach { row ->
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { k ->
-                        Column(
-                            Modifier.weight(1f).fillMaxHeight().friendsCard().clickableNoRipple {
+                        // The home mode card's tile (docs/GAME_TILE_STYLE.md): accent wash, top bar,
+                        // the outline icon in the accent on its soft chip.
+                        GameTileCard(
+                            accent = k.color, title = k.title, sub = k.sub,
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            surface = Color.White, titleColor = GameTileStyle.INK, subColor = FriendsPink.label,
+                            titleMaxLines = 2,
+                            onClick = {
                                 if (friends.isEmpty()) {
                                     note = "Add a friend first — then pick a game"
                                     scope.launch { addRequester.bringIntoView() }
                                 } else quickPlay = QuickPlayRequest(null, k)
-                            }.padding(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            FriendlyGameIcon(k, 32.dp)
-                            Text(k.title, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Text(k.sub, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        }
+                            },
+                        ) { FriendlyGameGlyph(k, 18.dp) }
                     }
                 }
             }

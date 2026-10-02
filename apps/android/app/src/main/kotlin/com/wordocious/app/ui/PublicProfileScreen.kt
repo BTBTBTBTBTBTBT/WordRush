@@ -654,26 +654,15 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // iOS modeChip: the mode's own glyph over its proper-case title —
             // every daily mode this viewer can see (sweep + visible More Games
             // titles, ProperNoundle included), since the row scrolls.
+            // The square game tile (docs/GAME_TILE_STYLE.md) at the rail's size, short names.
             visibleDailyCards().forEach { card ->
                 val m = card.engineMode!!
                 val active = m == selectedMode
-                Column(
-                    Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (active) card.accent.copy(alpha = 0.08f) else WTheme.surface)
-                        .border(1.5.dp, if (active) card.accent else WTheme.border, RoundedCornerShape(12.dp))
-                        .clickableNoRipple { selectedMode = m }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    ModeIconBox(card, 28.dp)
-                    Text(
-                        card.title, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                        softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        color = if (active) card.accent else WTheme.textMuted,
-                    )
-                }
+                GameTileSquare(
+                    accent = card.accent, label = com.wordocious.app.ModeGen.byId(card.id)?.shortTitle ?: card.title,
+                    selected = active, modifier = Modifier.padding(vertical = 6.dp).width(66.dp),
+                    onClick = { selectedMode = m },
+                ) { chip -> ModeGlyph(card, tint = card.accent, box = chip) }
             }
         }
         // Per-mode stats card (web: accent top bar + Wins/Losses/Best/Fastest)

@@ -8,8 +8,9 @@ import { useAuth } from '@/lib/auth-context';
 import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
 import { startGame } from '@/lib/friendly-games-client';
 import { vsHrefForMode } from '@/lib/invite-service';
-import { FR, KIND_SHORT, friendOnline, lastSeenMs, rivalryLine, sortForPicker } from '@/lib/friends-play';
-import { FriendAvatar, GameIconSquare, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { FR, KIND_COLOR, KIND_SHORT, friendOnline, lastSeenMs, rivalryLine, sortForPicker } from '@/lib/friends-play';
+import { FriendAvatar, GameGlyph, GameIconSquare, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { GameSquare } from '@/components/ui/game-tile';
 
 // The quick-play sheet (Friends overhaul §3): pick a pocket game (and a stake
 // for Call It) or one of the two Wordocious ways to play, then INVITE. Opened
@@ -114,17 +115,18 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
         {FRIENDLY_KINDS.map((k) => {
           const sel = k === kind;
           return (
-            <button
+            // Square game tile (docs/GAME_TILE_STYLE.md), selected = the picked game.
+            <GameSquare
               key={k}
-              type="button"
+              accent={KIND_COLOR[k]}
+              tone="light"
+              selected={sel}
+              glyph={<GameGlyph kind={k} size={16} color={KIND_COLOR[k]} stroke={2.2} />}
+              label={KIND_SHORT[k]}
               onClick={() => setKind(k)}
               aria-pressed={sel}
-              className="flex flex-col items-center gap-1.5 py-2.5 px-1 transition-transform active:scale-95"
-              style={{ ...cardStyle, boxShadow: sel ? `0 0 0 2px ${FR.solid}, ${FR.cardShadow}` : FR.cardShadow }}
-            >
-              <GameIconSquare kind={k} size={34} />
-              <span className="text-[10.5px] font-black text-center leading-tight" style={{ color: FR.text }}>{KIND_SHORT[k]}</span>
-            </button>
+              aria-label={KIND_SHORT[k]}
+            />
           );
         })}
       </div>

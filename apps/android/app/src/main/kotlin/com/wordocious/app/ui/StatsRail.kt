@@ -1,10 +1,7 @@
 package com.wordocious.app.ui
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,7 +21,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,10 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.ui.theme.WTheme
 
@@ -133,6 +126,8 @@ fun StatsRail(items: List<RailItem>, selected: String, onSelect: (String) -> Uni
             LazyRow(
                 state = listState,
                 modifier = Modifier.weight(1f),
+                // Room for the selected tile's glow and press scale (a LazyRow clips its children).
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 2.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items.forEach { it ->
@@ -183,9 +178,9 @@ fun StatsRail(items: List<RailItem>, selected: String, onSelect: (String) -> Uni
     }
 }
 
-/** One rail chip: 28dp icon tile in the accent at 15%, 10sp ExtraBold label,
- *  accent border when selected, today's W/L dot top-end on a game chip. */
-@OptIn(ExperimentalFoundationApi::class)
+/** One rail chip: the square game tile (docs/GAME_TILE_STYLE.md) — the home card's
+ *  wash, top bar and chip at 1 : 1, 10sp ExtraBold label, the selected chip in the
+ *  full accent with a glow, today's W/L dot top-end on a game chip. Hold = [onLongClick]. */
 @Composable
 private fun RailChip(
     item: RailItem,
@@ -195,40 +190,22 @@ private fun RailChip(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .then(if (inGrid) Modifier else Modifier.widthIn(min = 62.dp))
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (active) item.accent.copy(alpha = 0.08f) else WTheme.surface)
-            .border(1.5.dp, if (active) item.accent else WTheme.border, RoundedCornerShape(12.dp))
-            .combinedClickable(interactionSource = interaction, indication = null, onLongClick = onLongClick, onClick = onClick),
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Box(
-                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(item.accent.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                when {
-                    item.card != null -> ModeGlyph(item.card, item.accent, box = 28.dp)
-                    item.icon != null -> Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(14.dp))
-                }
+    GameTileSquare(
+        accent = item.accent, label = item.label, selected = active,
+        modifier = modifier.then(if (inGrid) Modifier else Modifier.width(66.dp)),
+        onLongClick = onLongClick, onClick = onClick,
+        overlay = {
+            item.dot?.let { won ->
+                Box(
+                    Modifier.align(Alignment.TopEnd).padding(top = 7.dp, end = 5.dp).size(8.dp).clip(CircleShape)
+                        .background(if (won) WTheme.correct else RAIL_LOSS_RED),
+                )
             }
-            Text(
-                item.label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                color = if (active) item.accent else WTheme.textMuted,
-                maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
-            )
-        }
-        item.dot?.let { won ->
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(4.dp).size(8.dp).clip(CircleShape)
-                    .background(if (won) WTheme.correct else RAIL_LOSS_RED),
-            )
+        },
+    ) { chip ->
+        when {
+            item.card != null -> ModeGlyph(item.card, item.accent, box = chip)
+            item.icon != null -> Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(chip * 0.5f))
         }
     }
 }

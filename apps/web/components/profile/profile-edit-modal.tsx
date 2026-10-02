@@ -13,6 +13,7 @@ import {
   type SocialLinks,
 } from '@/components/profile/social-links';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
+import { GameSquare } from '@/components/ui/game-tile';
 import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { ACCENT_COLORS, resolveAccent, accentDark } from '@/lib/profile-personalization';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
@@ -276,15 +277,19 @@ export function ProfileEditModal({ open, onClose }: Props) {
               const sel = favoriteMode === m.dbKey;
               const Icon = m.icon;
               return (
-                <button
+                // Compact square game tile (docs/GAME_TILE_STYLE.md).
+                <GameSquare
                   key={m.dbKey}
+                  accent={m.accentColor}
+                  selected={sel}
+                  size={36}
+                  glyph={Icon
+                    ? <Icon className="w-4 h-4" style={{ color: m.accentColor }} />
+                    : <span className="text-[10px] font-black" style={{ color: m.accentColor }}>{m.romanNumeral ?? m.shortTitle.charAt(0)}</span>}
                   onClick={() => setFavoriteMode(m.dbKey)}
-                  title={m.title}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center"
-                  style={{ background: sel ? `${m.accentColor}22` : 'var(--color-bg)', border: `1.5px solid ${sel ? m.accentColor : 'var(--color-border)'}`, color: m.accentColor }}
-                >
-                  {Icon ? <Icon className="w-4 h-4" /> : <span className="text-[10px] font-black">{m.romanNumeral ?? m.shortTitle.charAt(0)}</span>}
-                </button>
+                  aria-label={m.title}
+                  aria-pressed={sel}
+                />
               );
             })}
           </div>

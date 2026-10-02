@@ -536,7 +536,7 @@ struct PublicProfileView: View {
                 tabButton("vs", "VS", "bolt.horizontal.fill")
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) { ForEach(pickerModes) { m in modeChip(m) } }.padding(.horizontal, 1)
+                HStack(spacing: 8) { ForEach(pickerModes) { m in modeChip(m) } }.padding(.horizontal, 4).padding(.vertical, 6)
             }
             modeStatsCard
         }
@@ -558,15 +558,11 @@ struct PublicProfileView: View {
 
     private func modeChip(_ m: HomeMode) -> some View {
         let active = selectedMode == m.mode
+        // Square game tile (docs/GAME_TILE_STYLE.md).
         return Button { if let gm = m.mode { selectedMode = gm } } label: {
-            VStack(spacing: 4) {
-                ModeIconView(icon: m.icon, accent: m.accent, box: 28)
-                Text(m.title).font(Brand.font(10, .heavy)).foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
-                .minimumScaleFactor(0.7)
+            GameTileSquare(accent: m.accent, label: ModeGen.byId(m.id)?.shortTitle ?? m.title, selected: active, side: 64) { chip in
+                ModeIconView(icon: m.icon, accent: m.accent, box: chip)
             }
-            .frame(minWidth: 58).padding(.horizontal, 12).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
         }.buttonStyle(.plain)
     }
 

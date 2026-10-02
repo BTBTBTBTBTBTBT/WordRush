@@ -263,21 +263,12 @@ struct FriendsPanelView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
                     Button { quickPlay = QuickPlay(friend: nil, kind: k) } label: {
-                        VStack(alignment: .leading, spacing: 7) {
-                            FriendlyGameIcon(kind: k, size: 36)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(k.title).font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x111827))
-                                    .lineLimit(2).minimumScaleFactor(0.8)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Text(FriendsKit.sub(k)).font(Brand.font(9.5, .bold)).foregroundStyle(FriendsKit.label)
-                                    .lineLimit(2).minimumScaleFactor(0.8)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            Spacer(minLength: 0)
+                        // The home mode card's tile (docs/GAME_TILE_STYLE.md): the game's
+                        // color as a soft background, the bar on top, the icon in the accent.
+                        GameTileCard(accent: FriendsKit.color(k), title: k.title, sub: FriendsKit.sub(k),
+                                     titleLines: 2, minHeight: 128, light: true) {
+                            FriendlyGameIcon(kind: k, size: 32, tinted: true)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
-                        .padding(10)
-                        .vsCard(radius: 14)
                     }
                     .buttonStyle(PressableStyle())
                     .accessibilityLabel("\(k.title), \(FriendsKit.sub(k))")

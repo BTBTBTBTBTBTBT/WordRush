@@ -26,6 +26,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { VsBanner } from './vs-banner';
 import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
 import { InitialAvatar, SectionLabel, SoftPill, VsModeIcon, VsNav, vsCardStyle } from './vs-ui';
+import { GameSquare } from '@/components/ui/game-tile';
 
 const MODES = VS_MODE_ORDER as readonly string[];
 
@@ -168,22 +169,19 @@ export function VsLobby() {
                 const locked = free && m !== 'DUEL';
                 const color = modeColor(m);
                 return (
-                  <button
+                  // Compact square game tile (docs/GAME_TILE_STYLE.md): tint, border and top bar, no label at 34 px.
+                  <GameSquare
                     key={m}
-                    type="button"
+                    accent={color}
+                    tone="light"
+                    selected={on}
+                    size={34}
+                    glyph={<VsModeIcon mode={m} size={16} color={color} />}
                     onClick={() => pickMode(m)}
                     aria-label={`${modeTitle(m)}${locked ? ' (Pro)' : ''}`}
                     aria-pressed={on}
-                    className="flex items-center justify-center transition-transform active:scale-90"
-                    style={{
-                      width: 34, height: 34, borderRadius: 9,
-                      background: on ? color : '#ffffff',
-                      boxShadow: on ? `0 0 10px ${color}99` : VS.cardShadow,
-                      opacity: locked ? 0.35 : 1,
-                    }}
-                  >
-                    <VsModeIcon mode={m} size={16} color={on ? '#ffffff' : color} />
-                  </button>
+                    style={{ opacity: locked ? 0.35 : 1 }}
+                  />
                 );
               })}
             </div>

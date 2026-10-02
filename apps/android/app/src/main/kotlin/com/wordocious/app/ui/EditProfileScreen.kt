@@ -400,13 +400,12 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     items(dailyModes.size) { i ->
                         val m = dailyModes[i]
                         val sel = favoriteMode == m.engineMode?.name
-                        Box(
-                            Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
-                                .background(m.accent.copy(alpha = if (sel) 0.22f else 0.08f))
-                                .border(if (sel) 2.dp else 0.dp, if (sel) m.accent else Color.Transparent, RoundedCornerShape(10.dp))
-                                .clickableNoRipple { favoriteMode = m.engineMode?.name },
-                            contentAlignment = Alignment.Center,
-                        ) { ModeGlyph(m, tint = m.accent, box = 40.dp) }
+                        // The square game tile (docs/GAME_TILE_STYLE.md) at picker size, no label.
+                        GameTileSquare(
+                            accent = m.accent, label = null, selected = sel,
+                            modifier = Modifier.padding(vertical = 4.dp).size(44.dp), chipSize = 30.dp, corner = 12.dp,
+                            onClick = { favoriteMode = m.engineMode?.name },
+                        ) { chip -> ModeGlyph(m, tint = m.accent, box = chip) }
                     }
                 }
             }

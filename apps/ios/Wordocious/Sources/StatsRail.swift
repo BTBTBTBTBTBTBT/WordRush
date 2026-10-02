@@ -64,7 +64,7 @@ struct StatsRail: View {
                         HStack(spacing: 8) {
                             ForEach(items) { it in chip(it, inGrid: false).id(it.key) }
                         }
-                        .padding(.horizontal, 1)
+                        .padding(.horizontal, 4).padding(.vertical, 6)
                     }
                     // Keep the selected chip in view as the page changes (swipe, grid
                     // pick) — moving the rail the LEAST amount that reveals it. Centering
@@ -106,8 +106,9 @@ struct StatsRail: View {
         onSelect(key)
     }
 
-    /// One chip — the HModePicker / ProfileModePicker look: 28pt icon tile,
-    /// 10pt heavy label, accent border when selected, today's W/L dot top-right.
+    /// One chip — the square game tile (docs/GAME_TILE_STYLE.md, the same tile as
+    /// the Leaderboard picker): 64 pt in the rail, a fifth of the row in the grid,
+    /// today's W/L dot top-right under the bar.
     private func chip(_ it: StatsRailItem, inGrid: Bool) -> some View {
         let active = it.key == selected
         let isToday = it.key == StatsRailKey.today
@@ -115,21 +116,14 @@ struct StatsRail: View {
             if held { held = false; return }
             pick(it.key)
         } label: {
-            VStack(spacing: 4) {
-                ModeIconView(icon: it.icon, accent: it.accent, box: 28)
-                Text(it.label).font(Brand.font(10, .heavy))
-                    .foregroundStyle(active ? it.accent : Theme.textMuted)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+            GameTileSquare(accent: it.accent, label: it.label, selected: active, side: inGrid ? nil : 64) { chip in
+                ModeIconView(icon: it.icon, accent: it.accent, box: chip)
             }
-            .frame(minWidth: inGrid ? 0 : 62, maxWidth: inGrid ? .infinity : nil)
-            .padding(.horizontal, inGrid ? 4 : 10).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? it.accent.opacity(0.08) : Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? it.accent : Theme.border, lineWidth: 1.5))
             .overlay(alignment: .topTrailing) {
                 if let won = it.dot {
                     Circle().fill(won ? Theme.win : Color(hex: 0xDC2626))
                         .frame(width: 8, height: 8)
-                        .padding(4)
+                        .padding(.top, 8).padding(.trailing, 5)
                         .accessibilityLabel(won ? "Won today" : "Lost today")
                 }
             }

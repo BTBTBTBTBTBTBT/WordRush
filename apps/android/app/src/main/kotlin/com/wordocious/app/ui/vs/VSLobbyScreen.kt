@@ -64,6 +64,8 @@ import com.wordocious.app.data.VSCountsService
 import com.wordocious.app.data.VSPlayLimit
 import com.wordocious.app.data.VsChallengeService
 import com.wordocious.app.data.VsLobbyStore
+import com.wordocious.app.ui.GameTileSquare
+import com.wordocious.app.ui.ModeGlyph
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.modeAccent
 import com.wordocious.app.ui.theme.Nunito
@@ -234,14 +236,21 @@ private fun LobbyMain(
                     VsSectionLabel("PLAY", Modifier.weight(1f))
                     Text(vsModeName(shownMode).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = modeAccent(shownMode))
                 }
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                // The square game tile (docs/GAME_TILE_STYLE.md) at strip size: wash, top bar,
+                // border and chip, no label (the picked mode's name sits on the PLAY line).
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     VS_MODES.forEach { m ->
                         val locked = free && m != GameMode.DUEL
-                        VsModeTile(
-                            m, 34.dp, selected = m == shownMode,
-                            modifier = Modifier.alpha(if (locked) 0.35f else 1f)
-                                .clickableNoRipple { if (locked) onGoPro() else onMode(m) },
-                        )
+                        val accent = modeAccent(m)
+                        GameTileSquare(
+                            accent = accent, label = null, selected = m == shownMode,
+                            modifier = Modifier.size(44.dp).alpha(if (locked) 0.35f else 1f),
+                            surface = Color.White, chipSize = 30.dp, corner = 12.dp,
+                            onClick = { if (locked) onGoPro() else onMode(m) },
+                        ) { chip -> ModeGlyph(m, accent, chip) }
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

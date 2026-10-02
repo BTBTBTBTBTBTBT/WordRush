@@ -134,17 +134,13 @@ private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.Hel
     val helpCards = MODE_CARDS.filter { it.id != "more" } + visibleDailyCards().filter { it !in MODE_CARDS }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         helpCards.forEach { card ->
+            // The game tile's chrome (docs/GAME_TILE_STYLE.md) on the guide row.
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
-                    .border(1.dp, WTheme.divider, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+                Modifier.fillMaxWidth().gameTileChrome(card.accent, WTheme.surface)
+                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Box(
-                    Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(card.accent.copy(alpha = 0.08f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    ModeGlyph(card, card.accent, box = 32.dp)
-                }
+                GameTileChip(card.accent, 32.dp) { ModeGlyph(card, card.accent, box = 32.dp) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(card.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                     Text(modes.firstOrNull { it.title == card.title }?.desc ?: card.desc,

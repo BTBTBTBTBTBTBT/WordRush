@@ -239,14 +239,18 @@ struct VSLobbyView: View {
 
     /// The nine VS modes. Free: every icon shows, only Classic is selectable.
     private var modeStrip: some View {
-        HStack(spacing: 0) {
+        // Square game tiles at strip size, icon only (docs/GAME_TILE_STYLE.md).
+        HStack(spacing: 5) {
             ForEach(VsLobbyKit.modes, id: \.self) { m in
                 let locked = free && m != .duel
+                let accent = VsLobbyKit.accent(m)
                 Button {
                     if locked { showPro = true } else { Haptics.tap(); mode = m }
                 } label: {
-                    VSModeGlyphTile(mode: m, selected: (free ? .duel : mode) == m, size: 34)
-                        .opacity(locked ? 0.35 : 1)
+                    GameTileSquare(accent: accent, selected: (free ? .duel : mode) == m, radius: 10, light: true) { chip in
+                        if let h = VsLobbyKit.home(m) { ModeIconView(icon: h.icon, accent: accent, box: chip) }
+                    }
+                    .opacity(locked ? 0.35 : 1)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(VsLobbyKit.modeName(m) + (locked ? ", Pro" : ""))

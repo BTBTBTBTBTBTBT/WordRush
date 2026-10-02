@@ -450,8 +450,12 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             (guides.ifEmpty { modes.map { it to null } }).forEach { (mode, g) ->
                 val accent = modeAccent(mode)
-                Row(infoCardMod().clickableNoRipple { selected = mode }.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.14f)), Alignment.Center) {
+                // The game tile's chrome (docs/GAME_TILE_STYLE.md) on the guide row.
+                Row(
+                    Modifier.fillMaxWidth().gameTilePress { selected = mode }.gameTileChrome(accent, WTheme.surface).padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    GameTileChip(accent, 40.dp) {
                         Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp))
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {

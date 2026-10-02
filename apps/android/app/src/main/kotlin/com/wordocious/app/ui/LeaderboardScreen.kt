@@ -1236,50 +1236,25 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
     val accent = if (isSweep) SWEEP_ACCENT else if (isMore) (pickedMore?.accent ?: SWEEP_ACCENT) else (mode?.let { modeAccent(it) } ?: WTheme.primary)
     val short = if (isMore) (pickedMore?.let { LB_SHORT[it.dbKey] ?: com.wordocious.app.ModeGen.byId(it.id)?.shortTitle } ?: "More")
         else (LB_SHORT[id] ?: com.wordocious.app.ModeGen.byDbKey(id)?.shortTitle ?: id)
-    // The cell is a FIXED 52dp tile: cap the effective fontScale at 1.3x so a
-    // huge system text size can't shear the label out of the box (iOS caps its
-    // dynamic type at 1.6x but also shrinks labels to fit; Compose has no
-    // autosize in this BOM, so 1.3x is the honest ceiling).
-    val d = androidx.compose.ui.platform.LocalDensity.current
-    androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.ui.platform.LocalDensity provides
-            androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.3f)),
-    ) {
-        Column(
-            modifier.clip(RoundedCornerShape(12.dp))
-                .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
-                .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
-                .clickableNoRipple(onClick).height(52.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-        ) {
-            // §227: iOS ModeIconView(box: 26) — radius box*0.27 (7), fill
-            // accent@0.08 (this was 0.12/8dp: a heavier, rounder box than the
-            // iPhone's), glyph box*0.5 (13).
-            Box(Modifier.size(26.dp).clip(RoundedCornerShape(7.dp)).background(accent.copy(alpha = 0.08f)), Alignment.Center) {
-                // Web-faithful mode icon (WordleGrid/IV/VIII/TrendingUp/Shield/6/7/Skull/Crown);
-                // the sweep tile draws the broom line-art.
-                if (isSweep) {
-                    Icon(
-                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
-                        null, tint = accent, modifier = Modifier.size(13.dp),
-                    )
-                } else if (isMore) {
-                    if (pickedMore != null) ModeGlyph(pickedMore, accent, box = 26.dp)
-                    else Icon(
-                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_layout_grid),
-                        null, tint = accent, modifier = Modifier.size(13.dp),
-                    )
-                } else {
-                    mode?.let { ModeGlyph(it, accent, box = 26.dp) }
-                }
-            }
-            Text(
-                short, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                color = if (active) accent else WTheme.textMuted,
-                maxLines = 1, softWrap = false,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+    // The square game tile (docs/GAME_TILE_STYLE.md): the home card's wash, top
+    // bar and chip at 1 : 1, the picked mode selected. GameTileSquare caps the
+    // fontScale (1.3x) so huge system text can't shear the label out of the box.
+    GameTileSquare(accent = accent, label = short, selected = active, modifier = modifier, onClick = onClick) { chip ->
+        // Web-faithful mode icon (WordleGrid/IV/VIII/TrendingUp/Shield/6/7/Skull/Crown);
+        // the sweep tile draws the broom line-art.
+        if (isSweep) {
+            Icon(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
+                null, tint = accent, modifier = Modifier.size(chip * 0.5f),
             )
+        } else if (isMore) {
+            if (pickedMore != null) ModeGlyph(pickedMore, accent, box = chip)
+            else Icon(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_layout_grid),
+                null, tint = accent, modifier = Modifier.size(chip * 0.5f),
+            )
+        } else {
+            mode?.let { ModeGlyph(it, accent, box = chip) }
         }
     }
 }

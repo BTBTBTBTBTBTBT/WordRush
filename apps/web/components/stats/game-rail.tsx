@@ -6,6 +6,7 @@ import type { ModeMeta } from '@/lib/modes.generated';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { WIN_FG } from '@/lib/tile-theme';
+import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
 
 // The Stats tab's game rail (Stats + Friends redesign D2, founder 2026-09-26:
 // "I don't want to swipe right through 19 different games … flow like
@@ -87,20 +88,17 @@ export function GameRail({ items, selected, onSelect }: Props) {
     const active = it.key === selected;
     const Icon = it.icon;
     const isToday = it.key === RAIL_TODAY;
+    // Square game tile (docs/GAME_TILE_STYLE.md): 64 px in the rail, a full
+    // cell in the 5-wide grid.
     return (
-      <button
+      <GameSquare
         key={it.key}
         data-rail-key={it.key}
-        type="button"
-        // No transition: the selected chip's highlight lands in the tap's frame
-        // (founder, 2026-09-29 — iOS 3edd33c2 parity).
-        className={`${inGrid ? 'w-full' : 'flex-shrink-0 min-w-[62px]'} relative flex flex-col items-center gap-1`}
-        style={{
-          background: active ? `${it.accent}15` : 'var(--color-surface)',
-          border: active ? `1.5px solid ${it.accent}` : '1.5px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '8px 10px',
-        }}
+        accent={it.accent}
+        selected={active}
+        size={inGrid ? undefined : 64}
+        glyph={<GameTileGlyph accent={it.accent} icon={Icon} romanNumeral={it.romanNumeral} />}
+        label={it.label}
         onClick={() => {
           if (held.current) { held.current = false; return; }
           setGridOpen(false);
@@ -113,24 +111,14 @@ export function GameRail({ items, selected, onSelect }: Props) {
         aria-current={active ? 'page' : undefined}
         aria-label={isToday && !inGrid ? 'Today — hold for every game' : it.label}
       >
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${it.accent}15` }}>
-          {it.romanNumeral ? (
-            <span className="text-[10px] font-black leading-none" style={{ color: it.accent }}>{it.romanNumeral}</span>
-          ) : Icon ? (
-            <Icon className="w-3.5 h-3.5" style={{ color: it.accent }} />
-          ) : null}
-        </div>
-        <span className="text-[10px] font-extrabold leading-tight whitespace-nowrap" style={{ color: active ? it.accent : 'var(--color-text-muted)' }}>
-          {it.label}
-        </span>
         {it.dot && (
           <span
-            className="absolute top-1 right-1 w-2 h-2 rounded-full"
+            className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
             style={{ background: it.dot === 'won' ? WIN_FG : '#dc2626' }}
             aria-label={it.dot === 'won' ? 'Won today' : 'Lost today'}
           />
         )}
-      </button>
+      </GameSquare>
     );
   };
 
@@ -139,7 +127,7 @@ export function GameRail({ items, selected, onSelect }: Props) {
       <div className="flex items-stretch gap-2">
         <div
           ref={scrollerRef}
-          className="flex-1 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1"
+          className="flex-1 flex gap-2 overflow-x-auto py-1.5 -my-1.5 -mx-1 px-1"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
           role="tablist"
           aria-label="Stats pages"

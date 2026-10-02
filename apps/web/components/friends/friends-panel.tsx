@@ -28,7 +28,7 @@ import {
 } from '@/lib/friends-service';
 import { getActiveGames, loadGames, onGamesChange, type GameView } from '@/lib/friendly-games-client';
 import {
-  FR, KIND_SUB, bannerModel, bestFriendStreak, friendAction, friendLine, midnightClock, nobodyOnLine, onNow,
+  FR, KIND_COLOR, KIND_SUB, bannerModel, bestFriendStreak, friendAction, friendLine, midnightClock, nobodyOnLine, onNow,
   raceChips, sortActiveGames,
 } from '@/lib/friends-play';
 import { TodaysRace } from './todays-race';
@@ -36,7 +36,8 @@ import { NotificationPrefs } from './notification-prefs';
 import { ActivityFeed } from './activity-feed';
 import { FriendsBanner } from './friends-banner';
 import { QuickPlaySheet } from './quick-play-sheet';
-import { FlameCount, FriendAvatar, GameIconSquare, Pill, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { FlameCount, FriendAvatar, GameGlyph, GameIconSquare, Pill, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { GameTile } from '@/components/ui/game-tile';
 
 /** Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11). */
 function isNewFriend(f: FriendProfile): boolean {
@@ -438,20 +439,19 @@ export function FriendsPanel() {
       </SectionLabel>
       <div className="grid grid-cols-3 gap-2">
         {FRIENDLY_KINDS.map((k) => (
-          <button
+          // One game-tile style (docs/GAME_TILE_STYLE.md): the home card's tint, border and top bar.
+          <GameTile
             key={k}
-            type="button"
+            accent={KIND_COLOR[k]}
+            tone="light"
+            glyph={<GameGlyph kind={k} size={16} color={KIND_COLOR[k]} stroke={2.2} />}
+            title={FRIENDLY_TITLES[k]}
+            sub={KIND_SUB[k]}
             onClick={() => {
               if (friends.length === 0) { setNote('Add a friend first, then pick a game'); jumpToAdd(); return; }
               openPlay(friends.length === 1 ? friends[0] : null, k);
             }}
-            className="flex flex-col items-start gap-1.5 p-2.5 text-left transition-transform active:scale-[0.97]"
-            style={{ ...cardStyle, minHeight: 112 }}
-          >
-            <GameIconSquare kind={k} size={32} />
-            <span className="text-[12px] font-black leading-tight" style={{ color: FR.text }}>{FRIENDLY_TITLES[k]}</span>
-            <span className="font-bold" style={{ fontSize: 10, lineHeight: 1.25, color: '#4b5563' }}>{KIND_SUB[k]}</span>
-          </button>
+          />
         ))}
       </div>
 

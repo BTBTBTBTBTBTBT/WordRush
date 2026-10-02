@@ -6,10 +6,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -47,6 +45,8 @@ import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendlyGamesService
 import com.wordocious.app.data.FriendsService
+import com.wordocious.app.ui.GameTileSquare
+import com.wordocious.app.ui.GameTileStyle
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.core.COIN_STAKES
 import com.wordocious.core.FRIENDLY_KINDS
@@ -155,8 +155,8 @@ fun QuickPlaySheet(
             FriendsLabel(if (friend?.isOnline(now) == true) "QUICK GAMES · LIVE WHILE THEY'RE ON" else "QUICK GAMES")
             // Six tiles, 3 across × 2 rows (§9, web parity).
             FRIENDLY_KINDS.chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f).fillMaxHeight()) { kind = k; error = null } }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f)) { kind = k; error = null } }
                 }
             }
             if (kind == FriendlyKind.COIN) {
@@ -215,20 +215,13 @@ fun QuickPlaySheet(
     }
 }
 
+/** The square game tile (docs/GAME_TILE_STYLE.md): the home card's wash, top bar and chip, the picked game selected. */
 @Composable
 private fun GameTile(kind: FriendlyKind, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
-    Column(
-        modifier.friendsCard().then(if (selected) Modifier.border(2.dp, FriendsPink.solid, shape) else Modifier)
-            .clickableNoRipple(onClick).padding(horizontal = 4.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        FriendlyGameIcon(kind, 34.dp)
-        Text(
-            kind.title, fontSize = 10.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink, maxLines = 2,
-            lineHeight = 12.sp, textAlign = TextAlign.Center,
-        )
-    }
+    GameTileSquare(
+        accent = kind.color, label = kind.title, selected = selected, modifier = modifier,
+        surface = Color.White, labelColor = GameTileStyle.INK, onClick = onClick,
+    ) { chip -> FriendlyGameGlyph(kind, chip * 0.56f) }
 }
 
 private val TEAL = Color(0xFF0F766E)

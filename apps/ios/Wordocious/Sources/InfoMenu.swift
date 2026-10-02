@@ -203,7 +203,7 @@ struct GuidesIndexView: View {
         let accent = ModeStyle.accent(mode)
         return HStack(spacing: 12) {
             Image(systemName: "book.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
-                .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.14)))
+                .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.08)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(g?.title ?? GuideService.slug(for: mode).capitalized).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
                 if let tagline = g?.tagline {
@@ -213,7 +213,9 @@ struct GuidesIndexView: View {
             Spacer()
             Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).background(infoCard)
+        .padding(12).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
+        // The shared game-tile chrome (docs/GAME_TILE_STYLE.md) on the row layout.
+        .gameTile(accent: accent)
     }
 
     struct ModeBox: Identifiable { let mode: GameMode; var id: Int { mode.hashValue } }

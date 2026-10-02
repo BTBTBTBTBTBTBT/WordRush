@@ -766,18 +766,16 @@ private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String
             Modifier.weight(1f).horizontalScroll(androidx.compose.foundation.rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            // The square game tile (docs/GAME_TILE_STYLE.md), sized for the strip.
             modes.forEach { m ->
                 val active = m == selectedMode
-                val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
-                Text(
-                    com.wordocious.app.ModeGen.byDbKey(m)?.shortTitle ?: m,
-                    fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted,
-                    maxLines = 1, softWrap = false,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
-                        .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
-                        .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(8.dp))
-                        .clickableNoRipple { onMode(m) }.padding(horizontal = 10.dp, vertical = 5.dp),
-                )
+                val gm = runCatching { GameMode.valueOf(m) }.getOrNull()
+                val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
+                GameTileSquare(
+                    accent = accent, label = com.wordocious.app.ModeGen.byDbKey(m)?.shortTitle ?: m, selected = active,
+                    modifier = Modifier.padding(vertical = 4.dp).width(54.dp), chipSize = 26.dp, corner = 12.dp,
+                    onClick = { onMode(m) },
+                ) { chip -> gm?.let { ModeGlyph(it, accent, box = chip) } }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -9,6 +9,7 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
 import { LadderIcon } from '@/components/ui/ladder-icon';
+import { GameTileBar, gameTileSurface } from '@/components/ui/game-tile';
 import dynamic from 'next/dynamic';
 // Loaded on the "Sign in" tap only (founder, 2026-09-29).
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
@@ -56,8 +57,9 @@ const MORE_GAMES: LandingMode[] = [
 
 function ModeCard({ m }: { m: LandingMode }) {
   return (
-    <div className="relative overflow-hidden p-4 pt-5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
-      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${m.accent}, ${m.accent}88)` }} />
+    // One game-tile style (docs/GAME_TILE_STYLE.md): the home card's tint, border and top bar.
+    <div className="relative overflow-hidden p-4 pt-5" style={gameTileSurface(m.accent)}>
+      <GameTileBar accent={m.accent} />
       <div className="flex items-center gap-2 mb-1">
         <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black" style={{ background: `${m.accent}15`, color: m.accent }}>
           {m.roman ? m.roman : m.Icon ? <m.Icon className="w-4 h-4" style={{ color: m.accent }} /> : m.title.charAt(0)}

@@ -146,22 +146,16 @@ fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
                         color = WTheme.textMuted, letterSpacing = 1.sp,
                     )
                     section.modes.forEach { card ->
+                        // The game tile's chrome (docs/GAME_TILE_STYLE.md) on a list row.
                         Row(
                             Modifier.fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(WTheme.surface)
-                                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-                                .clickableNoRipple { onPick(card.dbKey!!) }
+                                .gameTilePress { onPick(card.dbKey!!) }
+                                .gameTileChrome(card.accent, WTheme.surface)
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Box(
-                                Modifier.size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
-                                    .background(card.accent.copy(alpha = 0.08f)),
-                                contentAlignment = Alignment.Center,
-                            ) { ModeGlyph(card, card.accent, box = 40.dp) }
+                            GameTileChip(card.accent, 40.dp) { ModeGlyph(card, card.accent, box = 40.dp) }
                             Column(Modifier.weight(1f)) {
                                 Text(card.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                                 Text(card.desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
