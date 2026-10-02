@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.EmojiEvents
@@ -578,38 +576,23 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         // container (ProfileTab `content`), so scrolling the board reclaims
         // their height instead of leaving them pinned to the top.
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
-            // (Shared AppHeader is above.) Page title: DAILY CHALLENGE + countdown.
+            // The Leaderboard banner (docs/LEADERBOARD_REDESIGN_SPEC.md §1): the core day
+            // title, date · reset clock, ALL-TIME → Records, and the game picker — eight
+            // Wordocious squares + the SWEEP chip, then the ten Puzzles. Replaces the old
+            // DAILY CHALLENGE title, countdown row and mode grid. Same selectMode path.
             item {
-                // §227 (founder side-by-side): iOS `header` is VStack(spacing: 4),
-                // 28pt black with -0.5 tracking, 4pt under it, inside the 8pt
-                // content inset — same numbers here.
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        "DAILY CHALLENGE", fontSize = 28.sp, fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                        style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
-                    )
-                    // Date + countdown, and the door to the all-time Records boards
-                    // (D2 step 3: the Records row left the Stats page; web /daily parity).
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DailyCountdownChip()
-                        Text(
-                            "All-time →", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
-                            modifier = Modifier.clickableNoRipple(onOpenRecords),
-                        )
-                    }
+                Box(Modifier.padding(top = 8.dp, bottom = 16.dp)) {
+                    LeaderboardBanner(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords)
                 }
             }
-            // Mode picker — the LazyColumn already supplies the 12.dp gutter.
-            item { ModePickerRow(selectedMode, horizontalPadding = 0.dp) { selectMode(it) } }
-            // Play CTA + your-board are per-mode; the Sweep board has no single
-            // mode to play or a completed grid, so both are skipped for it.
-            if (!isSweep) {
-                // Play CTA card — mode icon + "{n} players today" + Play button.
+            // §2.1 Play card for the selected game (game-tile CARD style). The Sweep board
+            // has no single mode to play, so its card carries the ranking explanation.
+            if (isSweep) {
+                item {
+                    SweepInfoCard()
+                    Spacer(Modifier.height(12.dp))
+                }
+            } else {
                 item {
                     ModeInfoCard(
                         modeId = selectedMode, players = playerCount,
@@ -619,128 +602,72 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                // Completed-daily dropdown (your board for this mode), web parity:
+                // §2.2 Completed-daily dropdown (your board for this mode), web parity:
                 // collapsible "Completed/Attempted Today" card above the user rank.
                 item(key = "completed-$selectedMode") {
                     com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
                 }
             }
-            // User rank — "You're ranked #N of M" (true total; shows even when
-            // the user is outside the visible top 50, web/iOS parity). For SWEEP
-            // this is the user's daily-sweep rank.
+            // §2.3 Your rank (true total; shows even when the user is outside the visible
+            // top 50, web/iOS parity). For SWEEP this is the user's daily-sweep rank.
             (if (isSweep) sweepRank else userRank)?.let { rank ->
                 item {
-                    UserRankCard(rank = rank.rank, total = rank.totalPlayers, mode = selectedMode, friends = friendsOnly && !isSweep)
-                    Spacer(Modifier.height(12.dp))
+                    val myPoints = if (isSweep) {
+                        sweepEntries.firstOrNull { it.userId == userId }?.totalScore
+                    } else {
+                        (entries + (rankWindow?.entries ?: emptyList())).firstOrNull { it.userId == userId }?.compositeScore
+                            ?: completions[selectedMode]?.score
+                    }
+                    UserRankCard(
+                        rank = rank.rank, total = rank.totalPlayers, mode = selectedMode,
+                        friends = friendsOnly && !isSweep, points = myPoints,
+                    )
+                    Spacer(Modifier.height(16.dp))
                 }
             }
-            // Leaderboard label
+            // §2.4 TODAY'S BOARD: label + Everyone | Friends + the bare share icon.
             item {
-                // iOS relabels the section when the cross-mode Sweep board is up.
-                if (isSweep) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "DAILY SWEEP", fontSize = 10.sp, fontWeight = FontWeight.Black,
-                            color = WTheme.textMuted, letterSpacing = 0.8.sp,
-                        )
-                        // §223 microcopy (web "Daily games only" slot): pre-answers
-                        // "why is 9/9 below 8/9" — the board ranks by points, not wins.
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                "Ranked by total points across all modes",
-                                fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                            )
-                            // Today's sweep-board share (§231) — the RPC rows
-                            // and the sharer's sweep rank are already on the page.
-                            if (!loading && sweepEntries.isNotEmpty()) {
-                                Icon(
-                                    Icons.Filled.Share, "Share sweep board",
-                                    tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
-                                    modifier = Modifier.size(14.dp).clickableNoRipple {
-                                        if (!sharingLb) {
-                                            sharingLb = true
-                                            shareScope.launch {
-                                                try {
-                                                    com.wordocious.app.data.LeaderboardShare.shareDailySweepCard(
-                                                        shareContext, sweepEntries, userId, sweepRank,
-                                                    )
-                                                } finally { sharingLb = false }
-                                            }
-                                        }
-                                    },
-                                )
-                            }
-                        }
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 2.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    LbSectionLabel("TODAY\u2019S BOARD", Modifier.weight(1f))
+                    // FRIENDS toggle (§207) — per-mode boards only, as before.
+                    if (!isSweep && userId != null) {
+                        FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
                     }
-                } else {
-                    // Founder-approved clarity (iOS parity): this board ranks
-                    // DAILY games only — Unlimited runs never appear here.
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "LEADERBOARD", fontSize = 10.sp, fontWeight = FontWeight.Black,
-                            color = WTheme.textMuted, letterSpacing = 0.8.sp,
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            // FRIENDS toggle (§207) — segmented shell, compact.
-                            if (userId != null) {
-                                val accent = Color(0xFF7C3AED)
-                                Row(
-                                    Modifier.clip(RoundedCornerShape(8.dp))
-                                        .border(1.5.dp, WTheme.border, RoundedCornerShape(8.dp)),
-                                ) {
-                                    listOf(false, true).forEach { f ->
-                                        val sel = friendsOnly == f
-                                        Text(
-                                            if (f) "Friends" else "All",
-                                            fontSize = 9.sp, fontWeight = FontWeight.Black,
-                                            color = if (sel) accent else WTheme.textMuted,
-                                            modifier = Modifier
-                                                .background(if (sel) accent.copy(alpha = 0.08f) else WTheme.surface)
-                                                .clickableNoRipple { selectFriendsOnly(f) }
-                                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                                        )
+                    val canShare = if (isSweep) !loading && sweepEntries.isNotEmpty() else !boardLoading && entries.isNotEmpty()
+                    if (canShare) {
+                        Box(
+                            Modifier.size(28.dp).clickableNoRipple {
+                                if (!sharingLb) {
+                                    sharingLb = true
+                                    shareScope.launch {
+                                        try {
+                                            if (isSweep) {
+                                                // Today's sweep-board share (§231).
+                                                com.wordocious.app.data.LeaderboardShare.shareDailySweepCard(
+                                                    shareContext, sweepEntries, userId, sweepRank,
+                                                )
+                                            } else {
+                                                com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
+                                                    shareContext, selectedMode, "solo",
+                                                    entries, rankWindow, userId, userRank,
+                                                    friends = friendsOnly,
+                                                )
+                                            }
+                                        } finally { sharingLb = false }
                                     }
                                 }
-                            }
-                            Text(
-                                "Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                                color = WTheme.textMuted,
+                            },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Share, if (isSweep) "Share sweep board" else "Share leaderboard",
+                                tint = WTheme.textSecondary.copy(alpha = if (sharingLb) 0.4f else 1f),
+                                modifier = Modifier.size(16.dp),
                             )
-                            // Today's-board share (web: Share icon beside the caption).
-                            if (!boardLoading && entries.isNotEmpty()) {
-                                Icon(
-                                    Icons.Filled.Share, "Share leaderboard",
-                                    tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
-                                    modifier = Modifier.size(14.dp).clickableNoRipple {
-                                        if (!sharingLb) {
-                                            sharingLb = true
-                                            shareScope.launch {
-                                                try {
-                                                    com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
-                                                        shareContext, selectedMode, "solo",
-                                                        entries, rankWindow, userId, userRank,
-                                                        friends = friendsOnly,
-                                                    )
-                                                } finally { sharingLb = false }
-                                            }
-                                        }
-                                    },
-                                )
-                            }
                         }
                     }
                 }
@@ -755,8 +682,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 } else {
                     item {
                         Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                                .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                            Modifier.lbSoftCard(),
                         ) {
                             sweepEntries.forEachIndexed { index, entry ->
                                 SweepRow(
@@ -764,6 +690,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
                                     scoreLabel = sweepScoreLabels[entry.totalScore],
+                                    restyled = true,
                                     details = sweepDetails[entry.userId],
                                     day = com.wordocious.app.todayLocalDate(),
                                     flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
@@ -779,8 +706,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         // Nobody's played yet — the friends list still renders
                         // as ghost rows so the board feels alive (and tauntable).
                         Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                                .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                            Modifier.lbSoftCard(),
                         ) {
                             ghostFriends.forEachIndexed { index, f ->
                                 GhostFriendRow(f, onOpenProfile) { tauntTarget = f }
@@ -789,8 +715,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         }
                     } else {
                         Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                                .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+                            Modifier.lbSoftCard()
                                 .padding(vertical = 40.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
@@ -821,8 +746,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 item {
                     // Card wrapper with dividers between rows (web: rounded surface card).
                     Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                        Modifier.lbSoftCard(),
                     ) {
                         entries.forEachIndexed { index, entry ->
                             LeaderboardRow(
@@ -841,7 +765,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     }
                                 } else null,
                                 scoreLabel = lbScoreLabels[entry.compositeScore],
-                                crownId = crownId,
+                                crownId = crownId, restyled = true,
                             )
                             if (index < entries.size - 1) Divider()
                         }
@@ -861,7 +785,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     rank = win.startRank + index, entry = entry, mode = selectedMode,
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
-                                    scoreLabel = lbScoreLabels[entry.compositeScore],
+                                    scoreLabel = lbScoreLabels[entry.compositeScore], restyled = true,
                                 )
                                 if (index < win.entries.size - 1) Divider()
                             }
@@ -877,37 +801,36 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     }
                 }
             }
-            // Yesterday's Winners (collapsible) — per-mode top 3, or yesterday's
-            // top sweepers when the Sweep tile is selected.
+            // §2.5 YESTERDAY'S WINNERS (collapsible) — per-mode top 3, or yesterday's
+            // top sweepers when the Sweep chip is selected. One soft card: the caps
+            // header (chevron + bare share) and, open, the podium rows under it.
             item {
                 Spacer(Modifier.height(16.dp))
+                Column(Modifier.lbSoftCard()) {
                 Row(
-                    Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                    Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
-                        Modifier.clickableNoRipple {
+                        Modifier.weight(1f).clickableNoRipple {
                             showYesterday = !showYesterday
                             if (showYesterday) paintCachedYesterday(selectedMode)
-                        },
+                        }.padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Yesterday's Winners", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                        LbSectionLabel("YESTERDAY\u2019S WINNERS")
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             if (showYesterday) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                            null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp),
+                            if (showYesterday) "Collapse" else "Expand", tint = WTheme.textSecondary, modifier = Modifier.size(16.dp),
                         )
                     }
                     // Settled-podium share — only once the dropdown is open with
                     // rows (web parity). The Sweep tile shares yesterday's
                     // sweep podium instead (§231).
                     if (showYesterday && (if (isSweep) yesterdaySweep else yesterday).isNotEmpty()) {
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            Icons.Filled.Share, "Share yesterday's podium",
-                            tint = WTheme.textMuted.copy(alpha = if (sharingPodium) 0.4f else 1f),
-                            modifier = Modifier.size(14.dp).clickableNoRipple {
+                        Box(
+                            Modifier.size(32.dp).clickableNoRipple {
                                 if (!sharingPodium) {
                                     sharingPodium = true
                                     shareScope.launch {
@@ -926,14 +849,19 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     }
                                 }
                             },
-                        )
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Share, "Share yesterday's podium",
+                                tint = WTheme.textSecondary.copy(alpha = if (sharingPodium) 0.4f else 1f),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
                 }
                 if (showYesterday) {
-                    Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-                    ) {
+                    Divider()
+                    Column {
                         if (yesterdayPending) {
                             // Not this mode's rows yet — the empty-state's footprint, blank, instead
                             // of the previous mode's podium or a false "No results" (founder, 2026-09-29).
@@ -976,12 +904,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     entry = e, mode = selectedMode,
                                     isCurrentUser = e.userId == userId,
                                     onOpenProfile = onOpenProfile,
-                                    scoreLabel = yLbScoreLabels[e.compositeScore],
+                                    scoreLabel = yLbScoreLabels[e.compositeScore], restyled = true,
                                 )
                                 if (i < yesterday.size - 1) Divider()
                             }
                         }
                     }
+                }
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -1031,9 +960,28 @@ private fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String)
     }
 }
 
-/** Rank icon — Crown (#1 gold), Medal (#2 muted / #3 bronze), else "N". Web parity. */
+/** Rank icon — Crown (#1 gold), Medal (#2 muted / #3 bronze), else "N". Web parity.
+ *  [discs] (the Leaderboard redesign, spec §2.4): numbered gold / silver / bronze
+ *  discs for 1–3, the plain number after. */
 @Composable
-private fun RankIcon(rank: Int) {
+private fun RankIcon(rank: Int, discs: Boolean = false) {
+    val medal = if (discs) medalColor(rank) else null
+    if (medal != null) {
+        Box(
+            Modifier.size(22.dp).clip(CircleShape)
+                .background(Brush.verticalGradient(listOf(medal.copy(alpha = 0.85f), medal))),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("$rank", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1)
+        }
+        return
+    }
+    if (discs) {
+        Box(Modifier.width(22.dp), contentAlignment = Alignment.Center) {
+            Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, maxLines = 1, softWrap = false)
+        }
+        return
+    }
     when (rank) {
         1 -> Icon(
             androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),
@@ -1054,126 +1002,126 @@ private fun RankIcon(rank: Int) {
     }
 }
 
+/** The redesign's card shell (spec §2): surface, radius 14, the soft card shadow, no border. */
+private fun Modifier.lbSoftCard(): Modifier =
+    this.fillMaxWidth().cardShadow(14.dp).clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
+
+/** Section label: 11 / 900, letter-spacing 1.2, #6b7280. */
 @Composable
-private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: (com.wordocious.core.GameMode) -> Unit) {
-    // Per-mode card (web /daily Play CTA): accent bar + icon + title + players
-    // today + an orange Play button that launches today's daily for this mode.
-    val card = modeCardForKey(modeId)
-    val accent = card?.accent ?: WTheme.primary
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-    ) {
-        Box(Modifier.fillMaxWidth().height(3.dp).background(
-            Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.5f))),
-        ))
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
+private fun LbSectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+        color = WTheme.textSecondary, maxLines = 1, modifier = modifier,
+    )
+}
+
+/** Everyone | Friends (§207 toggle) as a soft pill segmented control. */
+@Composable
+private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) {
+    val accent = Color(0xFF7C3AED)
+    Row(Modifier.clip(RoundedCornerShape(50)).background(accent.copy(alpha = 0.10f)).padding(2.dp)) {
+        listOf(false to "Everyone", true to "Friends").forEach { (f, label) ->
+            val on = friendsOnly == f
             Box(
-                Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.10f)),
+                Modifier.height(24.dp).clip(RoundedCornerShape(50))
+                    .background(if (on) WTheme.surface else Color.Transparent)
+                    .clickableNoRipple { onChange(f) }
+                    .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                if (card != null) ModeGlyph(card, accent, box = 32.dp)
-                else Icon(Icons.Filled.EmojiEvents, null, tint = accent, modifier = Modifier.size(16.dp))
-            }
-            Column(Modifier.weight(1f)) {
-                Text(card?.title ?: modeId, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
-                    Text(
-                        "$players player${if (players != 1) "s" else ""} today",
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    )
-                }
-            }
-            card?.engineMode?.let { gm ->
-                Row(
-                    Modifier
-                        // iOS gives the CTA a 30%-accent drop shadow.
-                        .shadow(
-                            4.dp, RoundedCornerShape(50),
-                            ambientColor = accent.copy(alpha = 0.3f), spotColor = accent.copy(alpha = 0.3f),
-                        )
-                        .clip(RoundedCornerShape(50))
-                        .background(accent)
-                        .clickableNoRipple { onPlay(gm) }
-                        .padding(horizontal = 16.dp, vertical = 9.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    // Already finished today's daily for this mode → eye + "View"
-                    // (the route already reconstructs the completed board). iOS parity.
-                    Icon(
-                        if (played) Icons.Filled.Visibility else Icons.Filled.PlayArrow,
-                        null, tint = Color.White, modifier = Modifier.size(11.dp),
-                    )
-                    Text(if (played) "View" else "Play", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
-                }
+                Text(
+                    label, fontSize = 10.5.sp, fontWeight = FontWeight.Black,
+                    color = if (on) accent else WTheme.textSecondary, maxLines = 1,
+                )
             }
         }
+    }
+}
+
+/** The solid-accent caps CTA (Play / View) on the play card. */
+@Composable
+private fun LbPlayButton(accent: Color, played: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .gameTilePress(onClick = onClick)
+            .shadow(4.dp, RoundedCornerShape(50), ambientColor = accent.copy(alpha = 0.3f), spotColor = accent.copy(alpha = 0.3f))
+            .clip(RoundedCornerShape(50))
+            .background(accent)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        // Already finished today's daily for this mode → eye + VIEW (the route
+        // already reconstructs the completed board). iOS parity.
+        Icon(
+            if (played) Icons.Filled.Visibility else Icons.Filled.PlayArrow,
+            null, tint = Color.White, modifier = Modifier.size(12.dp),
+        )
+        Text(
+            if (played) "VIEW" else "PLAY", fontSize = 13.sp, fontWeight = FontWeight.Black,
+            letterSpacing = 0.6.sp, color = Color.White, maxLines = 1,
+        )
     }
 }
 
 @Composable
-private fun DailyCountdownChip() {
-    val hidden = LocalTabHidden.current
-    val secs by androidx.compose.runtime.produceState(
-        initialValue = secondsUntilMidnight()
+private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: (com.wordocious.core.GameMode) -> Unit) {
+    // §2.1 Play card (game-tile CARD style: wash, 1.5 accent border, top bar,
+    // icon chip): name, "{n} players today" (+ the daily-only note), Play / View.
+    val card = modeCardForKey(modeId)
+    val accent = card?.accent ?: WTheme.primary
+    Row(
+        Modifier.fillMaxWidth().gameTileChrome(accent, WTheme.surface)
+            .padding(start = 14.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        while (true) { hidden.awaitShown(); value = secondsUntilMidnight(); kotlinx.coroutines.delay(1000) }
-    }
-    val h = secs / 3600; val m = (secs % 3600) / 60; val s = secs % 60
-    // iOS pairs the countdown with a calendar chip carrying today's abbreviated
-    // date ("Jul 29"); web parity for the clock half (no "Resets" label).
-    val today = remember(secs / 3600) {
-        java.text.SimpleDateFormat("MMM d", java.util.Locale.US).format(java.util.Date())
-    }
-    androidx.compose.foundation.layout.Row(
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
-    ) {
-        androidx.compose.foundation.layout.Row(
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
-        ) {
-            androidx.compose.material3.Icon(
-                Icons.Filled.CalendarMonth, null,
-                tint = WTheme.textMuted, modifier = Modifier.size(11.dp),   // iOS .system(size: 11)
-            )
-            Text(today, fontSize = 12.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold)
+        GameTileChip(accent, 36.dp) {
+            if (card != null) ModeGlyph(card, accent, box = 36.dp)
+            else Icon(Icons.Filled.EmojiEvents, null, tint = accent, modifier = Modifier.size(18.dp))
         }
-        androidx.compose.foundation.layout.Row(
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
-        ) {
-            androidx.compose.material3.Icon(
-                Icons.Filled.Schedule, null,
-                tint = WTheme.textMuted, modifier = Modifier.size(11.dp),   // iOS .system(size: 11)
-            )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                "%02d:%02d:%02d".format(h, m, s),
-                fontSize = 12.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
+                card?.title ?: modeId, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                Text(
+                    "$players player${if (players != 1) "s" else ""} today",
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1,
+                )
+            }
+            // Founder-approved clarity (iOS parity): this board ranks DAILY games only.
+            Text("Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
         }
+        card?.engineMode?.let { gm -> LbPlayButton(accent, played) { onPlay(gm) } }
     }
 }
 
-/**
- * Seconds until the next LOCAL midnight — the daily resets at local midnight
- * (matches the local-date puzzle/leaderboard grouping and iOS
- * `secondsUntilLocalMidnight()`), not UTC.
- */
-private fun secondsUntilMidnight(): Long {
-    val cal = java.util.Calendar.getInstance().apply {
-        add(java.util.Calendar.DAY_OF_YEAR, 1)
-        set(java.util.Calendar.HOUR_OF_DAY, 0)
-        set(java.util.Calendar.MINUTE, 0)
-        set(java.util.Calendar.SECOND, 0)
-        set(java.util.Calendar.MILLISECOND, 0)
+/** The Sweep board's card: no single game to play, so its ranking explanation (§223). */
+@Composable
+private fun SweepInfoCard() {
+    val accent = LB_SWEEP_GOLD
+    Row(
+        Modifier.fillMaxWidth().gameTileChrome(accent, WTheme.surface)
+            .padding(start = 14.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        GameTileChip(accent, 36.dp) {
+            Icon(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
+                null, tint = accent, modifier = Modifier.size(18.dp),
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Daily Sweep", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+            // §223 microcopy: pre-answers "why is 9/9 below 8/9" — the board ranks by points, not wins.
+            Text(
+                "Ranked by total points across all modes",
+                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
+        }
     }
-    return ((cal.timeInMillis - System.currentTimeMillis()) / 1000L).coerceAtLeast(0)
 }
 
 private val LB_SHORT = mapOf(
@@ -1259,25 +1207,51 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
     }
 }
 
+/** Medal tints for ranks 1–3 (gold / silver / bronze); null past the podium. */
+private fun medalColor(rank: Int): Color? = when (rank) {
+    1 -> Color(0xFFF59E0B)
+    2 -> Color(0xFF9CA3AF)
+    3 -> Color(0xFFB45309)
+    else -> null
+}
+
+/** §2.3 Your rank: a soft gold card — the rank in big numerals (medal-tinted on the
+ *  podium), OF N TODAY (or friends), the movement badge, and your points. */
 @Composable
-private fun UserRankCard(rank: Int, total: Int, mode: String, friends: Boolean = false) {
-    Box(
+private fun UserRankCard(rank: Int, total: Int, mode: String, friends: Boolean = false, points: Double? = null) {
+    val ink = medalColor(rank) ?: Color(0xFFD97706)
+    Row(
         modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .cardShadow(14.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(Brush.linearGradient(listOf(WTheme.highlightGold, WTheme.surface)))
-            .border(1.5.dp, WTheme.goldBorder, RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("You're ranked ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            // Gold on BOTH boards — iOS uses one rankBanner for per-mode + sweep.
-            Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-            // Transient "+N/−N" movement pill since you last looked (web parity).
-            // Friends mode keeps its own memory — a friend-rank must never
-            // compare against a stored global rank (§207).
-            RankDeltaBadge(mode = mode, playType = "solo", pageKey = if (friends) "daily-friends" else "daily", currentRank = rank)
-            Text(if (friends) " of $total friends" else " of $total", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // Gold on BOTH boards — iOS uses one rankBanner for per-mode + sweep.
+        Text(
+            "#$rank", fontSize = 30.sp, fontWeight = FontWeight.Black, color = ink, maxLines = 1,
+            style = TextStyle(fontFamily = Nunito),
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("YOUR RANK", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = WTheme.textSecondary)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    if (friends) "OF $total FRIENDS" else "OF $total TODAY",
+                    fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = WTheme.text, maxLines = 1,
+                )
+                // Transient "+N/−N" movement pill since you last looked (web parity).
+                // Friends mode keeps its own memory — a friend-rank must never
+                // compare against a stored global rank (§207).
+                RankDeltaBadge(mode = mode, playType = "solo", pageKey = if (friends) "daily-friends" else "daily", currentRank = rank)
+            }
+        }
+        if (points != null) {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(formatScore(points), fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+                Text("POINTS", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textSecondary)
+            }
         }
     }
 }
@@ -1325,9 +1299,7 @@ private fun SweepPill(flawless: Boolean, streak: Int = 0) {
 @Composable
 private fun EmptyBoardCard(message: String) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .padding(vertical = 40.dp),
+        Modifier.lbSoftCard().padding(vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
@@ -1352,18 +1324,15 @@ internal fun SweepRow(
     day: String = com.wordocious.app.todayLocalDate(),
     // §248: current flawless streak — the pill reads "FLAWLESS ×4" when >= 2.
     flawlessStreak: Int = 0,
+    /** The Leaderboard redesign's row look (medal discs, ringed own row); Records keeps the classic row. */
+    restyled: Boolean = false,
 ) {
-    val bg = when {
-        isCurrentUser -> WTheme.highlightGold
-        rank <= 3 -> WTheme.surfaceAlt
-        else -> Color.Transparent
-    }
     Row(
-        modifier = Modifier.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = Modifier.lbRowShell(isCurrentUser, rank, restyled),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RankIcon(rank)
+        RankIcon(rank, discs = restyled)
         // §212: faces on the sweep boards too (RPCs have no emoji column).
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         // Same shape as LeaderboardRow (Doug's Aug-16 feedback): stats under
@@ -1505,19 +1474,35 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
     }
 }
 
-@Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null, crownId: String? = null) {
-    val bg = when {
-        isCurrentUser -> WTheme.highlightGold
-        rank <= 3 -> WTheme.surfaceAlt
-        else -> Color.Transparent
+/**
+ * A board row's shell. Classic (Records): gold wash on your row, a soft tint on the
+ * podium. Restyled (Leaderboard, spec §2.4): plain rows; your row tinted #fef3c7
+ * inside a 1.5 dp #f59e0b ring, inset so the ring clears the card edge.
+ */
+private fun Modifier.lbRowShell(isCurrentUser: Boolean, rank: Int, restyled: Boolean): Modifier {
+    if (!restyled) {
+        val bg = when {
+            isCurrentUser -> WTheme.highlightGold
+            rank <= 3 -> WTheme.surfaceAlt
+            else -> Color.Transparent
+        }
+        return this.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp)
     }
+    if (!isCurrentUser) return this.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)
+    val shape = RoundedCornerShape(10.dp)
+    return this.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp)
+        .clip(shape).background(WTheme.goldBorderLight).border(1.5.dp, Color(0xFFF59E0B), shape)
+        .padding(horizontal = 8.dp, vertical = 7.dp)
+}
+
+@Composable
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null, crownId: String? = null, restyled: Boolean = false) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = Modifier.lbRowShell(isCurrentUser, rank, restyled),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RankIcon(rank)
+        RankIcon(rank, discs = restyled)
         // §212: photo → emoji → initial, left of every username — the boards
         // wear faces, not just names (web lbAvatar parity).
         LbAvatar(entry.profiles?.avatarUrl, entry.profiles?.avatarEmoji, entry.username ?: "Player")
@@ -1630,7 +1615,7 @@ private fun YesterdaySweepRow(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RankIcon(entry.rank.toInt())
+        RankIcon(entry.rank.toInt(), discs = true)
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         Column(
             Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) },

@@ -1427,73 +1427,102 @@ struct LeaderboardTab: View {
         }
     }
 
-    /// "Play CTA" card (web /daily): mode icon + title + players-today + a Play
-    /// button that launches today's daily for the selected mode.
+    /// Play card (spec §2.1): the selected game in the game-tile CARD style (tint,
+    /// border, top bar in its color), icon chip, name, players-today, and the
+    /// Play / View button as a solid accent pill with white caps text.
     private var playCtaCard: some View {
         // The whole catalog — the More Games titles are not in the home grid, and the
         // fallback showed their raw keys ("SCRAMBLE", "HUB") with no icon (founder, 2026-09-27).
         let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
-        return VStack(spacing: 0) {
-            LinearGradient(colors: [accent, accent.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
-                .frame(height: 3)
-            HStack(spacing: 10) {
-                if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.2.fill").font(.system(size: 10))
-                        // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
-                        if loading && playerCount == 0 {
-                            Text("000 players today").font(Brand.font(10, .bold)).redacted(reason: .placeholder)
-                        } else {
-                            Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
-                        }
-                    }.foregroundStyle(Theme.textMuted)
-                }
-                Spacer()
-                // Already finished today's daily for this mode → open the read-only
-                // solved board, matching the home cards. The cached completions
-                // answer instantly; userRank confirms once the leaderboard loads.
-                let played = completions.byMode[mode.rawValue] != nil || userRank != nil
-                Button {
-                    let title = m?.title ?? mode.rawValue
-                    if played { lbSolved = LbGame(mode: mode, title: title) }
-                    else if mode == .propernoundle { showPNDaily = true }
-                    else { lbGame = LbGame(mode: mode, title: title) }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: played ? "eye.fill" : "play.fill").font(.system(size: 11))
-                        Text(played ? "View" : "Play").font(Brand.font(13, .black))
+        return HStack(spacing: 12) {
+            if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(m?.title ?? mode.rawValue).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                HStack(spacing: 4) {
+                    Image(systemName: "person.2.fill").font(.system(size: 10))
+                    // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
+                    if loading && playerCount == 0 {
+                        Text("000 players today").font(Brand.font(10, .bold)).redacted(reason: .placeholder)
+                    } else {
+                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
                     }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 9)
-                    .background(Capsule().fill(accent))
-                    .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
-                }.buttonStyle(.plain)
+                }.foregroundStyle(Theme.textMuted)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            Spacer(minLength: 6)
+            // Already finished today's daily for this mode → open the read-only
+            // solved board, matching the home cards. The cached completions
+            // answer instantly; userRank confirms once the leaderboard loads.
+            let played = completions.byMode[mode.rawValue] != nil || userRank != nil
+            Button {
+                let title = m?.title ?? mode.rawValue
+                if played { lbSolved = LbGame(mode: mode, title: title) }
+                else if mode == .propernoundle { showPNDaily = true }
+                else { lbGame = LbGame(mode: mode, title: title) }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: played ? "eye.fill" : "play.fill").font(.system(size: 11, weight: .bold))
+                    Text(played ? "VIEW" : "PLAY").font(Brand.font(13, .black)).tracking(0.6)
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16).padding(.vertical, 9)
+                .background(Capsule().fill(accent))
+                .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
+            }.buttonStyle(.plain)
         }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 12)
+        .gameTile(accent: accent)
     }
 
-    private var header: some View {
-        VStack(spacing: 4) {
-            Text("DAILY CHALLENGE").font(Brand.font(28, .black)).tracking(-0.5)
-                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
-            HStack(spacing: 12) {
-                DailyCountdownLabel()
-                Button { showRecords = true } label: {
-                    Text("All-time →").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
-                }
-                .buttonStyle(.plain)
+    /// The Sweep board's card in the same tile style: its existing explanation instead of Play.
+    private var sweepCtaCard: some View {
+        let accent = Color(hex: 0xF59E0B)
+        return HStack(spacing: 12) {
+            ModeIconView(icon: .asset("broom"), accent: accent, box: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily Sweep").font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+                // §223 microcopy: the sweep board pre-answers "why is 9/9 below
+                // 8/9" — it ranks by points, not wins.
+                Text("Ranked by total points across all modes").font(Brand.font(10, .bold))
+                    .foregroundStyle(Theme.textMuted).lineLimit(2).minimumScaleFactor(0.8)
             }
-            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity).padding(.bottom, 4)
-        .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
+        .padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 12)
+        .gameTile(accent: accent)
+    }
+
+    /// Section label (spec §2): 11 / 900, letter-spacing 1.2, muted.
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text).font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(Theme.textMuted)
+            .lineLimit(1).fixedSize()
+    }
+
+    /// The bare share icon used by every board header.
+    private func shareIcon(busy: Bool, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.textMuted)
+                .frame(width: 30, height: 30).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .opacity(busy ? 0.4 : 1)
+        .accessibilityLabel(label)
+    }
+
+    /// "YESTERDAY’S WINNERS" + chevron (the collapsible toggle).
+    private var yesterdayToggle: some View {
+        Button { showYesterday.toggle() } label: {
+            HStack(spacing: 6) {
+                sectionLabel("YESTERDAY\u{2019}S WINNERS")
+                Image(systemName: showYesterday ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textMuted)
+            }
+            .padding(.vertical, 6).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var signedOut: some View {
@@ -1508,15 +1537,17 @@ struct LeaderboardTab: View {
     private var content: some View {
         ScrollView {
             VStack(spacing: 12) {
-                header
-                HModePicker(selected: modeSelection, isSweep: sweepSelection)
+                // Spec §1: one banner replaces the old gradient title, the
+                // date/countdown row and the mode picker grid.
+                LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
+                                      onAllTime: { showRecords = true })
                 if isSweep {
                     sweepBoard
                 } else {
-                perModeBoard
+                    perModeBoard
                 }
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, 16).padding(.vertical, 8)
             // Clear the banner+nav: every sibling tab hardcodes 72–80pt here,
             // but this tab never got ANY — invisible until Yesterday's Winners
             // made the page tall enough to cut off (founder screenshot). The
@@ -1524,6 +1555,7 @@ struct LeaderboardTab: View {
             // that the siblings' magic 72 quietly under-clears.
             .padding(.bottom, max(72, chrome.bottomInset))
         }
+        .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
         // Before the first frame: the selected board from the cache with the player's own row
         // (load() repeats this, but only after the render).
         .onAppear { if isSweep { paintCachedSweep() } else { paintCachedBoard() } }
@@ -1559,38 +1591,30 @@ struct LeaderboardTab: View {
     }
 
     /// The cross-mode Sweep board — players who completed every sweep daily today,
-    /// ranked by total composite score. Reuses the rank banner + rankIcon shell.
+    /// ranked by total composite score. Same card stack as the per-mode board.
     @ViewBuilder private var sweepBoard: some View {
-        if let r = sweepRank { rankBanner(r) }
+        sweepCtaCard
+        if let r = sweepRank {
+            rankBanner(r, points: mySweepScore.map { sweepScoreLabels[$0] ?? formatScore($0) })
+        }
 
-        HStack(alignment: .center) {
-            Text("DAILY SWEEP").font(Brand.font(10, .black)).tracking(0.8)
-                .foregroundStyle(Theme.textMuted)
-            Spacer()
-            // §223 microcopy: the sweep board pre-answers "why is 9/9 below
-            // 8/9" — it ranks by points, not wins.
-            Text("Ranked by total points across all modes").font(Brand.font(9, .bold))
-                .foregroundStyle(Theme.textMuted)
+        HStack(alignment: .center, spacing: 8) {
+            sectionLabel("TODAY\u{2019}S BOARD")
+            Spacer(minLength: 4)
             // §231: the same share icon as the per-mode board — today's sweep
             // board card with the sharer's sweep rank.
             if !sweepLoading && !sweepEntries.isEmpty {
-                Button {
+                shareIcon(busy: sharingLb, label: "Share sweep leaderboard") {
                     guard !sharingLb else { return }
                     sharingLb = true
                     LeaderboardShareFlow.shareSweep(
                         podium: false, entries: sweepEntries,
                         userId: auth.profile?.id, userRank: sweepRank)
                     sharingLb = false
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Theme.textMuted)
                 }
-                .buttonStyle(.plain)
-                .opacity(sharingLb ? 0.4 : 1)
-                .accessibilityLabel("Share sweep leaderboard")
             }
         }
+        .padding(.top, 4)
 
         if sweepLoading {
             LeaderboardSkeleton()
@@ -1600,48 +1624,37 @@ struct LeaderboardTab: View {
                 Text("No sweeps yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 40)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .lbCard()
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, entry in
                     sweepRow(rank: entry.rank, entry: entry)
-                    if idx < sweepEntries.count - 1 { Divider().overlay(Theme.border) }
+                    if idx < sweepEntries.count - 1 { lbDivider }
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .padding(.vertical, 4)
+            .lbCard()
         }
 
         // Yesterday's Winners — same toggle as the per-mode board, but the
         // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
         HStack(spacing: 8) {
-            Button { showYesterday.toggle() } label: {
-                HStack(spacing: 6) {
-                    Text("Yesterday's Winners").font(Brand.font(12, .heavy))
-                    Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
-                }.foregroundStyle(Theme.textMuted)
-            }
+            yesterdayToggle
+            Spacer(minLength: 4)
             // §231: settled sweep-podium share — only once the dropdown is
             // open with rows (per-mode parity).
             if showYesterday && !yesterdaySweep.isEmpty {
-                Button {
+                shareIcon(busy: sharingPodium, label: "Share yesterday's sweep podium") {
                     guard !sharingPodium else { return }
                     sharingPodium = true
                     LeaderboardShareFlow.shareSweep(
                         podium: true, entries: yesterdaySweep,
                         userId: auth.profile?.id)
                     sharingPodium = false
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Theme.textMuted)
                 }
-                .buttonStyle(.plain)
-                .opacity(sharingPodium ? 0.4 : 1)
-                .accessibilityLabel("Share yesterday's sweep podium")
             }
         }
+        .padding(.top, 4)
         if showYesterday {
             if ySweepKnown == nil {
                 LeaderboardSkeleton()
@@ -1649,17 +1662,16 @@ struct LeaderboardTab: View {
                 Text("No sweeps yesterday")
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                    .lbCard()
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(yesterdaySweep.enumerated()), id: \.element.id) { idx, entry in
                         yesterdaySweepRow(entry)
-                        if idx < yesterdaySweep.count - 1 { Divider().overlay(Theme.border) }
+                        if idx < yesterdaySweep.count - 1 { lbDivider }
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                .padding(.vertical, 4)
+                .lbCard()
             }
         }
     }
@@ -1701,186 +1713,192 @@ struct LeaderboardTab: View {
     }
 
     @ViewBuilder private var perModeBoard: some View {
-                playCtaCard
-                // .id(mode) → a fresh card per mode so switching away from one mode
-                // can't render the previous mode's board data (which trapped when a
-                // board mode rendered stale ProperNoundle data mid-transition).
-                if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
-                if let r = userRank { rankBanner(r) }
+        playCtaCard
+        // .id(mode) → a fresh card per mode so switching away from one mode
+        // can't render the previous mode's board data (which trapped when a
+        // board mode rendered stale ProperNoundle data mid-transition).
+        if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
+        if let r = userRank {
+            rankBanner(r, points: myModeScore.map { lbScoreLabels[$0] ?? formatScore($0) })
+        }
 
-                HStack(alignment: .center) {
-                    Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
-                        .foregroundStyle(Theme.textMuted)
-                    Spacer()
-                    // FRIENDS toggle (§207) — the Solo/VS segmented shell, compact.
-                    if auth.isAuthenticated {
-                        let accent = ModeStyle.accent(mode)
-                        HStack(spacing: 0) {
-                            ForEach([false, true], id: \.self) { f in
-                                // All|Friends repaints its cached board in the same transaction (founder,
-                                // 2026-09-29: a frame of the global rows and "of N" under "Friends").
-                                Button { if friendsOnly != f { instantly { friendsOnly = f; paintCachedBoard() } } } label: {
-                                    Text(f ? "Friends" : "All")
-                                        .font(Brand.font(9, .heavy))
-                                        .foregroundStyle(friendsOnly == f ? accent : Theme.textMuted)
-                                        .padding(.horizontal, 8).padding(.vertical, 3)
-                                        .background(friendsOnly == f ? accent.opacity(0.08) : Theme.surface)
-                                }
-                                .buttonStyle(InstantButtonStyle())
-                            }
+        HStack(alignment: .center, spacing: 8) {
+            sectionLabel("TODAY\u{2019}S BOARD")
+            Spacer(minLength: 4)
+            // FRIENDS toggle (§207) — Everyone | Friends, a soft pill segmented control.
+            if auth.isAuthenticated {
+                let accent = ModeStyle.accent(mode)
+                HStack(spacing: 0) {
+                    ForEach([false, true], id: \.self) { f in
+                        // Everyone|Friends repaints its cached board in the same transaction (founder,
+                        // 2026-09-29: a frame of the global rows and "of N" under "Friends").
+                        Button { if friendsOnly != f { instantly { friendsOnly = f; paintCachedBoard() } } } label: {
+                            Text(f ? "Friends" : "Everyone")
+                                .font(Brand.font(10, .heavy))
+                                .foregroundStyle(friendsOnly == f ? accent : Theme.textMuted)
+                                .padding(.horizontal, 10).frame(height: 24)
+                                .background(Capsule().fill(friendsOnly == f ? Theme.surface : Color.clear)
+                                    .shadow(color: friendsOnly == f ? Color.black.opacity(0.08) : .clear, radius: 2, x: 0, y: 1))
+                                .contentShape(Capsule())
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
+                        .buttonStyle(InstantButtonStyle())
+                        .accessibilityAddTraits(friendsOnly == f ? .isSelected : [])
                     }
-                    // Founder-approved clarity: this board ranks DAILY games
-                    // only — Unlimited runs never appear here (the founder's
-                    // sister played Unlimited and looked for her name).
-                    Text("Daily games only").font(Brand.font(9, .bold))
-                        .foregroundStyle(Theme.textMuted)
-                    if !loading && !entries.isEmpty {
-                        Button {
-                            guard !sharingLb else { return }
-                            sharingLb = true
-                            Task {
-                                await LeaderboardShareFlow.shareDaily(
-                                    mode: mode, playType: "solo",
-                                    entries: entries, rankWindow: rankWindow,
-                                    userId: auth.profile?.id, userRank: userRank,
-                                    friends: friendsOnly)
-                                sharingLb = false
-                            }
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Theme.textMuted)
+                }
+                .padding(2)
+                .background(Capsule().fill(Theme.textMuted.opacity(0.12)))
+            }
+            if !loading && !entries.isEmpty {
+                shareIcon(busy: sharingLb, label: "Share leaderboard") {
+                    guard !sharingLb else { return }
+                    sharingLb = true
+                    Task {
+                        await LeaderboardShareFlow.shareDaily(
+                            mode: mode, playType: "solo",
+                            entries: entries, rankWindow: rankWindow,
+                            userId: auth.profile?.id, userRank: userRank,
+                            friends: friendsOnly)
+                        sharingLb = false
+                    }
+                }
+            }
+        }
+        .padding(.top, 4)
+
+        if loading {
+            LeaderboardSkeleton()   // web parity: animate-pulse rows, not a spinner
+        } else if entries.isEmpty {
+            if friendsOnly && !ghostFriends.isEmpty {
+                // Nobody's played yet — the friends list still renders
+                // as ghost rows so the board feels alive (and tauntable).
+                VStack(spacing: 0) {
+                    ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
+                        ghostRow(f)
+                        if idx < ghostFriends.count - 1 { lbDivider }
+                    }
+                }
+                .padding(.vertical, 4)
+                .lbCard()
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
+                    Text(friendsOnly ? "No friends yet — add them from any profile" : "No daily results yet. Be the first!")
+                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        .multilineTextAlignment(.center)
+                    // Tier 2 (Aug 11): the empty Friends board is the
+                    // best recruiting surface in the app — use it.
+                    if friendsOnly {
+                        Button { showFriendsSheet = true } label: {
+                            Text("Add friends").font(Brand.font(12, .black)).foregroundStyle(.white)
+                                .padding(.horizontal, 16).padding(.vertical, 9)
+                                .background(RoundedRectangle(cornerRadius: 12)
+                                    .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                         }
                         .buttonStyle(.plain)
-                        .opacity(sharingLb ? 0.4 : 1)
-                        .accessibilityLabel("Share leaderboard")
+                        .padding(.top, 4)
                     }
                 }
+                .frame(maxWidth: .infinity).padding(.vertical, 40)
+                .lbCard()
+            }
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                    // §217: exact (score, time) ties share the rank.
+                    row(rank: LeaderboardService.competitionRank(entries, idx), entry: entry)
+                    if idx < entries.count - 1 { lbDivider }
+                }
+                // "Your neighborhood" — rows around the user's rank when
+                // they placed past the top 50 (web daily page parity).
+                if let win = rankWindow {
+                    lbDivider
+                    Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
+                        .frame(maxWidth: .infinity).padding(.vertical, 4)
+                    lbDivider
+                    ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
+                        row(rank: win.startRank + idx, entry: entry)
+                        if idx < win.entries.count - 1 { lbDivider }
+                    }
+                }
+                // FRIENDS ghost rows — friends who haven't played this
+                // mode today, muted, with the taunt bell (§207).
+                if friendsOnly {
+                    ForEach(ghostFriends) { f in
+                        lbDivider
+                        ghostRow(f)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+            .lbCard()
+        }
+        // Founder-approved clarity: this board ranks DAILY games
+        // only — Unlimited runs never appear here (the founder's
+        // sister played Unlimited and looked for her name).
+        Text("Daily games only").font(Brand.font(9, .bold))
+            .foregroundStyle(Theme.textMuted)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.top, -6)
 
-                if loading {
-                    LeaderboardSkeleton()   // web parity: animate-pulse rows, not a spinner
-                } else if entries.isEmpty {
-                    if friendsOnly && !ghostFriends.isEmpty {
-                        // Nobody's played yet — the friends list still renders
-                        // as ghost rows so the board feels alive (and tauntable).
-                        VStack(spacing: 0) {
-                            ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
-                                ghostRow(f)
-                                if idx < ghostFriends.count - 1 { Divider().overlay(Theme.border) }
-                            }
-                        }
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                    } else {
-                        VStack(spacing: 8) {
-                            Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                            Text(friendsOnly ? "No friends yet — add them from any profile" : "No daily results yet. Be the first!")
-                                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                                .multilineTextAlignment(.center)
-                            // Tier 2 (Aug 11): the empty Friends board is the
-                            // best recruiting surface in the app — use it.
-                            if friendsOnly {
-                                Button { showFriendsSheet = true } label: {
-                                    Text("Add friends").font(Brand.font(12, .black)).foregroundStyle(.white)
-                                        .padding(.horizontal, 16).padding(.vertical, 9)
-                                        .background(RoundedRectangle(cornerRadius: 12)
-                                            .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                                }
-                                .buttonStyle(.plain)
-                                .padding(.top, 4)
-                            }
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 40)
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        HStack(spacing: 8) {
+            yesterdayToggle
+            Spacer(minLength: 4)
+            // Settled-podium share — only once the dropdown is open with rows.
+            if showYesterday && !yesterday.isEmpty {
+                shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
+                    guard !sharingPodium else { return }
+                    sharingPodium = true
+                    Task {
+                        await LeaderboardShareFlow.sharePodium(
+                            mode: mode, playType: "solo",
+                            top3: yesterday, userId: auth.profile?.id,
+                            friends: friendsOnly)
+                        sharingPodium = false
                     }
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                            // §217: exact (score, time) ties share the rank.
-                            row(rank: LeaderboardService.competitionRank(entries, idx), entry: entry)
-                            if idx < entries.count - 1 { Divider().overlay(Theme.border) }
-                        }
-                        // "Your neighborhood" — rows around the user's rank when
-                        // they placed past the top 50 (web daily page parity).
-                        if let win = rankWindow {
-                            Divider().overlay(Theme.border)
-                            Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
-                                .frame(maxWidth: .infinity).padding(.vertical, 4)
-                            Divider().overlay(Theme.border)
-                            ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
-                                row(rank: win.startRank + idx, entry: entry)
-                                if idx < win.entries.count - 1 { Divider().overlay(Theme.border) }
-                            }
-                        }
-                        // FRIENDS ghost rows — friends who haven't played this
-                        // mode today, muted, with the taunt bell (§207).
-                        if friendsOnly {
-                            ForEach(ghostFriends) { f in
-                                Divider().overlay(Theme.border)
-                                ghostRow(f)
-                            }
-                        }
-                    }
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                 }
+            }
+        }
+        if showYesterday {
+            if yesterdayKnown == nil {
+                LeaderboardSkeleton()
+            } else if yesterday.isEmpty {
+                Text("No results from yesterday")
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
+                    .lbCard()
+            } else {
+                VStack(spacing: 0) {
+                    // Full daily rows (founder ask, Aug 11): profile
+                    // links, guesses + time detail, W/L pill.
+                    ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
+                        // §217: exact (score, time) ties share the rank.
+                        row(rank: LeaderboardService.competitionRank(yesterday, idx), entry: entry, scoreLabels: yLbScoreLabels)
+                        if idx < yesterday.count - 1 { lbDivider }
+                    }
+                }
+                .padding(.vertical, 4)
+                .lbCard()
+            }
+        }
+    }
 
-                HStack(spacing: 8) {
-                    Button { showYesterday.toggle() } label: {
-                        HStack(spacing: 6) {
-                            Text("Yesterday's Winners").font(Brand.font(12, .heavy))
-                            Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
-                        }.foregroundStyle(Theme.textMuted)
-                    }
-                    // Settled-podium share — only once the dropdown is open with rows.
-                    if showYesterday && !yesterday.isEmpty {
-                        Button {
-                            guard !sharingPodium else { return }
-                            sharingPodium = true
-                            Task {
-                                await LeaderboardShareFlow.sharePodium(
-                                    mode: mode, playType: "solo",
-                                    top3: yesterday, userId: auth.profile?.id,
-                                    friends: friendsOnly)
-                                sharingPodium = false
-                            }
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Theme.textMuted)
-                        }
-                        .buttonStyle(.plain)
-                        .opacity(sharingPodium ? 0.4 : 1)
-                        .accessibilityLabel("Share yesterday's podium")
-                    }
-                }
-                if showYesterday {
-                    if yesterdayKnown == nil {
-                        LeaderboardSkeleton()
-                    } else if yesterday.isEmpty {
-                        Text("No results from yesterday")
-                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
-                            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                    } else {
-                        VStack(spacing: 0) {
-                            // Full daily rows (founder ask, Aug 11): profile
-                            // links, guesses + time detail, W/L pill.
-                            ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
-                                // §217: exact (score, time) ties share the rank.
-                                row(rank: LeaderboardService.competitionRank(yesterday, idx), entry: entry, scoreLabels: yLbScoreLabels)
-                                if idx < yesterday.count - 1 { Divider().overlay(Theme.border) }
-                            }
-                        }
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                    }
-                }
+    /// Row separator inside the soft cards (inset, hairline).
+    private var lbDivider: some View {
+        Divider().overlay(Theme.border.opacity(0.6)).padding(.horizontal, 14)
+    }
+
+    /// The player's own points on the selected board (their row, else today's cached result).
+    private var myModeScore: Double? {
+        guard let uid = auth.profile?.id.lowercased() else { return nil }
+        let rows = entries + (rankWindow?.entries ?? [])
+        return rows.first { $0.userId.lowercased() == uid }?.compositeScore
+            ?? completions.byMode[mode.rawValue]?.score
+    }
+
+    /// The player's own total on the Sweep board.
+    private var mySweepScore: Double? {
+        guard let uid = auth.profile?.id.lowercased() else { return nil }
+        return sweepEntries.first { $0.userId.lowercased() == uid }?.totalScore
     }
 
     /// Compact yesterday row — RankIcon, name, small W/L pill, composite score (muted).
@@ -1900,32 +1918,77 @@ struct LeaderboardTab: View {
     }
 
 
-    private func rankBanner(_ r: (rank: Int, total: Int)) -> some View {
-        HStack(spacing: 3) {
-            (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
-             + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706)))
-            // Transient "+N/−N" movement pill since you last looked (web parity).
-            // Friends mode keeps its own memory — a friend-rank must never
-            // compare against a stored global rank.
-            RankDeltaBadge(mode: mode.rawValue, playType: "solo",
-                           pageKey: friendsOnly && !isSweep ? "daily-friends" : "daily",
-                           currentRank: r.rank)
-            Text(friendsOnly && !isSweep ? " of \(r.total) friends" : " of \(r.total)")
-                .font(Brand.body(12)).foregroundColor(Theme.textMuted)
+    /// Your rank (spec §2.3): a soft gold card — the rank in big numerals (medal
+    /// tint for the top 3), "OF N TODAY" (or friends), and your points.
+    private func rankBanner(_ r: (rank: Int, total: Int), points: String? = nil) -> some View {
+        let friends = friendsOnly && !isSweep
+        let ink = Color(hex: 0x92400E)
+        return HStack(alignment: .center, spacing: 12) {
+            Text("#\(r.rank)")
+                .font(Brand.font(34, .black)).monospacedDigit()
+                .foregroundStyle(Self.medalInk(r.rank) ?? Color(hex: 0x78350F))
+                .lineLimit(1).minimumScaleFactor(0.6)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("YOUR RANK").font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
+                HStack(spacing: 4) {
+                    Text(friends ? "OF \(r.total) FRIENDS" : "OF \(r.total) TODAY")
+                        .font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(Color(hex: 0x78350F))
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    // Transient "+N/−N" movement pill since you last looked (web parity).
+                    // Friends mode keeps its own memory — a friend-rank must never
+                    // compare against a stored global rank.
+                    RankDeltaBadge(mode: mode.rawValue, playType: "solo",
+                                   pageKey: friends ? "daily-friends" : "daily",
+                                   currentRank: r.rank)
+                }
+            }
+            Spacer(minLength: 6)
+            if let points {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(points).font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0x78350F))
+                        .lineLimit(1).fixedSize()
+                    Text("POINTS").font(Brand.font(9, .black)).tracking(1).foregroundStyle(ink)
+                }
+            }
         }
-            .frame(maxWidth: .infinity).padding(.vertical, 12)
-            .background(RoundedRectangle(cornerRadius: 16).fill(
-                LinearGradient(colors: [Theme.highlightGold, Theme.surface], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.goldBorder, lineWidth: 1.5))
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 14).fill(
+            LinearGradient(colors: [Color(hex: 0xFEF3C7), Color(hex: 0xFFFBEB)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+        .shadow(color: Color(hex: 0x92400E).opacity(0.10), radius: 6, x: 0, y: 2)
+        .accessibilityElement(children: .combine)
     }
 
+    /// Medal colors for ranks 1–3 (gold / silver / bronze discs); nil after.
+    private static func medal(_ rank: Int) -> Color? {
+        switch rank {
+        case 1: return Color(hex: 0xF59E0B)
+        case 2: return Color(hex: 0x9CA3AF)
+        case 3: return Color(hex: 0xCD7F32)
+        default: return nil
+        }
+    }
+    /// Deeper medal ink for the big rank numerals on the gold card.
+    private static func medalInk(_ rank: Int) -> Color? {
+        switch rank {
+        case 1: return Color(hex: 0xD97706)
+        case 2: return Color(hex: 0x6B7280)
+        case 3: return Color(hex: 0xB45309)
+        default: return nil
+        }
+    }
+
+    /// Medal discs for 1–3, the plain number after.
     @ViewBuilder
     private func rankIcon(_ rank: Int) -> some View {
-        switch rank {
-        case 1: Image(systemName: "crown.fill").foregroundStyle(Color(hex: 0xD97706))
-        case 2: Image(systemName: "medal.fill").foregroundStyle(Theme.textMuted)
-        case 3: Image(systemName: "medal.fill").foregroundStyle(Color(hex: 0xB45309))
-        default: Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 20)
+        if let c = Self.medal(rank) {
+            Text("\(rank)").font(Brand.font(11, .black)).foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(c))
+                .shadow(color: c.opacity(0.35), radius: 2, x: 0, y: 1)
+        } else {
+            Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
+                .lineLimit(1).minimumScaleFactor(0.6).frame(width: 22)
         }
     }
 
@@ -1978,8 +2041,8 @@ struct LeaderboardTab: View {
                 .accessibilityLabel("Taunt \(entry.username)")
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .youRow(isMe)
     }
 
     /// §216: on the FRIENDS board, the week's points leader wears the crown.
@@ -2129,8 +2192,8 @@ struct LeaderboardTab: View {
                 }
             }.buttonStyle(.plain)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .youRow(isMe)
     }
 
     /// §253: warm the OTHER modes' boards in the background so a chip tap
@@ -2416,27 +2479,6 @@ func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetail
 /// Aug 18: relative "best on board" dies in a crowd). Red = loss, hollow =
 /// not played. The [0.35, 0.9] remap spreads real-world ratios (~0.4–0.9)
 /// across the full visual range. Mirrors SweepModeDots in app/daily/page.tsx.
-/// The header's date + time-to-midnight. Only this label ticks each second —
-/// a Timer at the LeaderboardTab root re-rendered the whole tab every second
-/// (founder, 2026-09-29). The date shares the timeline so it flips at midnight.
-private struct DailyCountdownLabel: View {
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            let left = secondsUntilLocalMidnight()
-            HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    Image(systemName: "calendar").font(.system(size: 11))
-                    Text(ctx.date.formatted(.dateTime.month(.abbreviated).day()))
-                }
-                HStack(spacing: 4) {
-                    Image(systemName: "clock").font(.system(size: 11))
-                    Text(String(format: "%02d:%02d:%02d", left / 3600, (left % 3600) / 60, left % 60)).monospacedDigit()
-                }
-            }
-        }
-    }
-}
-
 struct SweepModeDots: View {
     let details: LeaderboardService.SweepDetails?
     let day: String
@@ -2654,3 +2696,23 @@ struct FlawlessBannerFooter: View {
     }
 }
 
+
+/// Leaderboard redesign (spec §2): the soft white card — radius 14, soft shadow, no border.
+/// Your own row: tinted gold with a 1.5 pt amber ring, inset inside the card.
+private extension View {
+    func lbCard() -> some View {
+        background(Theme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
+    }
+
+    @ViewBuilder func youRow(_ isMe: Bool) -> some View {
+        if isMe {
+            background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.highlightGold))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(hex: 0xF59E0B), lineWidth: 1.5))
+                .padding(.horizontal, 4)
+        } else {
+            padding(.horizontal, 4)
+        }
+    }
+}

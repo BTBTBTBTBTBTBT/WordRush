@@ -38,6 +38,8 @@ describe('records fold into Stats', () => {
     expect(records).not.toContain("['you', 'You']");
   });
   it('the Leaderboard page links to the all-time records', () => {
-    expect(read('app/daily/page.tsx')).toContain('href="/records"');
+    // The ALL-TIME → link lives in the Leaderboard banner (docs/LEADERBOARD_REDESIGN_SPEC.md §1).
+    expect(read('app/daily/page.tsx')).toContain('<LeaderboardBanner');
+    expect(read('components/leaderboard/leaderboard-banner.tsx')).toContain('href="/records"');
   });
 });

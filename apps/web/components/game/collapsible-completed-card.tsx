@@ -1,7 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+
+/**
+ * The Leaderboard redesign (docs/LEADERBOARD_REDESIGN_SPEC.md §2.2) shows the
+ * completed board "in a soft card": no border, radius 14, soft shadow. Pages
+ * opt in by wrapping the board in <SoftCompletedCards>; everywhere else keeps
+ * the bordered card.
+ */
+const SoftCardContext = createContext(false);
+export function SoftCompletedCards({ children }: { children: React.ReactNode }) {
+  return <SoftCardContext.Provider value={true}>{children}</SoftCardContext.Provider>;
+}
 
 /** Collapsible card wrapper used by all completed daily board variants */
 export function CollapsibleCompletedCard({
@@ -14,14 +25,16 @@ export function CollapsibleCompletedCard({
   children: React.ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const soft = useContext(SoftCardContext);
 
   return (
     <div
       className="mb-4"
       style={{
         background: 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-        borderRadius: '16px',
+        ...(soft
+          ? { borderRadius: 14, boxShadow: '0 2px 10px rgba(26,26,46,0.06)' }
+          : { border: '1.5px solid var(--color-border)', borderRadius: '16px' }),
         overflow: 'hidden',
       }}
     >

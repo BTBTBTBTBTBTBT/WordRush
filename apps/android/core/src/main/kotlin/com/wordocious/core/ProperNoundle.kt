@@ -164,6 +164,12 @@ object ProperNoundle {
     /** The display title of the holiday whose puzzle [date] serves, or null on an ordinary day. */
     fun holidayTitle(date: String): String? = holidayKeyForDay(date)?.let { HOLIDAY_TITLES[it] ?: it }
 
+    /** The display name of the calendar holiday that owns [date] (any holiday in the
+     *  bundled §20 table, whether or not a bank has entries for it), else null —
+     *  the Leaderboard title's "<HOLIDAY> HEROES" (web holidayTitle(holidayKeyForDay)). */
+    fun holidayNameForDay(date: String, table: HolidayTable? = HolidayTable.bundled): String? =
+        holidayKeyForDay(date, table)?.let { HOLIDAY_TITLES[it] }
+
     /** The ordinary (non-holiday) daily — alphabetical category round-robin. */
     private fun rotationPuzzle(date: String): NPuzzle? {
         if (categoryCycle.isEmpty()) return null

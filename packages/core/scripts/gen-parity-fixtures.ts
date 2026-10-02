@@ -36,6 +36,7 @@ import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadde
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
+import { leaderboardTitle } from '../src/leaderboard-title';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
@@ -392,6 +393,16 @@ export function renderFriendlyFixtures() {
   return { words: WORDS, games, boards, presence, streaks, banners };
 }
 
+// The Leaderboard's day title (founder, 2026-10-01): weekday wordplay + holidays.
+export function renderLeaderboardTitleFixtures() {
+  const days = ['2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2027-01-01', '2028-02-29'];
+  const titles = days.map((day) => ({ day, holiday: null as string | null, title: leaderboardTitle(day) }));
+  for (const [day, holiday] of [['2026-10-31', 'Halloween'], ['2026-12-25', 'Christmas'], ['2026-11-26', 'Thanksgiving'], ['2026-10-31', '']]) {
+    titles.push({ day, holiday, title: leaderboardTitle(day, holiday) });
+  }
+  return { titles };
+}
+
 const TARGET_DIRS = [
   join(repo, 'apps', 'ios', 'Tests', 'Fixtures'),
   join(repo, 'apps', 'android', 'core', 'src', 'test', 'resources', 'fixtures'),
@@ -724,6 +735,7 @@ const FILES: Array<[string, unknown]> = [
   ['home-banner-fixtures.json', renderHomeBannerFixtures()],
   ['vs-lobby-fixtures.json', renderVsLobbyFixtures()],
   ['friendly-games-fixtures.json', renderFriendlyFixtures()],
+  ['leaderboard-title-fixtures.json', renderLeaderboardTitleFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

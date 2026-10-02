@@ -22,3 +22,4 @@ export * from './games/crossword';
 export * from './home-banner';
 export * from './vs-lobby';
 export * from './friendly-games';
+export * from './leaderboard-title';

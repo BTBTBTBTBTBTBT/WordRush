@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share, Bell } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp, Trophy, Play, Share, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -12,7 +12,10 @@ import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
-import { ModePicker, PROFILE_MODES, SWEEP_MODE, modeByKey } from '@/components/profile/mode-picker';
+import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
+import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
+import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
+import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
@@ -25,7 +28,6 @@ import {
   getUserDailyRank,
   getUserSweepRank,
   getDailyPlayerCount,
-  getSecondsUntilMidnightLocal,
   getTodayLocal,
   getYesterdayLocal,
   formatHintsLabel,
@@ -105,34 +107,30 @@ const NO_STREAKS = new Map<string, number>();
 // effect on the server (where layout effects warn and do nothing).
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-function CountdownTimer() {
-  const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilMidnightLocal());
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSecondsLeft(getSecondsUntilMidnightLocal());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const hours = Math.floor(secondsLeft / 3600);
-  const minutes = Math.floor((secondsLeft % 3600) / 60);
-  const secs = secondsLeft % 60;
-
-  return (
-    <span className="font-mono text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-      <Clock className="w-3 h-3 inline mr-1" />
-      {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
-    </span>
-  );
-}
+// Leaderboard redesign (docs/LEADERBOARD_REDESIGN_SPEC.md §2): medal discs for
+// 1–3 (gold / silver / bronze), the plain number after.
+const MEDAL = ['#f59e0b', '#9ca3af', '#b45309'];
 
 function RankIcon({ rank }: { rank: number }) {
-  if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
-  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
-  if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#b45309' }} />;
-  return <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
+  if (rank >= 1 && rank <= 3) {
+    return (
+      <span
+        className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0"
+        style={{ background: MEDAL[rank - 1], boxShadow: `0 1px 4px ${MEDAL[rank - 1]}66` }}
+      >
+        {rank}
+      </span>
+    );
+  }
+  return <span className="text-xs font-black w-[22px] text-center shrink-0" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
 }
+
+// Section labels and cards (spec §2): 11 / 900 caps, letter-spacing 1.2; white
+// cards, radius 14, soft shadow, no borders.
+const SECTION_LABEL: React.CSSProperties = { fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: 'var(--color-text-secondary)' };
+// Your row: soft gold with a 1.5 px amber ring (the token is #fef3c7 in light).
+const YOUR_ROW: React.CSSProperties = { background: 'var(--color-gold-border-light)', boxShadow: 'inset 0 0 0 1.5px #f59e0b', borderRadius: 10 };
+const SOFT_CARD: React.CSSProperties = { background: 'var(--color-surface)', borderRadius: 14, boxShadow: '0 2px 10px rgba(26,26,46,0.06)' };
 
 function LeaderboardSkeleton() {
   return (
@@ -454,15 +452,27 @@ export default function DailyPage() {
   const yLbScoreLabels = tieAwareScoreLabels(yesterdayLeaderboard.map((e) => e.composite_score));
   const ySweepScoreLabels = tieAwareScoreLabels(yesterdaySweep.map((e) => e.total_score));
 
+  // Your rank card's points: your own row on the board in hand (the top-50 list
+  // or the "your neighborhood" window); omitted when the row isn't loaded.
+  const myPoints = (() => {
+    if (!user) return null;
+    if (isSweep) {
+      const e = sweepLeaderboard.find((r) => r.user_id === user.id);
+      return e ? sweepScoreLabels.get(e.total_score) ?? formatScore(e.total_score) : null;
+    }
+    const e = leaderboard.find((r) => r.user_id === user.id) ?? rankWindow?.entries.find((r) => r.user_id === user.id);
+    return e ? lbScoreLabels.get(e.composite_score) ?? formatScore(e.composite_score) : null;
+  })();
+
   // §212: photo → emoji → initial, left of every username — the boards
   // wear faces, not just names.
   const lbAvatar = (avatarUrl: string | null, avatarEmoji: string | null | undefined, username: string) =>
     avatarUrl ? (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+      <img src={avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
     ) : (
       <div
-        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+        className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0"
         style={{ background: '#7c3aed22', color: '#7c3aed' }}
       >
         {avatarEmoji?.trim() || username.charAt(0).toUpperCase()}
@@ -486,11 +496,8 @@ export default function DailyPage() {
     return (
       <div
         key={entry.user_id}
-        className="flex items-center gap-3 px-4 py-3"
-        style={{
-          background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
-          borderBottom: '1px solid var(--color-border)',
-        }}
+        className="flex items-center gap-3 px-3 py-2.5"
+        style={isCurrentUser ? YOUR_ROW : undefined}
       >
         <RankIcon rank={rank} />
         {lbAvatar(entry.avatar_url, entry.avatar_emoji, entry.username)}
@@ -530,7 +537,7 @@ export default function DailyPage() {
             </span>
           </div>
         </div>
-        <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
+        <div className="font-black text-[13px] text-right shrink-0 tabular-nums" style={{ color: 'var(--color-text)' }}>
           {scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
         </div>
         {/* Friends board: one-tap canned taunt on any friend's row (§207). */}
@@ -556,10 +563,10 @@ export default function DailyPage() {
   const renderGhostRow = (f: FriendProfile) => (
     <div
       key={`ghost-${f.id}`}
-      className="flex items-center gap-3 px-4 py-3"
-      style={{ borderBottom: '1px solid var(--color-border)', opacity: 0.55 }}
+      className="flex items-center gap-3 px-3 py-2.5"
+      style={{ opacity: 0.55 }}
     >
-      <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>–</span>
+      <span className="text-xs font-black w-[22px] text-center shrink-0" style={{ color: 'var(--color-text-muted)' }}>–</span>
       <div className="flex-1 min-w-0">
         <Link
           href={`/profile/${f.id}`}
@@ -593,11 +600,8 @@ export default function DailyPage() {
     return (
       <div
         key={entry.user_id}
-        className="flex items-center gap-3 px-4 py-3"
-        style={{
-          background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
-          borderBottom: '1px solid var(--color-border)',
-        }}
+        className="flex items-center gap-3 px-3 py-2.5"
+        style={isCurrentUser ? YOUR_ROW : undefined}
       >
         <RankIcon rank={rank} />
         {lbAvatar(entry.avatar_url, null, entry.username)}
@@ -747,178 +751,149 @@ export default function DailyPage() {
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
-        {/* Title */}
-        <div className="text-center mb-4">
-          <h1
-            className="text-3xl font-black bg-clip-text text-transparent tracking-tight"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-            }}
-          >
-            DAILY CHALLENGE
-          </h1>
-          <div className="flex items-center justify-center gap-3 mt-1">
-            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              <Calendar className="w-3 h-3 inline mr-1" />
-              {today && new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </span>
-            <CountdownTimer />
-            <Link href="/records" className="text-xs font-black" style={{ color: '#7c3aed' }}>All-time →</Link>
-          </div>
-        </div>
-
-        {/* Mode Picker */}
+        {/* The Leaderboard banner (spec §1): the day's title, date · reset
+            clock, All-time link, and the game picker (Wordocious + SWEEP chip,
+            then Puzzles). Replaces the old title, date row and mode grid. */}
         <div className="mb-4">
-          <ModePicker
-            grid
-            includeSweep
-            showAll={false}
-            selectedMode={selectedMode}
-            // The picker sends null for a tap on the selected tile (its "All"
-            // toggle-off) — the board has no All view, so that tap keeps the
-            // mode instead of jumping to Classic.
-            onSelectMode={(m) => { if (m) setSelectedMode(m); }}
-          />
+          <LeaderboardBanner today={today} selectedMode={selectedMode} onSelect={setSelectedMode} />
         </div>
 
-        {/* Play CTA Card */}
-        <div
-          className="overflow-hidden mb-4"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid var(--color-border)',
-            borderRadius: '16px',
-          }}
-        >
-          {/* Mode accent bar */}
-          <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
-
-          <div className="px-4 pt-3 pb-3">
-            {/* Mode header + Play button */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${color}15` }}
-                >
-                  {mode.romanNumeral ? (
-                    <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
-                  ) : Icon ? (
-                    <Icon className="w-4 h-4" style={{ color }} />
-                  ) : null}
-                </div>
-                <div>
-                  <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
-                    {mode.title}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    <Users className="w-3 h-3" />
-                    <span>
-                      {isSweep
-                        ? `${playerCount} swept today`
-                        : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
-                    </span>
-                  </div>
-                </div>
+        {/* Play card (spec §2.1): the game-tile card style in the game's color. */}
+        <div className="relative overflow-hidden mb-4" style={gameTileSurface(color)}>
+          <GameTileBar accent={color} />
+          <div className="flex items-center gap-3 px-3 pt-4 pb-3">
+            <GameTileChip accent={color}>
+              <GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />
+            </GameTileChip>
+            <div className="flex-1 min-w-0">
+              <div className="font-black truncate" style={{ fontSize: 15, color: 'var(--color-text)' }}>
+                {mode.title}
               </div>
-              {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
-                  no Play button (just complete every sweep daily to appear here). */}
-              {!isSweep && (
-                <button
-                  onClick={handlePlayDaily}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-black text-xs active:scale-95 transition-transform"
-                  style={{ background: color }}
-                >
-                  <Play className="w-3.5 h-3.5" fill="currentColor" />
-                  Play
-                </button>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                <Users className="w-3 h-3 shrink-0" />
+                <span className="truncate">
+                  {isSweep
+                    ? `${playerCount} swept today`
+                    : `${playerCount} player${playerCount !== 1 ? 's' : ''} today · Daily games only`}
+                </span>
+              </div>
+              {/* §223 microcopy: the sweep board pre-answers "why is a full sweep below
+                  a near-miss" — it ranks by points, not wins. */}
+              {isSweep && (
+                <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  Ranked by total points across all modes
+                </div>
               )}
             </div>
+            {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
+                no Play button (just complete every sweep daily to appear here). */}
+            {!isSweep && (
+              <button
+                onClick={handlePlayDaily}
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-black text-xs active:scale-95 transition-transform"
+                style={{ background: color, letterSpacing: 0.6, boxShadow: `0 2px 8px ${color}55` }}
+              >
+                <Play className="w-3.5 h-3.5" fill="currentColor" />
+                PLAY
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Completed Board Preview (per-mode only — Sweep has no board) */}
-        {!isSweep && <CompletedDailyBoard modeId={selectedMode} />}
+        {/* Your board (spec §2.2): per-mode only — Sweep has no board. */}
+        {!isSweep && (
+          <SoftCompletedCards>
+            <CompletedDailyBoard modeId={selectedMode} />
+          </SoftCompletedCards>
+        )}
 
-        {/* User Rank */}
+        {/* Your rank (spec §2.3): big numerals, medal tint for the top 3. */}
         {userRank && (
           <div
-            className="text-center p-3 mb-4"
+            className="flex items-center gap-3 px-4 py-3 mb-4"
             style={{
-              background: `linear-gradient(135deg, var(--color-highlight-gold), var(--color-surface))`,
-              border: '1.5px solid var(--color-gold-border)',
-              borderRadius: '16px',
+              background: 'linear-gradient(135deg, var(--color-gold-border-light), var(--color-highlight-gold))',
+              borderRadius: 14,
+              boxShadow: '0 2px 10px rgba(146,64,14,0.10)',
             }}
           >
-            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>You're ranked </span>
-            <span className="font-black text-lg" style={{ color: '#d97706' }}>#{userRank.rank}</span>
-            <RankDeltaBadge
-              mode={selectedMode}
-              playType="solo"
-              pageKey={friendsOnly ? 'daily-friends' : 'daily'}
-              currentRank={userRank.rank}
-            />
-            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {' '}of {userRank.totalPlayers}{friendsOnly && !isSweep ? ' friends' : ''}
+            <span
+              className="font-black leading-none tabular-nums"
+              style={{
+                fontSize: 34,
+                color: userRank.rank <= 3 ? MEDAL[userRank.rank - 1] : '#d97706',
+                textShadow: userRank.rank <= 3 ? `0 0 10px ${MEDAL[userRank.rank - 1]}66` : undefined,
+              }}
+            >
+              #{userRank.rank}
             </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center text-[11px] font-black" style={{ color: '#d97706', letterSpacing: 1 }}>
+                YOUR RANK
+                <RankDeltaBadge
+                  mode={selectedMode}
+                  playType="solo"
+                  pageKey={friendsOnly ? 'daily-friends' : 'daily'}
+                  currentRank={userRank.rank}
+                />
+              </div>
+              <div className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6 }}>
+                OF {userRank.totalPlayers}{friendsOnly && !isSweep ? ' FRIENDS' : ''} TODAY
+              </div>
+            </div>
+            {myPoints != null && (
+              <div className="text-right shrink-0">
+                <div className="font-black tabular-nums" style={{ fontSize: 17, color: 'var(--color-text)' }}>{myPoints}</div>
+                <div className="text-[9px] font-black" style={{ color: 'var(--color-text-secondary)', letterSpacing: 1 }}>POINTS</div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Leaderboard — the caption is founder-approved clarity: this board
-            ranks DAILY games only, so an Unlimited session never shows here. */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Leaderboard
-          </div>
+        {/* TODAY'S BOARD (spec §2.4) — daily games only (the Play card says so),
+            so an Unlimited session never shows here. */}
+        <div className="flex items-center justify-between gap-2 mb-2 px-1">
+          <div style={SECTION_LABEL}>TODAY&apos;S BOARD</div>
           <div className="flex items-center gap-2">
-            {/* FRIENDS toggle — the records-page segmented control, compact. */}
+            {/* Everyone | Friends — a soft pill segmented control. */}
             {!isSweep && user && (
-              <div
-                className="flex rounded-lg overflow-hidden"
-                style={{ border: '1.5px solid var(--color-border)' }}
-              >
-                {([false, true] as const).map((f) => (
-                  <button
-                    key={String(f)}
-                    onClick={() => setFriendsOnly(f)}
-                    className="px-2 py-0.5 text-[10px] font-extrabold"
-                    style={{
-                      background: friendsOnly === f ? `${color}15` : 'var(--color-surface)',
-                      color: friendsOnly === f ? color : 'var(--color-text-muted)',
-                    }}
-                  >
-                    {f ? 'Friends' : 'All'}
-                  </button>
-                ))}
+              <div role="group" aria-label="Everyone or Friends" className="flex" style={{ padding: 2, borderRadius: 999, background: `${color}14` }}>
+                {([false, true] as const).map((f) => {
+                  const on = friendsOnly === f;
+                  return (
+                    <button
+                      key={String(f)}
+                      onClick={() => setFriendsOnly(f)}
+                      aria-pressed={on}
+                      className="text-[10.5px] font-black"
+                      style={{
+                        height: 24, padding: '0 10px', borderRadius: 999, letterSpacing: 0.3,
+                        background: on ? 'var(--color-surface)' : 'transparent',
+                        color: on ? color : 'var(--color-text-muted)',
+                        boxShadow: on ? '0 1px 3px rgba(26,26,46,0.12)' : undefined,
+                      }}
+                    >
+                      {f ? 'Friends' : 'Everyone'}
+                    </button>
+                  );
+                })}
               </div>
             )}
-            <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {/* §223 microcopy: the sweep board pre-answers "why is a full sweep below
-                  a near-miss" — it ranks by points, not wins. */}
-              {isSweep ? 'Ranked by total points across all modes' : 'Daily games only'}
-            </div>
             {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
               <button
                 onClick={handleShareLeaderboard}
                 disabled={sharingLb}
                 aria-label="Share leaderboard"
                 className="p-1 -my-1 active:scale-95 transition-transform"
-                style={{ color: 'var(--color-text-muted)', opacity: sharingLb ? 0.4 : 1 }}
+                style={{ color: 'var(--color-text-secondary)', opacity: sharingLb ? 0.4 : 1 }}
               >
-                <Share className="w-3.5 h-3.5" />
+                <Share className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
         <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
-        <div
-          className="overflow-hidden"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1.5px solid var(--color-border)',
-            borderRadius: '16px',
-          }}
-        >
+        <div className="overflow-hidden p-1.5" style={SOFT_CARD}>
           {boardLoading ? (
             <LeaderboardSkeleton />
           ) : isSweep ? (
@@ -974,8 +949,8 @@ export default function DailyPage() {
               {rankWindow && (
                 <>
                   <div
-                    className="text-center py-1.5 text-sm font-black tracking-widest"
-                    style={{ color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}
+                    className="text-center py-1 text-sm font-black tracking-widest"
+                    style={{ color: 'var(--color-text-muted)' }}
                   >
                     ···
                   </div>
@@ -990,14 +965,16 @@ export default function DailyPage() {
         </div>
         </PullToRefresh>
 
-        {/* Yesterday's Winners — per-mode top 3, or yesterday's top sweepers */}
-        <div className="w-full mt-4 flex items-center justify-center gap-1.5 py-2">
+        {/* YESTERDAY'S WINNERS (spec §2.5) — per-mode top 3, or yesterday's top
+            sweepers; the collapsible podium in a soft card. */}
+        <div className="w-full mt-5 mb-2 flex items-center gap-1.5 px-1">
           <button
             onClick={() => setShowYesterday(!showYesterday)}
-            className="flex items-center gap-1.5 text-xs font-extrabold transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
+            aria-expanded={showYesterday}
+            className="flex-1 flex items-center gap-1.5 text-left"
+            style={SECTION_LABEL}
           >
-            Yesterday's Winners
+            YESTERDAY&apos;S WINNERS
             {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {/* Settled-podium share — only once the dropdown is open with rows. */}
@@ -1007,22 +984,15 @@ export default function DailyPage() {
               disabled={sharingPodium}
               aria-label="Share yesterday's podium"
               className="p-1 -my-1 active:scale-95 transition-transform"
-              style={{ color: 'var(--color-text-muted)', opacity: sharingPodium ? 0.4 : 1 }}
+              style={{ color: 'var(--color-text-secondary)', opacity: sharingPodium ? 0.4 : 1 }}
             >
-              <Share className="w-3.5 h-3.5" />
+              <Share className="w-4 h-4" />
             </button>
           )}
         </div>
 
         {showYesterday && (
-          <div
-            className="overflow-hidden mb-4"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1.5px solid var(--color-border)',
-              borderRadius: '16px',
-            }}
-          >
+          <div className="overflow-hidden mb-4 p-1.5" style={SOFT_CARD}>
             {yesterdayLoading ? (
               <LeaderboardSkeleton />
             ) : isSweep ? (
@@ -1036,11 +1006,7 @@ export default function DailyPage() {
                       returns time + modes for any day — show them like today's
                       board instead of the bare name/pill/score line. */}
                   {yesterdaySweep.filter((e) => !isBlocked(e.user_id)).map((entry) => (
-                    <div
-                      key={entry.user_id}
-                      className="flex items-center gap-3 px-4 py-3"
-                      style={{ borderBottom: '1px solid var(--color-border)' }}
-                    >
+                    <div key={entry.user_id} className="flex items-center gap-3 px-3 py-2.5">
                       <RankIcon rank={entry.rank} />
                       {lbAvatar(entry.avatar_url, null, entry.username)}
                       {/* §236: score rides the name line; stats own the width. */}

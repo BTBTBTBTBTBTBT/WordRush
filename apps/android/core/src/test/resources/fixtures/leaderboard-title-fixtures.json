@@ -1,0 +1,69 @@
+{
+  "titles": [
+    {
+      "day": "2026-09-27",
+      "holiday": null,
+      "title": "SUNDAY SUPERSTARS"
+    },
+    {
+      "day": "2026-09-28",
+      "holiday": null,
+      "title": "MONDAY MASTERS"
+    },
+    {
+      "day": "2026-09-29",
+      "holiday": null,
+      "title": "TUESDAY TITANS"
+    },
+    {
+      "day": "2026-09-30",
+      "holiday": null,
+      "title": "WEDNESDAY WIZARDS"
+    },
+    {
+      "day": "2026-10-01",
+      "holiday": null,
+      "title": "THURSDAY THUNDER"
+    },
+    {
+      "day": "2026-10-02",
+      "holiday": null,
+      "title": "FRIDAY’S FINEST"
+    },
+    {
+      "day": "2026-10-03",
+      "holiday": null,
+      "title": "SATURDAY STARS"
+    },
+    {
+      "day": "2027-01-01",
+      "holiday": null,
+      "title": "FRIDAY’S FINEST"
+    },
+    {
+      "day": "2028-02-29",
+      "holiday": null,
+      "title": "TUESDAY TITANS"
+    },
+    {
+      "day": "2026-10-31",
+      "holiday": "Halloween",
+      "title": "HALLOWEEN HEROES"
+    },
+    {
+      "day": "2026-12-25",
+      "holiday": "Christmas",
+      "title": "CHRISTMAS HEROES"
+    },
+    {
+      "day": "2026-11-26",
+      "holiday": "Thanksgiving",
+      "title": "THANKSGIVING HEROES"
+    },
+    {
+      "day": "2026-10-31",
+      "holiday": "",
+      "title": "SATURDAY STARS"
+    }
+  ]
+}

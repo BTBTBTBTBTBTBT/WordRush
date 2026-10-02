@@ -103,6 +103,8 @@ struct GameTileSquare<Icon: View>: View {
     /// Labels may wrap to two centered lines (web parity) instead of ellipsizing.
     var labelLines: Int = 2
     var light: Bool = false
+    /// Top bar height (4 pt; the small Leaderboard banner squares use 3).
+    var bar: CGFloat = 4
     @ViewBuilder var icon: (CGFloat) -> Icon
 
     var body: some View {
@@ -116,7 +118,7 @@ struct GameTileSquare<Icon: View>: View {
                     .overlay { GeometryReader { g in content(g.size.width).frame(width: g.size.width, height: g.size.height) } }
             }
         }
-        .gameTile(accent: accent, selected: selected, radius: radius, base: light ? .white : nil)
+        .gameTile(accent: accent, selected: selected, radius: radius, bar: bar, base: light ? .white : nil)
     }
 
     private func content(_ s: CGFloat) -> some View {
@@ -131,6 +133,6 @@ struct GameTileSquare<Icon: View>: View {
                     .padding(.horizontal, 4)
             }
         }
-        .padding(.top, 4) // optically center under the 4 pt bar
+        .padding(.top, bar) // optically center under the top bar
     }
 }

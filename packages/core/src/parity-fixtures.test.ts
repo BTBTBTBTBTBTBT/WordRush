@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures } from '../scripts/gen-parity-fixtures';
+import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures } from '../scripts/gen-parity-fixtures';
 
 // Freshness guard for the cross-platform engine-parity fixtures. The Swift and
 // Kotlin ports assert against the committed JSON; this test asserts the
@@ -33,6 +33,7 @@ describe('engine parity fixtures are fresh and synced', () => {
     ['home-banner-fixtures.json', JSON.stringify(renderHomeBannerFixtures(), null, 2) + '\n'],
     ['vs-lobby-fixtures.json', JSON.stringify(renderVsLobbyFixtures(), null, 2) + '\n'],
     ['friendly-games-fixtures.json', JSON.stringify(renderFriendlyFixtures(), null, 2) + '\n'],
+    ['leaderboard-title-fixtures.json', JSON.stringify(renderLeaderboardTitleFixtures(), null, 2) + '\n'],
   ];
 
   for (const [name, expected] of rendered) {
