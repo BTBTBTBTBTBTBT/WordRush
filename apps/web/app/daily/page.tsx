@@ -3,6 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { Users, ChevronDown, ChevronUp, Play, Share, Bell } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -473,7 +474,7 @@ export default function DailyPage() {
         avatarUrl={entry.avatar_url}
         avatarEmoji={entry.avatar_emoji}
         isMe={isCurrentUser}
-        nameSuffix={entry.user_id === crownId ? <span> 👑</span> : null}
+        nameSuffix={entry.user_id === crownId ? <Icon3D name="crown" size={14} inline label="Leads the week" className="ml-1" /> : null}
         stats={
           <>
             <span className="truncate">

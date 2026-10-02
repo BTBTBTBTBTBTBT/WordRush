@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Shared top header across all four tabs — a 1:1 port of the web AppHeader
-/// (components/ui/app-header.tsx): the WORDOCIOUS wordmark (no background) + a
-/// PRO badge when active, then help, settings, daily-streak, and streak-shield
-/// controls. Help/Settings open their sheets; the streak/shield pills show the
-/// real profile values and open an explanatory popover on tap.
+/// Shared top header across all four tabs (HEADER_SPEC §1, founder 2026-10-02).
+/// Row 1: the cast title — the ten mascots spelling WORDOCIOUS replace the
+/// wordmark and the PRO pill (Pro: W wears the crown over a soft gold glow line).
+/// Row 2: the streak / flawless / shield stat pills on the left, help and
+/// settings as white icon circles on the right. Help/Settings open their sheets;
+/// the pills show the real profile values and open an explanatory popover on tap.
 struct AppHeaderView: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var showMenu = false
@@ -16,91 +17,78 @@ struct AppHeaderView: View {
     @State private var showFlawless = false
     @State private var showAuth = false
 
+    // Stat inks (§1).
+    private static let streakInk = Color(hex: 0xC2410C)
+    private static let trophyInk = Color(hex: 0x92400E)
+    private static let shieldInk = Color(hex: 0x5B21B6)
+
     var body: some View {
-        HStack(spacing: 6) {
-            // Wordmark scales down (rather than clipping the PRO badge) when the
-            // PRO badge + controls crowd the row.
-            Text("WORDOCIOUS")
-                .font(Brand.wordmark(20)).tracking(0.5)
-                .foregroundStyle(Theme.wordmarkGradient)
-                .lineLimit(1).minimumScaleFactor(0.6)
-            if auth.isProActive {
-                Text("PRO").font(Brand.font(9, .black)).tracking(0.5).foregroundStyle(.white)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)],
-                                                              startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    .fixedSize()
-            }
-            Spacer(minLength: 6)
+        VStack(spacing: 8) {
+            CastTitle(pro: auth.isProActive)
 
-            circleButton("questionmark") { showMenu = true }
-            circleButton("gearshape.fill") { showSettings = true }
-
-            // Guest — prominent Sign In entry (account tabs also prompt, but the
-            // Home header had no entry). Presents the sign-in sheet.
-            if auth.isGuest {
-                Button { showAuth = true } label: {
-                    Text("Sign In").font(Brand.font(13, .heavy)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
-                                                                  startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Drawn from `headerStreak`/`headerShields`, not from `profile`
-            // directly: the profile row arrives a beat after launch, so gating
-            // the pills on it made them pop in a second late on EVERY cold
-            // start. Those accessors fall back to the last known values for
-            // exactly that window (nil on a first launch or after sign-out, so
-            // nothing is drawn then). The popovers still need the real row, so
-            // a tap during the window is simply inert — an interaction nobody
-            // can win the race to make.
-            if let streak = auth.headerStreak, streak > 0 {
-                Button { if auth.profile != nil { showStreak = true } } label: {
-                    pill(asset: "flame", iconColor: Color(hex: 0xF97316), text: "\(streak)",
-                         textColor: Color(hex: 0x92400E),
-                         bg: [Color(hex: 0xFFFBEB), Color(hex: 0xFFF7ED)], border: Color(hex: 0xFDE68A))
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showStreak) {
-                    if let p = auth.profile { streakPopover(p).modifier(CompactPopover()) }
-                }
-            }
-            // §244: flawless-streak pill — the day-stamped cache written by
-            // dailySweepStats(), synchronous like the other header values.
-            // Only a live run (>= 2) earns header real estate.
-            if MatchStatsService.cachedFlawlessStreak() >= 2 {
-                Button { showFlawless = true } label: {
-                    HStack(spacing: 4) {
-                        Text("🏆").font(.system(size: 11))
-                        Text("\(MatchStatsService.cachedFlawlessStreak())")
-                            .font(Brand.font(13, .heavy)).foregroundStyle(Color(hex: 0xB45309))
-                            .lineLimit(1).minimumScaleFactor(0.7)
+            HStack(spacing: 6) {
+                // Drawn from `headerStreak`/`headerShields`, not from `profile`
+                // directly: the profile row arrives a beat after launch, so gating
+                // the pills on it made them pop in a second late on EVERY cold
+                // start. Those accessors fall back to the last known values for
+                // exactly that window (nil on a first launch or after sign-out, so
+                // nothing is drawn then). The popovers still need the real row, so
+                // a tap during the window is simply inert — an interaction nobody
+                // can win the race to make.
+                if let streak = auth.headerStreak, streak > 0 {
+                    Button { if auth.profile != nil { showStreak = true } } label: {
+                        pill(.flame, text: "\(streak)", ink: Self.streakInk)
                     }
-                    .fixedSize()
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFFBEB), Color(hex: 0xFEF3C7)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    .overlay(Capsule().stroke(Color(hex: 0xF59E0B), lineWidth: 1.5))
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Daily streak, \(streak)")
+                    .popover(isPresented: $showStreak) {
+                        if let p = auth.profile { streakPopover(p).modifier(CompactPopover()) }
+                    }
                 }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showFlawless) {
-                    flawlessPopover(MatchStatsService.cachedFlawlessStreak()).modifier(CompactPopover())
+                // §244: flawless-streak pill — the day-stamped cache written by
+                // dailySweepStats(), synchronous like the other header values.
+                // Only a live run (>= 2) earns header real estate.
+                if MatchStatsService.cachedFlawlessStreak() >= 2 {
+                    let flawless = MatchStatsService.cachedFlawlessStreak()
+                    Button { showFlawless = true } label: {
+                        pill(.trophy, text: "\(flawless)", ink: Self.trophyInk)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Flawless streak, \(flawless)")
+                    .popover(isPresented: $showFlawless) {
+                        flawlessPopover(flawless).modifier(CompactPopover())
+                    }
                 }
-            }
-            if let shields = auth.headerShields {
-                Button { if auth.profile != nil { showShield = true } } label: {
-                    pill(asset: "shield", iconColor: Color(hex: 0x8B5CF6), text: "\(shields)",
-                         textColor: Color(hex: 0x5B21B6),
-                         bg: [Theme.surfaceHover, Theme.surfaceHover], border: Color(hex: 0xC4B5FD))
+                if let shields = auth.headerShields {
+                    Button { if auth.profile != nil { showShield = true } } label: {
+                        pill(.shield, text: "\(shields)", ink: Self.shieldInk)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Streak shields, \(shields)")
+                    .popover(isPresented: $showShield) {
+                        if let p = auth.profile { shieldPopover(p).modifier(CompactPopover()) }
+                    }
                 }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showShield) {
-                    if let p = auth.profile { shieldPopover(p).modifier(CompactPopover()) }
+
+                Spacer(minLength: 6)
+
+                // Guest — prominent Sign In entry (account tabs also prompt, but the
+                // Home header had no entry). Presents the sign-in sheet.
+                if auth.isGuest {
+                    Button { showAuth = true } label: {
+                        Text("Sign In").font(Brand.font(13, .heavy)).foregroundStyle(.white)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
+                                                                      startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    }
+                    .buttonStyle(.plain)
                 }
+
+                circleButton(.help, label: "Help") { showMenu = true }
+                circleButton(.gear, label: "Settings") { showSettings = true }
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 8)
+        .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 8)
         .sheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
             MenuSheet(selection: $menuSelection).presentationDetents([.large])
         }
@@ -111,39 +99,33 @@ struct AppHeaderView: View {
 
     // MARK: - Pieces
 
-    private func circleButton(_ system: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { circleLabel(system) }
-            .buttonStyle(.plain)
+    /// 38 pt white circle, soft shadow, the 22 pt icon (§1).
+    private func circleButton(_ icon: Icon3DName, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Icon3D(icon, size: 22).headerCircle(38)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
-    /// The circle-icon visual on its own (for use as a Menu label).
-    private func circleLabel(_ system: String) -> some View {
-        Image(systemName: system)
-            .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.textMuted)
-            .frame(width: 32, height: 32)
-            .background(Circle().fill(Theme.surfaceAlt))
-            .overlay(Circle().stroke(Theme.borderAlt, lineWidth: 1.5))
-    }
-
-    private func pill(asset: String, iconColor: Color, text: String, textColor: Color,
-                      bg: [Color], border: Color) -> some View {
+    /// White, fully round, soft shadow, NO border; the 20 pt icon + the number at 15 / 900 in the stat's ink.
+    private func pill(_ icon: Icon3DName, text: String, ink: Color) -> some View {
         HStack(spacing: 4) {
-            Image(asset).renderingMode(.template).resizable().scaledToFit()
-                .frame(width: 13, height: 13).foregroundStyle(iconColor)
-            Text(text).font(Brand.font(13, .heavy)).foregroundStyle(textColor)
+            Icon3D(icon, size: 20)
+            Text(text).font(Brand.font(15, .black)).foregroundStyle(ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
-        .fixedSize()   // never compress/wrap — keeps both pills the same pill shape
-        .padding(.horizontal, 10).padding(.vertical, 5)
-        .background(Capsule().fill(LinearGradient(colors: bg, startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .overlay(Capsule().stroke(border, lineWidth: 1.5))
+        .fixedSize()   // never compress/wrap — keeps every pill the same pill shape
+        .padding(.leading, 7).padding(.trailing, 10).padding(.vertical, 5)
+        .background(Capsule().fill(Theme.surface)
+            .shadow(color: .black.opacity(0.10), radius: 6, x: 0, y: 2))
     }
 
     private func streakPopover(_ p: Profile) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Image("flame").renderingMode(.template).resizable().scaledToFit().frame(width: 16, height: 16).foregroundStyle(Color(hex: 0xF97316))
+                Icon3D(.flame, size: 18)
                 Text("Daily Streak").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
             }
             statRow("Current", "\(p.dailyLoginStreak) \(p.dailyLoginStreak == 1 ? "day" : "days")")
@@ -159,7 +141,7 @@ struct AppHeaderView: View {
     private func flawlessPopover(_ streak: Int) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Text("🏆").font(.system(size: 15))
+                Icon3D(.trophy, size: 18)
                 Text("Flawless Streak").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
             }
             statRow("Current", "\(streak) \(streak == 1 ? "day" : "days")")
@@ -173,7 +155,7 @@ struct AppHeaderView: View {
     private func shieldPopover(_ p: Profile) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Image("shield").renderingMode(.template).resizable().scaledToFit().frame(width: 16, height: 16).foregroundStyle(Color(hex: 0x8B5CF6))
+                Icon3D(.shield, size: 18)
                 Text("Streak Shields").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
             }
             statRow("Available", "\(p.streakShields) \(p.streakShields == 1 ? "shield" : "shields")")
@@ -199,5 +181,115 @@ private struct CompactPopover: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 16.4, *) { content.presentationCompactAdaptation(.popover) }
         else { content }
+    }
+}
+
+// MARK: - Cast title (HEADER_SPEC §1)
+
+/// The ten mascots side by side in WORDOCIOUS order — the app's title. Tightly
+/// packed (each ~36 pt, ~8% overlap, bottoms aligned), centered, not tappable.
+/// A gentle one-time hop wave the first time it appears in a session (Reduce
+/// Motion — the OS setting or the in-app toggle — keeps it static). Pro: W wears
+/// the gold crown and the row sits on a soft gold glow line; free: neither.
+struct CastTitle: View {
+    var pro: Bool
+    var size: CGFloat = 36
+
+    @Environment(\.accessibilityReduceMotion) private var envReduceMotion
+    @State private var start = Date()
+    @State private var hopping = !CastTitle.didHop
+
+    /// The wave runs once per launch, not on every tab switch.
+    private static var didHop = false
+
+    /// Each character's visible width as a fraction of its square art (the art is
+    /// 512 px with transparent sides; I is the narrow one), so the row packs by
+    /// what you see rather than by the squares.
+    private static let visibleWidth: [MascotID: CGFloat] = [
+        .w: 0.92, .o1: 0.92, .r: 0.80, .d: 0.92, .o2: 0.76,
+        .c: 0.86, .i: 0.44, .o3: 0.91, .u: 0.92, .s: 0.92,
+    ]
+    private static let overlap: CGFloat = 0.08
+    private static let hop: CGFloat = 6
+    private static let stagger: Double = 0.07
+    private static let hopDuration: Double = 0.4
+
+    var body: some View {
+        GeometryReader { g in
+            let s = fittedSize(g.size.width)
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                Group {
+                    if Mascots.reduceMotion(envReduceMotion) || !hopping {
+                        row(s) { _ in 0 }
+                    } else {
+                        TimelineView(.animation(minimumInterval: 1 / 30)) { ctx in
+                            let t = ctx.date.timeIntervalSince(start)
+                            row(s) { i in Self.offset(i, t) }
+                        }
+                    }
+                }
+                .background(alignment: .bottom) {
+                    if pro {
+                        // The soft gold glow line beneath the row (#f59e0b ~25%, 2 pt, blurred).
+                        Capsule().fill(Color(hex: 0xF59E0B).opacity(0.25))
+                            .frame(height: 2)
+                            .padding(.horizontal, s * 0.2)
+                            .blur(radius: 1.5)
+                            .offset(y: 3)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .frame(height: size + crownRoom + 4)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(pro ? "Wordocious Pro" : "Wordocious")
+        .accessibilityAddTraits(.isHeader)
+        .task {
+            guard hopping, !Mascots.reduceMotion(envReduceMotion) else { hopping = false; return }
+            CastTitle.didHop = true
+            let total = Double(Mascots.cast.count - 1) * Self.stagger + Self.hopDuration
+            try? await Task.sleep(nanoseconds: UInt64(total * 1_000_000_000))
+            hopping = false
+        }
+    }
+
+    /// Head room for the crown above W (and the hop, which the frame absorbs).
+    private var crownRoom: CGFloat { pro ? size * 0.28 : Self.hop }
+
+    /// ~36 pt, smaller only when the screen can't fit the row.
+    private func fittedSize(_ width: CGFloat) -> CGFloat {
+        let units = Mascots.cast.reduce(CGFloat(0)) { $0 + (Self.visibleWidth[$1] ?? 1) }
+            - CGFloat(Mascots.cast.count - 1) * Self.overlap
+        guard width > 0 else { return size }
+        return min(size, width / units)
+    }
+
+    private func row(_ s: CGFloat, _ y: @escaping (Int) -> CGFloat) -> some View {
+        HStack(alignment: .bottom, spacing: -s * Self.overlap) {
+            ForEach(Array(Mascots.cast.enumerated()), id: \.element) { i, m in
+                Image(m.assetName).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: s, height: s)
+                    .frame(width: s * (Self.visibleWidth[m] ?? 1))
+                    .overlay(alignment: .top) {
+                        if pro && m == .w {
+                            // W's crown: ~45% of W's width, sitting on its top edge
+                            // (W's art starts ~12% down its square).
+                            Icon3D(.crown, size: s * 0.92 * 0.45)
+                                .offset(y: s * 0.115 - s * 0.92 * 0.45 * 0.72)
+                        }
+                    }
+                    .offset(y: y(i))
+                    .zIndex(Double(Mascots.cast.count - i))
+            }
+        }
+    }
+
+    private static func offset(_ i: Int, _ t: Double) -> CGFloat {
+        let local = t - Double(i) * stagger
+        guard local >= 0, local < hopDuration else { return 0 }
+        return -hop * CGFloat(sin(.pi * local / hopDuration))
     }
 }

@@ -276,7 +276,7 @@ struct ArchetypeSheet: View {
                 }
                 if let mine = viewerArchetype, let info = ProfileArchetype.info(mine) {
                     HStack(spacing: 8) {
-                        Image(systemName: info.symbol).font(.system(size: 14)).foregroundStyle(Theme.primary)
+                        SymbolGlyph(info.symbol, size: 14, color: Theme.primary)
                         Text("You are a ").font(Brand.body(13)).foregroundColor(Theme.textSecondary)
                         + Text(info.name).font(Brand.font(13, .black)).foregroundColor(Theme.primary)
                     }
@@ -464,9 +464,9 @@ struct H2HDetailScreen: View {
             .navigationTitle("You vs \(target.username)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) { PageTitle("You vs \(target.username)", size: 17) }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
                 }
             }
         }
@@ -658,7 +658,7 @@ struct TrophyCaseCard: View {
 
     private func shelf(_ icon: String, _ count: Int, _ label: String, _ color: Color, highlight: Bool = false) -> some View {
         VStack(spacing: 2) {
-            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 16, color: color)
             Text("\(count)").font(Brand.font(21, .black)).foregroundStyle(Theme.textPrimary)
             Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Theme.textSecondary)
         }
@@ -703,9 +703,9 @@ struct MedalHistorySheet: View {
             .navigationTitle("\(username)'s medals")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) { PageTitle("\(username)'s medals", size: 17) }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
                 }
             }
             .navigationDestination(for: PodiumRequest.self) { PodiumScreen(request: $0) }
@@ -726,8 +726,7 @@ struct MedalHistorySheet: View {
 
     private func rowContent(_ m: MedalRow, chevron: Bool) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: medalIcon(m.medalType).0)
-                .font(.system(size: 14)).foregroundStyle(medalIcon(m.medalType).1)
+            SymbolGlyph(medalIcon(m.medalType).0, size: 14, color: medalIcon(m.medalType).1)
             VStack(alignment: .leading, spacing: 1) {
                 Text(medalLabel(m)).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
                 Text(socialDayLabel(m.day)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
@@ -794,8 +793,7 @@ struct PodiumScreen: View {
                         ForEach(entries) { e in
                             NavigationLink(value: e.userId) {
                                 HStack(spacing: 10) {
-                                    Image(systemName: medalIcon(e.medalType).0)
-                                        .font(.system(size: 15)).foregroundStyle(medalIcon(e.medalType).1)
+                                    SymbolGlyph(medalIcon(e.medalType).0, size: 15, color: medalIcon(e.medalType).1)
                                     Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -813,6 +811,7 @@ struct PodiumScreen: View {
         }
         .navigationTitle("Podium")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { PageTitle("Podium", size: 17) } }
         .task {
             entries = await PublicProfileService.podium(day: request.day, mode: request.mode)
             loading = false
@@ -890,7 +889,7 @@ struct HighlightsReel: View {
 
     private func card(_ item: Item) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Image(systemName: item.symbol).font(.system(size: 15)).foregroundStyle(item.color)
+            SymbolGlyph(item.symbol, size: 15, color: item.color)
             Text(item.big).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(item.caption).font(Brand.font(9, .bold)).foregroundStyle(Theme.textSecondary)
@@ -1041,8 +1040,7 @@ struct LatelyCard: View {
     private func feedRow(icon: String, color: Color, text: String, when: String, divider: Bool) -> some View {
         if divider { Rectangle().fill(Theme.border).frame(height: 1) }
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 12)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 14, color: color)
                 .frame(width: 28, height: 28)
                 .background(RoundedRectangle(cornerRadius: 9).fill(color.opacity(0.08)))
             VStack(alignment: .leading, spacing: 1) {

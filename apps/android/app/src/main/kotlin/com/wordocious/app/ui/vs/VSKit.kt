@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -29,11 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -94,31 +90,28 @@ fun VsCard(modifier: Modifier = Modifier, padding: Dp = 12.dp, content: @Composa
     Column(modifier.fillMaxWidth().vsCard().padding(padding), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
 }
 
-/** The VS nav row: teal back chevron, a teal-gradient caps title, and a right slot. */
+/**
+ * The VS nav row (HEADER_SPEC §4): the shared white back circle, the teal-gradient
+ * caps title, the page host beside it where the page has no banner, and a right slot.
+ */
 @Composable
 fun VsNavBar(
     title: String,
     onBack: () -> Unit,
-    /** The page host beside the title (VS BATTLE: S, MASCOT_SPEC §6). */
+    /** The page host beside the title (MASCOT_SPEC §6). Null where the VS banner already hosts (§5). */
     host: com.wordocious.app.ui.MascotId? = null,
     right: @Composable RowScope.() -> Unit = {},
 ) {
-    Row(
-        Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(Modifier.size(36.dp).clip(CircleShape).clickableNoRipple(onBack), Alignment.Center) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = VsTeal.ink, modifier = Modifier.size(22.dp))
-        }
-        Text(
-            title, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, maxLines = 1,
-            style = TextStyle(brush = Brush.horizontalGradient(VsTeal.titleGradient), fontFamily = Nunito),
-        )
-        if (host != null) com.wordocious.app.ui.TitleHost(host)
-        Spacer(Modifier.weight(1f))
-        right()
-    }
+    com.wordocious.app.ui.PageHeader(
+        title,
+        Modifier.statusBarsPadding(),
+        accent = com.wordocious.app.ui.PageAccent.vs,
+        host = host,
+        onBack = onBack,
+        titleSize = 20.sp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        actions = right,
+    )
 }
 
 /** Solid teal caps button (primary VS action). */

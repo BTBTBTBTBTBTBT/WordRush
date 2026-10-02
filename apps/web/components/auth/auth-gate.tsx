@@ -101,11 +101,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         className="fixed inset-0 flex flex-col"
         style={{ backgroundColor: 'var(--color-bg)' }}
       >
-        {/* Mimic AppHeader height so content doesn't shift */}
+        {/* Mimic AppHeader height so content doesn't shift (two rows since HEADER_SPEC §1) */}
         <div
           className="flex items-center justify-center px-4"
           style={{
-            height: '52px',
+            height: '98px',
             borderBottom: '1.5px solid var(--color-border)',
             background: 'var(--color-surface)',
           }}

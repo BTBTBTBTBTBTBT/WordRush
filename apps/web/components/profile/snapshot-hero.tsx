@@ -1,6 +1,7 @@
 'use client';
 
-import { Trophy, Target, Zap, Flame, TrendingUp, Sparkles } from 'lucide-react';
+import { Target, Zap, TrendingUp, Sparkles } from 'lucide-react';
+import { Trophy3D, Flame3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { WIN_FG } from '@/lib/tile-theme';
 import { KitCard, StatCell, CountUp } from './stat-kit';
@@ -34,10 +35,10 @@ export function SnapshotHero({
     <KitCard>
       <div className="grid grid-cols-4 gap-y-3 gap-x-2">
         {/* F4: marquee numbers count up on mount. */}
-        <StatCell icon={Trophy} label="Wins" value={<CountUp target={totalWins} />} color={WIN_FG} />
+        <StatCell icon={Trophy3D} label="Wins" value={<CountUp target={totalWins} />} color={WIN_FG} />
         <StatCell icon={Target} label="Win Rate" value={<CountUp target={winRate} suffix="%" />} color="#2563eb" />
         <StatCell icon={Zap} label={STAT_LABELS.winStreak} value={<CountUp target={currentStreak} />} sub={`Best: ${bestStreak}`} color="#7c3aed" />
-        <StatCell icon={Flame} label={STAT_LABELS.dailyStreak} value={<CountUp target={dailyStreak} />} sub={`Best: ${bestDailyStreak}`} color="#f97316" />
+        <StatCell icon={Flame3D} label={STAT_LABELS.dailyStreak} value={<CountUp target={dailyStreak} />} sub={`Best: ${bestDailyStreak}`} color="#f97316" />
       </div>
       <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
         <div className="flex items-center gap-1.5 min-w-0">

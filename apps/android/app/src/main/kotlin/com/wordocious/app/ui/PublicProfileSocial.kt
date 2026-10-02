@@ -647,7 +647,7 @@ fun MedalHistorySheet(
             Modifier.padding(horizontal = 16.dp, vertical = 18.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("$targetName's medals", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            PageTitleText("$targetName's medals", fontSize = 18.sp)
             if (medals.isEmpty()) {
                 Text("No medals yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
@@ -667,7 +667,7 @@ fun MedalHistorySheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text(medalEmoji(m.medalType), fontSize = 16.sp)
+                    ChromeGlyph(medalEmoji(m.medalType), 20.dp, 16.sp)
                     Column(Modifier.weight(1f)) {
                         Text(medalLabel(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(shortDayLabel(m.day), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -748,7 +748,7 @@ fun HighlightsCard(highlights: List<ProfileHighlight>) {
                         .padding(horizontal = 11.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    Text(h.emoji, fontSize = 16.sp)
+                    ChromeGlyph(h.emoji, 20.dp, 16.sp)
                     Text(h.big, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                     Text(h.cap, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
                 }
@@ -891,7 +891,7 @@ fun LatelyCard(
                 Box(
                     Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(WTheme.surfaceHover),
                     contentAlignment = Alignment.Center,
-                ) { Text(item.emoji, fontSize = 13.sp) }
+                ) { ChromeGlyph(item.emoji, 18.dp, 13.sp) }
                 Column(Modifier.weight(1f)) {
                     Text(item.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
                     Text(item.whenLabel, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)

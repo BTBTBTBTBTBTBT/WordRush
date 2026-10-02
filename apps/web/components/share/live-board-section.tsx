@@ -15,7 +15,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Crown, Medal } from 'lucide-react';
+import { Medal } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import {
   fetchDailyLeaderboard,
   fetchDailySweepLeaderboard,
@@ -42,7 +43,7 @@ const TOP_N = 5;
 // Same rank iconography as the /daily and /records boards (crown gold,
 // silver/bronze medals, plain number below the podium).
 function RankIcon({ rank }: { rank: number }) {
-  if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
+  if (rank === 1) return <Icon3D name="crown" size={20} />;
   if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
   if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#b45309' }} />;
   return (

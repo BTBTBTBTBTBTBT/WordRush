@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { HelpCircle, X } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
+import { HeaderBack, HEADER_SHADOW } from '@/components/ui/page-header';
 import { getGuide } from '@/lib/guide-content';
 import { setGuidePaused } from '@/hooks/use-active-play-timer';
 import { Mascot } from '@/components/ui/mascot';
@@ -49,13 +50,9 @@ export function GameGuideButton({
         onClick={() => setOpen(true)}
         aria-label="How to play"
         className={`${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`}
-        style={{
-          background: 'var(--color-surface)',
-          border: `2px solid ${accentColor}`,
-          boxShadow: `0 2px 0 ${accentColor}33, 0 4px 12px rgba(0,0,0,0.08)`,
-        }}
+        style={{ background: '#ffffff', boxShadow: HEADER_SHADOW }}
       >
-        <HelpCircle className="w-5 h-5" style={{ color: accentColor }} />
+        <Icon3D name="help" size={24} />
       </button>
 
       {open && (
@@ -102,14 +99,7 @@ export function GameGuideButton({
                 </h2>
                 <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-                className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ background: 'var(--color-surface)' }}
-              >
-                <X className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-              </button>
+              <HeaderBack kind="close" onClick={() => setOpen(false)} size={32} />
             </div>
 
             <div className="overflow-y-auto px-5 pb-8 space-y-3">

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trophy, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
+import { Icon3D } from '@/components/ui/icon3d';
 import { FRIENDLY_TITLES, whoseTurn, type FriendlyMove } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
@@ -125,9 +127,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 
   const topBar = (
     <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
-      <button type="button" onClick={close} aria-label="Close" className="absolute left-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
-        <X style={{ width: 22, height: 22, color: FR.solid }} strokeWidth={2.6} />
-      </button>
+      <HeaderBack kind="close" onClick={close} className="absolute left-0" />
       <span
         className="font-black uppercase text-center px-10"
         style={{ fontSize: 19, letterSpacing: 0.3, backgroundImage: gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}
@@ -188,7 +188,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     <div className="flex-1 flex flex-col items-center gap-1.5" style={{ padding: '12px 8px 14px' }}>
       <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} size={40} online={!isMe && online} />
       <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: isMe ? '#4c1d95' : '#92400e', letterSpacing: 0.8 }}>
-        {won && <Trophy className="w-3 h-3 shrink-0" style={{ color: '#b45309' }} />}
+        {won && <Icon3D name="trophy" size={14} className="shrink-0" />}
         {label}
       </span>
       {value !== null && <span className="font-black" style={{ fontSize: 34, lineHeight: 1, color: isMe ? TILE.you : '#b45309' }}>{value}</span>}

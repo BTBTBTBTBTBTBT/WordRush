@@ -251,14 +251,9 @@ struct SpyglassView: View {
         }
     }
 
+    /// The corner controls (HEADER_SPEC §4): Home as a soft white circle, Help with the 3D icon.
     private func cornerButton(_ symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 20, weight: symbol == "questionmark" ? .bold : .regular)).foregroundStyle(spyglassAccent)
-                .frame(width: 44, height: 44)
-                .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(spyglassAccent, lineWidth: 2))
-                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
+        GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
     private func capsule(_ label: String, _ symbol: String, dim: Bool = false, action: @escaping () -> Void) -> some View {

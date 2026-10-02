@@ -24,9 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Schedule
@@ -287,14 +285,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(
-                Modifier.clickableNoRipple(onClose).padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color(0xFF7C3AED), modifier = Modifier.size(18.dp))
-                Text("Back", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
-            }
+            // The shared back circle (HEADER_SPEC §4).
+            HeaderBackButton(onClose)
             // App Review 1.2: users must be able to report/block each other
             // wherever strangers' content (usernames/bios/avatars) renders.
             if (!isOwnProfile) {
@@ -352,10 +344,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     }
                 }
                 Box {
-                    Icon(
-                        Icons.Filled.MoreVert, "More options", tint = WTheme.textMuted,
-                        modifier = Modifier.clickableNoRipple { menuOpen = true }.padding(4.dp).size(20.dp),
-                    )
+                    // A right-side action: the same white circle (HEADER_SPEC §4).
+                    HeaderCircle(onClick = { menuOpen = true }, contentDescription = "More options", size = 34.dp) {
+                        Icon(Icons.Filled.MoreVert, null, tint = HeaderInk.control, modifier = Modifier.size(20.dp))
+                    }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
                             text = { Text("Report user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) },
@@ -622,8 +614,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         val games = p.totalWins + p.totalLosses
         val winRate = if (games > 0) "%.1f".format(p.totalWins * 100.0 / games) else "0.0"
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OverallCard(Icons.Filled.EmojiEvents, Color(0xFF7C3AED), "${p.totalWins}", "Wins", "$winRate% win rate", Modifier.weight(1f))
-            OverallCard(Icons.Filled.LocalFireDepartment, Color(0xFFEA580C), "${p.currentStreak}", "Win Streak", "Best: ${p.bestStreak}", Modifier.weight(1f))
+            OverallCard(Icon3DName.TROPHY, Color(0xFF7C3AED), "${p.totalWins}", "Wins", "$winRate% win rate", Modifier.weight(1f))
+            OverallCard(Icon3DName.FLAME, Color(0xFFEA580C), "${p.currentStreak}", "Win Streak", "Best: ${p.bestStreak}", Modifier.weight(1f))
             OverallCard(Icons.Filled.Bolt, Color(0xFF7C3AED), "${p.dailyLoginStreak}", "Daily", "Best: ${p.bestDailyLoginStreak}", Modifier.weight(1f))
             OverallCard(Icons.Filled.TrackChanges, Color(0xFF2563EB), "$games", "Games", "${p.totalLosses} losses", Modifier.weight(1f))
         }
@@ -993,7 +985,7 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
 }
 
 @Composable
-private fun OverallCard(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, value: String, label: String, sub: String, modifier: Modifier = Modifier) {
+private fun OverallCard(icon: Any, tint: Color, value: String, label: String, sub: String, modifier: Modifier = Modifier) {
     Column(
         modifier
             .clip(RoundedCornerShape(16.dp))
@@ -1003,7 +995,11 @@ private fun OverallCard(icon: androidx.compose.ui.graphics.vector.ImageVector, t
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
+        // An ImageVector, or a 3D set icon (HEADER_SPEC §2: wins → trophy, streak → flame).
+        when (icon) {
+            is Icon3DName -> Icon3D(icon, 22.dp)
+            is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
+        }
         Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.4.sp)
         Text(sub, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)

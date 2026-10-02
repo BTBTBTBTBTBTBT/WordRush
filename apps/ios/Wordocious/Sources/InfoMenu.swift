@@ -110,16 +110,12 @@ struct MenuScaffold<Content: View>: View {
                 .frame(height: 6)
             HStack(spacing: 10) {
                 if let onBack {
-                    Button(action: onBack) {
-                        Image(systemName: "chevron.left").font(.system(size: 16, weight: .black)).foregroundStyle(Theme.textMuted)
-                    }
+                    HeaderCircleButton(.symbol("chevron.left"), size: 32, label: "Back", action: onBack)
                 }
-                Text(title).font(Brand.font(22, .black)).textCase(.uppercase).foregroundStyle(Theme.wordmarkGradient).lineLimit(1).minimumScaleFactor(0.6)
-                if let host { MascotView(host, size: 40, motion: .bob) }
+                PageHostTitle(text: title, host: host, size: 22, hostSize: 40)
                 Spacer()
-                Button { if let onClose { onClose() } else { dismiss() } } label: {
-                    Image(systemName: "xmark").font(.system(size: 14, weight: .black)).foregroundStyle(Theme.textMuted)
-                        .frame(width: 30, height: 30).background(Circle().fill(Theme.surfaceAlt))
+                HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") {
+                    if let onClose { onClose() } else { dismiss() }
                 }
             }
             .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 10)
@@ -157,7 +153,7 @@ struct MenuSheet: View {
 
     private func row(_ d: InfoMenuDestination) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: d.icon).font(.system(size: 16, weight: .bold)).foregroundStyle(d.accent)
+            SymbolGlyph(d.icon, size: 16, weight: .bold, color: d.accent)
                 .frame(width: 40, height: 40)
                 .background(RoundedRectangle(cornerRadius: 11).fill(d.accent.opacity(0.14)))
             VStack(alignment: .leading, spacing: 1) {

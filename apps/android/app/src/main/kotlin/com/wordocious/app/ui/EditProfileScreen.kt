@@ -225,12 +225,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
     // 48dp. Reported by the Play tester on the profile editor.
     Column(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Cancel", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onDone))
-            Spacer(Modifier.weight(1f))
-            Text("EDIT PROFILE", fontSize = 18.sp, fontWeight = FontWeight.Black,
-                style = androidx.compose.ui.text.TextStyle(brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), fontFamily = Nunito))
-            Spacer(Modifier.weight(1f))
+        // The shared page header (HEADER_SPEC §4): Cancel is the white close circle; Save
+        // stays the purple text action on the right.
+        PageHeader("EDIT PROFILE", onBack = onDone, backAsClose = true, backLabel = "Cancel", titleSize = 18.sp) {
             Text(
                 if (saving) "Saving…" else "Save", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
                 modifier = Modifier.clickableNoRipple {

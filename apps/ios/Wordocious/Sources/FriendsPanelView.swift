@@ -191,8 +191,7 @@ struct FriendsPanelView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("TODAY'S RACE").font(Brand.font(20, .black)).tracking(0.4)
-                        .foregroundStyle(LinearGradient(colors: FriendsKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+                    PageHostTitle(text: "TODAY'S RACE", colors: FriendsKit.titleGradient, host: Mascots.friends)
                         .frame(maxWidth: .infinity)
                     if let p = AuthService.shared.profile {
                         TodaysRaceCard(
@@ -209,7 +208,7 @@ struct FriendsPanelView: View {
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { showRace = false }.font(Brand.font(14, .black)).tint(FriendsKit.solid)
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { showRace = false }
                 }
             }
         }
@@ -320,7 +319,10 @@ struct FriendsPanelView: View {
                         if history.count > 1 { withAnimation(.easeInOut(duration: 0.15)) { showPastWeeks.toggle() } }
                     } label: {
                         HStack(spacing: 3) {
-                            Text("Last week: 👑 \(lw.name) · \(lw.pts.formatted()) pts")
+                            Text("Last week:")
+                                .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
+                            Icon3D(.crown, size: 13, label: "Winner")
+                            Text("\(lw.name) · \(lw.pts.formatted()) pts")
                                 .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
                             if history.count > 1 {
                                 Image(systemName: "chevron.down")
@@ -334,7 +336,11 @@ struct FriendsPanelView: View {
                     .buttonStyle(.plain)
                     if showPastWeeks {
                         ForEach(history.filter { $0.k > 0 }, id: \.k) { wk in
-                            Text("\(FriendsPanelView.pastWeekLabel(wk.k)): 👑 \(wk.name) · \(wk.pts.formatted()) pts")
+                            HStack(spacing: 3) {
+                                Text("\(FriendsPanelView.pastWeekLabel(wk.k)):")
+                                Icon3D(.crown, size: 13, label: "Winner")
+                                Text("\(wk.name) · \(wk.pts.formatted()) pts")
+                            }
                                 .font(Brand.font(10, .bold)).foregroundStyle(FriendsKit.label)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.leading, 4)
@@ -489,7 +495,7 @@ struct FriendsPanelView: View {
                         Text("@\(f.username)").font(Brand.font(13, .black))
                             .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
                         // §216: the week's leader wears the crown.
-                        if f.id == crownId { Text("👑").font(.system(size: 11)) }
+                        if f.id == crownId { Icon3D(.crown, size: 14, label: "This week's leader") }
                         if isNewFriend(f) {
                             Text("NEW").font(Brand.font(8, .black))
                                 .foregroundStyle(FriendsKit.solid)
@@ -982,7 +988,7 @@ struct FriendsPanelView: View {
             line = line + Text(" · 👑 \(name) \(r.winnerPoints.formatted())").font(Brand.font(11, .heavy)).foregroundColor(Theme.textMuted)
         }
         return HStack(spacing: 8) {
-            Text(win ? "👑" : "🏁").font(.system(size: 16))
+            if win { Icon3D(.crown, size: 20) } else { Text("🏁").font(.system(size: 16)) }
             line.frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
@@ -1100,12 +1106,9 @@ struct FriendsScreenView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        Text("FRIENDS").font(Brand.font(20, .black)).tracking(0.4)
-                            .foregroundStyle(LinearGradient(colors: FriendsKit.titleGradient, startPoint: .leading, endPoint: .trailing))
-                        // O1, the cheerleader, hosts Friends (MASCOT_SPEC §6).
-                        MascotView(Mascots.friends, size: 32, motion: .bob)
-                    }
+                    // HEADER_SPEC §5: the Friends banner's O1 is the page's host, so
+                    // the title row doesn't repeat it.
+                    PageTitle("FRIENDS", colors: FriendsKit.titleGradient)
                 }
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     NotificationPrefsButton()
@@ -1113,11 +1116,7 @@ struct FriendsScreenView: View {
                         withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("add-friend", anchor: .center) }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focusAdd = UUID() }
                     } label: {
-                        Image(systemName: "person.badge.plus")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(FriendsKit.solid)
-                            .frame(width: 28, height: 28)
-                            .background(Circle().fill(FriendsKit.soft))
+                        HeaderCircleLabel(glyph: .symbol("person.badge.plus"), size: 32)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Add a friend")

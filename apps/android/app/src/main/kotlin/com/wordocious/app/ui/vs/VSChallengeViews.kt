@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -144,9 +143,8 @@ fun MiniRunBoard(mode: GameMode, run: VsChallengeService.Run, solutions: List<St
 @Composable
 internal fun ResultTopBar(onClose: () -> Unit) {
     Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        Box(Modifier.size(36.dp).clip(CircleShape).clickableNoRipple(onClose).align(Alignment.CenterStart), Alignment.Center) {
-            Icon(Icons.Filled.Close, "Close", tint = VsPurple.ink, modifier = Modifier.size(22.dp))
-        }
+        // The shared white close circle (HEADER_SPEC §4).
+        com.wordocious.app.ui.HeaderBackButton(onClose, Modifier.align(Alignment.CenterStart), close = true)
         Text(
             "WORDOCIOUS", fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
             style = TextStyle(brush = Brush.horizontalGradient(WORDMARK), fontFamily = Nunito),
@@ -294,7 +292,7 @@ fun ChallengeResultView(
 private fun ResultColumn(label: String, winner: Boolean, run: VsChallengeService.Run, mode: GameMode, solutions: List<String>, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (winner) Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(13.dp))
+            if (winner) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 16.dp)
             Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = VsPurple.deep, maxLines = 1)
         }
         MiniRunBoard(mode, run, solutions)

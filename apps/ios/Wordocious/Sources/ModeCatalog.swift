@@ -171,8 +171,8 @@ struct ModeIconView: View {
                     .offset(y: box * 0.12)
             }
         case .symbol(let name):
-            Image(systemName: name).font(.system(size: box * 0.45, weight: .bold))
-                .foregroundStyle(accent)
+            // A trophy (the Stats rail's All-time chip) draws the 3D icon (HEADER_SPEC §2).
+            SymbolGlyph(name, size: box * 0.45, weight: .bold, color: accent)
         }
     }
 }

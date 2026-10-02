@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
@@ -790,10 +789,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         if (state.boards.size > 1) {
                             val solved = state.boards.count { it.status == GameStatus.WON }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
-                                    tint = Color(0xFFD97706), modifier = Modifier.size(statIcon),
-                                )
+                                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, statIcon + 3.dp)
                                 Spacer(Modifier.width(3.dp))
                                 Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
                             }
@@ -965,95 +961,59 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 }
 
 /**
- * Web game/sound-toggle.tsx: 44px circle, surface fill, 2px accent stroke,
- * Volume2/VolumeX icon, active scale press. Persists to the same pref the
- * Settings "Sound Effects" switch uses.
+ * Web game/sound-toggle.tsx: the Gauntlet sound toggle, a right-side header
+ * action in the shared white circle (HEADER_SPEC §4; 44 dp in games). Persists
+ * to the same pref the Settings "Sound Effects" switch uses.
  */
 @Composable
 internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
     var enabled by remember {
         mutableStateOf(com.wordocious.app.data.SettingsPref.get(com.wordocious.app.data.SettingsPref.SOUND, true))
     }
-    val circle = androidx.compose.foundation.shape.CircleShape
-    Box(
-        modifier = modifier
-            .size(44.dp)
-            .shadow(
-                6.dp, circle, clip = false,
-                // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
-                // default opaque-black elevation shadow read as a hard gray ring.
-                ambientColor = Color.Black.copy(alpha = 0.35f),
-                spotColor = Color.Black.copy(alpha = 0.35f),
-            )
-            .clip(circle)
-            .background(WTheme.surface)
-            .border(2.dp, accent, circle)
-            .clickableNoRipple {
-                enabled = !enabled
-                com.wordocious.app.data.SettingsPref.set(com.wordocious.app.data.SettingsPref.SOUND, enabled)
-            },
-        contentAlignment = Alignment.Center,
+    com.wordocious.app.ui.HeaderCircle(
+        onClick = {
+            enabled = !enabled
+            com.wordocious.app.data.SettingsPref.set(com.wordocious.app.data.SettingsPref.SOUND, enabled)
+        },
+        contentDescription = if (enabled) "Mute sounds" else "Unmute sounds",
+        modifier = modifier,
+        size = GAME_CORNER,
     ) {
         Icon(
             if (enabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-            contentDescription = if (enabled) "Mute sounds" else "Unmute sounds",
-            tint = accent,
+            contentDescription = null,
+            tint = com.wordocious.app.ui.HeaderInk.control,
             modifier = Modifier.size(20.dp),
         )
     }
 }
 
+/** The game corner circles' size (kept at 44 dp: the boards and titles are laid out around it). */
+internal val GAME_CORNER = 44.dp
+
+/**
+ * The game's back control (top-left): the shared soft white circle with the
+ * house in #6d28d9 (HEADER_SPEC §4). Visible in play + post-game. [accent] is
+ * kept for call-site parity; the header chrome no longer takes the mode color.
+ */
 @Composable
 internal fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val circle = androidx.compose.foundation.shape.CircleShape
-    Box(
-        modifier = modifier
-            .size(44.dp)
-            .shadow(
-                6.dp, circle, clip = false,
-                // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
-                // default opaque-black elevation shadow read as a hard gray ring.
-                ambientColor = Color.Black.copy(alpha = 0.35f),
-                spotColor = Color.Black.copy(alpha = 0.35f),
-            )
-            .clip(circle)
-            .background(WTheme.surface)
-            .border(2.dp, accent, circle)
-            .clickableNoRipple(onClick),
-        contentAlignment = Alignment.Center,
-    ) {
+    com.wordocious.app.ui.HeaderCircle(onClick, "Home", modifier, size = GAME_CORNER) {
         Icon(
             androidx.compose.material.icons.Icons.Filled.Home,
-            contentDescription = "Home",
-            tint = accent,
-            modifier = Modifier.size(20.dp),
+            contentDescription = null,
+            tint = com.wordocious.app.ui.HeaderInk.control,
+            modifier = Modifier.size(22.dp),
         )
     }
 }
 
-/** Top-right "?" help button — mirrors CornerHomeButton's circle/stroke/shadow. */
+/** Top-right help button: the white circle with the 3D `help` icon (HEADER_SPEC §2, §4). */
 @Composable
 internal fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val circle = androidx.compose.foundation.shape.CircleShape
-    Box(
-        modifier = modifier
-            .size(44.dp)
-            .shadow(
-                6.dp, circle, clip = false,
-                // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
-                // default opaque-black elevation shadow read as a hard gray ring.
-                ambientColor = Color.Black.copy(alpha = 0.35f),
-                spotColor = Color.Black.copy(alpha = 0.35f),
-            )
-            .clip(circle)
-            .background(WTheme.surface)
-            .border(2.dp, accent, circle)
-            .clickableNoRipple(onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        // iOS: questionmark at 20pt bold — 22sp Black read a step heavier.
-        Text("?", color = accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-    }
+    com.wordocious.app.ui.HeaderIconButton(
+        com.wordocious.app.ui.Icon3DName.HELP, "Help", onClick, modifier, size = GAME_CORNER, iconSize = 26.dp,
+    )
 }
 
 /**

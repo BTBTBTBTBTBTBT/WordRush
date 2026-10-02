@@ -72,17 +72,13 @@ fun NotificationPrefsButton(profile: Profile?) {
     var open by remember { mutableStateOf(false) }
     val prefs = profile.notificationPrefs ?: emptyMap()
     val anyOff = PUSH_CATEGORIES.any { prefs[it.key] == false }
-    Box(
-        Modifier.size(28.dp).background(WTheme.surfaceHover, CircleShape)
-            .border(1.5.dp, WTheme.border, CircleShape)
-            .clickableNoRipple { open = true },
-        contentAlignment = Alignment.Center,
-    ) {
+    // A header action: the shared white circle (HEADER_SPEC §4).
+    HeaderCircle(onClick = { open = true }, contentDescription = "Friends notification settings") {
         Icon(
             if (anyOff) Icons.Filled.NotificationsOff else Icons.Filled.Notifications,
-            "Friends notification settings",
+            null,
             tint = if (anyOff) WTheme.textMuted else PREFS_PURPLE,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(19.dp),
         )
     }
     if (open) NotificationPrefsDialog(profile = profile, onDismiss = { open = false })

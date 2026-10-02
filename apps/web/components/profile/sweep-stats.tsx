@@ -1,6 +1,7 @@
 'use client';
 
-import { Trophy, Sparkles, Flame } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { DailySweepStats, DailyPointsPoint } from '@/lib/stats-service';
 
 // Profile "All"-view card: Daily Sweep / Flawless Victory stats + a
@@ -82,11 +83,11 @@ export function SweepStatsCard({ stats, points }: { stats: DailySweepStats; poin
           <Stat label="Sweeps" value={String(stats.sweepCount)} color="#7c3aed" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <Trophy className="w-4 h-4" style={{ color: '#d97706' }} fill="currentColor" />
+          <Icon3D name="trophy" size={16} />
           <Stat label="Flawless" value={String(stats.flawlessCount)} color="#d97706" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <Flame className="w-4 h-4" style={{ color: '#ef4444' }} />
+          <Icon3D name="flame" size={16} />
           <Stat label="Sweep Streak" value={String(stats.currentSweepStreak)} color="#ef4444" />
         </div>
         <Stat label="Avg Sweep" value={fmtTime(stats.avgSweepSecs)} />

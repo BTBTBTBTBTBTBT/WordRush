@@ -645,7 +645,7 @@ struct HomeView: View {
 
     private var proPromptBanner: some View {
         HStack(spacing: 12) {
-            Image(systemName: "crown.fill").font(.system(size: 26)).foregroundStyle(Color(hex: 0xD97706))
+            Icon3D(.crown, size: 32)
             VStack(alignment: .leading, spacing: 1) {
                 Text("You're on a streak!").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
                 Text("Upgrade to Pro for ad-free play, stats, shields, and more.")
@@ -928,7 +928,7 @@ struct ModeLimitModal: View {
 
                 Button(action: onUpgrade) {
                     HStack(spacing: 6) {
-                        Image(systemName: "crown.fill").font(.system(size: 14))
+                        Icon3D(.crown, size: 18)
                         Text("Upgrade to Pro").font(Brand.font(14, .black))
                     }
                     .foregroundStyle(.white).frame(maxWidth: .infinity).padding(.vertical, 13)

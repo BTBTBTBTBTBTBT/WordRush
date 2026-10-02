@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronLeft, Swords } from 'lucide-react';
+import { Swords } from 'lucide-react';
 import { CastLoader, LoadingTip } from '@/components/ui/cast-loader';
-import { Mascot } from '@/components/ui/mascot';
+import { PageHeader } from '@/components/ui/page-header';
 import type { MascotId } from '@/lib/mascots';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
@@ -45,19 +45,13 @@ export function SectionLabel({ children, right }: { children: React.ReactNode; r
   );
 }
 
-/** Back chevron (teal), a gradient caps title, and a right slot. */
+/**
+ * The VS page header (HEADER_SPEC §4): the shared PageHeader in the VS teal —
+ * a white back circle, the gradient caps title, the host when no banner below
+ * carries it, and a right slot.
+ */
 export function VsNav({ title, onBack, right, host }: { title: string; onBack: () => void; right?: React.ReactNode; host?: MascotId }) {
-  return (
-    <div className="flex items-center gap-2" style={{ minHeight: 44 }}>
-      <button type="button" onClick={onBack} aria-label="Back" className="flex items-center justify-center active:opacity-60" style={{ width: 32, height: 32, marginLeft: -6 }}>
-        <ChevronLeft style={{ width: 24, height: 24, color: VS.ink }} strokeWidth={2.6} />
-      </button>
-      {/* The page host beside the title (§6), when no banner below carries it. */}
-      {host && <Mascot id={host} size={40} motion="bob" priority />}
-      <h1 className="flex-1 text-[22px] font-black text-transparent bg-clip-text" style={{ backgroundImage: VS.title, letterSpacing: 0.4 }}>{title}</h1>
-      {right}
-    </div>
-  );
+  return <PageHeader title={title} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
 }
 
 export const vsCardStyle: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow };

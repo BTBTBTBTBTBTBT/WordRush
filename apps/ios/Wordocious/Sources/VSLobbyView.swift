@@ -151,7 +151,7 @@ struct VSLobbyView: View {
     // MARK: - Nav (back, VS BATTLE, the honest count)
 
     private var nav: some View {
-        VSNavBar(title: "VS BATTLE", host: Mascots.vs, onBack: { dismiss() }) {
+        VSNavBar(title: "VS BATTLE", host: nil, onBack: { dismiss() }) {
             let looking = model.counts?.totalWaiting ?? 0
             if looking > 0 || model.online != nil {
                 HStack(spacing: 5) {
@@ -531,7 +531,7 @@ struct VSLobbyView: View {
                         .background(Capsule().fill(Theme.surfaceHover)).overlay(Capsule().stroke(Theme.border, lineWidth: 1))
                         .monospacedDigit()
                     NavigationLink { ProView() } label: {
-                        Label("Go Pro", systemImage: "crown.fill").font(Brand.font(14, .black)).foregroundStyle(.white)
+                        Label { Text("Go Pro") } icon: { Icon3D(.crown, size: 18) }.font(Brand.font(14, .black)).foregroundStyle(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                     }.buttonStyle(.plain).simultaneousGesture(TapGesture().onEnded { onClose() })

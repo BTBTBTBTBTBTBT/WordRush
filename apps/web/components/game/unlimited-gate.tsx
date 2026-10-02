@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Crown, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { GameMode } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { lookupInviteByCode } from '@/lib/invite-service';
@@ -28,7 +29,7 @@ function GateCard({ title, blurb, fallbackHref, fallbackLabel }: {
           className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center"
           style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
         >
-          <Crown className="w-7 h-7 text-white" />
+          <Icon3D name="crown" size={28} />
         </div>
         <h1 className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{title}</h1>
         <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>{blurb}</p>

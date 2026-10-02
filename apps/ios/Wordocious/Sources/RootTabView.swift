@@ -392,10 +392,10 @@ private struct BottomNav: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            item(.home, "house", "Home")
-            item(.leaderboard, "trophy", "Leaderboard")
-            item(.stats, "chart.bar", "Stats")
-            item(.friends, "person.2", "Friends", badge: pendingRequests)
+            item(.home, .tabHome, "Home")
+            item(.leaderboard, .tabLeaderboard, "Leaderboard")
+            item(.stats, .tabStats, "Stats")
+            item(.friends, .tabFriends, "Friends", badge: pendingRequests)
         }
         .padding(.top, 8)
         .frame(maxWidth: .infinity)
@@ -411,16 +411,19 @@ private struct BottomNav: View {
         .onReceive(NotificationCenter.default.publisher(for: FriendlyGamesService.changed)) { _ in recount() }
     }
 
-    private func item(_ t: RootTabView.Tab, _ icon: String, _ label: String, badge: Int = 0) -> some View {
+    /// HEADER_SPEC §3: the 3D tab icons at 28 pt. Selected: full color, a −2 pt
+    /// lift and the label in #7c3aed 900; unselected: the icon at 45% opacity and
+    /// 60% saturation with a grey label. Badges stay numeric.
+    private func item(_ t: RootTabView.Tab, _ icon: Icon3DName, _ label: String, badge: Int = 0) -> some View {
         let active = selection == t
-        let color = active ? Theme.primary : Theme.textMuted
         return Button {
             selection = t
             Haptics.tap()
         } label: {
-            VStack(spacing: 3) {
-                Image(systemName: active ? "\(icon).fill" : icon)
-                    .font(.system(size: 20)).foregroundStyle(color)
+            VStack(spacing: 2) {
+                Icon3D(icon, size: 28)
+                    .saturation(active ? 1 : 0.6)
+                    .opacity(active ? 1 : 0.45)
                     .overlay(alignment: .topTrailing) {
                         if badge > 0 {
                             // Win purple (founder, Aug 11); §5 shows the count.
@@ -433,16 +436,19 @@ private struct BottomNav: View {
                                 .accessibilityLabel("\(badge) waiting")
                         }
                     }
-                Text(label).font(Brand.font(10, .heavy)).foregroundStyle(color).lineLimit(1)
-                .minimumScaleFactor(0.7)
-                // 4px active dot (clear when inactive so all items align).
-                Circle().fill(active ? Theme.primary : .clear).frame(width: 4, height: 4)
+                    .offset(y: active ? -2 : 0)
+                Text(label)
+                    .font(Brand.font(10, active ? .black : .heavy))
+                    .foregroundStyle(active ? Color(hex: 0x7C3AED) : Theme.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 2)
+            .padding(.bottom, 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 }
 

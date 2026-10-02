@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
 import {
-  Trophy,
   Target,
-  Flame,
   Clock,
   Star,
   Zap,
@@ -20,6 +18,8 @@ import {
   Ban,
   Lock,
 } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
+import { PageHeader } from '@/components/ui/page-header';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
@@ -440,7 +440,9 @@ export default function PublicProfilePage() {
     ];
     return (
       <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="max-w-sm mx-auto pt-8 space-y-4 animate-fade-in-up">
+        {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
+        <PageHeader className="max-w-sm mx-auto" title="Profile" titleTag="div" back={{ href: '/' }} />
+        <div className="max-w-sm mx-auto pt-4 space-y-4 animate-fade-in-up">
           <div
             className="rounded-2xl p-6 flex flex-col items-center text-center"
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
@@ -545,6 +547,8 @@ export default function PublicProfilePage() {
   return (
     <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
+        <PageHeader title="Profile" titleTag="div" back={{ href: '/' }} />
         {/* Header Section */}
         <div className="flex flex-col items-center gap-4 animate-fade-in-up">
           {/* Avatar with today-progress ring + "N/total today" pill */}
@@ -762,7 +766,7 @@ export default function PublicProfilePage() {
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)', animationDelay: '0.2s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8" style={{ color: WIN_FG }} />
+              <Icon3D name="trophy" size={32} />
               <div>
                 <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Total Wins</div>
                 <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.total_wins}</div>
@@ -776,7 +780,7 @@ export default function PublicProfilePage() {
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)', animationDelay: '0.3s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3">
-              <Flame className="w-8 h-8" style={{ color: '#ea580c' }} fill="currentColor" />
+              <Icon3D name="flame" size={32} />
               <div>
                 <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Win Streak</div>
                 <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.current_streak}</div>

@@ -106,24 +106,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var deleteError by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
-        // Title bar with Done
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("SETTINGS", fontSize = 17.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            // The page host, R relaxing in his nightcap (MASCOT_SPEC §6).
-            Spacer(Modifier.width(6.dp))
-            TitleHost(Mascots.settings)
-            Spacer(Modifier.weight(1f))
-            Text(
-                // Deliberately brand purple, NOT iOS's #007AFF: that blue is a
-                // SwiftUI toolbar default rather than a design choice, and system
-                // blue reads as foreign chrome on Android.
-                "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
-                modifier = Modifier.clickableNoRipple(onDone),
-            )
-        }
+        // The shared page header (HEADER_SPEC §4) with the page host, R relaxing in
+        // his nightcap (MASCOT_SPEC §6); Done is the white close circle.
+        PageHeader("SETTINGS", host = Mascots.settings, onClose = onDone, closeLabel = "Done")
 
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),

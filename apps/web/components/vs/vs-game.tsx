@@ -40,7 +40,9 @@ import { useProperNoundleBank } from '@/components/propernoundle/puzzle-service'
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
-import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
+import { Loader2, Home, RotateCcw, Share2, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
+import { Icon3D } from '@/components/ui/icon3d';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine, INTRO_DURATION_MS } from './match-intro';
@@ -1782,9 +1784,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         <div className="max-w-md w-full mx-auto px-4 py-3 space-y-3.5">
           {/* Top bar — close (home) + wordmark, as on the challenge result. */}
           <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
-            <button type="button" onClick={handleHome} aria-label="Close" className="absolute left-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
-              <X style={{ width: 22, height: 22, color: '#7c3aed' }} strokeWidth={2.6} />
-            </button>
+            <HeaderBack kind="close" onClick={handleHome} className="absolute left-0" />
             <span className="font-black" style={{ fontSize: 20, backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)', ...GRADIENT_TEXT }}>
               WORDOCIOUS
             </span>
@@ -1877,7 +1877,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 </p>
               )}
               {cpuMilestone ? (
-                <p className="text-[13px] font-black" style={{ color: '#b45309' }}>🔥 {cpuMilestone}-win bot streak!</p>
+                <p className="text-[13px] font-black flex items-center justify-center gap-1" style={{ color: '#b45309' }}><Icon3D name="flame" size={18} /> {cpuMilestone}-win bot streak!</p>
               ) : cpuStreak > 0 ? (
                 <p className="text-[11.5px] font-extrabold" style={{ color: VS.label }}>Bot win streak: {cpuStreak}</p>
               ) : null}
@@ -2316,7 +2316,7 @@ function DailyVsAlreadyPlayed({
             className="w-full py-3 text-[14px] font-black uppercase text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
             style={{ background: '#7c3aed', borderRadius: 14, letterSpacing: 0.5 }}
           >
-            {isPro ? <Swords className="w-4 h-4" /> : <Crown className="w-4 h-4" />}
+            {isPro ? <Swords className="w-4 h-4" /> : <Icon3D name="crown" size={18} />}
             {isPro ? 'Play unlimited VS' : 'Upgrade to Pro'}
           </Link>
           <Link

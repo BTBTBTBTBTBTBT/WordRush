@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { X, EyeOff, Eye, ChevronRight } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
 
 export type ShareVariant = 'clean' | 'full';
 
@@ -102,14 +103,7 @@ export function ShareVariantHost() {
           >
             Share
           </h2>
-          <button
-            onClick={() => settle(null)}
-            className="flex items-center justify-center w-[30px] h-[30px] rounded-full transition-opacity hover:opacity-80"
-            style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
+          <HeaderBack kind="close" onClick={() => settle(null)} size={32} />
         </div>
 
         {/* Variant rows */}

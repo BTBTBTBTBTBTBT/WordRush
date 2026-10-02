@@ -129,7 +129,7 @@ private struct RecordCardShell<Content: View>: View {
 /// balanced in its grid column instead of hugging the left edge.
 private func meCell(_ icon: String, _ value: String, _ label: String, _ color: Color, dim: Bool = false) -> some View {
     VStack(spacing: 3) {
-        Image(systemName: icon).font(.system(size: 16)).foregroundStyle(dim ? Theme.textMuted : color)
+        SymbolGlyph(icon, size: 16, color: dim ? Theme.textMuted : color).opacity(dim && Icon3DName.forSymbol(icon) != nil ? 0.5 : 1)
         Text(value).font(Brand.font(15, .black)).foregroundStyle(dim ? Theme.textMuted : Theme.textPrimary)
             .lineLimit(1).minimumScaleFactor(0.7)
         Text(label).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
@@ -179,7 +179,7 @@ struct NextUpCard: View {
                 Text("NEXT UP").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 VStack(spacing: 4) {
                     HStack {
-                        Label("\(next)-day streak shield", systemImage: "flame.fill").font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
+                        Label { Text("\(next)-day streak shield") } icon: { Icon3D(.flame, size: 14) }.font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
                             .labelStyle(.titleAndIcon)
                         Spacer()
                         Text("\(dailyStreak)/\(next)").font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted)
@@ -240,7 +240,7 @@ struct SweepRecordsCard: View {
                     }
                 } else {
                     VStack(spacing: 8) {
-                        Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                        Icon3D(.trophy, size: 35).opacity(0.5)
                         Text("No sweeps yet").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 24)
@@ -253,7 +253,7 @@ struct SweepRecordsCard: View {
     /// §244: "🏆 Flawless: ×3 · best 5" — the streak notation beside the ranks.
     private var flawlessStreakChip: some View {
         HStack(spacing: 4) {
-            Text("🏆").font(.system(size: 10))
+            Icon3D(.trophy, size: 13)
             (Text("Flawless: ").font(Brand.font(9, .bold)).foregroundColor(Theme.textMuted)
              + Text("×\(sweep.currentFlawlessStreak)").font(Brand.font(11, .black)).foregroundColor(gold)
              + Text(sweep.bestFlawlessStreak > sweep.currentFlawlessStreak ? " · best \(sweep.bestFlawlessStreak)" : "")
@@ -361,7 +361,7 @@ struct GameRecordsCard: View {
                     Spacer()
                     if !held.isEmpty {
                         HStack(spacing: 3) {
-                            Image(systemName: "crown.fill").font(.system(size: 9))
+                            Icon3D(.crown, size: 12)
                             Text("\(held.count) all-time record\(held.count == 1 ? "" : "s")").font(Brand.font(10, .black))
                         }
                         .foregroundStyle(gold)
@@ -381,7 +381,7 @@ struct GameRecordsCard: View {
                     VStack(spacing: 8) {
                         ForEach(held) { r in
                             HStack(spacing: 6) {
-                                Image(systemName: "crown.fill").font(.system(size: 12)).foregroundStyle(gold)
+                                Icon3D(.crown, size: 15)
                                 (Text("You hold the all-time ").font(Brand.font(11, .bold)).foregroundColor(Theme.textMuted)
                                  + Text(RecordCatalog.labels[r.recordType]?.label ?? r.recordType).font(Brand.font(11, .black)).foregroundColor(Theme.textPrimary)
                                  + Text(" record").font(Brand.font(11, .bold)).foregroundColor(Theme.textMuted))
@@ -419,7 +419,7 @@ struct RecordsHeldRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("MEDALS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 HStack(spacing: 10) {
-                    Label("\(auth.profile?.goldMedals ?? 0)", systemImage: "crown.fill").font(Brand.font(13, .black)).foregroundStyle(gold)
+                    Label { Text("\(auth.profile?.goldMedals ?? 0)") } icon: { Icon3D(.crown, size: 16) }.font(Brand.font(13, .black)).foregroundStyle(gold)
                     Label("\(auth.profile?.silverMedals ?? 0)", systemImage: "medal.fill").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x9CA3AF))
                     Label("\(auth.profile?.bronzeMedals ?? 0)", systemImage: "medal.fill").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xB45309))
                 }.labelStyle(.titleAndIcon)
@@ -499,8 +499,7 @@ struct TrophyShelf: View {
                 ForEach(groups, id: \.type) { g in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 4) {
-                            Image(systemName: RecordCatalog.labels[g.type]?.symbol ?? "star.fill")
-                                .font(.system(size: 9)).foregroundStyle(gold)
+                            SymbolGlyph(RecordCatalog.labels[g.type]?.symbol ?? "star.fill", size: 10, color: gold)
                             Text((RecordCatalog.labels[g.type]?.label ?? g.type).uppercased())
                                 .font(Brand.font(9, .black)).tracking(0.7).foregroundStyle(Theme.textMuted)
                         }

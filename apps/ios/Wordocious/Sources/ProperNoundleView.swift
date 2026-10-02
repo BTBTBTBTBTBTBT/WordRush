@@ -409,24 +409,12 @@ struct ProperNoundleView: View {
             }
             // Corner Home button — matches the web GameHomeButton (red accent) and
             // every other game's screen, in play and on the completed screen.
-            Button { dismiss() } label: {
-                Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(.propernoundle))
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(.propernoundle), lineWidth: 2))
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-            }
-            .buttonStyle(.plain)
+            GameCornerButton(kind: .home) { dismiss() }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 8).padding(.leading, 8)
 
             // Help "?" button (top-right) — opens ProperNoundle's guide.
-            Button { showGuide = true } label: {
-                Image(systemName: "questionmark").font(.system(size: 20, weight: .bold)).foregroundStyle(ModeStyle.accent(.propernoundle))
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(.propernoundle), lineWidth: 2))
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-            }
-            .buttonStyle(.plain)
+            GameCornerButton(kind: .help) { showGuide = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.top, 8).padding(.trailing, 8)
             .sheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }

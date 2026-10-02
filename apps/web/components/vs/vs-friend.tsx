@@ -8,7 +8,8 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Crown, Link as LinkIcon, Loader2, User as UserIcon } from 'lucide-react';
+import { Check, Link as LinkIcon, Loader2, User as UserIcon } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { vsHrefForMode } from '@/lib/invite-service';
@@ -103,7 +104,7 @@ export function VsFriend() {
         ) : !isProActive ? (
           // Sending is Pro; answering a challenge stays free (from the lobby or a link).
           <div className="p-4 space-y-3 text-center" style={vsCardStyle}>
-            <Crown className="w-7 h-7 mx-auto" style={{ color: '#d97706' }} />
+            <Icon3D name="crown" size={28} className="mx-auto" />
             <div className="text-[15px] font-black" style={{ color: VS.deep }}>Challenging friends is Pro</div>
             <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Answering a challenge is free. Go Pro to send your own runs and invite friends live.</p>
             <button type="button" onClick={() => router.push('/pro')} className="w-full py-3 text-[14px] font-black text-white" style={{ background: '#7c3aed', borderRadius: 12 }}>SEE PRO</button>

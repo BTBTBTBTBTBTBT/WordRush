@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { type ReactNode } from 'react';
-import { Trophy, Sparkles, Zap, Swords, Flame, TrendingUp, LayoutGrid, Star, Timer } from 'lucide-react';
+import { Sparkles, Zap, Swords, TrendingUp, LayoutGrid, Star, Timer } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { ModeMeta } from '@/lib/modes.generated';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import type { DailyCompletion } from '@/lib/daily-service';
@@ -102,9 +103,9 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
             <div className="flex items-center gap-2 mx-auto">
               {flawless ? (
                 <>
-                  <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
+                  <Icon3D name="trophy" size={20} />
                   <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}>FLAWLESS VICTORY!</span>
-                  <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
+                  <Icon3D name="trophy" size={20} />
                 </>
               ) : (
                 <>
@@ -200,7 +201,7 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
       {/* Streaks + the best thing that happened today. */}
       <div className="grid grid-cols-2 gap-2">
         <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '14px' }}>
-          <Flame className="w-4 h-4 shrink-0" style={{ color: '#f97316' }} fill="currentColor" />
+          <Icon3D name="flame" size={16} className="shrink-0" />
           <div className="min-w-0">
             <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Sweep streaks</div>
             {/* Wordocious, then Puzzles: the same two runs the home banner shows. */}

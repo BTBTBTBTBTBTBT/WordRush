@@ -233,8 +233,9 @@ private struct StreakBadge: View {
     let streak: Int
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: "flame.fill").font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color(widgetHex: "#f59e0b"))
+            // The 3D streak buddy from the app's icon set (HEADER_SPEC §2).
+            Image("icon3d-flame").resizable().interpolation(.high).scaledToFit()
+                .frame(width: 16, height: 16)
             Text("\(streak)").font(.system(size: 14, weight: .black, design: .rounded))
                 .foregroundStyle(.primary)
         }

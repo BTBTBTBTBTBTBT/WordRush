@@ -46,9 +46,9 @@ struct EditProfileView: View {
             LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)], startPoint: .leading, endPoint: .trailing)
                 .frame(height: 6)
             HStack {
-                Button("Cancel") { dismiss() }.font(Brand.font(15, .bold)).foregroundStyle(Theme.textMuted)
+                HeaderCircleButton(.symbol("xmark"), size: 32, label: "Cancel") { dismiss() }
                 Spacer()
-                Text("EDIT PROFILE").font(Brand.font(18, .black)).foregroundStyle(Theme.wordmarkGradient)
+                PageTitle("EDIT PROFILE", size: 18)
                 Spacer()
                 Button(saving ? "Saving…" : "Save") { save() }.font(Brand.font(15, .black)).foregroundStyle(Theme.primary).disabled(saving)
             }

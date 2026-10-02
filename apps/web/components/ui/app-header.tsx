@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Flame, HelpCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { ProBadge } from '@/components/ui/pro-badge';
+import { CastTitle } from '@/components/ui/cast-title';
+import { Icon3D } from '@/components/ui/icon3d';
+import { HEADER_SHADOW } from '@/components/ui/page-header';
 import { MenuModal } from '@/components/modals/menu-modal';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { StatPopover } from '@/components/ui/stat-popover';
@@ -13,58 +14,47 @@ import { cachedFlawlessStreak, fetchDailySweepStats } from '@/lib/stats-service'
 import { getTodayLocal } from '@/lib/daily-service';
 import { readLinkReturn } from '@/lib/identity-linking';
 
-function ShieldIcon({ className }: { className?: string }) {
+// The home header (docs/HEADER_SPEC.md §1), shared by Home, Leaderboard,
+// Records, Stats and Pro. Row 1: the cast title (replaces the WORDOCIOUS text
+// and the PRO pill; Pro gets the crowned W + gold glow line). Row 2: the stat
+// pills (streak, flawless trophies, shields) on the left, help + settings on
+// the right. Every tap is the same as before the redesign.
+
+/** Stat pill inks (§1). */
+const INK = { streak: '#c2410c', trophy: '#92400e', shield: '#5b21b6' } as const;
+
+function StatPill({ icon, value, ink, onClick, label }: {
+  icon: 'flame' | 'trophy' | 'shield';
+  value: number;
+  ink: string;
+  onClick: () => void;
+  label: string;
+}) {
   return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M10 2L3 5.5V10C3 14.5 6 17.5 10 19C14 17.5 17 14.5 17 10V5.5L10 2Z" fill="#A78BFA" stroke="#8B5CF6" strokeWidth="1"/>
-      <path d="M8.5 10.5L9.5 11.5L12 9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex items-center gap-1 pl-1.5 pr-2.5 rounded-full transition-transform active:scale-95"
+      style={{ height: 32, background: '#ffffff', boxShadow: HEADER_SHADOW, color: ink }}
+    >
+      <Icon3D name={icon} size={20} priority />
+      <span className="font-black leading-none" style={{ fontSize: 15 }}>{value}</span>
+    </button>
   );
 }
 
-/**
- * Wordmark that SCALES its font down to fit the space left of the header
- * controls — the web equivalent of the native header's minimumScaleFactor.
- * "WORDOCIOUS" (+ PRO badge) must always show in full: an ellipsized
- * wordmark or a badge clipping into the help button are both unacceptable.
- * Measured with a ResizeObserver so streak/shield digit growth, rotation,
- * and font load all re-fit; 11px floor, then ellipsis as a never-in-practice
- * fallback.
- */
-function FitWordmark() {
-  const ref = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const fit = () => {
-      el.style.fontSize = '20px';
-      const scale = el.clientWidth / Math.max(1, el.scrollWidth);
-      if (scale < 1) el.style.fontSize = `${Math.max(10, Math.floor(20 * scale * 10) / 10)}px`;
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    if (el.parentElement) ro.observe(el.parentElement);
-    // Nunito loads async — the fallback font measures differently.
-    if (typeof document !== 'undefined' && document.fonts?.ready) {
-      document.fonts.ready.then(fit).catch(() => {});
-    }
-    return () => ro.disconnect();
-  }, []);
+function HeaderIconButton({ icon, onClick, label }: { icon: 'help' | 'gear'; onClick: () => void; label: string }) {
   return (
-    <span
-      ref={ref}
-      className="font-black truncate min-w-0"
-      style={{
-        fontSize: '20px',
-        backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        color: 'transparent',
-      }}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex items-center justify-center rounded-full transition-transform active:scale-95"
+      style={{ width: 38, height: 38, background: '#ffffff', boxShadow: HEADER_SHADOW }}
     >
-      WORDOCIOUS
-    </span>
+      <Icon3D name={icon} size={22} priority />
+    </button>
   );
 }
 
@@ -139,170 +129,110 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="flex items-center justify-between gap-2 px-4 py-3">
-        <Link href="/" className="flex items-center gap-1.5 min-w-0 shrink overflow-hidden">
-          <FitWordmark />
-          {isPro && <span className="shrink-0 flex items-center"><ProBadge size="sm" /></span>}
+      <header className="px-4 pt-2 pb-2 space-y-2">
+        {/* Row 1: the cast title. The link home is the old wordmark's tap. */}
+        <Link href="/" aria-label="Wordocious home" className="flex justify-center">
+          <CastTitle crown={isPro} />
         </Link>
 
-        {/* gap-1.5 matches the native header's spacing(6) — the extra 2px per
-            gap was part of what squeezed the wordmark into truncating. */}
-        <div className="flex items-center gap-1.5 relative shrink-0">
-          {/* "?" menu — opens the site-nav menu (native MenuSheet parity) */}
-          <button
-            onClick={() => setHelpOpen(true)}
-            className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
-            style={{
-              background: 'var(--color-surface-alt)',
-              border: '1.5px solid var(--color-border-alt)',
-              color: 'var(--color-text-muted)',
-            }}
-            aria-label="Menu"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
-
-          {/* Settings button — always visible (theme, sound, accessibility) */}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
-            style={{
-              background: 'var(--color-surface-alt)',
-              border: '1.5px solid var(--color-border-alt)',
-              color: 'var(--color-text-muted)',
-            }}
-            aria-label="Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-
-          {/* Guest — prominent Sign In entry (returns to the landing/login). */}
-          {isGuest && !profile && (
-            <button
-              onClick={exitGuest}
-              className="px-3.5 py-1.5 rounded-xl text-white font-extrabold text-sm transition-transform active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 2px 0 #4c1d95' }}
-            >
-              Sign In
-            </button>
-          )}
-
-          {profile && (
-            <>
-              {/* Streak pill */}
-              {streak > 0 && (
-                <button
-                  onClick={openStreak}
-                  className="flex items-center gap-1 px-2.5 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
-                  style={{
-                    background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
-                    border: '1.5px solid #fde68a',
-                    borderRadius: '20px',
-                    color: '#92400e',
-                  }}
-                >
-                  <Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />
-                  <span>{streak}</span>
-                </button>
-              )}
-              {/* §244: flawless-streak pill — only when a live run >= 2. */}
-              {flawlessStreak >= 2 && (
-                <button
-                  onClick={openFlawless}
-                  className="flex items-center gap-1 px-2.5 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
-                  style={{
-                    background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-                    border: '1.5px solid #f59e0b',
-                    borderRadius: '20px',
-                    color: '#b45309',
-                  }}
-                >
-                  <span className="text-[13px] leading-none">🏆</span>
-                  <span>{flawlessStreak}</span>
-                </button>
-              )}
-              {/* Shield pill */}
+        {/* Row 2: stat pills left, help + settings right. */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 relative min-w-0">
+            {/* Guest — prominent Sign In entry (returns to the landing/login). */}
+            {isGuest && !profile && (
               <button
-                onClick={openShield}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
-                style={{
-                  // Fixed fill to match the fixed #5b21b6 ink and the fully-fixed
-                  // streak pill beside it. Themed surface-hover put this at 1.46:1
-                  // in Dark, so the shield COUNT vanished while its twin rendered
-                  // fine — on every screen, since the header is persistent.
-                  background: '#f3f0ff',
-                  border: '1.5px solid #c4b5fd',
-                  borderRadius: '20px',
-                  color: '#5b21b6',
-                }}
+                onClick={exitGuest}
+                className="px-3.5 py-1.5 rounded-xl text-white font-extrabold text-sm transition-transform active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 2px 0 #4c1d95' }}
               >
-                <ShieldIcon className="w-4 h-4" />
-                <span>{shields}</span>
+                Sign In
               </button>
+            )}
 
-              {/* §244: Flawless Popover */}
-              <StatPopover open={flawlessOpen} onClose={() => setFlawlessOpen(false)}>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg leading-none">🏆</span>
-                    <span className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Flawless Streak</span>
-                  </div>
-                  <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    {flawlessStreak} straight day{flawlessStreak === 1 ? '' : 's'} winning every daily.
-                    Win every daily today to keep it alive.
-                  </p>
-                </div>
-              </StatPopover>
+            {profile && (
+              <>
+                {/* Streak pill */}
+                {streak > 0 && (
+                  <StatPill icon="flame" value={streak} ink={INK.streak} onClick={openStreak} label={`Daily streak: ${streak}`} />
+                )}
+                {/* §244: flawless-streak pill — only when a live run >= 2. */}
+                {flawlessStreak >= 2 && (
+                  <StatPill icon="trophy" value={flawlessStreak} ink={INK.trophy} onClick={openFlawless} label={`Flawless streak: ${flawlessStreak}`} />
+                )}
+                {/* Shield pill */}
+                <StatPill icon="shield" value={shields} ink={INK.shield} onClick={openShield} label={`Streak shields: ${shields}`} />
 
-              {/* Streak Popover */}
-              <StatPopover open={streakOpen} onClose={() => setStreakOpen(false)}>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Flame className="w-5 h-5" style={{ color: '#f97316' }} />
-                    <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Daily Streak</span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Current</span>
-                      <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{streak} {streak === 1 ? 'day' : 'days'}</span>
+                {/* §244: Flawless Popover */}
+                <StatPopover open={flawlessOpen} onClose={() => setFlawlessOpen(false)} align="left">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Icon3D name="trophy" size={20} />
+                      <span className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Flawless Streak</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Best</span>
-                      <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{bestStreak} {bestStreak === 1 ? 'day' : 'days'}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ borderTop: '1px solid var(--color-divider)' }} className="pt-2.5">
-                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                      Play any daily puzzle each day to keep your streak going. Miss a day and it resets — unless you use a streak shield.
+                    <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                      {flawlessStreak} straight day{flawlessStreak === 1 ? '' : 's'} winning every daily.
+                      Win every daily today to keep it alive.
                     </p>
                   </div>
-                </div>
-              </StatPopover>
+                </StatPopover>
 
-              {/* Shield Popover */}
-              <StatPopover open={shieldOpen} onClose={() => setShieldOpen(false)}>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <ShieldIcon className="w-5 h-5" />
-                    <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Streak Shields</span>
-                  </div>
+                {/* Streak Popover */}
+                <StatPopover open={streakOpen} onClose={() => setStreakOpen(false)} align="left">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Icon3D name="flame" size={20} />
+                      <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Daily Streak</span>
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Available</span>
-                    <span className="text-sm font-black" style={{ color: '#5b21b6' }}>{shields} {shields === 1 ? 'shield' : 'shields'}</span>
-                  </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Current</span>
+                        <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{streak} {streak === 1 ? 'day' : 'days'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Best</span>
+                        <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{bestStreak} {bestStreak === 1 ? 'day' : 'days'}</span>
+                      </div>
+                    </div>
 
-                  <div style={{ borderTop: '1px solid var(--color-divider)' }} className="pt-2.5">
-                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                      Shields protect your streak if you miss a day. Earn a free shield every 7-day streak milestone. PRO members get 4 shields each billing period.
-                    </p>
+                    <div style={{ borderTop: '1px solid var(--color-divider)' }} className="pt-2.5">
+                      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                        Play any daily puzzle each day to keep your streak going. Miss a day and it resets — unless you use a streak shield.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </StatPopover>
-            </>
-          )}
+                </StatPopover>
+
+                {/* Shield Popover */}
+                <StatPopover open={shieldOpen} onClose={() => setShieldOpen(false)} align="left">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Icon3D name="shield" size={20} />
+                      <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Streak Shields</span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Available</span>
+                      <span className="text-sm font-black" style={{ color: '#5b21b6' }}>{shields} {shields === 1 ? 'shield' : 'shields'}</span>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid var(--color-divider)' }} className="pt-2.5">
+                      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                        Shields protect your streak if you miss a day. Earn a free shield every 7-day streak milestone. PRO members get 4 shields each billing period.
+                      </p>
+                    </div>
+                  </div>
+                </StatPopover>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* "?" menu — opens the site-nav menu (native MenuSheet parity) */}
+            <HeaderIconButton icon="help" onClick={() => setHelpOpen(true)} label="Menu" />
+            {/* Settings button — always visible (theme, sound, accessibility) */}
+            <HeaderIconButton icon="gear" onClick={() => setSettingsOpen(true)} label="Settings" />
+          </div>
         </div>
       </header>
 

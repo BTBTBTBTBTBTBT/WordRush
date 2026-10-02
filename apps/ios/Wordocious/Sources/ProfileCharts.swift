@@ -881,7 +881,7 @@ private struct ProInsightsCard: View {
 
     private func statCell(_ label: String, _ value: String, _ icon: String, _ color: Color) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 18)
+            SymbolGlyph(icon, size: 14, color: color).frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
                 Text(value).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                 Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
@@ -1024,7 +1024,7 @@ struct ProStatsCard: View {
                 Text("Pro Feature").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 Button { showPro = true } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "crown.fill").font(.system(size: 12))
+                        Icon3D(.crown, size: 15)
                         Text("Upgrade to Pro").font(Brand.font(12, .black))
                     }
                     .foregroundStyle(.white)

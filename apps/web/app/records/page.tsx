@@ -3,7 +3,8 @@
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Crown, Users, User, Swords, ChevronDown, ChevronUp, Share } from 'lucide-react';
+import { Users, User, Swords, ChevronDown, ChevronUp, Share } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
@@ -111,7 +112,7 @@ function RecordCard({
   return (
     <div className="relative flex flex-col gap-1.5 p-3" style={isCurrentUser && hasRecord ? { ...SOFT_CARD, ...YOUR_ROW, borderRadius: 14 } : SOFT_CARD}>
       {isCurrentUser && hasRecord && (
-        <Crown className="absolute top-2.5 right-2.5 w-3.5 h-3.5" style={{ color: '#f59e0b' }} fill="#fde68a" aria-label="Your record" />
+        <Icon3D name="crown" size={14} label="Your record" className="absolute top-2.5 right-2.5" />
       )}
       <div className="flex items-center gap-2 min-w-0">
         <GameTileChip accent={accentColor} width={28}>

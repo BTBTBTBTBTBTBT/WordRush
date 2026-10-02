@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,13 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
@@ -74,10 +73,12 @@ import java.util.TimeZone
 data class InfoNavItem(
     val route: String, val label: String, val subtitle: String,
     val icon: ImageVector, val accent: Color,
+    /** The 3D icon set's glyph where one exists (HEADER_SPEC §2: help → `help`). */
+    val icon3d: Icon3DName? = null,
 )
 
 val INFO_NAV = listOf(
-    InfoNavItem("help", "How to Play", "Rules, tiles & scoring", Icons.AutoMirrored.Filled.HelpOutline, Color(0xFF7C3AED)),
+    InfoNavItem("help", "How to Play", "Rules, tiles & scoring", Icons.AutoMirrored.Filled.HelpOutline, Color(0xFF7C3AED), Icon3DName.HELP),
     InfoNavItem("guides", "Guides", "Strategy for every mode", Icons.Filled.MenuBook, Color(0xFF3B82F6)),
     InfoNavItem("strategy", "Strategy", "Solve faster, in fewer guesses", Icons.Filled.Lightbulb, Color(0xFFF59E0B)),
     InfoNavItem("words", "Words", "Every Word of the Day", Icons.Filled.CalendarMonth, Color(0xFFEC4899)),
@@ -98,17 +99,13 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("MENU", fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            Box(Modifier.size(30.dp).clip(CircleShape).background(WTheme.surfaceAlt).clickableNoRipple(onDismiss), Alignment.Center) {
-                Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
-            }
-        }
+        PageHeader("MENU", onClose = onDismiss, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             INFO_NAV.forEach { item ->
                 Row(infoCardMod().clickableNoRipple { onNav(item.route) }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(item.accent.copy(alpha = 0.14f)), Alignment.Center) {
-                        Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(16.dp))
+                        if (item.icon3d != null) Icon3D(item.icon3d, 24.dp)
+                        else Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(16.dp))
                     }
                     Column(Modifier.weight(1f)) {
                         Text(item.label.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -137,10 +134,7 @@ fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("SHARE", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDismiss))
-        }
+        PageHeader("SHARE", onClose = onDismiss, titleSize = 20.sp, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ShareVariantRow(Icons.Filled.VisibilityOff, Color(0xFF7C3AED), "No spoilers", "Colors only") { onPick(false) }
             ShareVariantRow(Icons.Filled.Visibility, Color(0xFFEC4899), "Full results", "Letters revealed") { onPick(true) }
@@ -260,25 +254,16 @@ private fun prettyDate(key: String): String = runCatching {
 private fun OverlayScaffold(
     title: String,
     onDone: () -> Unit,
-    leading: (@Composable () -> Unit)? = null,
+    /** A nested page's back (an article, a word) — the white back circle on the left. */
+    onBack: (() -> Unit)? = null,
     /** The page host beside the title (Help / Guides: C, MASCOT_SPEC §6). */
     host: MascotId? = null,
     content: @Composable () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (leading != null) { leading(); Spacer(Modifier.size(8.dp)) }
-            Text(title.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f, fill = host == null), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            if (host != null) {
-                Spacer(Modifier.size(6.dp))
-                TitleHost(host)
-                Spacer(Modifier.weight(1f))
-            }
-            Box(Modifier.size(30.dp).clip(CircleShape).background(WTheme.surfaceAlt).clickableNoRipple(onDone), Alignment.Center) {
-                Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
-            }
-        }
+        // The shared page header (HEADER_SPEC §4).
+        PageHeader(title, host = host, onBack = onBack, onClose = onDone, titleMaxLines = 4, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp))
         content()
     }
 }
@@ -297,9 +282,7 @@ fun StrategyScreen(onDone: () -> Unit) {
 
     selected?.let { a ->
         androidx.activity.compose.BackHandler { selected = null }
-        OverlayScaffold(a.title, onDone = onDone, leading = {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple { selected = null })
-        }) {
+        OverlayScaffold(a.title, onDone = onDone, onBack = { selected = null }) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("STRATEGY · ${a.minutes} MIN READ", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color(0xFFF59E0B))
                 Text(a.dek, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -379,9 +362,7 @@ fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
 @Composable
 private fun WordDetail(w: WordsService.Entry, onDone: () -> Unit, onBack: () -> Unit) {
     val word = w.word.uppercase()
-    OverlayScaffold(word, onDone = onDone, leading = {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onBack))
-    }) {
+    OverlayScaffold(word, onDone = onDone, onBack = onBack) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             // Gradient hero band — white tiles on a purple→pink panel.
             Column(

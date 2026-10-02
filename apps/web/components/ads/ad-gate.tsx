@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Crown } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
+
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { AD_CONFIG } from '@/lib/ads/ad-config';
@@ -111,7 +112,7 @@ export function AdGate({ children }: AdGateProps) {
 
             <Link href="/pro" className="block">
               <span className="inline-flex items-center gap-1 text-[10px] font-bold" style={{ color: '#d97706' }}>
-                <Crown className="w-3 h-3" />
+                <Icon3D name="crown" size={14} />
                 Go Pro for ad-free play
               </span>
             </Link>

@@ -75,8 +75,7 @@ struct StatCell: View {
     var body: some View {
         VStack(spacing: 2) {
             if let icon {
-                Image(systemName: icon).font(.system(size: 16))
-                    .foregroundStyle(color ?? Theme.textMuted)
+                SymbolGlyph(icon, size: 16, color: color ?? Theme.textMuted)
             }
             if let n = countUp {
                 CountUpNumber(value: n, suffix: countSuffix, font: Brand.font(18, .black),

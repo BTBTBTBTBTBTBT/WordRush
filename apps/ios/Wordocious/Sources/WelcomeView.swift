@@ -73,7 +73,7 @@ struct WelcomeView: View {
 
     private func pillar(_ icon: String, _ tint: Color, _ bg: Color, _ title: String, _ sub: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(tint)
+            SymbolGlyph(icon, size: 14, color: tint)
                 .frame(width: 28, height: 28).background(RoundedRectangle(cornerRadius: 8).fill(bg))
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)

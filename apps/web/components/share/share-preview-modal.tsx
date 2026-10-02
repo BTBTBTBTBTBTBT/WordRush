@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { Download, Copy, X, Check } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
 import { copyShareToClipboard } from '@/lib/share-utils';
 
 interface ShareModalState {
@@ -91,14 +92,7 @@ export function SharePreviewHost() {
               boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
             }}
           >
-            <button
-              onClick={closeSharePreview}
-              aria-label="Close"
-              className="absolute top-3 right-3 p-1.5 rounded-full transition-colors hover:bg-gray-100"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <HeaderBack kind="close" onClick={closeSharePreview} size={32} className="absolute top-3 right-3" />
 
             <h3 className="text-lg font-black text-center mb-3" style={{ color: 'var(--color-text)' }}>
               Share your result

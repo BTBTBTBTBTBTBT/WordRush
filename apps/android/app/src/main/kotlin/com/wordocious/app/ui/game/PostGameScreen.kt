@@ -25,7 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Refresh
@@ -390,18 +389,10 @@ private fun androidx.compose.foundation.layout.BoxScope.PostGameHelpButton(mode:
     if (showGuide) GuideSheet(mode = mode, onDismiss = { showGuide = false })
 }
 
-/** Corner Home button (top-left) — accent circle, matches the in-game one. */
+/** Corner Home button (top-left) — the in-game one, inset 8 dp. */
 @Composable
 internal fun CornerHomeButton(accent: Color, onBack: () -> Unit) {
-    Box(
-        modifier = Modifier.padding(8.dp).size(44.dp)
-            .shadow(4.dp, CircleShape, clip = false).clip(CircleShape)
-            .background(WTheme.surface).border(2.dp, accent, CircleShape)
-            .clickableNoRipple(onBack),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Filled.Home, "Home", tint = accent, modifier = Modifier.size(20.dp))
-    }
+    CornerHomeButton(accent, onClick = onBack, modifier = Modifier.padding(8.dp))
 }
 
 /**
@@ -447,12 +438,19 @@ private fun GauntletResultsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                if (won) Icons.Filled.EmojiEvents else Icons.Filled.Cancel, null,
-                tint = if (won) Color(0xFFD97706) else Color(0xFFF87171),
-                modifier = Modifier.size(60.dp)
-                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale; alpha = iconScale },
-            )
+            if (won) {
+                com.wordocious.app.ui.Icon3D(
+                    com.wordocious.app.ui.Icon3DName.TROPHY, 64.dp,
+                    Modifier.graphicsLayer { scaleX = iconScale; scaleY = iconScale; alpha = iconScale },
+                )
+            } else {
+                Icon(
+                    Icons.Filled.Cancel, null,
+                    tint = Color(0xFFF87171),
+                    modifier = Modifier.size(60.dp)
+                        .graphicsLayer { scaleX = iconScale; scaleY = iconScale; alpha = iconScale },
+                )
+            }
             if (won) {
                 Text(
                     "GAUNTLET CLEARED!", fontSize = 34.sp, fontWeight = FontWeight.Black,
@@ -495,7 +493,7 @@ private fun GauntletResultsScreen(
             modifier = Modifier.fillMaxWidth().riseIn(appeared, 400),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            GauntletStatCard(Icons.Filled.EmojiEvents, Color(0xFF7C3AED), "$cleared/${g.totalStages}", "Stages", Modifier.weight(1f))
+            GauntletStatCard(com.wordocious.app.ui.Icon3DName.TROPHY, Color(0xFF7C3AED), "$cleared/${g.totalStages}", "Stages", Modifier.weight(1f))
             GauntletStatCard(Icons.Filled.Tag, Color(0xFF60A5FA), "$totalGuesses", "Guesses", Modifier.weight(1f))
             GauntletStatCard(Icons.Filled.Schedule, Color(0xFFFB923C), fmtRunTime(totalTimeMs), "Time", Modifier.weight(1f))
         }
@@ -548,7 +546,8 @@ private fun Modifier.riseIn(appeared: Boolean, delayMs: Int): Modifier {
 /** Boxed run stat (iOS GauntletResultsView.statCard). */
 @Composable
 private fun GauntletStatCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color,
+    /** An ImageVector, or a 3D set icon (HEADER_SPEC §2). */
+    icon: Any, color: Color,
     value: String, label: String, modifier: Modifier = Modifier,
 ) {
     Column(
@@ -557,7 +556,10 @@ private fun GauntletStatCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+        when (icon) {
+            is com.wordocious.app.ui.Icon3DName -> com.wordocious.app.ui.Icon3D(icon, 22.dp)
+            is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+        }
         Text(value, fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
@@ -638,7 +640,7 @@ private fun FinishedStatsHeader(
             style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito),
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (isMulti) StatItem(Icons.Filled.EmojiEvents, Color(0xFFD97706), "$boardsSolved/$totalBoards")
+            if (isMulti) StatItem(com.wordocious.app.ui.Icon3DName.TROPHY, Color(0xFFD97706), "$boardsSolved/$totalBoards")
             Text(
                 if (maxGuesses > 0) "$guessCount/$maxGuesses guesses" else "$guessCount guesses",
                 fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
@@ -671,9 +673,12 @@ private fun FinishedStatsHeader(
 }
 
 @Composable
-private fun StatItem(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, text: String) {
+private fun StatItem(icon: Any, color: Color, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(12.dp))
+        when (icon) {
+            is com.wordocious.app.ui.Icon3DName -> com.wordocious.app.ui.Icon3D(icon, 15.dp)
+            is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = color, modifier = Modifier.size(12.dp))
+        }
         Text(text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }
@@ -707,7 +712,7 @@ internal fun DailyRankBadge(mode: GameMode) {
             .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(Icons.Filled.EmojiEvents, null, tint = if (gold) Color(0xFF92400E) else WTheme.textMuted, modifier = Modifier.size(10.dp))
+        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 13.dp, alpha = if (gold) 1f else 0.6f, colorFilter = if (gold) null else com.wordocious.app.ui.Icon3DMuted)
         Text(
             "${badge.label} · #$position of $total", fontSize = 10.sp, fontWeight = FontWeight.Black,
             color = if (gold) Color(0xFF92400E) else WTheme.textMuted,
@@ -893,7 +898,7 @@ internal fun NextDailyRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Filled.EmojiEvents, null, tint = lbAccent, modifier = Modifier.size(12.dp))
+                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 16.dp)
                 Text("View $lbTitle Leaderboard", fontSize = 12.sp, fontWeight = FontWeight.Black, color = lbAccent)
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = lbAccent, modifier = Modifier.size(11.dp))
             }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Home } from 'lucide-react';
+import { HEADER_INK, HEADER_SHADOW } from '@/components/ui/page-header';
 
 interface GameHomeButtonProps {
   /**
@@ -32,22 +33,18 @@ interface GameHomeButtonProps {
 
 /**
  * Shared corner Home button used at the top-left of every in-game header.
- * Sized for easy tapping on mobile (44×44 per iOS HIG) and colored to
- * match the mode the player is inside, so it reads as part of the page
- * rather than a floating afterthought.
+ * Sized for easy tapping on mobile (44×44 per iOS HIG). HEADER_SPEC §4: the
+ * back/close control is a soft white circle (no border) with the icon in
+ * #6d28d9 on every screen; `accentColor` is kept for callers but no longer
+ * tints it.
  */
 export function GameHomeButton({
-  accentColor = '#7c3aed',
   onClick,
   positionClass = 'absolute top-2 left-2 z-10',
   href = '/',
 }: GameHomeButtonProps) {
   const className = `${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`;
-  const style = {
-    background: 'var(--color-surface)',
-    border: `2px solid ${accentColor}`,
-    boxShadow: `0 2px 0 ${accentColor}33, 0 4px 12px rgba(0,0,0,0.08)`,
-  } as const;
+  const style = { background: '#ffffff', boxShadow: HEADER_SHADOW } as const;
 
   if (onClick) {
     return (
@@ -58,7 +55,7 @@ export function GameHomeButton({
         className={className}
         style={style}
       >
-        <Home className="w-5 h-5" style={{ color: accentColor }} />
+        <Home className="w-5 h-5" style={{ color: HEADER_INK }} strokeWidth={2.6} />
       </button>
     );
   }
@@ -70,7 +67,7 @@ export function GameHomeButton({
       className={className}
       style={style}
     >
-      <Home className="w-5 h-5" style={{ color: accentColor }} />
+      <Home className="w-5 h-5" style={{ color: HEADER_INK }} strokeWidth={2.6} />
     </Link>
   );
 }

@@ -50,7 +50,11 @@ struct ProView: View {
                     .padding(.horizontal, 14).padding(.bottom, 24)
                 }
             }
-            .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
+                }
+            }
             .alert("Purchase issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -83,10 +87,10 @@ struct ProView: View {
             // W, the leader in the cape, hosts Pro (MASCOT_SPEC §6) under the gold crown.
             ZStack(alignment: .top) {
                 MascotView(Mascots.pro, size: 56, motion: .bob).padding(.top, 18)
-                Image(systemName: "crown.fill").font(.system(size: 22)).foregroundStyle(gold)
+                Icon3D(.crown, size: 28)
             }
             .accessibilityHidden(true)
-            Text("Go Pro").font(Brand.title(36)).foregroundStyle(Theme.textPrimary)
+            PageTitle("Go Pro", colors: PageHeaderStyle.gold, size: 32)
             Text("Play unlimited & ad-free — every mode, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
         }
@@ -96,7 +100,7 @@ struct ProView: View {
     private var activePro: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "crown.fill").font(.system(size: 14)).foregroundStyle(.white)
+                Icon3D(.crown, size: 18)
                 Text("ACTIVE PRO").font(Brand.caption(13)).foregroundStyle(.white)
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
@@ -171,7 +175,10 @@ struct ProView: View {
     private func benefitRow(_ b: Benefit) -> some View {
         HStack(spacing: 12) {
             Group {
-                if let asset = b.asset {
+                if b.asset == "shield" {
+                    // The streak shield wears the 3D icon set (HEADER_SPEC §2).
+                    Icon3D(.shield, size: 24)
+                } else if let asset = b.asset {
                     Image(asset).renderingMode(.template).resizable().scaledToFit().frame(width: 20, height: 20)
                 } else {
                     Image(systemName: b.symbol).font(.system(size: 20))

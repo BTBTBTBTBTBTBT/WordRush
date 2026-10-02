@@ -1,6 +1,5 @@
 package com.wordocious.app.ui.vs
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -106,7 +104,7 @@ fun VsBannerView(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(Modifier.heightIn(min = 30.dp).padding(end = BANNER_HOST_CLEAR), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (gold) Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(18.dp))
+                    if (gold) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 22.dp)
                     Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = headInk, maxLines = 2)
                 }
                 Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = subInk, modifier = Modifier.padding(end = 4.dp))
@@ -138,7 +136,7 @@ fun VsBannerView(
                 )
                 if (botStreak > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Image(painterResource(com.wordocious.app.R.drawable.ic_flame_gold), "Bot win streak", modifier = Modifier.size(12.dp))
+                        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 14.dp, contentDescription = "Bot win streak")
                         Text("$botStreak", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
                     }
                 }

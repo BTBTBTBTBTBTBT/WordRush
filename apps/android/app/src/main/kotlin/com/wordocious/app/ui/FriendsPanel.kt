@@ -192,22 +192,18 @@ fun FriendsScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 1. Header
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "FRIENDS", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-                style = TextStyle(brush = Brush.horizontalGradient(FriendsPink.titleGradient), fontFamily = Nunito),
-            )
-            // The page host, O1 the cheerleader (MASCOT_SPEC §6).
-            TitleHost(Mascots.friends)
-            Spacer(Modifier.weight(1f))
+        // 1. Header (HEADER_SPEC §4). §5: the Friends banner's O1 is the page host,
+        // so the title row doesn't repeat it.
+        PageHeader(
+            "FRIENDS", accent = PageAccent.friends,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        ) {
             NotificationPrefsButton(myProfile)
             if (signedIn) {
-                Box(
-                    Modifier.size(28.dp).clip(CircleShape).background(Color.White)
-                        .clickableNoRipple { scope.launch { addRequester.bringIntoView(); runCatching { addFocus.requestFocus() } } },
-                    Alignment.Center,
-                ) { Icon(Icons.Filled.PersonAdd, "Add a friend", tint = FriendsPink.solid, modifier = Modifier.size(16.dp)) }
+                HeaderCircle(
+                    onClick = { scope.launch { addRequester.bringIntoView(); runCatching { addFocus.requestFocus() } } },
+                    contentDescription = "Add a friend",
+                ) { Icon(Icons.Filled.PersonAdd, null, tint = FriendsPink.solid, modifier = Modifier.size(19.dp)) }
             }
         }
         if (!signedIn) {
@@ -218,11 +214,20 @@ fun FriendsScreen(
             return@Column
         }
         note?.let {
-            Text(
-                it, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.solid,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(FriendsPink.soft)
+            // A shield note wears the 3D shield (HEADER_SPEC §2) instead of the emoji.
+            val shieldNote = it.startsWith(SHIELD_NOTE)
+            Row(
+                Modifier.clip(RoundedCornerShape(50)).background(FriendsPink.soft)
                     .clickableNoRipple { note = null }.padding(horizontal = 12.dp, vertical = 6.dp),
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                if (shieldNote) Icon3D(Icon3DName.SHIELD, 16.dp)
+                Text(
+                    if (shieldNote) it.removePrefix(SHIELD_NOTE) else it,
+                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.solid,
+                )
+            }
         }
 
         // 2. The Friends banner
@@ -344,7 +349,7 @@ fun FriendsScreen(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("TODAY’S RACE", fontSize = 17.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink)
+                PageTitleText("TODAY’S RACE", accent = PageAccent.friends, fontSize = 17.sp)
                 Column(Modifier.fillMaxWidth().friendsCard().padding(12.dp)) {
                     TodaysRaceCard(
                         friends = friends,
@@ -531,16 +536,19 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
                         )
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
-                    Text(if (win) "👑" else "🏁", fontSize = 16.sp)
+                    if (win) Icon3D(Icon3DName.CROWN, 22.dp) else Text("🏁", fontSize = 16.sp)
                     Text(
                         buildAnnotatedString {
                             append("Last week you finished ")
                             withStyle(SpanStyle(fontWeight = FontWeight.Black)) { append("${ordinal(r.rank)} of ${r.circleSize}") }
                             append(" · ${fmtPts(r.points)} pts")
                             if (!win && !r.winnerName.isNullOrBlank()) {
-                                withStyle(SpanStyle(color = FriendsPink.label)) { append(" · 👑 ${r.winnerName} ${fmtPts(r.winnerPoints)}") }
+                                withStyle(SpanStyle(color = FriendsPink.label)) {
+                                    append(" · "); appendIcon3D(Icon3DName.CROWN); append(" ${r.winnerName} ${fmtPts(r.winnerPoints)}")
+                                }
                             }
                         },
+                        inlineContent = icon3DInline(),
                         fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
                         color = if (win) Color(0xFF92400E) else FriendsPink.ink, fontFamily = Nunito,
                         lineHeight = 14.sp, modifier = Modifier.weight(1f),
@@ -567,7 +575,11 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().clickableNoRipple { if (pastWeeks.size > 1) showPastWeeks = !showPastWeeks },
                 ) {
-                    Text("Last week: 👑 $name · ${fmtPts(pts)} pts", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, fontFamily = Nunito)
+                    Text(
+                        buildAnnotatedString { append("Last week: "); appendIcon3D(Icon3DName.CROWN); append(" $name · ${fmtPts(pts)} pts") },
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, fontFamily = Nunito,
+                        inlineContent = icon3DInline(),
+                    )
                     if (pastWeeks.size > 1) {
                         Icon(
                             Icons.Filled.KeyboardArrowDown, "Past weeks", tint = FriendsPink.label,
@@ -579,8 +591,10 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
             if (showPastWeeks) {
                 pastWeeks.filter { it.first > 0 }.forEach { (k, name, pts) ->
                     Text(
-                        "${pastWeekLabel(k)}: 👑 $name · ${fmtPts(pts)} pts", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        buildAnnotatedString { append("${pastWeekLabel(k)}: "); appendIcon3D(Icon3DName.CROWN); append(" $name · ${fmtPts(pts)} pts") },
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold,
                         color = FriendsPink.label, fontFamily = Nunito, modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
+                        inlineContent = icon3DInline(),
                     )
                 }
             }
@@ -721,11 +735,15 @@ private fun YourFriendsSection(
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
-                                        if (f.id == crownId) "@${f.username} 👑" else "@${f.username}",
+                                        buildAnnotatedString {
+                                            append("@${f.username}")
+                                            if (f.id == crownId) { append(" "); appendIcon3D(Icon3DName.CROWN) }
+                                        },
                                         fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.ink,
                                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                                        inlineContent = icon3DInline(),
                                     )
-                                    if ((f.flawlessStreak ?: 0) >= 2) MiniChip("🏆 ×${f.flawlessStreak}", Color(0xFFB45309), Color(0xFFF59E0B))
+                                    if ((f.flawlessStreak ?: 0) >= 2) MiniChip("×${f.flawlessStreak}", Color(0xFFB45309), Color(0xFFF59E0B), Icon3DName.TROPHY)
                                     friendversary(f)?.let { MiniChip("🎉 $it DAYS", FriendsPink.solid, FriendsPink.solid) }
                                     if (isNewFriend(f)) MiniChip("NEW", PURPLE, PURPLE)
                                 }
@@ -753,12 +771,12 @@ private fun YourFriendsSection(
                             MenuItem("Play a game", FriendsPink.solid) { menuTarget = null; onPlay(f) }
                             MenuItem("Challenge ⚔️", Color(0xFFEC4899)) { menuTarget = null; onChallenge(f) }
                             if (canGift) {
-                                MenuItem("🛡️ Gift a shield", Color(0xFF0D9488)) {
+                                MenuItem("Gift a shield", Color(0xFF0D9488), Icon3DName.SHIELD) {
                                     menuTarget = null
                                     scope.launch {
                                         when (val r = FriendsService.giftShield(f.id)) {
                                             is FriendsService.GiftOutcome.Sent -> {
-                                                onNote("🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left")
+                                                onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
                                                 AuthService.refreshProfile()
                                             }
                                             is FriendsService.GiftOutcome.Failed -> onNote(r.message)
@@ -774,18 +792,27 @@ private fun YourFriendsSection(
     }
 }
 
+/** The gift note's marker: the note row swaps it for the 3D shield. */
+private const val SHIELD_NOTE = "🛡️ "
+
 @Composable
-private fun MiniChip(text: String, ink: Color, tint: Color) {
-    Box(Modifier.clip(RoundedCornerShape(4.dp)).background(tint.copy(alpha = 0.13f)).padding(horizontal = 4.dp, vertical = 1.dp)) {
+private fun MiniChip(text: String, ink: Color, tint: Color, icon3d: Icon3DName? = null) {
+    Row(
+        Modifier.clip(RoundedCornerShape(4.dp)).background(tint.copy(alpha = 0.13f)).padding(horizontal = 4.dp, vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        if (icon3d != null) Icon3D(icon3d, 11.dp)
         Text(text, fontSize = 8.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, maxLines = 1)
     }
 }
 
 @Composable
-private fun MenuItem(text: String, color: Color = Color.Unspecified, onClick: () -> Unit) {
+private fun MenuItem(text: String, color: Color = Color.Unspecified, icon3d: Icon3DName? = null, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Nunito, color = color) },
         onClick = onClick,
+        leadingIcon = icon3d?.let { { Icon3D(it, 20.dp) } },
     )
 }
 

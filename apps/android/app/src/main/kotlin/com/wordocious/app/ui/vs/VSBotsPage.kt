@@ -1,6 +1,5 @@
 package com.wordocious.app.ui.vs
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -142,7 +140,7 @@ private fun BotOfTheDayCard(today: VsDayResult, streak: Int, onPlay: () -> Unit)
                 Text(BotPersonas.tierLine("lexi"), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep)
                 if (streak > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Image(painterResource(com.wordocious.app.R.drawable.ic_flame_gold), null, modifier = Modifier.size(12.dp))
+                        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 14.dp)
                         Text("$streak ${if (streak == 1) "day" else "days"} in a row", fontSize = 11.sp, fontWeight = FontWeight.Black, color = ORANGE)
                     }
                 }

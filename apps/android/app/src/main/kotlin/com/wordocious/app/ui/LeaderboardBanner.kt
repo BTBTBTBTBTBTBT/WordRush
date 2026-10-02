@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -275,10 +274,7 @@ internal fun RecordsBanner(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(Modifier.padding(end = BANNER_HOST_CLEAR - 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(
-                    androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
-                    tint = Color(0xFFB45309), modifier = Modifier.size(20.dp),
-                )
+                Icon3D(Icon3DName.TROPHY, 22.dp)
                 Text(
                     "ALL-TIME RECORDS", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
                     lineHeight = 1.15.em, color = REC_INK, maxLines = 1, softWrap = false,

@@ -14,16 +14,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.EmojiEvents
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,19 +29,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wordocious.app.R
 import kotlinx.coroutines.flow.first
 import com.wordocious.app.ui.game.GameScreen
 import com.wordocious.app.ui.theme.WTheme
@@ -64,21 +54,15 @@ import com.wordocious.app.ui.theme.WTheme
  */
 private data class TabItem(
     val label: String,
-    /** Filled variant — shown only while the tab is active (iOS `<icon>.fill`). */
-    val icon: ImageVector?,
-    /** Outline variant — the inactive state. */
-    val outlineIcon: ImageVector?,
-    /** Vector-asset fallback for icons Material doesn't ship (Records = crown). */
-    val drawable: Int? = null,
-    /** Filled twin of [drawable], shown while the tab is active. */
-    val drawableFilled: Int? = null,
+    /** The tab's 3D icon (HEADER_SPEC §3). */
+    val icon: Icon3DName,
 )
 
 private val TABS = listOf(
-    TabItem("Home", Icons.Filled.Home, Icons.Outlined.Home),
-    TabItem("Leaderboard", Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents),
-    TabItem("Stats", Icons.Filled.BarChart, Icons.Outlined.BarChart),
-    TabItem("Friends", Icons.Filled.Group, Icons.Outlined.Group),
+    TabItem("Home", Icon3DName.TAB_HOME),
+    TabItem("Leaderboard", Icon3DName.TAB_LEADERBOARD),
+    TabItem("Stats", Icon3DName.TAB_STATS),
+    TabItem("Friends", Icon3DName.TAB_FRIENDS),
 )
 
 /**
@@ -86,9 +70,11 @@ private val TABS = listOf(
  *
  * WHY THIS IS HAND-ROLLED: Material3's `NavigationBar` draws a tonal pill
  * behind the selected item and sits on `surface`. iOS draws neither — it uses
- * the page background, a 1.5dp top hairline, an outline→filled icon swap, and a
- * 4dp dot under the active label. Using the Material default made the single
- * most permanently-visible element of the app read as a different product.
+ * the page background and a 1.5dp top hairline. The tab icons are the 3D set
+ * (HEADER_SPEC §3): selected = full color, a −2 dp lift and a #7c3aed 900 label;
+ * unselected = 45% opacity at 60% saturation with a gray label. Using the
+ * Material default made the single most permanently-visible element of the app
+ * read as a different product.
  */
 @Composable
 private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
@@ -129,32 +115,32 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
         ) {
             TABS.forEachIndexed { i, tab ->
                 val active = selected == i
-                val tint = if (active) WTheme.primary else WTheme.textMuted
                 Column(
                     Modifier.weight(1f).clickableNoRipple {
                         // iOS pairs every tab tap with Haptics.tap() (RootTabView.swift:162);
                         // ripple is suppressed here, so this is the only press feedback.
                         if (!WTheme.reducedMotion) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(i)
+                    }.semantics(mergeDescendants = true) {
+                        role = androidx.compose.ui.semantics.Role.Tab
+                        this.selected = active
                     },
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     Box {
-                        if (tab.drawable != null) {
-                            // Same outline→filled swap the Material tabs get.
-                            val res = if (active) (tab.drawableFilled ?: tab.drawable) else tab.drawable
-                            Icon(painterResource(res), tab.label, tint = tint, modifier = Modifier.size(20.dp))
-                        } else {
-                            Icon(
-                                (if (active) tab.icon else tab.outlineIcon)!!,
-                                tab.label, tint = tint, modifier = Modifier.size(20.dp),
-                            )
-                        }
+                        // §3: selected = full color with a small lift (−2 dp); unselected =
+                        // the same icon at 45% opacity and 60% saturation.
+                        Icon3D(
+                            tab.icon, 28.dp,
+                            Modifier.offset(y = if (active) (-2).dp else 0.dp),
+                            alpha = if (active) 1f else 0.45f,
+                            colorFilter = if (active) null else Icon3DMuted,
+                        )
                         // Pending requests + your-turn games → a count on the Friends icon.
                         if (tab.label == "Friends" && friendsBadge > 0) {
                             Box(
-                                Modifier.align(Alignment.TopEnd).offset(x = 9.dp, y = (-5).dp)
+                                Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-4).dp)
                                     .size(width = if (friendsBadge > 9) 20.dp else 15.dp, height = 15.dp)
                                     .clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
                                 contentAlignment = Alignment.Center,
@@ -166,11 +152,10 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                             }
                         }
                     }
-                    Text(tab.label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1)
-                    // 4dp active dot — transparent when inactive so labels stay aligned.
-                    Box(
-                        Modifier.size(4.dp).clip(CircleShape)
-                            .background(if (active) WTheme.primary else Color.Transparent),
+                    Text(
+                        tab.label, fontSize = 10.sp, maxLines = 1,
+                        fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
+                        color = if (active) HeaderInk.tabSelected else WTheme.textMuted,
                     )
                 }
             }

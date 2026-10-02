@@ -92,12 +92,7 @@ struct VSChallengeResultView: View {
                 ZStack {
                     Wordmark(size: 22)
                     HStack {
-                        Button(action: onHome) {
-                            Image(systemName: "xmark").font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(VsLobbyKit.purple).frame(width: 36, height: 36)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain).accessibilityLabel("Close")
+                        HeaderCircleButton(.symbol("xmark"), label: "Close", action: onHome)
                         Spacer()
                     }
                 }
@@ -170,7 +165,7 @@ struct VSChallengeResultView: View {
     private func column(label: String, run: VsChallengeRun, winner: Bool) -> some View {
         VStack(spacing: 8) {
             HStack(spacing: 4) {
-                if winner { Image(systemName: "trophy.fill").font(.system(size: 10, weight: .bold)).foregroundStyle(Color(hex: 0xB45309)) }
+                if winner { Icon3D(.trophy, size: 12) }
                 Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.purpleSub).lineLimit(1)
             }
             VSMiniRunBoard(run: run)

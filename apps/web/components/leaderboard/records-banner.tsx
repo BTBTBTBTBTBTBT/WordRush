@@ -1,7 +1,8 @@
 'use client';
 
-import { Trophy } from 'lucide-react';
+
 import { BannerGameRows, ResetLine, dayTitle } from './leaderboard-banner';
+import { Icon3D } from '@/components/ui/icon3d';
 import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
 import { PAGE_HOSTS } from '@/lib/mascots';
 
@@ -61,7 +62,7 @@ export function RecordsBanner({ tab, onTab, today, recordsCount, selectedMode, o
     >
       <div className="relative flex flex-col gap-1.5" style={{ padding: '12px 10px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 30, paddingRight: BANNER_HOST_CLEARANCE - 10 }}>
-          <Trophy className="w-5 h-5 shrink-0" style={{ color: '#b45309' }} />
+          <Icon3D name="trophy" size={20} className="shrink-0" />
           <h1 className="font-black truncate" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: HEAD, textShadow: '0 0 8px rgba(245,158,11,0.55)' }}>
             ALL-TIME RECORDS
           </h1>

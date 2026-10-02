@@ -140,7 +140,7 @@ struct InvitePanelView: View {
                         }.buttonStyle(.plain)
                     }
                     if inv.status == "converted" {
-                        Image(systemName: "crown.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xD97706))
+                        Icon3D(.crown, size: 15)
                     }
                 }
             }
@@ -148,7 +148,7 @@ struct InvitePanelView: View {
             if !leaders.isEmpty {
                 Divider()
                 HStack(spacing: 5) {
-                    Image(systemName: "trophy.fill").font(.system(size: 11)).foregroundStyle(Color(hex: 0xD97706))
+                    Icon3D(.trophy, size: 14)
                     Text("TOP INVITERS THIS MONTH").font(Brand.font(10, .black)).tracking(0.8)
                         .foregroundStyle(Theme.textMuted)
                 }

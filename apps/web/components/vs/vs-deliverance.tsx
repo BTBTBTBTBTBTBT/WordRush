@@ -5,7 +5,8 @@ import { GameMode, GameStatus, gameReducer, initializeGame, isWordValid } from '
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
-import { Trophy, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { isTypingTarget } from '@/lib/keyboard';
@@ -110,7 +111,7 @@ export function VsDeliverance({ seed, mode, solutions, onBoardSolved, onComplete
       {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
       <div className="text-center px-2 shrink-0">
         <div className="flex justify-center gap-3">
-          <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{completedBoards}/4</span>
+          <span className="text-gray-400 text-xs font-bold"><Icon3D name="trophy" size={14} inline className="mr-1" />{completedBoards}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>

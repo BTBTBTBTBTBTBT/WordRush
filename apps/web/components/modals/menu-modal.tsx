@@ -3,9 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
-  X,
   ChevronRight,
-  HelpCircle,
   BookOpen,
   Lightbulb,
   Calendar,
@@ -14,6 +12,9 @@ import {
   FileText,
 } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { Help3D } from '@/components/ui/icon3d';
+import { PageHeader } from '@/components/ui/page-header';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 interface MenuModalProps {
   open: boolean;
@@ -30,7 +31,7 @@ const MENU_ITEMS: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   accent: string;
 }[] = [
-  { href: '/how-to-play', title: 'How to Play', subtitle: 'Rules, tiles & scoring', icon: HelpCircle, accent: '#7C3AED' },
+  { href: '/how-to-play', title: 'How to Play', subtitle: 'Rules, tiles & scoring', icon: Help3D, accent: '#7C3AED' },
   { href: '/guides', title: 'Guides', subtitle: 'Strategy for every mode', icon: BookOpen, accent: '#3B82F6' },
   { href: '/strategy', title: 'Strategy', subtitle: 'Solve faster, in fewer guesses', icon: Lightbulb, accent: '#F59E0B' },
   { href: '/words', title: 'Words', subtitle: 'Every Word of the Day', icon: Calendar, accent: '#EC4899' },
@@ -87,23 +88,16 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
           style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }}
         />
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
-          <h2
-            className="text-xl font-black uppercase text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-          >
-            Menu
-          </h2>
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center w-[30px] h-[30px] rounded-full transition-opacity hover:opacity-80"
-            style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
+        {/* Header (HEADER_SPEC §4): gradient caps title with C (Help / Guides) beside it, white close circle. */}
+        <PageHeader
+          className="px-5 pt-3 pb-2 flex-shrink-0"
+          title="Menu"
+          titleTag="h2"
+          titleSize={20}
+          host={PAGE_HOSTS.guides}
+          hostSize={36}
+          close={{ onClick: onClose }}
+        />
 
         {/* Menu rows */}
         <div className="px-4 pb-5 overflow-y-auto flex-1 min-h-0 space-y-2">

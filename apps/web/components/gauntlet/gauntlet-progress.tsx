@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, Play, Clock, Trophy } from 'lucide-react';
+import { Check, Play, Clock } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { GauntletStageConfig } from '@wordle-duel/core';
 
 interface GauntletProgressProps {
@@ -93,7 +94,7 @@ export function GauntletStageHeader({ stage, elapsedTime, boardsSolved, totalBoa
       </h2>
       <div className="flex justify-center gap-3">
         {totalBoards != null && totalBoards > 1 && (
-          <span className="text-gray-400 text-[10px] font-bold"><Trophy className="w-3 h-3 inline mr-0.5 text-amber-600" />{boardsSolved ?? 0}/{totalBoards}</span>
+          <span className="text-gray-400 text-[10px] font-bold"><Icon3D name="trophy" size={14} inline className="mr-0.5" />{boardsSolved ?? 0}/{totalBoards}</span>
         )}
         {guessesUsed != null && maxGuesses != null && (
           <span className="text-gray-400 text-[10px] font-bold">{guessesUsed}/{maxGuesses} guesses</span>

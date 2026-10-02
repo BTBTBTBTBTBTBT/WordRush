@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Crown, Medal, Star, Flame, Sparkles, Trophy, LayoutGrid, Shield } from 'lucide-react';
+import { Medal, Star, Sparkles, LayoutGrid } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchFriendsFeed, reactToMoment, type FeedEvent, type FeedReactions } from '@/lib/friends-service';
@@ -42,15 +43,15 @@ function dayLabel(day: string, today: string): string {
 function describe(e: FeedEvent): { text: string; icon: React.ReactNode } {
   const who = e.me ? 'You' : e.username;
   switch (e.type) {
-    case 'flawless': return { text: `${who} won every daily — Flawless Victory`, icon: <Trophy className="w-4 h-4" style={{ color: '#b45309' }} fill="currentColor" /> };
+    case 'flawless': return { text: `${who} won every daily — Flawless Victory`, icon: <Icon3D name="trophy" size={16} /> };
     case 'sweep': return { text: `${who} swept the dailies`, icon: <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} /> };
     case 'more_flawless': return { text: `${who} — Flawless More Games, all ten won`, icon: <LayoutGrid className="w-4 h-4" style={{ color: '#b45309' }} /> };
     case 'more_sweep': return { text: `${who} — More Games Sweep, all ten played`, icon: <LayoutGrid className="w-4 h-4" style={{ color: '#4f46e5' }} /> };
     case 'game': {
       const kind = kindForTitle(e.gameTitle);
-      return { text: gameMomentText(e), icon: kind ? <GameIconSquare kind={kind} size={20} /> : <Trophy className="w-4 h-4" style={{ color: FR.solid }} /> };
+      return { text: gameMomentText(e), icon: kind ? <GameIconSquare kind={kind} size={20} /> : <Icon3D name="trophy" size={16} /> };
     }
-    case 'gift': return { text: `${who} sent ${e.otherName ?? 'a friend'} a streak shield`, icon: <Shield className="w-4 h-4" style={{ color: '#0d9488' }} fill="currentColor" /> };
+    case 'gift': return { text: `${who} sent ${e.otherName ?? 'a friend'} a streak shield`, icon: <Icon3D name="shield" size={16} /> };
     case 'record': {
       const label = e.kind ? RECORD_LABELS[e.kind]?.label ?? e.kind : 'record';
       const val = e.kind && e.value != null ? recordValue(e.kind, e.value, e.gameMode) : '';
@@ -59,11 +60,11 @@ function describe(e: FeedEvent): { text: string; icon: React.ReactNode } {
     case 'medal':
     default: {
       const k = e.kind ?? '';
-      if (k === 'gold') return { text: `${who} took gold in ${e.gameTitle ?? e.gameMode}`, icon: <Crown className="w-4 h-4" style={{ color: '#d97706' }} /> };
+      if (k === 'gold') return { text: `${who} took gold in ${e.gameTitle ?? e.gameMode}`, icon: <Icon3D name="crown" size={16} /> };
       if (k === 'silver') return { text: `${who} took silver in ${e.gameTitle ?? e.gameMode}`, icon: <Medal className="w-4 h-4" style={{ color: '#9ca3af' }} /> };
       if (k === 'bronze') return { text: `${who} took bronze in ${e.gameTitle ?? e.gameMode}`, icon: <Medal className="w-4 h-4" style={{ color: '#b45309' }} /> };
       if (k === 'perfect') return { text: `${who} played a perfect ${e.gameTitle ?? e.gameMode}`, icon: <Star className="w-4 h-4" style={{ color: WIN_FG }} fill="currentColor" /> };
-      if (k.startsWith('streak_')) return { text: `${who} hit a ${k.slice(7)}-day streak`, icon: <Flame className="w-4 h-4" style={{ color: '#f97316' }} fill="currentColor" /> };
+      if (k.startsWith('streak_')) return { text: `${who} hit a ${k.slice(7)}-day streak`, icon: <Icon3D name="flame" size={16} /> };
       return { text: `${who} earned a medal in ${e.gameTitle ?? e.gameMode}`, icon: <Medal className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} /> };
     }
   }

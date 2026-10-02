@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Crown, Loader2, Radio, Swords } from 'lucide-react';
+import { Loader2, Radio, Swords } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
+import { PageTitleText } from '@/components/ui/page-header';
 import { COIN_STAKES, FRIENDLY_KINDS, FRIENDLY_TITLES, presenceLine, type FriendlyKind } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
@@ -43,7 +45,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
         <div className="flex items-center gap-2 mb-3">
           <GameIconSquare kind={kind} size={36} />
           <div className="min-w-0">
-            <div className="text-[17px] font-black uppercase" style={{ color: FR.ink, letterSpacing: 0.3 }}>{FRIENDLY_TITLES[kind]}</div>
+            <PageTitleText accent="friends" size={17} className="block">{FRIENDLY_TITLES[kind]}</PageTitleText>
             <div className="text-[11.5px] font-bold" style={{ color: FR.label }}>Pick a friend to play</div>
           </div>
         </div>
@@ -104,7 +106,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
       <div className="flex items-center gap-3 mb-4">
         <FriendAvatar name={friend.username} url={friend.avatar_url} emoji={friend.avatar_emoji} size={48} online={on} pulse={on} />
         <div className="flex-1 min-w-0">
-          <div className="text-[17px] font-black uppercase truncate" style={{ color: FR.ink, letterSpacing: 0.3 }}>PLAY WITH @{friend.username}</div>
+          <PageTitleText accent="friends" size={17} className="block truncate">PLAY WITH @{friend.username}</PageTitleText>
           {presence && <div className="text-[11.5px] font-extrabold truncate" style={{ color: on ? FR.online : FR.label }}>{presence}</div>}
           {rivalry && <div className="text-[11px] font-bold truncate" style={{ color: FR.label }}>{rivalry}</div>}
         </div>
@@ -171,7 +173,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
           className="relative flex flex-col items-start gap-1 p-3 text-left transition-transform active:scale-[0.98]"
           style={{ ...cardStyle, background: FR.tealSoft }}
         >
-          {!isProActive && <Crown className="absolute top-2.5 right-2.5 w-3.5 h-3.5" style={{ color: FR.teal }} />}
+          {!isProActive && <Icon3D name="crown" size={14} className="absolute top-2.5 right-2.5" />}
           <span className="flex items-center gap-1.5 text-[12.5px] font-black" style={{ color: FR.teal }}>
             <Swords className="w-4 h-4" /> Race my run
           </span>

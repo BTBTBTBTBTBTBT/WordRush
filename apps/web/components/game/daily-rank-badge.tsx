@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trophy } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
+
 import { getUserDailyRank } from '@/lib/daily-service';
 import { topPercentLabel } from '@/lib/format';
 import { useAuth } from '@/lib/auth-context';
@@ -33,7 +34,7 @@ export function DailyRankBadge({ gameMode, playType = 'solo' }: DailyRankBadgePr
         color: gold ? '#92400e' : 'var(--color-text-muted)',
       }}
     >
-      <Trophy className="w-3 h-3" />
+      <Icon3D name="trophy" size={14} />
       {label} · #{rank.rank} of {rank.totalPlayers}
     </span>
   );

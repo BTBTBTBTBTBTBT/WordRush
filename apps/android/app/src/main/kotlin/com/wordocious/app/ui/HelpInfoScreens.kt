@@ -18,9 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,14 +52,8 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
     Column(Modifier.fillMaxSize().background(WTheme.surface)) {
         // Top accent bar (purple → pink → amber)
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(tabs[tab].uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f, fill = false), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            // The Help host, C the explorer (MASCOT_SPEC §6).
-            Spacer(Modifier.width(6.dp))
-            TitleHost(Mascots.help)
-            Spacer(Modifier.weight(1f))
-            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
-        }
+        // The shared page header (HEADER_SPEC §4) with the Help host, C the explorer (MASCOT_SPEC §6).
+        PageHeader(tabs[tab], host = Mascots.help, onClose = onDone, titleSize = 20.sp)
         // Tab chips — hidden when opened for a single section (e.g. FAQ from the
         // menu / footer), where the pill switcher makes no sense.
         if (showTabs) {
@@ -193,10 +184,7 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         // Accent bar — matches How to Play / the other menu screens.
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
-        }
+        PageHeader(title, onClose = onDone, titleSize = 20.sp)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(subtitle, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (fromApi) {

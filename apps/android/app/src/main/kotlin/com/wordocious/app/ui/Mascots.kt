@@ -10,18 +10,15 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,14 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -260,7 +251,9 @@ private fun Modifier.mascotWave(): Modifier {
  * each tile hop [hop] with a [staggerMs] stagger: [repeats] = null loops every
  * [loopMs] (the loader: 8 dp hop, 70 ms, 1.1 s), a number plays that many waves
  * then rests (the sweep celebration: 14 dp, 60 ms, twice). BOB floats the row.
- * [crown] draws Flawless's small gold crown on W. Decorative.
+ * [crown] puts the 3D `crown` (HEADER_SPEC §2) on W's top edge, [crownWidth] of
+ * W's width (Flawless 0.58, the Pro header 0.45). A negative [gap] overlaps the
+ * tiles (the home header's cast title, ~8%). Decorative.
  */
 @Composable
 fun CastRow(
@@ -273,6 +266,7 @@ fun CastRow(
     repeats: Int? = null,
     crown: Boolean = false,
     gap: Dp = 2.dp,
+    crownWidth: Float = 0.58f,
 ) {
     val still = mascotStill
     val hidden by LocalTabHidden.current
@@ -295,7 +289,7 @@ fun CastRow(
     }
     val bobMod = if (motion == MascotMotion.BOB && !still && !hidden) Modifier.mascotBob() else Modifier
     Row(
-        modifier.clearAndSetSemantics { }.then(bobMod).padding(top = if (crown) size * 0.42f else 0.dp),
+        modifier.clearAndSetSemantics { }.then(bobMod).padding(top = if (crown) size * crownWidth * 0.62f else 0.dp),
         horizontalArrangement = Arrangement.spacedBy(gap),
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -313,48 +307,12 @@ fun CastRow(
             ) {
                 Image(painterResource(id.res), null, Modifier.size(size))
                 if (crown && id == MascotId.W) {
-                    FlawlessCrown(
-                        Modifier.align(Alignment.TopCenter).offset(y = -size * 0.36f)
-                            .width(size * 0.58f).height(size * 0.42f),
+                    Icon3D(
+                        Icon3DName.CROWN, size * crownWidth,
+                        Modifier.align(Alignment.TopCenter).offset(y = -size * crownWidth * 0.62f),
                     )
                 }
             }
-        }
-    }
-}
-
-/** Flawless's crown: a simple rounded 3-point crown in #f59e0b, drawn in code. */
-@Composable
-fun FlawlessCrown(modifier: Modifier = Modifier) {
-    Canvas(modifier.clearAndSetSemantics { }) {
-        val w = size.width; val h = size.height
-        val gold = Color(0xFFF59E0B)
-        val edge = Color(0xFFB45309)
-        val base = h * 0.78f
-        val path = Path().apply {
-            moveTo(w * 0.08f, base)
-            lineTo(w * 0.04f, h * 0.30f)
-            lineTo(w * 0.30f, h * 0.55f)
-            lineTo(w * 0.50f, h * 0.16f)
-            lineTo(w * 0.70f, h * 0.55f)
-            lineTo(w * 0.96f, h * 0.30f)
-            lineTo(w * 0.92f, base)
-            close()
-        }
-        drawPath(path, gold)
-        drawPath(path, edge, style = Stroke(width = h * 0.06f, join = StrokeJoin.Round))
-        drawRoundRect(
-            gold, topLeft = Offset(w * 0.06f, base - h * 0.04f), size = Size(w * 0.88f, h * 0.2f),
-            cornerRadius = CornerRadius(h * 0.08f),
-        )
-        drawRoundRect(
-            edge, topLeft = Offset(w * 0.06f, base - h * 0.04f), size = Size(w * 0.88f, h * 0.2f),
-            cornerRadius = CornerRadius(h * 0.08f), style = Stroke(width = h * 0.05f),
-        )
-        val r = h * 0.09f
-        listOf(Offset(w * 0.04f, h * 0.28f), Offset(w * 0.5f, h * 0.13f), Offset(w * 0.96f, h * 0.28f)).forEach {
-            drawCircle(gold, r, it)
-            drawCircle(edge, r, it, style = Stroke(width = h * 0.04f))
         }
     }
 }

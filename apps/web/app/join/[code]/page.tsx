@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Gift, Crown } from 'lucide-react';
+import { Gift } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { logLandingVisit } from '@/lib/landing-visits';
 
@@ -87,7 +88,7 @@ export default function JoinReferralPage() {
   if (claimResult === 'claimed') {
     return centered(
       <>
-        <Crown className="w-10 h-10 mx-auto mb-2" style={{ color: '#d97706' }} />
+        <Icon3D name="crown" size={40} className="mx-auto mb-2" />
         <h1 className="text-lg font-black" style={{ color: 'var(--color-text)' }}>Pro unlocked!</h1>
         <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
           7 days of Wordocious Pro are on your account. Taking you to the game…

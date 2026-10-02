@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Crown, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { Mascot } from '@/components/ui/mascot';
 import { PAGE_HOSTS } from '@/lib/mascots';
 import Link from 'next/link';
@@ -85,7 +86,7 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
                   boxShadow: '0 4px 0 #92400e',
                 }}
               >
-                <Crown className="w-4 h-4 inline mr-1" />
+                <Icon3D name="crown" size={16} inline className="mr-1" />
                 Upgrade to Pro
               </button>
             </Link>

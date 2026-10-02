@@ -15,6 +15,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Lock, X } from 'lucide-react';
+import { Icon3D, icon3dForEmoji } from '@/components/ui/icon3d';
+import { HeaderBack } from '@/components/ui/page-header';
 import { evaluateGuess } from '@wordle-duel/core';
 import { modeLabel } from '@/lib/mode-labels';
 import { getTodayLocal } from '@/lib/daily-service';
@@ -152,14 +154,7 @@ function Modal({
         aria-modal="true"
         aria-label={ariaLabel}
       >
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="float-right -mt-1 -mr-1 w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: 'var(--color-surface-hover)', color: 'var(--color-text-muted)' }}
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <HeaderBack kind="close" onClick={onClose} size={30} className="float-right -mt-1 -mr-1" />
         {children}
       </div>
     </div>
@@ -758,7 +753,7 @@ export function HighlightsReel({
                 className={`relative min-w-[122px] rounded-xl px-3 py-2.5 shrink-0 ${tappable ? 'cursor-pointer transition-transform active:scale-[0.97] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
                 style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
               >
-                <div className="text-base leading-none">{h.emoji}</div>
+                <div className="text-base leading-none">{icon3dForEmoji(h.emoji) ? <Icon3D name={icon3dForEmoji(h.emoji)!} size={18} /> : h.emoji}</div>
                 <div className="text-[15px] font-black mt-1 flex items-center gap-1" style={{ color: 'var(--color-text)' }}>
                   {h.big}
                   {tappable && <ChevronRight className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />}
@@ -851,7 +846,7 @@ export function LatelyCard({
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0"
                 style={{ background: 'var(--color-surface-hover)' }}
               >
-                {e.emoji}
+                {icon3dForEmoji(e.emoji) ? <Icon3D name={icon3dForEmoji(e.emoji)!} size={18} /> : e.emoji}
               </div>
               <div className="text-xs font-bold leading-snug" style={{ color: 'var(--color-text)' }}>
                 {e.text}

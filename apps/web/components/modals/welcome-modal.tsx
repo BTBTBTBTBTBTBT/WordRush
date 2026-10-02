@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Sparkles, Trophy, Swords } from 'lucide-react';
+import { Sparkles, Swords } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 
@@ -171,7 +172,7 @@ export function WelcomeModal() {
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                     style={{ background: '#fffbeb' }}
                   >
-                    <Trophy className="w-3.5 h-3.5" style={{ color: '#d97706' }} />
+                    <Icon3D name="trophy" size={14} />
                   </div>
                   <div>
                     <p className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>

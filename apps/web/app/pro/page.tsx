@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail, Bot, Gift } from 'lucide-react';
+import { Check, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail, Bot, Gift } from 'lucide-react';
+import { Icon3D, Shield3D } from '@/components/ui/icon3d';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
-import { Mascot } from '@/components/ui/mascot';
+import { PageHeader } from '@/components/ui/page-header';
 import { PAGE_HOSTS } from '@/lib/mascots';
 
 const benefits = [
@@ -16,7 +17,7 @@ const benefits = [
   { icon: Swords, text: 'VS mode on every game — challenge friends in every mode' },
   { icon: Bot, text: 'Practice against the CPU — Easy, Medium & Hard bots, anytime' },
   { icon: Mail, text: 'Invite friends to private matches by link or username' },
-  { icon: Shield, text: '4 streak shields credited each billing period' },
+  { icon: Shield3D, text: '4 streak shields credited each billing period' },
   { icon: Gift, text: 'Gift 7 days of Pro to 3 friends — and earn rewards when they join' },
   { icon: Sparkles, text: 'Pro badge on profile & leaderboards' },
   { icon: BarChart3, text: 'Extended stats — win rate trends & avg speed per mode' },
@@ -80,16 +81,19 @@ export default function ProPage() {
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
-        <div className="text-center mb-8">
-          {/* W, cape and all, hosts GO PRO. */}
-          <div className="flex justify-center mb-2">
-            <Mascot id={PAGE_HOSTS.pro} size={72} motion="bob" priority />
-          </div>
-          <h1 className="text-4xl font-black mb-1" style={{ color: 'var(--color-text)' }}>Go Pro</h1>
-          <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Play unlimited & ad-free — every mode, any time
-          </p>
-        </div>
+        {/* W, cape and all, hosts GO PRO (HEADER_SPEC §4: the shared page header). */}
+        <PageHeader
+          className="mb-6"
+          title="GO PRO"
+          titleSize={30}
+          host={PAGE_HOSTS.pro}
+          hostSize={56}
+          sub={(
+            <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              Play unlimited &amp; ad-free — every mode, any time
+            </p>
+          )}
+        />
 
         {isProActive ? (
           <div
@@ -104,7 +108,7 @@ export default function ProPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3"
               style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
             >
-              <Crown className="w-4 h-4 text-white" />
+              <Icon3D name="crown" size={16} />
               <span className="text-white font-black text-sm">ACTIVE PRO</span>
             </div>
             <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>

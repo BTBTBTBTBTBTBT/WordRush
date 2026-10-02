@@ -68,7 +68,11 @@ struct NewPasswordSheet: View {
                 }
                 .padding(24)
             }
-            .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
+                }
+            }
         }
     }
 

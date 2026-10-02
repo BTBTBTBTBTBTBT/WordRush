@@ -183,13 +183,9 @@ struct FriendlyGameScreen: View {
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .padding(.horizontal, 48)
             HStack {
-                Button {
+                HeaderCircleButton(.symbol("xmark"), label: "Close") {
                     if game?.isActive == true { confirmClose = true } else { dismiss() }
-                } label: {
-                    Image(systemName: "xmark").font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(FriendsKit.solid).frame(width: 40, height: 40).contentShape(Rectangle())
                 }
-                .buttonStyle(.plain).accessibilityLabel("Close")
                 Spacer()
             }
         }

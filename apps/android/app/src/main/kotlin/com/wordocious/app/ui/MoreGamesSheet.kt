@@ -127,16 +127,11 @@ fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
                 .padding(horizontal = 16.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "MORE GAMES", fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f),
-                    style = TextStyle(fontFamily = Nunito, brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
-                )
-                Text(
-                    "Done", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
-                    modifier = Modifier.clickableNoRipple(onDismiss).padding(4.dp),
-                )
-            }
+            // The shared sheet header (HEADER_SPEC §4); Done is the white close circle.
+            PageHeader(
+                "MORE GAMES", onClose = onDismiss, closeLabel = "Done",
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+            )
             val flagTable by FlagsService.flags.collectAsState()
             val flagsLoaded by FlagsService.loaded.collectAsState()
             moreSections(MORE_CARDS.filter { it.dailyEligible && it.dbKey != null && FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }).forEach { section ->

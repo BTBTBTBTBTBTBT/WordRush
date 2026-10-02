@@ -71,11 +71,9 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
         val g = guide
         // iOS puts a "Done" button in the sheet toolbar — the drag handle alone is
         // not a discoverable way to close.
+        // HEADER_SPEC §4: Done is the shared white close circle.
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
-            Text(
-                "Done", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
-                modifier = Modifier.clickableNoRipple(onDismiss).padding(4.dp),
-            )
+            com.wordocious.app.ui.HeaderBackButton(onDismiss, close = true, contentDescription = "Done")
         }
         if (g == null) {
             Column(

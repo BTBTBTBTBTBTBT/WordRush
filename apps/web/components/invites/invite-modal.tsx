@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X as XIcon, Share2, Copy, Check, Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
 import { useAuth } from '@/lib/auth-context';
 import { createInvite } from '@/lib/invite-service';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
@@ -154,14 +155,7 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
         className="w-full max-w-sm p-5 relative"
         style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
       >
-        <button
-          onClick={() => { reset(); onClose(); }}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full"
-          style={{ background: 'var(--color-bg)' }}
-          aria-label="Close"
-        >
-          <XIcon className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-        </button>
+        <HeaderBack kind="close" onClick={() => { reset(); onClose(); }} size={32} className="absolute top-3 right-3" />
 
         {/* Branded title — matches the gradient treatment used for the
             site wordmark and mode headers. */}

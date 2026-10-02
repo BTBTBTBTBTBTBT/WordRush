@@ -1,6 +1,7 @@
 'use client';
 
-import { Trophy, Clock, Target, Flame, Crown, Zap } from 'lucide-react';
+import { Clock, Target, Zap } from 'lucide-react';
+import { Flame3D, Crown3D, Trophy3D, type IconLike } from '@/components/ui/icon3d';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { formatGuessStat } from '@/lib/format';
 import { fewestRecordLabel } from '@/lib/mode-stats';
@@ -32,13 +33,13 @@ export function fetchAllTimeRecordsShared(): Promise<AllTimeRecord[]> {
  *  paint it in its first render instead of a skeleton frame (founder, 2026-09-29). */
 export const peekAllTimeRecords = (): AllTimeRecord[] | null => allTimeRecordsValue;
 
-export const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string }> = {
+export const RECORD_LABELS: Record<string, { label: string; icon: IconLike; format: (v: number) => string }> = {
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
   fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => `${v} guesses` },
   most_games_played: { label: 'Most Games Played', icon: Zap, format: (v) => `${v} games` },
-  longest_streak: { label: 'Longest Win Streak', icon: Flame, format: (v) => `${v} wins` },
-  most_gold_medals: { label: 'Most Gold Medals', icon: Crown, format: (v) => `${v} golds` },
-  highest_level: { label: 'Highest Level', icon: Trophy, format: (v) => `Level ${v}` },
+  longest_streak: { label: 'Longest Win Streak', icon: Flame3D, format: (v) => `${v} wins` },
+  most_gold_medals: { label: 'Most Gold Medals', icon: Crown3D, format: (v) => `${v} golds` },
+  highest_level: { label: 'Highest Level', icon: Trophy3D, format: (v) => `Level ${v}` },
   most_daily_completions: { label: 'Most Dailies Completed', icon: Target, format: (v) => `${v} dailies` },
 };
 
@@ -76,7 +77,7 @@ export const SHIELD_EVERY = 7;
 export type UserStatRow = { game_mode: string; play_type: string; wins: number; losses: number; total_games: number; best_score: number | null; fastest_time: number | null };
 
 /** One personal record: icon, value, small label — dimmed when there is none yet. */
-export function MyStatCell({ icon: Icon, value, label, color, dim }: { icon: typeof Trophy; value: string; label: string; color: string; dim?: boolean }) {
+export function MyStatCell({ icon: Icon, value, label, color, dim }: { icon: IconLike; value: string; label: string; color: string; dim?: boolean }) {
   return (
     <div className="flex items-start gap-2.5 p-2">
       <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: dim ? 'var(--color-text-muted)' : color }} />

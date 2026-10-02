@@ -60,11 +60,7 @@ struct StreakShieldModal: View {
     private var askCard: some View {
         VStack(spacing: 0) {
             VStack(spacing: 4) {
-                ZStack {
-                    Image(systemName: "flame.fill").font(.system(size: 48)).foregroundStyle(Color(hex: 0xF59E0B))
-                    Image(systemName: "flame").font(.system(size: 48)).foregroundStyle(Color(hex: 0xC2410C))
-                }
-                .accessibilityHidden(true)
+                Icon3D(.flame, size: 60)
                 Text("\(streak)").font(Brand.font(52, .black)).foregroundStyle(Color(hex: 0x78350F))
                 Text("DAY STREAK").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xB45309))
             }
@@ -80,7 +76,7 @@ struct StreakShieldModal: View {
                     .font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x4B5563))
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
-                    Image(systemName: "shield.fill").font(.system(size: 13, weight: .bold))
+                    Icon3D(.shield, size: 16)
                     Text("\(shields) \(shieldWord(shields))").font(Brand.font(12, .black))
                 }
                 .foregroundStyle(Color(hex: 0x6D28D9))
@@ -132,11 +128,7 @@ struct StreakShieldModal: View {
     private var savedBeat: some View {
         VStack(spacing: 0) {
             VStack(spacing: 8) {
-                ZStack {
-                    Image(systemName: "shield.fill").font(.system(size: 56)).foregroundStyle(Color(hex: 0xC4B5FD))
-                    Image(systemName: "shield").font(.system(size: 56)).foregroundStyle(Color(hex: 0x6D28D9))
-                }
-                .accessibilityHidden(true)
+                Icon3D(.shield, size: 70)
                 Text("STREAK SAVED!").font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(Color(hex: 0x4C1D95))
             }
             .frame(maxWidth: .infinity)

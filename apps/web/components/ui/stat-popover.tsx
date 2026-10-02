@@ -6,9 +6,11 @@ interface StatPopoverProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  /** Which edge of the anchor it hangs from (the header's stat pills sit on the left). */
+  align?: 'left' | 'right';
 }
 
-export function StatPopover({ open, onClose, children }: StatPopoverProps) {
+export function StatPopover({ open, onClose, children, align = 'right' }: StatPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,14 +38,14 @@ export function StatPopover({ open, onClose, children }: StatPopoverProps) {
       {open && (
         <div
           ref={ref}
-          className="absolute right-0 top-full mt-2 z-50 animate-fade-in-scale"
+          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} top-full mt-2 z-50 animate-fade-in-scale`}
           style={{
             width: '240px',
           }}
         >
           {/* Arrow */}
           <div
-            className="absolute -top-1.5 right-6"
+            className={`absolute -top-1.5 ${align === 'left' ? 'left-6' : 'right-6'}`}
             style={{
               width: '12px',
               height: '12px',

@@ -154,7 +154,7 @@ struct ActivityFeedView: View {
                 if e.type == "game", let k = e.friendlyKind {
                     FriendlyGameIcon(kind: k, size: 20, glow: false)
                 } else {
-                    Image(systemName: d.symbol).font(.system(size: 13, weight: .bold)).foregroundStyle(d.color)
+                    SymbolGlyph(d.symbol, size: 13, weight: .bold, color: d.color)
                 }
             }
             .frame(width: 20)

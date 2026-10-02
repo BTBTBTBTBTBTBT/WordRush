@@ -28,15 +28,10 @@ struct HelpView: View {
                 .frame(height: 6)
 
             HStack {
-                Text(tab.rawValue).font(Brand.font(20, .black)).textCase(.uppercase).foregroundStyle(Theme.wordmarkGradient)
-                    .lineLimit(1).minimumScaleFactor(0.7)
                 // C, the explorer, hosts Help (MASCOT_SPEC §6).
-                MascotView(Mascots.help, size: 40, motion: .bob)
+                PageHostTitle(text: tab.rawValue, host: Mascots.help, hostSize: 40)
                 Spacer()
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.textMuted)
-                }
+                HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
             }
             .padding(.horizontal, 20).padding(.top, 16)
 

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Shield, Flame, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
+import { Icon3D } from '@/components/ui/icon3d';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface StreakShieldModalProps {
@@ -75,20 +77,13 @@ export function StreakShieldModal({
             aria-label="Streak shield"
           >
             {!saved && (
-              <button
-                onClick={onClose}
-                className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center transition-opacity hover:opacity-70"
-                style={{ color: '#92400e' }}
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <HeaderBack kind="close" onClick={onClose} size={32} className="absolute top-3 right-3 z-10" />
             )}
 
             {saved ? (
               <div className="animate-fade-in-scale">
                 <div className="flex flex-col items-center gap-1 px-6 pt-8 pb-6" style={{ background: 'linear-gradient(180deg, #ede9fe, #e0e7ff)' }}>
-                  <Shield className="w-14 h-14" style={{ color: '#6d28d9' }} fill="#c4b5fd" strokeWidth={1.8} />
+                  <Icon3D name="shield" size={56} />
                   <h2 className="mt-2 font-black" style={{ fontSize: 22, letterSpacing: 0.4, color: '#4c1d95' }}>STREAK SAVED!</h2>
                 </div>
                 <p className="px-6 py-5 text-center text-[13px] font-bold" style={{ color: '#4b5563' }}>
@@ -98,7 +93,7 @@ export function StreakShieldModal({
             ) : (
               <>
                 <div className="flex flex-col items-center px-6 pt-8 pb-5" style={{ background: 'linear-gradient(180deg, #fff3e0, #fde7f0)' }}>
-                  <Flame className="w-12 h-12" style={{ color: '#c2410c' }} fill="#f59e0b" strokeWidth={1.8} />
+                  <Icon3D name="flame" size={48} />
                   <div className="mt-1 font-black leading-none" style={{ fontSize: 52, color: '#78350f' }}>{streak}</div>
                   <div className="mt-1 text-[11px] font-black" style={{ letterSpacing: 1.2, color: '#b45309' }}>DAY STREAK</div>
                 </div>
@@ -110,7 +105,7 @@ export function StreakShieldModal({
                   </p>
 
                   <div className="flex items-center gap-1.5 text-[12px] font-black" style={{ color: '#6d28d9' }}>
-                    <Shield className="w-4 h-4" fill="#ede9fe" />
+                    <Icon3D name="shield" size={16} />
                     {shields} {shields === 1 ? 'shield' : 'shields'}
                   </div>
 

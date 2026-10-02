@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Crown, Swords, X } from 'lucide-react';
+import { Swords, X } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
@@ -78,7 +79,7 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
                   boxShadow: '0 4px 0 #92400e',
                 }}
               >
-                <Crown className="w-4 h-4 inline mr-1" />
+                <Icon3D name="crown" size={16} inline className="mr-1" />
                 Upgrade to Pro
               </button>
             </Link>

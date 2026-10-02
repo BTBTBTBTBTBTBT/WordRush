@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Trophy } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -44,7 +45,7 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
         >
           {/* U (zen, floating): all done for today. */}
           <Mascot id={PAGE_HOSTS.allDone} size={28} />
-          All {SWEEP_MODES.length} dailies done — Sweep complete! 🏆
+          All {SWEEP_MODES.length} dailies done — Sweep complete! <Icon3D name="trophy" size={18} />
         </div>
       )}
       <ViewLeaderboardLink currentMode={currentMode} />
@@ -77,7 +78,7 @@ function ViewLeaderboardLink({ currentMode }: { currentMode: string }) {
           className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
           style={{ background: `${color}15` }}
         >
-          <Trophy className="w-3.5 h-3.5" style={{ color }} />
+          <Icon3D name="trophy" size={14} />
         </span>
         <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
           View {mode.title} Leaderboard

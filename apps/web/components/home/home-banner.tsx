@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, Flame, Infinity as InfinityIcon, Share, Trophy } from 'lucide-react';
+import { Check, Infinity as InfinityIcon, Share } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import {
   bannerClockLine, bannerHeadline, groupStatus, groupStreak, groupTier, unlimitedGroupStatus,
   type BannerTier, type GroupProgress,
@@ -88,7 +89,7 @@ function RowHeader({ label, status, ink, streak }: { label: string; status: stri
       <span className="flex-1 text-[10px] font-black" style={{ letterSpacing: 0.5, color: ink }}>{status}</span>
       {streak != null && streak > 0 && (
         <span className="flex items-center gap-0.5 text-[12px] font-black" style={{ color: '#c2410c' }} aria-label={`${streak}-day streak`}>
-          <Flame className="w-3 h-3" style={{ color: '#c2410c' }} fill="#f59e0b" />
+          <Icon3D name="flame" size={14} />
           {streak}
         </span>
       )}
@@ -177,7 +178,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       <div className="relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-start gap-1.5" style={{ paddingRight: BANNER_HOST_CLEARANCE - 8 }}>
           <div className="flex-1 flex items-center gap-1.5" style={{ minHeight: 30 }}>
-            {double && <Trophy className="w-[18px] h-[18px] shrink-0" style={{ color: '#b45309' }} />}
+            {double && <Icon3D name="trophy" size={18} className="shrink-0" />}
             {unlimited && <InfinityIcon className="w-5 h-5 shrink-0" style={{ color: '#7c3aed' }} />}
             <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
           </div>

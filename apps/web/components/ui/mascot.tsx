@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { CAST, gameHost, mascotSrc, type MascotId } from '@/lib/mascots';
+import { Icon3D } from '@/components/ui/icon3d';
 
 // The cast components (docs/MASCOT_SPEC.md §0): Mascot(id, size, motion) and
 // CastRow(size, motion). Decorative only: aria-hidden, empty alt, never takes a
@@ -18,32 +19,23 @@ interface MascotProps {
   priority?: boolean;
   className?: string;
   style?: React.CSSProperties;
-  /** Gold crown on top (Flawless). */
+  /** The 3D crown on top (Flawless). */
   crown?: boolean;
 }
 
-/** The small rounded 3-point crown (§3 Flawless), drawn in code. */
+/**
+ * The crown on top (§3 Flawless; HEADER_SPEC §2: every crown is the 3D
+ * `crown` icon), ~45% of the mascot's width, tilted on its top edge.
+ */
 export function MascotCrown({ size }: { size: number }) {
-  const w = Math.round(size * 0.55);
-  const h = Math.round(w * 0.62);
+  const c = Math.round(size * 0.45);
   return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 32 20"
-      aria-hidden="true"
-      className="absolute left-1/2 pointer-events-none"
-      style={{ top: -Math.round(h * 0.55), transform: 'translateX(-50%) rotate(-8deg)', filter: 'drop-shadow(0 1px 1px rgba(146,64,14,0.35))' }}
-    >
-      <path
-        d="M3 17.5 L1.8 5.5 Q1.6 3.6 3.2 4.6 L9.5 9 L14.6 1.8 Q16 0 17.4 1.8 L22.5 9 L28.8 4.6 Q30.4 3.6 30.2 5.5 L29 17.5 Q28.8 19 27.3 19 L4.7 19 Q3.2 19 3 17.5 Z"
-        fill="#f59e0b"
-        stroke="#d97706"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-      <circle cx="16" cy="13.5" r="2.1" fill="#fde68a" />
-    </svg>
+    <Icon3D
+      name="crown"
+      size={c}
+      className="absolute left-1/2"
+      style={{ top: -Math.round(c * 0.6), transform: 'translateX(-50%) rotate(-8deg)', filter: 'drop-shadow(0 1px 1px rgba(146,64,14,0.3))' }}
+    />
   );
 }
 

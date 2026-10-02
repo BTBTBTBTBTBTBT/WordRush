@@ -21,13 +21,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MilitaryTech
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,14 +40,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ModeGen
-import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.data.ModeStats
@@ -71,7 +65,14 @@ import kotlinx.coroutines.launch
 private val PURPLE = Color(0xFF7C3AED)
 
 /** One feed sentence + its icon (a vector, or the crown drawable for gold). */
-private data class FeedLine(val text: String, val icon: ImageVector?, val crown: Boolean, val tint: Color)
+private data class FeedLine(
+    val text: String,
+    val icon: ImageVector?,
+    val crown: Boolean,
+    val tint: Color,
+    /** The 3D set's glyph where one exists (HEADER_SPEC §2). */
+    val icon3d: Icon3DName? = null,
+)
 
 // Mirrors web RECORD_LABELS label + format (RecordsScreen's copy is private).
 private val RECORD_LABEL: Map<String, Pair<String, (Int) -> String>> = mapOf(
@@ -100,12 +101,12 @@ private fun describe(e: FriendsService.FeedEvent): FeedLine {
     val who = if (e.me) "You" else e.username
     val game = e.gameTitle ?: e.gameMode ?: ""
     return when (e.type) {
-        "flawless" -> FeedLine("$who won every daily — Flawless Victory", Icons.Filled.EmojiEvents, false, Color(0xFFB45309))
+        "flawless" -> FeedLine("$who won every daily — Flawless Victory", null, false, Color(0xFFB45309), Icon3DName.TROPHY)
         "sweep" -> FeedLine("$who swept the dailies", Icons.Filled.AutoAwesome, false, PURPLE)
         "more_flawless" -> FeedLine("$who — Flawless More Games, all ten won", Icons.Filled.GridView, false, Color(0xFFB45309))
         "more_sweep" -> FeedLine("$who — More Games Sweep, all ten played", Icons.Filled.GridView, false, Color(0xFF4F46E5))
         // §294 (D3.4): a streak shield sent to a friend.
-        "gift" -> FeedLine("$who sent ${e.otherName ?: "a friend"} a streak shield", Icons.Filled.Shield, false, Color(0xFF0D9488))
+        "gift" -> FeedLine("$who sent ${e.otherName ?: "a friend"} a streak shield", null, false, Color(0xFF0D9488), Icon3DName.SHIELD)
         "record" -> {
             val (label, value) = e.kind?.let { recordLabelAndValue(it, e.value, e.gameMode) } ?: ("record" to "")
             val title = e.gameTitle?.let { "$it " } ?: ""
@@ -119,7 +120,7 @@ private fun describe(e: FriendsService.FeedEvent): FeedLine {
                 k == "silver" -> FeedLine("$who took silver in $game", Icons.Filled.MilitaryTech, false, Color(0xFF9CA3AF))
                 k == "bronze" -> FeedLine("$who took bronze in $game", Icons.Filled.MilitaryTech, false, Color(0xFFB45309))
                 k == "perfect" -> FeedLine("$who played a perfect $game", Icons.Filled.Star, false, PURPLE)
-                k.startsWith("streak_") -> FeedLine("$who hit a ${k.removePrefix("streak_")}-day streak", Icons.Filled.LocalFireDepartment, false, Color(0xFFF97316))
+                k.startsWith("streak_") -> FeedLine("$who hit a ${k.removePrefix("streak_")}-day streak", null, false, Color(0xFFF97316), Icon3DName.FLAME)
                 else -> FeedLine("$who earned a medal in $game", Icons.Filled.MilitaryTech, false, Color(0xFF9CA3AF))
             }
         }
@@ -310,7 +311,8 @@ private fun MomentRow(
                 )
                 when {
                     gameKind != null -> com.wordocious.app.ui.friends.FriendlyGameIcon(gameKind, 18.dp)
-                    line?.crown == true -> Icon(painterResource(R.drawable.ic_crown), null, tint = line.tint, modifier = Modifier.size(16.dp))
+                    line?.crown == true -> Icon3D(Icon3DName.CROWN, 20.dp)
+                    line?.icon3d != null -> Icon3D(line.icon3d, 20.dp)
                     line?.icon != null -> Icon(line.icon, null, tint = line.tint, modifier = Modifier.size(16.dp))
                 }
                 Text(

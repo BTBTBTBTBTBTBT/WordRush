@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Sparkles, TrendingUp, Star, Share, BookOpen, LayoutGrid } from 'lucide-react';
+import { Clock, Target, Zap, Medal, Sparkles, TrendingUp, Star, Share, BookOpen, LayoutGrid } from 'lucide-react';
+import { Icon3D, Flame3D, Trophy3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { getUserSweepRank, getUserAllTimeSweepRank, type AllTimeRecord } from '@/lib/daily-service';
@@ -109,7 +110,7 @@ export function NextUpCard({ dailyStreak, chases }: { dailyStreak: number; chase
         <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Next Up</div>
         <div className="mb-3">
           <div className="flex items-center justify-between text-[11px] font-extrabold mb-1">
-            <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />{nextShield}-day streak shield</span>
+            <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Icon3D name="flame" size={14} />{nextShield}-day streak shield</span>
             <span style={{ color: 'var(--color-text-muted)' }}>{dailyStreak}/{nextShield}</span>
           </div>
           <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
@@ -152,8 +153,8 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
         <div className="px-4 pb-3">
           <div className="grid grid-cols-2 gap-1">
             <MyStatCell icon={Sparkles} value={`${sweep.sweepCount}`} label="Daily Sweeps" color="#7c3aed" />
-            <MyStatCell icon={Trophy} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
-            <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
+            <MyStatCell icon={Trophy3D} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
+            <MyStatCell icon={Flame3D} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
             <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatRecordTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
           </div>
           {(sweepRankToday || sweepRankAllTime || sweep.currentFlawlessStreak > 0) && (
@@ -170,7 +171,7 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
               )}
               {sweep.currentFlawlessStreak > 0 && (
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  🏆 Flawless: <span className="font-black" style={{ color: '#d97706' }}>×{sweep.currentFlawlessStreak}</span>
+                  <Icon3D name="trophy" size={12} inline /> Flawless: <span className="font-black" style={{ color: '#d97706' }}>×{sweep.currentFlawlessStreak}</span>
                   {sweep.bestFlawlessStreak > sweep.currentFlawlessStreak ? ` · best ${sweep.bestFlawlessStreak}` : ''}
                 </span>
               )}
@@ -179,7 +180,7 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
         </div>
       ) : (
         <div className="py-5 text-center">
-          <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+          <Icon3D name="trophy" size={28} className="mx-auto mb-1.5" />
           <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
         </div>
       )}
@@ -208,9 +209,9 @@ export function PuzzleSweepRecordsCard({ rec }: { rec: PuzzleRecords | null }) {
       {rec && (rec.sweepDays > 0 || rec.flawlessDays > 0) ? (
         <div className="px-4 pb-3 grid grid-cols-2 gap-1">
           <MyStatCell icon={Sparkles} value={`${rec.sweepDays}`} label="Puzzles Sweeps" color={color} />
-          <MyStatCell icon={Trophy} value={`${rec.flawlessDays}`} label="Puzzles Flawless" color="#d97706" />
+          <MyStatCell icon={Trophy3D} value={`${rec.flawlessDays}`} label="Puzzles Flawless" color="#d97706" />
           <MyStatCell icon={TrendingUp} value={`${rec.bestSweep}`} label="Best Sweep Run" color="#2563eb" />
-          <MyStatCell icon={Flame} value={`${rec.bestFlawless}`} label="Best Flawless Run" color="#f97316" />
+          <MyStatCell icon={Flame3D} value={`${rec.bestFlawless}`} label="Best Flawless Run" color="#f97316" />
         </div>
       ) : (
         <div className="py-5 text-center">
@@ -236,7 +237,7 @@ export function WordQuizRecordCard({ rec }: { rec: { streak: number; best: numbe
         <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Word of the Day</div>
       </div>
       <div className="px-4 pb-3 grid grid-cols-3 gap-1">
-        <MyStatCell icon={Flame} value={`${rec.streak}`} label="Word Streak" color="#f97316" />
+        <MyStatCell icon={Flame3D} value={`${rec.streak}`} label="Word Streak" color="#f97316" />
         <MyStatCell icon={TrendingUp} value={`${rec.best}`} label="Best Run" color="#2563eb" />
         <MyStatCell icon={Target} value={`${Math.round((rec.right / rec.answered) * 100)}%`} label={`Right ${rec.right} of ${rec.answered}`} color={color} />
       </div>
@@ -258,7 +259,7 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
         <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Your Records</div>
         {held.length > 0 && (
           <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: 'var(--color-highlight-gold)', color: '#d97706' }}>
-            <Crown className="w-3 h-3" /> {held.length} all-time record{held.length === 1 ? '' : 's'}
+            <Icon3D name="crown" size={14} /> {held.length} all-time record{held.length === 1 ? '' : 's'}
           </span>
         )}
       </div>
@@ -266,7 +267,7 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
         <MyStatCell icon={Clock} value={fmt('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
         <MyStatCell icon={Target} value={fmt('fewest_guesses', my?.best_score)} label={recordLabel('fewest_guesses', dbKey)} color={color} dim={!my?.best_score} />
         <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
-        <MyStatCell icon={Trophy} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
+        <MyStatCell icon={Trophy3D} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
       </div>
       {(held.length > 0 || chase) && (
         <div className="px-4 pb-3 space-y-1.5" style={{ borderTop: '1px solid var(--color-border)' }}>
@@ -274,7 +275,7 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
             const cfg = RECORD_LABELS[r.record_type];
             return (
               <div key={`${r.record_type}-${r.play_type}`} className="flex items-center gap-2 pt-2 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                <Crown className="w-3.5 h-3.5 shrink-0" style={{ color: '#d97706' }} />
+                <Icon3D name="crown" size={14} className="shrink-0" />
                 <span className="flex-1 truncate">You hold the all-time <b style={{ color: 'var(--color-text)' }}>{cfg?.label ?? r.record_type}</b> record</span>
                 <span className="font-black" style={{ color: '#d97706' }}>{recordValue(r.record_type, r.record_value, dbKey)}</span>
               </div>
@@ -306,7 +307,7 @@ export function RecordsHeldRow({ recordsHeld }: { recordsHeld: AllTimeRecord[] }
         <div className="px-4 py-3">
           <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Medals</div>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#d97706' }}><Crown className="w-3.5 h-3.5" />{(profile as any)?.gold_medals ?? 0}</span>
+            <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#d97706' }}><Icon3D name="crown" size={14} />{(profile as any)?.gold_medals ?? 0}</span>
             <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#9ca3af' }}><Medal className="w-3.5 h-3.5" />{(profile as any)?.silver_medals ?? 0}</span>
             <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#b45309' }}><Medal className="w-3.5 h-3.5" />{(profile as any)?.bronze_medals ?? 0}</span>
           </div>

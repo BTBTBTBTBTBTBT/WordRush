@@ -70,10 +70,7 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}, onOpenStats: () -> Unit 
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Spacer(Modifier.weight(1f))
-            Icon(
-                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null,
-                tint = WTheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(56.dp),
-            )
+            Icon3D(Icon3DName.CROWN, 64.dp)
             Text(
                 "Sign in to see records", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -738,8 +735,9 @@ private fun recordValueInk(): Color =
 private fun RecordChip(cfg: RecordCfg, accent: Color, hasRecord: Boolean) {
     val tint = if (hasRecord) accent else WTheme.textMuted
     GameTileChip(tint, 32.dp) {
-        if (cfg.crown) {
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = tint, modifier = Modifier.size(16.dp))
+        val icon3d = if (cfg.crown) Icon3DName.CROWN else cfg.icon3d
+        if (icon3d != null) {
+            Icon3D(icon3d, 20.dp, alpha = if (hasRecord) 1f else 0.45f, colorFilter = if (hasRecord) null else Icon3DMuted)
         } else cfg.icon?.let { Icon(it, null, tint = tint, modifier = Modifier.size(16.dp)) }
     }
 }
@@ -759,7 +757,7 @@ private fun RecordHolder(record: LeaderboardService.AllTimeRecord, isCurrentUser
             maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
         )
-        if (isCurrentUser) Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), "Your record", tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
+        if (isCurrentUser) Icon3D(Icon3DName.CROWN, 14.dp, contentDescription = "Your record")
     }
 }
 

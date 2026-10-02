@@ -72,7 +72,7 @@ struct VSBannerView: View {
                 HStack(alignment: .top, spacing: 6) {
                     HStack(spacing: 6) {
                         if sweep {
-                            Image(systemName: "trophy.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(Color(hex: 0xB45309))
+                            Icon3D(.trophy, size: 20)
                         }
                         Text(VsLobby.vsBannerHeadline(input))
                             .font(Brand.font(16, .black)).tracking(0.4).lineSpacing(3)

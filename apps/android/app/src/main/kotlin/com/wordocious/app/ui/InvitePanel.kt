@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -42,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.ReferralService
 import com.wordocious.app.data.ShareEvents
@@ -210,7 +207,7 @@ fun InvitePanel() {
                 }
                 if (inv.status == "converted") {
                     // iOS marks a converted invite with trophy.fill, not a crown.
-                    Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
+                    Icon3D(Icon3DName.TROPHY, 14.dp)
                 }
             }
         }

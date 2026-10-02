@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wordocious.app.R
 import com.wordocious.app.ui.theme.WTheme
 
 /**
@@ -84,7 +82,7 @@ fun ModeLimitModal(
                 depth = 4.dp,
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(14.dp))
+                Icon3D(Icon3DName.CROWN, 18.dp)
                 Spacer(Modifier.size(6.dp))
                 Text("Upgrade to Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
             }

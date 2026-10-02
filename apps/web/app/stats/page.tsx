@@ -7,20 +7,18 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { supabase } from '@/lib/supabase-client';
 import {
-  Trophy,
-  Flame,
   Star,
   Zap,
   Swords,
   User,
   Medal,
   Sparkles,
-  Crown,
   Bot,
   Lock,
   Share,
   Pencil,
 } from 'lucide-react';
+import { Icon3D, Crown3D, Flame3D, type IconLike } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
@@ -45,7 +43,7 @@ import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
-import { Mascot } from '@/components/ui/mascot';
+import { PageHeader } from '@/components/ui/page-header';
 import { MASCOT_LINES, PAGE_HOSTS } from '@/lib/mascots';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -459,10 +457,8 @@ export default function StatsPage() {
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
         {/* STATS, with its host D (brainy, glasses + pencil) beside the title. */}
-        <div className="flex items-center gap-2 pt-1">
-          <Mascot id={PAGE_HOSTS.stats} size={44} motion="bob" priority />
-          <span className="text-2xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #3b82f6, #7c3aed)', letterSpacing: 0.4 }}>STATS</span>
-        </div>
+        {/* HEADER_SPEC §4: the shared page header (gradient caps title, host beside it). */}
+        <PageHeader title="STATS" titleTag="div" titleSize={24} host={PAGE_HOSTS.stats} hostSize={44} className="pt-1" />
 
         {/* ── Player card (founder, 2026-09-26: "the top looks unfinished with the random
             buttons"): ONE card. Avatar · name · chips on the first row with Edit / Share as
@@ -916,7 +912,7 @@ export default function StatsPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   {[
-                    { icon: Crown, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#d97706' },
+                    { icon: Crown3D, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#d97706' },
                     { icon: Medal, count: (profile as any).silver_medals || 0, label: 'Silver', color: 'var(--color-text-muted)' },
                     { icon: Medal, count: (profile as any).bronze_medals || 0, label: 'Bronze', color: '#b45309' },
                   ].map((m, i) => {
@@ -934,20 +930,20 @@ export default function StatsPage() {
                   <>
                     <div className={`space-y-1.5 ${showAllMedals ? 'max-h-80 overflow-y-auto pr-1' : ''}`}>
                       {(showAllMedals ? medals : medals.slice(0, 5)).map((medal: MedalType) => {
-                        const medalConfig: Record<string, { icon: typeof Crown; color: string; label: string }> = {
-                          gold: { icon: Crown, color: '#d97706', label: '1st' },
+                        const medalConfig: Record<string, { icon: IconLike; color: string; label: string }> = {
+                          gold: { icon: Crown3D, color: '#d97706', label: '1st' },
                           silver: { icon: Medal, color: 'var(--color-text-muted)', label: '2nd' },
                           bronze: { icon: Medal, color: '#b45309', label: '3rd' },
-                          streak_7: { icon: Flame, color: '#ea580c', label: '7-Day Streak' },
-                          streak_30: { icon: Flame, color: '#dc2626', label: '30-Day Streak' },
-                          streak_100: { icon: Flame, color: '#7c3aed', label: '100-Day Streak' },
+                          streak_7: { icon: Flame3D, color: '#ea580c', label: '7-Day Streak' },
+                          streak_30: { icon: Flame3D, color: '#dc2626', label: '30-Day Streak' },
+                          streak_100: { icon: Flame3D, color: '#7c3aed', label: '100-Day Streak' },
                           perfect: { icon: Star, color: WIN_FG, label: 'Perfect' },
                         };
                         const cfg = medalConfig[medal.medal_type] || { icon: Medal, color: 'var(--color-text-muted)', label: medal.medal_type };
                         const MedalIcon = cfg.icon;
                         return (
                           <div key={medal.id} className="flex items-center gap-2.5 p-2.5" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
-                            <MedalIcon className="w-4 h-4" style={{ color: cfg.color }} fill={cfg.icon === Flame || cfg.icon === Star ? 'currentColor' : 'none'} />
+                            <MedalIcon className="w-4 h-4" style={{ color: cfg.color }} fill={cfg.icon === Flame3D || cfg.icon === Star ? 'currentColor' : 'none'} />
                             <span className="text-xs font-extrabold flex-1" style={{ color: 'var(--color-text)' }}>
                               {medal.medal_type.startsWith('streak') ? cfg.label : (gameModeTitles[medal.game_mode] || medal.game_mode)}
                               {medal.medal_type === 'perfect' && <span className="text-[10px] font-bold ml-1" style={{ color: WIN_FG }}>Perfect!</span>}
@@ -1075,7 +1071,7 @@ export default function StatsPage() {
                   {cpuRecord.total === 0 ? (
                     <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Beat a bot to start your record</div>
                   ) : cpuBestStreak > 0 && (
-                    <div className="text-[10px] font-extrabold" style={{ color: '#f97316' }}>🔥 Best streak: {cpuBestStreak}</div>
+                    <div className="text-[10px] font-extrabold flex items-center gap-1" style={{ color: '#f97316' }}><Icon3D name="flame" size={14} /> Best streak: {cpuBestStreak}</div>
                   )}
                 </div>
                 <div className="text-right">
@@ -1189,7 +1185,7 @@ function FlawlessBannerFooter({ total }: { total: number }) {
     <div className="text-center mt-2">
       {streak >= 2 && (
         <div className="text-sm font-black tracking-wide" style={{ color: '#b45309' }}>
-          🏆 {streak}-DAY FLAWLESS STREAK
+          <Icon3D name="trophy" size={18} inline /> {streak}-DAY FLAWLESS STREAK
         </div>
       )}
       <div className="flex items-center justify-center gap-1.5 mt-0.5">

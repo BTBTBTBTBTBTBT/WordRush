@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.TrendingUp
@@ -128,13 +126,13 @@ fun TodayCard(
         ) {
             if (allDone) {
                 // Flanking trophy/sparkle glyphs + gradient banner text (the old Today's Dailies card).
-                val bannerIcon = if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome
-                val iconSize = if (flawless) 18.dp else 15.dp
+                val iconSize = 15.dp
                 Row(
                     Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 ) {
-                    Icon(bannerIcon, null, tint = if (flawless) Color(0xFFB45309) else Color(0xFF7C3AED), modifier = Modifier.size(iconSize))
+                    if (flawless) Icon3D(Icon3DName.TROPHY, 22.dp)
+                    else Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(iconSize))
                     Text(
                         if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
                         fontSize = 16.sp, fontWeight = FontWeight.Black,
@@ -146,7 +144,8 @@ fun TodayCard(
                             ),
                         ),
                     )
-                    Icon(bannerIcon, null, tint = if (flawless) Color(0xFFB45309) else Color(0xFFEC4899), modifier = Modifier.size(iconSize))
+                    if (flawless) Icon3D(Icon3DName.TROPHY, 22.dp)
+                    else Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFFEC4899), modifier = Modifier.size(iconSize))
                 }
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -223,7 +222,7 @@ fun TodayCard(
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(16.dp))
+                Icon3D(Icon3DName.FLAME, 20.dp)
                 Column {
                     Text("SWEEP STREAKS", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.6.sp)
                     // Wordocious, then Puzzles: the same two runs the home banner shows

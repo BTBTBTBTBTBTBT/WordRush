@@ -301,31 +301,27 @@ struct VSLockBadge: View {
     }
 }
 
-/// The VS page nav bar: teal back chevron, a gradient caps title, a trailing slot.
+/// The VS page nav bar in the shared page-header style (HEADER_SPEC §4): the back
+/// control as a soft white circle, the teal gradient caps title with the page's
+/// host, a trailing slot.
 struct VSNavBar<Trailing: View>: View {
     let title: String
-    /// The page's host beside the title (MASCOT_SPEC §6); nil = none.
-    var host: MascotID? = nil
+    /// The page's host beside the title (MASCOT_SPEC §6): S on the VS pages; nil
+    /// where the page's banner already has its host peeking over it (§5).
+    var host: MascotID? = Mascots.vs
     let onBack: () -> Void
     @ViewBuilder var trailing: () -> Trailing
     var body: some View {
         ZStack {
-            HStack(spacing: 6) {
-                Text(title).font(Brand.font(20, .black)).tracking(0.4)
-                    .foregroundStyle(LinearGradient(colors: VsLobbyKit.titleGradient, startPoint: .leading, endPoint: .trailing))
-                if let host { MascotView(host, size: 32, motion: .bob) }
-            }
+            PageHostTitle(text: title, colors: VsLobbyKit.titleGradient, host: host)
+                .padding(.horizontal, 52)
             HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left").font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(VsLobbyKit.ink).frame(width: 36, height: 36).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).accessibilityLabel("Back")
+                HeaderCircleButton(.symbol("chevron.left"), label: "Back", action: onBack)
                 Spacer()
                 trailing()
             }
         }
-        .padding(.horizontal, 8).padding(.top, 4).frame(height: 44)
+        .padding(.horizontal, 10).padding(.top, 4).frame(height: 48)
     }
 }
 

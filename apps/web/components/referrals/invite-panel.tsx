@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { Gift, Copy, Check, Crown, Trophy, X as XIcon } from 'lucide-react';
+import { Gift, Copy, Check, X as XIcon } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
@@ -231,7 +232,7 @@ export function InvitePanel() {
                     </button>
                   </>
                 )}
-                {inv.status === 'converted' && <Crown className="w-3.5 h-3.5" style={{ color: '#d97706' }} />}
+                {inv.status === 'converted' && <Icon3D name="crown" size={14} />}
               </div>
             );
           })}
@@ -241,7 +242,7 @@ export function InvitePanel() {
       {(leaders ?? []).length > 0 && (
         <div className="pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
           <div className="flex items-center gap-1.5 mb-1.5">
-            <Trophy className="w-3.5 h-3.5" style={{ color: '#d97706' }} />
+            <Icon3D name="trophy" size={14} />
             <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
               Top Inviters this month
             </span>

@@ -29,25 +29,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MilitaryTech
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -425,17 +417,10 @@ fun ProfileScreen(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
 
-        // The page's section label with its host (MASCOT_SPEC §1–§2, §6): D, glasses and
-        // a pencil, for the numbers — 28 dp just left of STATS, static.
+        // The shared page header (HEADER_SPEC §4) with the page host (MASCOT_SPEC §6): D,
+        // glasses and a pencil, for the numbers.
         item {
-            Row(
-                Modifier.semantics { heading() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Mascot(Mascots.stats, 28.dp)
-                Text("STATS", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = WTheme.textMuted)
-            }
+            PageHeader("STATS", host = Mascots.stats, contentPadding = PaddingValues(0.dp))
         }
 
         // ── A. Header ─────────────────────────────────────────────
@@ -1012,7 +997,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                 Box(Modifier.padding(top = 4.dp)) { ProfilePersonalizationRow(profile, start = true) }
             }
 
-            // Quiet icon actions — the same 32 dp circles as the header's ? and ⚙.
+            // Quiet icon actions — small 32 dp circles inside the profile card.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 CardIconButton(Icons.Filled.Edit, "Edit profile", purple, onEditProfile)
                 CardIconButton(Icons.Filled.Share, "Share profile card", purple, onShare)
@@ -1122,10 +1107,13 @@ private fun FlawlessBannerFooter(total: Int, seed: MatchStatsService.DailySweepS
     LaunchedEffect(Unit) { sweep = MatchStatsService.dailySweepStats() }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (sweep.currentFlawlessStreak >= 2) {
-            Text(
-                "🏆 ${sweep.currentFlawlessStreak}-DAY FLAWLESS STREAK",
-                fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309), letterSpacing = 0.5.sp,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon3D(Icon3DName.TROPHY, 18.dp)
+                Text(
+                    "${sweep.currentFlawlessStreak}-DAY FLAWLESS STREAK",
+                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309), letterSpacing = 0.5.sp,
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -1355,8 +1343,8 @@ private fun MedalHistoryRow(m: ProfileService.UserMedal) {
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         when (m.medalType) {
-            "gold" -> Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = color, modifier = Modifier.size(14.dp))
-            "streak_7", "streak_30", "streak_100" -> Icon(Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(14.dp))
+            "gold" -> Icon3D(Icon3DName.CROWN, 18.dp)
+            "streak_7", "streak_30", "streak_100" -> Icon3D(Icon3DName.FLAME, 18.dp)
             "perfect" -> Icon(Icons.Filled.Star, null, tint = color, modifier = Modifier.size(14.dp))
             else -> Icon(Icons.Filled.MilitaryTech, null, tint = color, modifier = Modifier.size(14.dp))
         }
@@ -1377,7 +1365,7 @@ private fun MedalCard(crown: Boolean, count: Int, label: String, color: Color, m
         modifier = modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.bg).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (crown) Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = color, modifier = Modifier.size(24.dp))
+        if (crown) Icon3D(Icon3DName.CROWN, 28.dp)
         else Icon(Icons.Filled.MilitaryTech, null, tint = color, modifier = Modifier.size(24.dp))
         Text("$count", fontSize = 20.sp, fontWeight = FontWeight.Black, color = color)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
@@ -1752,7 +1740,10 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
             Text("VS BOTS", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
             Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             if (total == 0) Text("Beat a bot to start your record", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
-            else if (bestStreak > 0) Text("🔥 Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
+            else if (bestStreak > 0) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Icon3D(Icon3DName.FLAME, 13.dp)
+                Text("Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
+            }
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(if (total == 0) "—" else "$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
@@ -2015,14 +2006,14 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
             if (!s.hasData) {
                 MascotEmptyState(Mascots.stats, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), size = 72.dp, color = WTheme.textMuted)
             } else {
-                val cells = buildList {
+                val cells = buildList<Triple<String, String, Any>> {
                     // The four base cells always render — an em dash where the
                     // metric is missing, so the 2×2 grid never reflows (iOS).
                     add(Triple("Fastest Win", s.fastestTime?.let { fmtTime(it) } ?: "—", Icons.Filled.Bolt))
                     add(Triple(fewestLabel, s.fewestGuesses?.let { fewestValue(it) } ?: "—", Icons.Filled.TrackChanges))
                     add(Triple("Perfect Games", "${s.perfectGames}", Icons.Filled.Star))
                     add(Triple("Consistency", if (s.consistencySample >= 3) "${s.consistency}" else "—", Icons.Filled.TrackChanges))
-                    if (s.currentStreak > 0) add(Triple("Win Streak", "${s.currentStreak}", Icons.Filled.LocalFireDepartment))
+                    if (s.currentStreak > 0) add(Triple("Win Streak", "${s.currentStreak}", Icon3DName.FLAME))
                     if (wordFacts && s.avgGuesses > 0) add(Triple("Avg Guesses", fmtG(s.avgGuesses), Icons.Filled.TrackChanges))
                     if (wordFacts && s.firstTryRate > 0) add(Triple("First Try Rate", "${s.firstTryRate}%", Icons.Filled.Star))
                     s.peakHour?.let { add(Triple("Peak Hour", hourLabelUpper(it), Icons.Filled.Bolt)) }
@@ -2045,7 +2036,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                 }
                 if (s.vsTotal > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Filled.EmojiEvents, null, tint = gold, modifier = Modifier.size(15.dp))
+                        Icon3D(Icon3DName.TROPHY, 18.dp)
                         Text("VS Record", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
                         Spacer(Modifier.weight(1f))
                         Text("${s.vsWins}W · ${s.vsLosses}L · ${s.vsWinRate}%", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -2065,12 +2056,16 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
 }
 
 @Composable
-private fun ProStatCell(label: String, value: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
+private fun ProStatCell(label: String, value: String, icon: Any, color: Color, modifier: Modifier = Modifier) {
     Row(
         modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+        // An ImageVector, or a 3D set icon (HEADER_SPEC §2: the win streak's flame).
+        when (icon) {
+            is Icon3DName -> Icon3D(icon, 18.dp)
+            is ImageVector -> Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+        }
         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
             Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
@@ -2141,7 +2136,7 @@ private fun ProLockedTeaser(label: String, onGoPro: () -> Unit) {
                 .clickableNoRipple(onGoPro).padding(horizontal = 16.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(13.dp))
+            Icon3D(Icon3DName.CROWN, 16.dp)
             Text("Upgrade to Pro", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
         }
     }

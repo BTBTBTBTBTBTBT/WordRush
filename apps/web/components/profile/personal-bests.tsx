@@ -1,6 +1,7 @@
 'use client';
 
-import { Zap, Target, Flame } from 'lucide-react';
+import { Zap, Target } from 'lucide-react';
+import { Flame3D } from '@/components/ui/icon3d';
 
 interface PersonalBestsProps {
   fastestWin: { time: number; date: string } | null;
@@ -25,7 +26,7 @@ export function PersonalBests({ fastestWin, fewestGuesses, bestStreak, accentCol
   const bests = [
     { icon: Zap, label: 'Fastest Win', value: fastestWin ? formatTime(fastestWin.time) : '-', date: fastestWin?.date },
     { icon: Target, label: 'Fewest Guesses', value: fewestGuesses ? String(fewestGuesses.count) : '-', date: fewestGuesses?.date },
-    { icon: Flame, label: 'Best Streak', value: bestStreak > 0 ? String(bestStreak) : '-', date: undefined },
+    { icon: Flame3D, label: 'Best Streak', value: bestStreak > 0 ? String(bestStreak) : '-', date: undefined },
   ];
 
   return (

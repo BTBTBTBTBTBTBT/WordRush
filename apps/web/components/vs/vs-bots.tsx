@@ -10,7 +10,8 @@
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flame, Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { ladderRungs, vsClock, VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { vsHrefForMode } from '@/lib/invite-service';
@@ -71,7 +72,7 @@ export function VsBots() {
                   <div className="text-[13px] font-black" style={{ color: VS.deep }}>{bod.line}</div>
                   {p.botOfDayStreak > 0 && (
                     <div className="flex items-center gap-1 text-[11.5px] font-black" style={{ color: '#c2410c' }}>
-                      <Flame className="w-3 h-3" fill="#f59e0b" /> {p.botOfDayStreak} {p.botOfDayStreak === 1 ? 'day' : 'days'} in a row
+                      <Icon3D name="flame" size={14} /> {p.botOfDayStreak} {p.botOfDayStreak === 1 ? 'day' : 'days'} in a row
                     </div>
                   )}
                 </div>

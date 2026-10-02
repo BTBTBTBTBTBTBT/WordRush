@@ -223,9 +223,7 @@ struct GauntletResultsView: View {
         ScrollView {
             VStack(spacing: 16) {
                 VStack(spacing: 8) {
-                    Image(systemName: won ? "trophy.fill" : "xmark.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(won ? Color(hex: 0xD97706) : Color(hex: 0xF87171))
+                    SymbolGlyph(won ? "trophy.fill" : "xmark.circle.fill", size: 60, color: won ? Color(hex: 0xD97706) : Color(hex: 0xF87171))
                         .scaleEffect(appeared ? 1 : 0.6).opacity(appeared ? 1 : 0)
                         .animation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.05)), value: appeared)
                     title.modifier(RiseIn(appeared: appeared, delay: 0.15))
@@ -279,7 +277,7 @@ struct GauntletResultsView: View {
 
     private func statCard(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {
         VStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 18)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 18, color: color)
             Text(value).font(Brand.font(22, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
             Text(label).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
         }

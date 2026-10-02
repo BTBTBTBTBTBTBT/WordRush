@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -66,6 +65,8 @@ data class RailItem(
     val card: ModeCard? = null,
     /** Fixed-chip icon (Today / All-time). */
     val icon: ImageVector? = null,
+    /** A 3D set icon for a fixed chip (HEADER_SPEC §2: All-time → `trophy`). */
+    val icon3d: Icon3DName? = null,
     val accent: Color,
     /** Today's result on a game chip: true = won, false = lost, null = not played. */
     val dot: Boolean? = null,
@@ -89,7 +90,7 @@ fun buildRailItems(
     return buildList {
         // All-time sits right after Today (founder, 2026-09-27: last of nineteen chips was too far to reach).
         add(RailItem(RAIL_TODAY, "Today", icon = Icons.Filled.CalendarToday, accent = Color(0xFF7C3AED)))
-        add(RailItem(RAIL_ALL, "All-time", icon = Icons.Filled.EmojiEvents, accent = Color(0xFFD97706)))
+        add(RailItem(RAIL_ALL, "All-time", icon3d = Icon3DName.TROPHY, accent = Color(0xFFD97706)))
         sweepCards.forEach { add(game(it)) }
         moreCards.forEach { add(game(it)) }
         // No VS chip (founder, 2026-10-01): VS is rarely played and its stats moved to the bottom of
@@ -205,6 +206,7 @@ private fun RailChip(
     ) { chip ->
         when {
             item.card != null -> ModeGlyph(item.card, item.accent, box = chip)
+            item.icon3d != null -> Icon3D(item.icon3d, chip * 0.62f)
             item.icon != null -> Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(chip * 0.5f))
         }
     }

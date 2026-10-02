@@ -299,11 +299,11 @@ fun FriendFace(
     }
 }
 
-/** Flame + count (the home flame), hidden by callers at 0. */
+/** The 3D streak flame (HEADER_SPEC §2) + count, hidden by callers at 0. */
 @Composable
-fun FlameCount(text: String, modifier: Modifier = Modifier, size: Dp = 12.dp) {
+fun FlameCount(text: String, modifier: Modifier = Modifier, size: Dp = 14.dp) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.ic_flame_gold), null, modifier = Modifier.size(size))
+        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, size)
         Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.flameInk, maxLines = 1)
     }
 }

@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -161,12 +160,14 @@ fun SweepCelebration(
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
-                        tint = if (flawless) Color(0xFFD97706) else if (more) Color(0xFF4F46E5) else Color(0xFF7C3AED), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
+                    if (flawless) Icon3D(Icon3DName.TROPHY, 30.dp)
+                    else Icon(Icons.Filled.AutoAwesome, null,
+                        tint = if (more) Color(0xFF4F46E5) else Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
                     Text(title, fontSize = if (more) 22.sp else 26.sp, fontWeight = FontWeight.Black, maxLines = 1,
                         style = TextStyle(brush = Brush.linearGradient(titleColors), fontFamily = Nunito))
-                    Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
-                        tint = if (flawless) Color(0xFFD97706) else if (more) Color(0xFF6366F1) else Color(0xFFEC4899), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
+                    if (flawless) Icon3D(Icon3DName.TROPHY, 30.dp)
+                    else Icon(Icons.Filled.AutoAwesome, null,
+                        tint = if (more) Color(0xFF6366F1) else Color(0xFFEC4899), modifier = Modifier.size(22.dp))
                 }
                 Text(
                     if (flawless) "All ${totals.total} $noun won today" else "All ${totals.total} $noun completed today",

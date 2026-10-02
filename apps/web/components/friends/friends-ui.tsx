@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Flame, Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
+import { Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
 
@@ -96,7 +97,7 @@ export function FlameCount({ days, label }: { days: number; label?: string }) {
   if (days <= 0) return null;
   return (
     <span className="flex items-center gap-0.5 text-[12px] font-black shrink-0" style={{ color: FR.flame }} aria-label={`${days}-day friend streak`}>
-      <Flame className="w-3 h-3" style={{ color: FR.flame }} fill={FR.flameFill} />
+      <Icon3D name="flame" size={14} />
       {label ?? days}
     </span>
   );

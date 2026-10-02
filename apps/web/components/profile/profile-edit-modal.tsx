@@ -5,6 +5,7 @@ import { validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { X as XIcon, Check, Pencil, Star, Lock, Globe } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import {
   PLATFORMS,
@@ -149,14 +150,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
         <div className="h-1.5 rounded-t-[20px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }} />
 
         <div className="p-5">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-3 w-8 h-8 flex items-center justify-center rounded-full"
-            style={{ background: 'var(--color-bg)' }}
-            aria-label="Close"
-          >
-            <XIcon className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-          </button>
+          <HeaderBack kind="close" onClick={onClose} size={32} className="absolute top-4 right-3" />
 
           <h2 className="text-lg font-black uppercase text-transparent bg-clip-text mb-3" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Edit Profile</h2>
 

@@ -48,12 +48,7 @@ struct InviteSheet: View {
                             .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
-                            .frame(width: 32, height: 32)
-                            .background(Circle().fill(Theme.surfaceHover))
-                    }.buttonStyle(.plain)
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
                 }
 
                     // Mode picker — a custom inline dropdown (styled with each

@@ -10,7 +10,8 @@ import { Keyboard } from '../game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('../effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('../effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Trophy, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
@@ -203,7 +204,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
           </h1>
         </GameHostTitle>
         <div className="flex justify-center gap-3 mt-1">
-          <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{completedBoards}/4</span>
+          <span className="text-gray-400 text-xs font-bold"><Icon3D name="trophy" size={14} inline className="mr-1" />{completedBoards}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>

@@ -58,7 +58,7 @@ import com.wordocious.app.ui.theme.WTheme
  */
 private val GOLD = Color(0xFFD97706)
 
-private data class Benefit(val icon: ImageVector?, val asset: Int?, val text: String)
+private data class Benefit(val icon: ImageVector?, val asset: Int?, val text: String, val icon3d: Icon3DName? = null)
 
 private val BENEFITS = listOf(
     Benefit(Icons.Filled.VisibilityOff, null, "Ad-free experience — no interruptions, ever"),
@@ -66,7 +66,7 @@ private val BENEFITS = listOf(
     Benefit(null, R.drawable.ic_swords, "VS mode on every game — challenge friends in every mode"),
     Benefit(Icons.Filled.Bolt, null, "Play the bots — climb the ladder from Rook to Adapt, any mode, any time"),
     Benefit(Icons.Filled.Mail, null, "Invite friends to private matches by link or username"),
-    Benefit(null, R.drawable.ic_shield, "4 streak shields credited each billing period"),
+    Benefit(null, null, "4 streak shields credited each billing period", Icon3DName.SHIELD),
     Benefit(Icons.Filled.Star, null, "Pro badge on profile & leaderboards"),
     Benefit(Icons.Filled.Insights, null, "Extended stats — win rate trends & avg speed per mode"),
     Benefit(Icons.Filled.Bolt, null, "Early access to new game modes"),
@@ -97,18 +97,20 @@ fun ProScreen(onDone: () -> Unit) {
         Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))
             .verticalScroll(rememberScrollState()),
     ) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Close", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.primary, modifier = Modifier.weight(1f).clickableNoRipple(onDone))
+        // The shared header chrome (HEADER_SPEC §4): Close is the white close circle;
+        // the page title + host sit in the hero below (GO PRO, W with the crown).
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.End) {
+            HeaderBackButton(onDone, close = true)
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Header
             // The Pro host: W, the leader in his cape, wearing the Pro crown (MASCOT_SPEC §6).
             Box(Modifier.size(width = 64.dp, height = 84.dp).mascotGroupBob(), contentAlignment = Alignment.BottomCenter) {
                 Mascot(Mascots.pro, 64.dp)
-                FlawlessCrown(Modifier.align(Alignment.TopCenter).size(width = 34.dp, height = 24.dp))
+                Icon3D(Icon3DName.CROWN, 30.dp, Modifier.align(Alignment.TopCenter))
             }
             Spacer(Modifier.height(6.dp))
-            Text("Go Pro", fontSize = 36.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            PageTitleText("Go Pro", fontSize = 36.sp, maxLines = 1)
             Text(
                 "Play unlimited & ad-free — every mode, any time",
                 fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
@@ -139,7 +141,7 @@ fun ProScreen(onDone: () -> Unit) {
                         Modifier.clip(RoundedCornerShape(50)).background(Brush.linearGradient(listOf(Color(0xFFF59E0B), GOLD))).padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(painterResource(R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Icon3D(Icon3DName.CROWN, 18.dp)
                         Text("ACTIVE PRO", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                     Text("You're enjoying all Pro benefits!", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -274,7 +276,8 @@ private fun BenefitRow(b: Benefit) {
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-            if (b.asset != null) Icon(painterResource(b.asset), null, tint = GOLD, modifier = Modifier.size(20.dp))
+            if (b.icon3d != null) Icon3D(b.icon3d, 22.dp)
+            else if (b.asset != null) Icon(painterResource(b.asset), null, tint = GOLD, modifier = Modifier.size(20.dp))
             else b.icon?.let { Icon(it, null, tint = GOLD, modifier = Modifier.size(20.dp)) }
         }
         Text(b.text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))

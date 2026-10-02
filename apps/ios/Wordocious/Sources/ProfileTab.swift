@@ -723,13 +723,11 @@ struct ProfileTab: View {
         return Array(out.prefix(2))
     }
 
-    /// The page's section label with its host (MASCOT_SPEC §1/§6): D, glasses and a
-    /// pencil, for the numbers — 28 pt just left of the label, static.
+    /// The page title in the shared header style (HEADER_SPEC §4) with its host
+    /// (MASCOT_SPEC §1/§6): D, glasses and a pencil, for the numbers.
     private var statsTitle: some View {
-        HStack(spacing: 6) {
-            MascotView(Mascots.stats, size: 28)
-            Text("STATS").font(Brand.font(13, .heavy)).tracking(1).foregroundStyle(Theme.textMuted)
-                .accessibilityAddTraits(.isHeader)
+        HStack(spacing: 0) {
+            PageHostTitle(text: "STATS", host: Mascots.stats)
             Spacer()
         }
         .padding(.bottom, -8)
@@ -861,14 +859,10 @@ struct ProfileTab: View {
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    /// A quiet 32 pt circle icon button — the app header's ? / ⚙ idiom with the brand purple glyph.
+    /// A 32 pt circle icon button — the shared header circle (HEADER_SPEC §4).
     private func iconCircle(_ system: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: system)
-                .font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(Theme.surfaceAlt))
-                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+            HeaderCircleLabel(glyph: .symbol(system), size: 32)
         }
         .buttonStyle(PressableStyle())
         .accessibilityLabel(label)
@@ -990,7 +984,7 @@ struct ProfileTab: View {
 
     private func medalCount(_ icon: String, _ count: Int, _ label: String, _ color: Color) -> some View {
         VStack(spacing: 2) {
-            Image(systemName: icon).font(.system(size: 22)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 22, color: color)
             Text("\(count)").font(Brand.font(18, .black)).foregroundStyle(color)
             Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
         }
@@ -1018,7 +1012,7 @@ struct ProfileTab: View {
         default: label = m.gameMode.flatMap { GameMode(rawValue: $0).map { ModeStyle.title($0) } } ?? (m.gameMode ?? "")
         }
         return HStack(spacing: 10) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 14, color: color)
             Text(label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
             Spacer()
             Text(shortMedalDate(m.day)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
@@ -1150,7 +1144,10 @@ struct ProfileTab: View {
                 if rec.total == 0 {
                     Text("Beat a bot to start your record").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)
                 } else if bestStreak > 0 {
-                    Text("🔥 Best streak: \(bestStreak)").font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0xF97316))
+                    HStack(spacing: 3) {
+                        Icon3D(.flame, size: 13)
+                        Text("Best streak: \(bestStreak)").font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0xF97316))
+                    }
                 }
             }
             Spacer()
@@ -1933,11 +1930,16 @@ struct LeaderboardTab: View {
             // score alone on the right.
             NavigationLink(value: entry.userId) {
                 VStack(alignment: .leading, spacing: 2) {
-                    (Text(entry.username)
-                        + (entry.userId == crownId ? Text(" 👑") : Text(""))
-                        + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 4) {
+                        Text(entry.username)
+                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        if entry.userId == crownId { Icon3D(.crown, size: 14, label: "This week's leader") }
+                        if isMe {
+                            Text("(you)").font(Brand.font(13, .heavy)).foregroundStyle(Color(hex: 0xD97706))
+                                .lineLimit(1).fixedSize()
+                        }
+                    }
                     HStack(spacing: 5) {
                         Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                             .lineLimit(1).minimumScaleFactor(0.8)
@@ -2469,7 +2471,7 @@ struct InstantButtonStyle: ButtonStyle {
 @ViewBuilder
 func placeholder(icon: String, title: String, subtitle: String) -> some View {
     VStack(spacing: 12) {
-        Image(systemName: icon).font(.system(size: 56)).foregroundStyle(Theme.primary.opacity(0.7))
+        SymbolGlyph(icon, size: 56, color: Theme.primary.opacity(0.7))
         Text(title).font(Brand.headline()).foregroundStyle(Theme.textPrimary)
         Text(subtitle).font(Brand.body(14)).foregroundStyle(Theme.textSecondary)
             .multilineTextAlignment(.center).padding(.horizontal, 40)
@@ -2492,8 +2494,11 @@ struct FlawlessBannerFooter: View {
     var body: some View {
         VStack(spacing: 2) {
             if sweep.currentFlawlessStreak >= 2 {
-                Text("🏆 \(sweep.currentFlawlessStreak)-DAY FLAWLESS STREAK")
-                    .font(Brand.font(13, .black)).tracking(0.5).foregroundStyle(Color(hex: 0xB45309))
+                HStack(spacing: 4) {
+                    Icon3D(.trophy, size: 16)
+                    Text("\(sweep.currentFlawlessStreak)-DAY FLAWLESS STREAK")
+                        .font(Brand.font(13, .black)).tracking(0.5).foregroundStyle(Color(hex: 0xB45309))
+                }
             }
             HStack(spacing: 6) {
                 Text("All \(total) dailies won today · +600 XP earned")

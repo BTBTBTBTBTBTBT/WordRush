@@ -136,10 +136,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Spacer(Modifier.weight(1f))
-            Icon(
-                Icons.Filled.EmojiEvents, null,
-                tint = WTheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(56.dp),
-            )
+            Icon3D(Icon3DName.TROPHY, 64.dp)
             Text(
                 "Sign in to see rankings", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1065,7 +1062,7 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
     ) {
         GameTileChip(accent, 36.dp) {
             if (card != null) ModeGlyph(card, accent, box = 36.dp)
-            else Icon(Icons.Filled.EmojiEvents, null, tint = accent, modifier = Modifier.size(18.dp))
+            else Icon3D(Icon3DName.TROPHY, 22.dp)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
@@ -1498,13 +1495,14 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
                 androidx.compose.ui.text.buildAnnotatedString {
                     append(entry.username ?: "Player")
                     // §216: the week's leader wears the crown (friends board).
-                    if (entry.userId == crownId) append(" 👑")
+                    if (entry.userId == crownId) { append(" "); appendIcon3D(Icon3DName.CROWN) }
                     if (isCurrentUser) {
                         withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
                     }
                 },
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                inlineContent = icon3DInline(),
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 if (playType == "vs") {

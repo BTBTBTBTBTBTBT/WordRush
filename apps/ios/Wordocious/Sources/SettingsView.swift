@@ -162,13 +162,12 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        Text("SETTINGS").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
-                        // R, relaxed in its nightcap, hosts Settings (MASCOT_SPEC §6).
-                        MascotView(Mascots.settings, size: 30, motion: .bob)
-                    }
+                    // R, relaxed in its nightcap, hosts Settings (MASCOT_SPEC §6).
+                    PageHostTitle(text: "SETTINGS", host: Mascots.settings, hostSize: 32)
                 }
-                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
+                }
             }
             .onChange(of: dailyReminder) { on in
                 if on {

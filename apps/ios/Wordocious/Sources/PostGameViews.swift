@@ -132,7 +132,7 @@ struct FinishedStatsHeader: View {
 
     private func statItem(icon: String, color: Color, text: String) -> some View {
         HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 11, color: color)
             Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
         }
     }
@@ -154,7 +154,7 @@ struct DailyRankBadge: View {
                 let badge = topPercentLabel(rank: r.rank, totalPlayers: r.total)
                 let gold = badge.gold
                 HStack(spacing: 4) {
-                    Image(systemName: "trophy.fill").font(.system(size: 10))
+                    Icon3D(.trophy, size: 12)
                     Text("\(badge.label) · #\(r.rank) of \(r.total)").font(Brand.font(10, .black))
                 }
                 .foregroundStyle(gold ? Color(hex: 0x92400E) : Theme.textMuted)
@@ -380,7 +380,7 @@ struct NextDailyCTA: View {
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "trophy.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
+                    Icon3D(.trophy, size: 14)
                     Text("View \(mode.title) Leaderboard").font(Brand.font(12, .black)).foregroundStyle(mode.accent)
                     Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
                 }

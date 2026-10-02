@@ -31,12 +31,9 @@ struct NotificationPrefsButton: View {
         if auth.profile != nil {
             let anyOff = PushCategories.anyOff(auth.profile?.notificationPrefs)
             Button { open = true } label: {
-                Image(systemName: anyOff ? "bell.slash" : "bell")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(anyOff ? Theme.textMuted : Color(hex: 0x7C3AED))
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(Theme.surfaceHover))
-                    .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                // A header action: the shared soft white circle (HEADER_SPEC §4).
+                HeaderCircleLabel(glyph: .symbol(anyOff ? "bell.slash" : "bell"), size: 32,
+                                  tint: anyOff ? Theme.textMuted : PageHeaderStyle.ink)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Friends notification settings")

@@ -90,7 +90,11 @@ struct GuideSheet: View {
                 }
             }
             .background(Theme.background.ignoresSafeArea())
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
+                }
+            }
         }
         .task { await service.load() }
     }

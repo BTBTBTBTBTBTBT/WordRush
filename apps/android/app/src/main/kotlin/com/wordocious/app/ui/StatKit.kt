@@ -105,10 +105,13 @@ fun StatCell(
      *  the fallback for Reduced Motion / non-integer cells. */
     countUp: Int? = null,
     countSuffix: String = "",
+    /** A 3D set icon in place of [icon] (HEADER_SPEC §2: wins → trophy, streaks → flame). */
+    icon3d: Icon3DName? = null,
 ) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        if (icon != null) Icon(icon, null, tint = color ?: WTheme.textMuted, modifier = Modifier.size(16.dp))
-        val valueColor = if (icon == null) (color ?: WTheme.text) else WTheme.text
+        if (icon3d != null) Icon3D(icon3d, 18.dp)
+        else if (icon != null) Icon(icon, null, tint = color ?: WTheme.textMuted, modifier = Modifier.size(16.dp))
+        val valueColor = if (icon == null && icon3d == null) (color ?: WTheme.text) else WTheme.text
         if (countUp != null) {
             CountUpNumber(target = countUp, suffix = countSuffix, color = valueColor)
         } else {

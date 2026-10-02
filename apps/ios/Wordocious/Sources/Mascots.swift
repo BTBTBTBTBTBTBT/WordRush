@@ -206,7 +206,7 @@ struct MascotView: View {
 
 /// The ten in order, spelling WORDOCIOUS. `.wave` = a staggered left-to-right hop
 /// (the loader: 8 pt, 70 ms stagger, 1.1 s loop, forever; the sweep celebration
-/// passes 14 pt / 60 ms / twice). Flawless: W wears a small gold crown drawn in code.
+/// passes 14 pt / 60 ms / twice). Flawless: W wears the gold crown icon.
 struct CastRow: View {
     var size: CGFloat = 22
     var motion: MascotMotion = .none
@@ -251,13 +251,9 @@ struct CastRow: View {
                     Image(m.assetName).resizable().interpolation(.high).scaledToFit()
                         .frame(width: size, height: size)
                     if crownOnW && m == .w {
-                        // Fill + a same-color round-joined stroke rounds the three points.
-                        CrownShape()
-                            .fill(Color(hex: 0xF59E0B))
-                            .overlay(CrownShape().stroke(Color(hex: 0xF59E0B),
-                                                         style: StrokeStyle(lineWidth: max(1.5, size * 0.07), lineJoin: .round)))
-                            .frame(width: size * 0.56, height: size * 0.34)
-                            .offset(y: -size * 0.26)
+                        // Flawless: W wears the gold crown from the icon set (HEADER_SPEC §2).
+                        Icon3D(.crown, size: size * 0.56)
+                            .offset(y: -size * 0.3)
                     }
                 }
                 .offset(y: y(i))
@@ -273,23 +269,6 @@ struct CastRow: View {
         let phase = local - Double(cycle) * period
         guard phase < Self.hopDuration else { return 0 }
         return -hop * CGFloat(sin(.pi * phase / Self.hopDuration))
-    }
-}
-
-/// A simple rounded three-point crown (W's Flawless crown).
-struct CrownShape: Shape {
-    func path(in r: CGRect) -> Path {
-        let w = r.width, h = r.height
-        var p = Path()
-        p.move(to: CGPoint(x: r.minX + w * 0.06, y: r.minY + h * 0.92))
-        p.addLine(to: CGPoint(x: r.minX, y: r.minY + h * 0.22))
-        p.addLine(to: CGPoint(x: r.minX + w * 0.3, y: r.minY + h * 0.52))
-        p.addLine(to: CGPoint(x: r.midX, y: r.minY))
-        p.addLine(to: CGPoint(x: r.maxX - w * 0.3, y: r.minY + h * 0.52))
-        p.addLine(to: CGPoint(x: r.maxX, y: r.minY + h * 0.22))
-        p.addLine(to: CGPoint(x: r.maxX - w * 0.06, y: r.minY + h * 0.92))
-        p.closeSubpath()
-        return p
     }
 }
 

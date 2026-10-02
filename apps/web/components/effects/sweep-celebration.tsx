@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Sparkles, Share2, X as XIcon } from 'lucide-react';
+import { Sparkles, Share2, X as XIcon } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { haptic } from '@/lib/haptics';
 import { playSuccess } from '@/lib/sounds';
 import type { DailyCompletion } from '@/lib/daily-service';
@@ -165,7 +166,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
             </div>
             <div className="flex items-center justify-center gap-2">
               {flawless
-                ? <Trophy className="w-7 h-7" style={{ color: '#d97706' }} fill="currentColor" />
+                ? <Icon3D name="trophy" size={28} />
                 : <Sparkles className="w-6 h-6" style={{ color: more ? '#4f46e5' : '#7c3aed' }} />}
               <h2
                 className="text-3xl font-black text-transparent bg-clip-text"
@@ -174,7 +175,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
                 {title}
               </h2>
               {flawless
-                ? <Trophy className="w-7 h-7" style={{ color: '#d97706' }} fill="currentColor" />
+                ? <Icon3D name="trophy" size={28} />
                 : <Sparkles className="w-6 h-6" style={{ color: more ? '#6366f1' : '#ec4899' }} />}
             </div>
 

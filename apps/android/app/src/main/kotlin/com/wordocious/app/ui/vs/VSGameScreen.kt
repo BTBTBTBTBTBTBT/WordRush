@@ -36,7 +36,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Schedule
@@ -709,7 +708,7 @@ private fun VsStatRow(vm: VSMatchViewModel, game: GameViewModel, state: GameStat
             isGauntlet -> {
                 if (state.boards.size > 1) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFD97706), modifier = Modifier.size(statIcon))
+                        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, statIcon + 3.dp)
                         Spacer(Modifier.width(3.dp))
                         Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
                     }
@@ -1208,7 +1207,12 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                 item {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         vm.photoFinish?.let { pf -> PhotoFinishStamp(pf == "clutch") }
-                        vm.cpuMilestone?.let { m -> Text("🔥 $m-win bot streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C)) }
+                        vm.cpuMilestone?.let { m ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 18.dp)
+                                Text("$m-win bot streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
+                            }
+                        }
                             ?: run { if (vm.cpuStreak > 0) Text("Bot win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub) }
                         vm.cpuUnlock?.let {
                             Text("🏅 Unlocked ${BotPersonas.persona(vm.cpuPersona?.tier ?: BotTier.HARD).name}’s badge!", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(vm.cpuPersona?.color ?: 0xFFEF4444))
@@ -1341,7 +1345,7 @@ private fun ResultSide(name: String, score: Double, guesses: Int, timeMs: Double
     val secs = kotlin.math.round(timeMs / 1000).toInt()   // iOS rounds, not truncates
     Column(modifier.padding(horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (winner) Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(13.dp))
+            if (winner) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 16.dp)
             Text(name.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = VsPurple.deep, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(String.format(Locale.US, "%.2f", score), fontSize = 34.sp, fontWeight = FontWeight.Black, color = VsPurple.deep)

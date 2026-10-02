@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
+import { HEADER_INK, HEADER_SHADOW } from '@/components/ui/page-header';
 
 interface SoundToggleProps {
   accentColor?: string;
   positionClass?: string;
 }
 
+// HEADER_SPEC §4: a right-side header action, the same soft white circle as
+// every header button; `accentColor` is kept for callers but no longer tints it.
 export function SoundToggle({
-  accentColor = '#7c3aed',
   positionClass = 'absolute top-2 right-2 z-10',
 }: SoundToggleProps) {
   const [enabled, setEnabled] = useState(() => isSoundEnabled());
@@ -29,13 +31,9 @@ export function SoundToggle({
       onClick={toggle}
       aria-label={enabled ? 'Mute sounds' : 'Unmute sounds'}
       className={`${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`}
-      style={{
-        background: 'var(--color-surface)',
-        border: `2px solid ${accentColor}`,
-        boxShadow: `0 2px 0 ${accentColor}33, 0 4px 12px rgba(0,0,0,0.08)`,
-      }}
+      style={{ background: '#ffffff', boxShadow: HEADER_SHADOW }}
     >
-      <Icon className="w-5 h-5" style={{ color: accentColor }} />
+      <Icon className="w-5 h-5" style={{ color: HEADER_INK }} strokeWidth={2.4} />
     </button>
   );
 }

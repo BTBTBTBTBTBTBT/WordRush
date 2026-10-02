@@ -12,7 +12,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Users, UserPlus, Check, X, Send, ChevronDown, MoreHorizontal, Share, Crown } from 'lucide-react';
+import { Users, UserPlus, Check, X, Send, ChevronDown, MoreHorizontal, Share } from 'lucide-react';
+import { HeaderCircle, HEADER_INK, PageHeader } from '@/components/ui/page-header';
+import { Icon3D } from '@/components/ui/icon3d';
 import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
@@ -354,7 +356,7 @@ export function FriendsPanel() {
   };
 
   const myTurnCount = sortedGames.filter((g) => g.yourTurn).length;
-  const menuItem = (label: string, onClick: () => void, color: string = FR.text) => (
+  const menuItem = (label: React.ReactNode, onClick: () => void, color: string = FR.text) => (
     <button
       onClick={onClick}
       className="w-full text-left px-3 py-2 text-xs font-extrabold hover:opacity-80"
@@ -367,19 +369,19 @@ export function FriendsPanel() {
   return (
     <div className="space-y-3.5">
       {/* 1. Header */}
-      <div className="flex items-center gap-2" style={{ minHeight: 44 }}>
-        <h1 className="flex-1 text-[22px] font-black text-transparent bg-clip-text" style={{ backgroundImage: FR.title, letterSpacing: 0.4 }}>FRIENDS</h1>
-        <NotificationPrefs />
-        <button
-          type="button"
-          onClick={jumpToAdd}
-          aria-label="Add a friend"
-          className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={{ background: '#ffffff', boxShadow: FR.cardShadow }}
-        >
-          <UserPlus className="w-4 h-4" style={{ color: FR.solid }} />
-        </button>
-      </div>
+      {/* HEADER_SPEC §4/§5: the shared header in the Friends accent; O1 stands in the banner below, so no title host. */}
+      <PageHeader
+        title="FRIENDS"
+        accent="friends"
+        right={(
+          <>
+            <NotificationPrefs />
+            <HeaderCircle label="Add a friend" onClick={jumpToAdd}>
+              <UserPlus className="w-4 h-4" style={{ color: HEADER_INK }} strokeWidth={2.6} />
+            </HeaderCircle>
+          </>
+        )}
+      />
 
       {/* 2. Friends banner */}
       {pending ? (
@@ -484,10 +486,10 @@ export function FriendsPanel() {
                   className="flex items-center gap-2 px-3 py-2 mb-1"
                   style={{ background: win ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f8f7ff', borderRadius: 12 }}
                 >
-                  <span className="text-base">{win ? '👑' : '🏁'}</span>
+                  {win ? <Icon3D name="crown" size={20} /> : <span className="text-base">🏁</span>}
                   <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : FR.text }}>
                     Last week you finished <b>{ordinalOf(r.rank)} of {r.circleSize}</b> · {r.points.toLocaleString()} pts
-                    {!win && r.winnerName ? <span style={{ color: FR.label }}> · 👑 {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
+                    {!win && r.winnerName ? <span style={{ color: FR.label }}> · <Icon3D name="crown" size={13} inline /> {r.winnerName} {r.winnerPoints.toLocaleString()}</span> : null}
                   </span>
                 </div>
               );
@@ -499,7 +501,7 @@ export function FriendsPanel() {
                 className="flex items-center gap-1 text-[10px] font-bold mt-0.5"
                 style={{ color: FR.label, cursor: pastWeeks.length > 1 ? 'pointer' : 'default' }}
               >
-                <span>Last week: 👑 {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts</span>
+                <span>Last week: <Icon3D name="crown" size={13} inline /> {lastWeek.name} · {lastWeek.pts.toLocaleString()} pts</span>
                 {pastWeeks.length > 1 && (
                   <ChevronDown className="w-3 h-3 transition-transform" style={{ transform: showPastWeeks ? 'rotate(180deg)' : 'none' }} />
                 )}
@@ -507,7 +509,7 @@ export function FriendsPanel() {
             )}
             {showPastWeeks && pastWeeks.filter((w) => w.k > 0).map((w) => (
               <div key={w.k} className="text-[10px] font-bold mt-0.5 pl-1" style={{ color: FR.label }}>
-                {pastWeekLabel(w.k)}: 👑 {w.name} · {w.pts.toLocaleString()} pts
+                {pastWeekLabel(w.k)}: <Icon3D name="crown" size={13} inline /> {w.name} · {w.pts.toLocaleString()} pts
               </div>
             ))}
             <div className="flex items-end justify-center gap-5 py-2">
@@ -584,7 +586,7 @@ export function FriendsPanel() {
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center gap-1 text-[13px] font-black truncate" style={{ color: FR.text }}>
                       <span className="truncate">@{f.username}</span>
-                      {f.id === crownId && <Crown className="w-3.5 h-3.5 shrink-0" style={{ color: '#f59e0b' }} fill="#f59e0b" aria-label="Leads the week" />}
+                      {f.id === crownId && <Icon3D name="crown" size={14} label="Leads the week" className="shrink-0" />}
                       {isNewFriend(f) && (
                         <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>NEW</span>
                       )}
@@ -628,7 +630,7 @@ export function FriendsPanel() {
                       {menuItem('Challenge ⚔️', () => { setMenuFor(null); void challenge(f); }, FR.solid)}
                       {menuItem('Taunt', () => { setMenuFor(null); setTauntTarget(f); })}
                       {isNewFriend(f) && menuItem('👋 Say hi', () => { setMenuFor(null); void sayHi(f); })}
-                      {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && menuItem('🛡️ Gift a shield', async () => {
+                      {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && menuItem(<span className="inline-flex items-center gap-1"><Icon3D name="shield" size={14} /> Gift a shield</span>, async () => {
                         setMenuFor(null);
                         const r = await giftShield(f.id);
                         setNote('error' in r ? r.error : `🛡️ Shield sent to ${f.username} · ${r.shieldsLeft} left`);

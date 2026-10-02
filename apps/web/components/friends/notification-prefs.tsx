@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bell, BellOff } from 'lucide-react';
+import { HEADER_SHADOW } from '@/components/ui/page-header';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 
@@ -55,14 +56,14 @@ export function NotificationPrefs() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Friends notification settings"
         aria-expanded={open}
-        className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-        style={{ background: '#ffffff', boxShadow: '0 2px 10px rgba(76,29,149,0.07)' }}
+        className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
+        style={{ width: 34, height: 34, background: '#ffffff', boxShadow: HEADER_SHADOW }}
       >
         {anyOff ? <BellOff className="w-4 h-4" style={{ color: '#6b7280' }} /> : <Bell className="w-4 h-4" style={{ color: '#db2777' }} />}
       </button>
       {open && (
         <div
-          className="absolute right-0 top-8 z-40 w-64 p-3 space-y-2"
+          className="absolute right-0 top-9 z-40 w-64 p-3 space-y-2"
           style={{ background: '#ffffff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(15,23,42,0.16)' }}
         >
           <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#6b7280' }}>Friends notifications</div>

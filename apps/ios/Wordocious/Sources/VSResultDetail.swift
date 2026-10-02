@@ -183,7 +183,7 @@ struct VSShareCardView: View {
             // Fixed-height header so the center VS column can align on the boards.
             VStack(spacing: 10) {
                 HStack(spacing: 6) {
-                    if side.won && !isDraw { Text("👑").font(.system(size: 24)) }
+                    if side.won && !isDraw { Icon3D(.crown, size: 28, label: "Winner") }
                     Text(side.name).font(Brand.font(28, .black)).foregroundStyle(accent).lineLimit(1)
                     .minimumScaleFactor(0.7)
                 }

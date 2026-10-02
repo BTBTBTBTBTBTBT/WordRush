@@ -128,34 +128,14 @@ struct GameScreen: View {
 
             // Persistent corner Home button (matches the web GameHomeButton),
             // visible during play and post-game.
-            Button { dismiss() } label: {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(ModeStyle.accent(mode))
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Theme.surface))
-                    .overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
-                    .shadow(color: ModeStyle.accent(mode).opacity(0.2), radius: 0, x: 0, y: 2)
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-            }
-            .buttonStyle(.plain)
+            GameCornerButton(kind: .home) { dismiss() }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 8).padding(.leading, 8)
 
             // Help "?" button (top-right) — opens this mode's strategy guide.
             // Matches the Home button's size/aesthetic; shifts left of the
             // Gauntlet sound toggle so the two don't overlap.
-            Button { showGuide = true } label: {
-                Image(systemName: "questionmark")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(ModeStyle.accent(mode))
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Theme.surface))
-                    .overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
-                    .shadow(color: ModeStyle.accent(mode).opacity(0.2), radius: 0, x: 0, y: 2)
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-            }
-            .buttonStyle(.plain)
+            GameCornerButton(kind: .help) { showGuide = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.top, 8).padding(.trailing, vm.isGauntlet ? 60 : 8)
             .sheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
@@ -332,7 +312,7 @@ struct GameScreen: View {
                     if vm.boardCount > 1 {
                         let solved = vm.boards.filter { $0.status == .won }.count
                         HStack(spacing: 3) {
-                            Image(systemName: "trophy.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xD97706))
+                            Icon3D(.trophy, size: 12)
                             Text("\(solved)/\(vm.boardCount)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
                         }
                     }
@@ -501,8 +481,11 @@ struct GameScreen: View {
 
     private var stageClearedBanner: some View {
         VStack(spacing: 10) {
-            Text(vm.isLastStage ? "🏆 Final stage cleared!" : "✅ Stage cleared!")
-                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+            HStack(spacing: 6) {
+                if vm.isLastStage { Icon3D(.trophy, size: 22) }
+                Text(vm.isLastStage ? "Final stage cleared!" : "✅ Stage cleared!")
+                    .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+            }
             Button(vm.isLastStage ? "Finish Gauntlet" : "Continue") { Haptics.success(); vm.nextStage() }
                 .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
         }
@@ -601,16 +584,8 @@ private struct GauntletSoundToggle: View {
     let accent: Color
     @AppStorage("pref-sound") private var soundOn = true
     var body: some View {
-        Button { soundOn.toggle() } label: {
-            Image(systemName: soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(accent)
-                .frame(width: 44, height: 44)
-                .background(Circle().fill(Theme.surface))
-                .overlay(Circle().stroke(accent, lineWidth: 2))
-                .shadow(color: accent.opacity(0.2), radius: 0, x: 0, y: 2)
-                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
+        // The same soft white circle as the corner Home / Help controls (HEADER_SPEC §4).
+        HeaderCircleButton(.symbol(soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill"), size: 44,
+                           label: soundOn ? "Sound on" : "Sound off") { soundOn.toggle() }
     }
 }

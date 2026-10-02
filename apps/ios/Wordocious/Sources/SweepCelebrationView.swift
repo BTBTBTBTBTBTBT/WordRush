@@ -63,13 +63,11 @@ struct SweepCelebrationView: View {
                     CastRow(size: 22, motion: .wave, hop: 14, stagger: 0.06, period: 1.0, repeats: 2, crownOnW: flawless)
                         .padding(.top, flawless ? 8 : 0)
                     HStack(spacing: 8) {
-                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .foregroundStyle(flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x4F46E5) : Color(hex: 0x7C3AED)))
+                        SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: 17, color: flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x4F46E5) : Color(hex: 0x7C3AED)))
                         Text(title)
                             .font(Brand.font(more ? 22 : 26, .black)).minimumScaleFactor(0.7).lineLimit(1)
                             .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
-                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .foregroundStyle(flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x6366F1) : Color(hex: 0xEC4899)))
+                        SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: 17, color: flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x6366F1) : Color(hex: 0xEC4899)))
                     }
                     Text(flawless ? "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") won today"
                                   : "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") completed today")

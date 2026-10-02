@@ -282,7 +282,7 @@ struct RecordStatCell: View {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8).fill(accent.opacity(0.08))
-                    Image(systemName: meta?.symbol ?? "rosette").font(.system(size: 13, weight: .semibold))
+                    SymbolGlyph(meta?.symbol ?? "rosette", size: 13, weight: .semibold)
                         .foregroundStyle(has ? accent : Theme.textMuted)
                 }
                 .frame(width: 28, height: 28)
@@ -313,8 +313,8 @@ struct RecordStatCell: View {
         .overlay(shape.strokeBorder(mine ? Color(hex: 0xF59E0B) : Color.clear, lineWidth: 1.5))
         .overlay(alignment: .topTrailing) {
             if mine {
-                Image(systemName: "crown.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xF59E0B))
-                    .padding(10).accessibilityLabel("Your record")
+                Icon3D(.crown, size: 15, label: "Your record")
+                    .padding(10)
             }
         }
         .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)

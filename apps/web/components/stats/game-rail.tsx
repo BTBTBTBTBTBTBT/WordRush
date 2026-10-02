@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { CalendarDays, Trophy, LayoutGrid, X } from 'lucide-react';
+import { CalendarDays, LayoutGrid, X } from 'lucide-react';
+import { Trophy3D } from '@/components/ui/icon3d';
 import type { ModeMeta } from '@/lib/modes.generated';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
@@ -50,7 +51,7 @@ export function buildRailItems(
   // All-time sits right after Today (founder, 2026-09-27: last of nineteen chips was too far to reach).
   return [
     { key: RAIL_TODAY, label: 'Today', icon: CalendarDays, accent: '#7c3aed' },
-    { key: RAIL_ALL, label: 'All-time', icon: Trophy, accent: '#d97706' },
+    { key: RAIL_ALL, label: 'All-time', icon: Trophy3D, accent: '#d97706' },
     ...sweepModes.map(game),
     ...moreModes.map(game),
     // No VS chip (founder, 2026-10-01): VS is rarely played and its stats moved to the bottom of

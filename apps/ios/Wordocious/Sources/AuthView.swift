@@ -54,7 +54,9 @@ struct AuthView: View {
             }
             .toolbar {
                 if showsCloseButton {
-                    ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } }
+                    ToolbarItem(placement: .topBarLeading) {
+                        HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
+                    }
                 }
             }
         }

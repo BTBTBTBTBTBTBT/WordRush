@@ -109,8 +109,7 @@ struct RecordsBannerView: View {
     private var strip: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Image(systemName: "trophy.fill").font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color(hex: 0xB45309))
+                Icon3D(.trophy, size: 21)
                 Text("ALL-TIME RECORDS")
                     .font(Brand.font(22, .black)).tracking(0.4)
                     .foregroundStyle(Self.head)

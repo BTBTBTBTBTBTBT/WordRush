@@ -1,6 +1,8 @@
 'use client';
 
-import { Share, Swords, Trophy, X } from 'lucide-react';
+import { Share, Swords, X } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
+import { Icon3D } from '@/components/ui/icon3d';
 import { challengeHeadline, vsClock, vsMargin, type VsRun } from '@wordle-duel/core';
 import { challengeSentSub, h2hLine, modeColor, modeTitle, rowStates } from '@/lib/vs-lobby';
 import type { HeadToHeadRecord } from '@/lib/head-to-head';
@@ -49,9 +51,7 @@ export function MiniBoard({ mode, side, solutions }: { mode: string; side: SideR
 function TopBar({ onClose }: { onClose: () => void }) {
   return (
     <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
-      <button type="button" onClick={onClose} aria-label="Close" className="absolute left-0 flex items-center justify-center active:opacity-60" style={{ width: 36, height: 36 }}>
-        <X style={{ width: 22, height: 22, color: '#7c3aed' }} strokeWidth={2.6} />
-      </button>
+      <HeaderBack kind="close" onClick={onClose} className="absolute left-0" />
       <span
         className="font-black"
         style={{ fontSize: 20, backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}
@@ -90,7 +90,7 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
   const column = (label: string, side: SideRun, winner: boolean) => (
     <div className="flex-1 flex flex-col items-center gap-2" style={{ padding: '12px 8px 14px' }}>
       <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: '#4c1d95', letterSpacing: 0.8 }}>
-        {winner && <Trophy className="w-3 h-3 shrink-0" style={{ color: '#b45309' }} />}
+        {winner && <Icon3D name="trophy" size={14} className="shrink-0" />}
         {label}
       </span>
       <MiniBoard mode={mode} side={side} solutions={solutions} />

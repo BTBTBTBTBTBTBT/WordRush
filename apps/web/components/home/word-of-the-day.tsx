@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Flame, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE, SOLUTION_SWAPS, SOLUTION_SWAPS_2 } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
@@ -159,7 +160,7 @@ export function WordOfTheDay() {
         )}
         {showFlame && (
           <span className="ml-auto flex items-center gap-0.5 text-[13px] font-black" style={{ color: '#c2410c' }} aria-label={`${streak}-day word streak`}>
-            <Flame className="w-3.5 h-3.5" style={{ color: '#c2410c' }} fill="#f59e0b" />
+            <Icon3D name="flame" size={14} />
             {streak}
           </span>
         )}

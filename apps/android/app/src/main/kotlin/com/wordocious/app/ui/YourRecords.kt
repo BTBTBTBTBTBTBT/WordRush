@@ -18,9 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Schedule
@@ -79,15 +77,22 @@ import kotlinx.coroutines.launch
  */
 
 // ── Record label/format/icon config (mirrors web RECORD_LABELS) ──────────────
-internal data class RecordCfg(val label: String, val icon: ImageVector?, val crown: Boolean, val format: (Int) -> String)
+internal data class RecordCfg(
+    val label: String,
+    val icon: ImageVector?,
+    val crown: Boolean,
+    /** The 3D set's glyph where one exists (HEADER_SPEC §2: streak → flame, level → trophy). */
+    val icon3d: Icon3DName? = null,
+    val format: (Int) -> String,
+)
 
 internal val RECORD_CFG: Map<String, RecordCfg> = mapOf(
     "fastest_win" to RecordCfg("Fastest Win", Icons.Filled.Schedule, false) { v -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s" },
     "fewest_guesses" to RecordCfg("Fewest Guesses", Icons.Filled.TrackChanges, false) { v -> "$v guesses" },
     "most_games_played" to RecordCfg("Most Games Played", Icons.Filled.Bolt, false) { v -> "$v games" },
-    "longest_streak" to RecordCfg("Longest Win Streak", Icons.Filled.LocalFireDepartment, false) { v -> "$v wins" },
+    "longest_streak" to RecordCfg("Longest Win Streak", null, false, Icon3DName.FLAME) { v -> "$v wins" },
     "most_gold_medals" to RecordCfg("Most Gold Medals", null, true) { v -> "$v golds" },
-    "highest_level" to RecordCfg("Highest Level", Icons.Filled.EmojiEvents, false) { v -> "Level $v" },
+    "highest_level" to RecordCfg("Highest Level", null, false, Icon3DName.TROPHY) { v -> "Level $v" },
     "most_daily_completions" to RecordCfg("Most Dailies Completed", Icons.Filled.TrackChanges, false) { v -> "$v dailies" },
 )
 
@@ -102,7 +107,7 @@ internal fun recordCfgFor(type: String, gameMode: String?): RecordCfg? {
     if (type != "fewest_guesses" || gameMode == null) return base
     val meta = com.wordocious.app.ModeGen.byDbKey(gameMode) ?: return base
     if (meta.guessSemantics == "guesses") return base
-    return RecordCfg(ModeStats.fewestRecordLabel(meta.guessSemantics), base.icon, base.crown) { v ->
+    return RecordCfg(ModeStats.fewestRecordLabel(meta.guessSemantics), base.icon, base.crown, base.icon3d) { v ->
         formatGuessStat(meta.guessSemantics, meta.guessBase, v)
     }
 }
@@ -212,7 +217,7 @@ fun NextUpCard(dailyStreak: Int, chases: List<RecordChase>) {
         Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
+            Icon3D(Icon3DName.FLAME, 16.dp)
             Spacer(Modifier.size(4.dp))
             Text("$nextShield-day streak shield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
             Spacer(Modifier.weight(1f))
@@ -272,10 +277,10 @@ fun SweepRecordsCard(
         if (sweep.hasData) {
             Row(Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) { MeCell(Icons.Filled.AutoAwesome, "${sweep.sweepCount}", "Daily Sweeps", Color(0xFF7C3AED)) }
-                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, "${sweep.flawlessCount}", "Flawless Victories", GOLD) }
+                Box(Modifier.weight(1f)) { MeCell(Icon3DName.TROPHY, "${sweep.flawlessCount}", "Flawless Victories", GOLD) }
             }
             Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.LocalFireDepartment, "${sweep.currentSweepStreak}", "Current Sweep Streak", Color(0xFFF97316)) }
+                Box(Modifier.weight(1f)) { MeCell(Icon3DName.FLAME, "${sweep.currentSweepStreak}", "Current Sweep Streak", Color(0xFFF97316)) }
                 Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Schedule, if (sweep.bestSweepSecs > 0) fmtRecordSecs(sweep.bestSweepSecs) else "—", "Best Sweep Time", Color(0xFF2563EB), dim = sweep.bestSweepSecs == 0) }
             }
             // Sweep leaderboard standing — today's daily board + all-time
@@ -301,7 +306,8 @@ fun SweepRecordsCard(
                     // §244: the flawless-streak notation rides the same row.
                     if (sweep.currentFlawlessStreak > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("🏆 Flawless", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                            Icon3D(Icon3DName.TROPHY, 14.dp)
+                            Text("Flawless", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                             Text("×${sweep.currentFlawlessStreak}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = GOLD)
                             if (sweep.bestFlawlessStreak > sweep.currentFlawlessStreak) {
                                 Text("· best ${sweep.bestFlawlessStreak}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -312,7 +318,7 @@ fun SweepRecordsCard(
             }
         } else {
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
+                Icon3D(Icon3DName.TROPHY, 30.dp, alpha = 0.5f, colorFilter = Icon3DMuted)
                 Spacer(Modifier.height(8.dp))
                 Text("No sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
@@ -343,10 +349,10 @@ fun PuzzleSweepsCard(records: com.wordocious.app.data.HomeStreaksService.PuzzleR
         if (t != null && records.hasData) {
             Row(Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) { MeCell(Icons.Filled.AutoAwesome, "${t.sweepDays}", "Sweeps", PUZZLES_ACCENT) }
-                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, "${t.flawlessDays}", "Flawless", GOLD) }
+                Box(Modifier.weight(1f)) { MeCell(Icon3DName.TROPHY, "${t.flawlessDays}", "Flawless", GOLD) }
             }
             Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.weight(1f)) { MeCell(Icons.Filled.LocalFireDepartment, "${t.bestSweep}", "Best Sweep Run", Color(0xFFF97316)) }
+                Box(Modifier.weight(1f)) { MeCell(Icon3DName.FLAME, "${t.bestSweep}", "Best Sweep Run", Color(0xFFF97316)) }
                 Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Star, "${t.bestFlawless}", "Best Flawless Run", GOLD, dim = t.bestFlawless == 0) }
             }
         } else {
@@ -378,8 +384,8 @@ fun WordOfTheDayRecordCard(record: com.wordocious.app.data.HomeStreaksService.Qu
         }
         Spacer(Modifier.height(2.dp))
         Row(Modifier.fillMaxWidth()) {
-            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.LocalFireDepartment, "${record.streak}", "Word Streak", Color(0xFFF97316), dim = record.streak == 0) }
-            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, "${record.best}", "Best Run", GOLD) }
+            Box(Modifier.weight(1f)) { MeCell(Icon3DName.FLAME, "${record.streak}", "Word Streak", Color(0xFFF97316), dim = record.streak == 0) }
+            Box(Modifier.weight(1f)) { MeCell(Icon3DName.TROPHY, "${record.best}", "Best Run", GOLD) }
             Box(Modifier.weight(1f)) { MeCell(Icons.Filled.TrackChanges, "${record.right} of ${record.answered}", "Right · $pct%", accent) }
         }
     }
@@ -409,7 +415,7 @@ fun GameRecordsCard(
                     Modifier.clip(RoundedCornerShape(50)).background(WTheme.highlightGold).padding(horizontal = 8.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(painterResource(R.drawable.ic_crown), null, tint = GOLD, modifier = Modifier.size(11.dp))
+                    Icon3D(Icon3DName.CROWN, 13.dp)
                     Text("${held.size} all-time record${if (held.size == 1) "" else "s"}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = GOLD)
                 }
             }
@@ -423,7 +429,7 @@ fun GameRecordsCard(
         }
         Row(Modifier.fillMaxWidth()) {
             Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Bolt, if (my != null) "${my.totalGames} games" else "—", "Games Played", accent, dim = my == null) }
-            Box(Modifier.weight(1f)) { MeCell(Icons.Filled.EmojiEvents, if (my != null) "${my.wins}–${my.losses}" else "—", "Win–Loss", accent, dim = my == null) }
+            Box(Modifier.weight(1f)) { MeCell(Icon3DName.TROPHY, if (my != null) "${my.wins}–${my.losses}" else "—", "Win–Loss", accent, dim = my == null) }
         }
         if (held.isNotEmpty() || chase != null) {
             Spacer(Modifier.height(6.dp))
@@ -432,7 +438,7 @@ fun GameRecordsCard(
                 val cfg = recordCfgFor(r.recordType, dbKey)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(painterResource(R.drawable.ic_crown), null, tint = GOLD, modifier = Modifier.size(14.dp))
+                    Icon3D(Icon3DName.CROWN, 16.dp)
                     Row(Modifier.weight(1f)) {
                         Text("You hold the all-time ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
                         Text(cfg?.label ?: r.recordType, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
@@ -463,7 +469,7 @@ fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRe
             Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MedalCount(R.drawable.ic_crown, GOLD, profile?.goldMedals ?: 0)
+                MedalCount(Icon3DName.CROWN, GOLD, profile?.goldMedals ?: 0)
                 MedalCount(Icons.Filled.MilitaryTech, Color(0xFF9CA3AF), profile?.silverMedals ?: 0)
                 MedalCount(Icons.Filled.MilitaryTech, Color(0xFFB45309), profile?.bronzeMedals ?: 0)
             }
@@ -571,7 +577,9 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
             val cfg = RECORD_CFG[type]
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (cfg?.crown == true) {
-                    Icon(painterResource(R.drawable.ic_crown), null, tint = GOLD, modifier = Modifier.size(11.dp))
+                    Icon3D(Icon3DName.CROWN, 13.dp)
+                } else if (cfg?.icon3d != null) {
+                    Icon3D(cfg.icon3d, 13.dp)
                 } else {
                     Icon(cfg?.icon ?: Icons.Filled.Star, null, tint = GOLD, modifier = Modifier.size(11.dp))
                 }
@@ -642,6 +650,29 @@ internal fun CardShell(barBrush: Brush, content: @Composable ColumnScope.() -> U
 }
 
 /** Centered icon-over-value-over-label tile (iOS `meCell`) — dimmed when there is none yet. */
+/** [MeCell] with a 3D set icon (HEADER_SPEC §2); dim = 45% at 60% saturation. */
+@Composable
+internal fun MeCell(
+    icon: Icon3DName,
+    value: String,
+    label: String,
+    color: Color,
+    dim: Boolean = false,
+) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Icon3D(icon, 18.dp, alpha = if (dim) 0.45f else 1f, colorFilter = if (dim) Icon3DMuted else null)
+        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (dim) WTheme.textMuted else WTheme.text, maxLines = 1)
+        Text(
+            label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            textAlign = TextAlign.Center, maxLines = 2,
+        )
+    }
+}
+
 @Composable
 internal fun MeCell(
     icon: ImageVector,
@@ -668,6 +699,15 @@ internal fun MeCell(
 internal fun MedalCount(res: Int, tint: Color, n: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         Icon(painterResource(res), null, tint = tint, modifier = Modifier.size(14.dp))
+        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
+    }
+}
+
+/** 3D-icon tally (HEADER_SPEC §2: the gold count wears the `crown`). */
+@Composable
+internal fun MedalCount(icon: Icon3DName, tint: Color, n: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Icon3D(icon, 16.dp)
         Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
     }
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { Bot, Flame, Swords, Trophy } from 'lucide-react';
+import { Bot, Swords } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import {
   vsBannerClockLine, vsBannerHeadline, vsRecordLine, vsSweep, vsTodayStatus,
   type VsDayResult, type WinLoss,
@@ -99,7 +100,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
 
       <div className="relative flex flex-col gap-1" style={{ padding: `12px ${BANNER_HOST_CLEARANCE}px 10px 12px`, background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
-          {gold && <Trophy className="w-[18px] h-[18px] shrink-0" style={{ color: '#b45309' }} />}
+          {gold && <Icon3D name="trophy" size={18} className="shrink-0" />}
           <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
         </div>
         <div className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: subInk }}>{clockLine}</div>
@@ -135,7 +136,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         </span>
         {streak > 0 && (
           <span className="flex items-center gap-0.5 text-[12px] font-black shrink-0" style={{ color: '#c2410c' }} aria-label={`${streak} bot wins in a row`}>
-            <Flame className="w-3 h-3" style={{ color: '#c2410c' }} fill="#f59e0b" />
+            <Icon3D name="flame" size={14} />
             {streak}
           </span>
         )}

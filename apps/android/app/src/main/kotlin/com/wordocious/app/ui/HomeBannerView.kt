@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AllInclusive
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -44,7 +42,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -153,7 +150,7 @@ fun HomeBannerView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        if (double) Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(18.dp))
+                        if (double) Icon3D(Icon3DName.TROPHY, 22.dp)
                         if (unlimited) Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
                         Text(
                             headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
@@ -253,7 +250,7 @@ private fun BannerGroupRow(
     }
 }
 
-/** Flame (filled #f59e0b, stroke #c2410c) + the run, no background. */
+/** The 3D streak flame (HEADER_SPEC §2) + the run in #c2410c, no background. */
 @Composable
 internal fun StreakFlame(streak: Int, flame: Dp, fontSize: Int) {
     Row(
@@ -261,7 +258,7 @@ internal fun StreakFlame(streak: Int, flame: Dp, fontSize: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Image(painterResource(com.wordocious.app.R.drawable.ic_flame_gold), null, modifier = Modifier.size(flame))
+        Icon3D(Icon3DName.FLAME, flame)
         Text("$streak", fontSize = fontSize.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
     }
 }

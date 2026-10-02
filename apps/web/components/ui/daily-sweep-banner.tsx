@@ -1,6 +1,7 @@
 'use client';
 
-import { Trophy, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 
 interface Props {
   /** Total dailies completed today (W + L combined). */
@@ -38,14 +39,14 @@ export function DailySweepBanner({ completed, wins, total }: Props) {
         }}
       >
         <div className="flex items-center gap-2">
-          <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
+          <Icon3D name="trophy" size={20} />
           <span
             className="text-lg font-black text-transparent bg-clip-text"
             style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}
           >
             FLAWLESS VICTORY!
           </span>
-          <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
+          <Icon3D name="trophy" size={20} />
         </div>
         <div className="text-[11px] font-extrabold mt-0.5" style={{ color: '#b45309' }}>
           All {total} dailies won today · +600 XP earned

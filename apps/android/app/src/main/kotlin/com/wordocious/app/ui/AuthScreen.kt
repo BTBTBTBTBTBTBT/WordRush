@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -105,18 +104,8 @@ fun AuthScreen(
         if (onDismiss != null) {
             Row(Modifier.fillMaxWidth()) {
                 Spacer(Modifier.weight(1f))
-                androidx.compose.foundation.layout.Box(
-                    Modifier.size(30.dp)
-                        .clip(androidx.compose.foundation.shape.CircleShape)
-                        .background(WTheme.surfaceAlt)
-                        .clickableNoRipple(onDismiss),
-                    Alignment.Center,
-                ) {
-                    androidx.compose.material3.Icon(
-                        androidx.compose.material.icons.Icons.Filled.Close, "Close",
-                        tint = WTheme.textMuted, modifier = Modifier.size(14.dp),
-                    )
-                }
+                // The shared white close circle (HEADER_SPEC §4).
+                HeaderBackButton(onDismiss, close = true)
             }
         }
         // Wordmark

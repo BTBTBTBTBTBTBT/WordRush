@@ -69,13 +69,11 @@ struct TodayCard: View {
                 // Header: the date + N/8, or the Sweep / Flawless banner on a full day.
                 if allDone {
                     HStack(spacing: 8) {
-                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
+                        SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
                         Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
                             .font(Brand.font(16, .black))
                             .foregroundStyle(LinearGradient(colors: flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                            .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
+                        SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
                     }
                 } else {
                     HStack {
@@ -251,7 +249,7 @@ struct TodayCard: View {
 
     private func infoCard<V: View>(icon: String, iconColor: Color, label: String, @ViewBuilder value: () -> V) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(iconColor)
+            SymbolGlyph(icon, size: 14, color: iconColor)
             VStack(alignment: .leading, spacing: 1) {
                 Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
                 value()

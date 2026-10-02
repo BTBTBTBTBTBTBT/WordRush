@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Link
@@ -101,25 +100,15 @@ fun InviteSheet(onDismiss: () -> Unit) {
             // Header row: gradient title + close.
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        "INVITE A FRIEND",
-                        fontSize = 24.sp, fontWeight = FontWeight.Black,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontFamily = com.wordocious.app.ui.theme.Nunito,
-                            brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))),
-                        ),
-                    )
+                    PageTitleText("INVITE A FRIEND", fontSize = 24.sp)
                     Text(
                         "Pick a mode, then send a link or a username invite.",
                         fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
-                Box(
-                    Modifier.size(32.dp).clip(CircleShape).background(WTheme.bg)
-                        .clickable { reset(); onDismiss() },
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(16.dp)) }
+                // The shared white close circle (HEADER_SPEC §4).
+                HeaderBackButton({ reset(); onDismiss() }, close = true)
             }
 
             Spacer(Modifier.size(16.dp))

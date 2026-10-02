@@ -4,7 +4,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -21,8 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -106,10 +102,7 @@ fun StreakShieldModal(
                             .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Shield, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(56.dp))
-                            Icon(painterResource(com.wordocious.app.R.drawable.ic_shield), null, tint = Color(0xFF6D28D9), modifier = Modifier.size(56.dp))
-                        }
+                        Icon3D(Icon3DName.SHIELD, 64.dp)
                         Text(
                             "STREAK SAVED!", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
                             color = Color(0xFF4C1D95), modifier = Modifier.padding(top = 8.dp),
@@ -131,7 +124,7 @@ fun StreakShieldModal(
                         .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Image(painterResource(com.wordocious.app.R.drawable.ic_flame_gold), null, modifier = Modifier.size(48.dp))
+                    Icon3D(Icon3DName.FLAME, 56.dp)
                     Text(
                         "$streak", fontSize = 52.sp, lineHeight = 52.sp, fontWeight = FontWeight.Black,
                         color = Color(0xFF78350F), modifier = Modifier.padding(top = 4.dp),
@@ -155,10 +148,7 @@ fun StreakShieldModal(
                         fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), textAlign = TextAlign.Center,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Shield, null, tint = Color(0xFFEDE9FE), modifier = Modifier.size(16.dp))
-                            Icon(painterResource(com.wordocious.app.R.drawable.ic_shield), null, tint = Color(0xFF6D28D9), modifier = Modifier.size(16.dp))
-                        }
+                        Icon3D(Icon3DName.SHIELD, 20.dp)
                         Text(
                             "$shields ${if (shields == 1) "shield" else "shields"}",
                             fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9),

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { Crown, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Icon3D } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
@@ -58,7 +59,7 @@ export function ProPromptModal() {
             }}
             role="alert"
           >
-            <Crown className="w-8 h-8 flex-shrink-0" style={{ color: '#d97706' }} />
+            <Icon3D name="crown" size={32} className="flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>You're on a streak!</p>
               <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>

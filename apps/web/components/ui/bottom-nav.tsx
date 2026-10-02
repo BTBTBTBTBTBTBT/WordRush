@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Home, Trophy, BarChart3, Users } from 'lucide-react';
+import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { useAuth } from '@/lib/auth-context';
 import { loadFriends, getIncoming, onFriendsChange } from '@/lib/friends-service';
 import { loadGames, getActiveGames, onGamesChange } from '@/lib/friendly-games-client';
@@ -12,11 +12,14 @@ import { friendsBadgeCount } from '@/lib/friends-play';
 // D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile
 // and Records merge into Stats; Friends gets its own tab. iOS RootTabView and
 // Android MainScreen carry the same four.
-const NAV_ITEMS = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/daily', label: 'Leaderboard', icon: Trophy },
-  { href: '/stats', label: 'Stats', icon: BarChart3 },
-  { href: '/friends', label: 'Friends', icon: Users },
+// HEADER_SPEC §3: the 3D tab icons at 28 px. Selected: full color, a −2 px
+// lift and the label in #7c3aed 900; unselected: 45% opacity, 60% saturation,
+// gray label. The numeric Friends badge stays.
+const NAV_ITEMS: { href: string; label: string; icon: Icon3DName }[] = [
+  { href: '/', label: 'Home', icon: 'tab-home' },
+  { href: '/daily', label: 'Leaderboard', icon: 'tab-leaderboard' },
+  { href: '/stats', label: 'Stats', icon: 'tab-stats' },
+  { href: '/friends', label: 'Friends', icon: 'tab-friends' },
 ];
 
 export function BottomNav() {
@@ -69,7 +72,6 @@ export function BottomNav() {
     >
       {NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href;
-        const Icon = item.icon;
 
         return (
           <Link
@@ -80,12 +82,16 @@ export function BottomNav() {
             aria-label={item.label}
           >
             <span className="relative">
-              <Icon
-                className="w-5 h-5 transition-colors"
-                style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}
-                fill={isActive ? '#7c3aed' : 'none'}
-                aria-hidden="true"
-              />
+              <span
+                className="block transition-[transform,opacity,filter] duration-200"
+                style={{
+                  transform: isActive ? 'translateY(-2px)' : 'none',
+                  opacity: isActive ? 1 : 0.45,
+                  filter: isActive ? 'none' : 'saturate(0.6)',
+                }}
+              >
+                <Icon3D name={item.icon} size={28} priority />
+              </span>
               {item.href === '/friends' && badge > 0 && (
                 <span
                   className="absolute -top-1.5 -right-2.5 flex items-center justify-center rounded-full text-[9px] font-black text-white"
@@ -97,17 +103,11 @@ export function BottomNav() {
               )}
             </span>
             <span
-              className="text-[10px] font-extrabold transition-colors"
+              className={`text-[10px] transition-colors ${isActive ? 'font-black' : 'font-extrabold'}`}
               style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}
             >
               {item.label}
             </span>
-            {isActive && (
-              <div
-                className="w-1 h-1 rounded-full"
-                style={{ backgroundColor: '#7c3aed' }}
-              />
-            )}
           </Link>
         );
       })}

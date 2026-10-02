@@ -80,13 +80,7 @@ struct SolvedPuzzleView: View {
             // Corner Home button on every completed screen — including Gauntlet —
             // matching the web GameHomeButton (gauntlet-game.tsx also renders it
             // alongside its top Home/Share links).
-            Button { dismiss() } label: {
-                Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(mode))
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-            }
-            .buttonStyle(.plain)
+            GameCornerButton(kind: .home) { dismiss() }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 8).padding(.leading, 8)
         }

@@ -817,12 +817,7 @@ struct VSGameView: View {
             ZStack {
                 Wordmark(size: 22)
                 HStack {
-                    Button(action: goHome) {
-                        Image(systemName: "xmark").font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(VsLobbyKit.purple).frame(width: 40, height: 40)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain).accessibilityLabel("Close")
+                    HeaderCircleButton(.symbol("xmark"), label: "Close", action: goHome)
                     Spacer()
                 }
             }
@@ -897,7 +892,7 @@ struct VSGameView: View {
         return VStack(spacing: 6) {
             VSPlayerAvatar(url: p.avatarUrl, username: p.name, botArt: p.botArt, size: 36)
             HStack(spacing: 4) {
-                if p.winner { Image(systemName: "trophy.fill").font(.system(size: 10, weight: .bold)).foregroundStyle(Color(hex: 0xB45309)) }
+                if p.winner { Icon3D(.trophy, size: 12) }
                 Text(label).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(VsLobbyKit.purpleSub)
                     .lineLimit(1).minimumScaleFactor(0.6)
             }
@@ -947,7 +942,10 @@ struct VSGameView: View {
                     .multilineTextAlignment(.center)
             }
             if let m = vm.cpuMilestone {
-                Text("🔥 \(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                HStack(spacing: 4) {
+                    Icon3D(.flame, size: 18)
+                    Text("\(m)-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                }
             } else if vm.cpuStreak > 0 {
                 Text("Bot win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.sub)
             }
@@ -1182,7 +1180,7 @@ struct VSMatchHeader: View {
                 HStack(spacing: 12) {
                     if game.boardCount > 1 {
                         HStack(spacing: 3) {
-                            Image(systemName: "trophy.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xD97706))
+                            Icon3D(.trophy, size: 12)
                             Text("\(game.boardsSolvedCount)/\(game.boardCount)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
                         }
                     }
@@ -1244,18 +1242,8 @@ struct VSGameHomeButton: View {
     let accent: Color
     let action: () -> Void
     var body: some View {
-        Button(action: action) {
-            Image(systemName: "house.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(accent)
-                .frame(width: 44, height: 44)
-                .background(Circle().fill(Theme.surface))
-                .overlay(Circle().stroke(accent, lineWidth: 2))
-                .shadow(color: accent.opacity(0.2), radius: 0, x: 0, y: 2)
-                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Home")
+        // HEADER_SPEC §4: the soft white circle with the house in the header ink.
+        GameCornerButton(kind: .home, action: action)
     }
 }
 
@@ -1662,7 +1650,7 @@ private struct DailyVsAlreadyPlayed: View {
                 } else {
                     // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
                     NavigationLink { ProView() } label: {
-                        Label("UPGRADE TO PRO", systemImage: "crown.fill").font(Brand.font(14, .black)).tracking(0.6)
+                        Label { Text("UPGRADE TO PRO") } icon: { Icon3D(.crown, size: 18) }.font(Brand.font(14, .black)).tracking(0.6)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 14)
                             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0xD97706)))

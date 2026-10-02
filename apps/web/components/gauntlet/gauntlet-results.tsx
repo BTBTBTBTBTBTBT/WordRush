@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Trophy, XCircle, Clock, Hash, Eye, X, ChevronRight } from 'lucide-react';
+import { XCircle, Clock, Hash, Eye, X, ChevronRight } from 'lucide-react';
+import { HeaderBack } from '@/components/ui/page-header';
+import { Icon3D } from '@/components/ui/icon3d';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
 import { recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
@@ -131,7 +133,7 @@ export function GauntletResults({
         <div className="text-center space-y-3">
           <div className="animate-fade-in-scale" style={{ animationDelay: '0.2s' }}>
             {won ? (
-              <Trophy className="w-20 h-20 text-amber-600 mx-auto" fill="currentColor" />
+              <Icon3D name="trophy" size={80} className="mx-auto" />
             ) : (
               <XCircle className="w-20 h-20 text-red-400 mx-auto" />
             )}
@@ -166,7 +168,7 @@ export function GauntletResults({
           style={{ animationDelay: '0.6s' }}
         >
           <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
-            <Trophy className="w-5 h-5 text-violet-400 mx-auto mb-1" />
+            <Icon3D name="trophy" size={20} className="mx-auto mb-1" />
             <div className="text-2xl font-black text-gray-800">{stagesCompleted}/5</div>
             <div className="text-gray-400 text-xs">Stages</div>
           </div>
@@ -342,14 +344,7 @@ function StageReviewModal({
         onClick={(e) => e.stopPropagation()}
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md h-[90vh] overflow-hidden p-5 flex flex-col animate-modal-content"
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-3 right-3 p-1.5 rounded-full transition-colors hover:bg-gray-100 text-gray-400"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <HeaderBack kind="close" onClick={onClose} size={32} className="absolute top-3 right-3" />
 
         <div className="flex items-center gap-2 mb-1">
           <Eye className="w-4 h-4 text-gray-400" />

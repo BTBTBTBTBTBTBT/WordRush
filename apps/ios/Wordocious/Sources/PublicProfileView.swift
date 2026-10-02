@@ -229,9 +229,9 @@ struct PublicProfileView: View {
                 }
             }
         } label: {
-            Image(systemName: "ellipsis.circle").font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Theme.textMuted).padding(4)
+            HeaderCircleLabel(glyph: .symbol("ellipsis"))
         }
+        .accessibilityLabel("More")
     }
 
     private func moderationToastView(_ toast: String) -> some View {
@@ -281,9 +281,7 @@ struct PublicProfileView: View {
         return ScrollView {
             VStack(spacing: 16) {
                 HStack {
-                    Button { dismiss() } label: {
-                        Label("Back", systemImage: "chevron.left").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
-                    }.buttonStyle(.plain)
+                    HeaderCircleButton(.symbol("chevron.left"), label: "Back") { dismiss() }
                     Spacer()
                     // Report / Block still works on private profiles.
                     if !isOwnProfile {
@@ -404,9 +402,7 @@ struct PublicProfileView: View {
         let toNext = 1000 - (p.xp % 1000)
         return VStack(spacing: 10) {
             HStack {
-                Button { dismiss() } label: {
-                    Label("Back", systemImage: "chevron.left").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
-                }.buttonStyle(.plain)
+                HeaderCircleButton(.symbol("chevron.left"), label: "Back") { dismiss() }
                 Spacer()
                 if !isOwnProfile { addFriendButton }
                 moderationMenu
@@ -515,7 +511,7 @@ struct PublicProfileView: View {
 
     private func card(_ icon: String, _ color: Color, _ value: String, _ label: String, _ sub: String) -> some View {
         VStack(spacing: 2) {
-            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+            SymbolGlyph(icon, size: 16, color: color)
             Text(value).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
             Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
             Text(sub).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)

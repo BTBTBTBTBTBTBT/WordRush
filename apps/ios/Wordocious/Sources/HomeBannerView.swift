@@ -120,7 +120,7 @@ struct HomeBannerView: View {
                 HStack(alignment: .top, spacing: 6) {
                     HStack(spacing: 6) {
                         if double {
-                            Image(systemName: "trophy.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(Color(hex: 0xB45309))
+                            Icon3D(.trophy, size: 20)
                         }
                         if unlimited {
                             Image(systemName: "infinity").font(.system(size: 17, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
@@ -223,15 +223,12 @@ struct HomeBannerView: View {
     }
 }
 
-/// The streak flame: amber fill, burnt-orange outline (spec colors f59e0b / c2410c).
+/// The streak flame: the 3D streak buddy (HEADER_SPEC §2), sized from the old
+/// glyph's point size so every caller keeps its local scale.
 struct FlameMark: View {
     var size: CGFloat = 12
     var body: some View {
-        ZStack {
-            Image(systemName: "flame.fill").font(.system(size: size, weight: .bold)).foregroundStyle(Color(hex: 0xF59E0B))
-            Image(systemName: "flame").font(.system(size: size, weight: .bold)).foregroundStyle(Color(hex: 0xC2410C))
-        }
-        .accessibilityHidden(true)
+        Icon3D(.flame, size: SymbolGlyph.iconSize(size))
     }
 }
 

@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -92,7 +91,7 @@ fun WelcomeScreen() {
                         title = "Daily Puzzles", sub = "Eight daily word games and ten More Games, new every day")
                     Pillar(icon = Icons.Filled.SportsScore, tint = Color(0xFFEC4899), bg = Color(0xFFFDF2F8),
                         title = "Play with Friends", sub = "Today's Race, a weekly finish and VS with friends")
-                    Pillar(icon = Icons.Filled.EmojiEvents, tint = Color(0xFFD97706), bg = Color(0xFFFFFBEB),
+                    Pillar(icon3d = Icon3DName.TROPHY, tint = Color(0xFFD97706), bg = Color(0xFFFFFBEB),
                         title = "Climb the Leaderboards", sub = "Earn medals, build streaks, and track your stats")
                 }
                 Spacer(Modifier.height(18.dp))
@@ -188,10 +187,12 @@ private fun Pillar(
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     painterRes: Int? = null,
     tint: Color, bg: Color, title: String, sub: String,
+    icon3d: Icon3DName? = null,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(bg), Alignment.Center) {
             when {
+                icon3d != null -> Icon3D(icon3d, 20.dp)
                 icon != null -> Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
                 painterRes != null -> Icon(androidx.compose.ui.res.painterResource(painterRes), null, tint = tint, modifier = Modifier.size(14.dp))
             }

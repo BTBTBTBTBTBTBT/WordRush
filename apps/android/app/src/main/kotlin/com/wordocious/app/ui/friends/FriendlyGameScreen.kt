@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -191,9 +190,8 @@ fun FriendlyGameScreen(
     Column(Modifier.fillMaxSize().background(FriendsPink.page)) {
         // Top bar: close (pink) + centered title in the game's gradient.
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Box(Modifier.size(36.dp).clip(CircleShape).clickableNoRipple { requestClose() }.align(Alignment.CenterStart), Alignment.Center) {
-                Icon(Icons.Filled.Close, "Close", tint = FriendsPink.solid, modifier = Modifier.size(22.dp))
-            }
+            // The shared white close circle (HEADER_SPEC §4).
+            com.wordocious.app.ui.HeaderBackButton({ requestClose() }, Modifier.align(Alignment.CenterStart), close = true)
             Text(
                 (game?.title ?: kind.title).uppercase(), fontSize = 19.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, maxLines = 1,
                 style = TextStyle(brush = Brush.horizontalGradient(kind.gradient), fontFamily = Nunito),
