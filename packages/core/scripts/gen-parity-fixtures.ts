@@ -35,6 +35,7 @@ import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, recons
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
+import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
@@ -343,6 +344,46 @@ export function renderVsLobbyFixtures() {
   let s = { cleared: 0, run: 0 };
   const ladder = games.map(([bot, won]) => { s = ladderAfterGame(s, bot, won); return { bot, won, after: s, rungs: ladderRungs(s) }; });
   return { banners, records, outcomes, ladder };
+}
+
+// Friends overhaul (founder, 2026-10-01): the server runs the pocket games, so
+// the ports only need the WORDS (card lines, headlines), whose-turn, the
+// Tic-Tac-Tile line, presence and friend streaks, and the banner.
+export function renderFriendlyFixtures() {
+  const scripts: Array<{ kind: 'rps' | 'ttt' | 'coin' | 'pass'; moves: Array<[string, any]>; ctx?: any }> = [
+    { kind: 'rps', moves: [['a', { kind: 'rps', pick: 'paper' }], ['b', { kind: 'rps', pick: 'rock' }], ['b', { kind: 'rps', pick: 'scissors' }], ['a', { kind: 'rps', pick: 'scissors' }], ['a', { kind: 'rps', pick: 'rock' }], ['b', { kind: 'rps', pick: 'scissors' }]] },
+    { kind: 'ttt', moves: [['a', { kind: 'ttt', cell: 0 }], ['b', { kind: 'ttt', cell: 4 }], ['a', { kind: 'ttt', cell: 1 }], ['b', { kind: 'ttt', cell: 2 }], ['a', { kind: 'ttt', cell: 6 }], ['b', { kind: 'ttt', cell: 3 }], ['a', { kind: 'ttt', cell: 5 }], ['b', { kind: 'ttt', cell: 7 }], ['a', { kind: 'ttt', cell: 8 }], ['b', { kind: 'ttt', cell: 0 }], ['a', { kind: 'ttt', cell: 4 }]] },
+    { kind: 'coin', moves: [['a', { kind: 'coin', call: 'heads' }], ['b', { kind: 'coin', call: 'heads' }], ['a', { kind: 'coin', call: 'tails' }], ['b', { kind: 'coin', call: 'tails' }], ['a', { kind: 'coin', call: 'heads' }]], ctx: { flips: [0.1, 0.1, 0.1, 0.7, 0.3] } },
+    { kind: 'pass', moves: [['a', { kind: 'pass', word: 'CRANE' }], ['b', { kind: 'pass', word: 'ROUTS' }], ['a', { kind: 'pass', word: 'RISKY' }], ['b', { kind: 'pass', word: 'RISKS' }]], ctx: { solution: 'RISKS' } },
+  ];
+  const games = scripts.map((sc) => {
+    let s: FriendlyState = newFriendlyState(sc.kind);
+    const flips = [...(sc.ctx?.flips ?? [])];
+    const steps = sc.moves.map(([by, mv]) => {
+      const r = applyFriendlyMove(s, by as any, mv, { random: () => flips.shift() ?? 0.1, solution: sc.ctx?.solution });
+      if (r.ok) s = r.state;
+      return {
+        by, move: mv, ok: r.ok, state: s, turn: whoseTurn(s), winner: friendlyWinner(s),
+        headlineA: friendlyHeadline(s, 'a'), headlineB: friendlyHeadline(s, 'b'),
+        cardA: friendlyCardLine({ kind: sc.kind, state: s, me: 'a', them: 'Doug', minutesAgo: 4 }),
+        cardB: friendlyCardLine({ kind: sc.kind, state: s, me: 'b', them: 'BT', minutesAgo: 75 }),
+      };
+    });
+    return { kind: sc.kind, steps };
+  });
+  const boards = [['a', 'a', 'a', '', '', '', '', '', ''], ['b', '', '', 'b', '', '', 'b', '', ''], ['a', 'b', 'a', 'b', 'a', 'b', 'b', 'a', 'b'], ['', '', 'a', '', 'a', '', 'a', '', '']]
+    .map((board) => ({ board, line: tttLine(board as any) }));
+  const now = Date.parse('2026-10-01T20:00:00Z');
+  const presence = [[30_000, 'Muddle'], [90_000, null], [119_000, 'Classic'], [121_000, null], [12 * 60_000, null], [59 * 60_000, null], [3 * 3600_000, 'Muddle'], [30 * 3600_000, null], [null, null]]
+    .map(([ago, activity]) => ({ lastSeenMs: ago === null ? null : now - (ago as number), activity, nowMs: now, online: isOnline(ago === null ? null : now - (ago as number), now), line: presenceLine(ago === null ? null : now - (ago as number), activity as string | null, now) }));
+  const me = ['2026-10-01', '2026-09-30', '2026-09-29', '2026-09-27', '2026-02-28', '2026-03-01'];
+  const them = ['2026-09-30', '2026-09-29', '2026-09-28', '2026-09-27', '2026-02-28', '2026-03-01'];
+  const streaks = ['2026-10-01', '2026-10-02', '2026-10-03', '2026-03-01', '2026-03-02'].map((today) => ({ mine: me, theirs: them, today, streak: friendStreak(me, them, today) }));
+  const base: FriendsBannerInput = { friendCount: 4, online: ['Doug', 'Kate', 'Mike'], myRank: 2, myPoints: 1180, leaderName: 'Kate', leaderPoints: 1240, nextPoints: 960 };
+  const banners = [base, { ...base, online: ['doug'] }, { ...base, online: [], myRank: 1, myPoints: 1380, nextPoints: 1240 }, { ...base, online: [] },
+    { ...base, online: [], leaderPoints: 0, myPoints: 0 }, { ...base, friendCount: 0, online: [] }, { ...base, online: [], myRank: 11, myPoints: 0, leaderPoints: 2500 }, { ...base, online: [], myRank: 22, myPoints: 10, leaderPoints: 12000 }, { ...base, online: [], myRank: 3, myPoints: 5, leaderPoints: 9 }]
+    .map((i) => ({ input: i, headline: friendsBannerHeadline(i), clock: friendsBannerClockLine(i, '04:12:08') }));
+  return { games, boards, presence, streaks, banners };
 }
 
 const TARGET_DIRS = [
@@ -676,6 +717,7 @@ const FILES: Array<[string, unknown]> = [
   ['scramble-fixtures.json', renderScrambleFixtures()],
   ['home-banner-fixtures.json', renderHomeBannerFixtures()],
   ['vs-lobby-fixtures.json', renderVsLobbyFixtures()],
+  ['friendly-games-fixtures.json', renderFriendlyFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

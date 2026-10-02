@@ -1,0 +1,1389 @@
+{
+  "games": [
+    {
+      "kind": "rps",
+      "steps": [
+        {
+          "by": "a",
+          "move": {
+            "kind": "rps",
+            "pick": "paper"
+          },
+          "ok": true,
+          "state": {
+            "kind": "rps",
+            "picks": {
+              "a": "paper"
+            },
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "ROUND 1",
+          "headlineB": "ROUND 1",
+          "cardA": "Round 1 · waiting on Doug",
+          "cardB": "Round 1 · your pick"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "rps",
+            "pick": "rock"
+          },
+          "ok": true,
+          "state": {
+            "kind": "rps",
+            "picks": {},
+            "rounds": [
+              {
+                "a": "paper",
+                "b": "rock",
+                "winner": "a"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 0
+            }
+          },
+          "turn": "both",
+          "winner": null,
+          "headlineA": "ROUND 2",
+          "headlineB": "ROUND 2",
+          "cardA": "Round 2 · your pick",
+          "cardB": "Round 2 · your pick"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "rps",
+            "pick": "scissors"
+          },
+          "ok": true,
+          "state": {
+            "kind": "rps",
+            "picks": {
+              "b": "scissors"
+            },
+            "rounds": [
+              {
+                "a": "paper",
+                "b": "rock",
+                "winner": "a"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "ROUND 2",
+          "headlineB": "ROUND 2",
+          "cardA": "Round 2 · your pick",
+          "cardB": "Round 2 · waiting on BT"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "rps",
+            "pick": "scissors"
+          },
+          "ok": true,
+          "state": {
+            "kind": "rps",
+            "picks": {},
+            "rounds": [
+              {
+                "a": "paper",
+                "b": "rock",
+                "winner": "a"
+              },
+              {
+                "a": "scissors",
+                "b": "scissors",
+                "winner": null
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 0
+            }
+          },
+          "turn": "both",
+          "winner": null,
+          "headlineA": "ROUND 3",
+          "headlineB": "ROUND 3",
+          "cardA": "Round 3 · your pick",
+          "cardB": "Round 3 · your pick"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "rps",
+            "pick": "rock"
+          },
+          "ok": true,
+          "state": {
+            "kind": "rps",
+            "picks": {
+              "a": "rock"
+            },
+            "rounds": [
+              {
+                "a": "paper",
+                "b": "rock",
+                "winner": "a"
+              },
+              {
+                "a": "scissors",
+                "b": "scissors",
+                "winner": null
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "ROUND 3",
+          "headlineB": "ROUND 3",
+          "cardA": "Round 3 · waiting on Doug",
+          "cardB": "Round 3 · your pick"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "rps",
+            "pick": "scissors"
+          },
+          "ok": true,
+          "state": {
+            "kind": "rps",
+            "picks": {},
+            "rounds": [
+              {
+                "a": "paper",
+                "b": "rock",
+                "winner": "a"
+              },
+              {
+                "a": "scissors",
+                "b": "scissors",
+                "winner": null
+              },
+              {
+                "a": "rock",
+                "b": "scissors",
+                "winner": "a"
+              }
+            ],
+            "score": {
+              "a": 2,
+              "b": 0
+            }
+          },
+          "turn": null,
+          "winner": "a",
+          "headlineA": "YOU WIN!",
+          "headlineB": "THEY WIN",
+          "cardA": "You won 2–0",
+          "cardB": "BT won 2–0"
+        }
+      ]
+    },
+    {
+      "kind": "ttt",
+      "steps": [
+        {
+          "by": "a",
+          "move": {
+            "kind": "ttt",
+            "cell": 0
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "b",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR MOVE",
+          "headlineB": "YOUR MOVE",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your move · BT moved 1 h ago"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ttt",
+            "cell": 4
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "",
+              "",
+              "",
+              "b",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "a",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR MOVE",
+          "headlineB": "THEIR MOVE",
+          "cardA": "Your move · Doug moved 4 min ago",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ttt",
+            "cell": 1
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "a",
+              "",
+              "",
+              "b",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "b",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR MOVE",
+          "headlineB": "YOUR MOVE",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your move · BT moved 1 h ago"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ttt",
+            "cell": 2
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "a",
+              "b",
+              "",
+              "b",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "a",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR MOVE",
+          "headlineB": "THEIR MOVE",
+          "cardA": "Your move · Doug moved 4 min ago",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ttt",
+            "cell": 6
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "a",
+              "b",
+              "",
+              "b",
+              "",
+              "a",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "b",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR MOVE",
+          "headlineB": "YOUR MOVE",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your move · BT moved 1 h ago"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ttt",
+            "cell": 3
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "a",
+              "b",
+              "b",
+              "b",
+              "",
+              "a",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "a",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR MOVE",
+          "headlineB": "THEIR MOVE",
+          "cardA": "Your move · Doug moved 4 min ago",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ttt",
+            "cell": 5
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "a",
+              "b",
+              "b",
+              "b",
+              "a",
+              "a",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "b",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR MOVE",
+          "headlineB": "YOUR MOVE",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your move · BT moved 1 h ago"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ttt",
+            "cell": 7
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "a",
+              "b",
+              "b",
+              "b",
+              "a",
+              "a",
+              "b",
+              ""
+            ],
+            "starter": "a",
+            "turn": "a",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR MOVE",
+          "headlineB": "THEIR MOVE",
+          "cardA": "Your move · Doug moved 4 min ago",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ttt",
+            "cell": 8
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "b",
+            "turn": "b",
+            "games": [
+              {
+                "winner": null
+              }
+            ],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR MOVE",
+          "headlineB": "YOUR MOVE",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your move · BT moved 1 h ago"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "ttt",
+            "cell": 0
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "b",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "b",
+            "turn": "a",
+            "games": [
+              {
+                "winner": null
+              }
+            ],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR MOVE",
+          "headlineB": "THEIR MOVE",
+          "cardA": "Your move · Doug moved 4 min ago",
+          "cardB": "Waiting on BT · 0–0"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "ttt",
+            "cell": 4
+          },
+          "ok": true,
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "b",
+              "",
+              "",
+              "",
+              "a",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "b",
+            "turn": "b",
+            "games": [
+              {
+                "winner": null
+              }
+            ],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR MOVE",
+          "headlineB": "YOUR MOVE",
+          "cardA": "Waiting on Doug · 0–0",
+          "cardB": "Your move · BT moved 1 h ago"
+        }
+      ]
+    },
+    {
+      "kind": "coin",
+      "steps": [
+        {
+          "by": "a",
+          "move": {
+            "kind": "coin",
+            "call": "heads"
+          },
+          "ok": true,
+          "state": {
+            "kind": "coin",
+            "caller": "b",
+            "rounds": [
+              {
+                "caller": "a",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "a"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 0
+            },
+            "stake": "Bragging rights"
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "ROUND 2 OF 5",
+          "headlineB": "ROUND 2 OF 5",
+          "cardA": "Doug calls next · 1–0",
+          "cardB": "Your call · 0–1"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "coin",
+            "call": "heads"
+          },
+          "ok": true,
+          "state": {
+            "kind": "coin",
+            "caller": "a",
+            "rounds": [
+              {
+                "caller": "a",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "a"
+              },
+              {
+                "caller": "b",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "b"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 1
+            },
+            "stake": "Bragging rights"
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "ROUND 3 OF 5",
+          "headlineB": "ROUND 3 OF 5",
+          "cardA": "Your call · 1–1",
+          "cardB": "BT calls next · 1–1"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "coin",
+            "call": "tails"
+          },
+          "ok": true,
+          "state": {
+            "kind": "coin",
+            "caller": "b",
+            "rounds": [
+              {
+                "caller": "a",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "a"
+              },
+              {
+                "caller": "b",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "b"
+              },
+              {
+                "caller": "a",
+                "call": "tails",
+                "flip": "heads",
+                "winner": "b"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 2
+            },
+            "stake": "Bragging rights"
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "ROUND 4 OF 5",
+          "headlineB": "ROUND 4 OF 5",
+          "cardA": "Doug calls next · 1–2",
+          "cardB": "Your call · 2–1"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "coin",
+            "call": "tails"
+          },
+          "ok": true,
+          "state": {
+            "kind": "coin",
+            "caller": "a",
+            "rounds": [
+              {
+                "caller": "a",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "a"
+              },
+              {
+                "caller": "b",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "b"
+              },
+              {
+                "caller": "a",
+                "call": "tails",
+                "flip": "heads",
+                "winner": "b"
+              },
+              {
+                "caller": "b",
+                "call": "tails",
+                "flip": "tails",
+                "winner": "b"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 3
+            },
+            "stake": "Bragging rights"
+          },
+          "turn": null,
+          "winner": "b",
+          "headlineA": "THEY WIN",
+          "headlineB": "YOU WIN!",
+          "cardA": "Doug won 3–1",
+          "cardB": "You won 3–1"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "coin",
+            "call": "heads"
+          },
+          "ok": false,
+          "state": {
+            "kind": "coin",
+            "caller": "a",
+            "rounds": [
+              {
+                "caller": "a",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "a"
+              },
+              {
+                "caller": "b",
+                "call": "heads",
+                "flip": "heads",
+                "winner": "b"
+              },
+              {
+                "caller": "a",
+                "call": "tails",
+                "flip": "heads",
+                "winner": "b"
+              },
+              {
+                "caller": "b",
+                "call": "tails",
+                "flip": "tails",
+                "winner": "b"
+              }
+            ],
+            "score": {
+              "a": 1,
+              "b": 3
+            },
+            "stake": "Bragging rights"
+          },
+          "turn": null,
+          "winner": "b",
+          "headlineA": "THEY WIN",
+          "headlineB": "YOU WIN!",
+          "cardA": "Doug won 3–1",
+          "cardB": "You won 3–1"
+        }
+      ]
+    },
+    {
+      "kind": "pass",
+      "steps": [
+        {
+          "by": "a",
+          "move": {
+            "kind": "pass",
+            "word": "CRANE"
+          },
+          "ok": true,
+          "state": {
+            "kind": "pass",
+            "turn": "b",
+            "guesses": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "tiles": [
+                  "ABSENT",
+                  "PRESENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT"
+                ]
+              }
+            ],
+            "solvedBy": null
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR GUESS · 2 OF 6",
+          "headlineB": "YOUR GUESS · 2 OF 6",
+          "cardA": "Doug's guess · 1 of 6 used",
+          "cardB": "Your guess · 1 of 6 used"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "pass",
+            "word": "ROUTS"
+          },
+          "ok": true,
+          "state": {
+            "kind": "pass",
+            "turn": "a",
+            "guesses": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "tiles": [
+                  "ABSENT",
+                  "PRESENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT"
+                ]
+              },
+              {
+                "by": "b",
+                "word": "ROUTS",
+                "tiles": [
+                  "CORRECT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "CORRECT"
+                ]
+              }
+            ],
+            "solvedBy": null
+          },
+          "turn": "a",
+          "winner": null,
+          "headlineA": "YOUR GUESS · 3 OF 6",
+          "headlineB": "THEIR GUESS · 3 OF 6",
+          "cardA": "Your guess · 2 of 6 used",
+          "cardB": "BT's guess · 2 of 6 used"
+        },
+        {
+          "by": "a",
+          "move": {
+            "kind": "pass",
+            "word": "RISKY"
+          },
+          "ok": true,
+          "state": {
+            "kind": "pass",
+            "turn": "b",
+            "guesses": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "tiles": [
+                  "ABSENT",
+                  "PRESENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT"
+                ]
+              },
+              {
+                "by": "b",
+                "word": "ROUTS",
+                "tiles": [
+                  "CORRECT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "CORRECT"
+                ]
+              },
+              {
+                "by": "a",
+                "word": "RISKY",
+                "tiles": [
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT",
+                  "ABSENT"
+                ]
+              }
+            ],
+            "solvedBy": null
+          },
+          "turn": "b",
+          "winner": null,
+          "headlineA": "THEIR GUESS · 4 OF 6",
+          "headlineB": "YOUR GUESS · 4 OF 6",
+          "cardA": "Doug's guess · 3 of 6 used",
+          "cardB": "Your guess · 3 of 6 used"
+        },
+        {
+          "by": "b",
+          "move": {
+            "kind": "pass",
+            "word": "RISKS"
+          },
+          "ok": true,
+          "state": {
+            "kind": "pass",
+            "turn": "a",
+            "guesses": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "tiles": [
+                  "ABSENT",
+                  "PRESENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT"
+                ]
+              },
+              {
+                "by": "b",
+                "word": "ROUTS",
+                "tiles": [
+                  "CORRECT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "CORRECT"
+                ]
+              },
+              {
+                "by": "a",
+                "word": "RISKY",
+                "tiles": [
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT",
+                  "ABSENT"
+                ]
+              },
+              {
+                "by": "b",
+                "word": "RISKS",
+                "tiles": [
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT",
+                  "CORRECT"
+                ]
+              }
+            ],
+            "solvedBy": "b"
+          },
+          "turn": null,
+          "winner": "b",
+          "headlineA": "THEY WIN",
+          "headlineB": "YOU WIN!",
+          "cardA": "Doug solved it",
+          "cardB": "You solved it"
+        }
+      ]
+    }
+  ],
+  "boards": [
+    {
+      "board": [
+        "a",
+        "a",
+        "a",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "line": {
+        "side": "a",
+        "cells": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "board": [
+        "b",
+        "",
+        "",
+        "b",
+        "",
+        "",
+        "b",
+        "",
+        ""
+      ],
+      "line": {
+        "side": "b",
+        "cells": [
+          0,
+          3,
+          6
+        ]
+      }
+    },
+    {
+      "board": [
+        "a",
+        "b",
+        "a",
+        "b",
+        "a",
+        "b",
+        "b",
+        "a",
+        "b"
+      ],
+      "line": null
+    },
+    {
+      "board": [
+        "",
+        "",
+        "a",
+        "",
+        "a",
+        "",
+        "a",
+        "",
+        ""
+      ],
+      "line": {
+        "side": "a",
+        "cells": [
+          2,
+          4,
+          6
+        ]
+      }
+    }
+  ],
+  "presence": [
+    {
+      "lastSeenMs": 1790884770000,
+      "activity": "Muddle",
+      "nowMs": 1790884800000,
+      "online": true,
+      "line": "On now · in Muddle"
+    },
+    {
+      "lastSeenMs": 1790884710000,
+      "activity": null,
+      "nowMs": 1790884800000,
+      "online": true,
+      "line": "On now"
+    },
+    {
+      "lastSeenMs": 1790884681000,
+      "activity": "Classic",
+      "nowMs": 1790884800000,
+      "online": true,
+      "line": "On now · in Classic"
+    },
+    {
+      "lastSeenMs": 1790884679000,
+      "activity": null,
+      "nowMs": 1790884800000,
+      "online": false,
+      "line": "Here 2 min ago"
+    },
+    {
+      "lastSeenMs": 1790884080000,
+      "activity": null,
+      "nowMs": 1790884800000,
+      "online": false,
+      "line": "Here 12 min ago"
+    },
+    {
+      "lastSeenMs": 1790881260000,
+      "activity": null,
+      "nowMs": 1790884800000,
+      "online": false,
+      "line": "Here 59 min ago"
+    },
+    {
+      "lastSeenMs": 1790874000000,
+      "activity": "Muddle",
+      "nowMs": 1790884800000,
+      "online": false,
+      "line": "Here 3 h ago"
+    },
+    {
+      "lastSeenMs": 1790776800000,
+      "activity": null,
+      "nowMs": 1790884800000,
+      "online": false,
+      "line": null
+    },
+    {
+      "lastSeenMs": null,
+      "activity": null,
+      "nowMs": 1790884800000,
+      "online": false,
+      "line": null
+    }
+  ],
+  "streaks": [
+    {
+      "mine": [
+        "2026-10-01",
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "theirs": [
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-28",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "today": "2026-10-01",
+      "streak": 2
+    },
+    {
+      "mine": [
+        "2026-10-01",
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "theirs": [
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-28",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "today": "2026-10-02",
+      "streak": 0
+    },
+    {
+      "mine": [
+        "2026-10-01",
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "theirs": [
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-28",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "today": "2026-10-03",
+      "streak": 0
+    },
+    {
+      "mine": [
+        "2026-10-01",
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "theirs": [
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-28",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "today": "2026-03-01",
+      "streak": 2
+    },
+    {
+      "mine": [
+        "2026-10-01",
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "theirs": [
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-28",
+        "2026-09-27",
+        "2026-02-28",
+        "2026-03-01"
+      ],
+      "today": "2026-03-02",
+      "streak": 2
+    }
+  ],
+  "banners": [
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [
+          "Doug",
+          "Kate",
+          "Mike"
+        ],
+        "myRank": 2,
+        "myPoints": 1180,
+        "leaderName": "Kate",
+        "leaderPoints": 1240,
+        "nextPoints": 960
+      },
+      "headline": "3 FRIENDS ON NOW",
+      "clock": "TODAY’S RACE ENDS IN 04:12:08 · YOU’RE 2ND, 60 BEHIND"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [
+          "doug"
+        ],
+        "myRank": 2,
+        "myPoints": 1180,
+        "leaderName": "Kate",
+        "leaderPoints": 1240,
+        "nextPoints": 960
+      },
+      "headline": "DOUG IS ON NOW",
+      "clock": "TODAY’S RACE ENDS IN 04:12:08 · YOU’RE 2ND, 60 BEHIND"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [],
+        "myRank": 1,
+        "myPoints": 1380,
+        "leaderName": "Kate",
+        "leaderPoints": 1240,
+        "nextPoints": 1240
+      },
+      "headline": "YOU LEAD TODAY’S RACE!",
+      "clock": "YOU LEAD BY 140 · ENDS IN 04:12:08"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [],
+        "myRank": 2,
+        "myPoints": 1180,
+        "leaderName": "Kate",
+        "leaderPoints": 1240,
+        "nextPoints": 960
+      },
+      "headline": "KATE LEADS TODAY’S RACE",
+      "clock": "TODAY’S RACE ENDS IN 04:12:08 · YOU’RE 2ND, 60 BEHIND"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [],
+        "myRank": 2,
+        "myPoints": 0,
+        "leaderName": "Kate",
+        "leaderPoints": 0,
+        "nextPoints": 960
+      },
+      "headline": "QUIET IN HERE · START A GAME",
+      "clock": "TODAY’S RACE IS OPEN · ENDS IN 04:12:08"
+    },
+    {
+      "input": {
+        "friendCount": 0,
+        "online": [],
+        "myRank": 2,
+        "myPoints": 1180,
+        "leaderName": "Kate",
+        "leaderPoints": 1240,
+        "nextPoints": 960
+      },
+      "headline": "BRING YOUR FRIENDS",
+      "clock": "ADD A FRIEND TO RACE, PLAY AND TRADE STREAKS"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [],
+        "myRank": 11,
+        "myPoints": 0,
+        "leaderName": "Kate",
+        "leaderPoints": 2500,
+        "nextPoints": 960
+      },
+      "headline": "KATE LEADS TODAY’S RACE",
+      "clock": "TODAY’S RACE ENDS IN 04:12:08 · YOU’RE 11TH, 2,500 BEHIND"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [],
+        "myRank": 22,
+        "myPoints": 10,
+        "leaderName": "Kate",
+        "leaderPoints": 12000,
+        "nextPoints": 960
+      },
+      "headline": "KATE LEADS TODAY’S RACE",
+      "clock": "TODAY’S RACE ENDS IN 04:12:08 · YOU’RE 22ND, 11,990 BEHIND"
+    },
+    {
+      "input": {
+        "friendCount": 4,
+        "online": [],
+        "myRank": 3,
+        "myPoints": 5,
+        "leaderName": "Kate",
+        "leaderPoints": 9,
+        "nextPoints": 960
+      },
+      "headline": "KATE LEADS TODAY’S RACE",
+      "clock": "TODAY’S RACE ENDS IN 04:12:08 · YOU’RE 3RD, 4 BEHIND"
+    }
+  ]
+}

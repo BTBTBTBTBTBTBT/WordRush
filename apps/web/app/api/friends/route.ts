@@ -4,6 +4,8 @@ import { requireUser } from '@/lib/friends-server';
 import { sweepAll } from '@/lib/supabase-sweep';
 import { sweepModesFor } from '@/lib/modes.generated';
 import { settleWeek } from '@/lib/weekly-race';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { friendStreak } from '@wordle-duel/core';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +33,8 @@ export async function GET(req: NextRequest) {
     .from('friendships')
     .select(
       `requester_id, addressee_id, status, created_at, accepted_at, reminded_at,
-       requester:profiles!friendships_requester_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak),
-       addressee:profiles!friendships_addressee_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak)`,
+       requester:profiles!friendships_requester_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak, last_seen_at, last_activity),
+       addressee:profiles!friendships_addressee_id_fkey(id, username, avatar_url, avatar_emoji, level, daily_login_streak, last_seen_at, last_activity)`,
     )
     .or(`requester_id.eq.${me},addressee_id.eq.${me}`);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -42,11 +44,13 @@ export async function GET(req: NextRequest) {
   type Prof = {
     id: string; username: string; avatar_url: string | null; avatar_emoji: string | null;
     level: number; daily_login_streak?: number | null;
+    last_seen_at?: string | null; last_activity?: string | null;
   };
   const friends: Array<Prof & {
     since: string | null; streak: number;
     playedToday?: number; weekPoints?: number; todayPoints?: number; h2hW?: number; h2hL?: number;
     lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number;
+    lastSeenAt?: string | null; activity?: string | null; friendStreak?: number;
   }> = [];
   const incoming: Array<Prof & { requestedAt: string }> = [];
   const outgoing: string[] = [];
@@ -58,10 +62,13 @@ export async function GET(req: NextRequest) {
   for (const row of (data ?? []) as any[]) {
     const other: Prof = row.requester_id === me ? row.addressee : row.requester;
     if (!other) continue; // profile vanished mid-join; FK cascade will clean up
-    const { daily_login_streak, ...prof } = other;
+    const { daily_login_streak, last_seen_at, last_activity, ...prof } = other;
     const streak = daily_login_streak ?? 0;
     if (row.status === 'accepted') {
-      friends.push({ ...prof, streak, since: row.accepted_at });
+      // Friends overhaul (additive): the heartbeat for "On now" and the db key
+      // of the game on their screen, mapped to its title (a key, never free text).
+      const activity = last_activity ? MODE_BY_DBKEY[last_activity]?.title ?? null : null;
+      friends.push({ ...prof, streak, since: row.accepted_at, lastSeenAt: last_seen_at ?? null, activity });
     } else if (row.addressee_id === me) {
       incoming.push({ ...prof, requestedAt: row.created_at });
     } else {
@@ -195,6 +202,8 @@ export async function GET(req: NextRequest) {
       f.h2hW = w;
       f.h2hL = l;
       f.flawlessStreak = flawlessStreakOf(f.id);
+      // Friends overhaul (additive): days in a row you BOTH finished a daily.
+      f.friendStreak = friendStreak(myDays.keys(), theirDays.keys(), day);
     }
     const myPast = pastWeekPointsOf(me);
     // D3.3 — the Sunday finish. The first visit after the client's Monday 00:00

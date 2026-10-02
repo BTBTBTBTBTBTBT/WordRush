@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { MODE_BY_DBKEY, MORE_GAME_MODES } from '@/lib/modes.generated';
+import { FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,10 @@ export const dynamic = 'force-dynamic';
  * did over the last seven days, from tables that already exist — Daily Sweeps
  * and Flawless Victories (daily_bonuses), podium / perfect / streak medals
  * (medals), all-time records set (all_time_records) and More Games Sweeps
- * (every More Games daily played on one day, from daily_results). Newest
- * first, capped at 40. Nothing is written.
+ * (every More Games daily played on one day, from daily_results), and —
+ * Friends overhaul 2026-10-01 — finished pocket games between people in the
+ * circle (friendly_games). Newest first, capped at 40. `reactions` carries
+ * each shown moment's fixed-emoji counts and the caller's own picks.
  */
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DAYS = 7;
@@ -26,7 +29,7 @@ export interface FeedEvent {
   me: boolean;
   day: string;            // the player's local day the event belongs to
   at: string;             // ISO timestamp for ordering
-  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless' | 'gift';
+  type: 'sweep' | 'flawless' | 'medal' | 'record' | 'more_sweep' | 'more_flawless' | 'gift' | 'game';
   /** Gift rows: the other party's name. */
   otherName?: string | null;
   otherId?: string | null;
@@ -35,6 +38,8 @@ export interface FeedEvent {
   gameMode?: string | null;
   gameTitle?: string | null;
   value?: number | null;
+  /** Pocket games: 'win' or 'draw', and the final score from the winner's side ("2–1"). */
+  score?: string | null;
 }
 
 function shiftDay(d: string, delta: number): string {
@@ -75,6 +80,9 @@ export async function GET(req: NextRequest) {
       .or(`sender_id.in.(${ids.join(',')}),recipient_id.in.(${ids.join(',')})`)
       .gte('created_at', `${cutoff}T00:00:00Z`),
   ]);
+  const { data: games } = await admin.from('friendly_games').select('id, kind, player_a, player_b, state, status, winner, updated_at')
+    .in('status', ['done', 'resigned']).in('player_a', ids).in('player_b', ids)
+    .gte('updated_at', `${cutoff}T00:00:00Z`).limit(60);
 
   const who = new Map<string, { username: string; avatar_url: string | null; avatar_emoji: string | null }>();
   for (const p of (profs ?? []) as any[]) who.set(p.id, { username: p.username, avatar_url: p.avatar_url ?? null, avatar_emoji: p.avatar_emoji ?? null });
@@ -135,6 +143,33 @@ export async function GET(req: NextRequest) {
       otherName: g.recipient_id === me ? 'you' : other?.username ?? 'a friend', otherId: g.recipient_id,
     });
   }
+  // Pocket games (Friends overhaul): shown from the winner's side, naming the other player.
+  for (const g of (games ?? []) as any[]) {
+    const winner: string | null = g.winner ?? null;
+    const lead = winner ?? g.player_a;
+    const otherId = lead === g.player_a ? g.player_b : g.player_a;
+    const sc = g.state?.score as { a: number; b: number } | undefined;
+    const leadSide = lead === g.player_a ? 'a' : 'b';
+    const score = sc ? `${sc[leadSide]}–${sc[leadSide === 'a' ? 'b' : 'a']}` : null;
+    events.push({
+      id: `game-${g.id}`, ...person(lead), day: (g.updated_at as string).slice(0, 10), at: g.updated_at, type: 'game',
+      kind: winner ? 'win' : 'draw', gameTitle: FRIENDLY_TITLES[g.kind as FriendlyKind] ?? null,
+      otherName: otherId === me ? 'you' : who.get(otherId)?.username ?? 'a friend', otherId,
+      score: g.status === 'resigned' ? 'by resignation' : g.kind === 'pass' ? null : score,
+    });
+  }
   events.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : a.at < b.at ? 1 : -1));
-  return NextResponse.json({ events: events.slice(0, 40) }, { headers: { 'Cache-Control': 'private, no-store' } });
+  const shown = events.slice(0, 40);
+
+  // Reactions (fixed emoji set) on the moments shown.
+  const reactions: Record<string, { counts: Record<string, number>; mine: string[] }> = {};
+  if (shown.length > 0) {
+    const { data: rx } = await admin.from('moment_reactions').select('moment_id, user_id, emoji').in('moment_id', shown.map((e) => e.id));
+    for (const r of (rx ?? []) as Array<{ moment_id: string; user_id: string; emoji: string }>) {
+      const slot = reactions[r.moment_id] ?? (reactions[r.moment_id] = { counts: {}, mine: [] });
+      slot.counts[r.emoji] = (slot.counts[r.emoji] ?? 0) + 1;
+      if (r.user_id === me) slot.mine.push(r.emoji);
+    }
+  }
+  return NextResponse.json({ events: shown, reactions }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
