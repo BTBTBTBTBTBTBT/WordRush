@@ -151,8 +151,8 @@ struct WordOfTheDayView: View {
         return VStack(alignment: .leading, spacing: 2) {
             HStack {
                 HStack(spacing: 6) {
-                    Image("book-open").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 12, height: 12).foregroundStyle(Theme.textMuted)
+                    // I, the shy one with the sprout, hosts the card (MASCOT_SPEC §1–§2): growing your words.
+                    MascotView(Mascots.wordOfTheDay, size: 28)
                     Text("WORD OF THE DAY").font(Brand.font(10, .heavy)).tracking(0.8)
                         .foregroundStyle(Theme.textMuted)
                 }

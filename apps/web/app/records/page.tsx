@@ -3,7 +3,7 @@
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Trophy, Crown, Users, User, Swords, ChevronDown, ChevronUp, Share } from 'lucide-react';
+import { Crown, Users, User, Swords, ChevronDown, ChevronUp, Share } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore, tieAwareScoreLabels, formatHintsLabel } from '@/lib/composite-scoring';
@@ -11,6 +11,8 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { modeByKey } from '@/components/profile/mode-picker';
 import { RecordsBanner, type RecordsTab } from '@/components/leaderboard/records-banner';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
 import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
@@ -526,7 +528,7 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
         ) : isSweep ? (
           sweepLeaderboard.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-              <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <div className="flex justify-center mb-2"><Mascot id={PAGE_HOSTS.empty} size={96} motion="bob" /></div>
               <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
             </div>
           ) : (
@@ -535,7 +537,7 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
           )
         ) : leaderboard.length === 0 ? (
           <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-            <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <div className="flex justify-center mb-2"><Mascot id={PAGE_HOSTS.empty} size={96} motion="bob" /></div>
             <p className="text-xs font-bold">No results yet today. Be the first!</p>
           </div>
         ) : (
@@ -804,7 +806,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
               <LeaderboardSkeleton />
             ) : sweepBoard.length === 0 ? (
               <div className="py-5 text-center">
-                <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+                <div className="flex justify-center mb-1.5"><Mascot id={PAGE_HOSTS.empty} size={96} motion="bob" /></div>
                 <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
               </div>
             ) : (
@@ -825,7 +827,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
           </div>
         ) : modeRecords.length === 0 ? (
           <div className="py-5 text-center" style={SOFT_CARD}>
-            <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+            <div className="flex justify-center mb-1.5"><Mascot id={PAGE_HOSTS.empty} size={96} motion="bob" /></div>
             <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No records yet</p>
           </div>
         ) : (

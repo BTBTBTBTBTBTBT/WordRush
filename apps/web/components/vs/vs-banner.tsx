@@ -6,6 +6,8 @@ import {
   type VsDayResult, type WinLoss,
 } from '@wordle-duel/core';
 import { VS, todayTileLine } from '@/lib/vs-lobby';
+import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // The VS banner (VS overhaul §1): the home banner's one-window shape in teal.
 // A frosted headline strip over TODAY (the Daily Battle and the Bot of the
@@ -72,6 +74,8 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
   const subInk = gold ? '#92400e' : VS.ink;
 
   return (
+    // The VS host (S) stands at the strip's right end.
+    <BannerHost id={PAGE_HOSTS.vs}>
     <div
       className="relative shrink-0 overflow-hidden"
       style={{
@@ -93,7 +97,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         </div>
       )}
 
-      <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+      <div className="relative flex flex-col gap-1" style={{ padding: `12px ${BANNER_HOST_CLEARANCE}px 10px 12px`, background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
           {gold && <Trophy className="w-[18px] h-[18px] shrink-0" style={{ color: '#b45309' }} />}
           <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: headInk }}>{headline}</span>
@@ -137,5 +141,6 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         )}
       </div>
     </div>
+    </BannerHost>
   );
 }

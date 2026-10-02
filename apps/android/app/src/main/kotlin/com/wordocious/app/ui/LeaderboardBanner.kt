@@ -77,7 +77,7 @@ internal fun LeaderboardBanner(
     }
     val glow = with(LocalDensity.current) { 8.dp.toPx() }
 
-    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE)) {
+    LbBannerShell(Color(0xFFFEF3C7), Color(0xFFEDE9FE), host = Mascots.leaderboard) {
         // Frosted strip: the day title, then the date · reset clock and the ALL-TIME door.
         Column(
             Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
@@ -86,7 +86,7 @@ internal fun LeaderboardBanner(
         ) {
             Text(
                 title, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
-                color = LB_INK, maxLines = 2,
+                color = LB_INK, maxLines = 2, modifier = Modifier.padding(end = BANNER_HOST_CLEAR - 4.dp),
                 style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -108,10 +108,12 @@ internal fun LeaderboardBanner(
 }
 
 /** The one-window banner chrome shared by the Leaderboard and Records banners: a
- *  [top] → [bottom] vertical gradient + the white sheen, radius 16, soft gold shadow. */
+ *  [top] → [bottom] vertical gradient + the white sheen, radius 16, soft gold shadow.
+ *  The page [host] (O2, MASCOT_SPEC §1–§2) peeks over the strip's top-right edge. */
 @Composable
-internal fun LbBannerShell(top: Color, bottom: Color, content: @Composable ColumnScope.() -> Unit) {
+internal fun LbBannerShell(top: Color, bottom: Color, host: MascotId? = null, content: @Composable ColumnScope.() -> Unit) {
     CappedFontScale {
+        Box(Modifier.fillMaxWidth().padding(top = if (host != null) BANNER_HOST_PEEK else 0.dp)) {
         Column(
             Modifier.fillMaxWidth()
                 .leaderboardBannerShadow()
@@ -125,6 +127,8 @@ internal fun LbBannerShell(top: Color, bottom: Color, content: @Composable Colum
                 },
             content = content,
         )
+        if (host != null) BannerHost(host, Modifier.align(Alignment.TopEnd))
+        }
     }
 }
 
@@ -264,20 +268,21 @@ internal fun RecordsBanner(
         else if (recordCount != null && recordCount > 0) "THE BEST EVER · $recordCount RECORDS"
         else "THE BEST EVER"
 
-    LbBannerShell(Color(0xFFEDE9FE), Color(0xFFFEF3C7)) {
+    LbBannerShell(Color(0xFFEDE9FE), Color(0xFFFEF3C7), host = Mascots.records) {
         Column(
             Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f))
                 .padding(start = 12.dp, top = 12.dp, end = 10.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.padding(end = BANNER_HOST_CLEAR - 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(
                     androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
                     tint = Color(0xFFB45309), modifier = Modifier.size(20.dp),
                 )
                 Text(
                     "ALL-TIME RECORDS", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                    lineHeight = 1.15.em, color = REC_INK, maxLines = 1,
+                    lineHeight = 1.15.em, color = REC_INK, maxLines = 1, softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     style = TextStyle(shadow = Shadow(LB_GOLD.copy(alpha = 0.55f), Offset.Zero, blurRadius = glow)),
                 )
             }

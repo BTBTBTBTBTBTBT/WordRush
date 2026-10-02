@@ -80,7 +80,12 @@ struct ProView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Image(systemName: "crown.fill").font(.system(size: 54)).foregroundStyle(gold)
+            // W, the leader in the cape, hosts Pro (MASCOT_SPEC §6) under the gold crown.
+            ZStack(alignment: .top) {
+                MascotView(Mascots.pro, size: 56, motion: .bob).padding(.top, 18)
+                Image(systemName: "crown.fill").font(.system(size: 22)).foregroundStyle(gold)
+            }
+            .accessibilityHidden(true)
             Text("Go Pro").font(Brand.title(36)).foregroundStyle(Theme.textPrimary)
             Text("Play unlimited & ad-free — every mode, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)

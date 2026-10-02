@@ -1,6 +1,8 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, Theme } from '@/lib/theme-context';
@@ -115,7 +117,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
       >
         <DialogHeader>
-          <DialogTitle className="font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Settings</DialogTitle>
+          {/* R (relaxed, nightcap) leans beside the title. */}
+          <div className="flex items-center gap-2">
+            <Mascot id={PAGE_HOSTS.settings} size={40} motion="bob" priority />
+            <DialogTitle className="font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Settings</DialogTitle>
+          </div>
           <DialogDescription style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">
             Customize your Wordocious experience
           </DialogDescription>

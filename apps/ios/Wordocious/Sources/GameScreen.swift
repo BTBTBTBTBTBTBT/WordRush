@@ -201,6 +201,7 @@ struct GameScreen: View {
                     onPlayAgain: playAgainAction.map { action in
                         { showVictory = false; action() }
                     },
+                    game: mode,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = false; revealComplete = true } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }
@@ -293,9 +294,13 @@ struct GameScreen: View {
 
     private var standardHeader: some View {
         VStack(spacing: 4) {
+            // The game's host stands at the left of the title, static during play (MASCOT_SPEC §5).
             Text(ModeStyle.title(mode))
                 .font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .gameHost(mode)
+                .padding(.horizontal, 52)
             HStack(spacing: 12) {
                 Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                 if !vm.stageCleared {
@@ -321,6 +326,7 @@ struct GameScreen: View {
                 .font(Brand.font(18, .black))
                 .foregroundStyle(LinearGradient(colors: Self.gauntletStageGradient(vm.gauntletStageName),
                                                 startPoint: .leading, endPoint: .trailing))
+                .gameHost(mode, size: 24)
             if !vm.stageCleared {
                 HStack(spacing: 12) {
                     if vm.boardCount > 1 {

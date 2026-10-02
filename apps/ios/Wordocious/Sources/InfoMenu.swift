@@ -85,6 +85,8 @@ func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
 /// wordmark-gradient title, an optional back chevron, and a Close button.
 struct MenuScaffold<Content: View>: View {
     let title: String
+    /// The page's host beside the title (MASCOT_SPEC §6), 40 pt with an idle bob.
+    var host: MascotID? = nil
     var onBack: (() -> Void)? = nil
     /// Close action when the scaffold is NOT hosted in a presentation (the More Games
     /// morph panel); nil → the environment dismiss.
@@ -92,8 +94,10 @@ struct MenuScaffold<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     let content: () -> Content
 
-    init(_ title: String, onBack: (() -> Void)? = nil, onClose: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(_ title: String, host: MascotID? = nil, onBack: (() -> Void)? = nil, onClose: (() -> Void)? = nil,
+         @ViewBuilder content: @escaping () -> Content) {
         self.title = title
+        self.host = host
         self.onBack = onBack
         self.onClose = onClose
         self.content = content
@@ -111,6 +115,7 @@ struct MenuScaffold<Content: View>: View {
                     }
                 }
                 Text(title).font(Brand.font(22, .black)).textCase(.uppercase).foregroundStyle(Theme.wordmarkGradient).lineLimit(1).minimumScaleFactor(0.6)
+                if let host { MascotView(host, size: 40, motion: .bob) }
                 Spacer()
                 Button { if let onClose { onClose() } else { dismiss() } } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .black)).foregroundStyle(Theme.textMuted)
@@ -138,7 +143,7 @@ struct MenuSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        MenuScaffold("Menu") {
+        MenuScaffold("Menu", host: Mascots.help) {
             ScrollView {
                 VStack(spacing: 8) {
                     ForEach(InfoMenuDestination.allCases) { d in
@@ -184,7 +189,7 @@ struct GuidesIndexView: View {
     }
 
     var body: some View {
-        MenuScaffold("Guides") {
+        MenuScaffold("Guides", host: Mascots.help) {
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(modes, id: \.self) { mode in
@@ -278,7 +283,7 @@ struct StrategyView: View {
             if let a = selected {
                 MenuScaffold(a.title, onBack: { selected = nil }) { articleBody(a) }
             } else {
-                MenuScaffold("Strategy") { list }
+                MenuScaffold("Strategy", host: Mascots.help) { list }
             }
         }
         .task { await service.load() }

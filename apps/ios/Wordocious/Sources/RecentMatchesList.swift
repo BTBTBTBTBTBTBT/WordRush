@@ -17,6 +17,8 @@ struct RecentMatchesList: View {
     var onSeeAll: (() -> Void)? = nil
     /// Empty-state line (Today: "No games yet today…").
     var emptyText: String = "No games played yet."
+    /// A cast member above the empty line (MASCOT_SPEC §2/§6); nil = the plain line.
+    var emptyHost: MascotID? = nil
     @State private var showAll = false
 
     /// Whether a `matches.created_at` stamp (UTC ISO-8601 from Supabase) falls on the
@@ -42,8 +44,11 @@ struct RecentMatchesList: View {
                 ForEach(0..<min(5, limit), id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) }
             }
         } else if matches.isEmpty {
-            Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                .frame(maxWidth: .infinity).padding(.vertical, 16)
+            Group {
+                if let emptyHost { MascotMessage(host: emptyHost, line: emptyText) }
+                else { Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted) }
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 16)
         } else {
             let shown = (showAll && onSeeAll == nil) ? matches : Array(matches.prefix(limit))
             LazyVStack(spacing: 8) {
@@ -90,6 +95,8 @@ struct TodayGamesList: View {
     let opponentNames: [String: String]
     var loading = false
     var emptyText = "No games played yet."
+    /// A cast member above the empty line (MASCOT_SPEC §2/§6); nil = the plain line.
+    var emptyHost: MascotID? = nil
     @State private var open: Set<String> = []
 
     /// Newest-first matches → rows. Groupable = solo with daily == false; everything else is its own row.
@@ -119,8 +126,11 @@ struct TodayGamesList: View {
         if loading {
             VStack(spacing: 8) { ForEach(0..<5, id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) } }
         } else if entries.isEmpty {
-            Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                .frame(maxWidth: .infinity).padding(.vertical, 16)
+            Group {
+                if let emptyHost { MascotMessage(host: emptyHost, line: emptyText) }
+                else { Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted) }
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 16)
         } else {
             LazyVStack(spacing: 8) {
                 ForEach(entries) { e in

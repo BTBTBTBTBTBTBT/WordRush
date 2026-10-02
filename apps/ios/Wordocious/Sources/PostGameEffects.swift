@@ -106,7 +106,15 @@ struct VictoryOverlay: View {
     /// tap-anywhere — "Keep playing" / "I'm done". When non-empty the card no
     /// longer dismisses on a background tap; every other game passes nothing.
     var actions: [VictoryAction] = []
+    /// The game on screen (MASCOT_SPEC §3/§5): on a win its host pops in above
+    /// VICTORY (a cast member seeded by the day + game when it has none); a loss
+    /// shows R, static.
+    var game: GameMode? = nil
     var onDismiss: () -> Void
+
+    private var winHost: MascotID {
+        game.flatMap { Mascots.host($0) } ?? Mascots.dailyPick(salt: game?.rawValue ?? "victory")
+    }
 
     private var isMulti: Bool { totalBoards > 1 }
     /// "35:17", not "35m 17s" — the long form wrapped inside the stat cell on a
@@ -123,6 +131,11 @@ struct VictoryOverlay: View {
                 LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
                                startPoint: .leading, endPoint: .trailing).frame(height: 6)
                 VStack(spacing: 12) {
+                    if won {
+                        MascotView(winHost, size: 88, motion: .pop)
+                    } else {
+                        MascotView(Mascots.loss, size: 80)
+                    }
                     Text(won ? "VICTORY!" : "GAME OVER")
                         .font(Brand.font(36, .black))
                         .foregroundStyle(won

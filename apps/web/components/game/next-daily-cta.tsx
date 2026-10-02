@@ -7,6 +7,8 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -40,7 +42,8 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
             color: '#92400e',
           }}
         >
-          <Trophy className="w-3.5 h-3.5" />
+          {/* U (zen, floating): all done for today. */}
+          <Mascot id={PAGE_HOSTS.allDone} size={28} />
           All {SWEEP_MODES.length} dailies done — Sweep complete! 🏆
         </div>
       )}

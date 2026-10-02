@@ -13,6 +13,7 @@ const GameOverAnimation = dynamic(() => import('../effects/game-over-animation')
 import { Trophy, Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
@@ -186,7 +187,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('QUORDLE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, 4, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showVictory && <VictoryAnimation mode="QUORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('QUORDLE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, 4, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('QUORDLE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === 'WON').length, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -195,9 +196,11 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
         <GameHomeButton accentColor="#ec4899" />
         <GameGuideButton slug="quadword" accentColor="#ec4899" />
         <SoundToggle accentColor="#ec4899" />
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-          QUADWORD
-        </h1>
+        <GameHostTitle mode="QUORDLE">
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
+            QUADWORD
+          </h1>
+        </GameHostTitle>
         <div className="flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{completedBoards}/4</span>
           <span className="text-gray-400 text-xs font-bold">{totalGuesses}/{state.boards[0]?.maxGuesses} guesses</span>

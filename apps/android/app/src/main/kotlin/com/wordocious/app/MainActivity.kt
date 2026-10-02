@@ -10,7 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -186,7 +185,8 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = WTheme.primary)
+                            // The cast's wave replaces the spinner, with D's rotating tips (MASCOT_SPEC §3, §6).
+                            com.wordocious.app.ui.CastLoader(null, tips = true)
                         }
                         else -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
                     }

@@ -351,7 +351,7 @@ fun HomeScreen(
             // lock/badge rules). The More Games band and sheet are gone.
             HomeSectionHeader("WORDOCIOUS DAILIES")
             ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
-            HomeSectionHeader("PUZZLES")
+            HomeSectionHeader("PUZZLES", host = Mascots.puzzles)
             ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = openCard)
 
             WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
@@ -673,7 +673,8 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
         // NOT — it reflows at the user's full text size, on proportional lines.
         CappedFontScale {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                // The Word of the Day host (I, the sprout: MASCOT_SPEC §1–§2), static.
+                Mascot(Mascots.wordOfTheDay, 28.dp)
                 Spacer(Modifier.width(6.dp))
                 Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
                 Spacer(Modifier.weight(1f))
@@ -926,17 +927,26 @@ internal fun formatCountdown(secs: Long): String {
     return "%02d:%02d:%02d".format(h, m, s)
 }
 
-/** Home section header ("WORDOCIOUS DAILIES", "PUZZLES"): the old GAME MODES label style. */
+/**
+ * Home section header ("WORDOCIOUS DAILIES", "PUZZLES"): the old GAME MODES label
+ * style. A [host] (Puzzles: C, MASCOT_SPEC §1–§2) stands just left of it, 28 dp, static.
+ */
 @Composable
-private fun HomeSectionHeader(title: String) {
-    Text(
-        title,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.ExtraBold,
-        color = WTheme.textMuted,
-        letterSpacing = 1.sp,
-        modifier = Modifier.padding(top = 2.dp),
-    )
+private fun HomeSectionHeader(title: String, host: MascotId? = null) {
+    Row(
+        Modifier.padding(top = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (host != null) Mascot(host, 28.dp)
+        Text(
+            title,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = WTheme.textMuted,
+            letterSpacing = 1.sp,
+        )
+    }
 }
 
 /**

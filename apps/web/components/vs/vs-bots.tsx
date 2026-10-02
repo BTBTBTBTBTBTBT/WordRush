@@ -21,6 +21,7 @@ import type { CpuKind } from '@/lib/adapters/bot-match-service';
 import { VS, loadVsMode, modeTitle, todayTileLine, utcDay } from '@/lib/vs-lobby';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { BotAvatar, ModeChip, SectionLabel, SoftPill, TealButton, VsNav, vsCardStyle } from './vs-ui';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 const KIND_BY_BOT: Record<string, CpuKind> = { rook: 'easy', lexi: 'medium', nova: 'hard', adapt: 'adaptive' };
 
@@ -47,7 +48,7 @@ export function VsBots() {
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: VS.page }}>
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
-        <VsNav title="BOTS" onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
+        <VsNav title="BOTS" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
 
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin" style={{ color: VS.ink }} /></div>

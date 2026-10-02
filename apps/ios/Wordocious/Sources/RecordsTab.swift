@@ -135,7 +135,7 @@ struct AllTimeRecordsView: View {
                             }
                         }
                     } else {
-                        // Web parity (records page): trophy + "No records yet" instead of a dash grid.
+                        // Web parity (records page): a host + "No records yet" instead of a dash grid.
                         emptyCard("No records yet")
                     }
                 }
@@ -153,11 +153,9 @@ struct AllTimeRecordsView: View {
     }
 
     private func emptyCard(_ text: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 28)
+        // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1).
+        MascotMessage(host: Mascots.empty, line: text)
+        .frame(maxWidth: .infinity).padding(.vertical, 20)
         .lbCard()
     }
 
@@ -597,12 +595,9 @@ struct DailyRecordsView: View {
     }
 
     private func emptyCard(_ text: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 30).padding(.horizontal, 16)
+        // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1).
+        MascotMessage(host: Mascots.empty, line: text)
+        .frame(maxWidth: .infinity).padding(.vertical, 20).padding(.horizontal, 16)
         .lbCard()
     }
 

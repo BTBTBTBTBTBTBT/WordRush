@@ -6,6 +6,8 @@ import type { FriendProfile } from '@/lib/friends-service';
 import type { RaceRow } from '@/lib/todays-race';
 import { FR, doingLine } from '@/lib/friends-play';
 import { FlameCount, FriendAvatar } from './friends-ui';
+import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // The Friends banner (Friends overhaul §2.2): the home banner's one-window shape
 // in the Friends pink. A frosted strip with the core headline and the clock
@@ -34,6 +36,8 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
   const anyPoints = chips.some((c) => c.points > 0);
 
   return (
+    // The Friends host (O1, the cheerleader) stands at the strip's right end.
+    <BannerHost id={PAGE_HOSTS.friends}>
     <div
       className="relative shrink-0 overflow-hidden"
       style={{
@@ -51,7 +55,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
         </div>
       )}
 
-      <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+      <div className="relative flex flex-col gap-1" style={{ padding: `12px ${BANNER_HOST_CLEARANCE}px 10px 12px`, background: 'rgba(255,255,255,0.5)' }}>
         <span className="font-black" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: FR.ink, textShadow: '0 0 12px rgba(219,39,119,0.55)' }}>{headline}</span>
         <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: FR.mid }}>{clockLine}</span>
       </div>
@@ -130,5 +134,6 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
         </>
       )}
     </div>
+    </BannerHost>
   );
 }

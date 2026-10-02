@@ -58,6 +58,8 @@ struct VSBannerView: View {
         .clipShape(shape)
         .shadow(color: sweep ? Color(hex: 0xF59E0B).opacity(0.8) : Color(hex: 0x134E4A).opacity(0.08),
                 radius: sweep ? 13 : 7, x: 0, y: sweep ? 0 : 4)
+        // The cast (docs/MASCOT_SPEC.md §1): S, the speedster, hosts VS — left of the share button.
+        .bannerHost(Mascots.vs, trailing: anyPlayed ? 50 : 10)
     }
 
     // MARK: Frosted strip
@@ -79,6 +81,7 @@ struct VSBannerView: View {
                             .lineLimit(2)
                     }
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                    .padding(.trailing, Mascots.bannerClearance)
                     // Nothing played yet: nothing to share, so no button (home parity).
                     if anyPlayed {
                         ShareLink(item: URL(string: "https://wordocious.com")!, message: Text(shareText)) {

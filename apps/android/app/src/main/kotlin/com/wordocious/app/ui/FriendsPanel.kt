@@ -198,6 +198,8 @@ fun FriendsScreen(
                 "FRIENDS", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
                 style = TextStyle(brush = Brush.horizontalGradient(FriendsPink.titleGradient), fontFamily = Nunito),
             )
+            // The page host, O1 the cheerleader (MASCOT_SPEC §6).
+            TitleHost(Mascots.friends)
             Spacer(Modifier.weight(1f))
             NotificationPrefsButton(myProfile)
             if (signedIn) {
@@ -687,6 +689,8 @@ private fun YourFriendsSection(
         }
         if (friends.isEmpty()) {
             Column(Modifier.fillMaxWidth().friendsCard().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                // No friends yet: I, growing your circle, says the line (MASCOT_SPEC §6).
+                MascotEmptyState(Mascots.addFriends, Mascots.addFriendLine, size = 72.dp, color = FriendsPink.sub)
                 Text(
                     "1. Add friends below by username, or from the Add Friend button on any player's profile.",
                     fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub, fontFamily = Nunito,

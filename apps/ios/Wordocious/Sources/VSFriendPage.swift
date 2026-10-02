@@ -102,9 +102,10 @@ struct VSFriendPage: View {
                 if loading {
                     ProgressView().tint(VsLobbyKit.ink).padding(20)
                 } else if friends.isEmpty {
-                    Text("No friends yet — add some from the Friends tab, or send a link.")
-                        .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
-                        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                    // I grows the circle (MASCOT_SPEC §6).
+                    MascotMessage(host: Mascots.addFriends, line: "No friends yet — add some from the Friends tab, or send a link.",
+                                  size: 72, color: VsLobbyKit.sub)
+                        .padding(16).frame(maxWidth: .infinity)
                 }
                 ForEach(friends) { f in
                     friendRow(f)

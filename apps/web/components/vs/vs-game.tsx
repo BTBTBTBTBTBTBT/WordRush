@@ -45,6 +45,8 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine, INTRO_DURATION_MS } from './match-intro';
 import { FinalBoards, VsResultWindow, logSolved, type EvaluatedRow } from './vs-result-detail';
+import { ResultHost } from '@/components/ui/mascot';
+import { vsResultHost } from '@/lib/mascots';
 import { OpponentLiveBoards } from './opponent-mini-board';
 import {
   hasPlayedModeToday,
@@ -1788,6 +1790,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             </span>
           </div>
 
+          {/* The result host: S pops on a win, R on a loss, U on a draw. */}
+          {matchResult && <ResultHost id={vsResultHost(outcome)} pop={outcome === 'win'} />}
           {/* The one-window result (home palette). */}
           {matchResult && (
             <VsResultWindow

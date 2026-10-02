@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { Users, ChevronDown, ChevronUp, Trophy, Play, Share, Bell } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp, Play, Share, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -14,6 +14,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
+import { Mascot } from '@/components/ui/mascot';
+import { MASCOT_LINES, PAGE_HOSTS, gameHost } from '@/lib/mascots';
 import { GameTileBar, GameTileChip, GameTileGlyph, gameTileSurface } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import { BoardAvatar, BoardRow, RankIcon, SECTION_LABEL, SOFT_CARD, SegmentedPill, YOUR_ROW, YourRankCard } from '@/components/leaderboard/board-rows';
@@ -743,6 +745,10 @@ export default function DailyPage() {
                 </div>
               )}
             </div>
+            {/* The selected game's host stands on the card's right side. */}
+            {!isSweep && gameHost(selectedMode) && (
+              <Mascot id={gameHost(selectedMode)!} size={44} motion="bob" />
+            )}
             {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
                 no Play button (just complete every sweep daily to appear here). */}
             {!isSweep && (
@@ -818,7 +824,7 @@ export default function DailyPage() {
           ) : isSweep ? (
             sweepLeaderboard.length === 0 ? (
               <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-                <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <div className="flex justify-center mb-2"><Mascot id={PAGE_HOSTS.empty} size={96} motion="bob" /></div>
                 <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
               </div>
             ) : (
@@ -833,10 +839,10 @@ export default function DailyPage() {
               <div>{ghostFriends.map(renderGhostRow)}</div>
             ) : (
               <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-                <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <div className="flex justify-center mb-2"><Mascot id={friendsOnly ? PAGE_HOSTS.addFriend : PAGE_HOSTS.empty} size={96} motion="bob" /></div>
                 <p className="text-xs font-bold">
                   {friendsOnly
-                    ? 'No friends yet — add them from any profile'
+                    ? MASCOT_LINES.addFriend
                     : 'No daily results yet. Be the first!'}
                 </p>
                 {friendsOnly && (

@@ -5,6 +5,8 @@ import { PUBLIC_MODE_GUIDES as MODE_GUIDES, getPublicGuide as getGuide } from '@
 import { STRATEGY_ARTICLES } from '@/lib/strategy-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
 import { InfoPageHeader } from '@/components/ui/info-page-header';
+import { Mascot } from '@/components/ui/mascot';
+import { guideHost } from '@/lib/mascots';
 
 export function generateStaticParams() {
   return MODE_GUIDES.map((g) => ({ slug: g.slug }));
@@ -30,6 +32,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
     .filter((g): g is NonNullable<typeof g> => !!g);
   // The long-form playbook for this mode on /strategy, when one exists.
   const playbook = STRATEGY_ARTICLES.find((a) => a.guide === guide.slug);
+  const host = guideHost(guide.slug);
 
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -39,7 +42,9 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
           <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>
             <GuideIcon slug={guide.slug} accent={guide.accent} className="w-5 h-5" />
           </span>
-          <h1 className="text-3xl font-black uppercase" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
+          <h1 className="text-3xl font-black uppercase min-w-0" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
+          {/* The game's host waves beside its guide title. */}
+          {host && <Mascot id={host} size={56} motion="wave" priority className="ml-auto" />}
         </div>
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
 

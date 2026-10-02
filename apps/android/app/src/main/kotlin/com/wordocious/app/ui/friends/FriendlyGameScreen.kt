@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -205,10 +205,12 @@ fun FriendlyGameScreen(
             Box(Modifier.fillMaxSize(), Alignment.Center) {
                 if (notFound) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Error screens get R (MASCOT_SPEC §6).
+                        com.wordocious.app.ui.Mascot(com.wordocious.app.ui.Mascots.offline, 96.dp, motion = com.wordocious.app.ui.MascotMotion.BOB)
                         Text("This game isn't available.", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
                         PinkPill("FRIENDS", solid = false, onClick = onFriends)
                     }
-                } else CircularProgressIndicator(color = FriendsPink.solid)
+                } else com.wordocious.app.ui.CastLoader(null)
             }
             return@Column
         }
@@ -317,35 +319,44 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
     val rightBg = if (lost) THEM_WON else THEM_TINT
     val score = scoreOf(g.state)
     val me = AuthService.profile.value
-    Column(
-        Modifier.fillMaxWidth()
-            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
-            .clip(RoundedCornerShape(16.dp))
-            .drawBehind {
-                drawRect(leftBg, size = Size(size.width / 2f, size.height))
-                drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
-                drawRect(Brush.linearGradient(
-                    0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                    start = Offset.Zero, end = Offset(size.width, size.height),
-                ))
-            }
-            .then(if (won && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
-    ) {
+    // The result's host (MASCOT_SPEC §3): O3, the prankster, pops on a win; R on a loss.
+    val host = if (won) com.wordocious.app.ui.Mascots.pocketWin else if (lost) com.wordocious.app.ui.Mascots.loss else null
+    Box(Modifier.fillMaxWidth().padding(top = if (host != null) com.wordocious.app.ui.BANNER_HOST_PEEK else 0.dp)) {
         Column(
-            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            Modifier.fillMaxWidth()
+                .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
+                .clip(RoundedCornerShape(16.dp))
+                .drawBehind {
+                    drawRect(leftBg, size = Size(size.width / 2f, size.height))
+                    drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
+                    drawRect(Brush.linearGradient(
+                        0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
+                        start = Offset.Zero, end = Offset(size.width, size.height),
+                    ))
+                }
+                .then(if (won && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FriendlyGameIcon(g.kind, 24.dp)
-                Text(headlineFor(g), fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = DEEP, maxLines = 2)
+            Column(
+                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Row(Modifier.padding(end = if (host != null) com.wordocious.app.ui.BANNER_HOST_CLEAR else 0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FriendlyGameIcon(g.kind, 24.dp)
+                    Text(headlineFor(g), fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = DEEP, maxLines = 2)
+                }
+                Text(subLineFor(g, theyOn), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = FriendsPink.mid)
             }
-            Text(subLineFor(g, theyOn), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = FriendsPink.mid)
+            val turn = if (g.active) whoseTurn(g.state) else null
+            Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                ScoreSide("YOU", me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, false, score?.get(g.me), turn?.includes(g.me) == true, Modifier.weight(1f))
+                ScoreSide("@${g.opponent.username.uppercase()}", g.opponent.username, g.opponent.avatarUrl, g.opponent.avatarEmoji, theyOn, score?.get(g.me.other), turn?.includes(g.me.other) == true, Modifier.weight(1f))
+            }
         }
-        val turn = if (g.active) whoseTurn(g.state) else null
-        Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
-            ScoreSide("YOU", me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, false, score?.get(g.me), turn?.includes(g.me) == true, Modifier.weight(1f))
-            ScoreSide("@${g.opponent.username.uppercase()}", g.opponent.username, g.opponent.avatarUrl, g.opponent.avatarEmoji, theyOn, score?.get(g.me.other), turn?.includes(g.me.other) == true, Modifier.weight(1f))
-        }
+        if (host != null) com.wordocious.app.ui.Mascot(
+            host, 56.dp,
+            Modifier.align(Alignment.TopEnd).offset(x = (-2).dp, y = -com.wordocious.app.ui.BANNER_HOST_PEEK),
+            motion = if (won) com.wordocious.app.ui.MascotMotion.POP else com.wordocious.app.ui.MascotMotion.NONE,
+        )
     }
 }
 

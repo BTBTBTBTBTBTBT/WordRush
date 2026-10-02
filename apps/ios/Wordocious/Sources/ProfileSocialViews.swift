@@ -538,8 +538,10 @@ struct GuardedBoardSheet: View {
             }.padding(24)
         case .failed:
             VStack(spacing: 10) {
-                Image(systemName: "wifi.slash").font(.system(size: 26)).foregroundStyle(Theme.textMuted)
+                // R for the offline / error screen (MASCOT_SPEC §6).
+                MascotView(Mascots.offline, size: 96, motion: .bob)
                 Text("Couldn't load this board").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                Text(Mascots.offlineLine).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
             }.padding(24)
         case let .loaded(board, boards):
             ScrollView {

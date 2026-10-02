@@ -27,6 +27,8 @@ import { VsBanner } from './vs-banner';
 import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
 import { InitialAvatar, SectionLabel, SoftPill, VsModeIcon, VsNav, vsCardStyle } from './vs-ui';
 import { GameSquare } from '@/components/ui/game-tile';
+import { PAGE_HOSTS } from '@/lib/mascots';
+import { CastLoader } from '@/components/ui/cast-loader';
 
 const MODES = VS_MODE_ORDER as readonly string[];
 
@@ -94,6 +96,8 @@ export function VsLobby() {
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav
           title="VS BATTLE"
+          // S stands in the banner below; the title carries him only while there's no banner.
+          host={authLoading || signedOut ? PAGE_HOSTS.vs : undefined}
           onBack={() => router.push('/')}
           right={count && !signedOut ? (
             <span className="flex items-center gap-1.5 text-[11px] font-extrabold" style={{ color: count.live ? VS.ink : VS.label }}>
@@ -106,7 +110,7 @@ export function VsLobby() {
         {authLoading ? (
           // Entitlement unknown: show neither the Pro nor the free lobby until we know.
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin" style={{ color: VS.ink }} />
+            <CastLoader />
           </div>
         ) : signedOut ? (
           <div className="p-4" style={vsCardStyle}>

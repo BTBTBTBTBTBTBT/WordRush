@@ -5,6 +5,8 @@ import { Confetti } from './confetti';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { haptic } from '@/lib/haptics';
 import { playSuccess } from '@/lib/sounds';
+import { victoryHost } from '@/lib/mascots';
+import { Mascot } from '@/components/ui/mascot';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
@@ -29,9 +31,11 @@ interface VictoryAnimationProps {
    *  dismisses and the "Tap anywhere" caption is hidden; every other game
    *  keeps the default behavior. */
   actions?: { label: string; onClick: () => void; primary?: boolean }[];
+  /** The game's mode db key: its host pops in above VICTORY (docs/MASCOT_SPEC.md §5). */
+  mode?: string;
 }
 
-export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain, actions }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain, actions, mode }: VictoryAnimationProps) {
   useEffect(() => { haptic('heavy'); playSuccess(); }, []);
   const { definition } = useWordDefinition(solution || null);
   const hasActions = !!actions && actions.length > 0;
@@ -51,6 +55,12 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
       <Confetti />
 
       <div className="relative max-w-sm w-full animate-fade-in-scale">
+        {/* The game's host pops in above VICTORY, standing on the card's top edge
+            so the card keeps its height (a mode without a host gets the day's
+            cast member). */}
+        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: -66, zIndex: 2 }}>
+          <Mascot id={victoryHost(mode, new Date().toDateString())} size={88} motion="pop" priority />
+        </div>
         <div
           className="relative overflow-hidden text-center"
           style={{
@@ -66,7 +76,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
             style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }}
           />
 
-          <div className="px-5 pt-5 pb-4">
+          <div className="px-5 pt-6 pb-4">
             {/* VICTORY header */}
             <h2
               className="text-4xl font-black text-transparent bg-clip-text"

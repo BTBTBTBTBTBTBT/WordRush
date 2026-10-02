@@ -383,7 +383,7 @@ export function FriendsPanel() {
 
       {/* 2. Friends banner */}
       {pending ? (
-        <div className="animate-pulse" style={{ height: 196, borderRadius: 16, background: 'linear-gradient(180deg, #fce7f3, #ede9fe)' }} aria-hidden />
+        <div className="animate-pulse" style={{ height: 196, marginTop: 16, borderRadius: 16, background: 'linear-gradient(180deg, #fce7f3, #ede9fe)' }} aria-hidden />
       ) : (
         <FriendsBanner
           input={bannerInput}

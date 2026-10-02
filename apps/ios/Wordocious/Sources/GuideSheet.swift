@@ -85,11 +85,8 @@ struct GuideSheet: View {
                 if let g = service.guide(for: mode) {
                     content(g)
                 } else {
-                    VStack(spacing: 12) {
-                        ProgressView().controlSize(.large).tint(Theme.primary)
-                        Text("Loading guide…").font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    CastLoader(label: "LOADING GUIDE", showTips: false)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .background(Theme.background.ignoresSafeArea())
@@ -102,11 +99,19 @@ struct GuideSheet: View {
     private func content(_ g: ModeGuide) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                // Title + tagline
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(g.title.uppercased()).font(Brand.font(26, .black))
-                        .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
-                    Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                // Title + tagline, the game's host waving hello at the top (MASCOT_SPEC §5).
+                HStack(alignment: .center, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(g.title.uppercased()).font(Brand.font(26, .black))
+                            .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                        Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if let host = Mascots.host(mode) {
+                        MascotView(host, size: 72, motion: .wave)
+                    }
                 }
 
                 // Quick facts (2-col grid of label/value chips)

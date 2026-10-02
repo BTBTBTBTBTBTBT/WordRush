@@ -435,8 +435,12 @@ struct FriendsPanelView: View {
                             ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
                         }
                     } else if incoming.isEmpty && outgoing.isEmpty {
-                        // Teaching empty state: explain the whole loop (Tier 1, Aug 11).
+                        // Teaching empty state: explain the whole loop (Tier 1, Aug 11),
+                        // under I and its one line (MASCOT_SPEC §6).
                         VStack(alignment: .leading, spacing: 5) {
+                            MascotMessage(host: Mascots.addFriends, line: Mascots.addFriendLine, size: 72,
+                                          font: Brand.font(13, .black), color: FriendsKit.ink)
+                                .frame(maxWidth: .infinity).padding(.bottom, 6)
                             Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
                             Text("2. Requests you send and receive land in INVITES.")
                             Text("3. Once a friend accepts, race them today, play pocket games and trade streaks.")
@@ -1096,8 +1100,12 @@ struct FriendsScreenView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("FRIENDS").font(Brand.font(20, .black)).tracking(0.4)
-                        .foregroundStyle(LinearGradient(colors: FriendsKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+                    HStack(spacing: 6) {
+                        Text("FRIENDS").font(Brand.font(20, .black)).tracking(0.4)
+                            .foregroundStyle(LinearGradient(colors: FriendsKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+                        // O1, the cheerleader, hosts Friends (MASCOT_SPEC §6).
+                        MascotView(Mascots.friends, size: 32, motion: .bob)
+                    }
                 }
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     NotificationPrefsButton()

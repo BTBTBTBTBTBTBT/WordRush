@@ -17,6 +17,7 @@ import { GameLoading } from '@/components/game/game-loading';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { CrosswordBoard, ClueColumns, CROSSWORD_ACCENT } from './crossword-board';
@@ -335,7 +336,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
 
   return (
     <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
+      {showVictory && <VictoryAnimation mode="CROSSWORD" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -343,7 +344,9 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
         <GameHomeButton accentColor={CROSSWORD_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="crosswordocious" accentColor={CROSSWORD_ACCENT} />
         <SoundToggle accentColor={CROSSWORD_ACCENT} />
-        <h1 className="font-black whitespace-nowrap px-12" style={{ color: CROSSWORD_ACCENT, fontSize: 'clamp(17px, 5.6vw, 24px)' }}>CROSSWORDOCIOUS</h1>
+        <GameHostTitle mode="CROSSWORD" className="px-12">
+          <h1 className="font-black whitespace-nowrap" style={{ color: CROSSWORD_ACCENT, fontSize: 'clamp(15px, 5vw, 24px)' }}>CROSSWORDOCIOUS</h1>
+        </GameHostTitle>
         <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{state.title}</div>
         <div className="flex justify-center items-center gap-2 mt-0.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{crosswordDailyNumber(getTodayLocal())}</span>}

@@ -262,7 +262,7 @@ struct HomeView: View {
                             }
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
-                                sectionHeader("PUZZLES").id(Self.puzzlesAnchor)
+                                sectionHeader("PUZZLES", host: Mascots.puzzles).id(Self.puzzlesAnchor)
                                 LazyVGrid(columns: columns, spacing: 8) {
                                     ForEach(puzzleModes) { mode in card(mode) }
                                 }
@@ -611,8 +611,10 @@ struct HomeView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        HStack {
+    /// `host`: a 28 pt cast member just left of the label, static (MASCOT_SPEC §2).
+    private func sectionHeader(_ title: String, host: MascotID? = nil) -> some View {
+        HStack(spacing: 6) {
+            if let host { MascotView(host, size: 28) }
             Text(title).font(Brand.font(13, .heavy)).tracking(1).foregroundStyle(Theme.textMuted)
             Spacer()
         }

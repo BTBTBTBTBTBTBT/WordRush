@@ -17,6 +17,7 @@ import { GameLoading } from '@/components/game/game-loading';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT, COLUMN_CLASS } from './muddle-board';
@@ -258,7 +259,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
 
   return (
     <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
+      {showVictory && <VictoryAnimation mode="SCRAMBLE" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -266,7 +267,9 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
         <GameHomeButton accentColor={MUDDLE_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="muddle" accentColor={MUDDLE_ACCENT} />
         <SoundToggle accentColor={MUDDLE_ACCENT} />
-        <h1 className="text-xl font-black leading-7" style={{ color: MUDDLE_ACCENT }}>MUDDLE</h1>
+        <GameHostTitle mode="SCRAMBLE">
+          <h1 className="text-xl font-black leading-7" style={{ color: MUDDLE_ACCENT }}>MUDDLE</h1>
+        </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-0.5 text-[11px] leading-none font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{scrambleDailyNumber(getTodayLocal())}</span>}
           {holiday && <span style={{ color: MUDDLE_ACCENT }}>{holiday}</span>}

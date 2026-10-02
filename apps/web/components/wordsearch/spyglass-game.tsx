@@ -15,6 +15,7 @@ import { bankSession } from '@/lib/bank-loader';
 import { GameLoading } from '@/components/game/game-loading';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { SpyglassGrid, SpyglassWordList, WORDSEARCH_ACCENT } from './spyglass-grid';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
@@ -229,7 +230,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
   return (
     <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.misses} guessLabel="Misses" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
+      {showVictory && <VictoryAnimation mode="WORDSEARCH" onComplete={() => setShowVictory(false)} guesses={state.misses} guessLabel="Misses" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.misses} guessLabel="Misses" boardsSolved={state.found.length} totalBoards={state.words.length} timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -237,7 +238,9 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         <GameHomeButton accentColor={WORDSEARCH_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="spyglass" accentColor={WORDSEARCH_ACCENT} />
         <SoundToggle accentColor={WORDSEARCH_ACCENT} />
-        <h1 className="text-2xl font-black" style={{ color: WORDSEARCH_ACCENT }}>SPYGLASS</h1>
+        <GameHostTitle mode="WORDSEARCH">
+          <h1 className="text-2xl font-black" style={{ color: WORDSEARCH_ACCENT }}>SPYGLASS</h1>
+        </GameHostTitle>
         <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{state.title}</div>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{wordsearchDailyNumber(getTodayLocal())}</span>}

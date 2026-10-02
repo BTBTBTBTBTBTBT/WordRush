@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, Flame, Sparkles } from 'lucide-react';
+import { Flame, Sparkles } from 'lucide-react';
 import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE, SOLUTION_SWAPS, SOLUTION_SWAPS_2 } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -134,7 +136,8 @@ export function WordOfTheDay() {
     >
       <div className="flex items-center justify-between mb-0.5">
         <div className="flex items-center gap-1.5">
-          <BookOpen className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
+          {/* Hosted by I (the sprout): growing your words. */}
+          <Mascot id={PAGE_HOSTS.wordOfTheDay} size={28} />
           <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
             Word of the Day
           </span>

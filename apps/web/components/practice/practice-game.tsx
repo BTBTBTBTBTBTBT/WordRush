@@ -10,6 +10,7 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
@@ -386,7 +387,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       className={`h-screen-stable flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
+      {showVictory && <VictoryAnimation mode={mode} onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, false, guessesUsed, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -404,9 +405,11 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
               <GameHomeButton accentColor={cfg.accent} />
               <GameGuideButton slug={mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'classic'} accentColor={cfg.accent} />
               <SoundToggle accentColor={cfg.accent} />
-              <h1 className="text-3xl font-black" style={{ backgroundImage: cfg.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}>
-                {cfg.title}
-              </h1>
+              <GameHostTitle mode={mode}>
+                <h1 className={`text-3xl font-black ${cfg.title.length > 11 ? 'max-[430px]:text-[26px]' : ''}`} style={{ backgroundImage: cfg.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}>
+                  {cfg.title}
+                </h1>
+              </GameHostTitle>
             </>
           );
         })()}

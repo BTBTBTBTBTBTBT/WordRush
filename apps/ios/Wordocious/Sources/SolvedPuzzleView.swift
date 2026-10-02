@@ -38,7 +38,7 @@ struct SolvedPuzzleView: View {
             LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             if !loaded {
-                ProgressView().controlSize(.large).tint(Theme.primary)
+                CastLoader(label: "LOADING \(ModeStyle.title(mode).uppercased())")
             } else if mode == .gauntlet, let g = gauntlet {
                 GauntletResultsView(progress: g, won: localWon, mode: mode, isDaily: true,
                                     elapsedMsFallback: elapsedMs, onHome: { dismiss() }, onShare: { share() })
@@ -70,7 +70,8 @@ struct SolvedPuzzleView: View {
                 }
             } else {
                 VStack(spacing: 12) {
-                    Image(systemName: "questionmark.folder").font(.system(size: 36)).foregroundStyle(Theme.textMuted)
+                    // R for the error screen (MASCOT_SPEC §6).
+                    MascotView(Mascots.offline, size: 96, motion: .bob)
                     Text("Couldn't load your solved puzzle").font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                     Button("Home") { dismiss() }.font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
                 }

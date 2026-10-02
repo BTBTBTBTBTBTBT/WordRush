@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -102,9 +101,14 @@ fun VsFriendPage(
             } else {
                 VsSectionLabel("FRIENDS")
                 if (!loaded) {
-                    Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { CircularProgressIndicator(color = VsTeal.ink) }
+                    Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { com.wordocious.app.ui.CastLoader(null) }
                 } else if (friends.isEmpty()) {
-                    Text("No friends yet — add some on the Friends tab, or send a link.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
+                    // I, growing your circle (MASCOT_SPEC §6).
+                    com.wordocious.app.ui.MascotEmptyState(
+                        com.wordocious.app.ui.Mascots.addFriends,
+                        "No friends yet — add some on the Friends tab, or send a link.",
+                        size = 72.dp, color = VsTeal.sub,
+                    )
                 }
                 friends.forEach { f ->
                     val id = f.id.lowercase()

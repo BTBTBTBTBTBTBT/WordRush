@@ -81,7 +81,12 @@ struct HomeBannerView: View {
         .clipShape(shape)
         .shadow(color: double ? Color(hex: 0xF59E0B).opacity(0.8) : Color(hex: 0x4C1D95).opacity(0.08),
                 radius: double ? 13 : 7, x: 0, y: double ? 0 : 4)
+        // The cast (docs/MASCOT_SPEC.md §1–§2): W hosts home, left of the share button.
+        .bannerHost(Mascots.home, trailing: showsShare ? 50 : 10)
     }
+
+    /// Unlimited: no share. Nothing played yet: nothing to share, so no button.
+    private var showsShare: Bool { !unlimited && anyPlayed }
 
     // MARK: Background
 
@@ -127,8 +132,9 @@ struct HomeBannerView: View {
                             .lineLimit(2)
                     }
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-                    // Unlimited: no share. Nothing played yet: nothing to share, so no button.
-                    if !unlimited && anyPlayed {
+                    // The headline keeps clear of the host standing at the strip's right end.
+                    .padding(.trailing, Mascots.bannerClearance)
+                    if showsShare {
                         Button(action: onShare) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 19, weight: .semibold)).foregroundStyle(subInk)

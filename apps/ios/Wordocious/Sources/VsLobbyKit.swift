@@ -304,12 +304,17 @@ struct VSLockBadge: View {
 /// The VS page nav bar: teal back chevron, a gradient caps title, a trailing slot.
 struct VSNavBar<Trailing: View>: View {
     let title: String
+    /// The page's host beside the title (MASCOT_SPEC §6); nil = none.
+    var host: MascotID? = nil
     let onBack: () -> Void
     @ViewBuilder var trailing: () -> Trailing
     var body: some View {
         ZStack {
-            Text(title).font(Brand.font(20, .black)).tracking(0.4)
-                .foregroundStyle(LinearGradient(colors: VsLobbyKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+            HStack(spacing: 6) {
+                Text(title).font(Brand.font(20, .black)).tracking(0.4)
+                    .foregroundStyle(LinearGradient(colors: VsLobbyKit.titleGradient, startPoint: .leading, endPoint: .trailing))
+                if let host { MascotView(host, size: 32, motion: .bob) }
+            }
             HStack {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left").font(.system(size: 17, weight: .bold))
@@ -471,9 +476,10 @@ struct VSLoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
             if let mode { VSModeGlyphTile(mode: mode, selected: false, size: 48) }
-            VSRingSpinner()
-            Text(title ?? "LOADING \(mode.map { VsLobbyKit.modeName($0).uppercased() } ?? "")")
-                .font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.label)
+            // The cast's staggered wave replaces the spinner; LOADING <MODE> stays and
+            // D voices a rotating tip (MASCOT_SPEC §3/§6).
+            CastLoader(label: title ?? "LOADING \(mode.map { VsLobbyKit.modeName($0).uppercased() } ?? "")",
+                       labelColor: VsLobbyKit.label, showTips: botArt == nil && line == nil, tipColor: VsLobbyKit.sub)
             if botArt != nil || line != nil {
                 HStack(spacing: 8) {
                     if let botArt { BotArtCircle(art: botArt, size: 30) }

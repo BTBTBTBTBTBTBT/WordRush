@@ -347,6 +347,7 @@ struct MuddleView: View {
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
                     solution: nil, solutions: [], showDefinition: false, statLabel: "CHECKS", points: vm.points,
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                    game: .scramble,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -496,6 +497,7 @@ struct MuddleView: View {
     private var header: some View {
         VStack(spacing: 1) {
             Text("MUDDLE").font(Brand.font(20, .black)).foregroundStyle(muddleAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.scramble, size: 24)
             HStack(spacing: 6) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(11)).foregroundStyle(muddleAccent) }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -120,6 +121,9 @@ fun HomeBannerView(
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
     CappedFontScale {
+        // The host (W, MASCOT_SPEC §1–§2) peeks 12 dp over the strip's top edge, so the
+        // card sits 12 dp down inside this box and the headline row keeps clear of it.
+        Box(Modifier.fillMaxWidth().padding(top = BANNER_HOST_PEEK)) {
         Column(
             Modifier.fillMaxWidth()
                 .bannerGlow(double)
@@ -143,7 +147,7 @@ fun HomeBannerView(
                     .padding(start = 12.dp, top = 12.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.padding(end = BANNER_HOST_CLEAR), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         Modifier.weight(1f).heightIn(min = 30.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -180,7 +184,25 @@ fun HomeBannerView(
             BannerGroupRow(puzzles, pTier, "PUZZLES", big = false, unlimited, completions, onOpen,
                 Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp))
         }
+        BannerHost(Mascots.home, Modifier.align(Alignment.TopEnd))
+        }
     }
+}
+
+/** How far a banner host peeks over the card's top edge (MASCOT_SPEC §2). */
+internal val BANNER_HOST_PEEK = 12.dp
+
+/** Right padding a banner headline keeps so the 56 dp host never covers it. */
+internal val BANNER_HOST_CLEAR = 50.dp
+
+/**
+ * A banner's host (MASCOT_SPEC §2): 56 dp at the right end of the headline strip,
+ * overlapping the card's top edge by [BANNER_HOST_PEEK], idle bob. Place it in a
+ * Box that has [BANNER_HOST_PEEK] top padding around the (clipped) card.
+ */
+@Composable
+internal fun BannerHost(id: MascotId, modifier: Modifier = Modifier) {
+    Mascot(id, 56.dp, modifier.offset(x = (-2).dp, y = -BANNER_HOST_PEEK), motion = MascotMotion.BOB)
 }
 
 @Composable

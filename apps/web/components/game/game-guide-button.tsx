@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { getGuide } from '@/lib/guide-content';
 import { setGuidePaused } from '@/hooks/use-active-play-timer';
+import { Mascot } from '@/components/ui/mascot';
+import { guideHost } from '@/lib/mascots';
 
 interface Props {
   /** Guide slug (matches lib/guide-content.ts): classic, six, quadword, … */
@@ -26,6 +28,7 @@ export function GameGuideButton({
 }: Props) {
   const [open, setOpen] = useState(false);
   const guide = getGuide(slug);
+  const host = guideHost(slug);
 
   // Pause the clock while the guide is open.
   useEffect(() => {
@@ -81,6 +84,13 @@ export function GameGuideButton({
             >
               <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }} />
             </div>
+
+            {/* The game's host waves hello at the top of its guide. */}
+            {host && (
+              <div className="flex justify-center px-5 pt-1 pb-1">
+                <Mascot id={host} size={72} motion="wave" priority />
+              </div>
+            )}
 
             <div className="flex items-start justify-between px-5 pb-2">
               <div>

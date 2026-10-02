@@ -24,6 +24,8 @@ struct LeaderboardBannerView: View {
             BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
         }
         .bannerWindow(top: Color(hex: 0xFEF3C7), bottom: Color(hex: 0xEDE9FE), shadow: Color(hex: 0x92400E))
+        // The cast (docs/MASCOT_SPEC.md §1): O2 in the spotlight beside the day's title.
+        .bannerHost(Mascots.leaderboard, trailing: 12)
     }
 
     // MARK: Frosted strip
@@ -40,6 +42,7 @@ struct LeaderboardBannerView: View {
                     .shadow(color: Self.gold.opacity(0.55), radius: 8)
                     .lineLimit(1).minimumScaleFactor(0.6)
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                    .padding(.trailing, Mascots.bannerClearance)
                     .accessibilityAddTraits(.isHeader)
                 HStack(spacing: 8) {
                     Text("\(date) · RESETS IN \(clock)")
@@ -99,22 +102,27 @@ struct RecordsBannerView: View {
             BannerGameRows(selected: $selected, isSweep: $isSweep, ink: Self.sub)
         }
         .bannerWindow(top: Color(hex: 0xEDE9FE), bottom: Color(hex: 0xFEF3C7), shadow: Color(hex: 0x4C1D95))
+        // The cast (docs/MASCOT_SPEC.md §1): O2, the Leaderboard's family, hosts Records.
+        .bannerHost(Mascots.records, trailing: 10)
     }
 
     private var strip: some View {
-        HStack(alignment: .center, spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: "trophy.fill").font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Color(hex: 0xB45309))
-                    Text("ALL-TIME RECORDS")
-                        .font(Brand.font(22, .black)).tracking(0.4)
-                        .foregroundStyle(Self.head)
-                        .shadow(color: Color(hex: 0xF59E0B).opacity(0.55), radius: 8)
-                        .lineLimit(1).minimumScaleFactor(0.6)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                .frame(minHeight: 30)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: "trophy.fill").font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color(hex: 0xB45309))
+                Text("ALL-TIME RECORDS")
+                    .font(Brand.font(22, .black)).tracking(0.4)
+                    .foregroundStyle(Self.head)
+                    .shadow(color: Color(hex: 0xF59E0B).opacity(0.55), radius: 8)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+            // The title row's right end belongs to the host (MASCOT_SPEC §2), so the
+            // DAILY | ALL-TIME switch rides the sub line (the home banner's switch row).
+            .padding(.trailing, Mascots.bannerClearance)
+            HStack(alignment: .center, spacing: 8) {
                 Group {
                     if tab == .daily {
                         // Ticks once a second for the reset clock.
@@ -127,10 +135,11 @@ struct RecordsBannerView: View {
                 }
                 .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
                 .foregroundStyle(Self.sub)
-                .lineLimit(1).minimumScaleFactor(0.7)
+                .lineLimit(2).minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                tabSwitch
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            tabSwitch
         }
         .padding(.top, 12).padding(.leading, 12).padding(.trailing, 10).padding(.bottom, 10)
         .background(Color.white.opacity(0.5))

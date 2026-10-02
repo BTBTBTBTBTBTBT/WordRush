@@ -5,6 +5,8 @@ import { haptic } from '@/lib/haptics';
 import { playGameOver } from '@/lib/sounds';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { useWordDefinitions } from '@/hooks/use-word-definitions';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 interface GameOverAnimationProps {
   onComplete?: () => void;
@@ -40,6 +42,10 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
       onClick={onComplete}
     >
       <div className="relative max-w-sm w-full animate-fade-in-scale">
+        {/* R (sleepy, nightcap) above the result, static, standing on the card's top edge. */}
+        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: -58, zIndex: 2 }}>
+          <Mascot id={PAGE_HOSTS.loss} size={80} priority />
+        </div>
         <div
           className="relative overflow-hidden text-center"
           style={{
@@ -55,7 +61,7 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
             style={{ background: 'linear-gradient(90deg, #f87171, #ef4444, #dc2626)' }}
           />
 
-          <div className="px-5 pt-5 pb-4">
+          <div className="px-5 pt-6 pb-4">
             {/* NICE TRY header */}
             <h2
               className="text-4xl font-black text-transparent bg-clip-text"

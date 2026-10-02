@@ -162,7 +162,11 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("SETTINGS").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
+                    HStack(spacing: 6) {
+                        Text("SETTINGS").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
+                        // R, relaxed in its nightcap, hosts Settings (MASCOT_SPEC §6).
+                        MascotView(Mascots.settings, size: 30, motion: .bob)
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
             }

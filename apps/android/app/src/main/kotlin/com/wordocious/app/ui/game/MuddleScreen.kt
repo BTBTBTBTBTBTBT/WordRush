@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -571,7 +572,16 @@ private fun MuddleHeader(session: MuddleSession) {
     val s = session.state
     // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) sit either side.
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 2.dp)) {
-        Text("MUDDLE", fontSize = 20.sp, lineHeight = 22.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1, modifier = Modifier.padding(horizontal = 52.dp))
+        // The game's host (R, groggy: MASCOT_SPEC §5) at the left of the title, static. It
+        // overhangs the compact 22 dp title line instead of growing the header.
+        Row(Modifier.padding(horizontal = 52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            com.wordocious.app.ui.Mascots.hostFor("SCRAMBLE")?.let {
+                Box(Modifier.size(30.dp, 22.dp), contentAlignment = Alignment.Center) {
+                    com.wordocious.app.ui.Mascot(it, 30.dp, Modifier.wrapContentSize(unbounded = true))
+                }
+            }
+            Text("MUDDLE", fontSize = 20.sp, lineHeight = 22.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1)
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 48.dp)) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
             session.holidayTitle?.let { Text(it, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = MUDDLE_ACCENT, maxLines = 1) }
@@ -1076,29 +1086,32 @@ private fun MuddleOverlay(session: MuddleSession, onPlayAgain: (() -> Unit)?, on
     val won = session.state.status == ScrambleStatus.WON
     val secs = session.elapsed
     Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        Column(
-            Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
-                    style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                }
-                onPlayAgain?.let {
+        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
+        com.wordocious.app.ui.ResultHostBox(won, "SCRAMBLE") { hostInset ->
+            Column(
+                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier.clip(CircleShape)
-                            .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                            .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
+                        if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
+                        style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
+                    }
+                    onPlayAgain?.let {
+                        Text(
+                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            modifier = Modifier.clip(CircleShape)
+                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
+                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
+                        )
+                    }
+                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
                 }
-                Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
         }
     }

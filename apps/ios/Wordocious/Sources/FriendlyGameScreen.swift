@@ -40,6 +40,10 @@ struct FriendlyGameScreen: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 16) {
+                            // Game over: a win → O3 pops in; a loss → R (MASCOT_SPEC §3).
+                            if !g.isActive, let outcome = Self.resultOutcome(g) {
+                                ResultHost(outcome: outcome, winner: Mascots.pocketWin)
+                            }
                             scoreWindow(g)
                             board(g)
                             if let moveError, !pinsInput(g) { errorText(moveError) }
@@ -58,6 +62,8 @@ struct FriendlyGameScreen: View {
             } else if let loadError {
                 Spacer()
                 VStack(spacing: 12) {
+                    // R for the error screen (MASCOT_SPEC §6).
+                    MascotView(Mascots.offline, size: 96, motion: .bob)
                     Text(loadError).font(Brand.font(15, .black)).foregroundStyle(FriendsKit.ink).multilineTextAlignment(.center)
                     Button { dismiss() } label: { FriendsPill(title: "FRIENDS", solid: false) }.buttonStyle(.plain)
                 }
@@ -65,7 +71,7 @@ struct FriendlyGameScreen: View {
                 Spacer()
             } else {
                 Spacer()
-                ProgressView().tint(FriendsKit.solid)
+                CastLoader(label: "LOADING GAME", labelColor: FriendsKit.mid, tipColor: FriendsKit.mid)
                 Spacer()
             }
         }
@@ -229,6 +235,16 @@ struct FriendlyGameScreen: View {
         }
         .clipShape(shape)
         .shadow(color: won ? FriendsKit.purple.opacity(0.35) : FriendsKit.ink.opacity(0.08), radius: won ? 10 : 7, x: 0, y: 4)
+    }
+
+    /// The finished game's result for its host; nil when there is none (expired).
+    static func resultOutcome(_ g: FriendlyGameView) -> ResultHost.Outcome? {
+        switch g.result {
+        case "win"?: return .win
+        case "loss"?: return .loss
+        case "draw"?: return .draw
+        default: return nil
+        }
     }
 
     /// Core headline; an expired game reads GAME EXPIRED and a resignation

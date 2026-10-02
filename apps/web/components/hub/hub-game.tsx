@@ -18,6 +18,7 @@ import { PlayClock } from '@/components/game/play-clock';
 import { useThrottledSave } from '@/hooks/use-throttled-save';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { HubRankBar, HubAllWordChips, HUB_ACCENT } from './hub-finished';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
@@ -465,7 +466,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     <div className={`h-screen-stable flex flex-col relative ${view === 'results' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Victory card (founder, 2026-09-28): the clock is paused under it; the time is the
           moment of the win. "Keep playing" resumes the hunt, "I'm done" ends the puzzle. */}
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points}
+      {showVictory && <VictoryAnimation mode="HUB" onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points}
         actions={[{ label: 'Keep playing', onClick: () => setShowVictory(false), primary: true }, { label: "I'm done", onClick: finish }]} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -474,7 +475,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         <GameHomeButton accentColor={HUB_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="hubbub" accentColor={HUB_ACCENT} />
         <SoundToggle accentColor={HUB_ACCENT} />
-        <h1 className="text-2xl font-black" style={{ color: HUB_ACCENT }}>HUBBUB</h1>
+        <GameHostTitle mode="HUB">
+          <h1 className="text-2xl font-black" style={{ color: HUB_ACCENT }}>HUBBUB</h1>
+        </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{hubDailyNumber(getTodayLocal())}</span>}
           <span>{state.found.length}/{state.words.length} words</span>

@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -84,7 +83,7 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             ) {
-                CircularProgressIndicator(color = WTheme.primary)
+                com.wordocious.app.ui.CastLoader(null)
                 Text("Loading guide…", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         } else {
@@ -94,17 +93,23 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                     .padding(horizontal = 16.dp).padding(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        g.title.uppercase(), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontFamily = com.wordocious.app.ui.theme.Nunito,
-                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                com.wordocious.app.ui.modeTitleGradient(mode),
+                // The game's host waves hello beside the title (MASCOT_SPEC §5: 72 dp, wave).
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            g.title.uppercase(), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontFamily = com.wordocious.app.ui.theme.Nunito,
+                                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    com.wordocious.app.ui.modeTitleGradient(mode),
+                                ),
                             ),
-                        ),
-                    )
-                    Text(g.tagline, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        )
+                        Text(g.tagline, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
+                    com.wordocious.app.ui.Mascots.hostFor(mode.name)?.let {
+                        com.wordocious.app.ui.Mascot(it, 72.dp, motion = com.wordocious.app.ui.MascotMotion.WAVE)
+                    }
                 }
                 // Quick facts — 2-col chips
                 g.facts.chunked(2).forEach { row ->

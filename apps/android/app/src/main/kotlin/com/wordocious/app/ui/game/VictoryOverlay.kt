@@ -103,10 +103,12 @@ fun VictoryOverlay(
     ) {
         if (won && !WTheme.reducedMotion) ConfettiView()
 
+        // The game's host pops above VICTORY; R stands, static, above GAME OVER
+        // (MASCOT_SPEC §3, §5). Its feet rest on the card, clear of the headline.
+        com.wordocious.app.ui.ResultHostBox(won, mode.name, Modifier.widthIn(max = 380.dp).padding(24.dp)) { hostInset ->
         Column(
             modifier = Modifier
-                .widthIn(max = 380.dp)
-                .padding(24.dp)
+                .padding(top = hostInset)
                 .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha }
                 .clip(RoundedCornerShape(16.dp))
                 .background(WTheme.surface)
@@ -196,6 +198,7 @@ fun VictoryOverlay(
                 }
                 Text("Tap anywhere to continue", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
+        }
         }
     }
 }

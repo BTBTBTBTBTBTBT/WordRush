@@ -151,6 +151,15 @@ fun SweepCelebration(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                // The whole cast jumps in a left-to-right wave, twice, over the confetti;
+                // Flawless crowns W (MASCOT_SPEC §3). Tiles shrink to fit a narrow card.
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val tile = minOf(30.dp, (maxWidth - 2.dp * 9) / 10)
+                    CastRow(
+                        tile, motion = MascotMotion.WAVE, hop = 14.dp, staggerMs = 60, repeats = 2,
+                        crown = flawless,
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
                         tint = if (flawless) Color(0xFFD97706) else if (more) Color(0xFF4F46E5) else Color(0xFF7C3AED), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))

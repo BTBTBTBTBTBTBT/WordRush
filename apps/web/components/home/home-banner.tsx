@@ -7,6 +7,8 @@ import {
 } from '@wordle-duel/core';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
+import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
 // docs/HOME_REDESIGN_SPEC.md). One window: a frosted headline strip over a
@@ -153,6 +155,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   );
 
   return (
+    // The home host (W) stands at the strip's right end; Flawless crowns him.
+    <BannerHost id={PAGE_HOSTS.home} crown={wTier === 'flawless'}>
     <div
       className="relative shrink-0 overflow-hidden"
       style={{
@@ -171,7 +175,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
 
       {/* Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious row's glow. */}
       <div className="relative flex flex-col gap-1" style={{ padding: '12px 8px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
-        <div className="flex items-start gap-1.5">
+        <div className="flex items-start gap-1.5" style={{ paddingRight: BANNER_HOST_CLEARANCE - 8 }}>
           <div className="flex-1 flex items-center gap-1.5" style={{ minHeight: 30 }}>
             {double && <Trophy className="w-[18px] h-[18px] shrink-0" style={{ color: '#b45309' }} />}
             {unlimited && <InfinityIcon className="w-5 h-5 shrink-0" style={{ color: '#7c3aed' }} />}
@@ -208,5 +212,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         {row(puzzles, pTier, 'PUZZLES', 'sm')}
       </div>
     </div>
+    </BannerHost>
   );
 }

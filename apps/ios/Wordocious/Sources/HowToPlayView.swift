@@ -69,14 +69,14 @@ struct HowToPlayView: View {
     }
 
     var body: some View {
-        MenuScaffold("How to Play") {
+        MenuScaffold("How to Play", host: Mascots.help) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Everything you need to know to get started")
                         .font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
 
                     if service.sections.isEmpty {
-                        ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
+                        CastLoader(showTips: false).frame(maxWidth: .infinity).padding(.top, 40)
                     } else {
                         ForEach(service.sections) { section(_: $0) }
                     }

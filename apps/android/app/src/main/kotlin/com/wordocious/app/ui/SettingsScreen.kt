@@ -112,6 +112,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("SETTINGS", fontSize = 17.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
+            // The page host, R relaxing in his nightcap (MASCOT_SPEC §6).
+            Spacer(Modifier.width(6.dp))
+            TitleHost(Mascots.settings)
             Spacer(Modifier.weight(1f))
             Text(
                 // Deliberately brand purple, NOT iOS's #007AFF: that blue is a

@@ -236,6 +236,7 @@ struct LadderView: View {
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
                     solution: nil, solutions: [], showDefinition: false, statLabel: "MOVES", points: vm.points,
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                    game: .ladder,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -288,6 +289,7 @@ struct LadderView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("LETTER LADDER").font(Brand.font(24, .black)).foregroundStyle(ladderAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.ladder)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("Par \(vm.state.par)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

@@ -17,6 +17,7 @@ import { GameLoading } from '@/components/game/game-loading';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { CipherBoard, FrequencyStrip, CRYPTOGRAM_ACCENT } from './cipher-board';
@@ -324,7 +325,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
 
   return (
     <div className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`} style={{ backgroundColor: 'var(--color-bg)' }}>
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
+      {showVictory && <VictoryAnimation mode="CRYPTOGRAM" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -332,7 +333,9 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         <GameHomeButton accentColor={CRYPTOGRAM_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="codebreaker" accentColor={CRYPTOGRAM_ACCENT} />
         <SoundToggle accentColor={CRYPTOGRAM_ACCENT} />
-        <h1 className="text-2xl font-black" style={{ color: CRYPTOGRAM_ACCENT }}>CODEBREAKER</h1>
+        <GameHostTitle mode="CRYPTOGRAM">
+          <h1 className="text-2xl font-black" style={{ color: CRYPTOGRAM_ACCENT }}>CODEBREAKER</h1>
+        </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{cryptogramDailyNumber(getTodayLocal())}</span>}
           {holiday && <span style={{ color: CRYPTOGRAM_ACCENT }}>{holiday}</span>}

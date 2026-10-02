@@ -129,7 +129,7 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     Column(
         Modifier.fillMaxSize().background(VsTeal.page),
     ) {
-        VsNavBar("VS BATTLE", onBack = onCancel) { VsModeChip(vm.mode) }
+        VsNavBar("VS BATTLE", onBack = onCancel, host = com.wordocious.app.ui.Mascots.vs) { VsModeChip(vm.mode) }
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

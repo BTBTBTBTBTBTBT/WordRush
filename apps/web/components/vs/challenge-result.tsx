@@ -5,6 +5,8 @@ import { challengeHeadline, vsClock, vsMargin, type VsRun } from '@wordle-duel/c
 import { challengeSentSub, h2hLine, modeColor, modeTitle, rowStates } from '@/lib/vs-lobby';
 import type { HeadToHeadRecord } from '@/lib/head-to-head';
 import { InitialAvatar, VsModeIcon } from './vs-ui';
+import { ResultHost } from '@/components/ui/mascot';
+import { vsResultHost } from '@/lib/mascots';
 
 // The async challenge screens in the HOME palette (VS overhaul §3 + §5, canvas
 // board AA phone 4): the race result (YOU vs @DOUG over one split window, the
@@ -102,6 +104,9 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
     <div className="min-h-screen overflow-y-auto" style={{ backgroundColor: '#f8f7ff' }}>
       <div className="max-w-md mx-auto px-4 py-3 space-y-3.5">
         <TopBar onClose={onClose} />
+
+        {/* The result host: S pops on a win, R on a loss, U on a draw. */}
+        <ResultHost id={vsResultHost(outcome)} pop={outcome === 'win'} />
 
         <div className="relative overflow-hidden" style={{ borderRadius: 16, background: `linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${left} 0%, ${left} 50%, ${right} 50%, ${right} 100%)`, boxShadow: '0 4px 14px rgba(76,29,149,0.08)' }}>
           {youWon && (

@@ -9,6 +9,8 @@ import { useFlags } from '@/hooks/use-flags';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
+import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // The Leaderboard banner (founder, 2026-10-01; docs/LEADERBOARD_REDESIGN_SPEC.md §1):
 // the home / VS / Friends one-window shape in gold-to-lilac. A frosted strip with
@@ -138,6 +140,8 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
     : null;
 
   return (
+    // The Leaderboard host (O2, the spotlight star) stands beside the day title.
+    <BannerHost id={PAGE_HOSTS.leaderboard}>
     <div
       className="relative shrink-0 overflow-hidden"
       style={{
@@ -147,7 +151,7 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
       }}
     >
       {/* Frosted headline strip. */}
-      <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+      <div className="relative flex flex-col gap-1" style={{ padding: `12px ${BANNER_HOST_CLEARANCE}px 10px 12px`, background: 'rgba(255,255,255,0.5)' }}>
         <h1 className="font-black" style={{ fontSize: 22, letterSpacing: 0.4, lineHeight: 1.15, color: INK, textShadow: '0 0 8px rgba(245,158,11,0.55)' }}>
           {title}
         </h1>
@@ -159,5 +163,6 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
 
       <BannerGameRows selectedMode={selectedMode} onSelect={onSelect} />
     </div>
+    </BannerHost>
   );
 }

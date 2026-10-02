@@ -208,6 +208,7 @@ struct SudokuView: View {
                                                        boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
                                                        hintsUsed: vm.hintsUsed).total),
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?(vm.state.difficulty) } : nil,
+                    game: .sudoku,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -248,6 +249,7 @@ struct SudokuView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text(ModeStyle.title(.sudoku)).font(Brand.font(24, .black)).foregroundStyle(sudokuAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.sudoku)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

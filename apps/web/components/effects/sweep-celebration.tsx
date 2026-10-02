@@ -12,6 +12,7 @@ import type { ShareMode } from '@/lib/share-image';
 import { MODE_SHARE_GLYPH } from '@/lib/share-grid';
 import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
+import { CastRow } from '@/components/ui/mascot';
 
 // One-time full-screen celebration shown when the player completes every daily
 // in the current sweep. Two distinct treatments (NOT the per-game victory
@@ -157,6 +158,11 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
           />
 
           <div className="relative px-5 pt-5 pb-5">
+            {/* The whole cast jumps in a left-to-right wave, twice, over the
+                confetti; on a Flawless day W wears the gold crown. */}
+            <div className="flex justify-center mb-2">
+              <CastRow size={26} motion="wave" hop={14} stagger={60} duration={1000} iterations={2} crownW={flawless} />
+            </div>
             <div className="flex items-center justify-center gap-2">
               {flawless
                 ? <Trophy className="w-7 h-7" style={{ color: '#d97706' }} fill="currentColor" />

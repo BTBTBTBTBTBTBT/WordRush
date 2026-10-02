@@ -151,7 +151,7 @@ struct VSLobbyView: View {
     // MARK: - Nav (back, VS BATTLE, the honest count)
 
     private var nav: some View {
-        VSNavBar(title: "VS BATTLE", onBack: { dismiss() }) {
+        VSNavBar(title: "VS BATTLE", host: Mascots.vs, onBack: { dismiss() }) {
             let looking = model.counts?.totalWaiting ?? 0
             if looking > 0 || model.online != nil {
                 HStack(spacing: 5) {

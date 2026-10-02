@@ -546,12 +546,20 @@ fun CrosswordScreen(
 private fun FitTitle(text: String) {
     var fontSize by remember { mutableStateOf(24.sp) }
     var settled by remember { mutableStateOf(false) }
-    Text(
-        text, fontSize = fontSize, fontWeight = FontWeight.Black, color = CROSSWORD_ACCENT, fontFamily = Nunito,
-        maxLines = 1, softWrap = false, textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 52.dp).drawWithContent { if (settled) drawContent() },
-        onTextLayout = { r -> if (r.didOverflowWidth && fontSize.value > 14f) fontSize = (fontSize.value * 0.92f).sp else settled = true },
-    )
+    // The game's host (D, glasses and a pencil: MASCOT_SPEC §5) stands at the left of the title, static.
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 52.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        com.wordocious.app.ui.Mascots.hostFor("CROSSWORD")?.let { com.wordocious.app.ui.Mascot(it, 30.dp) }
+        Text(
+            text, fontSize = fontSize, fontWeight = FontWeight.Black, color = CROSSWORD_ACCENT, fontFamily = Nunito,
+            maxLines = 1, softWrap = false, textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f, fill = false).drawWithContent { if (settled) drawContent() },
+            onTextLayout = { r -> if (r.didOverflowWidth && fontSize.value > 14f) fontSize = (fontSize.value * 0.92f).sp else settled = true },
+        )
+    }
 }
 
 @Composable
@@ -821,29 +829,32 @@ private fun CrosswordOverlay(session: CrosswordSession, onPlayAgain: (() -> Unit
     val won = session.state.status == CrosswordStatus.WON
     val secs = session.elapsed
     Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        Column(
-            Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
-                    style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                }
-                onPlayAgain?.let {
+        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
+        com.wordocious.app.ui.ResultHostBox(won, "CROSSWORD") { hostInset ->
+            Column(
+                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier.clip(CircleShape)
-                            .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                            .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
+                        if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
+                        style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        StatBlock("${session.state.checks}", "CHECKS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
+                    }
+                    onPlayAgain?.let {
+                        Text(
+                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            modifier = Modifier.clip(CircleShape)
+                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
+                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
+                        )
+                    }
+                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
                 }
-                Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
         }
     }

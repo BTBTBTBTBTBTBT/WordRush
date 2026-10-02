@@ -377,7 +377,8 @@ fun HubScreen(
 private fun HubHeader(session: HubSession) {
     val tick by produceState(0, session.state.ended) { while (!session.state.ended) { kotlinx.coroutines.delay(1000); value++ } }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
-        Text("HUBBUB", fontSize = 24.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito)
+        // The game's host stands at the left of its title (MASCOT_SPEC §5), static.
+        com.wordocious.app.ui.HostedGameTitle("HUB") { Text("HUBBUB", fontSize = 24.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("${session.state.found.size}/${session.state.words.size} words", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -596,28 +597,31 @@ private fun HubOverlay(session: HubSession, onPlayAgain: (() -> Unit)?, onDismis
     val won = session.state.status == HubStatus.WON; val secs = session.displaySeconds
     // Won: the card is a decision (Keep playing / I'm done), so a stray tap must not dismiss it; a loss still taps away.
     Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(if (won) ({}) else onDismiss), contentAlignment = Alignment.Center) {
-        Column(Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.fillMaxWidth().height(6.dp).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
-                    style = if (won) androidx.compose.ui.text.TextStyle(fontFamily = Nunito, brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else androidx.compose.ui.text.TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)))
-                Text(session.state.rankName, fontSize = 16.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito)
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    StatBlock("${session.state.found.size}", "WORDS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
+        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
+        com.wordocious.app.ui.ResultHostBox(won, "HUB") { hostInset ->
+            Column(Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.fillMaxWidth().height(6.dp).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
+                        style = if (won) androidx.compose.ui.text.TextStyle(fontFamily = Nunito, brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else androidx.compose.ui.text.TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)))
+                    Text(session.state.rankName, fontSize = 16.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito)
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        StatBlock("${session.state.found.size}", "WORDS"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
+                    }
+                    onPlayAgain?.let {
+                        Text(if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            modifier = Modifier.clip(CircleShape).background(if (won) androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171)))).clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp))
+                    }
+                    if (won) Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        // Keep playing → back to the board, clock resumes. I'm done → End at the recorded time, results.
+                        // Keep playing is the filled (primary) choice on all three platforms.
+                        Text("Keep playing", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            modifier = Modifier.clip(CircleShape).background(HUB_ACCENT).clickableNoRipple(onDismiss).padding(horizontal = 18.dp, vertical = 9.dp))
+                        Text("I'm done", fontSize = 13.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT,
+                            modifier = Modifier.clip(CircleShape).border(1.5.dp, HUB_ACCENT, CircleShape).clickableNoRipple { session.end(); onDismiss() }.padding(horizontal = 18.dp, vertical = 9.dp))
+                    }
+                    else Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
                 }
-                onPlayAgain?.let {
-                    Text(if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier.clip(CircleShape).background(if (won) androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171)))).clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp))
-                }
-                if (won) Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    // Keep playing → back to the board, clock resumes. I'm done → End at the recorded time, results.
-                    // Keep playing is the filled (primary) choice on all three platforms.
-                    Text("Keep playing", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier.clip(CircleShape).background(HUB_ACCENT).clickableNoRipple(onDismiss).padding(horizontal = 18.dp, vertical = 9.dp))
-                    Text("I'm done", fontSize = 13.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT,
-                        modifier = Modifier.clip(CircleShape).border(1.5.dp, HUB_ACCENT, CircleShape).clickableNoRipple { session.end(); onDismiss() }.padding(horizontal = 18.dp, vertical = 9.dp))
-                }
-                else Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
         }
     }

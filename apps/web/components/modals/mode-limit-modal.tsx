@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { Crown, Lock, X } from 'lucide-react';
+import { Crown, X } from 'lucide-react';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 import Link from 'next/link';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
@@ -55,7 +57,10 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
             aria-modal="true"
             aria-label={`${modeName} daily limit reached`}
           >
-            <Lock className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--color-text-muted)' }} />
+            {/* U (zen, floating): all done for today, new puzzles at midnight. */}
+            <div className="flex justify-center mb-2">
+              <Mascot id={PAGE_HOSTS.allDone} size={72} motion="bob" />
+            </div>
             <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>
               {modeName} — Played Today
             </h2>

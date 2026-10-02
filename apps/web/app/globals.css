@@ -647,6 +647,37 @@
 }
 .animate-banner-shimmer { animation: banner-shimmer 4s ease-in-out infinite; }
 
+/* The WORDOCIOUS cast (docs/MASCOT_SPEC.md; components/ui/mascot.tsx) ----------
+   bob:  idle float, 0 → −3 px → 0 over 2.6 s, forever (banners, empty states).
+   pop:  scale 0.6 → 1.08 → 1 over 420 ms with a 12° wiggle (victory, VS win).
+   wave: a hop (--mascot-hop) with a small tilt; CastRow staggers it per tile
+         through --mascot-delay, and sets the loop (--mascot-dur, --mascot-iter).
+   Reduce Motion (OS or the in-app toggle) turns every one of them off. */
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes mascot-pop {
+  0%   { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  45%  { opacity: 1; transform: scale(1.08) rotate(-12deg); }
+  70%  { transform: scale(0.98) rotate(6deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes mascot-hop {
+  0%, 45%, 100% { transform: translateY(0) rotate(0deg); }
+  20%           { transform: translateY(calc(var(--mascot-hop, 8px) * -1)) rotate(-6deg); }
+}
+.mascot-bob  { animation: mascot-bob 2.6s ease-in-out infinite; }
+.mascot-pop  { animation: mascot-pop 420ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both; transform-origin: 50% 90%; }
+.mascot-wave {
+  animation: mascot-hop var(--mascot-dur, 1100ms) ease-in-out var(--mascot-delay, 0ms) var(--mascot-iter, 3) both;
+  transform-origin: 50% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot { animation: none !important; }
+}
+[data-reduced-motion="true"] .mascot { animation: none !important; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

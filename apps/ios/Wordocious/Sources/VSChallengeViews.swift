@@ -102,6 +102,8 @@ struct VSChallengeResultView: View {
                     }
                 }
                 .padding(.top, 6)
+                // YOU WIN → S pops in; a loss → R; a draw → U (MASCOT_SPEC §3).
+                ResultHost(outcome: won ? .win : (lost ? .loss : .draw))
                 window
                 h2hCard
                 if let note {
@@ -380,10 +382,7 @@ struct VSChallengeRaceView: View {
         switch phase {
         case .loading:
             // The VS loading look (spec §2) — the mode isn't known until it loads.
-            VStack(spacing: 16) {
-                VSRingSpinner()
-                Text("LOADING CHALLENGE").font(Brand.font(12, .black)).tracking(1).foregroundStyle(VsLobbyKit.label)
-            }
+            CastLoader(label: "LOADING CHALLENGE", labelColor: VsLobbyKit.label, tipColor: VsLobbyKit.sub)
             .frame(maxWidth: .infinity)
             .padding(.top, 120)
         case .error(let message):
@@ -481,7 +480,11 @@ struct VSChallengeRaceView: View {
             Text("Your run: \(c.run.summary)").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.sub)
             let results = sent?.results ?? []
             if results.isEmpty {
-                Text("Nobody has raced it yet.").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.label)
+                // R: quiet in here (MASCOT_SPEC §1), kept small inside the card.
+                HStack(spacing: 8) {
+                    MascotView(Mascots.empty, size: 40, motion: .bob)
+                    Text("Nobody has raced it yet.").font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.label)
+                }
             } else {
                 ForEach(Array(results.enumerated()), id: \.offset) { _, r in
                     HStack {

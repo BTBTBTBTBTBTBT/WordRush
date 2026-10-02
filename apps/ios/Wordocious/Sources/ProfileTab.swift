@@ -186,7 +186,7 @@ struct ProfileTab: View {
                     if let profile = auth.profile {
                         content(profile)
                     } else if auth.isLoading && AuthService.hadPersistedSession {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 240)
+                        CastLoader(showTips: false).frame(maxWidth: .infinity, minHeight: 240)
                     } else {
                         signedOut
                     }
@@ -360,6 +360,7 @@ struct ProfileTab: View {
         ScrollViewReader { proxy in
         ScrollView {
             VStack(spacing: 16) {
+                statsTitle
                 header(p)
                 StatsRail(items: railItems, selected: $selected, onSelect: select)
                 Group {
@@ -419,7 +420,7 @@ struct ProfileTab: View {
                 SectionHeader("Today's Games", accent: Color(hex: 0x2563EB))
                 TodayGamesList(entries: todayEntries, profileId: p.id, opponentNames: opponentNames,
                                loading: recentLoading && recentMatches.isEmpty,
-                               emptyText: "No games yet today — play a daily to start the list.")
+                               emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats)
             }
         }
     }
@@ -722,6 +723,18 @@ struct ProfileTab: View {
         return Array(out.prefix(2))
     }
 
+    /// The page's section label with its host (MASCOT_SPEC §1/§6): D, glasses and a
+    /// pencil, for the numbers — 28 pt just left of the label, static.
+    private var statsTitle: some View {
+        HStack(spacing: 6) {
+            MascotView(Mascots.stats, size: 28)
+            Text("STATS").font(Brand.font(13, .heavy)).tracking(1).foregroundStyle(Theme.textMuted)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+        }
+        .padding(.bottom, -8)
+    }
+
     // MARK: Player card
 
     /// The player card (founder, 2026-09-26: "the top looks unfinished with the
@@ -934,7 +947,8 @@ struct ProfileTab: View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader("Recent Matches", accent: Color(hex: 0x2563EB))
             RecentMatchesList(matches: recentMatches, profileId: p.id, opponentNames: opponentNames,
-                              loading: recentLoading, limit: 5)
+                              loading: recentLoading, limit: 5,
+                              emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats)
         }
     }
 
@@ -1451,6 +1465,8 @@ struct LeaderboardTab: View {
                 }.foregroundStyle(Theme.textMuted)
             }
             Spacer(minLength: 6)
+            // The selected game's host stands inside the card, beside Play (MASCOT_SPEC §5).
+            if let host = Mascots.host(mode) { MascotView(host, size: 44) }
             // Already finished today's daily for this mode → open the read-only
             // solved board, matching the home cards. The cached completions
             // answer instantly; userRank confirms once the leaderboard loads.
@@ -1608,11 +1624,8 @@ struct LeaderboardTab: View {
         if sweepLoading {
             LeaderboardSkeleton()
         } else if sweepEntries.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                Text("No sweeps yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 40)
+            MascotMessage(host: Mascots.empty, line: "No sweeps yet today. Be the first!")
+                .frame(maxWidth: .infinity).padding(.vertical, 28)
             .lbCard()
         } else {
             VStack(spacing: 0) {
@@ -1756,10 +1769,9 @@ struct LeaderboardTab: View {
                 .lbCard()
             } else {
                 VStack(spacing: 8) {
-                    Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                    Text(friendsOnly ? "No friends yet — add them from any profile" : "No daily results yet. Be the first!")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                        .multilineTextAlignment(.center)
+                    // The cast (MASCOT_SPEC §6): I grows the circle; R says it's quiet in here.
+                    MascotMessage(host: friendsOnly ? Mascots.addFriends : Mascots.empty,
+                                  line: friendsOnly ? Mascots.addFriendLine : "No daily results yet. Be the first!")
                     // Tier 2 (Aug 11): the empty Friends board is the
                     // best recruiting surface in the app — use it.
                     if friendsOnly {

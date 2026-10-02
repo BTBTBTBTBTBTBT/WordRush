@@ -48,7 +48,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +66,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -425,6 +425,19 @@ fun ProfileScreen(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
 
+        // The page's section label with its host (MASCOT_SPEC §1–§2, §6): D, glasses and
+        // a pencil, for the numbers — 28 dp just left of STATS, static.
+        item {
+            Row(
+                Modifier.semantics { heading() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Mascot(Mascots.stats, 28.dp)
+                Text("STATS", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = WTheme.textMuted)
+            }
+        }
+
         // ── A. Header ─────────────────────────────────────────────
         item {
             ProfileHeader(profile, isProActive, onGoPro, onEditProfile, onShare = {
@@ -458,7 +471,7 @@ fun ProfileScreen(
         //    220 ms on every rail / Solo|VS / VS-board tap — the Solo|VS toggle and VS board
         //    picker live inside the page, so the tapped control itself faded back in, the old
         //    page cross-faded underneath, and AnimatedContent's size transform slid everything
-        //    below. key() keeps the old per-page state reset. The 4th item: PAGE_ITEM_INDEX. ──
+        //    below. key() keeps the old per-page state reset. The 5th item: PAGE_ITEM_INDEX. ──
         item {
             val page = selected; val tab = pageTab; val mode = pageMode
             androidx.compose.runtime.key(page, tab, mode) {
@@ -490,6 +503,7 @@ fun ProfileScreen(
                         TodayGamesList(
                             matches = recentMatches, opponentNames = opponentNames, userId = userId,
                             loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
+                            emptyHost = Mascots.stats, emptyText = Mascots.statsEmptyLine,
                         )
                         }
 
@@ -568,7 +582,7 @@ fun ProfileScreen(
                             AchievementsSection(unlockedAchievements, profile)
 
                             if (loading) {
-                                Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) }
+                                Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CastLoader(null, tips = true) }
                             }
 
                             // ── VS (founder, 2026-10-01): VS left the game rail (rarely played; the grid
@@ -609,6 +623,7 @@ fun ProfileScreen(
                                 // The newest 50 — the list also carries all of today for Today's Games.
                                 matches = recentMatches.take(50), opponentNames = opponentNames, userId = userId,
                                 loading = loading, limit = 5,
+                                emptyHost = Mascots.stats, emptyText = Mascots.statsEmptyLine,
                             )
                         }
 
@@ -645,9 +660,9 @@ fun ProfileScreen(
     }
 }
 
-/** The page item's index in the Stats LazyColumn (spacer · header · rail · page): the
- *  VS jump scrolls to it, offset by the VS section header's y inside it. */
-private const val PAGE_ITEM_INDEX = 3
+/** The page item's index in the Stats LazyColumn (spacer · STATS label · header · rail ·
+ *  page): the VS jump scrolls to it, offset by the VS section header's y inside it. */
+private const val PAGE_ITEM_INDEX = 4
 
 /** One chart scope's fetch: a mode (null = the global All view) and a play type. All chart
  *  fetches run CONCURRENTLY (was 6 serial round-trips + a 9-query per-mode streak N+1 — now
@@ -1998,7 +2013,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!s.hasData) {
-                Text("No games yet — play to build your stats.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+                MascotEmptyState(Mascots.stats, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), size = 72.dp, color = WTheme.textMuted)
             } else {
                 val cells = buildList {
                     // The four base cells always render — an em dash where the
@@ -2091,7 +2106,7 @@ private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, o
             if (!isPro) {
                 ProLockedTeaser("Pro Feature", onGoPro)
             } else if (bars.isEmpty()) {
-                Text("No games yet — play to build your stats.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+                MascotEmptyState(Mascots.stats, Mascots.statsEmptyLine, Modifier.padding(vertical = 12.dp), size = 72.dp, color = WTheme.textMuted)
             } else {
                 Text("Win Rate by Mode", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 bars.forEach { b -> ProBarRow(b.label, "${b.winRate}%", b.winRate.toFloat() / 100f, Color(0xFFFACC15)) }

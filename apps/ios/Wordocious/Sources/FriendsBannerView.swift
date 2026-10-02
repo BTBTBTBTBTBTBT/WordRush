@@ -52,6 +52,8 @@ struct FriendsBannerView: View {
         }
         .clipShape(shape)
         .shadow(color: FriendsKit.ink.opacity(0.08), radius: 7, x: 0, y: 4)
+        // The cast (docs/MASCOT_SPEC.md §1): O1, the four-armed cheerleader, hosts Friends.
+        .bannerHost(Mascots.friends, trailing: 12)
     }
 
     /// The banner's core input from today's race (competition ranks, the same
@@ -84,6 +86,7 @@ struct FriendsBannerView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(2).minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                    .padding(.trailing, Mascots.bannerClearance)
                 Text(FriendlyGames.friendsBannerClockLine(input, clock: clock))
                     .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
                     .foregroundStyle(FriendsKit.mid)

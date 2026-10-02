@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.QuestionAnswer
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -258,12 +257,24 @@ private fun prettyDate(key: String): String = runCatching {
 // ── Shared chrome ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun OverlayScaffold(title: String, onDone: () -> Unit, leading: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
+private fun OverlayScaffold(
+    title: String,
+    onDone: () -> Unit,
+    leading: (@Composable () -> Unit)? = null,
+    /** The page host beside the title (Help / Guides: C, MASCOT_SPEC §6). */
+    host: MascotId? = null,
+    content: @Composable () -> Unit,
+) {
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leading != null) { leading(); Spacer(Modifier.size(8.dp)) }
-            Text(title.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
+            Text(title.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f, fill = host == null), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
+            if (host != null) {
+                Spacer(Modifier.size(6.dp))
+                TitleHost(host)
+                Spacer(Modifier.weight(1f))
+            }
             Box(Modifier.size(30.dp).clip(CircleShape).background(WTheme.surfaceAlt).clickableNoRipple(onDone), Alignment.Center) {
                 Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
             }
@@ -312,7 +323,7 @@ fun StrategyScreen(onDone: () -> Unit) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Practical, original strategy for solving daily word puzzles faster and in fewer guesses.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (articles.isEmpty()) {
-                CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+                CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
             } else articles.forEach { a ->
                 Row(infoCardMod().clickableNoRipple { selected = a }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFFF59E0B).copy(alpha = 0.14f)), Alignment.Center) {
@@ -347,7 +358,7 @@ fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (words.isEmpty()) {
-                CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+                CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
             } else words.forEach { w ->
                 Row(infoCardMod().clickableNoRipple { selected = w }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))), Alignment.Center) {
@@ -446,7 +457,7 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
         return
     }
 
-    OverlayScaffold("Guides", onDone) {
+    OverlayScaffold("Guides", onDone, host = Mascots.help) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             (guides.ifEmpty { modes.map { it to null } }).forEach { (mode, g) ->
                 val accent = modeAccent(mode)
@@ -550,11 +561,11 @@ private fun htpColor(hex: String): Color =
 @Composable
 fun HowToPlayScreen(onDone: () -> Unit) {
     val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList()) { value = HowToPlayService.sections() }
-    OverlayScaffold("How to Play", onDone) {
+    OverlayScaffold("How to Play", onDone, host = Mascots.help) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Everything you need to know to get started", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (sections.isEmpty()) {
-                CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+                CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
             } else sections.forEach { HtpSectionCard(it) }
             Spacer(Modifier.height(24.dp))
         }

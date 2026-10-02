@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,8 +58,9 @@ fun ModeLimitModal(
                 .background(WTheme.surface).clickableNoRipple {}.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(Icons.Filled.Lock, null, tint = WTheme.textMuted, modifier = Modifier.size(40.dp))
-            Spacer(Modifier.height(12.dp))
+            // "All done for today, come back later": U, the calm one (MASCOT_SPEC §1).
+            Mascot(Mascots.allDone, 72.dp, motion = MascotMotion.BOB)
+            Spacer(Modifier.height(8.dp))
             Text("$modeName — Played Today", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
             Text(

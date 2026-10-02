@@ -614,7 +614,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       )}
 
       {showVictory && (
-        <VictoryAnimation
+        <VictoryAnimation mode="GAUNTLET"
           onComplete={handleVictoryComplete}
           onPlayAgain={!isDaily && isPro ? handlePlayAgain : undefined}
           timeSeconds={(() => {

@@ -13,6 +13,8 @@ import {
   FR, REACTIONS, REACTION_GLYPH, gameMomentText, kindForTitle, reactionChips, toggleReaction, type ReactionKey,
 } from '@/lib/friends-play';
 import { FriendAvatar, GameIconSquare, SectionLabel, cardStyle } from './friends-ui';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 // ACTIVITY — the Friends tab's feed (Stats + Friends redesign D3, founder
 // 2026-09-26): the last seven days of your circle's moments — Daily Sweeps,
@@ -182,9 +184,13 @@ export function ActivityFeed({ onRematch }: Props) {
             {[0, 1, 2].map((i) => <div key={i} className="h-8 rounded-xl" style={{ background: '#f1f5f9' }} />)}
           </div>
         ) : events.length === 0 ? (
-          <p className="text-xs font-bold p-1" style={{ color: FR.label }}>
-            Quiet week so far. A sweep, a medal, a record or a game won by anyone in your circle shows up here.
-          </p>
+          <div className="flex flex-col items-center gap-2 p-1 text-center">
+            {/* R (sleepy): quiet in here. */}
+            <Mascot id={PAGE_HOSTS.empty} size={96} motion="bob" />
+            <p className="text-xs font-bold" style={{ color: FR.label }}>
+              Quiet week so far. A sweep, a medal, a record or a game won by anyone in your circle shows up here.
+            </p>
+          </div>
         ) : (
           <div className="space-y-1">
             {shown.map((e, idx) => {

@@ -10,6 +10,8 @@ import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib
 import { FR, KIND_GRADIENT, TILE, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, Sheet } from './friends-ui';
+import { ResultHost } from '@/components/ui/mascot';
+import { pocketResultHost } from '@/lib/mascots';
 
 // A Friends pocket game (Friends overhaul §4, canvas board AE; also the push
 // deep link /friends/games/<id>). The server runs the rules; this screen polls
@@ -239,6 +241,8 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 
       {!active && (
         <div className="space-y-2.5 pt-1">
+          {/* Pocket game result host: O3 pops on a win, R on a loss, U on a draw. */}
+          <ResultHost id={pocketResultHost(youWon ? 'win' : theyWon ? 'loss' : 'draw')} pop={youWon} />
           <button
             type="button"
             onClick={rematch}

@@ -96,7 +96,13 @@ fun VsCard(modifier: Modifier = Modifier, padding: Dp = 12.dp, content: @Composa
 
 /** The VS nav row: teal back chevron, a teal-gradient caps title, and a right slot. */
 @Composable
-fun VsNavBar(title: String, onBack: () -> Unit, right: @Composable RowScope.() -> Unit = {}) {
+fun VsNavBar(
+    title: String,
+    onBack: () -> Unit,
+    /** The page host beside the title (VS BATTLE: S, MASCOT_SPEC §6). */
+    host: com.wordocious.app.ui.MascotId? = null,
+    right: @Composable RowScope.() -> Unit = {},
+) {
     Row(
         Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -109,6 +115,7 @@ fun VsNavBar(title: String, onBack: () -> Unit, right: @Composable RowScope.() -
             title, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, maxLines = 1,
             style = TextStyle(brush = Brush.horizontalGradient(VsTeal.titleGradient), fontFamily = Nunito),
         )
+        if (host != null) com.wordocious.app.ui.TitleHost(host)
         Spacer(Modifier.weight(1f))
         right()
     }

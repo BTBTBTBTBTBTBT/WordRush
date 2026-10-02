@@ -58,6 +58,10 @@ struct SweepCelebrationView: View {
                     .frame(height: 6)
 
                 VStack(spacing: 10) {
+                    // The whole cast jumps in a left-to-right wave, twice, over the
+                    // confetti (MASCOT_SPEC §3); Flawless crowns W.
+                    CastRow(size: 22, motion: .wave, hop: 14, stagger: 0.06, period: 1.0, repeats: 2, crownOnW: flawless)
+                        .padding(.top, flawless ? 8 : 0)
                     HStack(spacing: 8) {
                         Image(systemName: flawless ? "trophy.fill" : "sparkles")
                             .foregroundStyle(flawless ? Color(hex: 0xD97706) : (more ? Color(hex: 0x4F46E5) : Color(hex: 0x7C3AED)))

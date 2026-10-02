@@ -487,9 +487,9 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
                         fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
                     )
                 }
-                is ProfileService.BoardFetch.Unavailable -> Text(
-                    "This board isn't available.",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                is ProfileService.BoardFetch.Unavailable -> MascotEmptyState(
+                    // Error states get R (MASCOT_SPEC §6).
+                    Mascots.offline, "This board isn't available.", size = 72.dp, color = WTheme.textMuted,
                 )
                 is ProfileService.BoardFetch.Ready -> Column(
                     Modifier.verticalScroll(rememberScrollState()).heightIn(max = 440.dp),

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { X, ChevronLeft } from 'lucide-react';
+import { Mascot } from '@/components/ui/mascot';
+import type { MascotId } from '@/lib/mascots';
 
 /**
  * Native MenuScaffold parity chrome for the site-nav info pages (the pages
@@ -13,9 +15,11 @@ import { X, ChevronLeft } from 'lucide-react';
  * articles) pass `backHref` for the leading chevron, mirroring the native
  * scaffold's onBack.
  */
-export function InfoPageHeader({ title, backHref, titleTag = 'h1' }: {
+export function InfoPageHeader({ title, backHref, titleTag = 'h1', host }: {
   title: string;
   backHref?: string;
+  /** The page's host (docs/MASCOT_SPEC.md §6), standing beside the title. */
+  host?: MascotId;
   /** 'div' on article detail pages, whose real h1 is the article title in the body. */
   titleTag?: 'h1' | 'div';
 }) {
@@ -34,6 +38,7 @@ export function InfoPageHeader({ title, backHref, titleTag = 'h1' }: {
             <ChevronLeft className="w-5 h-5" strokeWidth={3} />
           </Link>
         )}
+        {host && <Mascot id={host} size={44} motion="bob" priority />}
         <TitleTag
           className="text-2xl font-black uppercase leading-tight min-w-0 truncate text-transparent bg-clip-text"
           style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}

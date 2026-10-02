@@ -136,7 +136,8 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
     ) {
         CappedFontScale {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                // The Word of the Day host (I, the sprout: MASCOT_SPEC §1–§2), static.
+                Mascot(Mascots.wordOfTheDay, 28.dp)
                 Spacer(Modifier.width(6.dp))
                 Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
                 Spacer(Modifier.weight(1f))

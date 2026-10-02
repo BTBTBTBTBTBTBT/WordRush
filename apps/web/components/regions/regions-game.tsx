@@ -13,6 +13,7 @@ import {
 } from '@wordle-duel/core';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { RegionsBoard } from './regions-board';
 import { RegionsPad } from './regions-pad';
@@ -306,7 +307,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
       className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', true, state.mistakes + 1, elapsedSeconds, 1, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
+      {showVictory && <VictoryAnimation mode="REGIONS" onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', true, state.mistakes + 1, elapsedSeconds, 1, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={computeScoreBreakdown('REGIONS', false, state.mistakes + 1, elapsedSeconds, 0, 1, state.hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? () => startPractice(state.n as RegionsSize) : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -314,7 +315,9 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
         <GameHomeButton accentColor={REGIONS_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="starsweep" accentColor={REGIONS_ACCENT} />
         <SoundToggle accentColor={REGIONS_ACCENT} />
-        <h1 className="text-2xl font-black" style={{ color: REGIONS_ACCENT }}>{REGIONS_HEADER}</h1>
+        <GameHostTitle mode="REGIONS">
+          <h1 className="text-2xl font-black" style={{ color: REGIONS_ACCENT }}>{REGIONS_HEADER}</h1>
+        </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{regionsDailyNumber(getTodayLocal())}</span>}
           <span>{REGIONS_SIZE_LABEL[state.n] ?? `${state.n} × ${state.n}`}</span>

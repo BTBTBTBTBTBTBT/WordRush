@@ -45,6 +45,8 @@ import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
+import { Mascot } from '@/components/ui/mascot';
+import { MASCOT_LINES, PAGE_HOSTS } from '@/lib/mascots';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
@@ -456,6 +458,12 @@ export default function StatsPage() {
       <AppHeader />
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
+        {/* STATS, with its host D (brainy, glasses + pencil) beside the title. */}
+        <div className="flex items-center gap-2 pt-1">
+          <Mascot id={PAGE_HOSTS.stats} size={44} motion="bob" priority />
+          <span className="text-2xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #3b82f6, #7c3aed)', letterSpacing: 0.4 }}>STATS</span>
+        </div>
+
         {/* ── Player card (founder, 2026-09-26: "the top looks unfinished with the random
             buttons"): ONE card. Avatar · name · chips on the first row with Edit / Share as
             quiet icon buttons top-right; the level pill + XP bar span the card; Private,
@@ -630,7 +638,7 @@ export default function StatsPage() {
                   the full history stays on All-time. Same rows, same stats. */}
               <SectionHeader label="Today's Games" accent="#2563eb" />
               {/* Founder, 2026-09-27: every game played TODAY (daily and unlimited), no cap, no "See all" — the full history lives on All-time. */}
-              <RecentMatchesList matches={todaysMatches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} groupUnlimited emptyText="No games yet today — play a daily to start the list." />
+              <RecentMatchesList matches={todaysMatches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} groupUnlimited emptyText={MASCOT_LINES.statsEmpty} emptyHost={PAGE_HOSTS.stats} />
             </>
           )}
 

@@ -102,7 +102,11 @@ fun ProScreen(onDone: () -> Unit) {
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Header
-            Icon(painterResource(R.drawable.ic_crown), null, tint = GOLD, modifier = Modifier.size(54.dp))
+            // The Pro host: W, the leader in his cape, wearing the Pro crown (MASCOT_SPEC §6).
+            Box(Modifier.size(width = 64.dp, height = 84.dp).mascotGroupBob(), contentAlignment = Alignment.BottomCenter) {
+                Mascot(Mascots.pro, 64.dp)
+                FlawlessCrown(Modifier.align(Alignment.TopCenter).size(width = 34.dp, height = 24.dp))
+            }
             Spacer(Modifier.height(6.dp))
             Text("Go Pro", fontSize = 36.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Text(

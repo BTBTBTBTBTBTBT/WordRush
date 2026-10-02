@@ -379,6 +379,7 @@ struct CrosswordView: View {
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: CROSSWORD_TOTAL_BOARDS,
                     solution: nil, solutions: [], showDefinition: false, statLabel: "CHECKS", points: vm.points,
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                    game: .crossword,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -433,7 +434,7 @@ struct CrosswordView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("CROSSWORDOCIOUS").font(Brand.font(24, .black)).foregroundStyle(crosswordAccent)
-                .lineLimit(1).minimumScaleFactor(0.6).padding(.horizontal, 48)
+                .lineLimit(1).minimumScaleFactor(0.6).gameHost(.crossword).padding(.horizontal, 48)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 48)
             HStack(spacing: 8) {

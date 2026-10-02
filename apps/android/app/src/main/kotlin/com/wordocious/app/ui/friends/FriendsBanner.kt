@@ -36,7 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.FriendsService
+import com.wordocious.app.ui.BANNER_HOST_CLEAR
+import com.wordocious.app.ui.BANNER_HOST_PEEK
+import com.wordocious.app.ui.BannerHost
 import com.wordocious.app.ui.CappedFontScale
+import com.wordocious.app.ui.Mascot
+import com.wordocious.app.ui.Mascots
 import com.wordocious.app.ui.LocalTabHidden
 import com.wordocious.app.ui.RaceRow
 import com.wordocious.app.ui.awaitShown
@@ -100,6 +105,8 @@ fun FriendsBannerView(
         .maxByOrNull { it.days }
 
     CappedFontScale {
+        // The host (O1, the cheerleader: MASCOT_SPEC §1–§2) peeks over the strip's top edge.
+        Box(Modifier.fillMaxWidth().padding(top = BANNER_HOST_PEEK)) {
         Column(
             Modifier.fillMaxWidth()
                 .friendsBannerGlow()
@@ -122,7 +129,7 @@ fun FriendsBannerView(
                 // Larger and glowing (founder 2026-10-01): 22 sp / 900 with a soft pink glow.
                 Text(
                     headline, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.15.em,
-                    color = FriendsPink.ink, maxLines = 2, modifier = Modifier.heightIn(min = 26.dp),
+                    color = FriendsPink.ink, maxLines = 2, modifier = Modifier.heightIn(min = 26.dp).padding(end = BANNER_HOST_CLEAR - 2.dp),
                     style = androidx.compose.ui.text.TextStyle(
                         shadow = androidx.compose.ui.graphics.Shadow(Color(0x8CDB2777), Offset.Zero, blurRadius = 16f),
                     ),
@@ -178,13 +185,19 @@ fun FriendsBannerView(
                     best?.let { FlameCount("${it.name.uppercase()} ${it.days} ${if (it.days == 1) "DAY" else "DAYS"}") }
                 }
                 if (rows.size <= 1) {
-                    Text("Add a friend to start a race", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
+                    // I's voice (MASCOT_SPEC §6).
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Mascot(Mascots.addFriends, 24.dp)
+                        Text(Mascots.addFriendLine, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
+                    }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         raceChips(rows).forEach { r -> RaceChip(r, Modifier.weight(1f)) }
                     }
                 }
             }
+        }
+        BannerHost(Mascots.friends, Modifier.align(Alignment.TopEnd))
         }
     }
 }

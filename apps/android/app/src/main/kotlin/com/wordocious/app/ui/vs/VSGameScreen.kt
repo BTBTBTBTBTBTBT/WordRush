@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -289,10 +290,8 @@ private fun VsLoadingScreen(mode: GameMode, sub: String? = null, botArtId: Strin
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
         Box(Modifier.vsCard(16.dp)) { VsModeTile(mode, 56.dp) }
-        CircularProgressIndicator(
-            color = VsTeal.ink, trackColor = VsTeal.soft, strokeWidth = 4.dp,
-            modifier = Modifier.size(40.dp),
-        )
+        // The cast's staggered wave replaces the spinner (MASCOT_SPEC §3); the label stays.
+        com.wordocious.app.ui.CastRow(22.dp, motion = com.wordocious.app.ui.MascotMotion.WAVE)
         Text(
             "LOADING ${vsModeName(mode).uppercase()}",
             fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = VsTeal.label,
@@ -1138,42 +1137,52 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
         ) {
             // The window.
             item {
-                Column(
-                    Modifier.widthIn(max = 520.dp).fillMaxWidth()
-                        .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
-                        .clip(RoundedCornerShape(16.dp))
-                        .drawBehind {
-                            drawRect(leftBg, size = Size(size.width / 2f, size.height))
-                            drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
-                            drawRect(Brush.linearGradient(
-                                0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                                start = Offset.Zero, end = Offset(size.width, size.height),
-                            ))
-                        }
-                        .then(if (isWin && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
-                ) {
+                // The result's host stands on the window (MASCOT_SPEC §3): S pops on a win,
+                // R stands still on a loss, U (calm) on a draw.
+                Box(Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(top = com.wordocious.app.ui.BANNER_HOST_PEEK)) {
                     Column(
-                        Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        Modifier.widthIn(max = 520.dp).fillMaxWidth()
+                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
+                            .clip(RoundedCornerShape(16.dp))
+                            .drawBehind {
+                                drawRect(leftBg, size = Size(size.width / 2f, size.height))
+                                drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
+                                drawRect(Brush.linearGradient(
+                                    0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
+                                    start = Offset.Zero, end = Offset(size.width, size.height),
+                                ))
+                            }
+                            .then(if (isWin && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
-                            Text(headline, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, maxLines = 2)
+                        Column(
+                            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Row(Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR - 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
+                                Text(headline, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, maxLines = 2)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Box(Modifier.size(18.dp), Alignment.Center) { com.wordocious.app.ui.ModeGlyph(vm.mode, modeAccent(vm.mode), 18.dp) }
+                                Text(
+                                    listOfNotNull(vsModeName(vm.mode).uppercase(), subLine).joinToString(" · "),
+                                    fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = VsPurple.mid,
+                                )
+                            }
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Box(Modifier.size(18.dp), Alignment.Center) { com.wordocious.app.ui.ModeGlyph(vm.mode, modeAccent(vm.mode), 18.dp) }
-                            Text(
-                                listOfNotNull(vsModeName(vm.mode).uppercase(), subLine).joinToString(" · "),
-                                fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = VsPurple.mid,
-                            )
+                        vm.result?.let { r ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                                ResultSide(myName, r.playerScore, r.playerGuesses, r.playerTime, mySolved, isWin && !isDraw, Modifier.weight(1f))
+                                ResultSide(oppName, r.opponentScore, r.opponentGuesses, r.opponentTime, oppSolved, !isWin && !isDraw, Modifier.weight(1f))
+                            }
                         }
                     }
-                    vm.result?.let { r ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
-                            ResultSide(myName, r.playerScore, r.playerGuesses, r.playerTime, mySolved, isWin && !isDraw, Modifier.weight(1f))
-                            ResultSide(oppName, r.opponentScore, r.opponentGuesses, r.opponentTime, oppSolved, !isWin && !isDraw, Modifier.weight(1f))
-                        }
-                    }
+                    com.wordocious.app.ui.Mascot(
+                        if (isDraw) com.wordocious.app.ui.Mascots.vsDraw else if (isWin) com.wordocious.app.ui.Mascots.vsWin else com.wordocious.app.ui.Mascots.vsLoss,
+                        56.dp,
+                        Modifier.align(Alignment.TopEnd).offset(x = (-2).dp, y = -com.wordocious.app.ui.BANNER_HOST_PEEK),
+                        motion = if (isWin && !isDraw) com.wordocious.app.ui.MascotMotion.POP else com.wordocious.app.ui.MascotMotion.NONE,
+                    )
                 }
             }
             item {

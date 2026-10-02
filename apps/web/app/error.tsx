@@ -2,6 +2,8 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -13,7 +15,10 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="text-center">
-        <div className="text-5xl mb-4">😵</div>
+        {/* R, sleepy in his nightcap, waits it out with you. */}
+        <div className="flex justify-center mb-3">
+          <Mascot id={PAGE_HOSTS.offline} size={96} priority />
+        </div>
         <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--color-text)' }}>Something went wrong</h1>
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Don't worry, your streak is safe.</p>
         <button

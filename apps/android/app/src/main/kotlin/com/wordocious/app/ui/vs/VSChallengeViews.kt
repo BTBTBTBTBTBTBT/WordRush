@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -211,43 +211,53 @@ fun ChallengeResultView(
             Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(
-                Modifier.fillMaxWidth()
-                    .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
-                    .clip(RoundedCornerShape(16.dp))
-                    .drawBehind {
-                        drawRect(leftBg, size = Size(size.width / 2f, size.height))
-                        drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
-                        drawRect(Brush.linearGradient(
-                            0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
-                            start = Offset.Zero, end = Offset(size.width, size.height),
-                        ))
-                    }
-                    .then(if (won && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
-            ) {
+            // The result's host stands on the window (MASCOT_SPEC §3): S pops on a win,
+            // R stands still on a loss, U (calm) on a draw.
+            Box(Modifier.fillMaxWidth().padding(top = com.wordocious.app.ui.BANNER_HOST_PEEK)) {
                 Column(
-                    Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 6.dp, bottom = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    Modifier.fillMaxWidth()
+                        .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
+                        .clip(RoundedCornerShape(16.dp))
+                        .drawBehind {
+                            drawRect(leftBg, size = Size(size.width / 2f, size.height))
+                            drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
+                            drawRect(Brush.linearGradient(
+                                0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
+                                start = Offset.Zero, end = Offset(size.width, size.height),
+                            ))
+                        }
+                        .then(if (won && !WTheme.reducedMotion) Modifier.bannerShimmer() else Modifier),
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
-                        Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, modifier = Modifier.weight(1f), maxLines = 2)
-                        Box(Modifier.size(36.dp).clickableNoRipple { onShare(headline) }, Alignment.Center) {
-                            Icon(Icons.Filled.Share, "Share", tint = VsPurple.mid, modifier = Modifier.size(19.dp))
+                    Column(
+                        Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.5f)).padding(start = 12.dp, top = 10.dp, end = 6.dp, bottom = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Row(Modifier.padding(end = com.wordocious.app.ui.BANNER_HOST_CLEAR + 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = VsPurple.ink, modifier = Modifier.size(18.dp))
+                            Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep, modifier = Modifier.weight(1f), maxLines = 2)
+                            Box(Modifier.size(36.dp).clickableNoRipple { onShare(headline) }, Alignment.Center) {
+                                Icon(Icons.Filled.Share, "Share", tint = VsPurple.mid, modifier = Modifier.size(19.dp))
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(Modifier.size(18.dp), Alignment.Center) { com.wordocious.app.ui.ModeGlyph(mode, modeAccent(mode), 18.dp) }
+                            Text(
+                                "${vsModeName(mode).uppercase()} · SAME PUZZLE · $margin",
+                                fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = VsPurple.mid,
+                            )
                         }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(Modifier.size(18.dp), Alignment.Center) { com.wordocious.app.ui.ModeGlyph(mode, modeAccent(mode), 18.dp) }
-                        Text(
-                            "${vsModeName(mode).uppercase()} · SAME PUZZLE · $margin",
-                            fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = VsPurple.mid,
-                        )
+                    Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                        ResultColumn("YOU", won, mine, mode, solutions, Modifier.weight(1f))
+                        ResultColumn("@${theirName.uppercase()}", lost, theirs, mode, solutions, Modifier.weight(1f))
                     }
                 }
-                Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
-                    ResultColumn("YOU", won, mine, mode, solutions, Modifier.weight(1f))
-                    ResultColumn("@${theirName.uppercase()}", lost, theirs, mode, solutions, Modifier.weight(1f))
-                }
+                com.wordocious.app.ui.Mascot(
+                    if (draw) com.wordocious.app.ui.Mascots.vsDraw else if (won) com.wordocious.app.ui.Mascots.vsWin else com.wordocious.app.ui.Mascots.vsLoss,
+                    56.dp,
+                    Modifier.align(Alignment.TopEnd).offset(x = (-2).dp, y = -com.wordocious.app.ui.BANNER_HOST_PEEK),
+                    motion = if (won) com.wordocious.app.ui.MascotMotion.POP else com.wordocious.app.ui.MascotMotion.NONE,
+                )
             }
             note?.let {
                 Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
@@ -301,7 +311,7 @@ fun RaceResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -> Un
     val outcome = vm.raceOutcome
     val context = LocalContext.current
     if (mine == null || outcome == null) {
-        Box(Modifier.fillMaxSize().background(VsTeal.page), Alignment.Center) { CircularProgressIndicator(color = VsPurple.ink) }
+        Box(Modifier.fillMaxSize().background(VsTeal.page), Alignment.Center) { com.wordocious.app.ui.CastLoader(null) }
         return
     }
     ChallengeResultView(
@@ -336,10 +346,12 @@ fun ChallengeSentScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             when (state) {
                 null, SendState.Sending -> {
-                    CircularProgressIndicator(color = VsPurple.ink)
+                    com.wordocious.app.ui.CastLoader(null)
                     Text("Sending your run…", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
                 }
                 is SendState.Failed -> {
+                    // Error screens get R (MASCOT_SPEC §6).
+                    com.wordocious.app.ui.Mascot(com.wordocious.app.ui.Mascots.offline, 96.dp, motion = com.wordocious.app.ui.MascotMotion.BOB)
                     Text("COULDN’T SEND", fontSize = 22.sp, fontWeight = FontWeight.Black, color = VsPurple.deep)
                     Text(state.message, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
                     PurpleButton("TRY AGAIN") { vm.retrySend() }
@@ -432,7 +444,7 @@ fun ChallengeRouteScreen(
             Spacer(Modifier.height(12.dp))
             when {
                 error != null -> SimpleCard(error!!, onHome)
-                l == null || c == null -> CircularProgressIndicator(color = VsTeal.ink)
+                l == null || c == null -> com.wordocious.app.ui.CastLoader(null)
                 l.expired && !l.isMine -> SimpleCard("This challenge has expired", onHome)
                 l.isMine -> {
                     VsCard {
@@ -459,6 +471,11 @@ fun ChallengeRouteScreen(
 @Composable
 private fun SimpleCard(text: String, onHome: () -> Unit) {
     VsCard(padding = 18.dp) {
+        // Errors and expired links get R (MASCOT_SPEC §6).
+        com.wordocious.app.ui.Mascot(
+            com.wordocious.app.ui.Mascots.offline, 72.dp,
+            Modifier.align(Alignment.CenterHorizontally), motion = com.wordocious.app.ui.MascotMotion.BOB,
+        )
         Text(text, fontSize = 16.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         VsTealButton("VS HOME", Modifier.fillMaxWidth(), onClick = onHome)
     }

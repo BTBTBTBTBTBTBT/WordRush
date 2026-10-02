@@ -758,6 +758,10 @@ struct VSGameView: View {
         return ZStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    if r != nil {
+                        // YOU WIN → S pops in; a loss → R; a draw → U (MASCOT_SPEC §3).
+                        ResultHost(outcome: isWin ? .win : (isDraw ? .draw : .loss))
+                    }
                     if let r {
                         resultWindow(headline: headline, margin: margin, isWin: isWin, isDraw: isDraw, isLoss: isLoss,
                                      me: ResultSide(name: myName, avatarUrl: AuthService.shared.profile?.avatarUrl, botArt: nil,
@@ -1143,6 +1147,7 @@ struct VSMatchHeader: View {
                     .font(Brand.font(28, .black))
                     .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1).minimumScaleFactor(0.6)
+                    .gameHost(mode)
                 VSTagPill()
             }
             HStack(spacing: 12) {

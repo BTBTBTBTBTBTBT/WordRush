@@ -224,6 +224,7 @@ struct SpyglassView: View {
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.found.count, totalBoards: vm.state.words.count,
                     solution: nil, solutions: [], showDefinition: false, statLabel: "MISSES", points: vm.points,
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                    game: .wordsearch,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -275,6 +276,7 @@ struct SpyglassView: View {
     private var header: some View {
         VStack(spacing: 3) {
             Text("SPYGLASS").font(Brand.font(24, .black)).foregroundStyle(spyglassAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.wordsearch)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }

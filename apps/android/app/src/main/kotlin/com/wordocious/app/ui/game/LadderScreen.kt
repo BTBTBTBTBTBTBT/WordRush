@@ -346,7 +346,8 @@ private fun LadderHeader(session: LadderSession) {
         while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
-        Text("LETTER LADDER", fontSize = 24.sp, fontWeight = FontWeight.Black, color = LADDER_ACCENT, fontFamily = Nunito)
+        // The game's host stands at the left of its title (MASCOT_SPEC §5), static.
+        com.wordocious.app.ui.HostedGameTitle("LADDER") { Text("LETTER LADDER", fontSize = 24.sp, fontWeight = FontWeight.Black, color = LADDER_ACCENT, fontFamily = Nunito) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("Par ${session.state.par}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -490,29 +491,32 @@ private fun LadderOverlay(session: LadderSession, onPlayAgain: (() -> Unit)?, on
     val won = session.state.status == LadderStatus.WON
     val secs = session.elapsed
     Box(Modifier.fillMaxSize().background(Color(0xFF18182E).copy(alpha = 0.6f)).clickableNoRipple(onDismiss), contentAlignment = Alignment.Center) {
-        Column(
-            Modifier.padding(horizontal = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
-                    style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    StatBlock("${session.state.moves}", "MOVES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
-                }
-                onPlayAgain?.let {
+        // The game's host stands on the card: pops on a win, R on a loss (MASCOT_SPEC §3, §5).
+        com.wordocious.app.ui.ResultHostBox(won, "LADDER") { hostInset ->
+            Column(
+                Modifier.padding(top = hostInset, start = 24.dp, end = 24.dp).widthIn(max = 380.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier.clip(CircleShape)
-                            .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
-                            .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
+                        if (won) "VICTORY!" else "GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black,
+                        style = if (won) TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))) else TextStyle(fontFamily = Nunito, color = Color(0xFFF87171)),
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        StatBlock("${session.state.moves}", "MOVES"); StatBlock(timeText(secs), "TIME"); StatBlock("%,d".format(session.points), "POINTS")
+                    }
+                    onPlayAgain?.let {
+                        Text(
+                            if (won) "Play again" else "Try again", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            modifier = Modifier.clip(CircleShape)
+                                .background(if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))) else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))))
+                                .clickableNoRipple(it).padding(horizontal = 28.dp, vertical = 10.dp),
+                        )
+                    }
+                    Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
                 }
-                Text("Tap anywhere to continue", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             }
         }
     }

@@ -13,6 +13,7 @@ const GameOverAnimation = dynamic(() => import('../effects/game-over-animation')
 import { Trophy, Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
@@ -181,7 +182,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showVictory && <VictoryAnimation mode="OCTORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', false, totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -190,9 +191,11 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
         <GameHomeButton accentColor="#7e22ce" />
         <GameGuideButton slug="octoword" accentColor="#7e22ce" />
         <SoundToggle accentColor="#7e22ce" />
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
-          OCTOWORD
-        </h1>
+        <GameHostTitle mode="OCTORDLE">
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+            OCTOWORD
+          </h1>
+        </GameHostTitle>
         <div className="flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{completedBoards}/8</span>
           <span className="text-gray-400 text-xs font-bold">{totalGuesses}/{state.boards[0]?.maxGuesses} guesses</span>

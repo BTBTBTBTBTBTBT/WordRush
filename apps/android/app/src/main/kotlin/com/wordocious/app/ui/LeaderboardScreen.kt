@@ -719,11 +719,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 .padding(vertical = 40.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Icon(Icons.Outlined.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.4f), modifier = Modifier.size(32.dp))
+                            // R on an empty board; I (growing your circle) on an empty Friends board (MASCOT_SPEC §6).
+                            Mascot(if (friendsOnly) Mascots.addFriends else Mascots.empty, 96.dp, motion = MascotMotion.BOB)
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                if (friendsOnly) "No friends yet — add them from any profile" else "No daily results yet. Be the first!",
+                                if (friendsOnly) Mascots.addFriendLine else "No daily results yet. Be the first!",
                                 color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             )
                             // Empty Friends board → recruit (§207 Tier 2, web parity).
                             if (friendsOnly) {
@@ -1080,6 +1082,8 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
             // Founder-approved clarity (iOS parity): this board ranks DAILY games only.
             Text("Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
         }
+        // The selected game's host stands inside the card, right side (MASCOT_SPEC §5), static.
+        Mascots.hostFor(modeId)?.let { Mascot(it, 44.dp) }
         card?.engineMode?.let { gm -> LbPlayButton(accent, played) { onPlay(gm) } }
     }
 }
@@ -1294,17 +1298,11 @@ private fun SweepPill(flawless: Boolean, streak: Int = 0) {
  *  as on the per-mode empty board — not the broom. */
 @Composable
 private fun EmptyBoardCard(message: String) {
-    Column(
-        Modifier.lbSoftCard().padding(vertical = 40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            Icons.Outlined.EmojiEvents,
-            null, tint = WTheme.textMuted.copy(alpha = 0.4f), modifier = Modifier.size(32.dp),
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(message, color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    }
+    // An empty board gets R, sleepy in his nightcap (MASCOT_SPEC §2, §6).
+    MascotEmptyState(
+        Mascots.empty, message, Modifier.lbSoftCard().padding(vertical = 28.dp, horizontal = 16.dp),
+        color = WTheme.textMuted,
+    )
 }
 
 /** One Daily Sweep row — total score over "total time · X/9[ · Ng][ · Nh]" +

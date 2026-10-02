@@ -189,7 +189,7 @@ private fun LobbyMain(
 
     Box(Modifier.fillMaxSize().background(VsTeal.page)) {
         Column(Modifier.fillMaxSize()) {
-            VsNavBar("VS BATTLE", onBack = onClose) {
+            VsNavBar("VS BATTLE", onBack = onClose, host = com.wordocious.app.ui.Mascots.vs) {
                 val looking = counts.values.sumOf { it.waiting }
                 if (looking > 0 || online != null) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(if (looking > 0) Color(0xFF22C55E) else VsTeal.grey))

@@ -34,7 +34,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.ui.BANNER_HOST_CLEAR
+import com.wordocious.app.ui.BANNER_HOST_PEEK
+import com.wordocious.app.ui.BannerHost
 import com.wordocious.app.ui.CappedFontScale
+import com.wordocious.app.ui.Mascots
 import com.wordocious.app.ui.bannerShimmer
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.dashedBorder
@@ -81,6 +85,8 @@ fun VsBannerView(
     val shape = RoundedCornerShape(16.dp)
     val bg = if (gold) listOf(Color(0xFFFDE68A), Color(0xFFFCD979)) else listOf(Color(0xFFD5F5EE), Color(0xFFE0F2FE))
     CappedFontScale {
+        // The host (S, the speedster: MASCOT_SPEC §1–§2) peeks over the strip's top edge.
+        Box(Modifier.fillMaxWidth().padding(top = BANNER_HOST_PEEK)) {
         Column(
             Modifier.fillMaxWidth()
                 .vsBannerGlow(gold)
@@ -99,11 +105,11 @@ fun VsBannerView(
                     .padding(start = 12.dp, top = 12.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(Modifier.heightIn(min = 30.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.heightIn(min = 30.dp).padding(end = BANNER_HOST_CLEAR), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (gold) Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(18.dp))
                     Text(headline, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = headInk, maxLines = 2)
                 }
-                Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = subInk)
+                Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = subInk, modifier = Modifier.padding(end = 4.dp))
             }
             // TODAY
             Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -137,6 +143,8 @@ fun VsBannerView(
                     }
                 }
             }
+        }
+        BannerHost(Mascots.vs, Modifier.align(Alignment.TopEnd))
         }
     }
 }

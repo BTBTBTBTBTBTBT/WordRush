@@ -337,6 +337,7 @@ struct CodebreakerView: View {
                     timeSeconds: vm.elapsed, boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: CRYPTOGRAM_TOTAL_BOARDS,
                     solution: nil, solutions: [], showDefinition: false, statLabel: "CHECKS", points: vm.points,
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?() } : nil,
+                    game: .cryptogram,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -389,6 +390,7 @@ struct CodebreakerView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("CODEBREAKER").font(Brand.font(24, .black)).foregroundStyle(codebreakerAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.cryptogram)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(codebreakerAccent) }

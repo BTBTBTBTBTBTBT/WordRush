@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
+import { Mascot } from '@/components/ui/mascot';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 const benefits = [
   { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
@@ -79,7 +81,10 @@ export default function ProPage() {
 
       <div className="max-w-lg mx-auto px-4">
         <div className="text-center mb-8">
-          <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
+          {/* W, cape and all, hosts GO PRO. */}
+          <div className="flex justify-center mb-2">
+            <Mascot id={PAGE_HOSTS.pro} size={72} motion="bob" priority />
+          </div>
           <h1 className="text-4xl font-black mb-1" style={{ color: 'var(--color-text)' }}>Go Pro</h1>
           <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Play unlimited & ad-free — every mode, any time

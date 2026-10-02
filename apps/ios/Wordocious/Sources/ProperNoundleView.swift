@@ -403,6 +403,7 @@ struct ProperNoundleView: View {
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && !vm.isVersus && AuthService.shared.isProActive)
                         ? { showVictory = false; onPlayAgain?() }
                         : nil,
+                    game: .propernoundle,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }
@@ -454,6 +455,7 @@ struct ProperNoundleView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.propernoundle)
             HStack(spacing: 8) {
                 if let p = vm.puzzle {
                     Text(categoryLabel(p.themeCategory))
@@ -796,6 +798,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             HStack(spacing: 8) {
                 Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
                     .lineLimit(1).minimumScaleFactor(0.6)
+                    .gameHost(.propernoundle)
                 VSTagPill()
             }
             HStack(spacing: 8) {

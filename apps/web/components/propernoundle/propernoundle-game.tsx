@@ -10,6 +10,7 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
+import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
@@ -732,7 +733,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
+      {showVictory && <VictoryAnimation mode="PROPERNOUNDLE" onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
@@ -741,9 +742,11 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         <GameHomeButton accentColor="#dc2626"  href={MORE_HOME_HREF} />
         <GameGuideButton slug="propernoundle" accentColor="#dc2626" />
         <SoundToggle accentColor="#dc2626" />
-        <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
-          PROPERNOUNDLE
-        </h1>
+        <GameHostTitle mode="PROPERNOUNDLE">
+          <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
+            PROPERNOUNDLE
+          </h1>
+        </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1">
           {mode === 'daily' && (
             <span className="text-gray-400 text-xs font-bold">#{getDailyPuzzleNumber()}</span>

@@ -227,6 +227,7 @@ struct RegionsView: View {
                                                        boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
                                                        hintsUsed: vm.hintsUsed).total),
                     onPlayAgain: (onPlayAgain != nil && !vm.isDaily && isPro) ? { showOverlay = false; onPlayAgain?(vm.n) } : nil,
+                    game: .regions,
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -266,6 +267,7 @@ struct RegionsView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("STARSWEEP").font(Brand.font(24, .black)).foregroundStyle(regionsAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.regions)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text(vm.sizeLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

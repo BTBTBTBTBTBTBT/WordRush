@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
-import { BotAvatar, VsModeIcon, VsRingSpinner } from './vs-ui';
+import { BotAvatar, VsModeIcon } from './vs-ui';
+import { CastLoader } from '@/components/ui/cast-loader';
 
 // Live search (VS overhaul §6) — never a dead end. A ring timer counts up
 // while we look for a person; a bot steps in at 0:15 unless the player taps
@@ -209,7 +210,7 @@ export function VsStartingScreen({ title, sub, mode }: { title: string; sub?: st
           <VsModeIcon mode={mode} size={24} />
         </span>
       )}
-      <VsRingSpinner />
+      <CastLoader />
       <h1 className="text-[20px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>{title}</h1>
       {sub && <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>{sub}</p>}
     </div>

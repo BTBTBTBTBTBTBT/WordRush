@@ -247,6 +247,7 @@ struct HubView: View {
                                    VictoryAction(label: "Keep playing", primary: true) { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } },
                                    VictoryAction(label: "I'm done") { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false }; vm.end() },
                                ] : [],
+                               game: .hub,
                                onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -305,6 +306,7 @@ struct HubView: View {
     private var header: some View {
         VStack(spacing: 4) {
             Text("HUBBUB").font(Brand.font(24, .black)).foregroundStyle(hubAccent)
+                .lineLimit(1).minimumScaleFactor(0.7).gameHost(.hub)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("\(vm.state.found.count)/\(vm.state.words.count) words").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

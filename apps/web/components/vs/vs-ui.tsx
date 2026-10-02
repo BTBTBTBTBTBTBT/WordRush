@@ -1,6 +1,9 @@
 'use client';
 
 import { ChevronLeft, Swords } from 'lucide-react';
+import { CastLoader, LoadingTip } from '@/components/ui/cast-loader';
+import { Mascot } from '@/components/ui/mascot';
+import type { MascotId } from '@/lib/mascots';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { VS, modeColor, modeTitle } from '@/lib/vs-lobby';
@@ -43,12 +46,14 @@ export function SectionLabel({ children, right }: { children: React.ReactNode; r
 }
 
 /** Back chevron (teal), a gradient caps title, and a right slot. */
-export function VsNav({ title, onBack, right }: { title: string; onBack: () => void; right?: React.ReactNode }) {
+export function VsNav({ title, onBack, right, host }: { title: string; onBack: () => void; right?: React.ReactNode; host?: MascotId }) {
   return (
     <div className="flex items-center gap-2" style={{ minHeight: 44 }}>
       <button type="button" onClick={onBack} aria-label="Back" className="flex items-center justify-center active:opacity-60" style={{ width: 32, height: 32, marginLeft: -6 }}>
         <ChevronLeft style={{ width: 24, height: 24, color: VS.ink }} strokeWidth={2.6} />
       </button>
+      {/* The page host beside the title (§6), when no banner below carries it. */}
+      {host && <Mascot id={host} size={40} motion="bob" priority />}
       <h1 className="flex-1 text-[22px] font-black text-transparent bg-clip-text" style={{ backgroundImage: VS.title, letterSpacing: 0.4 }}>{title}</h1>
       {right}
     </div>
@@ -122,8 +127,8 @@ export function VsRingSpinner({ size = 44 }: { size?: number }) {
 }
 
 /**
- * The VS loading screen (VS polish §2): the mode icon in its color, the teal
- * ring spinner and `LOADING <MODE>` on the VS page — never bare text or a
+ * The VS loading screen (VS polish §2): the mode icon in its color, the cast
+ * loader (it replaced the teal ring spinner) and `LOADING <MODE>` on the VS page — never bare text or a
  * blank screen while the match or its word lists load.
  */
 export function VsLoadingScreen({ mode, label }: { mode: string; label?: string }) {
@@ -137,10 +142,12 @@ export function VsLoadingScreen({ mode, label }: { mode: string; label?: string 
       <span className="flex items-center justify-center" style={{ width: 52, height: 52, borderRadius: 14, background: `${modeColor(mode)}1f` }}>
         <VsModeIcon mode={mode} size={26} />
       </span>
-      <VsRingSpinner />
+      {/* The cast waves in place of the spinner (docs/MASCOT_SPEC.md §3). */}
+      <CastLoader />
       <span className="text-[12px] font-black uppercase" style={{ color: VS.label, letterSpacing: 1.2 }}>
         {label ?? `Loading ${modeTitle(mode)}`}
       </span>
+      <LoadingTip color={VS.label} />
     </div>
   );
 }
