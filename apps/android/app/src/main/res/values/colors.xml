@@ -2,4 +2,6 @@
 <resources>
     <!-- color-bg from globals.css :root -->
     <color name="brand_bg">#F8F7FF</color>
+    <!-- FINISH_SPEC F2: the Home wallpaper's lilac behind the launch W mascot. -->
+    <color name="splash_lilac">#ECE0FB</color>
 </resources>

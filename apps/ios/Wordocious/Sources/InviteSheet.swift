@@ -74,7 +74,7 @@ struct InviteSheet: View {
                                 }
                                 .padding(.horizontal, 12).padding(.vertical, 10)
                                 .contentShape(Rectangle())
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(.squish)
 
                             // Expanded list — one styled row per mode.
                             if modeOpen {
@@ -127,7 +127,7 @@ struct InviteSheet: View {
             .frame(maxWidth: .infinity)
             .background(RoundedRectangle(cornerRadius: 10).fill(selected ? hm.accent.opacity(0.10) : Color.clear))
             .contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        }.buttonStyle(.squish)
     }
 
     // MARK: Tabs
@@ -140,7 +140,7 @@ struct InviteSheet: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 9)
                 .background(RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary : .clear))
         }
-        .buttonStyle(.plain).padding(2)
+        .buttonStyle(.squish).padding(2)
     }
 
     @ViewBuilder private var linkTab: some View {
@@ -156,13 +156,13 @@ struct InviteSheet: View {
                         Label(copied ? "Copied!" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
                             .font(Brand.font(13, .black)).frame(maxWidth: .infinity).padding(.vertical, 11)
                             .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surfaceHover)).foregroundStyle(Theme.textPrimary)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                     Button { share(url) } label: {
                         Label { Text("Share") } icon: { Icon3D(.share, size: 17) }
                             .font(Brand.font(13, .black)).frame(maxWidth: .infinity).padding(.vertical, 11)
                             .foregroundStyle(.white)
                             .background(RoundedRectangle(cornerRadius: 10).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                 }
                 Text("Link expires in 24 hours.")
                     .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
@@ -174,7 +174,7 @@ struct InviteSheet: View {
                     .font(Brand.font(14, .black)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }.buttonStyle(.plain).disabled(busy)
+            }.buttonStyle(.squish).disabled(busy)
         }
     }
 
@@ -199,7 +199,7 @@ struct InviteSheet: View {
                         .font(Brand.font(14, .black)).foregroundStyle(.white)
                         .frame(maxWidth: .infinity).padding(.vertical, 13)
                         .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                }.buttonStyle(.plain).disabled(busy)
+                }.buttonStyle(.squish).disabled(busy)
             }
         }
     }

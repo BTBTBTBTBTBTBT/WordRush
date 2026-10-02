@@ -352,7 +352,7 @@ struct VSGameView: View {
                     .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(VsLobbyKit.ink))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             // Logs alongside the ShareLink's own tap (share-sheet open = the
             // user's choice to share the invite link).
             .simultaneousGesture(TapGesture().onEnded {
@@ -493,7 +493,7 @@ struct VSGameView: View {
                 .background(RoundedRectangle(cornerRadius: 10).fill(used ? Theme.surfaceHover : hintAccent.opacity(0.08)))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(used)
     }
 

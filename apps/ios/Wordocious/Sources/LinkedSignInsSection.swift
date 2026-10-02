@@ -120,7 +120,7 @@ struct LinkedSignInsSection: View {
                     .padding(.horizontal, 12).padding(.vertical, 7)
                     .overlay(Capsule().stroke(Theme.primary, lineWidth: 1.5))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .disabled(working != nil)
         }
     }

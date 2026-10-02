@@ -644,7 +644,7 @@ struct ProfileTab: View {
                 .padding(16)
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
 
             Button(role: .destructive) { showDeleteConfirm = true } label: {
                 HStack(spacing: 12) {
@@ -655,7 +655,7 @@ struct ProfileTab: View {
                 .padding(16)
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
-            }.buttonStyle(.plain).disabled(deleting)
+            }.buttonStyle(.squish).disabled(deleting)
         }
         .onChange(of: dailyReminder) { on in
             if on {
@@ -964,7 +964,7 @@ struct ProfileTab: View {
                         Button { showAllMedals.toggle() } label: {
                             Text(showAllMedals ? "Show less" : "View all \(medals.count) medals ›")
                                 .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                        }.buttonStyle(.plain).padding(.top, 2)
+                        }.buttonStyle(.squish).padding(.top, 2)
                     }
                 } else {
                     // Web parity: empty-state copy instead of a bare grid.
@@ -1480,15 +1480,12 @@ struct LeaderboardTab: View {
                 else if mode == .propernoundle { showPNDaily = true }
                 else { lbGame = LbGame(mode: mode, title: title) }
             } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: played ? "eye.fill" : "play.fill").font(.system(size: 11, weight: .bold))
-                    Text(played ? "VIEW" : "PLAY").font(Brand.font(13, .black)).tracking(0.6)
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 9)
-                .background(Capsule().fill(accent))
-                .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
-            }.buttonStyle(.plain)
+                // FINISH_SPEC §A8 / §C2: a medium glossy candy pill (never the old
+                // tall blob) — purple PLAY, pink→purple VIEW BOARD.
+                CandyLabel(title: played ? "View board" : "Play", symbol: played ? "eye.fill" : "play.fill")
+            }
+            .buttonStyle(CandyButtonStyle(variant: played ? .pink : .purple, size: .medium, fullWidth: false))
+            .layoutPriority(2)
         }
         .padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 12)
         .gameTile(accent: accent)
@@ -1530,7 +1527,7 @@ struct LeaderboardTab: View {
             }
             .padding(.vertical, 6).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
     }
 
     private var signedOut: some View {
@@ -1712,7 +1709,7 @@ struct LeaderboardTab: View {
                                   streak: yFlawlessStreaks[entry.userId] ?? 0)
                     }
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -1785,7 +1782,7 @@ struct LeaderboardTab: View {
                                 .background(RoundedRectangle(cornerRadius: 12)
                                     .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                         .padding(.top, 4)
                     }
                 }
@@ -1952,7 +1949,7 @@ struct LeaderboardTab: View {
                         RowResultBadge(won: entry.completed)
                     }
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             Spacer()
             Text((scoreLabels ?? lbScoreLabels)[entry.compositeScore] ?? formatScore(entry.compositeScore))
                 .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
@@ -1965,7 +1962,7 @@ struct LeaderboardTab: View {
                 } label: {
                     Icon3D(.bell, size: 16) // ART_SPEC §5
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityLabel("Taunt \(entry.username)")
             }
         }
@@ -2003,12 +2000,12 @@ struct LeaderboardTab: View {
                     Text(f.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                     Text("Hasn't played yet").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             Spacer()
             Button { tauntTarget = f } label: {
                 Icon3D(.bell, size: 16) // ART_SPEC §5
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .accessibilityLabel("Nudge \(f.username)")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -2047,14 +2044,14 @@ struct LeaderboardTab: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16).padding(.vertical, 13)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     Divider().overlay(Theme.border)
                 }
                 Button { tauntTarget = nil } label: {
                     Text("Cancel").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
                         .frame(maxWidth: .infinity).padding(.vertical, 13)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
             }
             Spacer(minLength: 0)
         }
@@ -2116,7 +2113,7 @@ struct LeaderboardTab: View {
                                   streak: flawlessStreaks[entry.userId] ?? 0)
                     }
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(.horizontal, 10).padding(.vertical, 10)
         .youRow(isMe)
@@ -2457,7 +2454,10 @@ struct SweepModeDots: View {
 /// Selector buttons (banner game tiles, pill switches): no pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
 /// newly selected tile read as unselected for ~0.15 s after every tap (founder, 2026-09-29).
 struct InstantButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View { configuration.label.contentShape(Rectangle()) }
+    /// FINISH_SPEC §A9: still no fade, but the shared squish.
+    func makeBody(configuration: Configuration) -> some View {
+        SquishButtonStyle().makeBody(configuration: configuration).contentShape(Rectangle())
+    }
 }
 
 /// One un-animated transaction: a selection and the cached content it paints land in the SAME
@@ -2514,7 +2514,7 @@ struct FlawlessBannerFooter: View {
                     } label: {
                         Icon3D(.share, size: 14)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .opacity(sharing ? 0.4 : 1)
                     .accessibilityLabel("Share flawless streak")
                 }

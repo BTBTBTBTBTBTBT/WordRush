@@ -134,7 +134,11 @@ struct GameCardChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Self.radius)
-        let borderC = border ?? (done ? bar.opacity(0.4) : Theme.border)
+        // FINISH_SPEC §A1: no plain white — the card takes a soft wash of its own
+        // accent (stronger once done) with an accent border. Dark keeps its surface.
+        let dark = Theme.isDark
+        let borderC = border ?? (dark ? (done ? bar.opacity(0.4) : Theme.border) : bar.wash(done ? 0.45 : 0.32))
+        let fill: Color = dark ? Theme.surface : bar.wash(done ? 0.16 : 0.10)
         return VStack(spacing: 0) {
             // The thick top band (the clip rounds it into the card's top corners).
             LinearGradient(colors: [bar, bar.opacity(0.8)], startPoint: .leading, endPoint: .trailing)
@@ -142,13 +146,13 @@ struct GameCardChrome: ViewModifier {
             content
         }
         .background(ZStack {
-            shape.fill(Theme.surface)
-            if done { shape.fill(bar.opacity(0.06)) }
+            shape.fill(fill)
+            if dark && done { shape.fill(bar.opacity(0.06)) }
         })
         .clipShape(shape)
         .overlay(shape.stroke(borderC, lineWidth: 1.5))
         // ART_SPEC §11: an opaque base carrying the page-tinted lift, outside the clip.
-        .background(shape.fill(Theme.surface).pageCardShadow())
+        .background(shape.fill(fill).pageCardShadow())
     }
 }
 

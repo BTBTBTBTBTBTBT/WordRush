@@ -182,7 +182,7 @@ struct FriendsBannerView: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityHint("Opens today's race")
     }
 

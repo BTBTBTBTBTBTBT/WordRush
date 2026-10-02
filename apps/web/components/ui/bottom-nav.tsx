@@ -12,13 +12,24 @@ import { friendsBadgeCount } from '@/lib/friends-play';
 // D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile
 // and Records merge into Stats; Friends gets its own tab. iOS RootTabView and
 // Android MainScreen carry the same four.
-// HEADER_SPEC §3: the 3D tab icons at 28 px. Selected: full color, a −2 px
-// lift and the label in #7c3aed 900; unselected: 45% opacity, 60% saturation,
-// gray label. The numeric Friends badge stays.
-// ART_SPEC §18.3: a frosted floating pill, inset 12 px from the sides and 12 px
-// above the bottom safe area, radius 26, white at 78% with a background blur
-// (solid white 94% where blur isn't supported; globals.css .tab-pill), soft
-// shadow; the selected tab adds a 3 px purple underline pill under its label.
+// HEADER_SPEC §3: the 3D tab icons. Selected: full color and the label in
+// #6d28d9 900 with a 3 px purple underline pill; unselected: 55% opacity, 60%
+// saturation, muted label. The numeric Friends badge stays.
+// FINISH_SPEC A4 (replaces the §18.3 floating pill): DOCKED — flush to the
+// bottom edge, edge to edge, opaque, a soft page-tinted gradient (lilac Home,
+// warm Leaderboard, blue Stats, pink Friends) with a faint top line; the
+// home-indicator / safe area is part of the bar (globals.css .tab-dock) and the
+// page content ends above it (--bottom-nav-h). Each tab icon squishes on tap
+// (A9, components/ui/squish-host.tsx).
+/** The bar's tint follows the page (A4): Leaderboard + Records warm, Stats blue, Friends pink, the rest lilac. */
+export function tabTint(pathname: string | null): 'home' | 'leaderboard' | 'stats' | 'friends' {
+  const p = pathname ?? '/';
+  if (p.startsWith('/daily') || p.startsWith('/records')) return 'leaderboard';
+  if (p.startsWith('/stats') || p.startsWith('/profile')) return 'stats';
+  if (p.startsWith('/friends')) return 'friends';
+  return 'home';
+}
+
 const NAV_ITEMS: { href: string; label: string; icon: Icon3DName }[] = [
   { href: '/', label: 'Home', icon: 'tab-home' },
   { href: '/daily', label: 'Leaderboard', icon: 'tab-leaderboard' },
@@ -45,8 +56,8 @@ export function BottomNav() {
     return () => { offFriends(); offGames(); };
   }, [user]);
 
-  // Publish the room the nav takes at the bottom of the screen (the floating
-  // pill plus its inset above the safe area) as --bottom-nav-h on <html> so
+  // Publish the room the nav takes at the bottom of the screen (the docked bar
+  // including the safe area) as --bottom-nav-h on <html> so
   // the fixed AdBanner (mounted globally in layout.tsx) can stack directly
   // above the nav instead of covering it. ResizeObserver + resize keep it fresh
   // across safe-area/orientation changes; the cleanup resets to 0 on routes
@@ -73,8 +84,8 @@ export function BottomNav() {
   return (
     <nav
       ref={ref}
-      className="tab-pill fixed left-3 right-3 z-40 flex items-center justify-around px-2 py-1"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)', borderRadius: 26 }}
+      className="tab-dock fixed left-0 right-0 bottom-0 z-40 grid grid-cols-4"
+      data-tab-tint={tabTint(pathname)}
       aria-label="Main navigation"
     >
       {NAV_ITEMS.map((item) => {
@@ -84,20 +95,19 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center gap-0.5 pt-1 pb-0.5 px-3 min-w-[60px]"
+            className="flex flex-col items-center gap-0.5 pt-0.5 pb-0.5 min-w-0"
             aria-current={isActive ? 'page' : undefined}
             aria-label={item.label}
           >
             <span className="relative">
               <span
-                className="block transition-[transform,opacity,filter] duration-200"
+                className="tab-squish block transition-[opacity,filter] duration-200"
                 style={{
-                  transform: isActive ? 'translateY(-2px)' : 'none',
-                  opacity: isActive ? 1 : 0.45,
+                  opacity: isActive ? 1 : 0.55,
                   filter: isActive ? 'none' : 'saturate(0.6)',
                 }}
               >
-                <Icon3D name={item.icon} size={28} priority />
+                <Icon3D name={item.icon} size={30} priority />
               </span>
               {item.href === '/friends' && badge > 0 && (
                 <span
@@ -110,16 +120,16 @@ export function BottomNav() {
               )}
             </span>
             <span
-              className={`text-[10px] transition-colors ${isActive ? 'font-black' : 'font-extrabold'}`}
-              style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}
+              className={`text-[11px] transition-colors ${isActive ? 'font-black' : 'font-extrabold'}`}
+              style={{ color: isActive ? '#6d28d9' : '#8a78ad' }}
             >
               {item.label}
             </span>
-            {/* §18.3: the selected tab's 3 px purple underline pill (space kept on every tab). */}
+            {/* The selected tab's 3 px purple underline pill (space kept on every tab). */}
             <span
               aria-hidden="true"
               className="block rounded-full"
-              style={{ width: 18, height: 3, background: '#7c3aed', opacity: isActive ? 1 : 0 }}
+              style={{ width: 22, height: 3, background: '#7c3aed', opacity: isActive ? 1 : 0 }}
             />
           </Link>
         );

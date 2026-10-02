@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -44,6 +43,8 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { candyClass } from '@/components/ui/candy-button';
 
 // Muddle (More Games §5): unscramble four words; their circled letters spell
 // the punchline that completes the caption under the cartoon. A full word
@@ -256,8 +257,9 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const esCaption = es ? es.caption.split('____') : null;
   const noop = () => {};
   // Compact rule (§5, founder 2026-09-23): 30px capsules; the ::before pseudo stretches the hit target to 44px without adding height.
-  const capsule = (dim: boolean) => `relative flex items-center gap-1 text-xs font-bold px-3 h-[30px] rounded-full border transition-all before:content-[''] before:absolute before:-inset-y-[7px] before:inset-x-0 ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${MUDDLE_ACCENT}66`, color: MUDDLE_ACCENT, background: `${MUDDLE_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean) => candyClass({ dim });
+  const capsuleStyle = (_dim: boolean) => undefined;
 
   return (
     <GameBackground mode="SCRAMBLE" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
@@ -336,7 +338,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
         </div>
         {finished && (
           <div className={`${COLUMN_CLASS} px-1 pb-2 animate-fade-in-up`}>
-            <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+            <ResultCard accent={MUDDLE_ACCENT}>
               <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black" style={{ backgroundColor: `${MUDDLE_ACCENT}15`, border: `2px solid ${MUDDLE_ACCENT}44`, color: MUDDLE_ACCENT }}>
                 {won ? state.checks : '✗'}
               </div>
@@ -345,14 +347,13 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
                   {won ? (state.checks === 5 && state.hintsUsed === 0 ? 'Muddle solved clean' : 'Muddle solved') : 'Out of checks'}
                 </span>
                 <span className="text-xs text-gray-400">{`${scrambleBoardsSolved(state)}/${SCRAMBLE_TOTAL_BOARDS} solved · ${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}</span>
-                <div className="flex items-center gap-3 mt-0.5">
-                  <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                  <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <ShareGlyph onShare={handleShare} copied={copied} />
                   {mode === 'daily' && <DailyRankBadge gameMode="SCRAMBLE" />}
-                  {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: MUDDLE_ACCENT }}>Play Again</button>}
+                  {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
                 </div>
               </div>
-            </div>
+            </ResultCard>
             <ScoreBreakdownCard gameMode="SCRAMBLE" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
               boardsSolved={scrambleBoardsSolved(state)} totalBoards={SCRAMBLE_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
             {mode === 'daily' && <NextDailyCta currentMode="SCRAMBLE" />}

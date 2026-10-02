@@ -48,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -365,7 +367,7 @@ fun SudokuScreen(
         if (showOverlay) SudokuOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain(session.state.difficulty) } } else null) { showOverlay = false }
         // The same corner Home / "?" pair as every game (§19).
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(SUDOKU_ACCENT, onBack) }
-        CornerHelpButton(SUDOKU_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
+        CornerHelpButton(SUDOKU_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.SUDOKU, onDismiss = { showGuide = false; session.resumeFromGuide() })
     }
 }
@@ -420,80 +422,137 @@ private fun DifficultyPicker(current: SudokuDifficulty, onPick: (SudokuDifficult
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** ONE continuous ruled grid (§8): hairline lilac rules between cells, heavy
- *  rules around each 3 × 3 box and the edge. Givens dark and heaviest, the
- *  player's digits purple, hint digits violet, a wrong digit red; the selected
- *  cell in the stronger lilac fill with its row, column and box washed; every
- *  cell holding the selected digit emphasized. Pencil marks: the 3 × 3 mini-grid. */
+/**
+ * FINISH_SPEC B1 the Sudocious board in the game kit: every cell is a game tile on a
+ * frosted panel (boxes set apart by a wider gap). Givens = the plain light tile with a
+ * dark purple digit; the player's digits = the purple tile (a hint the same, a wrong
+ * digit the red conflict tile); empty = frosted glass with the pencil marks. The
+ * selected cell wears the typed ring; its row, column and box a soft lilac frost; every
+ * cell holding the selected digit a ring. Placing a number swells in like typing (B3).
+ */
 @Composable
 fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, digitSize: Dp = 22.dp, onSelect: (Int) -> Unit) {
-    val rule = Color(0xFFC4B5FD); val heavy = Color(0xFF4C1D95)
-    val selectedFill = Color(0xFFDDD6FE); val sameFill = Color(0xFFEDE9FE)
-    val player = Color(0xFF7C3AED); val hint = Color(0xFF8B5CF6); val wrong = Color(0xFFDC2626)
     fun boxOf(i: Int) = ((i / 9) / 3) * 3 + (i % 9) / 3
     val selRow = selected?.let { it / 9 } ?: -1; val selCol = selected?.let { it % 9 } ?: -1; val selBox = selected?.let(::boxOf) ?: -1
     val selDigit = selected?.let { state.board[it] }?.takeIf { it != '0' }
     val density = LocalDensity.current
+    val panel = RoundedCornerShape(18.dp)
+    val cellGap = 2.5.dp
+    val boxGap = 6.dp
 
     Box(
         Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
-            .clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
-            .border(2.5.dp, heavy, RoundedCornerShape(14.dp)),
+            .clip(panel)
+            .background(if (WTheme.isDark) WTheme.surface.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.5f))
+            .border(2.dp, Color(0x407C3AED), panel)
+            .padding(6.dp),
     ) {
-        Column(Modifier.fillMaxSize()) {
-            for (r in 0 until 9) {
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    for (c in 0 until 9) {
-                        val i = r * 9 + c
-                        val given = state.givens[i] != '0'
-                        val boardCh = state.board[i]
-                        val revealed = revealSolution && boardCh == '0'
-                        val value: Char? = if (boardCh != '0') boardCh else if (revealed) state.solution[i] else null
-                        val isWrong = state.wrongMask[i] == '1'
-                        val hinted = state.hintMask[i] == '1'
-                        val isSelected = i == selected
-                        val inWash = r == selRow || c == selCol || boxOf(i) == selBox
-                        val sameDigit = selDigit != null && value == selDigit && !isSelected
-                        val color = when { revealed -> WTheme.textMuted; isWrong -> wrong; hinted -> hint; given -> WTheme.text; else -> player }
-                        val bg = when { isSelected -> selectedFill; sameDigit -> sameFill; inWash -> WTheme.winBg; else -> Color.Transparent }
-                        Box(
-                            Modifier.weight(1f).fillMaxSize().background(bg).clickableNoRipple { onSelect(i) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (value != null) {
-                                // Derived from dp through density (TileView rule): a fixed cell must not grow with font scale.
-                                val fs = with(density) { digitSize.toSp() }
-                                Text(value.toString(), fontSize = fs, fontWeight = if (given) FontWeight.Black else FontWeight.ExtraBold, color = color, fontFamily = Nunito)
-                            } else if (state.notes[i] != 0) {
-                                val m = state.notes[i]
-                                val fs = with(density) { (digitSize * 0.39f).toSp() }
-                                Column(Modifier.fillMaxSize().padding(2.dp)) {
-                                    for (rr in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth()) {
-                                        for (cc in 0 until 3) {
-                                            val d = rr * 3 + cc
-                                            Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                if ((m and (1 shl d)) != 0) Text("${d + 1}", fontSize = fs, fontWeight = FontWeight.Bold, color = WTheme.textSecondary, fontFamily = Nunito)
-                                            }
-                                        }
-                                    }
-                                }
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(boxGap)) {
+            for (br in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(boxGap)) {
+                for (bc in 0 until 3) Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(cellGap)) {
+                    for (rr in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(cellGap)) {
+                        for (cc in 0 until 3) {
+                            val r = br * 3 + rr
+                            val c = bc * 3 + cc
+                            val i = r * 9 + c
+                            val given = state.givens[i] != '0'
+                            val boardCh = state.board[i]
+                            val revealed = revealSolution && boardCh == '0'
+                            val value: Char? = if (boardCh != '0') boardCh else if (revealed) state.solution[i] else null
+                            val face = when {
+                                value == null -> TileFace.EMPTY
+                                revealed || given -> TileFace.GIVEN
+                                state.wrongMask[i] == '1' -> TileFace.CONFLICT
+                                else -> TileFace.CORRECT
                             }
+                            SudokuCell(
+                                value = value, face = face,
+                                selected = i == selected,
+                                washed = i != selected && (r == selRow || c == selCol || boxOf(i) == selBox),
+                                sameDigit = selDigit != null && value == selDigit && i != selected,
+                                mutedDigit = revealed,
+                                notes = if (value == null) state.notes[i] else 0,
+                                digitSp = with(density) { digitSize.toSp() },
+                                noteSp = with(density) { (digitSize * 0.39f).toSp() },
+                                modifier = Modifier.weight(1f).fillMaxSize(),
+                                onClick = { onSelect(i) },
+                            )
                         }
                     }
                 }
             }
         }
-        // Rules — hairlines everywhere, heavy on the box boundaries.
-        Canvas(Modifier.fillMaxSize()) {
-            val side = size.width
-            val cell = side / 9f
-            for (k in 1 until 9) {
-                val heavyLine = k % 3 == 0
-                val w = if (heavyLine) 2.dp.toPx() else 1.dp.toPx()
-                val colr = if (heavyLine) heavy else rule
-                val p = k * cell
-                drawRect(colr, topLeft = Offset(p - w / 2, 0f), size = Size(w, side))
-                drawRect(colr, topLeft = Offset(0f, p - w / 2), size = Size(side, w))
+    }
+}
+
+/** One Sudocious cell as a game tile (B1), swelling in when a number is placed (B3). */
+@Composable
+private fun SudokuCell(
+    value: Char?, face: TileFace, selected: Boolean, washed: Boolean, sameDigit: Boolean, mutedDigit: Boolean,
+    notes: Int, digitSp: androidx.compose.ui.unit.TextUnit, noteSp: androidx.compose.ui.unit.TextUnit,
+    modifier: Modifier, onClick: () -> Unit,
+) {
+    var last by remember { mutableStateOf(value) }
+    val pop = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(value) {
+        val placed = last == null && value != null
+        last = value
+        if (placed && !WTheme.reducedMotion) {
+            pop.snapTo(0.9f)
+            pop.animateTo(1f, androidx.compose.animation.core.keyframes {
+                durationMillis = TileMotion.TYPE_MS
+                0.9f at 0
+                1.07f at (TileMotion.TYPE_MS * 0.55f).toInt()
+            })
+        }
+    }
+    val base = TileLooks.of(face, WTheme.colorblind, WTheme.isDark)
+    val look = when {
+        selected && face == TileFace.EMPTY -> TileLooks.TYPED
+        washed && face == TileFace.EMPTY && !WTheme.isDark -> base.copy(faceTop = Color(0xFFF3ECFF), faceMid = Color(0xFFF3ECFF), faceBottom = Color(0xFFEFE6FF))
+        else -> base
+    }
+    val ring = when {
+        selected && face != TileFace.EMPTY -> Color(0xFF8B5CF6)
+        sameDigit -> Color(0xFFF5C542)
+        else -> null
+    }
+    Box(
+        modifier
+            .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+            .drawBehind {
+                drawGameTile(look)
+                if (ring != null) {
+                    val sw = 2.5.dp.toPx()
+                    drawRoundRect(
+                        ring, topLeft = Offset(-sw / 2, -sw / 2), size = Size(size.width + sw, size.height + sw),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(minOf(size.width, size.height) * TILE_CORNER + sw / 2),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(sw),
+                    )
+                }
+            }
+            .clickableNoRipple(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (value != null) {
+            Text(
+                value.toString(), fontSize = digitSp, fontWeight = FontWeight.Black, fontFamily = Nunito,
+                color = if (mutedDigit) Color(0xFF8A78AD) else look.glyph,
+                modifier = Modifier.padding(bottom = 2.dp),
+                style = TextStyle(
+                    shadow = if (look.glyphShadow.alpha > 0f) androidx.compose.ui.graphics.Shadow(look.glyphShadow, Offset(0f, 1.5f), 1f) else null,
+                ),
+            )
+        } else if (notes != 0) {
+            Column(Modifier.fillMaxSize().padding(2.dp)) {
+                for (rr in 0 until 3) Row(Modifier.weight(1f).fillMaxWidth()) {
+                    for (cc in 0 until 3) {
+                        val d = rr * 3 + cc
+                        Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
+                            if ((notes and (1 shl d)) != 0) Text("${d + 1}", fontSize = noteSp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF8A78AD), fontFamily = Nunito)
+                        }
+                    }
+                }
             }
         }
     }
@@ -588,14 +647,8 @@ private fun SudokuResult(
 }
 
 @Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
-    Row(Modifier.clickableNoRipple(onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        // ART_SPEC §5: the result card's Share wears the 3D share icon (~1.2× the old glyph).
-        if (icon == Icons.Filled.Share) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.SHARE, 17.dp)
-        else Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
-    }
-}
+private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
+    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 

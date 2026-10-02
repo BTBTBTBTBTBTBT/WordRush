@@ -5,7 +5,6 @@ import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'r
 import { GameMode, gameReducer, getDailySeedDate, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
 import { CompletedBoardsRecap, toRecapBoards } from '../game/completed-mini-board';
-import Link from 'next/link';
 import { Keyboard } from '../game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('../effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -31,6 +30,8 @@ import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
+import { ResultLine, PlayAgainButton } from '@/components/game/result-line';
+import { REVEAL } from '@/lib/tile-motion';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
@@ -205,33 +206,26 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
             DELIVERANCE
           </h1>
         </GameHostTitle>
-        <div className="flex justify-center gap-3 mt-1">
+        {state.status === 'PLAYING' && <div className="flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Icon3D name="trophy" size={14} inline className="mr-1" />{completedBoards}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
-        </div>
+        </div>}
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
-        {state.status === 'WON' && (
-          <div className="mt-1 flex flex-col items-center gap-1">
-            <span className="text-green-600 text-xs font-bold">Deliverance complete in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {isDaily && <DailyRankBadge gameMode="RESCUE" />}
-              {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Play Again</button>}
-            </div>
-          </div>
-        )}
-        {state.status === 'LOST' && (
-          <div className="mt-1 flex flex-col items-center gap-1">
-            <span className="text-red-300 text-xs font-bold">Boards Completed {completedBoards}/4</span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {isDaily && <DailyRankBadge gameMode="RESCUE" />}
-              {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Try Again</button>}
-            </div>
-          </div>
+        {state.status !== 'PLAYING' && (
+          // FINISH_SPEC B6: two tinted result pills + the 3D share icon (no Home text link).
+          <ResultLine
+            className="mt-1.5"
+            won={state.status === 'WON'}
+            guesses={guessesUsed}
+            time={formatTime(elapsedTime)}
+            srText={state.status === 'WON' ? `Deliverance complete in ${guessesUsed} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${completedBoards}/4`}
+            onShare={handleShare}
+            copied={copied}
+          >
+            {isDaily && <DailyRankBadge gameMode="RESCUE" />}
+            {!isDaily && isPro && <PlayAgainButton onClick={handleRestart} won={state.status === 'WON'} />}
+          </ResultLine>
         )}
       </div>
 
@@ -262,7 +256,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
       {/* Keyboard — hidden when game is complete */}
       {state.status === 'PLAYING' && (
         <div className="shrink-0 pb-2 px-2">
-          <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} />
+          <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} revealDelayMs={REVEAL.end(5)} />
         </div>
       )}
 

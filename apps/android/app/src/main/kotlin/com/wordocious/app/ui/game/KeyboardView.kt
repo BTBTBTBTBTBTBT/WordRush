@@ -23,6 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.drawBehind
+import com.wordocious.app.ui.squishClickable
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -99,13 +103,13 @@ fun KeyboardView(
     }
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp), // spec row spacing 7
+        verticalArrangement = Arrangement.spacedBy(6.dp), // B2 row spacing (game-kit.html .kbd gap 6)
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ROWS.forEachIndexed { rowIdx, row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(5.dp), // spec key spacing 5
+                horizontalArrangement = Arrangement.spacedBy(4.dp), // B2 key spacing (game-kit.html .krow gap 4)
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // standard: ENTER left / ⌫ right (every phone puts backspace
@@ -128,10 +132,10 @@ fun KeyboardView(
                     if (perBoardStates != null) {
                         QuadrantKey(ch.toString(), perBoardStates, keyH, tap)
                     } else if (fill != null) {
-                        LetterKey(ch.toString(), fill, TileState.EMPTY, keyH, tap, used = true)
+                        LetterKey(ch.toString(), TileState.EMPTY, keyH, tap, fill = fill)
                     } else {
                         val state = letterStates[ch.toString()] ?: TileState.EMPTY
-                        LetterKey(ch.toString(), WTheme.keyColor(state), state, keyH, tap)
+                        LetterKey(ch.toString(), state, keyH, tap)
                     }
                 }
                 if (rowIdx == 2) {
@@ -159,6 +163,50 @@ fun KeyboardView(
     }
 }
 
+// ── FINISH_SPEC B2 · the keys are tiles ──────────────────────────────────
+
+/** B2 a key's paint: the lip (bottom 3 dp), the face gradient and the ink. */
+private data class KeyLook(val lip: Color, val faceTop: Color, val faceBottom: Color, val ink: Color)
+
+/** B2 the unplayed key: a lilac lip, a light face, dark purple letters. */
+private val KEY_PLAIN = KeyLook(Color(0xFFCDB9F0), Color(0xE6FFFFFF), Color(0xE6FFFFFF), Color(0xFF3B1A78))
+private val KEY_PLAIN_DARK = KeyLook(Color(0xFF4A3B6E), Color(0xFF3A2D5C), Color(0xFF33284F), Color(0xFFF1EAFF))
+
+/** B2 a revealed key takes its tile's state colors (the colorblind swap included). */
+private fun keyLookFor(state: TileState): KeyLook {
+    if (state == TileState.EMPTY) return if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
+    val face = when (state) {
+        TileState.CORRECT -> TileFace.CORRECT
+        TileState.PRESENT, TileState.HINT_USED -> TileFace.PRESENT
+        else -> TileFace.ABSENT
+    }
+    val t = TileLooks.of(face, WTheme.colorblind)
+    return KeyLook(t.edge, t.faceTop, t.faceMid, if (face == TileFace.ABSENT) Color(0xFFEEF1F6) else Color.White)
+}
+
+/** A key filled in a fixed color (Codebreaker's settled letters): that color's face, a darker lip. */
+private fun keyLookFill(fill: Color): KeyLook = KeyLook(
+    lip = Color(com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.32f, fill.copy(alpha = 1f).toArgb())),
+    faceTop = Color(com.wordocious.app.ui.TintMath.over(0xFFFFFFFF.toInt(), 0.22f, fill.copy(alpha = 1f).toArgb())),
+    faceBottom = fill.copy(alpha = 1f),
+    ink = Color.White,
+)
+
+private val KEY_CORNER = 9.dp
+private val KEY_LIP = 3.dp
+
+/** B2 a key tile: the lip under a face inset [KEY_LIP] from the bottom, radius 9; squishes on press (A9). */
+private fun Modifier.keyTile(look: KeyLook): Modifier = this.drawBehind {
+    val r = androidx.compose.ui.geometry.CornerRadius(KEY_CORNER.toPx())
+    drawRoundRect(look.lip, cornerRadius = r)
+    val faceH = size.height - KEY_LIP.toPx()
+    drawRoundRect(
+        Brush.verticalGradient(listOf(look.faceTop, look.faceBottom), endY = faceH),
+        size = androidx.compose.ui.geometry.Size(size.width, faceH),
+        cornerRadius = r,
+    )
+}
+
 /** Decorative space bar (§213): reacts like a key, does nothing. */
 @Composable
 private fun RowScope.SpaceKey(h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
@@ -166,22 +214,20 @@ private fun RowScope.SpaceKey(h: androidx.compose.ui.unit.Dp, onClick: () -> Uni
         modifier = Modifier
             .weight(4f)
             .height(h)
-            .clip(RoundedCornerShape(6.dp))
-            .background(WTheme.keyDefault)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
-            .semantics { role = Role.Button; contentDescription = "Space (decorative)" }
-            .clickableNoRipple(onClick),
+            .squishClickable("Space (decorative)", onClick = onClick)
+            .keyTile(if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN)
+            .padding(bottom = KEY_LIP),
         contentAlignment = Alignment.Center,
     ) {
-        Text("space", color = Color(0xFF8A86A0), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+        Text("space", color = Color(0xFF8A78AD), fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
     }
 }
 
 /**
  * Quadrant key — per spec Part 2: a grid of sub-cells (cols 2 for ≤4 boards, 4
- * for octo), each colored by that board's letter state (board-tile 500 palette).
- * All-absent → solid gray. Letter overlaid; white (w/ shadow) if any board has
- * info, else dark gray.
+ * for octo), each colored by that board's letter state (board-tile palette).
+ * All-absent → the slate key. Letter overlaid; white (w/ shadow) if any board has
+ * info, else dark purple. B2: drawn as a key tile (the sub-cells sit on its face).
  */
 @Composable
 private fun RowScope.QuadrantKey(
@@ -196,28 +242,26 @@ private fun RowScope.QuadrantKey(
     val cellStates = perBoardStates.map { it[letter] ?: TileState.EMPTY }
     val hasAny = cellStates.any { it != TileState.EMPTY }
     val allAbsent = cellStates.isNotEmpty() && cellStates.all { it == TileState.ABSENT }
+    val look = if (allAbsent) keyLookFor(TileState.ABSENT) else if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
+    val spoken = run {
+        // Spoken per-board summary, e.g. "A, board 1 correct, board 3 not in word".
+        val parts = cellStates.mapIndexedNotNull { i, st ->
+            tileStateName(st).takeIf { it.isNotEmpty() }?.let { "board ${i + 1} $it" }
+        }
+        if (parts.isEmpty()) letter else "$letter, ${parts.joinToString(", ")}"
+    }
 
     Box(
         modifier = Modifier
             .weight(1f)
             .height(h)
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (allAbsent) Color(0xFF9CA3AF) else WTheme.keyDefault)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
-            .semantics {
-                role = Role.Button
-                // Spoken per-board summary, e.g. "A, board 1 correct, board 3 not in word".
-                val parts = cellStates.mapIndexedNotNull { i, st ->
-                    tileStateName(st).takeIf { it.isNotEmpty() }?.let { "board ${i + 1} $it" }
-                }
-                contentDescription = if (parts.isEmpty()) letter else "$letter, ${parts.joinToString(", ")}"
-            }
-            .clickableNoRipple(onClick),
+            .squishClickable(spoken, onClick = onClick)
+            .keyTile(look),
         contentAlignment = Alignment.Center,
     ) {
         if (!allAbsent && hasAny) {
-            // Sub-cell grid
-            Column(Modifier.fillMaxSize()) {
+            // Sub-cell grid on the key's face.
+            Column(Modifier.fillMaxSize().padding(bottom = KEY_LIP).clip(RoundedCornerShape(KEY_CORNER))) {
                 for (r in 0 until rows) {
                     Row(Modifier.weight(1f).fillMaxWidth()) {
                         for (c in 0 until cols) {
@@ -231,85 +275,99 @@ private fun RowScope.QuadrantKey(
         }
         Text(
             letter,
-            color = if (hasAny) Color.White else Color(0xFF374151),
-            fontWeight = FontWeight.Bold,
+            color = if (hasAny) Color.White else look.ink,
+            fontWeight = FontWeight.Black,
             fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = KEY_LIP),
             // Web: text-shadow on the overlaid letter so it reads over sub-cells.
             style = if (hasAny) TextStyle(shadow = Shadow(Color(0x80000000), blurRadius = 3f)) else TextStyle.Default,
         )
     }
 }
 
-/** Board-tile (500) palette for quadrant sub-cells (NOT the darker key palette).
+/** Board-tile palette for quadrant sub-cells (NOT the darker key palette).
  *  Colorblind-aware — web's [data-colorblind] overrides recolor these cells too. */
 private fun quadColor(state: TileState): Color = when (state) {
     TileState.CORRECT -> if (WTheme.colorblind) Color(0xFFF5793A) else Color(0xFF7C3AED)
-    TileState.PRESENT, TileState.HINT_USED -> if (WTheme.colorblind) Color(0xFF85C0F9) else Color(0xFFF59E0B)
-    TileState.ABSENT -> WTheme.keyAbsent
-    TileState.EMPTY -> Color(0xFFE8E5F0)
+    TileState.PRESENT, TileState.HINT_USED -> if (WTheme.colorblind) Color(0xFF85C0F9) else Color(0xFFF5A524)
+    TileState.ABSENT -> Color(0xFF6B7891)
+    TileState.EMPTY -> Color.Transparent
 }
 
-// Keyboard letter key: 52 tall, rounded6, Nunito bold 18. iOS letterKey
-// (KeyboardView.swift:46-51) is a flat fill with NO stroke — only the wide
-// action keys and the quadrant keys are stroked.
+/**
+ * B2 a letter key: a tile (lilac lip, light face, dark purple Nunito Black letter)
+ * that takes its state colors after a reveal; squishes on press (A9).
+ */
 @Composable
-private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit, used: Boolean = false) {
-    val unstated = bg == WTheme.keyDefault && !used
-    val stateName = if (used) "used" else tileStateName(state)
+private fun RowScope.LetterKey(label: String, state: TileState, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit, fill: Color? = null) {
+    val look = if (fill != null) keyLookFill(fill) else keyLookFor(state)
+    val stateName = if (fill != null) "used" else tileStateName(state)
     Box(
         modifier = Modifier
             .weight(1f)
             .height(h)
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg)
-            .semantics {
-                role = Role.Button
-                contentDescription = if (stateName.isEmpty()) label else "$label, $stateName"
-            }
-            .clickableNoRipple(onClick),
+            .squishClickable(if (stateName.isEmpty()) label else "$label, $stateName", onClick = onClick)
+            .keyTile(look),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            // Fixed ink on the fixed key surface — WTheme.text is near-white
-            // in Dark and disappeared against it.
-            color = if (unstated) WTheme.keyInk else Color.White,
-            fontWeight = FontWeight.Bold,
+            color = look.ink,
+            fontWeight = FontWeight.Black,
             fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = KEY_LIP),
         )
     }
 }
 
-// Action keys — web: BACK = lucide Delete (backspace) icon, ENTER = text, font-black.
+/** B2 the chunky purple backspace (game-kit.html's delete key glyph, viewBox 32 × 24). */
+private val BACKSPACE_BODY = androidx.compose.ui.graphics.vector.PathParser()
+    .parsePathString("M10.2 2.5h17.3a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H10.2a3 3 0 0 1-2.3-1.1L2.2 13.9a3 3 0 0 1 0-3.8L7.9 3.6a3 3 0 0 1 2.3-1.1z")
+    .toPath()
+
+@Composable
+private fun ChunkyBackspace(width: androidx.compose.ui.unit.Dp) {
+    androidx.compose.foundation.Canvas(Modifier.size(width, width * 0.75f)) {
+        val k = size.width / 32f
+        val body = androidx.compose.ui.graphics.Path().apply { addPath(BACKSPACE_BODY) }
+        drawContext.canvas.save()
+        drawContext.canvas.scale(k, k)
+        // A faint white highlight under the body (drop-shadow 0 1 0 white 60%).
+        drawContext.canvas.translate(0f, 1f)
+        drawPath(body, Color.White.copy(alpha = 0.6f))
+        drawContext.canvas.translate(0f, -1f)
+        drawPath(body, Color(0xFF5B2BB5))
+        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(Color.White, androidx.compose.ui.geometry.Offset(15.2f, 8.3f), androidx.compose.ui.geometry.Offset(22.6f, 15.7f), strokeWidth = stroke.width, cap = stroke.cap)
+        drawLine(Color.White, androidx.compose.ui.geometry.Offset(22.6f, 8.3f), androidx.compose.ui.geometry.Offset(15.2f, 15.7f), strokeWidth = stroke.width, cap = stroke.cap)
+        drawContext.canvas.restore()
+    }
+}
+
+// Action keys (B2): the same key tile; Delete = the chunky purple backspace, ENTER = a 12 sp label.
 @Composable
 private fun RowScope.WideKey(label: String, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
+    val look = if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
     Box(
         modifier = Modifier
             .weight(1.7f)
             .height(h)
-            .clip(RoundedCornerShape(6.dp))
-            .background(WTheme.keyDefault)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
-            .semantics {
-                role = Role.Button
-                contentDescription = if (label == "BACK") "Delete" else "Submit guess"
-            }
-            .clickableNoRipple(onClick),
+            .squishClickable(if (label == "BACK") "Delete" else "Submit guess", onClick = onClick)
+            .keyTile(look),
         contentAlignment = Alignment.Center,
     ) {
-        if (label == "BACK") {
-            Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = "Backspace", tint = WTheme.keyInk, modifier = Modifier.size(20.dp))
-        } else {
-            // maxLines/softWrap + a slightly smaller face: "ENTER" wrapped to
-            // "ENTE / R" on a Galaxy S23, where the key is narrower than the
-            // label at 14sp. Never let this key wrap.
-            // Shrinks to fit at a large font scale instead of clipping ("ENTEF" — Doug, 2026-09-27).
-            com.wordocious.app.ui.FitText(
-                label,
-                fontSize = 13.sp,
-                color = WTheme.keyInk,
-                fontWeight = FontWeight.ExtraBold,
-            )
+        Box(Modifier.padding(bottom = KEY_LIP), contentAlignment = Alignment.Center) {
+            if (label == "BACK") {
+                ChunkyBackspace(30.dp)
+            } else {
+                // Never let this key wrap; shrinks to fit at a large font scale ("ENTEF" — Doug, 2026-09-27).
+                com.wordocious.app.ui.FitText(
+                    label,
+                    fontSize = 12.sp,
+                    color = look.ink,
+                    fontWeight = FontWeight.Black,
+                )
+            }
         }
     }
 }

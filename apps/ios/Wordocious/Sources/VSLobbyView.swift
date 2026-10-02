@@ -252,7 +252,7 @@ struct VSLobbyView: View {
                     }
                     .opacity(locked ? 0.35 : 1)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityLabel(VsLobbyKit.modeName(m) + (locked ? ", Pro" : ""))
                 .frame(maxWidth: .infinity)
             }
@@ -343,7 +343,7 @@ struct VSLobbyView: View {
                     } label: {
                         Text("See all").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.ink)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                 }
                 VStack(spacing: 0) {
                     ForEach(Array(model.rivals.prefix(3).enumerated()), id: \.element.id) { i, r in
@@ -404,7 +404,7 @@ struct VSLobbyView: View {
                     ForEach(Array(recent.prefix(3).enumerated()), id: \.element.id) { i, c in
                         if i > 0 { Divider().padding(.leading, 48) }
                         NavigationLink { VSChallengeRaceView(code: c.code) } label: { sentRow(c) }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                     }
                 }
                 .vsCard()
@@ -495,7 +495,7 @@ struct VSLobbyView: View {
                 Text("Sign in").font(Brand.font(15, .black)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(20)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
@@ -539,7 +539,7 @@ struct VSLobbyView: View {
                         Label { Text("Go Pro") } icon: { Icon3D(.crown, size: 18) }.font(Brand.font(14, .black)).foregroundStyle(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    }.buttonStyle(.plain).simultaneousGesture(TapGesture().onEnded { onClose() })
+                    }.buttonStyle(.squish).simultaneousGesture(TapGesture().onEnded { onClose() })
                     Button("Maybe later") { onClose() }
                         .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 }

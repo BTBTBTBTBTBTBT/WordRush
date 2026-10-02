@@ -6,6 +6,7 @@ import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from 
 import { replayRecordedGuesses } from '@/hooks/use-game-snapshot';
 import { supabase } from '@/lib/supabase-client';
 import { Board } from '@/components/game/board';
+import { LetterTile, type TileLook } from '@/components/game/letter-tile';
 import { CompletedMiniBoard, GauntletStageBreakdown } from '@/components/game/completed-mini-board';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { useWordDefinition } from '@/hooks/use-word-definition';
@@ -110,18 +111,12 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
   const wordGroups = answerDisplay.split(' ').map(word => normalizeString(word).length);
   const totalLetters = wordGroups.reduce((a, b) => a + b, 0);
 
-  const getPNTileColor = (state: PNTileState) => {
-    switch (state) {
-      case 'correct': return 'tile-correct';
-      case 'present': return 'tile-present';
-      case 'absent': return 'tile-absent';
-      // Hint rows: same gray as the in-game NoundleBoard (#e5e7eb/#d1d5db) —
-      // without this they fell through to the white "empty" style and a hint
-      // row was indistinguishable from an unplayed one.
-      case 'hint-used': return 'bg-gray-200 border-gray-300';
-      default: return 'bg-white border-gray-300';
-    }
-  };
+  // FINISH_SPEC B1: the shared glossy tile (hint rows a quiet frosted gap).
+  const pnLook = (state: PNTileState, letter: string): TileLook =>
+    state === 'correct' || state === 'present' || state === 'absent' ? state
+    : state === 'hint-used' ? 'gap'
+    : letter ? 'typed' : 'empty';
+  const pnTile = Math.min(16, Math.floor(200 / totalLetters));
 
   return (
     <div className="grid gap-[2px]" style={{ gridTemplateRows: `repeat(${maxGuesses}, 1fr)` }}>
@@ -142,18 +137,13 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
                 const letter = PN_PLACEHOLDER.test(raw) ? '' : raw;
                 const tileState = isPast && guess && guess.tiles[idx] ? guess.tiles[idx] : 'empty';
                 groupTiles.push(
-                  <div
+                  <LetterTile
                     key={`${gi}-${ti}`}
-                    className={`flex items-center justify-center border rounded text-[6px] font-bold leading-none ${
-                      tileState === 'empty' || tileState === 'hint-used' ? 'text-gray-800' : 'text-white'
-                    } ${getPNTileColor(tileState)}`}
-                    style={{
-                      width: `${Math.min(16, Math.floor(200 / totalLetters))}px`,
-                      aspectRatio: '1',
-                    }}
-                  >
-                    {letter.toUpperCase()}
-                  </div>
+                    letter={letter.toUpperCase()}
+                    look={pnLook(tileState, letter)}
+                    pop={false}
+                    style={{ width: pnTile, height: pnTile, ['--gt-font' as string]: `${Math.max(6, Math.round(pnTile * 0.5))}px` }}
+                  />
                 );
               }
               return (
@@ -665,7 +655,7 @@ function CompletedWordBoard({ modeId }: CompletedDailyBoardProps) {
         /* ── Single-board (Classic) ── */
         <>
           {/* Compact board */}
-          <div className="mx-auto" style={{ maxWidth: '200px' }}>
+          <div className="mx-auto" style={{ maxWidth: '200px', ['--gt-font' as string]: `${Math.round((200 / (solution?.length || 5)) * 0.5)}px` } as React.CSSProperties}>
             <Board
               guesses={singleDisplayGuesses}
               currentGuess=""

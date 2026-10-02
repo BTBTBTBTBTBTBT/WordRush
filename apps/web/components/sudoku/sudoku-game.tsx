@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -41,6 +40,7 @@ import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
 
 // Sudocious, the daily sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
 // device from the daily seed; Pro Unlimited picks Easy / Medium / Hard. Three
@@ -383,7 +383,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
             {/* Result panel — the answer is on the board above (a lost board
                 shows the solution in muted digits), so nobody leaves without it. */}
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={SUDOKU_ACCENT}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-2xl font-black"
                   style={{ backgroundColor: `${SUDOKU_ACCENT}15`, border: `2px solid ${SUDOKU_ACCENT}44`, color: SUDOKU_ACCENT }}>
                   {won ? '✓' : remaining}
@@ -397,14 +397,13 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
                       ? `${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
                       : `${remaining} cell${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`}
                   </span>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="SUDOKU" />}
-                    {mode !== 'daily' && isPro && <button onClick={() => startPractice(difficulty)} className="text-xs font-bold underline" style={{ color: SUDOKU_ACCENT }}>Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={() => startPractice(difficulty)} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard
                 gameMode="SUDOKU"
                 completed={won}

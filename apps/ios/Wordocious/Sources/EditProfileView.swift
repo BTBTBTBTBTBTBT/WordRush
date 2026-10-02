@@ -159,7 +159,7 @@ struct EditProfileView: View {
         VStack(spacing: 8) {
             Button { showPhotoChoice = true } label: {
                 Text(uploadingAvatar ? "Uploading…" : "Change Photo").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
-            }.disabled(uploadingAvatar).buttonStyle(.plain)
+            }.disabled(uploadingAvatar).buttonStyle(.squish)
             HStack(spacing: 8) {
                 Text("Avatar emoji").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 TextField("🎯", text: $avatarEmoji).frame(width: 44).multilineTextAlignment(.center)
@@ -210,7 +210,7 @@ struct EditProfileView: View {
                                        selected: favoriteMode == m.dbKey, side: 58) { chip in
                             ModeIconView(icon: m.icon, accent: m.accent, box: chip)
                         }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                     .accessibilityLabel(m.title)
                     .accessibilityAddTraits(favoriteMode == m.dbKey ? .isSelected : [])
                 }
@@ -243,7 +243,7 @@ struct EditProfileView: View {
                 .overlay(RoundedRectangle(cornerRadius: 10)
                     .stroke(isPrivate ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             Text("Hide your words, stats, and game history from other players. You'll still appear on leaderboards.")
                 .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
         }
@@ -290,7 +290,7 @@ struct EditProfileView: View {
             .foregroundStyle(selected ? .white : Theme.textPrimary)
             .padding(.horizontal, 10).padding(.vertical, 6)
             .background(Capsule().fill(selected ? accentColor : Theme.surfaceAlt))
-        }.buttonStyle(.plain)
+        }.buttonStyle(.squish)
     }
 
     // MARK: - Save

@@ -229,9 +229,9 @@ struct SpyglassView: View {
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .wordsearch) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -266,7 +266,7 @@ struct SpyglassView: View {
                 .background(Capsule().fill(dim ? Color.clear : spyglassAccent.opacity(0.05)))
                 .overlay(Capsule().stroke(dim ? Theme.border : spyglassAccent.opacity(0.4), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel(label)
     }
 
@@ -420,8 +420,11 @@ struct SpyglassGridView: View {
     var body: some View {
         let s = vm.state, n = s.n
         GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
-            let cell = side / CGFloat(n)
+            // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered).
+            let cell = CGFloat(BoardSizing.fitTile(widthUnits: Double(n), heightUnits: Double(n),
+                                                   width: Double(geo.size.width), height: Double(geo.size.height),
+                                                   maxTile: 120, minTile: 4))
+            let side = cell * CGFloat(n)
             let chars = Array(s.grid)
             let foundCells: Set<Int> = Set(s.words.filter { s.found.contains($0.w) }.flatMap { wordsearchCells(n, $0) })
             let hintCells: Set<Int> = Set(s.words.filter { s.hinted.contains($0.w) && !s.found.contains($0.w) }.compactMap { wordsearchCells(n, $0).first })

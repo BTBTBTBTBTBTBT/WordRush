@@ -1,7 +1,7 @@
 package com.wordocious.app.ui
 
-import com.wordocious.app.ui.theme.Nunito
-
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -9,16 +9,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,23 +31,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import com.wordocious.app.data.AuthService
-import androidx.compose.foundation.layout.BoxWithConstraints
+import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
+import java.time.DayOfWeek
+import java.time.LocalDate
 
 /**
- * Shared top header for every tab (docs/HEADER_SPEC.md §1; web `app-header.tsx`,
- * iOS `AppHeaderView`). Row 1: the cast title, the ten mascots spelling
- * WORDOCIOUS (it replaces the wordmark and the PRO pill); Pro wears the crown on
- * W over a soft gold glow line, the header's only Pro marker. Row 2: the streak /
- * flawless / shield pills on the left, Sign In (guests) + Help + Settings circles
- * on the right. Must appear on Home/Leaderboard/Stats/Friends.
+ * Shared top header for every tab (Home, Leaderboard, Stats, Friends). FINISH_SPEC:
+ * A5 the living cast header — the ten cast heroes spelling WORDOCIOUS edge to edge,
+ * one character at a time playing its move (Pro wears the crown on W over a soft gold
+ * glow line, the header's only Pro marker); C1 / A3 the controls row under it — the
+ * streak / flawless / shield counts and the help / settings controls as bare soft 3D
+ * icons (no bubbles) with soft numbers, squishing on press; C5 the streak and shield
+ * popups, anchored under the tapped control. Mirrors web `app-header.tsx` and iOS
+ * `AppHeaderView`.
  */
 @Composable
 fun AppHeader(
@@ -55,31 +74,21 @@ fun AppHeader(
     val profile by AuthService.profile.collectAsState()
     val isGuest by AuthService.isGuest.collectAsState()
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 6.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         CastTitle(pro = AuthService.isProActive)
         HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn)
     }
 }
 
-/** Plays the cast title's hop wave once per app session (§1: on first appearance). */
-private var castTitleWaved = false
-
 /**
- * §1 row 1: the ten mascots in WORDOCIOUS order, ~36 dp, ~8% overlap, bottoms
- * aligned, centered, tappable to nothing, sized down to fit narrow phones. A
- * one-time hop wave on first appearance (reduce motion: static, via CastRow).
- * Pro: the 3D crown on W (~45% of W's width) and a soft gold glow line beneath.
+ * A5 the cast row, edge to edge (a 2 dp gutter). Pro: the crown on W and a soft gold
+ * glow line beneath the row.
  */
 @Composable
 private fun CastTitle(pro: Boolean) {
-    val wave = remember { !castTitleWaved.also { castTitleWaved = true } }
-    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        // n tiles with 8% overlap span size * (n - 0.08 (n - 1)).
-        val n = Mascots.cast.size
-        val tile = minOf(36.dp, maxWidth / (n - 0.08f * (n - 1)))
+    Box(Modifier.fillMaxWidth().padding(horizontal = 2.dp), contentAlignment = Alignment.BottomCenter) {
         if (pro) {
             // #f59e0b at ~25%, 2 dp, blurred (blur is API 31+; the faded ends carry it below).
             Box(
@@ -91,16 +100,12 @@ private fun CastTitle(pro: Boolean) {
                     ),
             )
         }
-        CastRow(
-            tile,
-            Modifier.padding(bottom = if (pro) 3.dp else 0.dp),
-            motion = if (wave) MascotMotion.WAVE else MascotMotion.NONE,
-            hop = 8.dp, staggerMs = 60, repeats = 1,
-            crown = pro, crownWidth = 0.45f,
-            gap = -(tile * 0.08f),
-        )
+        LivingCastHeader(Modifier.fillMaxWidth().padding(bottom = if (pro) 3.dp else 0.dp), crown = pro)
     }
 }
+
+/** Which header popup is open (C5). */
+private enum class HeaderPop { STREAK, FLAWLESS, SHIELD }
 
 @Composable
 private fun HeaderControlsRow(
@@ -110,177 +115,336 @@ private fun HeaderControlsRow(
     onSettings: () -> Unit,
     onSignIn: () -> Unit,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+    var open by remember { mutableStateOf<HeaderPop?>(null) }
+    Column(Modifier.fillMaxWidth()) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        var menuOpen by remember { mutableStateOf(false) }
-        var streakOpen by remember { mutableStateOf(false) }
-        var shieldOpen by remember { mutableStateOf(false) }
-        var flawlessOpen by remember { mutableStateOf(false) }
 
-        // Pills read AuthService.headerStreak/headerShields, not `profile`
-        // directly: the profile row lands a beat after launch, so gating on it
-        // made both pills pop in a second late on every cold start. Those fall
-        // back to the last known values for exactly that window, and are null
-        // on a first launch or after sign-out so nothing is drawn. The popovers
-        // still need the real row, so a tap during the window is inert.
+        // Counts read AuthService.headerStreak/headerShields, not `profile` directly:
+        // the profile row lands a beat after launch, so gating on it made the counts pop
+        // in a second late on every cold start. Those fall back to the last known values
+        // for exactly that window, and are null on a first launch or after sign-out so
+        // nothing is drawn. The popups still need the real row, so a tap during the
+        // window is inert.
         Row(
             Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             val streak = AuthService.headerStreak ?: 0
             if (streak > 0) {
-                HeaderPill(onClick = { if (profile != null) streakOpen = true }) {
-                    Icon3D(Icon3DName.FLAME, 20.dp)
-                    PillNumber("$streak", HeaderInk.streak)
-                }
+                SoftControl(
+                    Icon3DName.FLAME, "$streak day streak",
+                    onClick = { if (profile != null) open = HeaderPop.STREAK },
+                    number = "$streak",
+                )
             }
-            // §244: flawless-streak pill — the day-stamped cache written by
+            // §244: flawless-streak count — the day-stamped cache written by
             // dailySweepStats(), synchronous like the other header values. Only a
             // live run (>= 2) earns header real estate.
             val flawlessStreak = com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak()
             if (flawlessStreak >= 2) {
-                HeaderPill(onClick = { flawlessOpen = true }) {
-                    Icon3D(Icon3DName.TROPHY, 20.dp)
-                    PillNumber("$flawlessStreak", HeaderInk.trophy)
-                }
+                SoftControl(
+                    Icon3DName.TROPHY, "$flawlessStreak day flawless streak",
+                    onClick = { open = HeaderPop.FLAWLESS },
+                    number = "$flawlessStreak",
+                )
             }
-            // Shield pill (shown once we have a value, cached or live) — tappable, like iOS.
             val shields = AuthService.headerShields
             if (shields != null) {
-                HeaderPill(onClick = { if (profile != null) shieldOpen = true }) {
-                    Icon3D(Icon3DName.SHIELD, 20.dp)
-                    PillNumber("$shields", HeaderInk.shield)
-                }
-            }
-
-            // Explainer popovers — iOS opens these on pill tap (AppHeaderView
-            // streakPopover / shieldPopover). Without them the pills were inert
-            // numbers with nothing telling the player what a shield even is.
-            val p = profile
-            if (streakOpen && p != null) {
-                HeaderInfoPopover(onDismiss = { streakOpen = false }) {
-                    PopoverTitle(title = "Daily Streak") { Icon3D(Icon3DName.FLAME, 18.dp) }
-                    PopoverStatRow("Current", "${p.dailyLoginStreak} ${if (p.dailyLoginStreak == 1) "day" else "days"}")
-                    PopoverStatRow("Best", "${p.bestDailyLoginStreak} ${if (p.bestDailyLoginStreak == 1) "day" else "days"}")
-                    PopoverDivider()
-                    PopoverBody(
-                        "Play any daily puzzle each day to keep your streak going. " +
-                            "Miss a day and it resets — unless you use a streak shield.",
-                    )
-                }
-            }
-            if (flawlessOpen) {
-                HeaderInfoPopover(onDismiss = { flawlessOpen = false }) {
-                    PopoverTitle(title = "Flawless Streak") { Icon3D(Icon3DName.TROPHY, 18.dp) }
-                    PopoverStatRow("Current", "$flawlessStreak ${if (flawlessStreak == 1) "day" else "days"}")
-                    PopoverDivider()
-                    PopoverBody("Consecutive days winning every Daily Sweep game. Win them all today to keep it alive.")
-                }
-            }
-            if (shieldOpen && p != null) {
-                HeaderInfoPopover(onDismiss = { shieldOpen = false }) {
-                    PopoverTitle(title = "Streak Shields") { Icon3D(Icon3DName.SHIELD, 18.dp) }
-                    PopoverStatRow("Available", "${p.streakShields} ${if (p.streakShields == 1) "shield" else "shields"}")
-                    PopoverDivider()
-                    PopoverBody(
-                        "Shields protect your streak if you miss a day. Earn a free shield every " +
-                            "7-day streak milestone. PRO members get 4 shields each billing period.",
-                    )
-                }
+                SoftControl(
+                    Icon3DName.SHIELD, "$shields streak ${if (shields == 1) "shield" else "shields"}",
+                    onClick = { if (profile != null) open = HeaderPop.SHIELD },
+                    number = "$shields",
+                )
             }
         }
 
-        // Guest — prominent Sign In entry (account tabs also prompt, but Home
-        // had none). Opens sign-in as a DISMISSIBLE overlay, matching iOS.
-        // This used to call exitGuest(), which flipped the root gate and tore
-        // MainScreen down: you lost your tab and your place, and backing out
-        // stranded you on the sign-in gate instead of where you started.
+        // Guest — the Sign In entry, a small candy pill (A8). Opens sign-in as a
+        // DISMISSIBLE overlay, matching iOS: guest state is untouched, so backing out
+        // returns you to the exact tab you were on.
         if (isGuest) {
-            Text(
-                "Sign In", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
-                modifier = Modifier
-                    .clip(CircleShape)   // iOS Capsule()
-                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
-                    .clickableNoRipple(onSignIn)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
+            CandyButton("Sign In", onClick = onSignIn, size = CandySize.SMALL)
+            Spacer(Modifier.width(2.dp))
         }
-        HeaderIconButton(Icon3DName.HELP, "Help", onClick = { menuOpen = true })
+        SoftControl(Icon3DName.HELP, "Help", onClick = { menuOpen = true })
         if (menuOpen) {
             InfoMenuSheet(onNav = { menuOpen = false; onNav(it) }, onDismiss = { menuOpen = false })
         }
-        HeaderIconButton(Icon3DName.GEAR, "Settings", onClick = onSettings)
+        SoftControl(Icon3DName.GEAR, "Settings", onClick = onSettings)
+    }
+    // C5 the popups, anchored just under this controls row (this zero-height strip sits
+    // right below it, so the popup's anchor bottom is the row's bottom edge).
+    Box(Modifier.fillMaxWidth()) {
+        val p = profile
+        when (open) {
+            HeaderPop.STREAK -> if (p != null) StreakPopup(p, onDismiss = { open = null })
+            HeaderPop.SHIELD -> if (p != null) ShieldPopup(p.streakShields, onDismiss = { open = null })
+            HeaderPop.FLAWLESS -> FlawlessPopup(com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak(), onDismiss = { open = null })
+            null -> Unit
+        }
+    }
     }
 }
 
-@Composable
-private fun PillNumber(text: String, ink: Color) {
-    Text(text, fontSize = 15.sp, fontWeight = FontWeight.Black, color = ink, maxLines = 1, style = TextStyle(fontFamily = Nunito))
+// ── C5 · streak + shield popups ───────────────────────────────────────────
+
+/**
+ * C5 this week's played days (Monday first) for a [streak]-day run as of [today]:
+ * the run ends today when [playedToday], else yesterday, and covers [streak]
+ * consecutive days back from there. (A shield-saved day inside the run counts as
+ * kept; there is no per-day history on the client.)
+ */
+object StreakWeek {
+    fun days(today: LocalDate, streak: Int, playedToday: Boolean): List<Boolean> {
+        val monday = today.with(DayOfWeek.MONDAY)
+        if (streak <= 0) return List(7) { false }
+        val end = if (playedToday) today else today.minusDays(1)
+        val start = end.minusDays((streak - 1).toLong())
+        return List(7) { i ->
+            val d = monday.plusDays(i.toLong())
+            !d.isBefore(start) && !d.isAfter(end)
+        }
+    }
+
+    val LABELS = listOf("M", "T", "W", "T", "F", "S", "S")
 }
 
 /**
- * The streak/shield explainer bubble. iOS uses a `.popover` anchored to the
- * pill; Compose has no anchored-popover primitive, so this is a small centered
- * dialog with the same 240dp width, padding, and copy.
+ * Places the popup card just under the anchor (the controls row), centered across
+ * the window with the card's own side margins.
+ */
+private class UnderAnchor(private val gapPx: Int) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val x = ((windowSize.width - popupContentSize.width) / 2).coerceAtLeast(0)
+        val y = (anchorBounds.bottom + gapPx).coerceAtMost((windowSize.height - popupContentSize.height).coerceAtLeast(0))
+        return IntOffset(x, y)
+    }
+}
+
+/** The whole-window dim behind a header popup (tap = dismiss). */
+private object WindowOrigin : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset = IntOffset.Zero
+}
+
+/**
+ * C5 a header popup: the page dims softly and the card sits just under the control
+ * row it came from — a colored [header] gradient with the big 3D [icon], a friendly
+ * [title] + [subtitle] and a [host] pose, then the body on the [tint].
  */
 @Composable
-private fun HeaderInfoPopover(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            Modifier
-                .width(240.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            content = content,
-        )
-    }
-}
-
-@Composable
-private fun PopoverTitle(title: String, icon: @Composable () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        icon()
-        Text(title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-    }
-}
-
-@Composable
-private fun PopoverStatRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.weight(1f))
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-    }
-}
-
-@Composable
-private fun PopoverDivider() {
-    Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.divider))
-}
-
-@Composable
-private fun PopoverBody(text: String) {
-    Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary)
-}
-
-/** §1 stat pill: white, radius 999, soft shadow, NO border; 20 dp icon + 15/900 number. */
-@Composable
-private fun HeaderPill(
-    onClick: (() -> Unit)? = null,
-    content: @Composable () -> Unit,
+private fun HeaderPopup(
+    onDismiss: () -> Unit,
+    tint: Color,
+    header: Brush,
+    icon: Icon3DName,
+    title: String,
+    subtitle: String,
+    host: Pair<MascotId, String>,
+    body: @Composable ColumnScope.() -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .softWhite()
-            .then(if (onClick != null) Modifier.clickableNoRipple(onClick) else Modifier)
-            .padding(start = 7.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) { content() }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    // The dim (its own window behind the card).
+    Popup(popupPositionProvider = WindowOrigin, onDismissRequest = onDismiss, properties = PopupProperties(focusable = false)) {
+        Box(Modifier.fillMaxSize().background(Color(0x471E0F3C)).clickableNoRipple(onDismiss))
+    }
+    Popup(
+        popupPositionProvider = remember(density) { UnderAnchor(with(density) { 6.dp.roundToPx() }) },
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = true, dismissOnClickOutside = true),
+    ) {
+        val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
+        LaunchedEffect(Unit) { appear.animateTo(1f, tween(220)) }
+        val shape = RoundedCornerShape(24.dp)
+        Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.TopCenter) {
+            Column(
+                Modifier.widthIn(max = 440.dp).fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = appear.value
+                        val s = 0.94f + 0.06f * appear.value
+                        scaleX = s; scaleY = s
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+                    }
+                    // The card's lift (0 18 40 rgba(40,15,80,.35)).
+                    .shadow(16.dp, shape, clip = false, ambientColor = Color(0x59280F50), spotColor = Color(0x59280F50))
+                    .clip(shape)
+                    .background(if (WTheme.isDark) WTheme.surface else tint)
+                    .clickableNoRipple { /* the card itself never dismisses */ },
+            ) {
+                // The colored header: big 3D icon, headline + subline, the host on the right.
+                Box(Modifier.fillMaxWidth().background(header)) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 16.dp, end = 86.dp, top = 14.dp, bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon3D(icon, 58.dp)
+                        Column(Modifier.semantics(mergeDescendants = true) { contentDescription = "$title. $subtitle" }) {
+                            Text(
+                                title, fontSize = 21.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = Color.White,
+                                style = androidx.compose.ui.text.TextStyle(
+                                    shadow = androidx.compose.ui.graphics.Shadow(Color(0x1F000000), Offset(0f, 2f * density.density), 0f),
+                                ),
+                            )
+                            Text(subtitle, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.9f))
+                        }
+                    }
+                    CastPose(host.first, host.second, 74.dp, Modifier.align(Alignment.BottomEnd).offset(x = (-8).dp, y = 6.dp))
+                }
+                body()
+            }
+        }
+    }
+}
+
+/** C5 a soft-number stat tile (CURRENT / BEST) on the popup, tinted in [accent] with a top bar. */
+@Composable
+private fun PopupStatTile(value: String, label: String, accent: Color, labelInk: Color, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(14.dp)
+    Column(
+        modifier.clip(shape)
+            .background(accentWash(accent, 0.12f))
+            .border(1.5.dp, accentLine(accent, 0.30f), shape)
+            .drawBehind { drawRect(accent, size = androidx.compose.ui.geometry.Size(size.width, 4.dp.toPx())) }
+            .padding(top = 10.dp, bottom = 8.dp, start = 10.dp, end = 10.dp)
+            .semantics(mergeDescendants = true) { },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        SoftNumber(value, 28.sp)
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = labelInk)
+    }
+}
+
+@Composable
+private fun PopupBody(text: String) {
+    Text(
+        text, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, lineHeight = 19.sp,
+        color = if (WTheme.isDark) WTheme.textSecondary else Color(0xFF5A4A72),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 14.dp),
+    )
+}
+
+private val STREAK_ORANGE = Color(0xFFF5A524)
+private val STREAK_LABEL = Color(0xFFA2560C)
+
+/** C5 the streak popup: warm orange header with the flame and S (trophy), Current + Best, this week. */
+@Composable
+private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Unit) {
+    val current = p.dailyLoginStreak
+    val best = maxOf(p.bestDailyLoginStreak, current)
+    val playedToday = com.wordocious.app.data.DailyCompletionsService.readCache().isNotEmpty()
+    val week = remember(current, playedToday) { StreakWeek.days(LocalDate.now(), current, playedToday) }
+    HeaderPopup(
+        onDismiss = onDismiss,
+        tint = Color(0xFFFFF6EA),
+        header = Brush.linearGradient(
+            0f to Color(0xFFFFB36B), 0.6f to STREAK_ORANGE, 1f to Color(0xFFFF8A5C),
+            start = Offset.Zero, end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        ),
+        icon = Icon3DName.FLAME,
+        title = if (current > 0) "$current-day streak!" else "Daily streak",
+        subtitle = when {
+            current <= 0 -> "Play any daily to start one."
+            current >= best -> "Your best ever. Keep it rolling."
+            else -> "Keep it rolling."
+        },
+        host = MascotId.S to "trophy",
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            PopupStatTile("$current", "CURRENT", STREAK_ORANGE, STREAK_LABEL, Modifier.weight(1f))
+            PopupStatTile("$best", "BEST", STREAK_ORANGE, STREAK_LABEL, Modifier.weight(1f))
+        }
+        // This week as seven day tiles, filled orange for each day played.
+        Row(
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 2.dp)
+                .semantics { contentDescription = "This week: ${week.count { it }} of 7 days played" },
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            week.forEachIndexed { i, on ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(StreakWeek.LABELS[i], fontSize = 10.sp, fontWeight = FontWeight.Black, color = STREAK_LABEL)
+                    WeekDayTile(on)
+                }
+            }
+        }
+        PopupBody("Play any daily puzzle each day to keep your streak going. Miss a day and it resets, unless a streak shield saves it.")
+    }
+}
+
+@Composable
+private fun WeekDayTile(on: Boolean) {
+    val shape = RoundedCornerShape(8.dp)
+    Box(
+        Modifier.padding(top = 2.dp).fillMaxWidth().height(28.dp)
+            .then(
+                if (on) Modifier
+                    .drawBehind { drawRoundRect(Color(0xFFB0650B), topLeft = Offset(0f, 2.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx())) }
+                    .padding(bottom = 2.dp)
+                    .clip(shape)
+                    .background(Brush.verticalGradient(listOf(Color(0xFFFFB36B), STREAK_ORANGE)))
+                else Modifier.clip(shape)
+                    .background(Color(0x73FFD6A0))
+                    .dashedBorder(1.5.dp, Color(0x59D97706), 8.dp),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (on) Text("✓", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+    }
+}
+
+/** C5 the shield popup: purple header with the shield and U (lotus); the shields as a row of 3D shields. */
+@Composable
+private fun ShieldPopup(shields: Int, onDismiss: () -> Unit) {
+    HeaderPopup(
+        onDismiss = onDismiss,
+        tint = Color(0xFFF5EFFF),
+        header = Brush.linearGradient(
+            0f to Color(0xFFA78BFA), 0.6f to Color(0xFF7C3AED), 1f to Color(0xFF6D28D9),
+            start = Offset.Zero, end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        ),
+        icon = Icon3DName.SHIELD,
+        title = "$shields streak ${if (shields == 1) "shield" else "shields"}",
+        subtitle = if (shields > 0) "Your streak is protected." else "Earn one at your next 7-day milestone.",
+        host = MascotId.U to "lotus",
+    ) {
+        // Up to four earned shields, then the next one to earn, faded.
+        Row(
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 2.dp)
+                .semantics { contentDescription = "$shields shields" },
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        ) {
+            repeat(minOf(shields, 4)) { Icon3D(Icon3DName.SHIELD, 40.dp) }
+            Icon3D(Icon3DName.SHIELD, 40.dp, alpha = 0.28f, colorFilter = Icon3DMuted)
+        }
+        PopupBody("A shield saves your streak if you miss a day. Earn a free one at every 7-day milestone; Pro members get 4 each billing period.")
+    }
+}
+
+/** The flawless-streak popup in the same family: gold header, the trophy and O2 cheering (A7). */
+@Composable
+private fun FlawlessPopup(days: Int, onDismiss: () -> Unit) {
+    HeaderPopup(
+        onDismiss = onDismiss,
+        tint = Color(0xFFFFF8E6),
+        header = Brush.linearGradient(
+            0f to Color(0xFFFFD166), 0.6f to Color(0xFFF5A524), 1f to Color(0xFFF59E0B),
+            start = Offset.Zero, end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        ),
+        icon = Icon3DName.TROPHY,
+        title = "$days-day flawless run!",
+        subtitle = "Every Daily Sweep game won.",
+        host = MascotId.O2 to "cheer",
+    ) {
+        Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 4.dp)) {
+            PopupStatTile("$days", "CURRENT", STREAK_ORANGE, STREAK_LABEL, Modifier.weight(1f))
+        }
+        PopupBody("Consecutive days winning every Daily Sweep game. Win them all today to keep it alive.")
+    }
 }

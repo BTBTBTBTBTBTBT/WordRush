@@ -64,7 +64,7 @@ struct RecordsTab: View {
                             .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .padding(.top, 8)
                 }
                 .padding(.horizontal, 16).padding(.top, 8)
@@ -219,7 +219,7 @@ struct AllTimeRecordsView: View {
                     Text("\(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             Spacer(minLength: 6)
             Text("\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s")").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).fixedSize()
@@ -303,7 +303,7 @@ struct RecordStatCell: View {
                         Text(record.holderUsername).font(Brand.font(11, .heavy)).lineLimit(1).minimumScaleFactor(0.7)
                             .foregroundStyle(mine ? Color(hex: 0xD97706) : Theme.textPrimary)
                     }
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
             Spacer(minLength: 0)
         }
@@ -363,7 +363,7 @@ struct RecordsBoardRow: View {
                         RowResultBadge(won: entry.completed)
                     }
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             Spacer(minLength: 6)
             Text(score).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).fixedSize()
@@ -662,7 +662,7 @@ struct DailyRecordsView: View {
                                   streak: flawlessStreaks[e.userId] ?? 0)
                     }
                 }
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(.horizontal, 10).padding(.vertical, 10)
         .youRow(isMe)
@@ -790,7 +790,7 @@ struct YesterdayPodiumCard: View {
                             }
                             .padding(.vertical, 6).contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                         Spacer(minLength: 4)
                         // Settled-podium share — only once the podium is open with rows.
                         if open && !top3.isEmpty {

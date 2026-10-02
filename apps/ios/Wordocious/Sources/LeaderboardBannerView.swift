@@ -83,7 +83,7 @@ struct LeaderboardBannerView: View {
                             .lineLimit(1).fixedSize()
                             .padding(.vertical, 4).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .accessibilityLabel("All-time records")
                 }
             }

@@ -490,7 +490,7 @@ struct TrophyShelf: View {
                     } label: {
                         Icon3D(.share, size: 15)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .opacity(sharingShelf ? 0.4 : 1)
                     .accessibilityLabel("Share trophy shelf")
                 }

@@ -94,7 +94,7 @@ struct AuthView: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 12)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain).disabled(working || !SupabaseConfig.isConfigured)
+                }.buttonStyle(.squish).disabled(working || !SupabaseConfig.isConfigured)
 
                 HStack(spacing: 10) {
                     Rectangle().fill(Theme.border).frame(height: 1)
@@ -144,7 +144,7 @@ struct AuthView: View {
                         .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))   // btn-3d
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .disabled(working || !SupabaseConfig.isConfigured || (mode == .reset && resetSent)
                           || (mode == .signup && signupSent))
 
@@ -170,7 +170,7 @@ struct AuthView: View {
                     Text("Play without an account")
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary).underline()
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .disabled(working)
             }
         }
@@ -214,7 +214,7 @@ struct AuthView: View {
                     Spacer()
                     Button(title, action: action)
                         .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                 }
             }
             HStack(spacing: 8) {
@@ -230,7 +230,7 @@ struct AuthView: View {
                     Image(systemName: showPassword ? "eye.slash" : "eye")
                         .font(.system(size: 14)).foregroundStyle(Theme.textMuted)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityLabel(showPassword ? "Hide password" : "Show password")
             }
             .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))

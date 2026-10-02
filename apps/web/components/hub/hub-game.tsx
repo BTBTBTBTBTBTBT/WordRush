@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -43,6 +42,9 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { CandyButton, candyClass } from '@/components/ui/candy-button';
+import { darken, softMix } from '@/lib/soft-surface';
 
 // Hubbub (More Games §12): seven letters, one required center, words of 4+
 // letters. The game finalizes ONCE — reaching Hubbub (50% of max) is the win,
@@ -335,16 +337,20 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const rank = hubRank(state);
   const rankName = HUB_RANKS[rank].name;
   const won = state.status === 'won';
-  const capsule = (dim: boolean, filled = false) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : filled ? 'text-white' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean, filled = false) => dim ? undefined : filled ? { background: HUB_ACCENT, borderColor: HUB_ACCENT } : { borderColor: `${HUB_ACCENT}66`, color: HUB_ACCENT, background: `${HUB_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean, filled = false) => candyClass({ dim, color: filled ? 'amber' : 'purple' });
+  const capsuleStyle = (_dim: boolean, _filled = false) => undefined;
 
+  // FINISH_SPEC B1: the hive letters are the shared glossy tiles — the center
+  // letter in the Hubbub accent, the rest plain light tiles.
   const letterTile = (ch: string, isCentre: boolean) => (
     <button key={ch} type="button" onClick={() => { haptic('light'); playKeyTap(); type(ch); }} disabled={state.ended}
-      className="rounded-[14%] font-black flex items-center justify-center active:scale-95 transition-transform select-none shrink-0"
-      style={{ width: 'var(--tile)', height: 'var(--tile)', fontSize: 'calc(var(--tile) * 0.42)',
-        ...(isCentre ? { background: HUB_ACCENT, color: '#fff', boxShadow: '0 2px 0 rgba(0,0,0,0.12)' } : { background: 'var(--color-surface)', color: 'var(--color-text)', border: '2px solid var(--color-border)', boxShadow: '0 2px 0 rgba(0,0,0,0.06)' }) }}
+      className="gtile shrink-0"
+      data-s={isCentre ? 'correct' : 'given'}
+      style={{ width: 'var(--tile)', height: 'var(--tile)', padding: 0, border: 0, ['--gt-font' as string]: 'calc(var(--tile) * 0.46)',
+        ...(isCentre ? { ['--gt-edge' as string]: darken(HUB_ACCENT, 0.35), ['--gt-face' as string]: `linear-gradient(${softMix(HUB_ACCENT, 0.7)}, ${HUB_ACCENT} 70%, ${darken(HUB_ACCENT, 0.08)})` } : null) } as React.CSSProperties}
       aria-label={isCentre ? `${ch}, center letter` : ch}>
-      {ch}
+      <b>{ch}</b>
     </button>
   );
 
@@ -431,22 +437,21 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="px-4 pt-2 pb-4 animate-fade-in-up flex flex-col gap-3">
           {rankBar}
-          <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+          <ResultCard accent={HUB_ACCENT}>
             <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-lg font-black" style={{ backgroundColor: `${HUB_ACCENT}15`, border: `2px solid ${HUB_ACCENT}44`, color: HUB_ACCENT }}>
               {Math.floor((state.points * 100) / Math.max(1, state.max))}%
             </div>
             <div className="flex flex-col gap-1 min-w-0">
               <span className={`text-sm font-bold ${won ? 'text-green-600' : 'text-red-500'}`}>{won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}</span>
               <span className="text-xs text-gray-400">{state.points}/{state.max} pts · {state.found.length}/{state.words.length} words · {state.found.filter((w) => state.pangrams.includes(w)).length}/{state.pangrams.length} pangram{state.pangrams.length === 1 ? '' : 's'} · {formatTime(scoredSeconds)}{state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}</span>
-              <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-                {!state.ended && <button onClick={() => setView('board')} className="text-xs font-bold underline" style={{ color: HUB_ACCENT }}>Keep going</button>}
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <ShareGlyph onShare={handleShare} copied={copied} />
+                {!state.ended && <CandyButton size="sm" color="purple" onClick={() => setView('board')}>Keep going</CandyButton>}
                 {mode === 'daily' && <DailyRankBadge gameMode="HUB" />}
-                {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: HUB_ACCENT }}>Play Again</button>}
+                {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
               </div>
             </div>
-          </div>
+          </ResultCard>
           <div className="w-full max-w-md mx-auto">
             <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
               {state.ended ? 'ALL WORDS' : `FOUND SO FAR · ${state.words.length - state.found.length} MORE TO FIND`}

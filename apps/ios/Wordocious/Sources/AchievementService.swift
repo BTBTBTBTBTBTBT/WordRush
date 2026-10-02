@@ -368,7 +368,7 @@ struct CollapsibleSection<Content: View>: View {
                 }
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())   // whole row tappable, not just the text/chevron
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             if open { content.padding(.top, 8) }
         }
     }

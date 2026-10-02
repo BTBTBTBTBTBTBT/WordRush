@@ -18,6 +18,9 @@ export const TILE_HEX = {
   absentDeep: '#64748b',
   empty: '#e5e7eb',
   emptyBorder: '#d1d5db',
+  /** The frosted empty tile drawn opaque (canvas / inline consumers). */
+  frosted: '#f3ecff',
+  frostedBorder: '#ddd0f5',
 } as const;
 
 export const KEY_HEX = {
@@ -84,6 +87,7 @@ export function getTileHex(
     case 'correct': return { bg: TILE_HEX.correct, border: TILE_HEX.correct, text: '#ffffff' };
     case 'present': return { bg: TILE_HEX.present, border: TILE_HEX.present, text: '#ffffff' };
     case 'absent': return { bg: TILE_HEX.absentDeep, border: TILE_HEX.absentDeep, text: '#ffffff' };
-    default: return { bg: '#ffffff', border: TILE_HEX.emptyBorder, text: '#1a1a2e' };
+    // FINISH_SPEC B1 / WHITE_AUDIT: an empty tile is frosted lilac, never plain white.
+    default: return { bg: TILE_HEX.frosted, border: TILE_HEX.frostedBorder, text: '#3b1a78' };
   }
 }

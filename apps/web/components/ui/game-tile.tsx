@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ComponentType, CSSProperties, ReactNode } from 'react';
 import { isGameArtIcon } from '@/lib/art';
+import { SOFT, alphaHex, overAlpha } from '@/lib/soft-surface';
 
 // One game-tile style everywhere (founder, 2026-10-01; docs/GAME_TILE_STYLE.md).
 // The reference is the home mode card in its completed state
@@ -19,26 +20,34 @@ export const GAME_TILE_RADIUS = 14;
  */
 export type GameTileTone = 'theme' | 'light';
 
+// FINISH_SPEC A1 / WHITE_AUDIT lever 4: no plain white under the tile — the
+// accent's wash is laid over the card base (white in the light themes, the
+// dark surface in the dark theme; always white on the light-only pages).
 const TONE = {
-  theme: { surface: 'var(--color-surface)', text: 'var(--color-text)', muted: 'var(--color-text-muted)' },
+  theme: { surface: 'var(--color-card-base, #ffffff)', text: 'var(--color-text)', muted: 'var(--color-text-muted)' },
   light: { surface: '#ffffff', text: '#1a1a2e', muted: '#9ca3af' },
 } as const;
 
-/** Background, border, radius and (when selected) glow of a game tile. */
+/**
+ * Background, border, radius and shadow of a game tile — a mini game card
+ * (A1): the accent's ≈13% wash, a ≈32% border and a soft accent shadow;
+ * selected = a stronger wash, the full-accent border and an accent ring.
+ */
 export function gameTileSurface(
   accent: string,
   { selected = false, tone = 'theme', radius = GAME_TILE_RADIUS }: { selected?: boolean; tone?: GameTileTone; radius?: number } = {},
 ): CSSProperties {
-  const tint = selected ? `${accent}1f` : `${accent}0f`;
+  const share = selected ? SOFT.strong : SOFT.tint;
+  const tint = alphaHex(accent, share);
   return {
     background: `linear-gradient(${tint}, ${tint}), ${TONE[tone].surface}`,
-    border: selected ? `2px solid ${accent}` : `1.5px solid ${accent}66`,
+    border: selected ? `2px solid ${accent}` : `1.5px solid ${alphaHex(accent, overAlpha(SOFT.line, share))}`,
     borderRadius: radius,
-    boxShadow: selected ? `0 0 10px ${accent}66` : undefined,
+    boxShadow: selected ? `0 0 0 3px ${alphaHex(accent, 0.22)}, 0 0 10px ${accent}55` : `0 3px 8px ${alphaHex(accent, 0.18)}`,
   };
 }
 
-/** The 4 px accent bar across the top (the parent must be `relative overflow-hidden`). */
+/** The 4 px accent bar across the top (the parent must be `relative overflow-hidden`): the mini game card's top bar. */
 export function GameTileBar({ accent, radius = GAME_TILE_RADIUS }: { accent: string; radius?: number }) {
   return (
     <div
@@ -70,7 +79,7 @@ export function GameTileChip({ accent, children, width = 32 }: { accent: string;
   return (
     <span
       className="flex items-center justify-center shrink-0"
-      style={{ width, aspectRatio: '1 / 1', borderRadius: 8, background: `${accent}15` }}
+      style={{ width, aspectRatio: '1 / 1', borderRadius: 8, background: `${accent}1c` }}
     >
       {children}
     </span>
@@ -96,7 +105,7 @@ export function GameTile({ accent, glyph, title, sub, tone = 'theme', className 
     <button
       type="button"
       {...rest}
-      className={`relative flex flex-col items-start px-3 py-3 text-left overflow-hidden transition-transform active:scale-[0.96] ${className}`}
+      className={`relative flex flex-col items-start px-3 py-3 text-left overflow-hidden ${className}`}
       style={{ ...gameTileSurface(accent, { tone }), ...style }}
     >
       <GameTileBar accent={accent} />
@@ -140,7 +149,7 @@ export function GameSquare({ accent, glyph, label, selected = false, size, tone 
       {...rest}
       // No color transition: the selected state lands in the tap's frame
       // (founder, 2026-09-29); only the press scale animates.
-      className={`relative flex flex-col items-center justify-center overflow-hidden transition-transform active:scale-[0.96] ${size == null ? 'w-full' : 'flex-shrink-0'} ${className}`}
+      className={`relative flex flex-col items-center justify-center overflow-hidden ${size == null ? 'w-full' : 'flex-shrink-0'} ${className}`}
       style={{
         ...gameTileSurface(accent, { selected, tone, radius }),
         // Fill mode: square by default, but stretch to the row so a square with a

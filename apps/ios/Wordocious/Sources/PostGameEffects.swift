@@ -180,15 +180,11 @@ struct VictoryOverlay: View {
                         + (points.map { ". \($0) points" } ?? ""))
 
                     if let onPlayAgain {
+                        // FINISH_SPEC §A8: the glossy candy button.
                         Button(action: onPlayAgain) {
-                            Text(won ? "Play again" : "Try again")
-                                .font(Brand.font(14, .black)).foregroundStyle(.white)
-                                .padding(.horizontal, 28).padding(.vertical, 10)
-                                .background(Capsule().fill(won
-                                    ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                                    : AnyShapeStyle(Color(hex: 0xF87171))))
+                            CandyLabel(title: won ? "Play again" : "Try again", symbol: "arrow.clockwise")
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(CandyButtonStyle(variant: won ? .purple : .pink, size: .medium, fullWidth: false))
                         .padding(.top, 6)
                     }
                     if actions.isEmpty {
@@ -197,16 +193,8 @@ struct VictoryOverlay: View {
                         HStack(spacing: 10) {
                             ForEach(actions.indices, id: \.self) { i in
                                 let a = actions[i]
-                                Button(action: a.action) {
-                                    Text(a.label).font(Brand.font(14, .black)).lineLimit(1).minimumScaleFactor(0.7)
-                                        .foregroundStyle(a.primary ? .white : Color(hex: 0x7C3AED))
-                                        .padding(.horizontal, 20).padding(.vertical, 10)
-                                        .background(Capsule().fill(a.primary
-                                            ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                                            : AnyShapeStyle(Color(hex: 0x7C3AED).opacity(0.08))))
-                                        .overlay(Capsule().stroke(a.primary ? Color.clear : Color(hex: 0x7C3AED).opacity(0.4), lineWidth: 1.5))
-                                }
-                                .buttonStyle(.plain)
+                                Button(action: a.action) { CandyLabel(title: a.label) }
+                                    .buttonStyle(CandyButtonStyle(variant: a.primary ? .purple : .peach, size: .medium))
                             }
                         }
                         .padding(.top, 8)
@@ -230,7 +218,7 @@ struct VictoryOverlay: View {
 
     private func statBlock(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
-            Text(value).font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
+            Text(value).softNumber(20).lineLimit(1).minimumScaleFactor(0.6)
             Text(label).font(Brand.font(10, .bold)).tracking(0.6).foregroundStyle(Theme.textMuted)
         }
     }

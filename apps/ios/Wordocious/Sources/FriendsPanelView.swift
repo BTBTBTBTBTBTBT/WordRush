@@ -300,7 +300,7 @@ struct FriendsPanelView: View {
                     } label: {
                         Icon3D(.share, size: 15)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .opacity(sharingRace ? 0.4 : 1)
                     .accessibilityLabel("Share weekly race")
                 }
@@ -331,7 +331,7 @@ struct FriendsPanelView: View {
                             Spacer(minLength: 0)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     if showPastWeeks {
                         ForEach(history.filter { $0.k > 0 }, id: \.k) { wk in
                             HStack(spacing: 3) {
@@ -361,7 +361,7 @@ struct FriendsPanelView: View {
                                 Text("\(slot.entry.pts.formatted()) pts").font(Brand.font(9, .bold)).foregroundStyle(FriendsKit.label)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                         .padding(.top, slot.rank == 0 ? 0 : 8)
                     }
                 }
@@ -384,7 +384,7 @@ struct FriendsPanelView: View {
                                         .fixedSize()
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                         }
                     }
                     .padding(.top, 2)
@@ -427,7 +427,7 @@ struct FriendsPanelView: View {
                         Text("Nudge all who haven't played").font(Brand.font(10.5, .black))
                             .foregroundStyle(FriendsKit.solid).lineLimit(1).minimumScaleFactor(0.8)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                 }
             }
             if friends.isEmpty {
@@ -525,7 +525,7 @@ struct FriendsPanelView: View {
             .padding(.horizontal, 12).padding(.vertical, 10)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         // §225: long-press menu — profile, taunt, challenge, gift, unfriend.
         .contextMenu {
             Button { profileTarget = f.id } label: {
@@ -560,19 +560,19 @@ struct FriendsPanelView: View {
     @ViewBuilder private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         if online {
             Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: { FriendsPill(title: "Play") }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityLabel("Play with \(f.username)")
         } else if (f.playedToday ?? 0) > 0 {
             Button { challenge(f) } label: {
                 FriendsPill(title: challenging == f.id ? "Sending…" : "Challenge", solid: false)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .disabled(challenging != nil)
             .opacity(challenging != nil && challenging != f.id ? 0.5 : 1)
             .accessibilityLabel("Challenge \(f.username) to a VS Battle")
         } else {
             Button { tauntTarget = f } label: { FriendsPill(title: "Nudge", solid: false) }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityLabel("Nudge \(f.username)")
         }
     }
@@ -602,7 +602,7 @@ struct FriendsPanelView: View {
                         .padding(.horizontal, 14).frame(height: 40)
                         .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.solid))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .disabled(sending || username.trimmingCharacters(in: .whitespaces).isEmpty)
                     .opacity(sending || username.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
                 }
@@ -636,7 +636,7 @@ struct FriendsPanelView: View {
                                 .padding(.horizontal, 10).padding(.vertical, 7)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(FriendsKit.page))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                         }
                     }
                 }
@@ -649,7 +649,7 @@ struct FriendsPanelView: View {
                         }
                         .foregroundStyle(FriendsKit.solid)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .disabled(resolvingShare)
                     .opacity(resolvingShare ? 0.5 : 1)
                 }
@@ -686,17 +686,17 @@ struct FriendsPanelView: View {
                                 NavigationLink(value: r.id) {
                                     Text("@\(r.username)").font(Brand.font(13, .black))
                                         .foregroundStyle(Color(hex: 0x111827)).lineLimit(1)
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(.squish)
                                 Spacer()
                                 Button { Task { await FriendsService.accept(requesterId: r.id) } } label: {
                                     FriendsPill(title: "Accept")
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(.squish)
                                 Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
                                     Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
                                         .foregroundStyle(FriendsKit.label).frame(width: 28, height: 28)
                                         .background(Circle().fill(Color(hex: 0xF3F4F6)))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.squish)
                                 .accessibilityLabel("Decline \(r.username)")
                             }
                         }
@@ -715,7 +715,7 @@ struct FriendsPanelView: View {
                                     (Text("@\(r.username)").font(Brand.font(13, .black)).foregroundColor(Color(hex: 0x111827))
                                         + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(FriendsKit.label))
                                         .lineLimit(1)
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(.squish)
                                 Spacer()
                                 // §212: the invite usually died unseen — re-push, 1/24h.
                                 Button {
@@ -729,12 +729,12 @@ struct FriendsPanelView: View {
                                 } label: {
                                     FriendsPill(title: withinDay(r.remindedAt) ? "Reminded" : "Remind", solid: false)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.squish)
                                 .disabled(withinDay(r.remindedAt))
                                 .opacity(withinDay(r.remindedAt) ? 0.55 : 1)
                                 Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
                                     FriendsPill(title: "Cancel", solid: false, muted: true)
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(.squish)
                             }
                         }
                     }
@@ -787,14 +787,14 @@ struct FriendsPanelView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16).padding(.vertical, 13)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     Divider().overlay(Theme.border)
                 }
                 Button { tauntTarget = nil } label: {
                     Text("Cancel").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
                         .frame(maxWidth: .infinity).padding(.vertical, 13)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
             }
             Spacer(minLength: 0)
         }
@@ -1153,7 +1153,7 @@ struct FriendsScreenView: View {
         } label: {
             HeaderCircleLabel(glyph: .icon(.addFriend), size: 32)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel("Add a friend")
     }
 }
@@ -1191,7 +1191,7 @@ struct FriendsRowLink: View {
             .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .task { await FriendsService.load() }
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
             version = FriendsService.version

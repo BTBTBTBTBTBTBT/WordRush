@@ -462,19 +462,8 @@ private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 // Flat accent capsule with a play glyph + soft drop shadow (iOS btn).
-                Row(
-                    Modifier
-                        .shadow(4.dp, RoundedCornerShape(50), spotColor = accent.copy(alpha = 0.3f), ambientColor = accent.copy(alpha = 0.3f))
-                        .clip(RoundedCornerShape(50))
-                        .background(accent)
-                        .clickableNoRipple(onPlay)
-                        .padding(horizontal = 14.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(10.dp))
-                    Text("Play", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                }
+                // FINISH_SPEC A8: the glossy candy PLAY pill.
+                CandyButton("Play", onClick = onPlay, color = CandyColor.PURPLE, size = CandySize.SMALL, icon = CandyIcon.PLAY)
                 Text(
                     "How to play",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = accent,
@@ -517,15 +506,8 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
         }
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                .clickableNoRipple(onGoPro)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Text("Go Pro", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
-        }
+        // FINISH_SPEC A8: a small glossy candy pill.
+        CandyButton("Go Pro", onClick = onGoPro, color = CandyColor.AMBER, size = CandySize.SMALL)
         Icon(
             androidx.compose.material.icons.Icons.Filled.Close, null,
             tint = WTheme.textMuted,
@@ -737,18 +719,15 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
                 Text("+${invites.size - 1} more pending", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA21CAF))
             }
         }
-        Text(
+        // FINISH_SPEC A8: a small glossy candy pill.
+        CandyButton(
             "Play",
-            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFEC4899))
-                .clickableNoRipple {
-                    runCatching { com.wordocious.core.GameMode.valueOf(top.gameMode) }.getOrNull()?.let { m ->
-                        onJoinInvite(m, top.inviteCode)
-                    }
+            onClick = {
+                runCatching { com.wordocious.core.GameMode.valueOf(top.gameMode) }.getOrNull()?.let { m ->
+                    onJoinInvite(m, top.inviteCode)
                 }
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+            },
+            color = CandyColor.PINK, size = CandySize.SMALL, icon = CandyIcon.PLAY,
         )
         Box(
             Modifier.size(28.dp).clip(androidx.compose.foundation.shape.CircleShape)
@@ -815,23 +794,8 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
         // Pro-only Invite button (web page.tsx + iOS HomeView LIVE banner parity).
         if (isPro) {
             Spacer(Modifier.weight(1f))
-            Box {
-                // iOS .shadow(color: 0x9F1239, radius: 0, y: 2) — the app's hard
-                // 2pt btn-3d offset, which Compose's blurred shadow can't do.
-                Box(
-                    Modifier.matchParentSize().offset(y = 2.dp)
-                        .clip(RoundedCornerShape(6.dp)).background(Color(0xFF9F1239)),
-                )
-                Text(
-                    "Invite",
-                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFFEC4899), Color(0xFFDB2777))))
-                        .clickable { onInvite() }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
+            // FINISH_SPEC A8: a small glossy candy pill.
+            CandyButton("Invite", onClick = onInvite, color = CandyColor.PINK, size = CandySize.SMALL)
         }
     }
 }

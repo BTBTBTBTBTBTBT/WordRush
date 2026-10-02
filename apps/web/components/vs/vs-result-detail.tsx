@@ -20,6 +20,7 @@ import { normalizeString } from '@/components/propernoundle/game-logic';
 import { MomentArt } from '@/components/ui/art-title';
 import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import { resultMoment } from '@/lib/art';
+import { alphaHex, overAlpha } from '@/lib/soft-surface';
 
 // The solo tile colors (the .tile-* CSS vars — colorblind palette included).
 const TILE_BG: Record<string, string> = {
@@ -75,7 +76,13 @@ export function logSolved(guessLog: OpponentGuessLogEntry[], solutions: string[]
 }
 
 /** The result screens' soft white card (VS polish §2: no outline borders). */
-const RESULT_CARD: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: '0 2px 10px rgba(76,29,149,0.07)' };
+/** FINISH_SPEC A1 / WHITE_AUDIT lever 2: a lavender wash, never plain white. */
+const RESULT_CARD: React.CSSProperties = {
+  background: `linear-gradient(${alphaHex('#7c3aed', 0.09)}, ${alphaHex('#7c3aed', 0.09)}), #ffffff`,
+  border: `1.5px solid ${alphaHex('#7c3aed', overAlpha(0.28, 0.09))}`,
+  borderRadius: 14,
+  boxShadow: '0 2px 10px rgba(76,29,149,0.07)',
+};
 
 /** Solved / Not solved chip — purple / slate (VS polish §2: not green/red). */
 function SolveBadge({ solved, size = 10 }: { solved: boolean; size?: number }) {

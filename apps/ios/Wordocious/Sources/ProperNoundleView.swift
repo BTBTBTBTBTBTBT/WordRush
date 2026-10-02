@@ -369,9 +369,12 @@ struct ProperNoundleView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    Spacer(minLength: 4)
-                    NoundleBoard(vm: vm)
-                    Spacer(minLength: 4)
+                    // §B5: the board fills the space between the header and the hints.
+                    GeometryReader { g in
+                        NoundleBoard(vm: vm, width: g.size.width, height: g.size.height)
+                            .frame(width: g.size.width, height: g.size.height)
+                    }
+                    .padding(.vertical, 4)
                     hints; NoundleKeyboard(vm: vm).padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
@@ -411,12 +414,12 @@ struct ProperNoundleView: View {
             // every other game's screen, in play and on the completed screen.
             GameCornerButton(kind: .home) { dismiss() }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.top, 8).padding(.leading, 8)
+            .padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
 
             // Help "?" button (top-right) — opens ProperNoundle's guide.
             GameCornerButton(kind: .help) { showGuide = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .padding(.top, 8).padding(.trailing, 8)
+            .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
             .sheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -585,20 +588,29 @@ struct NoundleHints: View {
                 .background(Capsule().fill(used ? Color.clear : bg))
                 .overlay(Capsule().stroke(used ? Color(hex: 0xE5E7EB) : border, lineWidth: 1.5))
         }
-        .buttonStyle(.plain).disabled(used)
+        .buttonStyle(.squish).disabled(used)
     }
 }
 
 /// Word-group tile board for ProperNoundle.
 struct NoundleBoard: View {
     @ObservedObject var vm: ProperNoundleVM
+    /// The area the board may fill (FINISH_SPEC §B5, the shared `BoardSizing`
+    /// rule): the screen's content width by default; in play, also the height
+    /// left between the header and the hints / keyboard.
+    var width: CGFloat = UIScreen.main.bounds.width - 20
+    var height: CGFloat? = nil
 
     var body: some View {
         let groups = vm.puzzle.map { ProperNoundle.wordGroups($0.display) } ?? [vm.answerLen]
         let total = groups.reduce(0, +)
         let gap: CGFloat = 4, groupGap: CGFloat = 14
-        let avail: CGFloat = 350
-        let tile = min(40, floor((avail - gap * CGFloat(max(0, total - 1)) - groupGap * CGFloat(max(0, groups.count - 1))) / CGFloat(max(1, total))))
+        let rows = max(1, vm.maxGuesses)
+        let tile = floor(CGFloat(BoardSizing.fitTile(
+            widthUnits: Double(max(1, total)),
+            fixedWidth: Double(gap * CGFloat(max(0, total - groups.count)) + groupGap * CGFloat(max(0, groups.count - 1))),
+            heightUnits: Double(rows), fixedHeight: Double(gap * CGFloat(rows - 1)),
+            width: Double(width), height: height.map(Double.init), maxTile: 64)))
         return VStack(spacing: gap) {
             ForEach(0..<vm.maxGuesses, id: \.self) { row in
                 rowView(row, groups: groups, tile: tile, gap: gap, groupGap: groupGap)
@@ -627,22 +639,19 @@ struct NoundleBoard: View {
         }
     }
 
+    /// FINISH_SPEC §B1: the same glossy tiles as every word game.
     private func nTile(_ letter: String, _ state: NTile, size: CGFloat) -> some View {
-        let filled = state != .empty
-        let color: Color = {
+        let face: GlossyFace = {
             switch state {
-            case .correct: return Theme.correct
-            case .present: return Theme.present
-            case .absent: return Theme.absent
-            case .hintUsed: return Color(hex: 0xD1D5DB) // web HINT_USED = gray
-            case .empty: return Theme.surface // themed: a fixed white tile under themed ink is invisible in Dark
+            case .correct: return .correct
+            case .present: return .present
+            case .absent: return .absent
+            case .hintUsed: return .hintUsed
+            case .empty: return letter.isEmpty ? .empty : .typed
             }
         }()
-        return Text(letter).font(Brand.fixedFont(size * 0.5, .heavy))   // tile-derived
-            .foregroundStyle(filled ? .white : Theme.textPrimary)
-            .frame(width: size, height: size)
-            .background(RoundedRectangle(cornerRadius: size * 0.14).fill(color))
-            .overlay(RoundedRectangle(cornerRadius: size * 0.14).stroke(letter.isEmpty ? Theme.emptyBorder : Theme.textPrimary.opacity(0.25), lineWidth: 2))
+        return GlossyTile(face: face, letter: letter, width: size)
+            .modifier(TypePop(letter: state == .empty ? letter : "", size: CGSize(width: size, height: size)))
     }
 }
 
@@ -708,46 +717,48 @@ struct NoundleKeyboard: View {
 
     private func spaceKey() -> some View {
         Button { Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
-            Text("space").font(Brand.font(12, .semibold)).foregroundStyle(Color(hex: 0x8A86A0))
-                .frame(maxWidth: .infinity).frame(height: keyHeight)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+            KeyCap(state: nil, height: keyHeight) { Text("space").font(Brand.font(12, .heavy)) }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel("Space (decorative)")
     }
 
+    /// FINISH_SPEC §B2: the same key tiles as every word game.
     private func letterKey(_ l: String) -> some View {
-        let st = vm.keyState(l)
         // Map ProperNoundle's NTile to the engine TileState for the shared key palette.
-        let bg: Color = st.map { s in
-            switch s {
-            case .correct: return Theme.keyCorrect
-            case .present, .hintUsed: return Theme.keyPresent
-            case .absent: return Theme.keyAbsent
-            default: return Theme.keyDefault
+        let st: TileState? = vm.keyState(l).flatMap { n in
+            switch n {
+            case .correct: return .correct
+            case .present: return .present
+            case .hintUsed: return .hintUsed
+            case .absent: return .absent
+            case .empty: return nil
             }
-        } ?? Theme.keyDefault
+        }
         return Button { vm.type(l); Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
-            // keyInk: this is a SECOND copy of the keyboard and the themed-ink
-            // fix in KeyboardView never reached it — 1.08:1 on the fixed key in Dark.
-            Text(l).font(Brand.font(18, .bold)).foregroundStyle(st == nil ? Theme.keyInk : .white)
-                .frame(maxWidth: .infinity).frame(height: keyHeight)
-                .background(RoundedRectangle(cornerRadius: 6).fill(bg))
-        }.buttonStyle(.plain)
+            KeyCap(state: st, height: keyHeight) { Text(l).font(Brand.font(18, .black)) }
+        }
+        .buttonStyle(KeyPressStyle())
+        .accessibilityLabel(l)
+        .accessibilityValue(st?.a11yName ?? "")
     }
 
     private func action(_ label: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
-            Text(label).font(Brand.font(14, .bold)).foregroundStyle(Theme.keyInk)
-                .frame(width: 54, height: keyHeight).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
-        }.buttonStyle(.plain)
+            KeyCap(state: nil, height: keyHeight, width: 54) {
+                Text(label).font(Brand.font(12, .black)).tracking(0.5)
+            }
+        }
+        .buttonStyle(KeyPressStyle())
+        .accessibilityLabel(label == "ENTER" ? "Submit guess" : label)
     }
 
     private func iconAction(_ systemName: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
-            Image(systemName: systemName).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.keyInk)
-                .frame(width: 54, height: keyHeight).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
-        }.buttonStyle(.plain)
+            KeyCap(state: nil, height: keyHeight, width: 54) { DeleteKeyIcon(width: 30) }
+        }
+        .buttonStyle(KeyPressStyle())
+        .accessibilityLabel("Delete")
     }
 }
 
@@ -773,9 +784,11 @@ struct ProperNoundleVSBoard<Strip: View>: View {
                 Color.clear.frame(width: 44, height: 44)
             }
             strip()
-            Spacer(minLength: 4)
-            NoundleBoard(vm: vm)
-            Spacer(minLength: 4)
+            GeometryReader { g in
+                NoundleBoard(vm: vm, width: g.size.width, height: g.size.height)
+                    .frame(width: g.size.width, height: g.size.height)
+            }
+            .padding(.vertical, 4)
             if !vm.isFinished { NoundleHints(vm: vm) }
             NoundleKeyboard(vm: vm).padding(.bottom, 6)
         }

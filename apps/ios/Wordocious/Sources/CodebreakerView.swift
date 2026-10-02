@@ -342,9 +342,9 @@ struct CodebreakerView: View {
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .cryptogram) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -379,7 +379,7 @@ struct CodebreakerView: View {
                 .background(Capsule().fill(dim ? Color.clear : codebreakerAccent.opacity(0.05)))
                 .overlay(Capsule().stroke(dim ? Theme.border : codebreakerAccent.opacity(0.4), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(dim)
         .accessibilityLabel(label)
     }
@@ -686,7 +686,7 @@ struct CipherBoardView: View {
         return Button { vm.select(code); SoundManager.shared.playKeyTap() } label: {
             CipherTile(plain: plain, code: code, fill: fill, border: border, ink: ink, selected: isSel, width: width)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(finished)
         .accessibilityLabel("Code letter \(code)\(plain.isEmpty ? "" : ", pencilled \(plain)")\(locked ? ", locked" : "")")
     }
@@ -718,7 +718,7 @@ struct FrequencyStripView: View {
                     .background(Capsule().fill(isSel ? codebreakerAccent.opacity(0.07) : Theme.surface))
                     .overlay(Capsule().stroke(isSel ? codebreakerAccent : Theme.border, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityLabel("Code letter \(c), \(freq[c] ?? 0) times\(plain.map { ", pencilled \($0)" } ?? "")")
             }
         }

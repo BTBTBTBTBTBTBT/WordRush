@@ -23,12 +23,12 @@ struct ShareVariantSheet: View {
                 Button { selection = false; dismiss() } label: {
                     row(icon: "eye.slash.fill", accent: Color(hex: 0x7C3AED),
                         title: "No spoilers", subtitle: "Colors only")
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
 
                 Button { selection = true; dismiss() } label: {
                     row(icon: "eye.fill", accent: Color(hex: 0xEC4899),
                         title: "Full results", subtitle: "Letters revealed")
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
 
                 Spacer(minLength: 0)
             }

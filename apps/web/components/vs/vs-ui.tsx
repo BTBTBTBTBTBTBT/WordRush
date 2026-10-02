@@ -9,6 +9,7 @@ import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { isGameArtIcon, type TitleArtName } from '@/lib/art';
 import { VS, modeColor, modeTitle } from '@/lib/vs-lobby';
+import { alphaHex, overAlpha } from '@/lib/soft-surface';
 
 // Shared pieces of the VS screens (VS overhaul, spec docs/VS_REDESIGN_SPEC.md
 // §0): the real mode icons from the home cards, the mode chip, section labels,
@@ -66,7 +67,13 @@ export function VsNav({ title, onBack, right, host, art, artLabel }: {
   return <PageHeader title={title} art={art} artLabel={artLabel} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
 }
 
-export const vsCardStyle: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: VS.cardShadow };
+/** FINISH_SPEC A1 / WHITE_AUDIT lever 2: the VS card takes a soft wash of the VS teal (always over white: VS pages are light-only). */
+export const vsCardStyle: React.CSSProperties = {
+  background: `linear-gradient(${alphaHex('#0d9488', 0.1)}, ${alphaHex('#0d9488', 0.1)}), #ffffff`,
+  border: `1.5px solid ${alphaHex('#0d9488', overAlpha(0.3, 0.1))}`,
+  borderRadius: 14,
+  boxShadow: VS.cardShadow,
+};
 
 /** A player's avatar: their picture (circle), or their letter tile (ART_SPEC §20). */
 export function InitialAvatar({ name, url, emoji, accent, size = 34 }: { name: string; url?: string | null; emoji?: string | null; accent?: string | null; size?: number }) {

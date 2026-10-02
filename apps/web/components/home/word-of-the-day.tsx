@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
 import { HomeSectionTitle } from '@/components/home/home-section-title';
 import { MODE_CARD, ModeCardBand, modeCardSurface } from '@/components/home/mode-card';
+import { SoftNum } from '@/components/ui/soft-number';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -179,9 +180,9 @@ export function WordOfTheDay() {
             <span className="text-[10px] font-extrabold italic" style={{ color: '#7c3aed' }}>{partOfSpeech}</span>
           )}
           {showFlame && (
-            <span className="ml-auto flex items-center gap-0.5 text-[13px] font-black" style={{ color: '#c2410c' }} aria-label={`${streak}-day word streak`}>
+            <span className="ml-auto flex items-center gap-0.5" aria-label={`${streak}-day word streak`}>
               <Icon3D name="flame" size={14} />
-              {streak}
+              <SoftNum size={13}>{streak}</SoftNum>
             </span>
           )}
         </div>
@@ -194,7 +195,7 @@ export function WordOfTheDay() {
                 key={i}
                 type="button"
                 onClick={() => pick(i)}
-                className="flex items-center gap-2 text-left px-2.5 py-1.5 transition-transform active:scale-[0.98]"
+                className="flex items-center gap-2 text-left px-2.5 py-1.5"
                 style={{ minHeight: 44, border: '1.5px solid #ddd6fe', borderRadius: 10, background: 'var(--color-surface)' }}
               >
                 <span className="w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black" style={{ background: '#ede9fe', color: '#5b21b6' }}>

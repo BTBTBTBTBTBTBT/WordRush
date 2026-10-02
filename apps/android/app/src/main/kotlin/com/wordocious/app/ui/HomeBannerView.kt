@@ -152,7 +152,8 @@ fun HomeBannerView(
             // row's glow. ART_SPEC §18.4: white at 72% (the fill under it is a smooth gradient, so
             // a backdrop blur would change nothing on Android; no platform backdrop blur here).
             Column(
-                Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.72f))
+                // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
+                Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f))
                     .padding(start = 12.dp, top = 12.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -310,8 +311,8 @@ private fun BannerTile(
         // Unlimited: white 90%, no border, a soft violet lift, accent icon.
         unlimited -> {
             ink = accent
-            look = Modifier.shadow(1.5.dp, shape, ambientColor = Color(0x1F4C1D95), spotColor = Color(0x1F4C1D95))
-                .clip(shape).background(Color.White.copy(alpha = 0.9f))
+            // FINISH_SPEC A1: icon tiles are mini game cards (tint, line, 4 dp top bar).
+            look = Modifier.miniGameCard(accent, radius)
         }
         // Won: accent fill with an accent glow, white icon.
         result?.completed == true -> {
@@ -327,7 +328,8 @@ private fun BannerTile(
         // Unplayed: white 85%, dashed accent border at 55%, accent icon.
         else -> {
             ink = accent
-            look = Modifier.clip(shape).background(Color.White.copy(alpha = 0.85f)).dashedBorder(1.5.dp, accent.copy(alpha = 0.55f), radius)
+            // FINISH_SPEC A1: an unplayed tile is a mini game card (was white with a dashed line).
+            look = Modifier.miniGameCard(accent, radius)
         }
     }
     val state = when {
@@ -428,7 +430,7 @@ private fun DailyUnlimitedSwitch(value: PlayMode, onChange: (PlayMode) -> Unit) 
             val ink = if (!on) Color(0xFF7C3AED) else if (mode == PlayMode.DAILY) Color(0xFF4C1D95) else Color(0xFF6D28D9)
             Box(
                 Modifier.height(26.dp).clip(RoundedCornerShape(50))
-                    .background(if (on) Color.White else Color.Transparent)
+                    .background(if (on) accentWash(Color(0xFF7C3AED), 0.06f) else Color.Transparent)
                     .clickableNoRipple { onChange(mode) }
                     .padding(horizontal = 10.dp)
                     .semantics { contentDescription = label.lowercase() + if (on) ", selected" else "" },

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -44,6 +43,8 @@ import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { candyClass } from '@/components/ui/candy-button';
 
 // Letter Ladder (More Games §15): change one letter at a time from START to
 // END. Rejected entries are free; every accepted word is a move; the budget
@@ -257,8 +258,9 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const gc = ladderGuessCount(state);
   const parLabel = formatGuessStat('overPar', 1, gc);
   const movesLeft = Math.max(0, ladderMaxMoves(state) - state.moves);
-  const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${LADDER_ACCENT}66`, color: LADDER_ACCENT, background: `${LADDER_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean) => candyClass({ dim });
+  const capsuleStyle = (_dim: boolean) => undefined;
 
   return (
     <GameBackground mode="LADDER" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
@@ -320,7 +322,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
               <LadderBoard state={state} typing="" invalid={false} shaking={false} revealPath={!won} />
             </div>
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={LADDER_ACCENT}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
                   style={{ backgroundColor: `${LADDER_ACCENT}15`, border: `2px solid ${LADDER_ACCENT}44`, color: LADDER_ACCENT }}>
                   {won ? parLabel : '✗'}
@@ -334,14 +336,13 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
                       ? `${state.moves} move${state.moves === 1 ? '' : 's'} · Par ${state.par} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
                       : `${state.moves} moves · Par ${state.par} · ${formatTime(elapsedSeconds)}`}
                   </span>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="LADDER" />}
-                    {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: LADDER_ACCENT }}>Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard gameMode="LADDER" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
                 boardsSolved={won ? 1 : 0} totalBoards={1} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
               {mode === 'daily' && <NextDailyCta currentMode="LADDER" />}

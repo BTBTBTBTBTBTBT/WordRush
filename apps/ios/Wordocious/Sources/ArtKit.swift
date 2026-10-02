@@ -81,7 +81,7 @@ struct DayTitleArtView: View {
             .interpolation(.high)
             .scaledToFit()
             .frame(maxWidth: 420, maxHeight: maxHeight)
-            .titleArtMotion(float: true)
+            .titleArtMotion(float: false)   // FINISH_SPEC §A6: headlines don't float
             .frame(maxWidth: .infinity)
             .accessibilityLabel(label)
             .accessibilityAddTraits(.isHeader)
@@ -147,7 +147,7 @@ struct ArtTitle: View {
                 .interpolation(.high)
                 .scaledToFit()
                 .frame(maxWidth: maxWidth)
-                .titleArtMotion(float: true)
+                .titleArtMotion(float: false)   // FINISH_SPEC §A6: headlines don't float
                 .accessibilityLabel(label ?? name.label)
                 .accessibilityAddTraits(.isHeader)
         } else {

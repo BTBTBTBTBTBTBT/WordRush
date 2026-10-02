@@ -4,6 +4,7 @@ import { Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import type { HomeCard } from './mode-chrome';
 import { MODE_CARD, ModeCardBand, TitleLineSlot, modeCardSurface } from './mode-card';
+import { CandyButton } from '@/components/ui/candy-button';
 
 // VS Battle as a full-width tile at the very bottom of the game area (founder +
 // JP, 2026-09-26): the VS card and the old LIVE strip merged — VS icon and
@@ -46,7 +47,7 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
     >
       <ModeCardBand accent={accent} />
       <div className="flex items-center gap-3" style={{ padding: `${MODE_CARD.padY}px ${MODE_CARD.padX}px` }}>
-        <button type="button" onClick={onOpen} className="flex-1 min-w-0 flex items-center gap-3 text-left transition-transform active:scale-[0.98]" aria-label="Open VS Battle">
+        <button type="button" onClick={onOpen} className="flex-1 min-w-0 flex items-center gap-3 text-left" aria-label="Open VS Battle">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}15` }}>
             <Icon className="w-5 h-5" style={{ color: accent }} />
           </div>
@@ -68,16 +69,10 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
           </div>
         </button>
         {isPro && (
-          // A soft pill in the tile's own teal (founder, 2026-10-01: the hot-pink 3D button looked out of place).
-          <button
-            type="button"
-            onClick={onInvite}
-            className="flex items-center gap-1 px-3 font-black text-[11px] rounded-full transition-transform active:scale-95 shrink-0"
-            style={{ height: 32, background: `${accent}14`, border: `1.5px solid ${accent}55`, color: '#0f766e' }}
-          >
-            <Icon3D name="add-friend" size={17} />
+          // FINISH_SPEC A8: a small candy pill in the tile's own teal.
+          <CandyButton size="sm" color="teal" onClick={onInvite} className="shrink-0" icon={<Icon3D name="add-friend" size={17} />}>
             Invite
-          </button>
+          </CandyButton>
         )}
       </div>
     </div>

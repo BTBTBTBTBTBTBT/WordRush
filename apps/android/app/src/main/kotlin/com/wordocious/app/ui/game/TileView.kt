@@ -1,18 +1,13 @@
 package com.wordocious.app.ui.game
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,21 +16,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.TileState
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Spoken name for a tile's evaluation (TalkBack). */
 fun tileStateName(state: TileState): String = when (state) {
@@ -46,169 +38,277 @@ fun tileStateName(state: TileState): String = when (state) {
     else -> ""
 }
 
+/** B3 a tile's one-shot celebration after its row lands: the win hop or the loss sink. */
+enum class TileCelebration { HOP, SINK }
+
+private val SPRING_SOFT = CubicBezierEasing(0.34f, 1.45f, 0.64f, 1f)
+private val FLIP_EASE = CubicBezierEasing(0.37f, 0f, 0.63f, 1f)
+private val HOP_EASE = CubicBezierEasing(0.3f, 1.5f, 0.5f, 1f)
+
 /**
- * Single tile — matches the web Board's `Tile` component (border-2, tile colors,
- * white text on filled). `flipDelay` drives the orthographic scaleY squash
- * (web's `animate-tile-flip-mini` @ `letterIndex * 80ms`).
+ * One board tile in the FINISH_SPEC game kit (B1): a rounded square with a thick
+ * bottom lip, a gloss and white Nunito Black letters — right spot purple, wrong spot
+ * gold, not in word slate grey; empty = frosted glass; typed = white face + purple
+ * ring + dark purple letter. B3 motion: typing swells the tile in (300 ms soft
+ * spring); [flipDelay] (ms) turns the tile over (720 ms, the color swapping at the
+ * half — it shows the typed face until then) and lands it with a soft color glow
+ * (900 ms); [isInvalid] = red letters, red ring and a red glow; [celebrate] plays the
+ * win hop / loss sink after [celebrateDelay]; [hintGlow] pulses a gold glow twice.
+ * Reduce Motion: the flip is a quick crossfade, everything else is off.
+ *
+ * Every size (corner 22%, lip 7%, ring, letter) derives from the measured tile, so a
+ * 10 dp OctoWord tile and a 70 dp Classic tile share one look ([cornerRadius] and
+ * [borderWidth] are accepted for call-site compatibility and no longer used).
  */
 @Composable
 fun TileView(
     letter: String,
     state: TileState,
     flipDelay: Int? = null,   // ms; null = no animation
-    flipDuration: Int = 300,  // web: tile-flip 500ms full board, tile-flip-mini 300ms
+    flipDuration: Int = TileMotion.FLIP_MS,
     isInvalid: Boolean = false,
-    /** null = derive from the tile like iOS (corner = 0.14 × min side). */
-    cornerRadius: Dp? = null,
-    /** null = derive like iOS (stroke = 0.09 × min side, clamped 1–2dp). A
-     *  FIXED 2dp border ate 40% of a 10dp OctoWord tile on a 360dp phone. */
-    borderWidth: Dp? = null,
+    @Suppress("UNUSED_PARAMETER") cornerRadius: Dp? = null,
+    @Suppress("UNUSED_PARAMETER") borderWidth: Dp? = null,
     /**
      * Explicit letter size as a DP COUNT, or null to derive it from the tile
-     * the way iOS does (BoardView.swift:72-85 — `min(width, height) * 0.5`).
-     * A FIXED size is wrong whenever the tile can shrink: OctoWord squeezes 13
-     * rows into a small card, the cell became shorter than a 10sp glyph, and
-     * every letter was clipped in half. Callers that own their geometry still
-     * pass a number — it is converted through density (NOT multiplied by the
-     * user's fontScale), because the tile box it must fit does not font-scale.
-     * iOS equally derives from the tile, not from Dynamic Type (fixedFont).
+     * (0.56 × the shorter side). Converted through density, NOT multiplied by the
+     * user's fontScale: the tile box it must fit does not font-scale.
      */
     fontSize: Float? = null,
     // square=true forces a 1:1 tile (single-board). false = fill the cell
-    // (multi-board in-play, non-square per spec — prevents overlap).
+    // (multi-board in-play, the grid sizes the cells).
     square: Boolean = true,
-    // Sequence locked-board mask: gray-100 tile, gray-300 border, "•" letter.
+    // Sequence locked-board mask: a frosted tile with a "•".
     masked: Boolean = false,
-    // Mini (multi-board) tile — web's colorblind palette differs: cyan-600/orange-500
-    // (multi-board.tsx getTileColor) vs the single-board CSS-override palette.
-    mini: Boolean = false,
+    // Mini (multi-board) tile — same colors (the colorblind swap included).
+    @Suppress("UNUSED_PARAMETER") mini: Boolean = false,
     modifier: Modifier = Modifier,
+    celebrate: TileCelebration? = null,
+    celebrateDelay: Int = 0,
+    hintGlow: Boolean = false,
+    /** Not-a-word clear (B3): 0 = shown … 1 = shrunk away; drawn by the board's clear pass. */
+    clearProgress: Float = 0f,
 ) {
-    // Web tile-flip: rotateX 0→90→0 over the full duration, fill-mode `both` —
-    // the tile sits flat (final color) before its stagger delay, then flips.
-    // Under Reduced Motion we snap (no flip) — spec accessibility gating.
-    val animateFlip = flipDelay != null && !WTheme.reducedMotion
-    val rotation = remember(flipDelay) { Animatable(0f) }
+    val reduced = WTheme.reducedMotion
+    val hasLetter = letter.isNotBlank()
+    val finalFace = TileLooks.faceFor(state, hasLetter, isInvalid, masked)
+
+    // ── Reveal flip (B3): typed face → turn over → final face at the half → glow. ──
+    val animateFlip = flipDelay != null
+    var showFinal by remember(flipDelay) { mutableStateOf(!animateFlip) }
+    val flip = remember(flipDelay) { Animatable(0f) }      // 0..1 over the whole turn
+    val fade = remember(flipDelay) { Animatable(1f) }      // reduced-motion crossfade
+    val bloom = remember(flipDelay) { Animatable(0f) }     // 0..1 glow intensity
     LaunchedEffect(flipDelay) {
-        if (animateFlip) {
-            delay(flipDelay!!.toLong())
-            rotation.animateTo(90f, tween(flipDuration / 2, easing = EaseIn))
-            rotation.animateTo(0f, tween(flipDuration / 2, easing = EaseOut))
+        if (!animateFlip) return@LaunchedEffect
+        delay(flipDelay!!.toLong())
+        if (reduced) {
+            fade.animateTo(0.4f, tween(TileMotion.REDUCED_FLIP_MS / 2))
+            showFinal = true
+            fade.animateTo(1f, tween(TileMotion.REDUCED_FLIP_MS / 2))
+            return@LaunchedEffect
+        }
+        flip.animateTo(0.5f, tween(flipDuration / 2, easing = FLIP_EASE))
+        showFinal = true
+        flip.animateTo(1f, tween(flipDuration / 2, easing = FLIP_EASE))
+        bloom.animateTo(1f, tween((TileMotion.BLOOM_MS * 0.35f).toInt(), easing = EaseOut))
+        bloom.animateTo(0f, tween((TileMotion.BLOOM_MS * 0.65f).toInt(), easing = EaseOut))
+    }
+
+    // ── Type (B3): the letter fades in as the tile swells 1.07 and eases back. ──
+    var lastLetter by remember { mutableStateOf(letter) }
+    val pop = remember { Animatable(1f) }
+    val popAlpha = remember { Animatable(1f) }
+    LaunchedEffect(letter) {
+        val typedNow = state == TileState.EMPTY && hasLetter && lastLetter.isBlank() && !masked
+        lastLetter = letter
+        if (typedNow && !reduced) {
+            coroutineScope {
+                launch {
+                    pop.snapTo(0.9f)
+                    pop.animateTo(1f, keyframes {
+                        durationMillis = TileMotion.TYPE_MS
+                        0.9f at 0 using SPRING_SOFT
+                        1.07f at (TileMotion.TYPE_MS * 0.55f).toInt() using SPRING_SOFT
+                        1f at TileMotion.TYPE_MS
+                    })
+                }
+                launch {
+                    popAlpha.snapTo(0.6f)
+                    popAlpha.animateTo(1f, tween((TileMotion.TYPE_MS * 0.55f).toInt()))
+                }
+            }
         }
     }
 
-    val filled = state != TileState.EMPTY
-    // Spec: invalid = bg #FEF2F2 / border #F87171 / text #EF4444.
-    //
-    // Empty tiles use the THEMED surface, not hard white. They were opaque
-    // Color.White, which is right in the three light themes but drew a grid of
-    // glaring white blocks over the near-black page in Dark. iOS returns .clear
-    // for .empty (Theme.swift:90) and lets the page show through; a flat
-    // surface fill is the same result without the gradient bleeding through the
-    // tile, which is why white was chosen here originally.
-    val bgColor = when {
-        isInvalid -> Color(0xFFFEF2F2)
-        masked -> Color(0xFFF3F4F6)
-        // Orange = CORRECT, blue = PRESENT — matching this app's own keyboard
-        // (KeyboardView.quadColor), iOS and web. These two were reversed
-        // (cyan=correct, orange=present) against a web behavior that no longer
-        // exists, so in Quad/Octo with colorblind mode ON, orange meant
-        // "present" on the board and "correct" on the keys. It actively misled
-        // the exact users the feature is for.
-        filled && mini && WTheme.colorblind && state == TileState.CORRECT -> Color(0xFFF5793A)
-        filled && mini && WTheme.colorblind && state == TileState.PRESENT -> Color(0xFF85C0F9)
-        filled -> WTheme.tileColor(state)
-        else -> WTheme.surface
+    // ── Not a word (B3): the red glow (1 s). ──
+    val bad = remember { Animatable(0f) }
+    LaunchedEffect(isInvalid) {
+        if (!isInvalid || reduced) { bad.snapTo(0f); return@LaunchedEffect }
+        bad.snapTo(0f)
+        bad.animateTo(1f, keyframes {
+            durationMillis = TileMotion.BAD_MS
+            0f at 0
+            1f at 350
+            0.6f at 700
+            0f at TileMotion.BAD_MS
+        })
     }
-    val borderColor = when {
-        isInvalid -> Color(0xFFF87171)
-        masked -> Color(0xFFD1D5DB)
-        // Web HINT_USED: faint ghost tile — border gray-200 (#E5E7EB).
-        state == TileState.HINT_USED -> Color(0xFFE5E7EB)
-        // Web ABSENT keeps the gray-300 border (board.tsx TILE.border).
-        state == TileState.ABSENT -> Color(0xFFD1D5DB)
-        filled -> bgColor
-        else -> WTheme.emptyBorder
+
+    // ── Hint (B3): flips in, then a gold glow pulses twice. ──
+    val hint = remember { Animatable(0f) }
+    LaunchedEffect(hintGlow) {
+        if (!hintGlow || reduced) return@LaunchedEffect
+        repeat(2) {
+            hint.animateTo(1f, tween(TileMotion.HINT_PULSE_MS / 2))
+            hint.animateTo(0f, tween(TileMotion.HINT_PULSE_MS / 2))
+        }
     }
-    val textColor = when {
-        isInvalid -> Color(0xFFEF4444)
-        masked -> WTheme.text
-        // Web HINT_USED letter = gray-300, not white-on-gray.
-        state == TileState.HINT_USED -> Color(0xFFD1D5DB)
-        filled -> Color.White
-        else -> WTheme.text
+
+    // ── Win hop / loss sink (B3). ──
+    val celY = remember(celebrate) { Animatable(0f) }   // fraction of the tile height
+    val celSX = remember(celebrate) { Animatable(1f) }
+    val celSY = remember(celebrate) { Animatable(1f) }
+    val celRot = remember(celebrate) { Animatable(0f) }
+    LaunchedEffect(celebrate) {
+        if (celebrate == null || reduced) return@LaunchedEffect
+        delay(celebrateDelay.toLong())
+        coroutineScope {
+            when (celebrate) {
+                TileCelebration.HOP -> {
+                    val d = TileMotion.HOP_MS
+                    launch {
+                        celY.animateTo(0f, keyframes {
+                            durationMillis = d
+                            0f at 0 using HOP_EASE
+                            -0.34f at (d * 0.35f).toInt() using HOP_EASE
+                            0.04f at (d * 0.60f).toInt() using HOP_EASE
+                        })
+                    }
+                    launch {
+                        celSX.animateTo(1f, keyframes {
+                            durationMillis = d
+                            1f at 0; 1.06f at (d * 0.35f).toInt(); 0.97f at (d * 0.60f).toInt()
+                        })
+                    }
+                    launch {
+                        celSY.animateTo(1f, keyframes {
+                            durationMillis = d
+                            1f at 0; 0.96f at (d * 0.35f).toInt(); 1.04f at (d * 0.60f).toInt()
+                        })
+                    }
+                }
+                TileCelebration.SINK -> {
+                    val d = TileMotion.SINK_MS
+                    launch {
+                        celRot.animateTo(0f, keyframes {
+                            durationMillis = d
+                            0f at 0 using EaseOut; -4f at (d * 0.4f).toInt() using EaseOut; 3f at (d * 0.7f).toInt() using EaseOut
+                        })
+                    }
+                    launch {
+                        celY.animateTo(0.02f, keyframes {
+                            durationMillis = d
+                            0f at 0 using EaseOut; 0f at (d * 0.4f).toInt() using EaseOut; 0.03f at (d * 0.7f).toInt() using EaseOut
+                        })
+                    }
+                }
+            }
+        }
     }
-    val showBorder = !filled || state == TileState.HINT_USED || state == TileState.ABSENT || masked
+
+    val face = if (showFinal) finalFace else if (hasLetter) TileFace.TYPED else TileFace.EMPTY
+    val look = TileLooks.of(face, WTheme.colorblind, WTheme.isDark)
+    val glyphText = if (masked) "•" else letter.uppercase()
+    val glyphColor = if (masked) Color(0xFF8A78AD) else look.glyph
 
     BoxWithConstraints(
         modifier = modifier
             .then(if (square) Modifier.aspectRatio(1f) else Modifier.fillMaxSize())
             .graphicsLayer {
-                rotationX = rotation.value
+                val f = flip.value
+                // rotateX 0 → −90 (scale 1.05) → 0 across the turn.
+                val half = if (f <= 0.5f) f * 2f else (1f - f) * 2f
+                rotationX = -90f * half
+                val turnScale = 1f + 0.05f * half
+                scaleX = turnScale * pop.value * celSX.value
+                scaleY = turnScale * pop.value * celSY.value
+                translationY = celY.value * size.height
+                rotationZ = celRot.value
+                alpha = popAlpha.value * fade.value
                 cameraDistance = 12f * density
+                transformOrigin = TransformOrigin(0.5f, if (celebrate != null) 1f else 0.5f)
+            }
+            .drawBehind {
+                val glowAlpha: Float
+                val glowColor: Color
+                when {
+                    bad.value > 0f -> { glowColor = TileLooks.BAD.glow; glowAlpha = bad.value }
+                    hint.value > 0f -> { glowColor = Color(0xB3F5C542); glowAlpha = hint.value }
+                    else -> { glowColor = look.glow; glowAlpha = bloom.value }
+                }
+                drawGameTile(look, glowColor, glowAlpha)
             }
             // TalkBack reads the letter plus its evaluation instead of a bare glyph.
-            .then(if (letter.isNotBlank() && !masked) Modifier.semantics {
-                contentDescription = if (filled) "$letter, ${tileStateName(state)}" else letter
+            .then(if (hasLetter && !masked) Modifier.semantics {
+                contentDescription = if (state != TileState.EMPTY) "$letter, ${tileStateName(state)}" else letter
             } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        // MEASURE the tile, then derive every piece of chrome from it — the iOS
-        // intent (BoardView.swift TileView: s = min(w,h); corner s*0.14, border
-        // clamp(s*0.09, 1, 2), letter s*0.5). Fixed dp constants ported from a
-        // full-size tile are exactly the "fixed-tile-ladder" bug class (Bible
-        // §201/§202): they fit a 58dp tile and devour a 10dp OctoWord tile.
-        val s = minOf(maxWidth, maxHeight)
-        val shape = RoundedCornerShape(cornerRadius ?: (s.value * 0.14f).dp)
-        val stroke = borderWidth ?: (s.value * 0.09f).coerceIn(1f, 2f).dp
-        // Letter = half the SHORTER side, matching iOS. Small floor so a sliver
-        // of a tile still renders something rather than nothing. The floor (and
-        // every font here) lives in DP: a floor in SP is re-multiplied by the
-        // user's fontScale and can exceed the tile outright — Samsung's default
-        // "Large" text setting was enough to overflow an OctoWord cell.
-        val fontDp = (fontSize ?: (s.value * 0.5f)).coerceAtLeast(4f)
-        // Convert through density instead of reading .value and emitting it as
-        // sp. Dp.value is a dp count; handing it to .sp re-multiplies it by the
-        // user's fontScale inside a tile whose aspectRatio box did NOT scale, so
-        // at 2x text size the glyph doubled and clipped. Ironically Android was
-        // the only platform to break here BECAUSE it is the only one that
-        // honors font scale at all.
-        val density = androidx.compose.ui.platform.LocalDensity.current
-        val fontSp = with(density) { fontDp.dp.toSp() }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape)
-                .background(bgColor)
-                .then(if (showBorder) Modifier.border(stroke, borderColor, shape) else Modifier),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = letter.uppercase(),
-                color = textColor,
-                fontSize = fontSp,
-                maxLines = 1,
-                softWrap = false,
-                fontWeight = FontWeight.Black,
-                textAlign = TextAlign.Center,
-                // The Text inherits Material3 bodyLarge, whose DEFAULT lineHeight
-                // is 24sp (and letterSpacing 0.5sp). A 6sp letter laid out on a
-                // 24sp line box inside a 10dp tile paints the glyph ~19dp down —
-                // entirely below the tile — leaving only its clipped top visible.
-                // That was the "microscopic letters sheared at the top edge" on
-                // every small multi-board tile. Pin the line box to the glyph
-                // (lineHeight = fontSize, font padding off, center + trim) so the
-                // letter is truly centered at ANY tile size — iOS Text parity.
-                letterSpacing = 0.sp,
-                lineHeight = fontSp,
-                style = LocalTextStyle.current.copy(
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    lineHeightStyle = LineHeightStyle(
-                        alignment = LineHeightStyle.Alignment.Center,
-                        trim = LineHeightStyle.Trim.Both,
-                    ),
-                ),
+        val s = minOf(maxWidth, maxHeight).value
+        if (glyphText.isNotEmpty()) {
+            val clearScale = 1f - 0.6f * clearProgress
+            TileGlyph(
+                glyphText, glyphColor, look.glyphShadow,
+                (fontSize ?: (s * 0.56f)), s,
+                Modifier.graphicsLayer {
+                    scaleX = clearScale; scaleY = clearScale
+                    alpha = 1f - clearProgress
+                },
             )
         }
     }
+}
+
+/**
+ * B3 not a word, the clear pass: after the red glow the rejected letters shrink away
+ * right to left, [TileMotion.CLEAR_STAGGER_MS] apart. The game state clears the input
+ * on its own clock; this keeps a ghost of the [rejected] letters on screen while they
+ * go, so the row empties one tile at a time instead of all at once. Returns the
+ * letters to draw on the input row (the ghost while clearing, else [current]) and each
+ * column's clear progress.
+ */
+@Composable
+fun rememberRejectClear(current: String, isInvalid: Boolean, columns: Int): Pair<String, (Int) -> Float> {
+    var lastRejected by remember { mutableStateOf("") }
+    var ghost by remember { mutableStateOf<String?>(null) }
+    val progress = remember(columns) { List(columns) { Animatable(0f) } }
+    if (isInvalid && current.length == columns) lastRejected = current
+    LaunchedEffect(current) {
+        val rejected = lastRejected
+        if (current.isEmpty() && rejected.isNotEmpty() && !WTheme.reducedMotion) {
+            ghost = rejected
+            progress.forEach { it.snapTo(0f) }
+            coroutineScope {
+                for (i in columns - 1 downTo 0) {
+                    val col = i
+                    launch {
+                        delay(((columns - 1 - col) * TileMotion.CLEAR_STAGGER_MS).toLong())
+                        progress[col].animateTo(1f, tween(TileMotion.CLEAR_MS, easing = CubicBezierEasing(0.5f, 0f, 0.75f, 0f)))
+                    }
+                }
+            }
+            ghost = null
+            lastRejected = ""
+        } else if (current.isNotEmpty()) {
+            ghost = null
+            if (!isInvalid) lastRejected = ""
+            progress.forEach { it.snapTo(0f) }
+        } else {
+            lastRejected = ""
+        }
+    }
+    val g = ghost
+    return if (g != null) g to { col: Int -> progress.getOrNull(col)?.value ?: 0f }
+    else current to { _: Int -> 0f }
 }

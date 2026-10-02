@@ -1,15 +1,15 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { CandyLink } from '@/components/ui/candy-button';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
 import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES, isGameArtIcon } from '@/lib/art';
+import { PAGE_SCENES } from '@/lib/art';
+import { softCard } from '@/lib/soft-surface';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -17,8 +17,13 @@ import { PAGE_SCENES, isGameArtIcon } from '@/lib/art';
 const DAILY_ORDER: Array<{ id: string; href: string }> = SWEEP_MODES
   .map((m) => ({ id: m.dbKey as string, href: dailyHref(m.dbKey as string) ?? '/' }));
 
+/** The CTA stack's row: full width up to 400, 10 px apart (B6). */
+const CTA_ROW = 'w-full max-w-[400px] mx-auto mt-3';
+
 /**
- * U3: post-game handoff that keeps the daily loop moving. Rendered only on
+ * U3: post-game handoff that keeps the daily loop moving. FINISH_SPEC B6 + A8:
+ * the three CTAs are glossy candy buttons with icons — amber next daily,
+ * purple leaderboard, soft peach Unlimited. Rendered only on
  * DAILY results — points at the first unplayed daily mode, or celebrates
  * the sweep when every sweep mode is done. `currentMode` is excluded explicitly so a
  * just-finished game never suggests itself while its completion event is
@@ -35,13 +40,8 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
     <>
       {next ? <NextDailyLink next={next} /> : (
         <div
-          className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black"
-          style={{
-            background: 'var(--color-highlight-gold)',
-            border: '1.5px solid var(--color-gold-border)',
-            borderRadius: '12px',
-            color: '#92400e',
-          }}
+          className={`${CTA_ROW} px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black`}
+          style={{ ...softCard('#f5a524', { radius: 16 }), color: '#92400e' }}
         >
           {/* U, all done for today (docs/ART_SPEC.md §7), small enough for the strip. */}
           <ArtScene scene={PAGE_SCENES.allDone} height={48} maxWidthPct={30} center={false} />
@@ -61,67 +61,26 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
 function ViewLeaderboardLink({ currentMode }: { currentMode: string }) {
   const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
   if (!mode) return null;
-  const color = mode.accentColor;
 
   return (
-    <Link
-      href={`/daily?mode=${currentMode}`}
-      className="w-full max-w-[400px] mx-auto mt-2 px-3 py-2.5 flex items-center justify-between transition-transform active:scale-[0.98]"
-      style={{
-        background: 'var(--color-surface)',
-        border: `1.5px solid ${color}55`,
-        borderRadius: '12px',
-      }}
-    >
-      <span className="flex items-center gap-2 min-w-0">
-        <span
-          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-          style={{ background: `${color}15` }}
-        >
-          <Icon3D name="trophy" size={14} />
-        </span>
-        <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
-          View {mode.title} Leaderboard
-        </span>
-      </span>
-      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />
-    </Link>
+    <div className={CTA_ROW}>
+      <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="lg" block icon={<Icon3D name="trophy" size={26} />} aria-label={`View ${mode.title} Leaderboard`}>
+        {mode.title} Leaderboard
+      </CandyLink>
+    </div>
   );
 }
 
 function NextDailyLink({ next }: { next: { id: string; href: string } }) {
   const mode = PROFILE_MODES.find((m) => m.dbKey === next.id);
   if (!mode) return null;
-  const color = mode.accentColor;
-  const Icon = mode.icon;
 
   return (
-    <Link
-      href={next.href}
-      className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5 flex items-center justify-between transition-transform active:scale-[0.98]"
-      style={{
-        background: 'var(--color-surface)',
-        border: `1.5px solid ${color}55`,
-        borderRadius: '12px',
-      }}
-    >
-      <span className="flex items-center gap-2 min-w-0">
-        <span
-          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-          style={{ background: `${color}15` }}
-        >
-          {!(Icon && isGameArtIcon(Icon)) && mode.romanNumeral ? (
-            <span className="text-[9px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
-          ) : Icon ? (
-            <Icon className="w-3.5 h-3.5" style={{ color }} />
-          ) : null}
-        </span>
-        <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
-          Next Daily: <span style={{ color }}>{mode.title}</span>
-        </span>
-      </span>
-      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />
-    </Link>
+    <div className={CTA_ROW}>
+      <CandyLink href={next.href} color="amber" size="lg" block icon="arrow" aria-label={`Next Daily: ${mode.title}`}>
+        Next daily: {mode.title}
+      </CandyLink>
+    </div>
   );
 }
 
@@ -147,35 +106,12 @@ function KeepPlayingUnlimited({ currentMode }: { currentMode: string }) {
   if (!isProActive || !entry || !mode) return null;
 
   const href = entry.href.split('?')[0];   // unlimited = same route, no daily param
-  const color = mode.accentColor;
-  const Icon = mode.icon;
 
   return (
-    <a
-      href={href}
-      className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5 flex items-center justify-between transition-transform active:scale-[0.98]"
-      style={{
-        background: 'var(--color-surface)',
-        border: `1.5px solid ${color}55`,
-        borderRadius: '12px',
-      }}
-    >
-      <span className="flex items-center gap-2 min-w-0">
-        <span
-          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-          style={{ background: `${color}15` }}
-        >
-          {!(Icon && isGameArtIcon(Icon)) && mode.romanNumeral ? (
-            <span className="text-[9px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
-          ) : Icon ? (
-            <Icon className="w-3.5 h-3.5" style={{ color }} />
-          ) : null}
-        </span>
-        <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
-          Keep playing: <span style={{ color }}>Unlimited {mode.title}</span>
-        </span>
-      </span>
-      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />
-    </a>
+    <div className={CTA_ROW}>
+      <CandyLink href={href} native color="peach" size="lg" block icon="infinity" aria-label={`Keep playing: Unlimited ${mode.title}`}>
+        Unlimited {mode.title}
+      </CandyLink>
+    </div>
   );
 }

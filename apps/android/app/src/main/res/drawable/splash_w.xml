@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC F2: the launch icon — the W mascot inside the SplashScreen's 192 dp
+     icon circle (the 288 dp icon box minus a 48 dp inset each side). -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/mascot_w"
+    android:inset="48dp" />

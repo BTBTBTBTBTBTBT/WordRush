@@ -166,7 +166,7 @@ struct WordOfTheDayView: View {
                     Spacer(minLength: 4)
                     HStack(spacing: 2) {
                         FlameMark(size: 13)
-                        Text("\(streak)").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        Text("\(streak)").softNumber(14)
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(streak)-day word streak")
@@ -177,7 +177,7 @@ struct WordOfTheDayView: View {
                     Text("Which one is it?").font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x4B5563))
                     ForEach(0..<3, id: \.self) { i in
                         Button { pick(i, info, q) } label: { choiceRow(i, q.choices[i]) }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                     }
                 }
                 .padding(.top, 6)
@@ -217,7 +217,7 @@ struct WordOfTheDayView: View {
                 .padding(.vertical, 6).padding(.horizontal, 8)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .fixedSize()
         }
         .frame(maxWidth: .infinity)

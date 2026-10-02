@@ -108,7 +108,7 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
   const revealed = state.revealed[row];
   const isActive = active && !finished;
   return (
-    <div className={`${COLUMN_CLASS} flex flex-col gap-1 rounded-lg px-2 py-1 ${shaking ? 'animate-shake' : ''}`} style={{ background: isActive ? LILAC : undefined, border: `1px solid ${isActive ? LILAC_BORDER : 'transparent'}` }} onClick={() => !solved && !finished && onSelect(row)} role="group" aria-label={`Word ${row + 1}`}>
+    <div className={`${COLUMN_CLASS} flex flex-col gap-1 rounded-lg px-2 py-1 ${shaking ? 'gt-nudge' : ''}`} style={{ background: isActive ? LILAC : undefined, border: `1px solid ${isActive ? LILAC_BORDER : 'transparent'}` }} onClick={() => !solved && !finished && onSelect(row)} role="group" aria-label={`Word ${row + 1}`}>
       <div className="flex items-center justify-between" style={{ height: ICON_BTN }}>
         <div className="flex items-center gap-0.5" aria-label={`Scrambled letters ${w.scramble.split('').join(' ')}`}>
           {[...w.scramble].map((ch, i) => (
@@ -132,12 +132,12 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
           const filled = ch !== '';
           const pinned = revealed[i] !== '_';
           const ring = circled.has(i);
-          const bg = solved ? PURPLE : filled ? (pinned ? HINT : PURPLE) : 'var(--color-surface)';
-          const border = solved || filled ? bg : 'var(--color-border)';
+          // FINISH_SPEC B1: the shared glossy tile — purple once filled (a pinned hint letter in the hint violet), frosted when empty.
+          const hintTile = !solved && filled && pinned;
           return (
-            <span key={i} className="relative flex items-center justify-center rounded-md border-2 font-black" style={{ width: TILE, height: TILE, background: bg, borderColor: border, color: filled || solved ? '#fff' : 'var(--color-text)', fontSize: TILE_FONT }} aria-label={ring ? `${ch || 'empty'}, circled` : ch || 'empty'}>
-              {ch}
-              {ring && <span className="absolute rounded-full pointer-events-none" style={{ inset: RING_INSET, border: `2px solid ${filled || solved ? '#fff' : PURPLE}`, opacity: 0.9 }} aria-hidden />}
+            <span key={i} className={`gtile ${filled && !solved ? 'gt-pop' : ''}`} data-s={solved || filled ? 'correct' : 'empty'} style={{ width: TILE, height: TILE, ['--gt-font' as string]: `${TILE_FONT}px`, ...(hintTile ? { ['--gt-edge' as string]: '#5b21b6', ['--gt-face' as string]: `linear-gradient(#b197fc, ${HINT} 70%, #7c4ddb)` } : null) } as React.CSSProperties} aria-label={ring ? `${ch || 'empty'}, circled` : ch || 'empty'}>
+              <b>{ch}</b>
+              {ring && <span className="absolute rounded-full pointer-events-none" style={{ inset: RING_INSET, bottom: `calc(${RING_INSET} + 7%)`, zIndex: 3, border: `2px solid ${filled || solved ? '#fff' : PURPLE}`, opacity: 0.9 }} aria-hidden />}
             </span>
           );
         })}
@@ -162,7 +162,7 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
   const showTray = open && !solved && !finished;
   let pos = 0;
   return (
-    <div className={`${COLUMN_CLASS} flex flex-col gap-1 rounded-lg px-2 pt-1.5 pb-1 mt-1 ${shaking ? 'animate-shake' : ''}`} style={{ borderTop: '1.5px solid var(--color-border)', background: isActive ? LILAC : undefined, opacity: open || finished ? 1 : 0.55 }} onClick={() => open && !solved && !finished && onSelect()} role="group" aria-label="Punchline">
+    <div className={`${COLUMN_CLASS} flex flex-col gap-1 rounded-lg px-2 pt-1.5 pb-1 mt-1 ${shaking ? 'gt-nudge' : ''}`} style={{ borderTop: '1.5px solid var(--color-border)', background: isActive ? LILAC : undefined, opacity: open || finished ? 1 : 0.55 }} onClick={() => open && !solved && !finished && onSelect()} role="group" aria-label="Punchline">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1" style={{ minHeight: showTray ? ICON_BTN : undefined }}>
         <span className="text-[10px] font-black tracking-widest uppercase leading-none" style={{ color: 'var(--color-text-muted)' }}>{open || finished ? 'The punchline' : 'Solve the four words to unlock the punchline'}</span>
         {showTray && (
@@ -186,9 +186,9 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
                 const ch = solved || finished ? target[idx] : entry[idx] ?? '';
                 const filled = ch !== '';
                 return (
-                  <span key={k} className="relative flex items-center justify-center rounded-md border-2 font-black" style={{ width: FINAL_TILE, height: FINAL_TILE, background: filled ? LILAC : 'var(--color-surface)', borderColor: filled ? LILAC_BORDER : 'var(--color-border)', color: LILAC_TEXT, fontSize: FINAL_FONT }}>
-                    {ch}
-                    <span className="absolute rounded-full pointer-events-none" style={{ inset: 3, border: `2px solid ${PURPLE}`, opacity: filled ? 0.9 : 0.35 }} aria-hidden />
+                  <span key={k} className="gtile" data-s={filled ? 'typed' : 'empty'} style={{ width: FINAL_TILE, height: FINAL_TILE, ['--gt-font' as string]: `${FINAL_FONT}px`, ['--gt-glyph' as string]: LILAC_TEXT } as React.CSSProperties}>
+                    <b>{ch}</b>
+                    <span className="absolute rounded-full pointer-events-none" style={{ inset: '3px 3px calc(3px + 7%) 3px', zIndex: 3, border: `2px solid ${PURPLE}`, opacity: filled ? 0.9 : 0.35 }} aria-hidden />
                   </span>
                 );
               })}

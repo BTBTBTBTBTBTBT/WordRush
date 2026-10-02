@@ -26,6 +26,16 @@ d = np.sqrt(((arr - np.array(K, np.float32)) ** 2).sum(axis=2))
 # gets soft alpha + despill. Everything inside a character stays fully opaque,
 # so colors near the key (blue D, white letters on cyan) aren't eaten.
 bg = d <= LO
+# Only key-colored regions connected to the image border are background. Enclosed key-colored
+# pockets (a yawning mouth, a tear, a gap under an arm) stay unless they are big (real holes
+# like the inside of a letter O are large; facial details are small).
+lab, nlab = ndimage.label(bg)
+border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+sizes = ndimage.sum(np.ones_like(lab), lab, index=np.arange(1, nlab + 1))
+keep_bg = np.zeros(nlab + 1, bool)
+for i in range(1, nlab + 1):
+    keep_bg[i] = (i in border) or sizes[i - 1] > bg.size * 0.004
+bg = keep_bg[lab]
 band = ndimage.binary_dilation(bg, iterations=3) & ~bg
 alpha = np.full(d.shape, 255.0)
 alpha[bg] = 0

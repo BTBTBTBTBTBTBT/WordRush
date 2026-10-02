@@ -76,7 +76,7 @@ struct ProView: View {
                 Text("Sign in").font(Brand.font(15, .black)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(20).padding(.top, 8)
     }

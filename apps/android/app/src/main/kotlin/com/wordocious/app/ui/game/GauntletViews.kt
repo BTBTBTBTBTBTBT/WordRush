@@ -203,10 +203,11 @@ private fun StageReviewBoard(board: BoardState, stageWon: Boolean, modifier: Mod
     Column(
         modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(if (won) Color(0xFFF5F3FF) else if (lost) Color(0xFFFEF2F2) else Color.White)
+            // FINISH_SPEC A1: frosted, never plain white; won lavender, lost rose.
+            .background(if (won) Color(0xFFEFE6FF) else if (lost) Color(0xFFFDECEF) else Color.White.copy(alpha = 0.45f))
             .border(
-                2.dp,
-                if (won) Color(0xFFA78BFA) else if (lost) Color(0xFFF87171) else Color(0xFFE5E7EB),
+                1.5.dp,
+                if (won) Color(0xFFA78BFA) else if (lost) Color(0xFFF87171) else Color(0x407C3AED),
                 RoundedCornerShape(10.dp),
             )
             .padding(4.dp),

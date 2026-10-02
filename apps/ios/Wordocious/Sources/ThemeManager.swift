@@ -65,10 +65,12 @@ final class ThemeManager: ObservableObject {
     var colorScheme: ColorScheme { theme == "dark" ? .dark : .light }
 
     static let palettes: [String: Palette] = [
-        // Default — globals.css :root (light).
+        // Default — globals.css :root (light). FINISH_SPEC §A1 (no plain white):
+        // the surface is the soft lavender page-card wash (#7c3aed ≈7% over white,
+        // the mockups' #f5eeff) with its matching #e2d3ff border.
         "default": Palette(
             background: Color(hex: 0xF8F7FF), backgroundGradientEnd: Color(hex: 0xF3F0FF),
-            surface: Color(hex: 0xFFFFFF), border: Color(hex: 0xEDE9F6),
+            surface: Color(hex: 0xF5EEFF), border: Color(hex: 0xE2D3FF),
             borderAlt: Color(hex: 0xE5E7EB), borderLight: Color(hex: 0xE0DAF0),
             divider: Color(hex: 0xF0F0F0), surfaceAlt: Color(hex: 0xF3F4F6),
             surfaceHover: Color(hex: 0xF3F0FF), textPrimary: Color(hex: 0x1A1A2E),
@@ -91,18 +93,20 @@ final class ThemeManager: ObservableObject {
 
         // Ocean — blue/teal-tinted light theme (web stub only recolored unused
         // tile vars; this is a full palette so the theme actually applies).
+        // §A1: a soft sky wash instead of plain white.
         "ocean": Palette(
             background: Color(hex: 0xF0F7FB), backgroundGradientEnd: Color(hex: 0xE3F0F7),
-            surface: Color(hex: 0xFFFFFF), border: Color(hex: 0xCFE4EF),
+            surface: Color(hex: 0xEEF8FD), border: Color(hex: 0xCFE4EF),
             borderAlt: Color(hex: 0xD5E5EE), borderLight: Color(hex: 0xDDEBF3),
             divider: Color(hex: 0xE8F1F6), surfaceAlt: Color(hex: 0xEAF3F8),
             surfaceHover: Color(hex: 0xE3F0F7), textPrimary: Color(hex: 0x0F2E3D),
             textMuted: Color(hex: 0x6B8A99), textSecondary: Color(hex: 0x4A6B7A)),
 
         // Forest — green/earth-tinted light theme (full palette, see Ocean note).
+        // §A1: a soft leaf wash instead of plain white.
         "forest": Palette(
             background: Color(hex: 0xF3F8F1), backgroundGradientEnd: Color(hex: 0xE8F2E4),
-            surface: Color(hex: 0xFFFFFF), border: Color(hex: 0xD6E6CF),
+            surface: Color(hex: 0xEFF9F2), border: Color(hex: 0xD6E6CF),
             borderAlt: Color(hex: 0xDBE7D4), borderLight: Color(hex: 0xE0EBDA),
             divider: Color(hex: 0xECF3E9), surfaceAlt: Color(hex: 0xEDF4EA),
             surfaceHover: Color(hex: 0xE8F2E4), textPrimary: Color(hex: 0x1F3320),

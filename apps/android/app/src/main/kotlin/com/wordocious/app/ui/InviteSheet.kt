@@ -331,7 +331,7 @@ private fun PrimaryButton(
             .alpha(if (enabled) 1f else 0.5f)
             .clip(RoundedCornerShape(12.dp))
             .background(brush)
-            .clickable(enabled = enabled) { onClick() }
+            .clickableNoRipple { if (enabled) onClick() }
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,

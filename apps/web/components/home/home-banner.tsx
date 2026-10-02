@@ -1,6 +1,8 @@
 'use client';
 
 import { useLayoutEffect, useRef } from 'react';
+import { softIconTile } from '@/lib/soft-surface';
+import { SoftNum } from '@/components/ui/soft-number';
 import { Check, Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { isGameArtIcon, onPageShadow } from '@/lib/art';
@@ -55,8 +57,11 @@ function Tile({ card, result, unlimited, size, onOpen }: {
   const accent = card.accentColor;
   let style: React.CSSProperties;
   let ink: string;
+  // FINISH_SPEC A1: an unplayed (or Unlimited) tile is a mini game card — the
+  // accent's wash, its border and a thin accent top bar — never plain white.
+  const mini = { ...softIconTile(accent, { radius: size === 'lg' ? 9 : 8 }), boxShadow: `inset 0 3px 0 ${accent}, 0 2px 5px ${accent}33` };
   if (unlimited) {
-    style = { background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(76,29,149,0.12)' };
+    style = mini;
     ink = accent;
   } else if (result) {
     style = result.won
@@ -64,7 +69,7 @@ function Tile({ card, result, unlimited, size, onOpen }: {
       : { background: '#9ca3af' };
     ink = '#ffffff';
   } else {
-    style = { background: 'rgba(255,255,255,0.85)', border: `1.5px dashed ${accent}8c` };
+    style = mini;
     ink = accent;
   }
   return (
@@ -72,7 +77,7 @@ function Tile({ card, result, unlimited, size, onOpen }: {
       type="button"
       onClick={onOpen}
       aria-label={`${card.title}${unlimited ? '' : result ? (result.won ? ', won' : ', played') : ', not played yet'}`}
-      className="flex items-center justify-center shrink-0 transition-transform active:scale-90"
+      className="flex items-center justify-center shrink-0"
       style={{ width: px, height: px, borderRadius: size === 'lg' ? 9 : 8, ...style }}
     >
       {Icon && isGameArtIcon(Icon)
@@ -94,9 +99,9 @@ function RowHeader({ label, status, ink, streak }: { label: string; status: stri
       <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: ink }}>{label}</span>
       <span className="flex-1 text-[10px] font-black" style={{ letterSpacing: 0.5, color: ink }}>{status}</span>
       {streak != null && streak > 0 && (
-        <span className="flex items-center gap-0.5 text-[12px] font-black" style={{ color: '#c2410c' }} aria-label={`${streak}-day streak`}>
+        <span className="flex items-center gap-0.5" aria-label={`${streak}-day streak`}>
           <Icon3D name="flame" size={14} />
-          {streak}
+          <SoftNum size={12}>{streak}</SoftNum>
         </span>
       )}
     </div>
@@ -157,7 +162,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         className="font-black transition-colors"
         style={{
           height: 26, padding: '0 10px', borderRadius: 999, fontSize: 10.5, letterSpacing: 0.6,
-          background: on ? '#ffffff' : 'transparent',
+          background: on ? '#f5eeff' : 'transparent',
+          boxShadow: on ? '0 1px 3px rgba(76, 29, 149, 0.18)' : undefined,
           color: on ? (mode === 'daily' ? '#4c1d95' : '#6d28d9') : '#7c3aed',
         }}
       >
@@ -191,7 +197,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
 
   return (
     // The home host (W) stands at the strip's right end; Flawless crowns him.
-    <BannerHost id={PAGE_HOSTS.home} crown={wTier === 'flawless'}>
+    <BannerHost id={PAGE_HOSTS.home} pose="art-pose-w-wave" crown={wTier === 'flawless'}>
     <div
       className="relative shrink-0 overflow-hidden w-full"
       style={{

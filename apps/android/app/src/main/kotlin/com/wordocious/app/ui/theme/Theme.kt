@@ -33,9 +33,15 @@ data class Palette(
     val goldBorderLight: Color = Color(0xFFFEF3C7),
 )
 
+// FINISH_SPEC A1 (no plain white anywhere): the light themes' `surface` — the token
+// behind ~130 cards, sheets, rows and inputs, and the Material scheme's surface /
+// surfaceContainer* (every M3 Card, AlertDialog, ModalBottomSheet, TextField,
+// DropdownMenu) — is a soft wash of the theme's accent instead of #FFFFFF: Light the
+// mockups' lavender card (#F5EEFF, brand purple ≈9% over white), Ocean a sea-glass
+// blue, Forest a mint. Dark keeps its existing dark surface.
 object Palettes {
     val Light = Palette(
-        bg = Color(0xFFF8F7FF), surface = Color(0xFFFFFFFF), border = Color(0xFFEDE9F6),
+        bg = Color(0xFFF8F7FF), surface = Color(0xFFF5EEFF), border = Color(0xFFEDE9F6),
         borderLight = Color(0xFFE0DAF0), borderAlt = Color(0xFFE5E7EB), divider = Color(0xFFF0F0F0),
         surfaceHover = Color(0xFFF3F0FF), surfaceAlt = Color(0xFFF3F4F6),
         text = Color(0xFF1A1A2E), textMuted = Color(0xFF9CA3AF), textSecondary = Color(0xFF6B7280),
@@ -51,13 +57,13 @@ object Palettes {
         goldBorderLight = Color(0xFF78350F),
     )
     val Ocean = Palette(
-        bg = Color(0xFFF0F7FB), surface = Color(0xFFFFFFFF), border = Color(0xFFCFE4EF),
+        bg = Color(0xFFF0F7FB), surface = Color(0xFFEAF4FA), border = Color(0xFFCFE4EF),
         borderLight = Color(0xFFDDEBF3), borderAlt = Color(0xFFD5E5EE), divider = Color(0xFFE8F1F6),
         surfaceHover = Color(0xFFE3F0F7), surfaceAlt = Color(0xFFEAF3F8),
         text = Color(0xFF0F2E3D), textMuted = Color(0xFF6B8A99), textSecondary = Color(0xFF4A6B7A),
     )
     val Forest = Palette(
-        bg = Color(0xFFF3F8F1), surface = Color(0xFFFFFFFF), border = Color(0xFFD6E6CF),
+        bg = Color(0xFFF3F8F1), surface = Color(0xFFEEF6EA), border = Color(0xFFD6E6CF),
         borderLight = Color(0xFFE0EBDA), borderAlt = Color(0xFFDBE7D4), divider = Color(0xFFECF3E9),
         surfaceHover = Color(0xFFE8F2E4), surfaceAlt = Color(0xFFEDF4EA),
         text = Color(0xFF1F3320), textMuted = Color(0xFF7A8C72), textSecondary = Color(0xFF56684F),
@@ -202,7 +208,8 @@ private fun schemeFor(p: Palette) =
         onPrimary = Color.White,
         onBackground = p.text,
         onSurface = p.text,
-        surfaceContainerLowest = p.bg,
+        // A1: no white container role in the light themes either.
+        surfaceContainerLowest = p.surface,
         surfaceContainerLow = p.surface,
         surfaceContainer = p.surface,
         surfaceContainerHigh = p.surface,

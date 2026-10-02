@@ -177,17 +177,11 @@ fun VictoryOverlay(
                 }
                 Spacer(Modifier.height(16.dp))
                 if (onPlayAgain != null) {
-                    Text(
-                        if (won) "Play again" else "Try again",
-                        fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(
-                                if (won) Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))
-                                else Brush.horizontalGradient(listOf(Color(0xFFF87171), Color(0xFFF87171))),
-                            )
-                            .clickable { onPlayAgain() }
-                            .padding(horizontal = 28.dp, vertical = 10.dp),
+                    // FINISH_SPEC A8: the glossy candy button.
+                    com.wordocious.app.ui.CandyButton(
+                        if (won) "Play again" else "Try again", onClick = onPlayAgain,
+                        color = if (won) com.wordocious.app.ui.CandyColor.PINK else com.wordocious.app.ui.CandyColor.AMBER,
+                        size = com.wordocious.app.ui.CandySize.MEDIUM, icon = com.wordocious.app.ui.CandyIcon.PLAY,
                     )
                     Spacer(Modifier.height(10.dp))
                 }
@@ -202,7 +196,8 @@ fun VictoryOverlay(
 private fun StatBlock(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // One line always — a long time must never break inside its cell (founder, 2026-09-28).
-        FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        // A2: a soft number (Nunito Black, dark purple, tabular) — shrinks to fit, never breaks.
+        FitText(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) com.wordocious.app.ui.FinishInk.softNumberDark else com.wordocious.app.ui.FinishInk.softNumber)
         Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = WTheme.textMuted)
     }
 }

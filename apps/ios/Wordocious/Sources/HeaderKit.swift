@@ -47,6 +47,8 @@ enum Icon3DName: String, CaseIterable {
         case "person.badge.plus", "person.crop.circle.badge.plus": return .addFriend
         case "speaker.wave.2.fill", "speaker.wave.2", "speaker.fill": return .sound
         case "lock", "lock.fill": return .lock
+        // FINISH_SPEC §A3: "home" is the tab-home 3D icon.
+        case "house", "house.fill": return .tabHome
         default: return forSymbol(symbol)
         }
     }
@@ -168,19 +170,29 @@ struct PageHostTitle: View {
     }
 }
 
+/// FINISH_SPEC §A3: header controls are the soft 3D icons drawn BARE — no circle or
+/// pill behind them — 23 pt tall, in a 44-pt tap area, squishing on press.
+enum HeaderControl {
+    /// The bare 3D icon's height.
+    static let icon: CGFloat = 23
+    /// The tap area.
+    static let tap: CGFloat = 44
+    /// A plain SF Symbol control (close ✕) drawn bare in the header ink.
+    static let symbol: CGFloat = 19
+}
+
 extension View {
-    /// The soft white circle behind a header control (white = the theme surface,
-    /// so the dark theme gets its dark surface), no border, a soft shadow.
+    /// A header control's tap area (§A3): bare — no circle, no shadow — at least 44 pt.
+    /// (Kept under its old name so every caller follows the new look.)
     func headerCircle(_ size: CGFloat = PageHeaderStyle.circle) -> some View {
-        frame(width: size, height: size)
-            .background(Circle().fill(Theme.surface)
-                .shadow(color: .black.opacity(0.10), radius: 6, x: 0, y: 2))
-            .contentShape(Circle())
+        frame(width: max(size, HeaderControl.tap), height: max(size, HeaderControl.tap))
+            .contentShape(Rectangle())
     }
 }
 
-/// A header control: a soft white circle holding either an SF Symbol in the
-/// header ink (back / close / share …) or an icon from the 3D set.
+/// A header control (§A3): a bare 3D icon (back / home / share / help / sound …) or,
+/// where the set has no art (close ✕), the SF Symbol in the header ink — no bubble,
+/// a 44-pt tap area, the squish on press.
 struct HeaderCircleButton: View {
     enum Glyph {
         case symbol(String)
@@ -207,12 +219,12 @@ struct HeaderCircleButton: View {
 
     var body: some View {
         Button(action: action) { HeaderCircleLabel(glyph: glyph, size: size, tint: tint) }
-            .buttonStyle(.plain)
+            .buttonStyle(.squishIcon)
             .accessibilityLabel(label)
     }
 }
 
-/// The circle visual on its own (for a Menu / NavigationLink / sheet label).
+/// The control's visual on its own (for a Menu / NavigationLink / sheet label).
 struct HeaderCircleLabel: View {
     let glyph: HeaderCircleButton.Glyph
     var size: CGFloat = PageHeaderStyle.circle
@@ -223,22 +235,24 @@ struct HeaderCircleLabel: View {
             switch glyph {
             case .symbol(let s):
                 if let icon = Icon3DName.forHeaderSymbol(s) {
-                    // §5: the 3D art fills its square, so ~1.2× the old glyph size.
-                    Icon3D(icon, size: (size * 0.5).rounded())
+                    Icon3D(icon, size: HeaderControl.icon)
+                        .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
                 } else {
                     Image(systemName: s)
-                        .font(.system(size: (size * 0.42).rounded(), weight: .bold))
+                        .font(.system(size: HeaderControl.symbol, weight: .heavy))
                         .foregroundStyle(tint)
+                        .shadow(color: .white.opacity(0.8), radius: 0, x: 0, y: 1)
                 }
             case .icon(let i):
-                Icon3D(i, size: (size * 0.6).rounded())
+                Icon3D(i, size: HeaderControl.icon)
+                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
             case .mutedIcon(let i):
-                let side = (size * 0.5).rounded()
+                let side = HeaderControl.icon
                 ZStack {
                     Icon3D(i, size: side).saturation(0.4).opacity(0.5)
                     Capsule().fill(tint)
                         .frame(width: side * 1.1, height: max(2, side * 0.11))
-                        .overlay(Capsule().stroke(Theme.surface, lineWidth: 1))
+                        .overlay(Capsule().stroke(Color.white.opacity(0.9), lineWidth: 1))
                         .rotationEffect(.degrees(-45))
                 }
             }
@@ -250,12 +264,16 @@ struct HeaderCircleLabel: View {
 /// The game screens' corner controls (44 pt): Home (the back control) and Help.
 struct GameCornerButton: View {
     enum Kind { case home, help }
-    /// The circles' vertical center from the screen's top: 8 pt inset + half the
-    /// 44 pt circle. Game headers center their title art on it (ART_SPEC §14).
-    static let centerY: CGFloat = 30
-    /// ART_SPEC §19.3: the corner-button row's height (8 pt inset + the 44 pt circle
-    /// + a 4 pt gap) — solo game titles start below it.
-    static let rowHeight: CGFloat = 56
+    /// FINISH_SPEC §B4: the controls row tucks right under the status bar — a 2 pt
+    /// top inset, 4 pt from the sides (the bare icons sit centered in 44-pt taps).
+    static let topInset: CGFloat = 2
+    static let sideInset: CGFloat = 4
+    /// The controls' vertical center from the screen's top: the inset + half the
+    /// 44 pt tap area. Game headers center their title art on it (ART_SPEC §14).
+    static let centerY: CGFloat = 24
+    /// The controls row's height (the inset + the 44 pt tap area + a 2 pt gap) —
+    /// solo game titles start below it (§19.3 / FINISH_SPEC §B4).
+    static let rowHeight: CGFloat = 48
 
     let kind: Kind
     let action: () -> Void
@@ -265,8 +283,24 @@ struct GameCornerButton: View {
         case .home:
             HeaderCircleButton(.symbol("house.fill"), size: 44, label: "Home", action: action)
         case .help:
-            HeaderCircleButton(.icon(.help), size: 44, label: "How to play", action: action)
+            // FINISH_SPEC §B4: the controls row's right side is sound + help.
+            HStack(spacing: 0) {
+                GameSoundToggle()
+                HeaderCircleButton(.icon(.help), size: 44, label: "How to play", action: action)
+            }
         }
+    }
+}
+
+/// The game sound toggle (mirrors the web SoundToggle): persists to the same
+/// `pref-sound` key SoundManager reads, so muting also silences the jingles. The
+/// 3D sound icon, slashed + dimmed when muted.
+struct GameSoundToggle: View {
+    @AppStorage("pref-sound") private var soundOn = true
+
+    var body: some View {
+        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44,
+                           label: soundOn ? "Sound on" : "Sound off") { soundOn.toggle() }
     }
 }
 

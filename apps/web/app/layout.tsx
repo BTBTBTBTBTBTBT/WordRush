@@ -15,6 +15,9 @@ import { AuthGate } from '@/components/auth/auth-gate';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
 import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
+import { ColdStartIntro } from '@/components/providers/cold-start-intro';
+import { SPLASH } from '@/lib/intro';
+import { SquishHost } from '@/components/ui/squish-host';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
 import { ReferralRedeemer } from '@/components/referrals/referral-redeemer';
@@ -39,9 +42,14 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://wordocious.com'),
   manifest: '/manifest.json',
   themeColor: '#a78bfa',
+  // FINISH_SPEC F1: app icon B (the W mascot on the purple→pink gradient),
+  // made from docs/design/brand/logo/app-icon-B-1024.png.
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
   },
   appleWebApp: {
     capable: true,
@@ -82,8 +90,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={nunito.className} style={{ backgroundColor: 'var(--color-bg)' }} suppressHydrationWarning>
-        {/* Branded loading screen — visible until React hydrates and removes it.
-            Uses only inline styles so it renders correctly before Tailwind loads. */}
+        {/* The static launch screen (FINISH_SPEC F2): the Home wallpaper color
+            with the app-icon W mascot centered, painted before any script runs
+            (inline styles only, so it renders before the stylesheet). React
+            removes it on hydration; on a cold start at Home the in-app intro
+            (ColdStartIntro) takes over from the same spot. */}
         <div
           id="app-loader"
           style={{
@@ -93,38 +104,19 @@ export default function RootLayout({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            flexDirection: 'column',
-            gap: '16px',
-            background: '#f8f7ff',
+            background: SPLASH.background,
           }}
         >
-          <span
-            style={{
-              fontSize: '28px',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent',
-            }}
-          >
-            WORDOCIOUS
-          </span>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              border: '3px solid #ede9f6',
-              borderTopColor: '#a78bfa',
-              borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-            }}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={SPLASH.icon}
+            alt=""
+            width={SPLASH.size}
+            height={SPLASH.size}
+            style={{ width: SPLASH.size, height: SPLASH.size, filter: 'drop-shadow(0 12px 24px rgba(76, 29, 149, 0.25))' }}
           />
         </div>
         <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes spin { to { transform: rotate(360deg) } }
           /* Fade out once React hydrates */
           #app-loader.loaded {
             opacity: 0;
@@ -159,6 +151,10 @@ export default function RootLayout({
             signed-out users (who get <LoginScreen/> instead of children) never
             mount it and are stuck on the loading spinner forever. */}
         <AppLoaderDismiss />
+        {/* F2: the cold-start intro (session-only, skippable, Reduce Motion = crossfade). */}
+        <ColdStartIntro />
+        {/* A9: everything tappable squishes (one document listener). */}
+        <SquishHost />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>

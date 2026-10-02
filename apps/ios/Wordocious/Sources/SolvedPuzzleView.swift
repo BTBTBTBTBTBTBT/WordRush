@@ -81,7 +81,7 @@ struct SolvedPuzzleView: View {
             // alongside its top Home/Share links).
             GameCornerButton(kind: .home) { dismiss() }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.top, 8).padding(.leading, 8)
+            .padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
         }
         .navigationBarBackButtonHidden(true)
         .hidesBottomNav()

@@ -201,7 +201,7 @@ struct ProfileIdentityChips: View {
             if let arch = persona?.archetype, let info = ProfileArchetype.info(arch) {
                 Button { showArchetype = true } label: {
                     chip("\(info.name.uppercased()) ›", color: Color(hex: 0x7C3AED))
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
             if let pct = persona?.bestPercentile {
                 chip("TOP \(Int(pct.topPct.rounded()))% · \(socialModeTitle(pct.mode).uppercased())",
@@ -269,7 +269,7 @@ struct ArchetypeSheet: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 20)).foregroundStyle(Theme.textMuted)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                 }
                 Text("Every player gets one of five archetypes from how they actually play. The first rule you qualify for — top to bottom — is yours.")
                     .font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
@@ -386,7 +386,7 @@ struct YouVsThemCard: View {
                     .padding(.horizontal, 10).padding(.vertical, 9)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
             HStack(spacing: 4) {
                 Icon3D(.lock, size: 11) // ART_SPEC §5
@@ -711,7 +711,7 @@ struct MedalHistorySheet: View {
         if isPodium, let mode = m.gameMode {
             NavigationLink(value: PodiumRequest(day: m.day, mode: mode)) {
                 rowContent(m)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         } else {
             rowContent(m)
         }
@@ -788,7 +788,7 @@ struct PodiumScreen: View {
                                 .padding(12)
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
                                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(.squish)
                         }
                     }
                 }
@@ -857,7 +857,7 @@ struct HighlightsReel: View {
                         ForEach(items) { item in
                             if item.tapsCalendar {
                                 Button { showCalendar = true } label: { card(item) }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.squish)
                             } else {
                                 card(item)
                             }
@@ -915,7 +915,7 @@ struct StreakCalendarSheet: View {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 20)).foregroundStyle(Theme.textMuted)
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 10), spacing: 10) {
                 ForEach(days, id: \.key) { day in
@@ -1008,7 +1008,7 @@ struct LatelyCard: View {
                         .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xEC4899).opacity(0.06)))
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xEC4899).opacity(0.35), lineWidth: 1.5))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .padding(.top, 9)
                 }
             }

@@ -12,50 +12,108 @@ struct ShakeEffect: GeometryEffect {
     }
 }
 
-/// Web-parity tile flip on reveal: `rotateX` 0°→90°→0° — the tile rotates to
-/// edge-on at the midpoint and back, with its final color applied throughout
-/// (mirrors the `tile-flip` keyframe; no face swap). Progress 0→1 maps to the
-/// 0→90→0 triangle so a single eased tween produces the flip.
-private struct TileFlip: ViewModifier, Animatable {
+/// FINISH_SPEC §B3 reveal: the tile turns over (rotateX 0 → −90° → 0 with a 1.05
+/// swell at the edge-on midpoint) and swaps from its typed face to its color at
+/// the half. Animatable, so the face swap lands exactly at progress 0.5. A cheap
+/// 2D scale stands in for the 3D rotation (every multi-board tile can flip at once).
+private struct FlipFace: View, Animatable {
     var progress: Double
+    let letter: String
+    let face: GlossyFace
+    let width: CGFloat
+    let height: CGFloat
+    let glow: Color
+    let glowAmount: CGFloat
+    let goldRing: Bool
+
     var animatableData: Double {
         get { progress }
         set { progress = newValue }
     }
-    func body(content: Content) -> some View {
+
+    var body: some View {
         let angle = (progress < 0.5 ? progress : 1 - progress) * 2 * 90
-        // An orthographic rotateX (perspective 0) just scales height by cos(angle):
-        // 1 → 0 (edge-on) → 1. Using a cheap 2D scaleEffect instead of
-        // rotation3DEffect keeps it smooth even when every multi-board tile flips
-        // at once. Visually identical to the web's tile-flip.
-        return content.scaleEffect(x: 1, y: CGFloat(cos(angle * .pi / 180)), anchor: .center)
+        let swell = CGFloat(1 + 0.05 * sin(.pi * progress))
+        GlossyTile(face: progress < 0.5 ? .typed : face, letter: letter, width: width, height: height,
+                   glow: glow, glowAmount: glowAmount, goldRing: goldRing)
+            .scaleEffect(x: swell, y: CGFloat(cos(angle * .pi / 180)) * swell, anchor: .center)
     }
 }
 
-/// A just-committed tile that flips open on reveal. Reuses `TileView` for the
-/// face so styling stays pixel-identical. 0.5s / 150ms stagger on a full board,
-/// 0.3s / 80ms on mini (multi-board) — matching web's tile-flip / tile-flip-mini.
+/// A just-committed tile that flips open on reveal (FINISH_SPEC §B3): 720 ms each,
+/// 300 ms apart, the color swapping at the half, then a soft color glow (bloom,
+/// 900 ms). A hint tile pulses a gold glow twice instead; the winning row hops in
+/// a wave (`hopAt`); a lost board's last row wobbles and sinks (`sinkAt`).
+/// Reduce Motion: the final face, no motion.
 struct FlipRevealTile: View {
     let letter: String
     let state: TileState
     var size: CGFloat = 58
     var height: CGFloat? = nil
     var delay: Double = 0
-    var duration: Double = 0.5
+    var duration: Double = TileMotion.flip
+    /// Seconds after appearing when this tile starts its win hop (nil = none).
+    var hopAt: Double? = nil
+    /// Seconds after appearing when this tile starts its loss wobble + sink.
+    var sinkAt: Double? = nil
+    /// A hint reveal: the gold glow ×2 instead of the color bloom.
+    var hint: Bool = false
+
     @State private var progress: Double = 0
+    @State private var glow: CGFloat = 0
+    @State private var hop: Double = 0
+    @State private var sink: Double = 0
 
     var body: some View {
-        TileView(letter: letter, state: state, revealed: true, size: size, height: height)
-            .modifier(TileFlip(progress: progress))
-            .onAppear {
-                // Theme.reduceMotion = in-app toggle OR OS setting (the old
-                // env-only check let the in-app toggle keep flipping tiles).
-                guard !Theme.reduceMotion else { return }
-                withAnimation(.easeInOut(duration: duration).delay(delay)) { progress = 1 }
+        let h = height ?? size
+        let face = GlossyFace(revealed: state)
+        let box = CGSize(width: size, height: h)
+        FlipFace(progress: progress, letter: letter, face: face, width: size, height: h,
+                 glow: hint ? Color(hex: 0xF5C542).opacity(0.7) : GlossyTile.bloom(face),
+                 glowAmount: glow, goldRing: hint)
+            .modifier(KeyframeEffect(progress: hop, frames: TileMotion.hopFrames, easing: TileMotion.hopEasing, size: box))
+            .modifier(KeyframeEffect(progress: sink, frames: TileMotion.sinkFrames, easing: .easeOut, size: box,
+                                     desaturate: sink > 0))
+            .onAppear(perform: run)
+    }
+
+    private func run() {
+        // Theme.reduceMotion = in-app toggle OR OS setting.
+        guard !Theme.reduceMotion else { progress = 1; return }
+        guard progress == 0 else { return }
+        withAnimation(.timingCurve(0.37, 0, 0.63, 1, duration: duration).delay(delay)) { progress = 1 }
+        let land = delay + duration
+        if hint {
+            for k in 0..<2 {
+                let t = land + Double(k) * TileMotion.hintPulse
+                DispatchQueue.main.asyncAfter(deadline: .now() + t) {
+                    withAnimation(.easeInOut(duration: TileMotion.hintPulse / 2)) { glow = 1 }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + t + TileMotion.hintPulse / 2) {
+                    withAnimation(.easeInOut(duration: TileMotion.hintPulse / 2)) { glow = 0 }
+                }
             }
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + land) {
+                withAnimation(.easeOut(duration: TileMotion.bloom * 0.35)) { glow = 1 }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + land + TileMotion.bloom * 0.35) {
+                withAnimation(.easeOut(duration: TileMotion.bloom * 0.65)) { glow = 0 }
+            }
+        }
+        if let hopAt {
+            withAnimation(.linear(duration: TileMotion.hop).delay(hopAt)) { hop = 1 }
+        }
+        if let sinkAt {
+            withAnimation(.linear(duration: TileMotion.sink).delay(sinkAt)) { sink = 1 }
+        }
     }
 }
 
+/// One board tile in the game kit's glossy look (FINISH_SPEC §B1): frosted glass
+/// when empty, a white face with a purple border once typed (it pops in), purple
+/// / gold / slate once revealed, red letters + ring when the row isn't a word.
+/// Same API as before, so every board (solo, VS, completed recaps) follows.
 struct TileView: View {
     let letter: String
     let state: TileState
@@ -65,33 +123,21 @@ struct TileView: View {
     /// tiles (web `1fr` rows). Defaults to a square tile.
     var height: CGFloat? = nil
     /// Live "not a valid / already-guessed word" indicator on the typing row —
-    /// red tile (web: border-red-400 / bg-red-50 / text-red-500), shown before Enter.
+    /// red letters + ring (§B3), shown before Enter and while a rejection plays.
     var isInvalid: Bool = false
+
+    private var face: GlossyFace {
+        if isInvalid { return .bad }
+        if revealed { return GlossyFace(revealed: state) }
+        // "•" marks a locked Succession board's hidden guesses.
+        return letter.isEmpty || letter == "•" ? .empty : .typed
+    }
 
     var body: some View {
         let h = height ?? size
-        let s = min(size, h)
-        let filled = state != .empty
-        // Web HINT_USED tile: bg-gray-100 / border-gray-200 / text-gray-300 —
-        // a faint ghost tile, not a solid gray tile with white text.
-        let fg: Color = isInvalid ? Color(hex: 0xEF4444)
-            : (filled && revealed ? (state == .hintUsed ? Color(hex: 0xD1D5DB) : .white) : Theme.textPrimary)
-        // Theme.surface, NOT Color.white. An unrevealed tile pairs this fill
-        // with Theme.textPrimary above — a FIXED white tile under THEMED ink is
-        // #F0EEF6 on #FFFFFF in Dark, i.e. 1.15:1, and the letters you type are
-        // invisible. Identical in Light (surface is #FFFFFF there); Dark now
-        // matches Android, which already themed both sides.
-        let bg: Color = isInvalid ? Color(hex: 0xFEF2F2) : (revealed ? Theme.tileColor(for: state) : Theme.surface)
-        let border: Color = isInvalid ? Color(hex: 0xF87171)
-            : (!revealed ? Theme.emptyBorder
-               : (state == .hintUsed ? Color(hex: 0xE5E7EB)
-                  : (state == .absent ? Theme.emptyBorder : Theme.borderAlt)))
-        Text(letter)
-            .font(Brand.fixedFont(s * 0.5, .black))   // derived from the tile, not from Dynamic Type
-            .foregroundStyle(fg)
-            .frame(width: size, height: h)
-            .background(RoundedRectangle(cornerRadius: s * 0.14).fill(bg))
-            .overlay(RoundedRectangle(cornerRadius: s * 0.14).stroke(border, lineWidth: min(2, max(1, s * 0.09))))
+        GlossyTile(face: face, letter: letter, width: size, height: h)
+            // §B3 type: the letter fades in as the tile swells (typing rows only).
+            .modifier(TypePop(letter: revealed ? "" : letter, size: CGSize(width: size, height: h)))
     }
 }
 
@@ -130,6 +176,9 @@ struct BoardView: View {
     /// Guess count observed at first appear — rows present then (resume/restore)
     /// never flip; only rows committed live during this session do (web parity).
     @State private var seenGuessCount: Int = -1
+    /// §B3 not a word: the typed letters stay red for the rejection's 1 s glow.
+    @State private var rejecting = false
+    @State private var rejectGlow: CGFloat = 0
 
     private var board: BoardState { vm.board(boardIndex) }
     private var prefilled: [PrefilledGuess] { board.prefilledGuesses ?? [] }
@@ -157,6 +206,19 @@ struct BoardView: View {
         .opacity(seqLocked ? 0.6 : 1)
         .overlay(activeSeqBorder)
         .onAppear { if seenGuessCount < 0 { seenGuessCount = board.guesses.count } }
+        .onChange(of: vm.shakeCount) { _ in playReject() }
+    }
+
+    /// §B3 "not a word": the letters turn red with a soft red glow for 1 s while the
+    /// row nudges (the view model then clears them right to left).
+    private func playReject() {
+        rejecting = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + TileMotion.rejectHold) { rejecting = false }
+        guard !Theme.reduceMotion else { return }
+        withAnimation(.easeOut(duration: 0.35)) { rejectGlow = 1 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.easeInOut(duration: 0.65)) { rejectGlow = 0 }
+        }
     }
 
     // MARK: Sequence (Succession) per-board state
@@ -191,11 +253,14 @@ struct BoardView: View {
             HStack(spacing: spacing) {
                 ForEach(0..<vm.wordLength, id: \.self) { col in
                     let ch = col < letters.count ? String(letters[col]) : ""
-                    TileView(letter: ch, state: .empty, revealed: false, size: tileSize, height: tileHeight, isInvalid: invalid && !ch.isEmpty)
+                    TileView(letter: ch, state: .empty, revealed: false, size: tileSize, height: tileHeight,
+                             isInvalid: (invalid || rejecting) && !ch.isEmpty)
                 }
             }
-            .modifier(ShakeEffect(animatableData: CGFloat(vm.shakeCount)))
-            .animation(Theme.animation(.linear(duration: 0.4)), value: vm.shakeCount)
+            .shadow(color: Color(hex: 0xF0435F).opacity(0.6 * Double(rejectGlow)), radius: tileSize * 0.3 * rejectGlow)
+            // §B3: the small row nudge (520 ms).
+            .modifier(NudgeEffect(animatableData: CGFloat(vm.shakeCount), scale: max(0.5, tileSize / 58)))
+            .animation(Theme.animation(.linear(duration: TileMotion.nudge)), value: vm.shakeCount)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(letters.isEmpty ? "Current guess row, empty"
                 : "Current guess: \(letters.map(String.init).joined(separator: ", "))\(invalid ? ". Not a valid word" : "")")
@@ -219,16 +284,23 @@ struct BoardView: View {
     }
 
     private func revealedRow(_ eval: GuessResult, animate: Bool = false) -> some View {
-        // Per-tile staggered flip (web parity). Multi-board uses the faster "mini"
-        // timing (0.3s / 80ms); single board the full flip (0.5s / 150ms).
-        let mini = vm.isMultiBoard
-        let stagger = mini ? 0.08 : 0.15
-        let dur = mini ? 0.3 : 0.5
+        // FINISH_SPEC §B3: one motion kit for every board — each tile turns over in
+        // 720 ms, 300 ms apart; the winning row hops in a wave once it has landed; a
+        // lost board's last row wobbles and sinks; a hint row pulses gold.
+        let n = eval.tiles.count
+        let landed = TileMotion.rowReveal(columns: n)
+        let isHint = eval.tiles.contains { $0.state == .hintUsed }
+        let wins = animate && eval.isCorrect
+        let sinks = animate && !eval.isCorrect && board.status == .lost
         return HStack(spacing: spacing) {
             ForEach(eval.tiles.indices, id: \.self) { col in
                 if animate {
                     FlipRevealTile(letter: eval.tiles[col].letter, state: eval.tiles[col].state,
-                                   size: tileSize, height: tileHeight, delay: Double(col) * stagger, duration: dur)
+                                   size: tileSize, height: tileHeight,
+                                   delay: Double(col) * TileMotion.flipStagger,
+                                   hopAt: wins ? landed + Double(col) * TileMotion.hopStagger : nil,
+                                   sinkAt: sinks ? landed + Double(col) * TileMotion.sinkStagger : nil,
+                                   hint: isHint && eval.tiles[col].state == .correct)
                 } else {
                     TileView(letter: eval.tiles[col].letter, state: eval.tiles[col].state, revealed: true, size: tileSize, height: tileHeight)
                 }
@@ -252,8 +324,10 @@ struct SolvedBoardFrame: ViewModifier {
     func body(content: Content) -> some View {
         // Web: every multi board sits in a card — default border-gray-200 / white,
         // green when solved, red when lost. Single board (active:false) = no frame.
-        let border: Color = won ? Color(hex: 0xA78BFA) : (lost ? Color(hex: 0xF87171) : (active ? Color(hex: 0xE5E7EB) : .clear))
-        let fill: Color = won ? Color(hex: 0xF5F3FF) : (lost ? Color(hex: 0xFEF2F2) : (active ? .white : .clear))
+        // FINISH_SPEC §A1: no plain white — an idle board sits on a soft lilac wash.
+        let border: Color = won ? Color(hex: 0xA78BFA) : (lost ? Color(hex: 0xF87171) : (active ? Color(hex: 0xE2D3FF) : .clear))
+        let fill: Color = won ? Color(hex: 0xF5F3FF) : (lost ? Color(hex: 0xFEF2F2)
+            : (active ? (Theme.isDark ? Theme.surface : Color(hex: 0xF5EEFF).opacity(0.7)) : .clear))
         let badge = max(13, min(20, tileSize * 0.7))
         return content
             .padding(active ? 4 : 0)
@@ -479,10 +553,11 @@ struct CompletedMiniBoardView: View {
     }
 }
 
-/// Lays boards out so they always fit on screen above the keyboard. Tiles are
-/// sized to the smaller of the width budget and (when `fitHeight` is given) the
-/// vertical budget, so multi-board modes like Deliverance/OctoWord never get
-/// clipped. Single board = 1 column; 2/4/8 boards = 2 columns.
+/// Lays boards out with the ONE shared sizing rule (FINISH_SPEC §B5, core
+/// `BoardSizing`): the board fills the space between the title / status line and
+/// the keyboard — as wide as the screen allows (a 2% margin each side) and
+/// centered in the remaining height. Multi-board games size their whole grid the
+/// same way (tiles stretch to fill each cell, web `1fr` rows).
 ///
 /// - `availableWidth`: usable width for the whole grid.
 /// - `fitHeight`: when set (in-play), tiles also shrink to fit this height so
@@ -493,14 +568,8 @@ struct BoardLayout: View {
     var availableWidth: CGFloat
     var fitHeight: CGFloat? = nil
 
-    private let colSpacing: CGFloat = 10
-    private let rowSpacing: CGFloat = 14
-
-    // Match the web (multi-board.tsx): single board = 1 col, 2–4 boards = 2
-    // cols, octordle (>4) = 4 cols. Using 2 cols for 8 boards forced 4 rows,
-    // which crushed every tile to fit the height — the web's 4×2 keeps them legible.
-    private var cols: Int { vm.boardCount <= 1 ? 1 : (vm.boardCount > 4 ? 4 : 2) }
-    private var boardRows: Int { (vm.boardCount + cols - 1) / cols }
+    private var cols: Int { BoardSizing.boardColumns(boardCount: vm.boardCount) }
+    private var boardRows: Int { BoardSizing.boardRows(boardCount: vm.boardCount) }
 
     /// Tallest board (prefilled rows + guess rows) drives the height budget.
     private var rowsPerBoard: Int {
@@ -510,18 +579,12 @@ struct BoardLayout: View {
         }.max() ?? vm.maxGuesses
     }
 
-    /// Cap so boards don't balloon on wide screens (matches prior sizes).
-    private var maxTile: CGFloat {
-        switch vm.boardCount {
-        case 1: return 58
-        case 2: return 46
-        case 4: return 38
-        default: return 32 // octordle (8)
-        }
+    /// The multi-board fill layout from the shared rule.
+    private var multi: BoardSizing.Multi {
+        BoardSizing.multi(boardCount: vm.boardCount, wordLength: vm.wordLength, rowsPerBoard: rowsPerBoard,
+                          width: Double(availableWidth), height: fitHeight.map(Double.init),
+                          boardGap: Double(boardGap), tileGap: Double(tileGap), framePad: Double(framePadTotal))
     }
-
-    /// Per-board frame overhead (SolvedBoardFrame padding 4*2 + border 2*2).
-    private var framePad: CGFloat { vm.boardCount > 1 ? 12 : 0 }
 
     /// OctoWord-only: the board the user tapped to zoom into (web parity — only
     /// >4-board layouts are zoomable). Overlaid large + still playable.
@@ -541,8 +604,7 @@ struct BoardLayout: View {
             }
         }
         // Center the board in the greedy area between header and keyboard so the
-        // leftover space is split top/bottom — matches the web `justify-center
-        // h-full` (practice-game.tsx) instead of pinning the board to the top.
+        // leftover space is split top/bottom.
         .frame(maxWidth: .infinity, maxHeight: fitHeight == nil ? nil : .infinity, alignment: .center)
         // Zoom overlay covers only the board area (this view's frame), never the
         // keyboard below — matching the web backdrop.
@@ -564,52 +626,46 @@ struct BoardLayout: View {
     /// size (and back on dismiss) — a true maximize/minimize from position.
     @ViewBuilder
     private func expandedOverlay(_ i: Int) -> some View {
+        let m = multi
+        let gridW = CGFloat(m.gridWidth)
         let areaH = fitHeight ?? availableWidth * 2.2
-        let cellW = (availableWidth - CGFloat(cols - 1) * boardGap) / CGFloat(cols)
-        let cellH = (areaH - CGFloat(boardRows - 1) * boardGap) / CGFloat(boardRows)
+        let cellW = CGFloat(m.cellWidth)
+        let cellH = CGFloat(m.cellHeight ?? Double((areaH - CGFloat(boardRows - 1) * boardGap) / CGFloat(boardRows)))
+        let gridH = cellH * CGFloat(boardRows) + CGFloat(boardRows - 1) * boardGap
         let r = i / cols, c = i % cols
         let srcMidX = CGFloat(c) * (cellW + boardGap) + cellW / 2
-        let srcMidY = CGFloat(r) * (cellH + boardGap) + cellH / 2
-        let rows = CGFloat(rowsPerBoard)
+        let srcMidY = (areaH - gridH) / 2 + CGFloat(r) * (cellH + boardGap) + cellH / 2
         // Render the enlarged board with the SAME tile layout as the mini, so at
         // p=0 (scale 1, slot position) it overlays the mini exactly. Then scale up
         // toward center as p→1 — a clean maximize from / minimize to the real slot.
-        let tileW = max(6, (cellW - framePadTotal - CGFloat(vm.wordLength - 1) * tileGap) / CGFloat(vm.wordLength))
-        let tileH = max(6, (cellH - framePadTotal - (rows - 1) * tileGap) / rows)
-        let maxScale = max(1, min(availableWidth * 0.96 / cellW, areaH * 0.96 / cellH))
+        let tileW = CGFloat(m.tileWidth)
+        let tileH = CGFloat(m.tileHeight)
+        let maxScale = max(1, min(gridW * 0.96 / cellW, areaH * 0.96 / cellH))
         let p = zoomProgress
-        let s = 1 + (maxScale - 1) * p
-        let dx = (srcMidX - availableWidth / 2) * (1 - p)
+        let sc = 1 + (maxScale - 1) * p
+        let dx = (srcMidX - gridW / 2) * (1 - p)
         let dy = (srcMidY - areaH / 2) * (1 - p)
         ZStack {
             Color.black.opacity(0.6 * p).onTapGesture { dismissExpanded() }
             BoardView(vm: vm, boardIndex: i, tileSize: tileW, tileHeight: tileH, fillGap: tileGap)
-                .scaleEffect(s, anchor: .center)
+                .scaleEffect(sc, anchor: .center)
                 .offset(x: dx, y: dy)
                 .onTapGesture { dismissExpanded() }
         }
-        .frame(width: availableWidth, height: areaH, alignment: .center)
+        .frame(width: gridW, height: areaH, alignment: .center)
     }
 
-    // MARK: Multi-board fill layout — web parity. Boards fill the full width and
-    // (in-play) height; tiles stretch to non-square cells like the web's `1fr`
-    // rows. 8px between boards (gap-2), 2px between tiles (gap-[2px]).
+    // MARK: Multi-board fill layout — 8 pt between boards, 2 pt between tiles.
     private let boardGap: CGFloat = 8
     private let tileGap: CGFloat = 2
     private let framePadTotal: CGFloat = 8   // SolvedBoardFrame .padding(4) per side
 
     private var multiGrid: some View {
         let n = vm.boardCount
-        let cellW = (availableWidth - CGFloat(cols - 1) * boardGap) / CGFloat(cols)
-        let rows = CGFloat(rowsPerBoard)
-        let innerW = cellW - framePadTotal
-        let tileW = max(6, (innerW - CGFloat(vm.wordLength - 1) * tileGap) / CGFloat(vm.wordLength))
-        // Cell height fills the vertical budget in-play; nil → square tiles (post-game scroll).
-        let cellH: CGFloat? = {
-            guard let h = fitHeight, h.isFinite, h > 0 else { return nil }
-            return (h - CGFloat(boardRows - 1) * boardGap) / CGFloat(boardRows)
-        }()
-        let tileH = max(6, cellH.map { ($0 - framePadTotal - (rows - 1) * tileGap) / rows } ?? tileW)
+        let m = multi
+        let cellW = CGFloat(m.cellWidth)
+        let tileW = CGFloat(m.tileWidth)
+        let tileH = CGFloat(m.tileHeight)
         return VStack(spacing: boardGap) {
             ForEach(0..<boardRows, id: \.self) { r in
                 HStack(spacing: boardGap) {
@@ -637,26 +693,14 @@ struct BoardLayout: View {
                 }
             }
         }
-        .frame(width: availableWidth, alignment: .top)
+        .frame(width: CGFloat(m.gridWidth), alignment: .top)
     }
 
-    /// Solve for the largest tile that fits both the width and (optionally) the
-    /// height budget. Within a board, inter-tile spacing is `tileSize * 0.1`
-    /// (see BoardView.spacing).
+    /// §B5: the largest square tile that fits the width (2% margins) and, in play,
+    /// the height between the title and the keyboard. Inter-tile spacing is
+    /// `tileSize * 0.1` (see BoardView.spacing).
     private func fittedTileSize() -> CGFloat {
-        let wl = CGFloat(vm.wordLength)
-        // board width  = wl*t + (wl-1)*0.1*t = t * (wl + (wl-1)*0.1)
-        let wFactor = wl + (wl - 1) * 0.1
-        let usableW = availableWidth - CGFloat(cols - 1) * colSpacing - CGFloat(cols) * framePad
-        let tileW = usableW / (CGFloat(cols) * wFactor)
-
-        guard let h = fitHeight, h.isFinite, h > 0 else {
-            return max(8, min(maxTile, tileW))
-        }
-        let rb = CGFloat(rowsPerBoard)
-        let hFactor = rb + (rb - 1) * 0.1
-        let usableH = h - CGFloat(boardRows - 1) * rowSpacing - CGFloat(boardRows) * framePad
-        let tileH = usableH / (CGFloat(boardRows) * hFactor)
-        return max(8, min(maxTile, tileW, tileH))
+        CGFloat(BoardSizing.squareTile(columns: vm.wordLength, rows: rowsPerBoard,
+                                       width: Double(availableWidth), height: fitHeight.map(Double.init)))
     }
 }

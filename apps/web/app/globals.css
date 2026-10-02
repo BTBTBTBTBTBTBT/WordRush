@@ -7,16 +7,22 @@
 :root {
   --transition-duration: 200ms;
   --color-bg: #f8f7ff;
-  --color-surface: #ffffff;
-  --color-border: #ede9f6;
-  --color-border-light: #e0daf0;
+  /* Finishing build A1 (docs/FINISH_SPEC.md, docs/WHITE_AUDIT.md lever 1): no
+     plain-white surface. The shared surface is the brand lavender wash (the
+     mockups' card tint), its border the mockups' lilac line. Accent cards mix
+     their own color over --color-card-base (lib/soft-surface.ts), which stays
+     the opaque white the washes are measured against. */
+  --color-surface: #f5eeff;
+  --color-card-base: #ffffff;
+  --color-border: #e6dcf6;
+  --color-border-light: #e0d4f4;
   --color-text: #1a1a2e;
   --color-text-muted: #9ca3af;
   --color-text-secondary: #6b7280;
-  --color-surface-hover: #f3f0ff;
-  --color-surface-alt: #f3f4f6;
-  --color-border-alt: #e5e7eb;
-  --color-divider: #f0f0f0;
+  --color-surface-hover: #eee4fd;
+  --color-surface-alt: #f1eafc;
+  --color-border-alt: #e4daf3;
+  --color-divider: #ece4f8;
   --color-highlight-gold: #fffbeb;
   --color-gold-border: #fde68a;
   --color-gold-border-light: #fef3c7;
@@ -45,6 +51,7 @@
 [data-theme="dark"] {
   --color-bg: #1a1a2e;
   --color-surface: #252542;
+  --color-card-base: #252542;
   --color-border: #3a3a5c;
   --color-border-light: #2e2e4a;
   --color-text: #f0eef6;
@@ -76,7 +83,9 @@
    actually apply. Kept in sync with the native ThemeManager "ocean" palette.) */
 [data-theme="ocean"] {
   --color-bg: #f0f7fb;
-  --color-surface: #ffffff;
+  /* A1: the ocean accent's soft wash instead of plain white. */
+  --color-surface: #ebf6f9;
+  --color-card-base: #ffffff;
   --color-border: #cfe4ef;
   --color-border-light: #ddebf3;
   --color-text: #0f2e3d;
@@ -92,7 +101,9 @@
    native ThemeManager "forest" palette). */
 [data-theme="forest"] {
   --color-bg: #f3f8f1;
-  --color-surface: #ffffff;
+  /* A1: the forest accent's soft wash instead of plain white. */
+  --color-surface: #ecf8f0;
+  --color-card-base: #ffffff;
   --color-border: #d6e6cf;
   --color-border-light: #e0ebda;
   --color-text: #1f3320;
@@ -198,9 +209,9 @@
   :root {
     --background: 248 100% 99%;
     --foreground: 240 33% 14%;
-    --card: 0 0% 100%;
+    --card: 267 100% 97%;
     --card-foreground: 240 33% 14%;
-    --popover: 0 0% 100%;
+    --popover: 267 100% 97%;
     --popover-foreground: 240 33% 14%;
     --primary: 263 70% 50%;
     --primary-foreground: 0 0% 98%;
@@ -226,9 +237,9 @@
   .dark {
     --background: 248 100% 99%;
     --foreground: 240 33% 14%;
-    --card: 0 0% 100%;
+    --card: 267 100% 97%;
     --card-foreground: 240 33% 14%;
-    --popover: 0 0% 100%;
+    --popover: 267 100% 97%;
     --popover-foreground: 240 33% 14%;
     --primary: 263 70% 50%;
     --primary-foreground: 0 0% 98%;
@@ -757,46 +768,47 @@
 [data-reduced-motion="true"] .art-pop,
 [data-reduced-motion="true"] .art-float { animation: none !important; }
 
-/* The floating tab bar (docs/ART_SPEC.md §18.3; components/ui/bottom-nav.tsx):
-   white at 78% with a background blur, solid white 94% where blur isn't
-   supported or transparency is reduced; soft shadow. Dark: the surface ink. */
-.tab-pill {
-  --tab-pill-ring: #ffffff;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 8px 24px rgba(76, 29, 149, 0.14), 0 1px 3px rgba(15, 23, 42, 0.06);
+/* The docked tab bar (docs/FINISH_SPEC.md A4; components/ui/bottom-nav.tsx):
+   flush to the bottom edge, edge to edge, opaque, a soft page-tinted gradient
+   (lilac Home, warm Leaderboard, blue Stats, pink Friends) with a faint top
+   line; the home-indicator / safe area is part of the bar. Content ends above
+   it (the pages pad by --bottom-nav-h). Dark: the surface ink. */
+.tab-dock {
+  --tab-dock-1: #f7f1ff;
+  --tab-dock-2: #ece0ff;
+  --tab-pill-ring: #ece0ff;
+  background: linear-gradient(var(--tab-dock-1), var(--tab-dock-2));
+  border-top: 1px solid rgba(124, 58, 237, 0.14);
+  box-shadow: 0 -6px 16px rgba(76, 29, 149, 0.08);
+  padding: 8px 6px max(6px, env(safe-area-inset-bottom));
 }
-[data-theme="dark"] .tab-pill {
-  --tab-pill-ring: #252542;
-  background: rgba(37, 37, 66, 0.94);
-  border-color: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+.tab-dock[data-tab-tint="leaderboard"] { --tab-dock-1: #fff8ea; --tab-dock-2: #ffeccc; --tab-pill-ring: #ffeccc; border-top-color: rgba(217, 119, 6, 0.18); }
+.tab-dock[data-tab-tint="stats"] { --tab-dock-1: #f2f6ff; --tab-dock-2: #e2ebff; --tab-pill-ring: #e2ebff; border-top-color: rgba(37, 99, 235, 0.16); }
+.tab-dock[data-tab-tint="friends"] { --tab-dock-1: #fff3f9; --tab-dock-2: #fde2f0; --tab-pill-ring: #fde2f0; border-top-color: rgba(236, 72, 153, 0.16); }
+[data-theme="dark"] .tab-dock {
+  --tab-dock-1: #2a2a4a;
+  --tab-dock-2: #222240;
+  --tab-pill-ring: #222240;
+  border-top-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.35);
 }
-/* Content clears the floating pill (§18.3): never less than the page's own
-   bottom padding, and at least the pill's room (--bottom-nav-h, published by
+/* Content ends above the docked bar (A4): never less than the page's own
+   bottom padding, and at least the bar's room (--bottom-nav-h, published by
    BottomNav) plus 16 px while a tab bar is on screen. */
 .pb-tab-clear { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-20 { padding-bottom: max(5rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-24 { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-32 { padding-bottom: max(8rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 /* The Home banner's frosted headline strip (§18.4): white at 72% with a blur. */
-.banner-frost { background: rgba(255, 255, 255, 0.72); }
+.banner-frost { background: rgba(245, 238, 255, 0.78); }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .tab-pill {
-    background: rgba(255, 255, 255, 0.78);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
-    backdrop-filter: blur(18px) saturate(1.4);
-  }
-  [data-theme="dark"] .tab-pill { background: rgba(37, 37, 66, 0.78); }
   .banner-frost {
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .tab-pill { background: rgba(255, 255, 255, 0.94); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  [data-theme="dark"] .tab-pill { background: rgba(37, 37, 66, 0.94); }
-  .banner-frost { background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .banner-frost { background: rgba(245, 238, 255, 0.94); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* Game screen headers wearing title art (docs/ART_SPEC.md §14, §19.3;
@@ -874,3 +886,354 @@
 .skip-to-content:focus {
   transform: translateX(-50%) translateY(0);
 }
+
+/* ══ Finishing build (docs/FINISH_SPEC.md; reference CSS in
+   docs/design/brand/mockups/game-kit.html + finishing-touches.html) ══════════ */
+
+/* ── B1 · The letter / number tile (ART_SPEC §20 recipe; components/game/letter-tile.tsx):
+   a rounded square body in --gt-edge that shows as a thick bottom lip, a face
+   7% shorter (::before), a soft gloss over the top (::after), and Nunito Black
+   glyphs. Right spot purple (no gold rim), wrong spot gold, not in the word
+   slate gray, empty frosted glass over the wallpaper, typed white face +
+   purple border + dark purple letter; Sudoku givens a plain light tile.
+   Colorblind mode re-points the state ramps. */
+:root {
+  --gt-c-base: #7c3aed; --gt-c-light: #a66bff; --gt-c-bot: #6a2bd6; --gt-c-edge: #4c1d95;
+  --gt-p-base: #f5a524; --gt-p-light: #ffd166; --gt-p-bot: #e8901a; --gt-p-edge: #b0650b;
+  --gt-a-base: #6b7891; --gt-a-light: #8d99b0; --gt-a-bot: #5d6981; --gt-a-edge: #3f4a5e;
+}
+[data-colorblind="true"] {
+  --gt-c-base: #f5793a; --gt-c-light: #ffa06a; --gt-c-bot: #e8612a; --gt-c-edge: #a8410f;
+  --gt-p-base: #85c0f9; --gt-p-light: #b3d8fc; --gt-p-bot: #6aaef0; --gt-p-edge: #3b7fc4;
+}
+.gtile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 22%;
+  background: var(--gt-edge, rgba(216, 200, 243, 0.55));
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gtile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 7% 0;
+  border-radius: 22%;
+  background: var(--gt-face, rgba(255, 255, 255, 0.62));
+  box-shadow: var(--gt-ring, inset 0 0 0 2px rgba(124, 58, 237, 0.16));
+}
+.gtile::after {
+  content: '';
+  position: absolute;
+  left: 8%; right: 8%; top: 6%;
+  height: 38%;
+  border-radius: 18%;
+  background: linear-gradient(rgba(255, 255, 255, var(--gt-gloss, 0.55)), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.gtile > b {
+  position: absolute;
+  inset: 0 0 7% 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: var(--gt-font, clamp(0.875rem, 4vmin, 1.5rem));
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--gt-glyph, #fff);
+  text-shadow: 0 0.052em 0.034em var(--gt-shadow, rgba(0, 0, 0, 0.25));
+}
+.gtile[data-s="empty"] { --gt-edge: rgba(216, 200, 243, 0.55); --gt-face: rgba(255, 255, 255, 0.62); --gt-gloss: 0.35; --gt-glyph: #3b1a78; --gt-shadow: transparent; }
+.gtile[data-s="typed"] { --gt-edge: #c9b2f2; --gt-face: #ffffff; --gt-ring: inset 0 0 0 2.5px #8b5cf6; --gt-glyph: #3b1a78; --gt-shadow: rgba(124, 58, 237, 0.18); }
+.gtile[data-s="correct"] { --gt-edge: var(--gt-c-edge); --gt-face: linear-gradient(var(--gt-c-light), var(--gt-c-base) 70%, var(--gt-c-bot)); --gt-ring: none; --gt-shadow: rgba(46, 12, 99, 0.55); --gt-glow: rgba(150, 90, 255, 0.6); }
+.gtile[data-s="present"] { --gt-edge: var(--gt-p-edge); --gt-face: linear-gradient(var(--gt-p-light), var(--gt-p-base) 70%, var(--gt-p-bot)); --gt-ring: none; --gt-shadow: rgba(120, 60, 0, 0.45); --gt-glow: rgba(255, 190, 70, 0.65); }
+.gtile[data-s="absent"] { --gt-edge: var(--gt-a-edge); --gt-face: linear-gradient(var(--gt-a-light), var(--gt-a-base) 70%, var(--gt-a-bot)); --gt-ring: none; --gt-gloss: 0.32; --gt-shadow: rgba(25, 30, 45, 0.45); --gt-glow: rgba(140, 150, 175, 0.35); }
+.gtile[data-s="given"] { --gt-edge: #d8c8f3; --gt-face: #ffffff; --gt-ring: inset 0 0 0 1.5px rgba(124, 58, 237, 0.14); --gt-glyph: #2a1650; --gt-shadow: transparent; }
+.gtile[data-s="conflict"] { --gt-edge: #b4233c; --gt-face: linear-gradient(#ff8a9b, #f0435f 70%, #d9324e); --gt-ring: none; }
+/* A revealed-by-hint gap (Six / Seven hint rows): a quiet frosted tile. */
+.gtile[data-s="gap"] { --gt-edge: rgba(216, 200, 243, 0.4); --gt-face: rgba(255, 255, 255, 0.45); --gt-gloss: 0.25; --gt-glyph: #c4b5fd; --gt-shadow: transparent; }
+[data-theme="dark"] .gtile[data-s="empty"] { --gt-edge: rgba(167, 139, 250, 0.28); --gt-face: rgba(255, 255, 255, 0.12); --gt-ring: inset 0 0 0 2px rgba(196, 181, 253, 0.22); --gt-gloss: 0.12; --gt-glyph: #e9ddff; }
+[data-theme="dark"] .gtile[data-s="gap"] { --gt-edge: rgba(167, 139, 250, 0.2); --gt-face: rgba(255, 255, 255, 0.08); --gt-gloss: 0.1; }
+
+/* The tile flipping over shows its typed face until the half (.gt-cover). */
+.gt-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 22%;
+  background: #c9b2f2;
+  pointer-events: none;
+  animation: gt-cover 720ms linear var(--gt-d, 0ms) both;
+}
+.gt-cover::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 7% 0;
+  border-radius: 22%;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 2.5px #8b5cf6;
+}
+.gt-cover > b {
+  position: absolute;
+  inset: 0 0 7% 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: var(--gt-font, clamp(0.875rem, 4vmin, 1.5rem));
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #3b1a78;
+}
+@keyframes gt-cover { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* ── B3 · Motion kit ── */
+/* type / place a number: 300 ms soft spring, fade in + swell 1.07 */
+.gt-pop { animation: gt-pop 300ms cubic-bezier(0.34, 1.45, 0.64, 1); }
+@keyframes gt-pop { 0% { transform: scale(0.9); opacity: 0.6; } 55% { transform: scale(1.07); opacity: 1; } 100% { transform: scale(1); } }
+/* reveal: each tile turns over in 720 ms (300 ms apart through --gt-d), the color swaps at the half, then a soft glow blooms (900 ms) */
+.gt-flip { animation: gt-flip 720ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both; }
+.gt-flip::before { animation: gt-bloom 900ms ease-out calc(var(--gt-d, 0ms) + 720ms); }
+@keyframes gt-flip { 0% { transform: perspective(420px) rotateX(0) scale(1); } 50% { transform: perspective(420px) rotateX(-90deg) scale(1.05); } 100% { transform: perspective(420px) rotateX(0) scale(1); } }
+@keyframes gt-bloom { 0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } 35% { box-shadow: 0 0 16px 3px var(--gt-glow, rgba(124, 58, 237, 0.55)); } 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); } }
+/* not a word: the row nudges (520 ms), its letters turn red with a red glow, then clear right to left (--gt-out-d) */
+.gt-nudge { animation: gt-nudge 520ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes gt-nudge { 15%, 85% { transform: translateX(-2px); } 30%, 70% { transform: translateX(5px); } 45%, 55% { transform: translateX(-6px); } }
+.gtile.gt-bad { --gt-glyph: #c2183a; }
+.gtile.gt-bad::before { animation: gt-bad var(--gt-bad-ms, 1000ms) ease-in-out forwards; }
+@keyframes gt-bad { 0% { box-shadow: inset 0 0 0 2.5px #8b5cf6, 0 0 0 0 rgba(240, 67, 95, 0); } 35% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 18px 4px rgba(240, 67, 95, 0.6); } 70% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 10px 2px rgba(240, 67, 95, 0.35); } 100% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 0 0 rgba(240, 67, 95, 0); } }
+.gtile.gt-out > b { animation: gt-outb 220ms cubic-bezier(0.5, 0, 0.75, 0) var(--gt-out-d, 0ms) forwards; }
+@keyframes gt-outb { to { transform: scale(0.4); opacity: 0; } }
+/* win: a hop wave (560 ms each, 90 ms apart through --gt-hop-d) after the reveal */
+.gt-hop { animation: gt-hop 560ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
+.gt-flip.gt-hop { animation: gt-flip 720ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-hop 560ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
+@keyframes gt-hop { 0% { transform: translateY(0); } 35% { transform: translateY(-34%) scale(1.06, 0.96); } 60% { transform: translateY(4%) scale(0.97, 1.04); } 100% { transform: translateY(0); } }
+/* lose: a wobble, then the row settles a little lower */
+.gt-sink { animation: gt-sink 700ms ease-out var(--gt-sink-d, 0ms) forwards; }
+.gt-flip.gt-sink { animation: gt-flip 720ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-sink 700ms ease-out var(--gt-sink-d, 0ms) forwards; }
+@keyframes gt-sink { 40% { transform: rotate(-4deg); } 70% { transform: rotate(3deg) translateY(3%); } 100% { transform: rotate(0) translateY(2%); filter: saturate(0.7); } }
+/* hint: flips in purple with a gold glow, twice */
+.gtile.gt-hint::before { animation: gt-hint 1.2s ease-in-out 2; }
+@keyframes gt-hint { 50% { box-shadow: inset 0 0 0 3px #f5c542, 0 0 18px 4px rgba(245, 197, 66, 0.7); } }
+
+/* ── B2 · Keyboard keys are tiles too: lilac lip, light face, dark purple letters, state colors after a reveal ── */
+.kkey {
+  position: relative;
+  border: 0;
+  padding-top: 0;
+  padding-bottom: 3px;
+  border-radius: 9px;
+  background: var(--k-edge, #cdb9f0);
+  color: var(--k-ink, #3b1a78);
+  font-weight: 900;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.kkey::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 3px 0;
+  border-radius: 9px;
+  background: var(--k-face, rgba(255, 255, 255, 0.92));
+}
+.kkey > * { position: relative; }
+.kkey[data-s="correct"] { --k-edge: var(--gt-c-edge); --k-face: linear-gradient(var(--gt-c-light), var(--gt-c-base)); --k-ink: #ffffff; }
+.kkey[data-s="present"] { --k-edge: var(--gt-p-edge); --k-face: linear-gradient(var(--gt-p-light), var(--gt-p-base)); --k-ink: #ffffff; }
+.kkey[data-s="absent"] { --k-edge: var(--gt-a-edge); --k-face: linear-gradient(var(--gt-a-light), var(--gt-a-base)); --k-ink: #eef1f6; }
+.kkey[data-s="blocked"] { --k-edge: rgba(220, 38, 38, 0.25); --k-face: rgba(254, 226, 226, 0.9); --k-ink: rgba(220, 38, 38, 0.45); }
+.kkey-text { text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18); }
+.kkey:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+/* ── A9 · Everything tappable squishes: components/ui/squish-host.tsx plays the
+   spongy press (lib/squish.ts frames) on every tappable element through the Web
+   Animations API — no class needed; `data-no-squish` opts out. ── */
+
+/* ── A3 · Header controls: the soft 3D icon drawn bare (no circle / pill), 23 px
+   tall, numbers in 17 px soft type, a 44 px tap area that never moves layout. */
+.hdr-glyph {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: 0;
+  padding: 0;
+  line-height: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hdr-glyph::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+.hdr-glyph img { filter: drop-shadow(0 3px 5px rgba(76, 29, 149, 0.18)); }
+.hdr-glyph:focus-visible { outline: 3px solid #7c3aed; outline-offset: 3px; border-radius: 10px; }
+
+/* ── A2 · Soft numbers: Nunito Black, dark purple, tabular, a soft white text shadow (never gradient digits) ── */
+.soft-num {
+  font-weight: 900;
+  color: #3b1a78;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(76, 29, 149, 0.18);
+}
+[data-theme="dark"] [data-page-scheme="auto"] .soft-num,
+[data-theme="dark"] .soft-num-auto { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
+
+/* ── A8 · Buttons: one glossy candy style everywhere (components/ui/candy-button.tsx;
+   reference docs/design/brand/buttons/chatgpt-buttons-*.jpg). A pill (radius =
+   height / 2) or circle in a vertical 2-stop gradient, a thin gold outline just
+   inside the edge, a thick darker bottom lip (the bottom color darkened ~35%)
+   plus a soft drop shadow, a white gloss across the top half, and a white
+   Nunito Black label with a dark-purple outline. Press = squish (scale .92,
+   the lip compresses) with the spring back. Sizes: lg 52, md 40, round 40. */
+.candy {
+  --candy-1: #a66bff;
+  --candy-2: #6d28d9;
+  --candy-lip: #471a8d;
+  --candy-gold: #f5c542;
+  --candy-ring: 2px;
+  --candy-lip-h: 5px;
+  --candy-h: 52px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--candy-h);
+  min-width: var(--candy-h);
+  padding: 0 calc(var(--candy-h) * 0.42);
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(var(--candy-1), var(--candy-2));
+  box-shadow: inset 0 0 0 var(--candy-ring) var(--candy-gold), 0 var(--candy-lip-h) 0 var(--candy-lip), 0 calc(var(--candy-lip-h) + 5px) 14px rgba(59, 26, 120, 0.28);
+  margin-bottom: var(--candy-lip-h);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.candy::before {
+  content: '';
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 7%;
+  height: 46%;
+  border-radius: 999px;
+  background: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.candy > * { position: relative; }
+/* The white label with its dark-purple outline (on the button itself, so a
+   plain text child gets it too). */
+.candy {
+  text-shadow:
+    1.5px 0 0 #3b1a78, -1.5px 0 0 #3b1a78, 0 1.5px 0 #3b1a78, 0 -1.5px 0 #3b1a78,
+    1.1px 1.1px 0 #3b1a78, -1.1px 1.1px 0 #3b1a78, 1.1px -1.1px 0 #3b1a78, -1.1px -1.1px 0 #3b1a78,
+    0 3px 4px rgba(40, 10, 80, 0.35);
+}
+.candy-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 1px;
+}
+.candy > svg, .candy-icon {
+  display: inline-flex;
+  flex: none;
+  line-height: 0;
+  filter: drop-shadow(1.5px 0 0 #3b1a78) drop-shadow(-1.5px 0 0 #3b1a78) drop-shadow(0 1.5px 0 #3b1a78) drop-shadow(0 -1.5px 0 #3b1a78) drop-shadow(0 2px 2px rgba(40, 10, 80, 0.3));
+}
+.candy-md { --candy-h: 40px; --candy-lip-h: 4px; font-size: 14px; gap: 6px; }
+.candy-sm { --candy-h: 32px; --candy-lip-h: 3px; --candy-ring: 1px; font-size: 12px; gap: 5px; }
+.candy-round { padding: 0; width: var(--candy-h); --candy-h: 40px; --candy-lip-h: 4px; }
+.candy-block { display: flex; width: 100%; }
+.candy-purple { --candy-1: #a66bff; --candy-2: #6d28d9; --candy-lip: #471a8d; }
+.candy-pink { --candy-1: #f472b6; --candy-2: #a21caf; --candy-lip: #691272; }
+.candy-amber { --candy-1: #ffc56b; --candy-2: #f97316; --candy-lip: #a24b0e; }
+.candy-teal { --candy-1: #5eead4; --candy-2: #0d9488; --candy-lip: #086058; }
+.candy-peach { --candy-1: #ffd6c2; --candy-2: #fbb38f; --candy-lip: #a3745d; color: #3b1a78; }
+.candy-peach { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
+.candy-peach > svg, .candy-peach .candy-icon { filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6)); }
+.candy:disabled, .candy[aria-disabled="true"], .candy.candy-dim { filter: saturate(0.4); opacity: 0.6; cursor: default; }
+.candy:focus-visible { outline: 3px solid #7c3aed; outline-offset: 3px; }
+.candy { transition: box-shadow 90ms ease-out; }
+/* Held down: the lip compresses (the squish itself is SquishHost's). */
+.candy.candy-pressed { box-shadow: inset 0 0 0 var(--candy-ring) var(--candy-gold), 0 calc(var(--candy-lip-h) * 0.4) 0 var(--candy-lip), 0 4px 8px rgba(59, 26, 120, 0.22); }
+
+/* ── A5 · The living cast header (components/ui/cast-header.tsx): ten heroes
+   spelling WORDOCIOUS edge to edge; one character at a time plays its move. */
+.castrow { display: flex; align-items: flex-end; width: 100%; }
+.castrow .cm { position: relative; min-width: 0; width: 0; margin-right: -2.2%; transform-origin: 50% 85%; filter: drop-shadow(0 3px 4px rgba(60, 30, 110, 0.18)); }
+.castrow .cm:nth-child(even) { margin-bottom: 7px; }
+.castrow .cm:last-child { margin-right: 0; }
+.castrow .cm > img { position: absolute; max-width: none; pointer-events: none; user-select: none; }
+.cm.act-o1 { animation: m-spin 900ms cubic-bezier(0.45, 0, 0.25, 1); transform-origin: 50% 55%; }
+@keyframes m-spin { 0% { transform: rotate(0); } 85% { transform: rotate(372deg); } 100% { transform: rotate(360deg); } }
+.cm.act-w { animation: m-hop 700ms cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes m-hop { 0% { transform: translateY(0); } 15% { transform: scale(1.06, 0.9); } 45% { transform: translateY(-22%) scale(0.96, 1.05); } 80% { transform: translateY(0) scale(1.06, 0.93); } 100% { transform: none; } }
+.cm.act-r { animation: m-nod 1600ms ease-in-out; }
+@keyframes m-nod { 0% { transform: none; } 55% { transform: rotate(-10deg) translateY(4%); } 70% { transform: rotate(-10deg) translateY(4%); } 80% { transform: rotate(4deg) translateY(-6%); } 100% { transform: none; } }
+.cm.act-d { animation: m-double 760ms ease-out; }
+@keyframes m-double { 0%, 100% { transform: none; } 20% { transform: translateY(-10%); } 40% { transform: none; } 60% { transform: translateY(-7%); } 80% { transform: none; } }
+.cm.act-o2 { animation: m-star 820ms cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes m-star { 0%, 100% { transform: none; } 40% { transform: scale(1.16) rotate(-6deg); } 70% { transform: scale(0.97) rotate(3deg); } }
+.cm.act-c { animation: m-peek 1200ms ease-in-out; }
+@keyframes m-peek { 0%, 100% { transform: none; } 30%, 65% { transform: translateX(8%) rotate(9deg); } }
+.cm.act-i { animation: m-wiggle 900ms ease-in-out; }
+@keyframes m-wiggle { 0%, 100% { transform: none; } 20% { transform: rotate(-9deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+.cm.act-o3 { animation: m-jump 760ms cubic-bezier(0.3, 1.4, 0.5, 1); }
+@keyframes m-jump { 0%, 100% { transform: none; } 20% { transform: scale(1.08, 0.88); } 50% { transform: translateY(-30%) rotate(-8deg); } 82% { transform: translateY(0) scale(1.05, 0.94); } }
+.cm.act-u { animation: m-float 1800ms ease-in-out; }
+@keyframes m-float { 0%, 100% { transform: none; } 50% { transform: translateY(-14%); } }
+.cm.act-s { animation: m-dash 700ms ease-in-out; }
+@keyframes m-dash { 0%, 100% { transform: none; } 15% { transform: translateX(-6%) skewX(8deg); } 35% { transform: translateX(10%) skewX(-10deg); } 55% { transform: translateX(-4%) skewX(4deg); } 75% { transform: translateX(3%); } }
+
+/* ── F2 · Cold-start intro (components/providers/cold-start-intro.tsx) ── */
+.intro-pop { animation: intro-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@keyframes intro-pop { 0% { opacity: 0; transform: scale(0.3) translateY(20%); } 70% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: none; } }
+.intro-bounce { animation: intro-bounce 520ms cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes intro-bounce { 0% { transform: none; } 25% { transform: scale(1.08, 0.9); } 55% { transform: translateY(-14%) scale(0.96, 1.05); } 85% { transform: scale(1.04, 0.95); } 100% { transform: none; } }
+
+/* Reduce Motion (OS or the in-app toggle): flips become a quick crossfade and
+   every hop, nudge, sink, squish and cast move is off. */
+@keyframes gt-fade { 50% { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) {
+  .gt-flip, .gt-flip.gt-hop, .gt-flip.gt-sink { animation: gt-fade 160ms linear !important; }
+  .gt-flip::before, .gt-pop, .gt-hop, .gt-sink, .gt-nudge, .gtile.gt-hint::before,
+  .castrow .cm, .intro-pop, .intro-bounce { animation: none !important; }
+  .gt-cover { display: none; }
+}
+[data-reduced-motion="true"] .gt-flip,
+[data-reduced-motion="true"] .gt-flip.gt-hop,
+[data-reduced-motion="true"] .gt-flip.gt-sink { animation: gt-fade 160ms linear !important; }
+[data-reduced-motion="true"] .gt-flip::before,
+[data-reduced-motion="true"] .gt-pop,
+[data-reduced-motion="true"] .gt-hop,
+[data-reduced-motion="true"] .gt-sink,
+[data-reduced-motion="true"] .gt-nudge,
+[data-reduced-motion="true"] .gtile.gt-hint::before,
+[data-reduced-motion="true"] .castrow .cm,
+[data-reduced-motion="true"] .intro-pop,
+[data-reduced-motion="true"] .intro-bounce { animation: none !important; }
+[data-reduced-motion="true"] .gt-cover { display: none; }

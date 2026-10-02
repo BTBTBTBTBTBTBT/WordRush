@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { X, Download } from 'lucide-react';
+import { CandyButton } from '@/components/ui/candy-button';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -57,14 +58,9 @@ export function PwaProvider() {
         <p className="text-xs font-black text-white">Install Wordocious</p>
         <p className="text-[10px] font-bold text-white/70">Add to home screen for the best experience</p>
       </div>
-      <button
-        onClick={handleInstall}
-        className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black"
-        style={{ background: 'white', color: '#7c3aed' }}
-        aria-label="Install Wordocious app"
-      >
+      <CandyButton size="sm" color="amber" onClick={handleInstall} className="shrink-0" aria-label="Install Wordocious app">
         Install
-      </button>
+      </CandyButton>
       <button
         onClick={handleDismiss}
         className="shrink-0 p-1 rounded-full"

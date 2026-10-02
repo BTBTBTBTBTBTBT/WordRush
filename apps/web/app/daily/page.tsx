@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { Users, ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { CandyButton } from '@/components/ui/candy-button';
+import { Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { formatScore, tieAwareScoreLabels, modeScoreCeiling } from '@/lib/composite-scoring';
+import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
 import { formatShortTime as formatTime } from '@/lib/format';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
@@ -694,6 +695,8 @@ export default function DailyPage() {
     }
   };
 
+  const playedSelected = dailiesDay === getTodayLocal() && todayDailies.has(selectedMode);
+
   const handlePlayDaily = () => {
     if (!user) {
       setAuthModalOpen(true);
@@ -758,14 +761,17 @@ export default function DailyPage() {
             {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
                 no Play button (just complete every sweep daily to appear here). */}
             {!isSweep && (
-              <button
+              // FINISH_SPEC A8 / C2: a medium glossy candy pill — VIEW BOARD once
+              // today's daily is done, PLAY before — never the old tall blob.
+              <CandyButton
+                size="md"
+                color="purple"
+                icon={playedSelected ? 'eye' : 'play'}
                 onClick={handlePlayDaily}
-                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-black text-xs active:scale-95 transition-transform"
-                style={{ background: color, letterSpacing: 0.6, boxShadow: `0 2px 8px ${color}55` }}
+                className="shrink-0"
               >
-                <Play className="w-3.5 h-3.5" fill="currentColor" />
-                PLAY
-              </button>
+                {playedSelected ? 'View board' : 'Play'}
+              </CandyButton>
             )}
           </div>
         </div>

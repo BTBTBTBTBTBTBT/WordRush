@@ -1,6 +1,8 @@
 'use client';
 
 import { TileState } from '@wordle-duel/core';
+import { LetterTile, tileLook, type TileLook } from '@/components/game/letter-tile';
+import { tileFontPx } from '@/lib/board-fit';
 
 // The Gauntlet Succession-stage board (solo + VS share it — VS polish §1).
 // Mini board for sequence stages in gauntlet — 2x2 grid with sequential unlock
@@ -47,14 +49,6 @@ export function GauntletSequenceMiniBoard({
     return result;
   };
 
-  const getTileColor = (state: TileState) => {
-    switch (state) {
-      case TileState.CORRECT: return 'tile-correct';
-      case TileState.PRESENT: return 'tile-present';
-      case TileState.ABSENT: return 'tile-absent';
-      default: return 'bg-white border-gray-300';
-    }
-  };
 
   const showColors = isActive || isCompleted || isFailed;
 
@@ -65,15 +59,8 @@ export function GauntletSequenceMiniBoard({
 
   return (
     <div
-      className={`relative p-1 rounded-lg border-2 ${tileSize ? '' : 'h-full'} flex flex-col transition-colors duration-300 overflow-hidden ${
-        isCompleted
-          ? 'border-violet-400 bg-violet-50'
-          : isFailed
-          ? 'border-red-400 bg-red-50'
-          : isActive
-          ? 'border-yellow-400 bg-white shadow-lg shadow-yellow-500/20'
-          : 'border-gray-200 bg-gray-50 opacity-60'
-      }`}
+      className={`relative p-1 rounded-lg border-2 ${tileSize ? '' : 'h-full'} flex flex-col transition-colors duration-300 overflow-hidden ${!isActive && !isCompleted && !isFailed ? 'opacity-60' : ''}`}
+      style={{ ...sequenceFrame({ isActive, isCompleted, isFailed }), ['--gt-font' as string]: tileSize ? `${tileFontPx(tileSize)}px` : '11px' }}
     >
       <div className={tileSize ? 'grid gap-[2px]' : 'grid gap-[2px] flex-1'} style={{ gridTemplateRows: `repeat(${board.maxGuesses}, ${tileSize ? `${tileSize}px` : '1fr'})` }}>
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
@@ -86,29 +73,30 @@ export function GauntletSequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`} style={tileSize ? { gridTemplateColumns: `repeat(5, ${tileSize}px)` } : undefined}>
+            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'gt-nudge' : ''}`} style={tileSize ? { gridTemplateColumns: `repeat(5, ${tileSize}px)` } : undefined}>
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];
 
+                const look: TileLook = isPastGuess && showColors
+                  ? tileLook(tileState, letter)
+                  : isPastGuess
+                  ? 'given'
+                  : letter ? 'typed' : 'empty';
+                const shown = (showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : '';
+
                 return (
-                  <div
+                  <LetterTile
                     key={letterIndex}
-                    className={`flex items-center justify-center min-h-0 border rounded font-bold text-[10px] sm:text-xs ${
-                      isCurrentRow && isInvalidWord && letter
-                        ? 'bg-red-50 border-red-400 text-red-500'
-                        : isPastGuess && showColors
-                        ? `${getTileColor(tileState)} text-white`
-                        : isPastGuess && !showColors
-                        ? 'bg-gray-100 border-gray-300 text-gray-800'
-                        : letter
-                        ? 'bg-white border-gray-400 text-gray-800'
-                        : 'bg-white border-gray-200'
-                    } ${isLastSubmitted ? 'animate-tile-flip-mini' : ''}`}
-                    style={{ ...(isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : {}), ...(tileSize ? { width: tileSize, height: tileSize, fontSize: Math.max(8, Math.round(tileSize * 0.45)) } : {}) }}
-                  >
-                    {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
-                  </div>
+                    letter={shown}
+                    look={look}
+                    flipIndex={isLastSubmitted ? letterIndex : undefined}
+                    bad={!!isShaking && isCurrentRow && !!letter}
+                    outIndex={4 - letterIndex}
+                    invalid={isCurrentRow && !!isInvalidWord && !!letter}
+                    className="min-h-0"
+                    style={tileSize ? { width: tileSize, height: tileSize } : { aspectRatio: 'auto' }}
+                  />
                 );
               })}
             </div>
@@ -123,4 +111,12 @@ export function GauntletSequenceMiniBoard({
       )}
     </div>
   );
+}
+
+/** The board's frame (FINISH_SPEC A1, no plain white): solved purple wash, failed red wash, the active board a warm frosted wash with its gold ring, the rest frosted lavender. */
+function sequenceFrame({ isActive, isCompleted, isFailed }: { isActive: boolean; isCompleted: boolean; isFailed: boolean }): React.CSSProperties {
+  if (isCompleted) return { background: 'rgba(237, 228, 255, 0.82)', borderColor: '#a78bfa', boxShadow: '0 10px 15px -3px rgba(139, 92, 246, 0.2)' };
+  if (isFailed) return { background: 'rgba(254, 232, 236, 0.82)', borderColor: '#f87171' };
+  if (isActive) return { background: 'rgba(255, 249, 235, 0.78)', borderColor: '#facc15', boxShadow: '0 10px 15px -3px rgba(234, 179, 8, 0.2)' };
+  return { background: 'rgba(245, 238, 255, 0.55)', borderColor: 'rgba(196, 181, 253, 0.5)' };
 }

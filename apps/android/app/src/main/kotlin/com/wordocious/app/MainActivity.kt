@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.wordocious.app.data.AuthService
@@ -93,6 +94,10 @@ class MainActivity : ComponentActivity() {
         // and content frame itself, so this path cannot hit that null;
         // ComponentActivity.setContentView also wires the view-tree owners
         // Compose needs. Behavior is otherwise identical.
+        // FINISH_SPEC F2: the in-app intro plays on a COLD start only — never on a warm
+        // start, a config-change recreation or a resume.
+        val coldStart = savedInstanceState == null && !com.wordocious.app.ui.ColdStart.played
+        com.wordocious.app.ui.ColdStart.played = true
         setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
             WordociousTheme {
                 // Tell the SYSTEM BARS which way the app's palette leans.
@@ -191,6 +196,10 @@ class MainActivity : ComponentActivity() {
                         else -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
                     }
                   }
+                  // F2 the cold-start intro, over the whole window (outside the nav-bar
+                  // inset) so its W sits exactly where the launch screen's W was.
+                  var intro by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(coldStart) }
+                  if (intro) com.wordocious.app.ui.ColdStartIntro(onDone = { intro = false })
                 }
             }
         } })

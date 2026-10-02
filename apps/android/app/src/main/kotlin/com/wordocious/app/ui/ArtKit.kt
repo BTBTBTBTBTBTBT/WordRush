@@ -79,8 +79,11 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     DAILIES(R.drawable.art_title_dailies, "Dailies"),
 }
 
-/** Title art's widest size (§2: fill the content width up to ~420). */
-val TITLE_ART_MAX_WIDTH: Dp = 420.dp
+/**
+ * Title art's widest size. FINISH_SPEC A6: page titles are headlines — the full width
+ * they are given (edge to edge on a phone); this cap only stops tablets ballooning.
+ */
+val TITLE_ART_MAX_WIDTH: Dp = 600.dp
 
 /**
  * A page title image (§2): fills the width it is given up to [maxWidth], height
@@ -417,10 +420,10 @@ val GAME_TITLE_ART_GUIDE_HEIGHT: Dp = 72.dp
 /** §14 Leaderboard / Records Play card art cap (was ≈40; fills the space left of Play). */
 val GAME_TITLE_ART_CARD_HEIGHT: Dp = 52.dp
 /**
- * §19.3 The corner-button row of a game header (44 dp circle + 8 dp inset): the
- * title art starts below it.
+ * §19.3 / FINISH_SPEC B4 The controls row of a game header (44 dp tap area + 4 dp
+ * inset, tucked right under the status bar): the title art starts below it.
  */
-val GAME_CORNER_ROW: Dp = 52.dp
+val GAME_CORNER_ROW: Dp = 48.dp
 
 /** The game title art's height / width when the drawable can't say (≈900 × 210). */
 private const val GAME_TITLE_ART_FALLBACK_RATIO = 0.235f
@@ -540,18 +543,12 @@ fun Modifier.titleArtMotion(float: Boolean): Modifier {
             played = true
         }
     }
-    val hidden by LocalTabHidden.current
-    val floatY: State<Float>? = if (float && !hidden) {
-        rememberInfiniteTransition(label = "titleFloat").animateFloat(
-            initialValue = 0f, targetValue = -2f,
-            animationSpec = infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-            label = "y",
-        )
-    } else null
+    // FINISH_SPEC A6: titles are headlines right on the wallpaper — no idle float any more
+    // (the one-time pop-in stays). [float] is kept for call-site compatibility.
+    @Suppress("UNUSED_VARIABLE") val noFloat = float
     return this.graphicsLayer {
         scaleX = scale.value
         scaleY = scale.value
         this.alpha = alpha.value
-        translationY = (floatY?.value ?: 0f) * density
     }
 }

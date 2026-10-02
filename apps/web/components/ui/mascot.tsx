@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { CAST, gameHost, mascotSrc, type MascotId } from '@/lib/mascots';
 import { Icon3D } from '@/components/ui/icon3d';
-import { ART_SIZE, GAME_HEADER, GAME_TITLE_ART_HEIGHT, artSrc, gameHeaderArtHeight, gameTitleArtForDbKey } from '@/lib/art';
+import { ART_SIZE, GAME_HEADER, GAME_TITLE_ART_HEIGHT, artSrc, gameHeaderArtHeight, gameTitleArtForDbKey, type PoseArtName } from '@/lib/art';
 
 // The cast components (docs/MASCOT_SPEC.md §0): Mascot(id, size, motion) and
 // CastRow(size, motion). Decorative only: aria-hidden, empty alt, never takes a
@@ -119,19 +119,30 @@ export const BANNER_HOST_CLEARANCE = 68;
  * with the idle bob. The wrapper adds the headroom so a scroll container never
  * clips the peek; the banner keeps BANNER_HOST_CLEARANCE on its headline.
  */
-export function BannerHost({ id, crown = false, children }: { id: MascotId; crown?: boolean; children: React.ReactNode }) {
+export function BannerHost({ id, crown = false, pose, children }: {
+  id: MascotId;
+  crown?: boolean;
+  /**
+   * FINISH_SPEC A7: draw this pose of the host instead of its hero image — on
+   * a page whose cast header already shows the hero (Home), the same character
+   * never appears in the same image twice.
+   */
+  pose?: PoseArtName;
+  children: React.ReactNode;
+}) {
   const headroom = crown ? 26 : 16;
+  const place: React.CSSProperties = { position: 'absolute', top: headroom - 12, right: 10, zIndex: 1 };
   return (
     <div className="relative shrink-0" style={{ paddingTop: headroom }}>
       {children}
-      <Mascot
-        id={id}
-        size={56}
-        motion="bob"
-        priority
-        crown={crown}
-        style={{ position: 'absolute', top: headroom - 12, right: 10, zIndex: 1 }}
-      />
+      {pose ? (
+        <span aria-hidden="true" className="mascot mascot-bob pointer-events-none select-none" style={{ ...place, width: 60, height: 60, lineHeight: 0 }}>
+          <Image src={artSrc(pose)} alt="" width={ART_SIZE[pose][0]} height={ART_SIZE[pose][1]} priority draggable={false} style={{ width: 60, height: 60, objectFit: 'contain' }} />
+          {crown && <MascotCrown size={60} />}
+        </span>
+      ) : (
+        <Mascot id={id} size={56} motion="bob" priority crown={crown} style={place} />
+      )}
     </div>
   );
 }

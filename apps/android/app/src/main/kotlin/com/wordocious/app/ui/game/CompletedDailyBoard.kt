@@ -271,7 +271,7 @@ fun CompletedDailyBoard(modeId: String) {
                     StatsRow(listOf("$boardsSolved/$totalBoards" to "Boards", "$guesses" to "Guesses", fmt(timeSeconds) to "Time"))
                 } else {
                     Box(Modifier.width(180.dp).aspectRatio(boards[0].solution.length.toFloat() / boards[0].maxGuesses)) {
-                        MiniBoardView(board = boards[0])
+                        MiniBoardView(board = boards[0], animateLastRow = false)
                     }
                     Spacer(Modifier.height(12.dp))
                     val solution = boards[0].solution.uppercase()
@@ -332,7 +332,7 @@ internal fun CompletedBoardsRecapGrid(
                 val rows = (b.prefilledGuesses?.size ?: 0) + b.maxGuesses
                 Box(Modifier.width(if (boards.size > 4) 64.dp else 96.dp)
                     .aspectRatio(b.solution.length.toFloat() / rows)) {
-                    MiniBoardView(board = b)
+                    MiniBoardView(board = b, animateLastRow = false)
                 }
                 // §233: a missed board's word never appears in its tiles — spell
                 // it out in loss red under the red-bordered board (the treatment

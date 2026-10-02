@@ -1,5 +1,9 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.border
+
+import androidx.compose.ui.draw.drawWithContent
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -28,9 +32,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * `btn-3d` button — matches the web's solid-offset-shadow 3D buttons
- * (e.g. `boxShadow: 0 4px 0 #4c1d95` + translateY(3px) on press). The face sits
- * above a darker shadow rect; pressing slides the face down onto the shadow.
+ * The shared 3D button, now in the FINISH_SPEC A8 glossy candy finish: a pill (the
+ * caller's [shape] is kept only for its corner on non-pill callers), the caller's
+ * [face] gradient, a thin gold outline just inside the edge, the darker [shadow] lip
+ * the face sinks into on press, a white gloss across the top half, and the A9 squish.
+ * New code uses [CandyButton]; this keeps the older call sites in the same family.
  */
 @Composable
 fun Button3D(
@@ -40,24 +46,40 @@ fun Button3D(
     modifier: Modifier = Modifier,
     height: Dp = 48.dp,
     depth: Dp = 4.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    @Suppress("UNUSED_PARAMETER") shape: Shape = RoundedCornerShape(14.dp),
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val y by animateDpAsState(if (pressed) depth else 0.dp, tween(80), label = "btn3d")
+    val y by animateDpAsState(if (pressed && !com.wordocious.app.ui.theme.WTheme.reducedMotion) depth * 0.6f else 0.dp, tween(80), label = "btn3d")
+    val pill = RoundedCornerShape(50)
 
-    Box(modifier.height(height + depth)) {
-        // Shadow layer (the dark bottom edge)
+    Box(modifier.height(height + depth).pressSquish(interaction)) {
+        // Lip layer (the dark bottom edge) with a soft drop shadow.
         Box(
             Modifier.fillMaxWidth().height(height).offset(y = depth)
-                .clip(shape).background(shadow),
+                .shadow(6.dp, pill, clip = false, ambientColor = shadow.copy(alpha = 0.3f), spotColor = shadow.copy(alpha = 0.45f))
+                .clip(pill).background(shadow),
         )
-        // Face (slides down onto the shadow when pressed)
+        // Face (sinks into the lip when pressed), gloss on the top half, gold outline.
         Row(
             Modifier.fillMaxWidth().height(height).offset(y = y)
-                .clip(shape).background(face)
+                .clip(pill).background(face)
+                .drawWithContent {
+                    val inset = size.height * 0.12f
+                    drawRoundRect(
+                        Brush.verticalGradient(
+                            listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0f)),
+                            startY = inset * 0.6f, endY = size.height * 0.52f,
+                        ),
+                        topLeft = androidx.compose.ui.geometry.Offset(inset * 1.4f, inset * 0.6f),
+                        size = androidx.compose.ui.geometry.Size(size.width - inset * 2.8f, size.height * 0.46f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height * 0.25f),
+                    )
+                    drawContent()
+                }
+                .border(1.5.dp, Color(0xFFF5C542), pill)
                 .clickable(
                     interactionSource = interaction,
                     indication = null,

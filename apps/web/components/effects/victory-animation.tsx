@@ -8,6 +8,7 @@ import { playSuccess } from '@/lib/sounds';
 import { victoryHost } from '@/lib/mascots';
 import { Mascot } from '@/components/ui/mascot';
 import { MomentArt } from '@/components/ui/art-title';
+import { CandyButton } from '@/components/ui/candy-button';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
@@ -193,28 +194,21 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
             {/* §242 (founder: "go right into the next game without going
                 back"): unlimited games offer the next puzzle on the card. */}
             {onPlayAgain && !hasActions && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}
-                className="mt-4 px-7 py-2.5 rounded-full text-sm font-black text-white active:scale-95 transition-transform"
-                style={{ background: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-              >
+              <CandyButton size="md" color="purple" icon="replay" className="mt-4" onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}>
                 Play again
-              </button>
+              </CandyButton>
             )}
             {hasActions ? (
               <div className="mt-4 flex justify-center gap-2 flex-wrap">
                 {actions!.map((a) => (
-                  <button
+                  <CandyButton
                     key={a.label}
-                    type="button"
+                    size="md"
+                    color={a.primary ? 'purple' : 'peach'}
                     onClick={(e) => { e.stopPropagation(); a.onClick(); }}
-                    className={`px-6 py-2.5 rounded-full text-sm font-black active:scale-95 transition-transform ${a.primary ? 'text-white' : ''}`}
-                    style={a.primary
-                      ? { background: 'linear-gradient(135deg, #a78bfa, #ec4899)' }
-                      : { border: '1.5px solid var(--color-border)', color: 'var(--color-text)', background: 'var(--color-bg)' }}
                   >
                     {a.label}
-                  </button>
+                  </CandyButton>
                 ))}
               </div>
             ) : (

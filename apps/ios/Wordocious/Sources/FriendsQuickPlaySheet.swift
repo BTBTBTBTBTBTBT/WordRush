@@ -90,7 +90,7 @@ struct FriendsQuickPlaySheet: View {
                         .padding(.horizontal, 12).padding(.vertical, 9)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     if f.id != friends.last?.id { Divider().padding(.leading, 56) }
                 }
             }
@@ -153,7 +153,7 @@ struct FriendsQuickPlaySheet: View {
                                         .background(Capsule().fill(Color.white))
                                         .overlay(Capsule().stroke(stake == s ? FriendsKit.solid : Color(hex: 0xF3E8FF), lineWidth: stake == s ? 2 : 1))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.squish)
                                 .accessibilityAddTraits(stake == s ? .isSelected : [])
                             }
                         }

@@ -60,24 +60,30 @@ fun MiniBoardView(
     // arrive as colors only (no letters). When set, these rows replace
     // board.guesses — same card, frame, tiles and flip-in as the solo board.
     stateRows: List<List<TileState>>? = null,
+    /** False on a static recap (a completed board): no reveal / hop replays. */
+    animateLastRow: Boolean = true,
 ) {
     val isWon = board.status == GameStatus.WON
     val isLost = board.status == GameStatus.LOST
     val isPlaying = board.status == GameStatus.PLAYING
 
+    // FINISH_SPEC A1 / B1: the board panel is frosted glass over the game wallpaper with a
+    // faint lilac line (never plain white); won = a soft lavender wash, lost = a soft rose.
+    val dark = WTheme.isDark
     val borderColor = when {
         active -> Color(0xFFFACC15)  // active board yellow border (spec)
-        isWon -> Color(0xFFA78BFA)   // green-400
-        isLost -> Color(0xFFF87171)  // red-400
-        else -> Color(0xFFE5E7EB)    // gray-200
+        isWon -> Color(0xFFA78BFA)
+        isLost -> Color(0xFFF87171)
+        dark -> WTheme.border
+        else -> Color(0x407C3AED)
     }
     val bgColor = when {
-        isWon -> Color(0xFFF5F3FF)   // green-50
-        isLost -> Color(0xFFFEF2F2)  // red-50
+        dark -> if (isWon) Color(0xFF2E1065).copy(alpha = 0.5f) else if (isLost) Color(0xFF450A0A).copy(alpha = 0.4f) else WTheme.surface.copy(alpha = 0.6f)
+        isWon -> Color(0xFFEFE6FF)
+        isLost -> Color(0xFFFDECEF)
         // No locked tint: iOS conveys locked purely by the 0.6 dim that
-        // MultiBoardLayout applies. A gray-50 card UNDER that dim read as a
-        // second, muddier state that iOS never shows.
-        else -> Color.White
+        // MultiBoardLayout applies.
+        else -> Color.White.copy(alpha = 0.45f)
     }
 
     val prefills = board.prefilledGuesses ?: emptyList()
@@ -93,6 +99,9 @@ fun MiniBoardView(
     // could not survive OctoWord's 13 rows in a mini card on a 360dp phone —
     // the glyph was taller than the cell and the chrome ate the tile.
     val wordLen = board.solution.length
+    // B3: the rejected letters clear right to left (a ghost while they go).
+    val (shownGuess, clearOf) = rememberRejectClear(currentGuess, isInvalid, wordLen)
+    val clearing = shownGuess != currentGuess
 
     // Outer box is NOT clipped so the ✓ badge can float above the card edge
     // (iOS SolvedBoardFrame offsets it -30% of its height). The old structure
@@ -105,7 +114,7 @@ fun MiniBoardView(
                 .fillMaxSize()
                 .clip(RoundedCornerShape(8.dp))
                 .background(bgColor)
-                .border(2.dp, borderColor, RoundedCornerShape(8.dp))
+                .border(if (active) 2.dp else 1.5.dp, borderColor, RoundedCornerShape(8.dp))
                 .then(if (onClick != null) Modifier.clickableNoRippleBox(onClick) else Modifier)
                 .padding(4.dp),
         ) {
@@ -144,7 +153,7 @@ fun MiniBoardView(
                 val guess = when {
                     stateRows != null -> ""
                     isPastGuess -> board.guesses[rowIdx]
-                    isCurrentRow -> currentGuess
+                    isCurrentRow -> shownGuess
                     else -> ""
                 }
                 // Hint rows (Six/Seven) carry a stored evaluation keyed by row
@@ -154,7 +163,7 @@ fun MiniBoardView(
                 // styling and could misplace the letter.
                 val hintEval = if (isPastGuess && stateRows == null) board.hintEvaluations?.get(rowIdx.toString()) else null
                 val eval = hintEval ?: if (isPastGuess && stateRows == null) evaluateGuess(board.solution, board.guesses[rowIdx]) else null
-                val isLastSubmitted = isPastGuess && rowIdx == lastSubmittedRow && hintEval == null
+                val isLastSubmitted = animateLastRow && isPastGuess && rowIdx == lastSubmittedRow && hintEval == null
 
                 Row(
                     modifier = Modifier.weight(1f).fillMaxWidth()
@@ -178,16 +187,21 @@ fun MiniBoardView(
                         colorRow != null -> colorRow.getOrNull(col) ?: TileState.EMPTY
                         else -> eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY
                     }
-                        val flipDelay = if (isLastSubmitted && !locked) col * 80 else null
+                        // B3: 720 ms turns, 300 ms apart (the same reveal as the big board).
+                        val flipDelay = if (isLastSubmitted && !locked) col * TileMotion.FLIP_STAGGER_MS else null
                         TileView(
                             letter = letter,
                             state = state,
                             flipDelay = flipDelay,
-                            isInvalid = isInvalid && isCurrentRow && letter.isNotEmpty(),
-                            square = false,      // see prefill note — card height makes cells square
+                            isInvalid = (isInvalid || clearing) && isCurrentRow && letter.isNotEmpty(),
+                            square = false,      // the fitted grid sizes the cells
                             masked = masked,
                             mini = true,
                             modifier = Modifier.weight(1f),
+                            // B3: a board solved by this guess hops its row once it lands.
+                            celebrate = if (isLastSubmitted && isWon && stateRows == null) TileCelebration.HOP else null,
+                            celebrateDelay = TileMotion.revealMs(wordLen) + col * TileMotion.HOP_STAGGER_MS,
+                            clearProgress = if (isCurrentRow) clearOf(col) else 0f,
                         )
                     }
                 }

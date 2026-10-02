@@ -214,9 +214,9 @@ struct SudokuView: View {
             }
             // Corner Home + "?" buttons — the same pair as every game (§19).
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .sudoku) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -283,7 +283,7 @@ struct SudokuView: View {
                         .background(Capsule().fill(active ? sudokuAccent : Color.clear))
                         .overlay(Capsule().stroke(sudokuAccent.opacity(active ? 1 : 0.35), lineWidth: 1.5))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityAddTraits(active ? .isSelected : [])
             }
         }
@@ -366,8 +366,11 @@ struct SudokuBoardView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
-            let cell = side / 9
+            // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered).
+            let cell = CGFloat(BoardSizing.fitTile(widthUnits: 9, heightUnits: 9,
+                                                   width: Double(geo.size.width), height: Double(geo.size.height),
+                                                   maxTile: 420 / 9, minTile: 10))
+            let side = cell * 9
             let selRow = selected.map { $0 / 9 } ?? -1, selCol = selected.map { $0 % 9 } ?? -1, selBox = selected.map(boxOf) ?? -1
             let selDigit: Character? = selected.flatMap { ch(state.board, $0) == "0" ? nil : ch(state.board, $0) }
             ZStack {
@@ -383,12 +386,13 @@ struct SudokuBoardView: View {
                         }
                     }
                 }
-                // Rules — hairlines everywhere, heavy on the box boundaries.
+                // Rules — §B1: the tiles separate the cells, so only the box
+                // boundaries keep a line (soft hairlines between the tiles).
                 Canvas { ctx, _ in
                     for k in 1..<9 {
                         let heavyLine = k % 3 == 0
-                        let w: CGFloat = heavyLine ? 2 : 1
-                        let color = heavyLine ? heavy : rule
+                        let w: CGFloat = heavyLine ? 2 : 0.5
+                        let color = heavyLine ? heavy.opacity(0.55) : rule.opacity(0.35)
                         let p = CGFloat(k) * cell
                         ctx.fill(Path(CGRect(x: p - w / 2, y: 0, width: w, height: side)), with: .color(color))
                         ctx.fill(Path(CGRect(x: 0, y: p - w / 2, width: side, height: w)), with: .color(color))
@@ -418,12 +422,25 @@ struct SudokuBoardView: View {
         let sameDigit = selDigit != nil && value == selDigit && !isSelected
         let color: Color = revealed ? Theme.textMuted : isWrong ? wrong : hinted ? hint : given ? Theme.textPrimary : player
         let bg: Color = isSelected ? selectedFill : sameDigit ? sameFill : inWash ? Theme.winBG : Color.clear
+        // FINISH_SPEC §B1: digits ride the game-kit tiles — a given clue is a plain
+        // light tile with a dark purple digit; your numbers are purple tiles (a hint
+        // too), a wrong entry the red conflict tile; empty cells are frosted glass.
+        let face: GlossyFace = revealed ? .hintUsed : (value == nil ? .empty
+            : (given ? .given : (isWrong ? .conflict : .correct)))
+        let tileSide = cell * 0.9
+        let digit = value.map(String.init) ?? ""
         Button { onSelect(i) } label: {
             ZStack {
                 Rectangle().fill(bg)
-                if let value {
-                    Text(String(value)).font(Brand.font(min(24, cell * 0.55), given ? .black : .heavy)).foregroundStyle(color)
-                } else if state.notes[i] != 0 {
+                GlossyTile(face: face, letter: revealed ? "" : digit, width: tileSide,
+                           letterScale: given ? 0.58 : 0.56)
+                    .modifier(TypePop(letter: given ? "" : digit, size: CGSize(width: tileSide, height: tileSide)))
+                    .overlay {
+                        if revealed {
+                            Text(digit).font(Brand.fixedFont(tileSide * 0.5, .heavy)).foregroundStyle(color)
+                        }
+                    }
+                if value == nil && state.notes[i] != 0 {
                     let m = state.notes[i]
                     VStack(spacing: 0) {
                         ForEach(0..<3, id: \.self) { rr in
@@ -431,19 +448,19 @@ struct SudokuBoardView: View {
                                 ForEach(0..<3, id: \.self) { cc in
                                     let d = rr * 3 + cc
                                     Text((m & (1 << d)) != 0 ? "\(d + 1)" : " ")
-                                        .font(Brand.font(max(9, cell * 0.24), .bold)).foregroundStyle(Theme.textSecondary)
+                                        .font(Brand.font(max(9, cell * 0.24), .bold)).foregroundStyle(Color(hex: 0x8A78AD))
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 }
                             }
                         }
                     }
-                    .padding(cell * 0.08)
+                    .padding(cell * 0.1)
                 }
             }
             .frame(width: cell, height: cell)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel("Row \(i / 9 + 1) column \(i % 9 + 1)\(value.map { ", \($0)" } ?? ", empty")\(given ? ", given" : "")\(isWrong ? ", wrong" : "")")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -469,13 +486,14 @@ struct SudokuPad: View {
                 ForEach(1...9, id: \.self) { d in
                     let done = vm.completeDigits.contains(d)
                     Button { vm.place(d) } label: {
-                        Text("\(d)").font(Brand.font(20, .black)).foregroundStyle(Theme.keyInk)
-                            .frame(maxWidth: .infinity).frame(height: 48)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(vm.state.notesMode ? sudokuAccent.opacity(0.08) : Theme.keyDefault))
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(vm.state.notesMode ? sudokuAccent.opacity(0.35) : Theme.border, lineWidth: 1.5))
-                            .opacity(done ? 0.4 : 1)
+                        // FINISH_SPEC §B2: the number keys are key tiles too.
+                        KeyCap(state: nil, fill: vm.state.notesMode ? sudokuAccent.wash(0.18) : nil, height: 48) {
+                            Text("\(d)").font(Brand.font(20, .black))
+                                .foregroundStyle(vm.state.notesMode ? sudokuAccent : FinishInk.softNumber)
+                        }
+                        .opacity(done ? 0.4 : 1)
                     }
-                    .buttonStyle(PressableStyle())
+                    .buttonStyle(KeyPressStyle())
                     .accessibilityLabel("\(vm.state.notesMode ? "Note " : "")\(d)")
                 }
             }
@@ -516,7 +534,7 @@ struct SudokuPad: View {
                 .background(Capsule().fill(active ? sudokuAccent : (dim ? Color.clear : sudokuAccent.opacity(0.05))))
                 .overlay(Capsule().stroke(dim ? Theme.border : (active ? sudokuAccent : sudokuAccent.opacity(0.4)), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(dim)
         .accessibilityLabel(label)
         .accessibilityAddTraits(active ? .isSelected : [])
@@ -568,7 +586,7 @@ struct CustomCompletedDailyCard: View {
                         }
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                     if expanded {
                         VStack(spacing: 8) {
                             if let board { CompletedCustomBoardView(board: board) }

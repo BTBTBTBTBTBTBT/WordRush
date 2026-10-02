@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Icon3D } from '@/components/ui/icon3d';
 import type { ReactNode } from 'react';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
@@ -8,11 +7,11 @@ import { MODE_SCORE_CONFIG } from '@/lib/composite-scoring';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import { modeLabel } from '@/lib/mode-labels';
 import { getTodayLocal, type DailyCompletion } from '@/lib/daily-service';
-import { MORE_HOME_HREF } from '@/lib/more-games';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { ResultCard } from '@/components/game/result-line';
 
 interface CompletedCustomDailyProps {
   /** daily_results / matches game_mode key (SUDOKU, WORDSEARCH, ...). */
@@ -63,7 +62,7 @@ export function CompletedCustomDaily({ dbKey, completion, boardsSolved, totalBoa
           </div>
         )}
         <div className="px-4 pb-4 pt-2 animate-fade-in-up">
-          <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+          <ResultCard accent={accent}>
             <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
               style={{ backgroundColor: `${accent}15`, border: `2px solid ${accent}44`, color: accent }}
               aria-hidden>
@@ -76,14 +75,13 @@ export function CompletedCustomDaily({ dbKey, completion, boardsSolved, totalBoa
               </span>
               <span className="text-xs text-gray-400">Finished on another device</span>
               <span className="text-xs text-gray-400">{stat}</span>
-              <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {/* The 3D W / L badge (docs/ART_SPEC.md §4). */}
                 <Icon3D name={won ? 'badge-w' : 'badge-l'} size={24} label={won ? 'Win' : 'Loss'} />
                 <DailyRankBadge gameMode={dbKey} />
               </div>
             </div>
-          </div>
+          </ResultCard>
           <ScoreBreakdownCard gameMode={dbKey} completed={won} guessCount={completion.guesses} timeSeconds={completion.timeSeconds}
             boardsSolved={solved} totalBoards={total} hintsUsed={hintsUsed} bestCorrectLetters={bestCorrectLetters} day={getTodayLocal()} />
           <NextDailyCta currentMode={dbKey} />

@@ -1,11 +1,10 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
 import { getKeyboardLayout, onKeyboardLayoutChange, type KeyboardLayout } from '@/lib/keyboard-layout';
-import { Delete } from 'lucide-react';
 
 // Three arrangements of the same keys (§213) — see lib/keyboard-layout.ts.
 // SPACE is decorative: it presses (haptic + sound) but sends nothing.
@@ -31,6 +30,28 @@ const LAYOUT_ROWS: Record<KeyboardLayout, string[][]> = {
 };
 
 type LetterState = 'correct' | 'present' | 'absent';
+
+// FINISH_SPEC B2: keys are tiles too (globals.css `.kkey`): a lilac lip, a light
+// face and dark purple letters, taking the tile state colors after a reveal;
+// Delete is a chunky purple backspace icon; ENTER is 12 px. Every key sinks
+// into its lip and springs back on press (A9, components/ui/squish-host.tsx).
+
+/** The chunky purple backspace (mockup game-kit.html). */
+function BackspaceIcon() {
+  return (
+    <svg viewBox="0 0 32 24" width="30" height="22" aria-hidden="true" style={{ width: '62%', maxWidth: 30, height: 'auto', filter: 'drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6))' }}>
+      <path d="M10.2 2.5h17.3a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H10.2a3 3 0 0 1-2.3-1.1L2.2 13.9a3 3 0 0 1 0-3.8L7.9 3.6a3 3 0 0 1 2.3-1.1z" fill="#5b2bb5" />
+      <path d="M15.2 8.3l7.4 7.4M22.6 8.3l-7.4 7.4" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A key face's fill per state (the tile ramps). */
+const KEY_FACE: Record<LetterState, string> = {
+  correct: 'linear-gradient(var(--gt-c-light), var(--gt-c-base))',
+  present: 'linear-gradient(var(--gt-p-light), var(--gt-p-base))',
+  absent: 'linear-gradient(var(--gt-a-light), var(--gt-a-base))',
+};
 const EMPTY_STATES: Record<string, LetterState> = {};
 
 interface KeyboardProps {
@@ -42,13 +63,29 @@ interface KeyboardProps {
    *  confirmed by a Check) fill with the mode accent so the remaining letters
    *  stand out, the way the word games color used keys. letter → CSS color. */
   keyFills?: Record<string, string>;
+  /** B2: hold new key colors until the reveal has landed (ms; 0 = at once). A
+   *  reset (fewer colored keys than shown) always applies at once. */
+  revealDelayMs?: number;
 }
 
-const QUADRANT_COLORS: Record<string, string> = {
-  correct: 'key-correct',
-  present: 'key-present',
-  absent: 'key-absent',
-};
+/** How many colored keys a state set holds (a reset holds fewer). */
+function coloredCount(v: Record<string, LetterState> | Record<string, LetterState>[] | undefined): number {
+  if (!v) return 0;
+  return Array.isArray(v) ? v.reduce((n, m) => n + Object.keys(m).length, 0) : Object.keys(v).length;
+}
+
+/** The letter states the keys show: new colors wait out the reveal (B2). */
+function useRevealed<T extends Record<string, LetterState> | Record<string, LetterState>[] | undefined>(states: T, delay: number): T {
+  const [shown, setShown] = useState(states);
+  const shownRef = useRef(states);
+  useEffect(() => {
+    const apply = () => { shownRef.current = states; setShown(states); };
+    if (!delay || coloredCount(states) < coloredCount(shownRef.current)) { apply(); return; }
+    const t = setTimeout(apply, delay);
+    return () => clearTimeout(t);
+  }, [states, delay]);
+  return delay ? shown : states;
+}
 
 function QuadrantKey({
   letter,
@@ -72,48 +109,35 @@ function QuadrantKey({
   return (
     <button
       onClick={() => { haptic('light'); playKeyTap(); onClick(); }}
+      data-s={allAbsent ? 'absent' : undefined}
       className={cn(
         // §255: the sm sizes are thumb keys; from lg (desktop / iPad landscape)
         // they were eating a third of the viewport and squeezing the boards.
         // 44px keeps Apple's touch minimum while giving the height back.
-        'relative w-10 sm:w-12 lg:w-11 rounded-md font-black text-base sm:text-lg overflow-hidden',
+        'kkey w-10 sm:w-12 lg:w-11 text-base sm:text-lg select-none',
         compact ? 'h-10 sm:h-12 lg:h-10' : 'h-12 sm:h-14 lg:h-11',
-        'transition-all duration-150 select-none',
-        allAbsent
-          ? 'text-white'
-          : hasAny
-          ? 'text-white'
-          : 'text-gray-700'
       )}
-      style={{
-        border: '1.5px solid var(--color-border)',
-        textShadow: hasAny ? '0 1px 2px rgba(0,0,0,0.35)' : undefined,
-      }}
+      style={hasAny && !allAbsent ? { ['--k-ink' as string]: '#ffffff' } : undefined}
     >
-      {allAbsent ? (
-        <div className="absolute inset-0 key-absent" />
-      ) : (
-        <div
-          className="absolute inset-0 grid"
+      {!allAbsent && hasAny && (
+        <span
+          aria-hidden="true"
+          className="absolute grid overflow-hidden"
           style={{
+            inset: '0 0 3px 0',
+            borderRadius: 9,
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
           }}
         >
           {boardStates.map((states, i) => {
             const state = states[letter];
-            return (
-              <div
-                key={i}
-                className={cn(state ? QUADRANT_COLORS[state] : '')}
-                style={!state ? { backgroundColor: '#e8e5f0' } : undefined}
-              />
-            );
+            return <span key={i} style={{ background: state ? KEY_FACE[state] : 'rgba(255, 255, 255, 0.92)' }} />;
           })}
-        </div>
+        </span>
       )}
       <span
-        className="relative z-10"
+        className={cn('relative z-10', hasAny && 'kkey-text')}
         style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }}
       >
         {letter}
@@ -125,7 +149,9 @@ function QuadrantKey({
 // Memoized (founder, 2026-09-29): the game screens pass stable props (useCallback
 // handlers, memoized letter states), so a tick or a message elsewhere on the
 // screen no longer re-renders every key.
-export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STATES, boardLetterStates, blackedOutLetters, keyFills }: KeyboardProps) {
+export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealDelayMs = 0 }: KeyboardProps) {
+  const letterStates = useRevealed(rawLetterStates, revealDelayMs);
+  const boardLetterStates = useRevealed(rawBoardStates, revealDelayMs);
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
   const [layout, setLayout] = useState<KeyboardLayout>('standard');
   useEffect(() => {
@@ -138,7 +164,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STA
   const keyH = layout === 'michael' ? 'h-10 sm:h-12 lg:h-10' : 'h-12 sm:h-14 lg:h-11';   // §255: see Key
 
   return (
-    <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
+    <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard" style={{ paddingBottom: 3 }}>
       {rows.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
           {row.map((key, ki) => {
@@ -152,10 +178,10 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STA
                   key={`space-${ki}`}
                   onClick={() => { haptic('light'); playKeyTap(); }}
                   aria-label="Space (decorative)"
-                  className={cn(keyH, 'flex-1 max-w-[240px] rounded-md font-bold text-xs transition-all duration-150 select-none active:scale-95')}
-                  style={{ backgroundColor: '#e8e5f0', border: '1.5px solid var(--color-border)', color: '#8a86a0' }}
+                  className={cn(keyH, 'kkey flex-1 max-w-[240px] text-xs select-none')}
+                  style={{ ['--k-ink' as string]: '#8a78ad' }}
                 >
-                  space
+                  <span>space</span>
                 </button>
               );
             }
@@ -168,21 +194,14 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STA
                   disabled={isBlackedOut}
                   aria-label={key === 'BACK' ? 'Backspace' : 'Submit guess'}
                   className={cn(
-                    keyH, 'px-3 sm:px-4 lg:px-3 rounded-md font-black text-base sm:text-lg',
-                    'transition-all duration-150 select-none',
+                    keyH, 'kkey px-3 sm:px-4 lg:px-3 select-none flex items-center justify-center',
+                    key === 'BACK' ? 'min-w-[3.25rem] sm:min-w-[4rem]' : 'text-[12px] tracking-[0.04em]',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
-                  style={{
-                    // Fixed dark ink, NOT var(--color-text). The key SURFACE is a
-                    // fixed brand lavender that does not follow the theme, so a
-                    // themed foreground put near-white #F0EEF6 on #E8E5F0 in Dark
-                    // and the letters became invisible.
-                    backgroundColor: '#e8e5f0',
-                    border: '1.5px solid var(--color-border)',
-                    color: '#1a1a2e',
-                  }}
                 >
-                  {key === 'BACK' ? <Delete className="h-5 w-5" aria-hidden="true" /> : key}
+                  {/* Fixed dark ink on the fixed light key face (never the theme's
+                      text color, which is near-white in Dark). */}
+                  {key === 'BACK' ? <span className="flex items-center justify-center w-full"><BackspaceIcon /></span> : <span>{key}</span>}
                 </button>
               );
             }
@@ -193,14 +212,10 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STA
                   key={key}
                   disabled
                   aria-label={`${key}, unavailable`}
-                  className={cn(keyH, 'w-10 sm:w-12 lg:w-11 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none')}
-                  style={{
-                    backgroundColor: 'rgba(220,38,38,0.15)',
-                    border: '1.5px solid rgba(220,38,38,0.2)',
-                    color: 'rgba(220,38,38,0.4)',
-                  }}
+                  data-s="blocked"
+                  className={cn(keyH, 'kkey w-10 sm:w-12 lg:w-11 text-base sm:text-lg opacity-60 cursor-not-allowed animate-pulse select-none')}
                 >
-                  ?
+                  <span>?</span>
                 </button>
               );
             }
@@ -224,23 +239,15 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates = EMPTY_STA
                 key={key}
                 onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
                 aria-label={fill ? `${key}, used` : state ? `${key}, ${state}` : key}
-                className={cn(
-                  keyH, 'w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
-                  'transition-all duration-150 select-none',
-                  state === 'correct' && 'key-correct text-white',
-                  state === 'present' && 'key-present text-white',
-                  state === 'absent' && 'key-absent text-white',
-                )}
-                style={fill ? { backgroundColor: fill, border: `1.5px solid ${fill}`, color: '#ffffff' } : {
-                  backgroundColor: state ? undefined : '#e8e5f0',
-                  border: state ? undefined : '1.5px solid var(--color-border)',
-                  // Fixed ink over the fixed key surface — see the wide keys
-                  // above. var(--color-text) is near-white in Dark and made
-                  // every unplayed letter invisible.
-                  color: !state ? '#1a1a2e' : undefined,
-                }}
+                data-s={fill ? undefined : state}
+                className={cn(keyH, 'kkey w-10 sm:w-12 text-base sm:text-lg select-none')}
+                style={fill ? {
+                  ['--k-face' as string]: fill,
+                  ['--k-edge' as string]: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), ${fill}`,
+                  ['--k-ink' as string]: '#ffffff',
+                } : undefined}
               >
-                {key}
+                <span className={state || fill ? 'kkey-text' : undefined}>{key}</span>
               </button>
             );
           })}

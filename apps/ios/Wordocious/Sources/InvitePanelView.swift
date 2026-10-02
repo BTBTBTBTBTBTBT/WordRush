@@ -102,7 +102,7 @@ struct InvitePanelView: View {
                     .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing))
                     .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .disabled(creating || slotsLeft == 0)
 
             if let error {
@@ -132,11 +132,11 @@ struct InvitePanelView: View {
                     if inv.status == "pending" {
                         Button { share(code: inv.code) } label: {
                             Icon3D(.share, size: 16)
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(.squish)
                         Button { cancelTarget = inv } label: {
                             Image(systemName: "xmark").font(.system(size: 12))
                                 .foregroundStyle(Theme.textMuted)
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(.squish)
                     }
                     if inv.status == "converted" {
                         Icon3D(.crown, size: 15)

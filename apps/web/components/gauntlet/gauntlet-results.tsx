@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { XCircle, Clock, Hash, Eye, X } from 'lucide-react';
+import { XCircle, Eye } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
@@ -10,6 +10,11 @@ import { shareResult } from '@/lib/share-utils';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
+import { ClockGlyph, PlayAgainButton, ShareGlyph } from '@/components/game/result-line';
+import { LetterTile, tileLook } from '@/components/game/letter-tile';
+import { miniBoardFrame } from '@/components/game/multi-board';
+import { SoftNum } from '@/components/ui/soft-number';
+import { softPill } from '@/lib/soft-surface';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -147,13 +152,11 @@ export function GauntletResults({
           >
             {won ? 'GAUNTLET CLEARED!' : 'GAUNTLET FAILED'}
           </h1>
-          {/* Actions at the top (matches the native completed screens). */}
-          <div className="flex items-center justify-center gap-4 pt-1">
-            <button onClick={onHome} className="text-sm font-bold underline hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Home</button>
-            <button onClick={handleShare} className="text-sm font-bold underline text-blue-500 hover:opacity-70">{copied ? 'Copied!' : 'Share'}</button>
-            {showPlayAgain && (
-              <button onClick={onPlayAgain} className="text-sm font-bold underline text-purple-500 hover:opacity-70">Play Again</button>
-            )}
+          {/* Actions at the top (FINISH_SPEC B6: the 3D share icon, no Home text
+              link — the tab bar's Home is right below; Play again a candy button). */}
+          <div className="flex items-center justify-center gap-3 pt-1">
+            <ShareGlyph onShare={handleShare} copied={copied} />
+            {showPlayAgain && <PlayAgainButton onClick={onPlayAgain} won={won} />}
           </div>
           {isDaily && (
             <div className="flex justify-center">
@@ -167,20 +170,21 @@ export function GauntletResults({
           className="grid grid-cols-3 gap-3 animate-fade-in-up"
           style={{ animationDelay: '0.6s' }}
         >
-          <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
-            <Icon3D name="trophy" size={20} className="mx-auto mb-1" />
-            <div className="text-2xl font-black text-gray-800">{stagesCompleted}/5</div>
-            <div className="text-gray-400 text-xs">Stages</div>
+          {/* A1 + A2: three tinted stat tiles with 3D icons and soft numbers. */}
+          <div className="text-center" style={{ ...softPill('#f5a524', { radius: 14 }), padding: '14px 6px 10px' }}>
+            <Icon3D name="trophy" size={22} className="mx-auto mb-1" />
+            <SoftNum size={24} as="div">{stagesCompleted}/5</SoftNum>
+            <div className="text-[10px] font-black uppercase mt-1" style={{ letterSpacing: '0.12em', color: '#a2560c' }}>Stages</div>
           </div>
-          <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
-            <Hash className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-            <div className="text-2xl font-black text-gray-800">{totalGuesses}</div>
-            <div className="text-gray-400 text-xs">Guesses</div>
+          <div className="text-center" style={{ ...softPill('#7c3aed', { radius: 14 }), padding: '14px 6px 10px' }}>
+            <Icon3D name="badge-check" size={22} className="mx-auto mb-1" />
+            <SoftNum size={24} as="div">{totalGuesses}</SoftNum>
+            <div className="text-[10px] font-black uppercase mt-1" style={{ letterSpacing: '0.12em', color: '#6d28d9' }}>Guesses</div>
           </div>
-          <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
-            <Clock className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-            <div className="text-2xl font-black text-gray-800">{formatTime(totalTimeMs)}</div>
-            <div className="text-gray-400 text-xs">Time</div>
+          <div className="text-center" style={{ ...softPill('#2563eb', { radius: 14 }), padding: '14px 6px 10px' }}>
+            <span className="flex justify-center mb-1"><ClockGlyph size={22} /></span>
+            <SoftNum size={24} as="div">{formatTime(totalTimeMs)}</SoftNum>
+            <div className="text-[10px] font-black uppercase mt-1" style={{ letterSpacing: '0.12em', color: '#2456a8' }}>Time</div>
           </div>
         </div>
 
@@ -332,7 +336,8 @@ function StageReviewModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md h-[90vh] overflow-hidden p-5 flex flex-col animate-modal-content"
+        className="relative rounded-2xl shadow-2xl w-full max-w-md h-[90vh] overflow-hidden p-5 flex flex-col animate-modal-content"
+        style={{ background: 'var(--color-surface)' }}
       >
         <HeaderBack kind="close" onClick={onClose} size={32} className="absolute top-3 right-3" />
 
@@ -357,7 +362,7 @@ function StageReviewModal({
             Aligning the pill position to each board's slot in the
             MiniBoard grid below makes it trivial to eyeball "this is
             the board I failed" without reading the colors. */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-4">
+        <div className="rounded-xl px-3 py-2 mb-4" style={{ background: 'linear-gradient(#7c3aed10, #7c3aed10), var(--color-card-base, #ffffff)', border: '1.5px solid #e2d3ff' }}>
           <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
             {solutionsLabel}
           </div>
@@ -406,14 +411,6 @@ function StageReviewModal({
   );
 }
 
-const REVIEW_TILE_CLASS: Record<TileState, string> = {
-  [TileState.CORRECT]: 'tile-correct text-white',
-  [TileState.PRESENT]: 'tile-present text-white',
-  [TileState.ABSENT]: 'tile-absent text-white',
-  [TileState.EMPTY]: 'bg-white border-gray-300 text-gray-800',
-  [TileState.HINT_USED]: 'bg-gray-100 border-gray-200 text-gray-300',
-};
-
 function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: boolean }) {
   const prefills = board.prefilledGuesses ?? [];
   const prefillCount = prefills.length;
@@ -449,11 +446,8 @@ function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: bo
   // Wordle and Quordle reviews fit on screen without scrolling.
   return (
     <div
-      className={`p-1.5 rounded-lg border-2 h-full min-h-0 min-w-0 flex flex-col ${
-        won ? 'border-violet-400 bg-violet-50' :
-        lost ? 'border-red-400 bg-red-50' :
-        'border-gray-200 bg-white'
-      }`}
+      className="p-1.5 rounded-lg border-2 h-full min-h-0 min-w-0 flex flex-col"
+      style={{ ...miniBoardFrame(won ? 'WON' : lost ? 'LOST' : 'PLAYING'), ['--gt-font' as string]: '11px' }}
     >
       <div
         className="grid gap-[2px] flex-1 min-h-0"
@@ -466,12 +460,14 @@ function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: bo
             style={{ gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))` }}
           >
             {row.tiles.map((t, tIdx) => (
-              <div
+              <LetterTile
                 key={tIdx}
-                className={`flex items-center justify-center min-h-0 min-w-0 rounded border text-[10px] sm:text-xs font-bold ${REVIEW_TILE_CLASS[t.state]}`}
-              >
-                {t.letter ? t.letter.toUpperCase() : ''}
-              </div>
+                letter={t.letter ? t.letter.toUpperCase() : ''}
+                look={tileLook(t.state, t.letter)}
+                pop={false}
+                className="min-h-0 min-w-0"
+                style={{ aspectRatio: 'auto' }}
+              />
             ))}
           </div>
         ))}

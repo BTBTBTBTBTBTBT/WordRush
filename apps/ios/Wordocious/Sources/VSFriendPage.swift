@@ -89,7 +89,7 @@ struct VSFriendPage: View {
             .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(on ? Color.white : Color.clear))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
@@ -148,7 +148,7 @@ struct VSFriendPage: View {
             .background(RoundedRectangle(cornerRadius: 12).strokeBorder(on ? VsLobbyKit.ink : .clear, lineWidth: 2))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
@@ -165,7 +165,7 @@ struct VSFriendPage: View {
             .background(RoundedRectangle(cornerRadius: 12).strokeBorder(link ? VsLobbyKit.ink : .clear, lineWidth: 2))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityAddTraits(link ? .isSelected : [])
     }
 

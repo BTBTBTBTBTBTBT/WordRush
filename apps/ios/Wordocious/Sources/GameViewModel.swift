@@ -452,17 +452,31 @@ final class GameViewModel: ObservableObject {
         }
     }
 
-    /// Reject an invalid/duplicate guess: toast + sound + a row shake, then clear
-    /// the typed row (web parity — web shakes for 600ms then setCurrentGuess('')).
+    /// Reject an invalid/duplicate guess: toast + sound + a row nudge, then clear
+    /// the typed row. FINISH_SPEC §B3: the letters glow red for 1 s, then clear
+    /// right to left 90 ms apart (Reduce Motion: all at once after 0.6 s).
     private func rejectGuess(_ message: String) {
         flash(message)
         SoundManager.shared.playInvalid()
         shakeCount += 1
         let rejected = currentInput
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+        let still = Theme.reduceMotion
+        DispatchQueue.main.asyncAfter(deadline: .now() + (still ? 0.6 : TileMotion.rejectHold)) { [weak self] in
             guard let self else { return }
             // Only clear if the player hasn't already started a new entry.
-            if self.currentInput == rejected { self.currentInput = "" }
+            guard self.currentInput == rejected else { return }
+            if still { self.currentInput = "" } else { self.clearRejected(expecting: rejected) }
+        }
+    }
+
+    /// One letter off the end every 90 ms, stopping the moment the player edits.
+    private func clearRejected(expecting expected: String) {
+        guard currentInput == expected, !currentInput.isEmpty else { return }
+        currentInput.removeLast()
+        let next = currentInput
+        guard !next.isEmpty else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + TileMotion.rejectStep) { [weak self] in
+            self?.clearRejected(expecting: next)
         }
     }
 

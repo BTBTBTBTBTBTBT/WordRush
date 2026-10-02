@@ -60,7 +60,7 @@ struct WelcomeView: View {
                                 LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                             .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4)
                     }
-                    .buttonStyle(.plain).disabled(saving)
+                    .buttonStyle(.squish).disabled(saving)
 
                     Button("Skip for now") { skip() }
                         .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).padding(.top, 10)

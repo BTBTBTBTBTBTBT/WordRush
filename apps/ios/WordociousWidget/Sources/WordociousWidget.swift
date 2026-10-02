@@ -280,7 +280,8 @@ private struct FrostedStrip<Content: View>: View {
         HStack(spacing: 6, content: content)
             .padding(.horizontal, 12).padding(.top, top).padding(.bottom, 7)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.5))
+            // FINISH_SPEC §A1: a lavender frost instead of plain white.
+            .background(Color(widgetHex: "#F5EEFF").opacity(0.6))
     }
 }
 
@@ -353,7 +354,9 @@ private struct ModeCell: View {
                     .resizable().interpolation(.high).scaledToFit()
                     .frame(width: size * 0.78, height: size * 0.78)
             } else {
+                // FINISH_SPEC §A1: a soft wash of the game's accent, not plain white.
                 shape.fill(Color.white.opacity(0.72))
+                shape.fill(accent.opacity(0.14))
                 shape.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
                 ModeGlyph(mode: mode, accent: accent, box: size)
             }
@@ -396,7 +399,7 @@ private struct FooterStrip: View {
                 .layoutPriority(1)
         }
         .padding(.horizontal, 8).padding(.vertical, 3)
-        .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.55)))
+        .background(RoundedRectangle(cornerRadius: 9).fill(Color(widgetHex: "#F5EEFF").opacity(0.7)))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Wordocious. \(statText). New puzzles at midnight.")
     }

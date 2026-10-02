@@ -69,7 +69,13 @@ targets:
         # actually reaches the binary — xcodegen otherwise hardcodes "1".
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
-        UILaunchScreen: {}
+        # FINISH_SPEC §F2: the static launch screen — the Home wallpaper's color with
+        # the app icon's W mascot centered (launch-w, ~171 pt). The in-app cold-start
+        # intro (ColdStartIntro.swift) starts from exactly this frame.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: launch-w
+          UIImageRespectsSafeAreaInsets: false
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -114,7 +120,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "233"
+        CURRENT_PROJECT_VERSION: "234"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -171,7 +177,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "233"
+        CURRENT_PROJECT_VERSION: "234"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES

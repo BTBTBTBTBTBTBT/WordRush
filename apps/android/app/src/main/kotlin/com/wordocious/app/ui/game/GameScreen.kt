@@ -80,6 +80,20 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
     override fun <T : ViewModel> create(modelClass: Class<T>): T = GameViewModel(seed, mode) as T
 }
 
+/**
+ * B3 the keyboard's colors trail the board: [value] is shown [waitMs] after it changes
+ * (the reveal's length), and at once on first composition.
+ */
+@Composable
+internal fun <T> rememberAfterReveal(value: T, waitMs: Int): T {
+    var shown by remember { mutableStateOf(value) }
+    LaunchedEffect(value) {
+        if (waitMs > 0 && shown != value) kotlinx.coroutines.delay(waitMs.toLong())
+        shown = value
+    }
+    return shown
+}
+
 /** Format elapsed seconds as M:SS for the game header. */
 private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
 
@@ -91,22 +105,31 @@ private fun ClockText(elapsed: kotlinx.coroutines.flow.StateFlow<Int>, size: and
 }
 
 /**
- * Horizontal shake for a rejected guess (spec: ±4px `4*sin(d*π*6)` linear 0.4s).
- * Re-fires whenever [shakeKey] changes. No-op under Reduced Motion.
+ * FINISH_SPEC B3 not a word: the row gives a small nudge (520 ms: −2 / +5 / −6 dp,
+ * cubic-bezier(.36,.07,.19,.97)) while its letters turn red. Re-fires whenever
+ * [shakeKey] changes. No-op under Reduced Motion.
  */
 @Composable
 internal fun Modifier.shakeOnReject(shakeKey: Int): Modifier {
     if (WTheme.reducedMotion) return this
     val anim = remember { androidx.compose.animation.core.Animatable(0f) }
-    val amplitudePx = with(androidx.compose.ui.platform.LocalDensity.current) { 4.dp.toPx() }
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
     androidx.compose.runtime.LaunchedEffect(shakeKey) {
         if (shakeKey == 0) return@LaunchedEffect
         anim.snapTo(0f)
-        anim.animateTo(1f, androidx.compose.animation.core.tween(400, easing = androidx.compose.animation.core.LinearEasing))
+        anim.animateTo(0f, androidx.compose.animation.core.keyframes {
+            durationMillis = TileMotion.NUDGE_MS
+            val e = androidx.compose.animation.core.CubicBezierEasing(0.36f, 0.07f, 0.19f, 0.97f)
+            0f at 0 using e
+            -2f at (TileMotion.NUDGE_MS * 0.15f).toInt() using e
+            5f at (TileMotion.NUDGE_MS * 0.30f).toInt() using e
+            -6f at (TileMotion.NUDGE_MS * 0.45f).toInt() using e
+            -6f at (TileMotion.NUDGE_MS * 0.55f).toInt() using e
+            5f at (TileMotion.NUDGE_MS * 0.70f).toInt() using e
+            -2f at (TileMotion.NUDGE_MS * 0.85f).toInt() using e
+        })
     }
-    return this.graphicsLayer {
-        translationX = amplitudePx * kotlin.math.sin(anim.value * Math.PI.toFloat() * 6f)
-    }
+    return this.graphicsLayer { translationX = anim.value * density }
 }
 
 /**
@@ -388,7 +411,12 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             computeCombinedLetterStates(state.boards)
         }
     }
-    val perBoardStates = if (useQuadrant) remember(state) { computePerBoardLetterStates(state.boards) } else null
+    val perBoardStatesNow = if (useQuadrant) remember(state) { computePerBoardLetterStates(state.boards) } else null
+    // B3: keys take their new colors only after the last tile of the reveal lands, so the
+    // reveal stays a surprise (Reduce Motion: at once).
+    val revealWait = if (WTheme.reducedMotion) 0 else TileMotion.revealMs(state.boards.firstOrNull()?.solution?.length ?: 5)
+    val keyLetterStates = rememberAfterReveal(letterStates, revealWait)
+    val perBoardStates = perBoardStatesNow?.let { rememberAfterReveal(it, revealWait) }
     // ALL multi-board modes (incl. Sequence) apply each guess to every
     // still-PLAYING board — web sequence-game dispatches applyToAll:true and
     // iOS matches. The old !isSequential exception routed guesses to
@@ -404,7 +432,26 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     var dismissedVictory by remember { mutableStateOf(false) }
     // vm.wasReplayed: a finish reconstructed from the server (daily completed on
     // another device) lands directly on PostGameScreen — no victory celebration.
-    val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory && !vm.wasReplayed
+    // FINISH_SPEC B3: a LIVE finish holds the board on screen while the final row
+    // reveals and the win hop wave (or the loss sink) plays, THEN hands over to the
+    // victory / result screens. Presentation only — the record pipeline below runs on
+    // isFinished as before. Resumed, replayed and Reduce Motion finishes don't wait.
+    var finishHoldDone by remember { mutableStateOf(false) }
+    LaunchedEffect(isFinished) {
+        if (isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !finishHoldDone) {
+            kotlinx.coroutines.delay(
+                TileMotion.finishHoldMs(
+                    tiles = state.boards.firstOrNull()?.solution?.length ?: 5,
+                    won = state.status == GameStatus.WON,
+                    multiBoard = state.boards.size > 1,
+                    reduced = WTheme.reducedMotion,
+                ).toLong(),
+            )
+            finishHoldDone = true
+        }
+    }
+    val holdingFinishedBoard = isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !finishHoldDone
+    val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory && !vm.wasReplayed && !holdingFinishedBoard
 
     // Game-start interstitial for free users (web AdGate / iOS parity). Shown
     // once per live game; the ad's duration is excluded from the game timer.
@@ -654,8 +701,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         }
     }
 
-    // Show the stats / post-game screen
-    if (isFinished) {
+    // Show the stats / post-game screen (after the finish hold, B3).
+    if (isFinished && !holdingFinishedBoard) {
         val elapsed by vm.elapsed.collectAsState()
         // ProperNoundle: the revealed (redacted) Clue stays in the finished
         // header on iOS (ProperNoundleView.header shows vm.clue post-game too).
@@ -898,7 +945,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             Spacer(Modifier.height(6.dp))
 
             KeyboardView(
-                letterStates = letterStates,
+                letterStates = keyLetterStates,
                 onKey = { vm.typeLetter(it) },
                 onDelete = { vm.deleteLetter() },
                 onEnter = { vm.submit(applyToAll = isApplyToAll) },
@@ -910,23 +957,18 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 
         // Corner Home button (top-left) — spec Part 2 Nav: 44dp circle, surface
         // fill, 2dp accent stroke, house icon, shadow. Visible in play + post-game.
-        CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(8.dp))
+        CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(GAME_CONTROLS_INSET))
 
         // Help "?" button (top-right corner) — opens this mode's strategy guide
         // and pauses the clock while it's open. iOS only shows a second corner
         // button (the sound toggle) in Gauntlet, so the help button only shifts
         // left there (GameScreen.swift:148).
-        val isGauntlet = mode == GameMode.GAUNTLET
+        // B4: sound + help on the right of the controls row, in every game.
         CornerHelpButton(
             accent = accent,
             onClick = { showGuide = true; vm.pauseTimer() },
-            modifier = Modifier.align(Alignment.TopEnd)
-                .padding(top = 8.dp, end = if (isGauntlet) 60.dp else 8.dp, start = 8.dp, bottom = 8.dp),
+            modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET),
         )
-        // Sound toggle — Gauntlet only, in the corner the help button vacated.
-        if (isGauntlet) {
-            SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
-        }
         if (showGuide) {
             GuideSheet(mode = mode, onDismiss = { showGuide = false; vm.resumeTimer() })
         }
@@ -969,12 +1011,12 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 }
 
 /**
- * Web game/sound-toggle.tsx: the Gauntlet sound toggle, a right-side header
- * action in the shared white circle (HEADER_SPEC §4; 44 dp in games). Persists
- * to the same pref the Settings "Sound Effects" switch uses.
+ * The game sound toggle (FINISH_SPEC A3 / B4: sound + help sit on the right of the
+ * controls row in every game): the bare soft 3D sound icon, no bubble, squishing on
+ * press. Persists to the same pref the Settings "Sound Effects" switch uses.
  */
 @Composable
-internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
+internal fun SoundToggleButton(@Suppress("UNUSED_PARAMETER") accent: Color, modifier: Modifier = Modifier) {
     var enabled by remember {
         mutableStateOf(com.wordocious.app.data.SettingsPref.get(com.wordocious.app.data.SettingsPref.SOUND, true))
     }
@@ -987,47 +1029,54 @@ internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
         modifier = modifier,
         size = GAME_CORNER,
     ) {
-        // The 3D sound icon (ART_SPEC §5, ~1.2× the old glyph); muted = faded + desaturated.
+        // Muted = faded + desaturated.
         com.wordocious.app.ui.Icon3D(
-            com.wordocious.app.ui.Icon3DName.SOUND, 24.dp,
+            com.wordocious.app.ui.Icon3DName.SOUND, com.wordocious.app.ui.SOFT_CONTROL_ICON,
             alpha = if (enabled) 1f else 0.4f,
             colorFilter = if (enabled) null else com.wordocious.app.ui.Icon3DMuted,
         )
     }
 }
 
-/** The game corner circles' size (kept at 44 dp: the boards and titles are laid out around it). */
+/** B4 the controls row sits tucked right under the status bar. */
+internal val GAME_CONTROLS_INSET = 4.dp
+
+/** The game controls' tap area (A3: a full 44 dp; the boards and titles are laid out around it). */
 internal val GAME_CORNER = 44.dp
 
 /**
- * The game's back control (top-left): the shared soft white circle with the
- * house in #6d28d9 (HEADER_SPEC §4). Visible in play + post-game. [accent] is
- * kept for call-site parity; the header chrome no longer takes the mode color.
+ * The game's home control (top-left of the controls row, FINISH_SPEC A3 / B4): the
+ * bare soft 3D home icon (`tab_home`), 23 dp, no bubble, squishing on press.
+ * Visible in play + post-game. [accent] is kept for call-site parity.
  */
 @Composable
-internal fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun CornerHomeButton(@Suppress("UNUSED_PARAMETER") accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     com.wordocious.app.ui.HeaderCircle(onClick, "Home", modifier, size = GAME_CORNER) {
-        Icon(
-            androidx.compose.material.icons.Icons.Filled.Home,
-            contentDescription = null,
-            tint = com.wordocious.app.ui.HeaderInk.control,
-            modifier = Modifier.size(22.dp),
+        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TAB_HOME, com.wordocious.app.ui.SOFT_CONTROL_ICON)
+    }
+}
+
+/**
+ * The right side of the game controls row (FINISH_SPEC B4): sound + help, both bare
+ * soft 3D icons. Help opens the mode's guide (the caller pauses the clock).
+ */
+@Composable
+internal fun CornerHelpButton(@Suppress("UNUSED_PARAMETER") accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        SoundToggleButton(accent)
+        com.wordocious.app.ui.HeaderIconButton(
+            com.wordocious.app.ui.Icon3DName.HELP, "How to play", onClick, size = GAME_CORNER,
         )
     }
 }
 
-/** Top-right help button: the white circle with the 3D `help` icon (HEADER_SPEC §2, §4). */
-@Composable
-internal fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    com.wordocious.app.ui.HeaderIconButton(
-        com.wordocious.app.ui.Icon3DName.HELP, "Help", onClick, modifier, size = GAME_CORNER, iconSize = 26.dp,
-    )
-}
-
 /**
- * Single-board — fills available space like the web's `max-w-[400px] max-h-full
- * aspect-ratio` board. Uses BoxWithConstraints to compute the largest board that
- * fits width AND height, then centers it. Font size scales with tile size.
+ * Single board — FINISH_SPEC B5: sized by the ONE shared rule ([BoardSizing.fitSquare]):
+ * as wide as the space allows (a small side margin), square tiles, centered in the
+ * height that is left. B3 motion: the last submitted row reveals (720 ms flips, 300 ms
+ * apart, each landing with a glow); a rejected guess nudges and its red letters clear
+ * right to left; a win hops the row in a wave and a loss sinks it once the reveal lands;
+ * a fresh hint row glows gold.
  */
 @Composable
 internal fun SingleBoard(
@@ -1040,99 +1089,96 @@ internal fun SingleBoard(
     // groups separated by a wider gap (iOS NoundleBoard). null = one flat row.
     // Trails `modifier` so existing positional callers keep compiling.
     wordGroups: List<Int>? = null,
+    /** False on a static recap (the finished screen): no reveal / celebration replays. */
+    animateLastRow: Boolean = true,
 ) {
     val wordLen = board.solution.length
     val rows = board.maxGuesses
     val lastSubmittedRow = if (board.guesses.isNotEmpty()) board.guesses.size - 1 else -1
     val groups = wordGroups?.takeIf { it.size > 1 && it.sum() == wordLen }
+    val playing = board.status == GameStatus.PLAYING
+    // B3: the not-a-word clear keeps a ghost of the rejected letters while they go.
+    val (shownGuess, clearOf) = rememberRejectClear(currentGuess, isInvalid, wordLen)
+    val clearing = shownGuess != currentGuess
 
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
-        // Inter-word gaps are 14dp where intra-word gaps are 4dp (iOS NoundleBoard),
-        // so each extra group eats another 10dp of board width.
-        val extraGroupGap = 10.dp * ((groups?.size ?: 1) - 1)
-        // Max board width per web (400px ≈ 380dp accounting for padding)
-        val maxBoardW = minOf(maxWidth, 380.dp) - extraGroupGap
-        val maxBoardH = maxHeight
-
-        // Board aspect ratio is wordLen:rows (each tile square)
-        val ratio = wordLen.toFloat() / rows.toFloat()
-        val fromWidth: Dp = maxBoardW
-        val fromWidthH: Dp = fromWidth / ratio
-
-        val (boardW, boardH) = if (fromWidthH <= maxBoardH) {
-            fromWidth to fromWidthH
-        } else {
-            (maxBoardH * ratio) to maxBoardH
-        }
-
-        // Scale font size to tile height.
-        // Ratios match iOS TileView (BoardView.swift): letter = 0.5 × tile,
-        // corner = 0.14 × tile, border = 0.09 × tile clamped to 1–2dp. Android
-        // previously used 0.44 letters and SHARP corners (web parity) — against
-        // iOS, the reference here, that made the board read as a different game.
-        val gapTotal = 4.dp * (rows - 1)
-        val tileHValue = (boardH.value - gapTotal.value) / rows
-        // Floor lowered from 14sp: iOS derives with NO floor (BoardView.swift:85),
-        // and the ProperNoundle catalog runs to 29 letters, where the derived
-        // size is ~4sp and a 14sp glyph overflows its cell. This is a DP count —
-        // TileView converts it through density WITHOUT the user's fontScale (the
-        // tile the glyph must fit doesn't font-scale; iOS fixedFont parity).
-        val tileFontDp = (tileHValue * 0.5f).coerceIn(4f, 28f)
-        val tileCorner = (tileHValue * 0.14f).dp
-        val tileBorder = (tileHValue * 0.09f).coerceIn(1f, 2f).dp
+        val gap = BOARD_TILE_GAP
+        // Inter-word gaps are 14 dp where intra-word gaps are the tile gap (iOS NoundleBoard).
+        val extraGroupGap = (WORD_GROUP_GAP - gap) * ((groups?.size ?: 1) - 1)
+        val fit = BoardSizing.fitSquare(
+            availW = maxWidth.value, availH = maxHeight.value,
+            cols = wordLen, rows = rows, gap = gap.value, extraWidth = extraGroupGap.value,
+        )
+        val tile = fit.cellW
+        // Letter = 0.56 of the tile (game-kit.html), as a DP count: TileView converts it
+        // through density WITHOUT the user's fontScale (the tile doesn't font-scale).
+        val tileFontDp = (tile * 0.56f).coerceIn(4f, 40f)
 
         Column(
-            modifier = Modifier.size(boardW + extraGroupGap, boardH),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.size(fit.width.dp, fit.height.dp),
+            verticalArrangement = Arrangement.spacedBy(gap),
         ) {
             // Submitted rows
             for (rowIdx in 0 until board.guesses.size) {
                 // Hint rows (Clue / vowel / consonant) carry a stored evaluation
-                // keyed by row index — use it so the row paints as iOS's faint
-                // HINT_USED ghost instead of being re-evaluated into solid ABSENT
-                // tiles, and so a revealed letter lands in its real slot.
+                // keyed by row index — use it so the row paints as the faint hint
+                // ghost instead of being re-evaluated into solid ABSENT tiles, and so
+                // a revealed letter lands in its real slot.
                 val hintEval = board.hintEvaluations?.get(rowIdx.toString())
                 val eval = hintEval ?: evaluateGuess(board.solution, board.guesses[rowIdx])
-                val isLastSubmitted = rowIdx == lastSubmittedRow && hintEval == null
+                val isLastSubmitted = animateLastRow && rowIdx == lastSubmittedRow && hintEval == null
+                val isFreshHint = animateLastRow && rowIdx == lastSubmittedRow && hintEval != null
+                val celebrate = when {
+                    !isLastSubmitted -> null
+                    board.status == GameStatus.WON -> TileCelebration.HOP
+                    board.status == GameStatus.LOST -> TileCelebration.SINK
+                    else -> null
+                }
                 BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) { col ->
-                    val tile = eval.tiles.getOrNull(col)
+                    val t = eval.tiles.getOrNull(col)
+                    val letter = t?.letter?.takeIf { it.isNotBlank() } ?: ""
                     TileView(
-                        letter = tile?.letter?.takeIf { it.isNotBlank() } ?: "",
-                        state = tile?.state ?: TileState.EMPTY,
-                        flipDelay = if (isLastSubmitted) col * 150 else null,
-                        flipDuration = 500, // web tile-flip 0.5s (full board)
+                        letter = letter,
+                        state = t?.state ?: TileState.EMPTY,
+                        flipDelay = if (isLastSubmitted || (isFreshHint && letter.isNotEmpty())) col * TileMotion.FLIP_STAGGER_MS else null,
                         fontSize = tileFontDp,
-                        cornerRadius = tileCorner,
-                        borderWidth = tileBorder,
                         modifier = Modifier.weight(1f),
+                        celebrate = celebrate,
+                        celebrateDelay = TileMotion.revealMs(wordLen) +
+                            col * (if (celebrate == TileCelebration.HOP) TileMotion.HOP_STAGGER_MS else 60),
+                        hintGlow = isFreshHint && letter.isNotEmpty(),
                     )
                 }
             }
-            // Current input row — turns red + shakes on a rejected guess.
-            if (board.guesses.size < board.maxGuesses && board.status == GameStatus.PLAYING) {
+            // Current input row — red + nudge on a rejected guess, then the clear.
+            if (board.guesses.size < board.maxGuesses && playing) {
                 BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth().shakeOnReject(shakeKey)) { col ->
-                    val letter = currentGuess.getOrNull(col)?.toString() ?: ""
+                    val letter = shownGuess.getOrNull(col)?.toString() ?: ""
                     TileView(
                         letter = letter,
                         state = TileState.EMPTY,
-                        isInvalid = isInvalid && letter.isNotEmpty(),
+                        isInvalid = (isInvalid || clearing) && letter.isNotEmpty(),
                         fontSize = tileFontDp,
-                        cornerRadius = tileCorner,
-                        borderWidth = tileBorder,
                         modifier = Modifier.weight(1f),
+                        clearProgress = clearOf(col),
                     )
                 }
             }
-            // Empty rows
-            val emptyStart = board.guesses.size + if (board.status == GameStatus.PLAYING) 1 else 0
+            // Empty rows (frosted glass)
+            val emptyStart = board.guesses.size + if (playing) 1 else 0
             for (rowIdx in emptyStart until board.maxGuesses) {
                 BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) {
-                    TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, cornerRadius = tileCorner, borderWidth = tileBorder, modifier = Modifier.weight(1f))
+                    TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, modifier = Modifier.weight(1f))
                 }
             }
         }
     }
 }
+
+/** B1 the gap between board tiles (the mockup's 5 px at ~60 px tiles). */
+internal val BOARD_TILE_GAP = 5.dp
+/** ProperNoundle's gap between words. */
+private val WORD_GROUP_GAP = 14.dp
 
 /**
  * One board row of [count] tiles. When [groups] is non-null the tiles are split
@@ -1147,18 +1193,18 @@ private fun BoardRow(
     tile: @Composable androidx.compose.foundation.layout.RowScope.(Int) -> Unit,
 ) {
     if (groups == null) {
-        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(BOARD_TILE_GAP)) {
             for (col in 0 until count) tile(col)
         }
         return
     }
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(WORD_GROUP_GAP)) {
         var start = 0
         for (len in groups) {
             val offset = start
             Row(
                 modifier = Modifier.weight(len.toFloat()),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(BOARD_TILE_GAP),
             ) {
                 for (k in 0 until len) tile(offset + k)
             }

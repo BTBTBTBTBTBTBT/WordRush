@@ -84,53 +84,41 @@ struct LetterKeyboard: View {
 
     private func spaceKey() -> some View {
         Button { Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
-            Text("space")
-                .font(Brand.font(12, .semibold))
-                .foregroundStyle(Color(hex: 0x8A86A0))
-                .frame(maxWidth: .infinity)
-                .frame(height: keyHeight)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+            KeyCap(state: nil, height: keyHeight) { Text("space").font(Brand.font(12, .heavy)) }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel("Space (decorative)")
     }
 
+    /// FINISH_SPEC §B2: keys are tiles (lilac lip, light face, dark purple letters).
     private func letterKey(_ letter: String) -> some View {
         let state = keyState(letter)
         let fill = keyFill(letter)
-        let bg = fill ?? state.map { Theme.keyColor(for: $0) } ?? Theme.keyDefault
-        let fg: Color = (state == nil && fill == nil) ? Theme.keyInk : .white
         return Button {
             onLetter(letter)
             Haptics.tap()
             SoundManager.shared.playKeyTap()
         } label: {
-            Text(letter)
-                .font(Brand.font(18, .bold))
-                .foregroundStyle(fg)
-                .frame(maxWidth: .infinity)
-                .frame(height: keyHeight)
-                .background(RoundedRectangle(cornerRadius: 6).fill(bg))
+            KeyCap(state: state, fill: fill, height: keyHeight) {
+                Text(letter).font(Brand.font(18, .black))
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel(letter)
         .accessibilityValue(fill != nil ? "used" : (state?.a11yName ?? ""))
     }
 
     private func actionKey(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Group {
+            KeyCap(state: nil, height: keyHeight, width: 54) {
                 if label == "⌫" {
-                    Image(systemName: "delete.left").font(.system(size: 20, weight: .semibold))
+                    DeleteKeyIcon(width: 30)
                 } else {
-                    Text(label).font(Brand.font(14, .heavy))
+                    Text(label).font(Brand.font(12, .black)).tracking(0.5)
                 }
             }
-            .foregroundStyle(Theme.keyInk)
-            .frame(width: 54, height: keyHeight)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel(label == "⌫" ? "Delete" : "Submit")
     }
 }

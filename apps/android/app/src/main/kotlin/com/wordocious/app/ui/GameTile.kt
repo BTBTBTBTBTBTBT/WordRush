@@ -111,8 +111,10 @@ fun Modifier.gameTilePress(onLongClick: (() -> Unit)? = null, onClick: () -> Uni
         if (pressed && !WTheme.reducedMotion) 0.96f else 1f,
         animationSpec = tween(if (WTheme.reducedMotion) 0 else 120), label = "gameTilePress",
     )
+    // A9: the shared squish (was a flat 0.96 scale).
+    @Suppress("UNUSED_VARIABLE") val unused = scale
     return this
-        .graphicsLayer { scaleX = scale; scaleY = scale }
+        .pressSquish(interaction)
         .combinedClickable(interactionSource = interaction, indication = null, onLongClick = onLongClick, onClick = onClick)
 }
 

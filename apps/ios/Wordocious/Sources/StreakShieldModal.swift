@@ -33,7 +33,8 @@ struct StreakShieldModal: View {
                 if saved { savedBeat.transition(.opacity) } else { askCard }
             }
             .frame(maxWidth: 360)
-            .background(Color.white)
+            // FINISH_SPEC §A1: a warm wash instead of plain white.
+            .background(Color(hex: 0xFFF6EA))
             .clipShape(shape)
             .overlay(alignment: .topTrailing) {
                 if !saved {
@@ -42,7 +43,7 @@ struct StreakShieldModal: View {
                             .foregroundStyle(Color(hex: 0x92400E))
                             .frame(width: 36, height: 36).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .padding(.top, 12).padding(.trailing, 12)
                     .accessibilityLabel("Close")
                 }
@@ -61,7 +62,7 @@ struct StreakShieldModal: View {
         VStack(spacing: 0) {
             VStack(spacing: 4) {
                 Icon3D(.flame, size: 60)
-                Text("\(streak)").font(Brand.font(52, .black)).foregroundStyle(Color(hex: 0x78350F))
+                Text("\(streak)").softNumber(52)
                 Text("DAY STREAK").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xB45309))
             }
             .frame(maxWidth: .infinity)
@@ -93,15 +94,12 @@ struct StreakShieldModal: View {
                             onClose()
                         }
                     } label: {
-                        Text(loading == "shield" ? "USING A SHIELD…" : "USE A SHIELD")
-                            .font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).frame(height: 48)
-                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(
-                                LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing)))
-                            .shadow(color: Color(hex: 0x6D28D9).opacity(0.3), radius: 8, x: 0, y: 6)
+                        // FINISH_SPEC §A8: the glossy candy button.
+                        CandyLabel(title: loading == "shield" ? "Using a shield…" : "Use a shield") {
+                            Icon3D(.shield, size: 22)
+                        }
                     }
-                    .buttonStyle(.plain).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
+                    .buttonStyle(CandyButtonStyle(variant: .purple)).disabled(loading != nil)
                     .padding(.top, 4)
                 } else {
                     Text("You're out of shields. Pro members get 4 every billing period.")
@@ -117,7 +115,7 @@ struct StreakShieldModal: View {
                         .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x6B7280))
                         .frame(maxWidth: .infinity).padding(.vertical, 8)
                 }
-                .buttonStyle(.plain).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
+                .buttonStyle(.squish).disabled(loading != nil).opacity(loading != nil ? 0.5 : 1)
             }
             .padding(.vertical, 20).padding(.horizontal, 24)
         }

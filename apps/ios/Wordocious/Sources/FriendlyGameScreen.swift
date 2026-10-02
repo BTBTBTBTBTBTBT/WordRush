@@ -69,7 +69,7 @@ struct FriendlyGameScreen: View {
                     // (MASCOT_SPEC §6, ART_SPEC §7).
                     SceneArt(loadError == Self.goneLine ? .notFound : .unplugged)
                     Text(loadError).font(Brand.font(15, .black)).foregroundStyle(FriendsKit.ink).multilineTextAlignment(.center)
-                    Button { dismiss() } label: { FriendsPill(title: "FRIENDS", solid: false) }.buttonStyle(.plain)
+                    Button { dismiss() } label: { FriendsPill(title: "FRIENDS", solid: false) }.buttonStyle(.squish)
                 }
                 .padding(24)
                 Spacer()

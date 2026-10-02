@@ -232,9 +232,9 @@ struct RegionsView: View {
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .regions) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -301,7 +301,7 @@ struct RegionsView: View {
                         .background(Capsule().fill(active ? regionsAccent : Color.clear))
                         .overlay(Capsule().stroke(regionsAccent.opacity(active ? 1 : 0.35), lineWidth: 1.5))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .accessibilityAddTraits(active ? .isSelected : [])
             }
         }
@@ -388,8 +388,11 @@ struct RegionsBoardView: View {
     var body: some View {
         let n = state.n
         GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
-            let cell = side / CGFloat(n)
+            // FINISH_SPEC §B5: the shared board-sizing rule (2% side margin, centered).
+            let cell = CGFloat(BoardSizing.fitTile(widthUnits: Double(n), heightUnits: Double(n),
+                                                   width: Double(geo.size.width), height: Double(geo.size.height),
+                                                   maxTile: 120, minTile: 4))
+            let side = cell * CGFloat(n)
             let reg = Array(state.regions), b = Array(state.board), h = Array(state.hintMask), w = Array(state.wrongMask)
             let sol = Array(state.solution)
             ZStack {
@@ -459,7 +462,7 @@ struct RegionsBoardView: View {
             .frame(width: cell, height: cell)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel("Row \(i / n + 1) column \(i % n + 1), region \(region + 1), \(mark == "*" ? (isWrong ? "wrong star" : "star") : mark == "o" ? "black star, double-tap to play" : mark == "x" ? "crossed out" : "empty")")
         .accessibilityAddTraits(i == focused ? .isSelected : [])
     }
@@ -490,7 +493,7 @@ struct RegionsPad: View {
                 .background(Capsule().fill(active ? regionsAccent : (dim ? Color.clear : regionsAccent.opacity(0.05))))
                 .overlay(Capsule().stroke(dim ? Theme.border : (active ? regionsAccent : regionsAccent.opacity(0.4)), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(dim)
         .accessibilityLabel(label)
         .accessibilityAddTraits(active ? .isSelected : [])

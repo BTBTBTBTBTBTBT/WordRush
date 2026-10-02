@@ -42,6 +42,8 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { candyClass, candyVars } from '@/components/ui/candy-button';
 
 // Kindred (More Games §14): sixteen words, four groups of four, four mistakes.
 // Submit four → a group locks (bar with pips), three-of-a-kind reads "One
@@ -275,8 +277,9 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   const holiday = holidayTitle(sessionPuzzle?.holiday ?? null);
   const revealedLabels = state.revealedTiers.map((t) => state.groups.find((g) => g.tier === t)!).filter((g) => !state.solved.some((s) => s.tier === g.tier));
   const unsolved = groupsUnsolved(state);
-  const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean, filled = false) => dim ? undefined : filled ? { borderColor: GROUPS_ACCENT, color: '#fff', background: GROUPS_ACCENT } : { borderColor: `${GROUPS_ACCENT}66`, color: GROUPS_ACCENT, background: `${GROUPS_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean) => candyClass({ dim });
+  const capsuleStyle = (_dim: boolean, filled = false) => (filled ? candyVars('amber') : undefined);
   const mistakesLabel = `${state.mistakes} mistake${state.mistakes === 1 ? '' : 's'}`;
 
   return (
@@ -375,7 +378,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
               {unsolved.map((g) => <GroupBar key={g.tier} group={g} revealed />)}
             </div>
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={GROUPS_ACCENT}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
                   style={{ backgroundColor: `${GROUPS_ACCENT}15`, border: `2px solid ${GROUPS_ACCENT}44`, color: GROUPS_ACCENT }}>
                   {won ? (state.mistakes === 0 ? '✓' : state.mistakes) : '✗'}
@@ -387,14 +390,13 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
                   <span className="text-xs text-gray-400">
                     {`${state.solved.length}/${GROUPS_TOTAL_BOARDS} groups · ${mistakesLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
                   </span>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="GROUPS" />}
-                    {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: GROUPS_ACCENT }}>Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard gameMode="GROUPS" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
                 boardsSolved={groupsBoardsSolved(state)} totalBoards={GROUPS_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
               {mode === 'daily' && <NextDailyCta currentMode="GROUPS" />}

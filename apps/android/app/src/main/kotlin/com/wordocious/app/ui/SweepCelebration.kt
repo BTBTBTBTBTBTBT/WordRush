@@ -172,7 +172,7 @@ fun SweepCelebration(
 
                 // Per-game list (3 columns)
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.55f)).padding(8.dp),
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(FinishInk.lavender.copy(alpha = 0.6f)).padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     rows.chunked(3).forEach { triple ->
@@ -225,7 +225,7 @@ fun SweepCelebration(
                         Text("Share", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
                     Row(
-                        Modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.7f))
+                        Modifier.clip(RoundedCornerShape(12.dp)).background(FinishInk.lavender.copy(alpha = 0.8f))
                             .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
                             .clickable { onClose() }.padding(horizontal = 18.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -244,7 +244,8 @@ fun SweepCelebration(
 private fun stat(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // Fixed ink: the card gradient behind these stats is a fixed pastel.
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
+        // A2: a soft number.
+        SoftNumber(value, 20.sp, color = FinishInk.softNumber)
         Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
     }
 }

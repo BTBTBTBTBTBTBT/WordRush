@@ -9,11 +9,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import com.wordocious.app.ui.theme.WTheme
 
-/** Clickable with no ripple — used by mode cards, keyboard keys, back button, etc. */
+/**
+ * Clickable with no ripple — used by mode cards, keyboard keys, back button, etc.
+ * FINISH_SPEC A9: every tappable squishes, so this shared tap carries the shared
+ * press ([pressSquish]: .92 on touch-down, a bouncy spring past 1 on release, off with
+ * Reduce Motion). It presses what follows it in the chain; scrim-sized areas skip it.
+ */
 @Composable
 fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier {
     val interaction = remember { MutableInteractionSource() }
-    return this.clickable(interactionSource = interaction, indication = null, onClick = onClick)
+    return this.pressSquish(interaction).clickable(interactionSource = interaction, indication = null, onClick = onClick)
 }
 
 /**

@@ -60,7 +60,7 @@ struct VSLiveTile<Destination: View>: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .accessibilityLabel("VS Battle, \(countText)")
 
             if isPro {
@@ -77,7 +77,7 @@ struct VSLiveTile<Destination: View>: View {
                     .overlay(Capsule().stroke(Color(hex: 0x0D9488).opacity(0.33), lineWidth: 1.5))
                     .contentShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
             }
         }
         .padding(GameCardChrome.inner)

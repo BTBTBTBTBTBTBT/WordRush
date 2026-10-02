@@ -143,7 +143,7 @@ struct TodayCard: View {
                             .lineLimit(1).minimumScaleFactor(0.75)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
             }
             // The streak card holds two lines now: both cards take the taller height.
             .fixedSize(horizontal: false, vertical: true)
@@ -195,7 +195,7 @@ struct TodayCard: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
     }
 
     /// A 20pt Puzzles chip: solid accent + white glyph when won, red when
@@ -217,7 +217,7 @@ struct TodayCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel(m.title)
     }
 

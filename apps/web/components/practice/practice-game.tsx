@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, getDailySeedDate, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
@@ -8,11 +8,14 @@ import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock } from 'lucide-react';
+import { ResultLine, PlayAgainButton } from '@/components/game/result-line';
+import { CandyButton } from '@/components/ui/candy-button';
+import { useBoardFit } from '@/hooks/use-board-fit';
+import { REVEAL } from '@/lib/tile-motion';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { NextDailyCta } from '@/components/game/next-daily-cta';
@@ -364,24 +367,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   // so on a short viewport six rows simply ran into the keyboard. Same cure
   // VS Classic already had: measure the area left between the header and the
   // keyboard and hand the board exact pixels that fit both dimensions.
+  // FINISH_SPEC B5: the shared board-sizing rule (hooks/use-board-fit.ts) —
+  // as wide as the screen allows (a small side margin), centered in the
+  // height left between the title / status line and the keyboard.
   const boardAreaRef = useRef<HTMLDivElement>(null);
-  const [boardSize, setBoardSize] = useState<{ w: number; h: number } | null>(null);
   const boardCols = currentBoard.solution.length;
-  useLayoutEffect(() => {
-    const el = boardAreaRef.current;
-    if (!el) return;
-    const fit = () => {
-      const r = el.getBoundingClientRect();
-      const availW = Math.min(400, Math.max(0, r.width - 32));
-      const availH = Math.max(0, r.height - 8);
-      const w = Math.min(availW, (availH * boardCols) / maxGuesses);
-      if (w > 40) setBoardSize({ w, h: (w * maxGuesses) / boardCols });
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [boardCols, maxGuesses]);
+  const boardFit = useBoardFit(boardAreaRef, { cols: boardCols, rows: maxGuesses, vPad: 8 });
+  const boardSize = boardFit ? { w: boardFit.w, h: boardFit.h } : null;
+  const hintRows = useMemo(() => Object.keys(currentBoard.hintEvaluations ?? {}).map(Number), [currentBoard.hintEvaluations]);
   const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
 
   return (
@@ -415,39 +408,39 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             </>
           );
         })()}
-        <div className="flex justify-center gap-3 mt-1">
+        {!gameComplete && <div className="flex justify-center gap-3 mt-1">
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
-        </div>
+        </div>}
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
             <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
           </div>
         )}
         {(state.status === GameStatus.WON || state.status === GameStatus.LOST) && (
-          <div className="mt-1 flex flex-col items-center gap-1">
-            <span className={`text-xs font-bold ${state.status === GameStatus.WON ? 'text-green-600' : 'text-red-400'}`}>
-              {state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : `Out of guesses`}  ·  {formatTime(elapsedTime)}
-            </span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {isDaily && <DailyRankBadge gameMode={mode} />}
-              {!isDaily && isPro && (
-                <button onClick={handleReset} className="text-amber-600 text-xs font-bold underline">
-                  {state.status === GameStatus.WON ? 'Play Again' : 'Try Again'}
-                </button>
-              )}
-            </div>
-          </div>
+          // FINISH_SPEC B6: two tinted result pills + the 3D share icon (no Home text link).
+          <ResultLine
+            className="mt-1.5"
+            won={state.status === GameStatus.WON}
+            guesses={guessesUsed}
+            time={formatTime(elapsedTime)}
+            srText={`${state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : 'Out of guesses'} · ${formatTime(elapsedTime)}`}
+            onShare={handleShare}
+            copied={copied}
+          >
+            {isDaily && <DailyRankBadge gameMode={mode} />}
+            {!isDaily && isPro && <PlayAgainButton onClick={handleReset} won={state.status === GameStatus.WON} />}
+          </ResultLine>
         )}
       </div>
 
       {/* Board + Post-game summary */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4" ref={boardAreaRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto" ref={boardAreaRef}>
         <div className={`flex flex-col items-center ${gameComplete ? 'justify-start pt-2' : 'justify-center h-full'}`}>
           <Board
             sizePx={boardSize ?? undefined}
+            gap={boardFit?.gap}
+            hintRows={hintRows}
             guesses={currentBoard.guesses}
             currentGuess={currentGuess}
             maxGuesses={currentBoard.maxGuesses}
@@ -483,38 +476,20 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
       {/* Hint buttons — Six/Seven only, hidden when game is complete */}
       {hasHints && !gameComplete && (
-        <div className="shrink-0 flex justify-center gap-3 px-4 pb-4">
-          <button
-            onClick={handleVowelHint}
-            disabled={hints.vowelUsed}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
-            style={{
-              background: hints.vowelUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
-              border: `1.5px solid ${hints.vowelUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
-              color: hints.vowelUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
-            }}
-          >
+        <div className="shrink-0 flex justify-center gap-3 px-4 pb-3">
+          <CandyButton size="sm" color="teal" onClick={handleVowelHint} disabled={hints.vowelUsed}>
             {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : '💡 Vowel'}
-          </button>
-          <button
-            onClick={handleConsonantHint}
-            disabled={hints.consonantUsed}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
-            style={{
-              background: hints.consonantUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
-              border: `1.5px solid ${hints.consonantUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
-              color: hints.consonantUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
-            }}
-          >
+          </CandyButton>
+          <CandyButton size="sm" color="teal" onClick={handleConsonantHint} disabled={hints.consonantUsed}>
             {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : '💡 Consonant'}
-          </button>
+          </CandyButton>
         </div>
       )}
 
       {/* Keyboard — hidden when game is complete */}
       {!gameComplete && (
         <div className="shrink-0 pb-2 px-2">
-          <Keyboard onKey={handleKey} letterStates={letterStates} />
+          <Keyboard onKey={handleKey} letterStates={letterStates} revealDelayMs={REVEAL.end(currentBoard.solution.length)} />
         </div>
       )}
 

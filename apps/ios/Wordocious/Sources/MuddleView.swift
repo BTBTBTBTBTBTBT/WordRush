@@ -352,9 +352,9 @@ struct MuddleView: View {
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .scramble) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -486,7 +486,7 @@ struct MuddleView: View {
                 .overlay(Capsule().stroke(muddleAccent.opacity(0.4), lineWidth: 1.5))
                 .contentShape(Rectangle().inset(by: -(MdSize.hitTarget - MdSize.capsuleHeight) / 2))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel(label)
     }
 
@@ -728,7 +728,7 @@ private func hintButton(_ label: String, _ symbol: String, action: @escaping () 
             .frame(width: MdSize.hitTarget, height: MdSize.hitTarget)
             .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.squish)
     .accessibilityLabel(label)
 }
 
@@ -742,7 +742,7 @@ private func trayLetter(_ letter: Character, size: CGFloat, color: Color, dimmed
             .frame(minWidth: 20, minHeight: 24)
             .contentShape(Rectangle().inset(by: -10))
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.squish)
     .disabled(dimmed)
     .accessibilityLabel("Place \(letter)")
 }

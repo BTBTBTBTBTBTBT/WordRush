@@ -178,7 +178,7 @@ struct ProLockOverlay<Content: View>: View {
                     colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                     startPoint: .leading, endPoint: .trailing)))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
         }
         .sheet(isPresented: $showPro) { ProView() }
     }
@@ -188,11 +188,11 @@ struct ProLockOverlay<Content: View>: View {
 /// so profile buttons/chips feel responsive like the game keyboard. Reusable
 /// across the app via `.buttonStyle(PressableStyle())`.
 struct PressableStyle: ButtonStyle {
-    var scale: CGFloat = 0.96
+    /// FINISH_SPEC §A9: the shared squish (~.92; a caller's deeper press wins).
+    var scale: CGFloat = 0.92
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1)
-            .animation(Theme.animation(.easeOut(duration: 0.12)), value: configuration.isPressed)
+        let s = min(scale, 0.92)
+        return SquishButtonStyle(squash: CGSize(width: s, height: s)).makeBody(configuration: configuration)
             .onChange(of: configuration.isPressed) { pressed in
                 if pressed { Haptics.tap() }
             }

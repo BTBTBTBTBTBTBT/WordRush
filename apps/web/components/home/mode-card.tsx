@@ -5,6 +5,7 @@ import { Infinity as InfinityIcon } from 'lucide-react';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { GameArt } from '@/components/ui/game-art';
 import { isGameArtIcon, onPageShadow } from '@/lib/art';
+import { SOFT, alphaHex, overAlpha, softBackground } from '@/lib/soft-surface';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
@@ -83,20 +84,19 @@ export const MODE_CARD = {
 } as const;
 
 /**
- * The game card's surface (§18.2 / §21.5): white, radius 18, a 1.5 px border
- * and the page's tinted shadow. A finished daily gets the soft accent tint and
- * an accent border; a locked card a gray border. Shared with the Word of the
- * Day and VS Battle cards so all of Home is one card style.
+ * The game card's surface (§18.2 / §21.5; FINISH_SPEC A1 — no plain white):
+ * every card takes a soft wash of its game's accent (≈13% over white) with a
+ * 1.5 px accent border (≈32%), radius 18 and the page's tinted shadow. A
+ * finished daily gets a stronger wash and an accent border so "played" still
+ * reads; a locked card a gray wash and border. Shared with the Word of the Day
+ * and VS Battle cards so all of Home is one card style. Dark mode keeps the
+ * dark surface under the wash (--color-card-base).
  */
 export function modeCardSurface(accent: string, { done = false, locked = false }: { done?: boolean; locked?: boolean } = {}): CSSProperties {
+  const share = done ? 0.2 : SOFT.tint;
   return {
-    // Completed daily: soft tint in the mode's accent color to signal
-    // "you've played this one". Fresh/unplayed cards stay white.
-    // (Over the white card, so it stays opaque on the page tint.)
-    background: done
-      ? `linear-gradient(${accent}0f, ${accent}0f), var(--color-surface)`
-      : 'var(--color-surface)',
-    border: `1.5px solid ${locked ? '#d1d5db' : done ? `${accent}66` : 'var(--color-border)'}`,
+    background: locked ? softBackground('#9ca3af', SOFT.tint) : softBackground(accent, share),
+    border: `1.5px solid ${locked ? '#d1d5db' : done ? `${accent}66` : alphaHex(accent, overAlpha(SOFT.line, share))}`,
     borderRadius: MODE_CARD.radius,
     // §11: lifts off the page tint with the page's tinted shadow.
     boxShadow: onPageShadow(),
@@ -164,7 +164,7 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
     : null;
   return (
     <div
-      className={`relative cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
+      className={`relative cursor-pointer overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
       style={modeCardSurface(card.accentColor, { done: isDailyDone, locked: isLocked })}
     >
       {/* Thick top band in the game's accent (§18.2), rounded with the card. */}

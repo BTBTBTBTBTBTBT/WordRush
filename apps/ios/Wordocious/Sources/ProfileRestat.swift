@@ -58,7 +58,7 @@ struct SnapshotHero: View {
                         .padding(.top, 10)
                         .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .padding(.top, 10)
                 }
             }

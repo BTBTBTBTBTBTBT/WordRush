@@ -8,6 +8,7 @@ import { useWordDefinitions } from '@/hooks/use-word-definitions';
 import { Mascot } from '@/components/ui/mascot';
 import { MomentArt } from '@/components/ui/art-title';
 import { PAGE_HOSTS } from '@/lib/mascots';
+import { CandyButton } from '@/components/ui/candy-button';
 
 interface GameOverAnimationProps {
   onComplete?: () => void;
@@ -168,13 +169,9 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
 
             {/* §242: unlimited games offer another run straight from the card. */}
             {onPlayAgain && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}
-                className="mt-4 px-7 py-2.5 rounded-full text-sm font-black text-white active:scale-95 transition-transform"
-                style={{ background: '#f87171' }}
-              >
+              <CandyButton size="md" color="amber" icon="replay" className="mt-4" onClick={(e) => { e.stopPropagation(); onPlayAgain(); }}>
                 Try again
-              </button>
+              </CandyButton>
             )}
             <p className="text-xs font-bold mt-4" style={{ color: '#fca5a5' }}>
               Tap anywhere to continue

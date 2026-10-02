@@ -178,8 +178,21 @@ extension View {
     /// §0 card: white, radius 14, no border; ART_SPEC §11: its soft shadow is
     /// tinted toward the page's accent (teal on VS, pink on Friends).
     func vsCard(radius: CGFloat = 14) -> some View {
-        background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color.white)
-            .pageCardShadow())
+        modifier(VSCardSurface(radius: radius))
+    }
+}
+
+/// FINISH_SPEC §A1: the VS card is no longer plain white — a soft wash of the
+/// page's accent (VS teal) with a matching 1.5-pt border and the page-tinted lift.
+private struct VSCardSurface: ViewModifier {
+    let radius: CGFloat
+    @Environment(\.pageTint) private var tint
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return content
+            .background(shape.fill(tint.accent.wash(0.08)).pageCardShadow())
+            .overlay(shape.stroke(tint.accent.wash(0.26), lineWidth: 1.5).allowsHitTesting(false))
     }
 }
 

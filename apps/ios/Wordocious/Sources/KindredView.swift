@@ -325,9 +325,9 @@ struct KindredView: View {
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .groups) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -375,7 +375,7 @@ struct KindredView: View {
                 .background(Capsule().fill(dim ? Color.clear : live ? kindredAccent : kindredAccent.opacity(0.05)))
                 .overlay(Capsule().stroke(dim ? Theme.border : live ? kindredAccent : kindredAccent.opacity(0.4), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(dim)
         .accessibilityLabel(label)
     }

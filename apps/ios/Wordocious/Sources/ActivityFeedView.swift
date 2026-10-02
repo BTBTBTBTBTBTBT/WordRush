@@ -64,7 +64,7 @@ struct ActivityFeedView: View {
                                     .font(Brand.font(11, .heavy)).foregroundStyle(FriendsKit.solid)
                                     .frame(maxWidth: .infinity).padding(.vertical, 4)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                         }
                     }
                 } else {
@@ -202,7 +202,7 @@ struct ActivityFeedView: View {
             .background(Capsule().fill(FriendsKit.soft))
             .overlay(Capsule().stroke(mine ? FriendsKit.solid : .clear, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityAddTraits(mine ? .isSelected : [])
     }
 

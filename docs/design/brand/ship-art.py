@@ -33,7 +33,8 @@ GAMES = ['practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', '
          'cryptogram', 'wordsearch', 'regions',
          'pocket-rps', 'pocket-ttt', 'pocket-coin', 'pocket-pass', 'pocket-ghost', 'pocket-chain']
 MOMENTS = ['victory', 'soclose', 'sweep', 'flawless', 'youwin', 'youlose', 'draw', 'newrecord', 'streak']
-SCENES = ['r-asleep', 'r-unplugged', 'u-alldone', 'o3-notfound', 'i-invite', 'd-nostats']
+SCENES = ['r-asleep', 'r-unplugged', 'u-alldone', 'o3-notfound', 'i-invite', 'd-nostats',
+          'pro-crown', 'shield-guard', 'flawless-star', 'sweep-broom', 'banner-sweep', 'banner-flawless']
 UI = ['badge-w', 'badge-l', 'badge-check', 'lock', 'bell', 'add-friend', 'share', 'sound', 'back']
 
 
@@ -122,6 +123,7 @@ for g in GAMES:
     if g.startswith('pocket-') or g in ('vs', 'more'):
         continue
     ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
+ship('game-sweep', square(os.path.join(HERE, 'games', 'sweep.png'))); n += 1   # Sweep tile (founder 10-02)
 ship('art-bg-tiles', Image.open(os.path.join(HERE, 'backgrounds', 'tile-pattern.png')).convert('RGBA')); n += 1
 # every cast pose on its own (founder 10-02 build: popups, share footers, VS, empty states)
 POSES_DIR = os.path.join(HERE, 'poses')

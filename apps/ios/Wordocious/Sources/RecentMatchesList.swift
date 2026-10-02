@@ -65,12 +65,12 @@ struct RecentMatchesList: View {
                     Button { Haptics.tap(); onSeeAll() } label: {
                         Text("See all \(matches.count) in All-time →")
                             .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.plain).padding(.top, 2)
+                    }.buttonStyle(.squish).padding(.top, 2)
                 } else {
                     Button { showAll.toggle() } label: {
                         Text(showAll ? "Show less" : "View all \(matches.count) ›")
                             .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.plain).padding(.top, 2)
+                    }.buttonStyle(.squish).padding(.top, 2)
                 }
             }
         }
@@ -146,7 +146,7 @@ struct TodayGamesList: View {
                             Haptics.tap()
                             withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { if isOpen { open.remove(mode) } else { open.insert(mode) } }
                         } label: { groupRow(mode, games, isOpen: isOpen) }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                         if isOpen { ForEach(games) { row($0).padding(.leading, 14) } }
                     }
                 }

@@ -20,7 +20,7 @@ struct MoreModePickerSheet: View {
                                 .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted).tracking(1)
                             ForEach(section.modes) { m in
                                 if let gm = m.mode ?? m.dbKey.flatMap({ GameMode(rawValue: $0) }) {
-                                    Button { onPick(gm); dismiss() } label: { row(m) }.buttonStyle(.plain)
+                                    Button { onPick(gm); dismiss() } label: { row(m) }.buttonStyle(.squish)
                                 }
                             }
                         }

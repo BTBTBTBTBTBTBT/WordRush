@@ -4,6 +4,7 @@ import { Undo2, Eraser, X, Lightbulb } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
 import { REGIONS_ACCENT } from './copy';
+import { candyClass } from '@/components/ui/candy-button';
 
 // The Starsweep action row (§18b, §19): ProperNoundle-style capsules —
 // Undo · Erase · Auto-cross · Hint — EACH with its icon. Auto-cross is a
@@ -23,14 +24,9 @@ interface RegionsPadProps {
 
 export function RegionsPad({ onUndo, onErase, onToggleAutoCross, onHint, autoCross, canUndo, canErase, hintsUsed, disabled = false }: RegionsPadProps) {
   const tap = (fn: () => void) => () => { if (disabled) return; haptic('light'); playKeyTap(); fn(); };
-  const capsule = (active: boolean, dim: boolean) =>
-    `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-      dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : active ? 'text-white' : 'hover:opacity-80'
-    }`;
-  const capsuleStyle = (active: boolean, dim: boolean) =>
-    dim ? undefined
-      : active ? { background: REGIONS_ACCENT, borderColor: REGIONS_ACCENT }
-      : { borderColor: `${REGIONS_ACCENT}66`, color: REGIONS_ACCENT, background: `${REGIONS_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (active: boolean, dim: boolean) => candyClass({ dim, color: active ? 'amber' : 'purple' });
+  const capsuleStyle = (_active: boolean, _dim: boolean) => undefined;
 
   return (
     <div className="flex justify-center gap-2 px-1 max-w-xl mx-auto w-full" role="group" aria-label="Starsweep controls">

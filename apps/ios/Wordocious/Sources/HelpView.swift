@@ -51,7 +51,7 @@ struct HelpView: View {
                                 .padding(.horizontal, 12).padding(.vertical, 6)
                                 .background(Capsule().fill(tab == t ? Theme.textPrimary : Theme.surfaceAlt))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                     }
                     Spacer()
                 }

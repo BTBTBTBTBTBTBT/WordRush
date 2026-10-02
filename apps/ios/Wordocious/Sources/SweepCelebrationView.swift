@@ -107,7 +107,7 @@ struct SweepCelebrationView: View {
                         }
                     }
                     .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.55)))
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xF5EEFF).opacity(0.6)))
 
                     HStack(spacing: 8) {
                         Button {
@@ -127,7 +127,7 @@ struct SweepCelebrationView: View {
                             HStack(spacing: 5) { Image(systemName: "xmark"); Text("Close") }
                                 .font(Brand.font(15, .black)).foregroundStyle(accentText)
                                 .padding(.horizontal, 18).padding(.vertical, 11)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.7)))
+                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xF5EEFF).opacity(0.75)))
                                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
                         }
                     }
@@ -151,7 +151,7 @@ struct SweepCelebrationView: View {
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
-            Text(value).font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
+            Text(value).softNumber(20)
             Text(label.uppercased()).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
         }
     }

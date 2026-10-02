@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -49,6 +48,9 @@ const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_EMOJI } from './categories';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { CandyButton } from '@/components/ui/candy-button';
+import { REVEAL } from '@/lib/tile-motion';
 
 type GameMode = 'daily' | 'practice';
 
@@ -802,8 +804,8 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         <>
           {/* Hint clue text */}
           {hints.hint && (
-            <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-              <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+            <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg" style={{ background: 'linear-gradient(#dc262614, #dc262614), var(--color-card-base, #ffffff)', border: '1.5px solid #f8c9c9' }}>
+              <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
             </div>
           )}
 
@@ -821,51 +823,21 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
 
           {/* Hint Buttons */}
           <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
-            <button
-              onClick={handleHintClue}
-              disabled={hints.hintUsed || hints.loadingHint}
-              className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-                hints.hintUsed
-                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  : 'border-purple-300 text-purple-600 bg-purple-50 hover:bg-purple-100'
-              }`}
-            >
-              {hints.loadingHint ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Lightbulb className="w-3 h-3" />
-              )}
+            <CandyButton size="sm" color="purple" onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+              icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
               Clue
-            </button>
-            <button
-              onClick={handleVowelReveal}
-              disabled={hints.vowelUsed}
-              className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-                hints.vowelUsed
-                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  : 'border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100'
-              }`}
-            >
-              <Eye className="w-3 h-3" />
+            </CandyButton>
+            <CandyButton size="sm" color="teal" onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
               {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
-            </button>
-            <button
-              onClick={handleConsonantReveal}
-              disabled={hints.consonantUsed}
-              className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-                hints.consonantUsed
-                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'
-              }`}
-            >
-              <Hash className="w-3 h-3" />
+            </CandyButton>
+            <CandyButton size="sm" color="pink" onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
               {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
-            </button>
+            </CandyButton>
           </div>
 
           {/* Keyboard */}
           <div className="shrink-0 pb-2 px-2 pt-1">
-            <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
+            <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} revealDelayMs={REVEAL.end(answerLength)} />
           </div>
         </>
       ) : (
@@ -874,8 +846,8 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
           <div className="flex-1 min-h-0 overflow-y-auto">
             {/* Hint clue text */}
             {hints.hint && (
-              <div className="mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-                <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+              <div className="mx-4 mb-1 px-3 py-1.5 rounded-lg" style={{ background: 'linear-gradient(#dc262614, #dc262614), var(--color-card-base, #ffffff)', border: '1.5px solid #f8c9c9' }}>
+                <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
               </div>
             )}
 
@@ -893,7 +865,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
 
             {/* Result panel */}
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={'#dc2626'}>
                 {resultImage}
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className={`text-sm font-bold ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
@@ -909,14 +881,13 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
                   {resultClue && (
                     <p className="text-xs text-gray-500 leading-snug mt-0.5">{resultClue}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
-                    {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={handlePlayAgain} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard
                 gameMode="PROPERNOUNDLE"
                 completed={gameStatus === 'won'}

@@ -365,7 +365,7 @@ fun RegionsScreen(
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) RegionsOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain(session.n) } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(REGIONS_ACCENT, onBack) }
-        CornerHelpButton(REGIONS_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
+        CornerHelpButton(REGIONS_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.REGIONS, onDismiss = { showGuide = false; session.resumeFromGuide() })
     }
 }
@@ -557,14 +557,8 @@ private fun RegionsResult(
 }
 
 @Composable
-private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
-    Row(Modifier.clickableNoRipple(onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        // ART_SPEC §5: the result card's Share wears the 3D share icon (~1.2× the old glyph).
-        if (icon == Icons.Filled.Share) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.SHARE, 17.dp)
-        else Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
-    }
-}
+private fun ResultAction(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) =
+    GameResultAction(icon, label, color, onClick)
 
 private fun timeText(s: Int) = if (s >= 60) "${s / 60}:${"%02d".format(s % 60)}" else "${s}s"
 

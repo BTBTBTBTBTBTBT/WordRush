@@ -161,7 +161,7 @@ struct VSBotsView: View {
             guard r.state != .locked else { return }
             if isPro { play(BotPersonas.kind(forBotId: r.id)) } else { showPro = true }
         } label: { row }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .allowsHitTesting(r.state != .locked)
         .accessibilityLabel("\(VsLobby.botName(r.id)), \(tag.lowercased()), \(r.line)")
     }

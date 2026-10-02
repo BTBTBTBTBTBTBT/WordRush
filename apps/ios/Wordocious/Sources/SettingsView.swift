@@ -94,7 +94,7 @@ struct SettingsView: View {
                                             await UIApplication.shared.open(url)
                                         }
                                     }
-                                } label: { linkRow("Manage Subscription") }.buttonStyle(.plain)
+                                } label: { linkRow("Manage Subscription") }.buttonStyle(.squish)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
@@ -109,9 +109,9 @@ struct SettingsView: View {
                                 // dropped for the same reason it left the "?" menu: it
                                 // restated How to Play in older copy. Section now opens
                                 // with Help & Support.
-                                Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.plain)
+                                Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.squish)
                                 Divider().overlay(Theme.border)
-                                Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.plain)
+                                Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.squish)
                                 Divider().overlay(Theme.border)
                                 // Ad-consent withdrawal. UMP requires a
                                 // PERSISTENT entry point — the first-launch
@@ -124,10 +124,10 @@ struct SettingsView: View {
                                         AdsManager.shared.showPrivacyOptions { err in
                                             consentError = err
                                         }
-                                    } label: { linkRow("Ad Privacy Settings") }.buttonStyle(.plain)
+                                    } label: { linkRow("Ad Privacy Settings") }.buttonStyle(.squish)
                                     Divider().overlay(Theme.border)
                                 }
-                                Button { infoKind = .terms } label: { linkRow("Terms of Service") }.buttonStyle(.plain)
+                                Button { infoKind = .terms } label: { linkRow("Terms of Service") }.buttonStyle(.squish)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
@@ -150,7 +150,7 @@ struct SettingsView: View {
                                 .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface).pageCardShadow())
                                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                             .disabled(deleting)
                         }
                         Text("Wordocious · v1.0.0").font(Brand.font(11, .bold))
@@ -243,7 +243,7 @@ struct SettingsView: View {
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.background))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(.squish)
     }
 
     private func themeRow(_ t: (value: String, label: String, desc: String)) -> some View {
@@ -260,7 +260,7 @@ struct SettingsView: View {
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.background))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(.squish)
     }
 
     private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>) -> some View {

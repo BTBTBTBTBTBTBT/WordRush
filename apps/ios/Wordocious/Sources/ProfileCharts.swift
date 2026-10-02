@@ -224,7 +224,7 @@ private struct GuessDistributionChart: View {
                     .opacity(selected == nil || selected == label ? 1 : 0.35)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
             }
         }
     }
@@ -1033,7 +1033,7 @@ struct ProStatsCard: View {
                         LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                     .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
             }
         }
     }

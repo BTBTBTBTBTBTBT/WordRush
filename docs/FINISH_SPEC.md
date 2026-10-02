@@ -41,8 +41,26 @@ A6. **Page titles are headlines**: page/day title art full width edge to edge, r
     box/stage/border, no float animation. Footer-page titles share one height (fit width up to that height).
 A7. **Character variety**: on one screen never the same character in the same image twice; secondary spots
     (popups, share footers, empty states, emails) use a different character than the page/game host.
-A8. **Chunky 3D buttons** for primary actions: gradient + 4-pt darker bottom lip + soft shadow, white
-    Nunito Black label, optional 3D icon, squish on press (purple, gold, soft-lilac variants — see mockups).
+A8. **Buttons: one glossy candy style everywhere** (founder: the big blob Play / View buttons are
+    "horrendous … there should be no buttons looking like that on the app"; design by ChatGPT, reference
+    `docs/design/brand/buttons/chatgpt-buttons-*.jpg`). Every button (pill and round) is:
+    - a pill (radius = height/2) or circle filled with a vertical 2-stop gradient in its color
+      (purple #a66bff→#6d28d9 primary · pink→purple #f472b6→#a21caf secondary · amber #ffc56b→#f97316 ·
+      teal #5eead4→#0d9488 · soft peach #ffd6c2→#fbb38f with dark-purple text for quiet actions);
+    - a thin GOLD outline (2 pt #f5c542, 1 pt on small buttons) just inside the edge;
+    - a thick darker bottom lip (4–5 pt, the gradient's bottom color darkened ~35%) so it looks pressable,
+      plus a soft drop shadow;
+    - a glossy white highlight across the top half (white 45% → 0%, inset from the edges);
+    - label in Nunito Black, white, with a 1.5–2 pt dark-purple outline (#3b1a78) and a soft shadow; optional
+      leading icon in the same white-with-outline treatment (▶ play, eye, arrow);
+    - press = squish (scale .92, the lip compresses) with the spring back.
+    Sizes: large 52 pt (primary CTAs), medium 40 pt, small round 40 pt. No other button styles remain
+    (no flat pills, no blobs, no plain text-link buttons for actions).
+A9. **Everything tappable squishes** (founder: "give all the buttons that spongey feel when pushed"): every
+    button, icon button, chip, segmented option, game tile, card and list row that responds to a tap gets
+    the same spongy press — scale down to ~.92 (icons .86/.80) on touch-down, spring back past 1 (~1.05) and
+    settle on release (≈260 ms, bouncy spring). One shared modifier / style per platform applied app-wide.
+    Off with Reduce Motion.
 
 ## B. Game kit (all word games + number games)
 
@@ -73,11 +91,25 @@ B6. **Finished game screen**: no "Home" text link; Share = the 3D share icon; th
 C1. **Home**: living cast header (A5); controls row under it (A3); cards tinted (A1). Home cards keep §21.
 C2. **Leaderboard**: the day title is the headline (A6); the date/reset row tops the picker card (tinted);
     picker icon tiles are mini game cards, selected = stronger tint + accent ring; play card = title art +
-    "N players today" + a "View board" chunky button (no purple eye blob) on a lavender card with top bar;
+    "N players today" + a medium VIEW BOARD / PLAY glossy pill (A8) — never the old tall purple/orange blob on a lavender card with top bar;
     ONE result card (crown, "#1 of N today", how you solved it, points) on gold; a top-3 PODIUM (gold /
     silver / bronze steps, letter-tile avatars, crown on 1st), then the rest in one tinted card with soft
     striped rows. Monday + Wednesday titles were regenerated (already shipped).
-C3. **Stats**: STATS headline; player card lavender + purple→pink top bar + gradient level bar; game rail
+C2a. **Board rows: W/L badge in its own column** (founder): on every leaderboard / records / yesterday's
+    winners / sweep row, the W / L result badge moves out of the subtitle line ("4 Guesses · 48s [W]") into a
+    fixed-width column immediately LEFT of the points total, vertically centered on the row, so the badges
+    stack in one perfectly even column down the list and the points stay right-aligned beside them. Rows
+    without a badge keep the column's space (empty) so the points still line up.
+C2b. **Sweep is a game tile** (founder): a new glossy 3D broom icon `game-sweep` (ChatGPT, same style as the
+    game icons) sits as the 9th tile in the WORDOCIOUS row, right after Seven, on the Leaderboard picker (and
+    anywhere the dailies row appears with Sweep) — no separate "SWEEP" pill above the row.
+C3. **Stats game picker = the Leaderboard picker** (founder): the Stats page gets the same picker window as
+    the Leaderboard (same card, header row, WORDOCIOUS row incl. the Sweep tile + PUZZLES row, mini-game-card
+    tiles tinted by game, selected = stronger tint + accent ring), with every game visible at once — no
+    horizontal scrolling rail. Tapping a tile switches the Stats content below to that game's stats (Today /
+    All-time stay as the first two options, e.g. a two-segment toggle in the window's header row). Reuse ONE
+    shared picker component on both pages.
+C3 (cont). **Stats page look**: STATS headline; player card lavender + purple→pink top bar + gradient level bar; game rail
     chips with game icons (tinted by game; selected filled purple); Today on a soft blue card with the 8
     sweep tiles (mini game cards with W/L badges) + three tinted pills (magenta Puzzles, teal VS, gold
     Standing); streak + best-moment tiles and the four all-time tiles each in their own color with 3D icons;
@@ -86,6 +118,10 @@ C4. **Friends**: FRIENDS headline; race banner pink with O1 cheering, medal-colo
     as letter tiles with a green dot; the six friend games as small tinted cards with their own top bars;
     this week's race with the podium on gold; friends list on lavender with striped rows and chunky
     Play / Challenge / Nudge buttons.
+C4b. **Friends header cleanup** (founder): remove the bell (notification prefs) and the add-friend circle
+    from beside the FRIENDS title. Notification preferences move into Settings under a new "Notifications"
+    section (same toggles). "Add a friend" becomes a small glossy candy button (A8, no white bubble) in the
+    "Your friends" section header. The FRIENDS title is then centered (A6 headline, nothing beside it).
 C5. **Streak + shield popups**: colored header (warm orange streak / purple shields) with the big 3D icon,
     a friendly headline and a host character (S the speedster for streak, U for shields); Current + Best in
     two tinted soft-number tiles; the streak popup shows this week as seven day tiles (filled orange per
@@ -146,3 +182,27 @@ F2. **Cold-start launch** (founder: "a big prominent centered, professional, pol
 F3. **Store** (after TestFlight): the founder takes raw screenshots; I make captioned store screenshots
     for iOS (6.9" + 6.5") and Play (phone) in the new look, a new Play feature graphic, and update the
     listing text. Not part of the code build.
+
+## G. Popups + celebrations with custom art (founder 10-02: "anything else that wasn't stylized yet")
+
+Art (OpenAI API, transparent, on-model; shipped as `art-scene-*` ×3):
+`art-scene-pro-crown` (W crowned with a golden star), `art-scene-shield-guard` (U shielding the streak flame),
+`art-scene-flawless-star` (pink O on a gem), `art-scene-sweep-broom` (S racing a broom),
+`art-scene-banner-sweep` (O1 + S with broom + W, wide), `art-scene-banner-flawless` (D + pink O with gem + I, wide).
+
+G1. **Go Pro popup / Pro page**: gold-tinted card family (A1) with a gold top bar; `pro-crown` art large at
+    the top; plan options as tinted cards (selected = stronger tint + ring); the primary CTA a large amber/
+    gold candy button (A8); feature list rows with 3D icons; no plain white anywhere.
+G2. **Streak-at-risk window** (StreakShieldModal) + streak / shield / flawless header popovers (C5): purple
+    header with `shield-guard`; soft-number streak; USE A SHIELD = purple candy button, "Let it reset" = soft
+    peach candy button; the "streak saved" state shows the art with a glow + confetti.
+G3. **Flawless + Daily Sweep celebrations** (SweepCelebration / VictoryOverlay "flawless" + "sweep" variants):
+    full-screen tinted overlay in the moment's color, the big art (`flawless-star` / `sweep-broom`) springing in
+    with a bounce, the existing moment lettering above it, soft-number stat tiles below, confetti, candy CTAs.
+G4. **Home banner Sweep / Flawless states**: when the banner flips to the sweep or flawless state, show the
+    wide `banner-sweep` / `banner-flawless` art across the banner (behind/beside the headline, cast fully
+    visible), in a tinted banner card with its own top bar color (gold for sweep, pink for flawless).
+G5. **Everything else not yet touched** (sweep of the app): limit-reached window, More Games sheet, invite /
+    add-friend windows, sign-in + first launch, Settings + Edit profile, toasts, loading + empty screens —
+    tinted surfaces, candy buttons, soft numbers, squish, and a cast pose (art-pose-*) where there is room,
+    following A7 (different character than the page host).

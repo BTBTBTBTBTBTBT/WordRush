@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -44,6 +43,9 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { candyClass, candyVars } from '@/components/ui/candy-button';
+import { fitBoard } from '@/lib/board-fit';
 
 // Crosswordocious (More Games §13): a themed fill-in sayings crossword. Tap a
 // cell or a clue, type; letters are free to set and clear. Check locks right
@@ -72,12 +74,11 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   useEffect(() => {
     const el = bandRef.current;
     if (!el || !rows) return;
+    // FINISH_SPEC B5: the shared board-sizing rule (lib/board-fit.ts) with this
+    // grid's 3 px gaps, 12 px sides, 16 px of air and the 26–42 px cell range.
     const measure = () => {
-      const h = el.clientHeight - 16;               // pt-1/pb-1 plus a little air before the clues
-      const w = el.clientWidth - 24;
-      const byH = Math.floor((h - (rows - 1) * 3) / rows);
-      const byW = Math.floor((w - (cols - 1) * 3) / cols);
-      const next = Math.max(26, Math.min(42, byH, byW));
+      const fit = fitBoard({ width: el.clientWidth, height: el.clientHeight, cols, rows, gap: 3, side: 12, vPad: 16, maxTile: 42 });
+      const next = Math.max(26, fit?.tile ?? 26);
       setBoardCell((prev) => (prev === next ? prev : next));
     };
     measure();
@@ -333,8 +334,9 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const holiday = holidayTitle(sessionPuzzle?.holiday ?? null);
   const checksLabel = state.checks === 0 ? 'No checks' : `${state.checks} check${state.checks === 1 ? '' : 's'}`;
   const filled = crosswordCorrectCount(state), total = crosswordLetterCount(state);
-  const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean, danger = false) => dim ? undefined : danger ? { borderColor: '#dc262666', color: '#dc2626', background: '#dc26260d' } : { borderColor: `${CROSSWORD_ACCENT}66`, color: CROSSWORD_ACCENT, background: `${CROSSWORD_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean) => candyClass({ dim });
+  const capsuleStyle = (_dim: boolean, danger = false) => (danger ? candyVars('pink') : undefined);
 
   return (
     <GameBackground mode="CROSSWORD" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
@@ -418,7 +420,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
               <ClueColumns state={state} activeEntry={null} onPick={() => {}} finished />
             </div>
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={CROSSWORD_ACCENT}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
                   style={{ backgroundColor: `${CROSSWORD_ACCENT}15`, border: `2px solid ${CROSSWORD_ACCENT}44`, color: CROSSWORD_ACCENT }}>
                   {won ? (state.checks === 0 ? '✓' : state.checks) : '✗'}
@@ -430,14 +432,13 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
                   <span className="text-xs text-gray-400">
                     {`${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
                   </span>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="CROSSWORD" />}
-                    {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: CROSSWORD_ACCENT }}>Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard gameMode="CROSSWORD" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
                 boardsSolved={won ? 1 : 0} totalBoards={CROSSWORD_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
               {mode === 'daily' && <NextDailyCta currentMode="CROSSWORD" />}

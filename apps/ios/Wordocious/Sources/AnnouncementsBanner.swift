@@ -30,7 +30,7 @@ struct AnnouncementsBanner: View {
                     Button { dismiss(a) } label: {
                         Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Theme.textMuted)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                 }
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())

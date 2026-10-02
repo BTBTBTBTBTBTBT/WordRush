@@ -30,6 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -106,78 +112,112 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val friendsBadge = remember(friendsVersion, activeGames) {
         com.wordocious.app.data.FriendsService.incoming.size + activeGames.count { it.yourTurn }
     }
-    // ART_SPEC §18.3 (the ChatGPT home mockup): a floating frosted pill — inset 12 dp
-    // from the sides and the bottom safe area (the root Surface in MainActivity applies
-    // the nav-bar inset app-wide), radius 26, a soft violet shadow. The Scaffold lays
-    // the pages out above it, so the last row always clears the pill and only the
-    // page background shows around it. Compose can't blur what is drawn behind a node,
-    // so the pill takes the spec's no-blur fill: the surface at 94%.
-    val pillShape = RoundedCornerShape(TAB_PILL_CORNER)
-    Box(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp, top = 6.dp)) {
-        Row(
-            Modifier.fillMaxWidth()
-                .shadow(10.dp, pillShape, clip = false, ambientColor = HeaderInk.shadow, spotColor = HeaderInk.shadow)
-                .clip(pillShape)
-                .background(WTheme.surface.copy(alpha = 0.94f))
-                .padding(top = 8.dp, bottom = 5.dp),
-        ) {
-            TABS.forEachIndexed { i, tab ->
-                val active = selected == i
-                Column(
-                    Modifier.weight(1f).clickableNoRipple {
+    // FINISH_SPEC A4: the docked tab bar — flush to the bottom edge, edge to edge and
+    // opaque, so the page content ends right above it and nothing shows underneath; a soft
+    // page-tinted gradient (lilac Home, warm Leaderboard, blue Stats, pink Friends) with a
+    // faint top line. The home-indicator strip under it is painted in the bar's bottom
+    // color by MainScreen (dockedTabBarExtension), so it reads as part of the bar. Each
+    // tab icon squishes on tap.
+    val look = tabBarLook(selected)
+    Row(
+        Modifier.fillMaxWidth()
+            .drawBehind {
+                // Soft upward shadow (0 -6 16 rgba(76,29,149,.08)) and the faint top line.
+                drawRect(
+                    Brush.verticalGradient(listOf(Color.Transparent, Color(0x144C1D95)), startY = -16.dp.toPx(), endY = 0f),
+                    topLeft = Offset(0f, -16.dp.toPx()), size = Size(size.width, 16.dp.toPx()),
+                )
+            }
+            .background(Brush.verticalGradient(listOf(look.top, look.bottom)))
+            .drawBehind { drawRect(look.line, size = Size(size.width, 1.dp.toPx())) }
+            .padding(top = 8.dp, start = 6.dp, end = 6.dp, bottom = 4.dp),
+    ) {
+        TABS.forEachIndexed { i, tab ->
+            val active = selected == i
+            val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            Column(
+                Modifier.weight(1f)
+                    .clickable(interactionSource = interaction, indication = null) {
                         // iOS pairs every tab tap with Haptics.tap() (RootTabView.swift:162);
-                        // ripple is suppressed here, so this is the only press feedback.
+                        // ripple is suppressed here, so the squish + haptic are the press feedback.
                         if (!WTheme.reducedMotion) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(i)
                     }.semantics(mergeDescendants = true) {
                         role = androidx.compose.ui.semantics.Role.Tab
                         this.selected = active
                     },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Box {
-                        // §3: selected = full color with a small lift (−2 dp); unselected =
-                        // the same icon at 45% opacity and 60% saturation.
-                        Icon3D(
-                            tab.icon, 28.dp,
-                            Modifier.offset(y = if (active) (-2).dp else 0.dp),
-                            alpha = if (active) 1f else 0.45f,
-                            colorFilter = if (active) null else Icon3DMuted,
-                        )
-                        // Pending requests + your-turn games → a count on the Friends icon.
-                        if (tab.label == "Friends" && friendsBadge > 0) {
-                            Box(
-                                Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-4).dp)
-                                    .size(width = if (friendsBadge > 9) 20.dp else 15.dp, height = 15.dp)
-                                    .clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    if (friendsBadge > 99) "99+" else "$friendsBadge",
-                                    fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1,
-                                )
-                            }
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                // A4: the icon squishes on tap (the icon press, .86 / .80 → 1.08 → 1).
+                Box(Modifier.pressSquish(interaction, icon = true)) {
+                    // Selected = full color; unselected = the same icon at 55% opacity and
+                    // 60% saturation (game-kit.html `.tab img`).
+                    Icon3D(
+                        tab.icon, 29.dp,
+                        alpha = if (active) 1f else 0.55f,
+                        colorFilter = if (active) null else Icon3DMuted,
+                    )
+                    // Pending requests + your-turn games → a count on the Friends icon.
+                    if (tab.label == "Friends" && friendsBadge > 0) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-4).dp)
+                                .size(width = if (friendsBadge > 9) 20.dp else 15.dp, height = 15.dp)
+                                .clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                if (friendsBadge > 99) "99+" else "$friendsBadge",
+                                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1,
+                            )
                         }
                     }
-                    Text(
-                        tab.label, fontSize = 10.sp, maxLines = 1,
-                        fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
-                        color = if (active) HeaderInk.tabSelected else WTheme.textMuted,
-                    )
-                    // §18.3 the selected tab's 3 dp purple underline pill under its label.
-                    Box(
-                        Modifier.size(width = 18.dp, height = 3.dp).clip(CircleShape)
-                            .background(if (active) HeaderInk.tabSelected else Color.Transparent),
-                    )
                 }
+                Text(
+                    tab.label, fontSize = 11.sp, maxLines = 1,
+                    fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
+                    color = if (active) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
+                )
+                // The selected tab's 3 dp purple underline pill under its label.
+                Box(
+                    Modifier.size(width = 22.dp, height = 3.dp).clip(CircleShape)
+                        .background(if (active) HeaderInk.tabSelected else Color.Transparent),
+                )
             }
         }
     }
 }
 
-/** §18.3 the floating tab bar pill's corner radius. */
-private val TAB_PILL_CORNER = 26.dp
+/** A4 the docked bar's page tint: gradient top → bottom and the faint top line. */
+internal data class TabBarLook(val top: Color, val bottom: Color, val line: Color)
+
+/** A4 the docked bar's look for the selected [tab] (dark mode: the dark surface). */
+internal fun tabBarLook(tab: Int): TabBarLook {
+    if (WTheme.isDark) return TabBarLook(WTheme.surface, WTheme.bg, WTheme.border)
+    return when (tab) {
+        1 -> TabBarLook(Color(0xFFFFF8EA), Color(0xFFFFEBC9), Color(0x33F59E0B))   // Leaderboard: warm
+        2 -> TabBarLook(Color(0xFFF2F6FF), Color(0xFFE1EBFF), Color(0x242563EB))   // Stats: blue
+        3 -> TabBarLook(Color(0xFFFFF2F8), Color(0xFFFBE0EE), Color(0x29EC4899))   // Friends: pink
+        else -> TabBarLook(Color(0xFFF7F1FF), Color(0xFFECE0FF), Color(0x247C3AED)) // Home: lilac
+    }
+}
+
+/**
+ * A4 the home-indicator strip is part of the docked bar: paint the window's
+ * navigation-bar inset (below this node's bottom edge) in the bar's bottom color.
+ */
+@Composable
+private fun Modifier.dockedTabBarExtension(enabled: Boolean, tab: Int): Modifier {
+    if (!enabled) return this
+    val inset = androidx.compose.foundation.layout.WindowInsets.Companion.navigationBars
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val bottomPx = inset.getBottom(density)
+    if (bottomPx <= 0) return this
+    val color = tabBarLook(tab).bottom
+    return this.drawBehind {
+        drawRect(color, topLeft = Offset(0f, size.height), size = Size(size.width, bottomPx.toFloat()))
+    }
+}
 
 /**
  * Unlimited seed for a mode — 1:1 port of iOS `resolvedUnlimitedSeed`
@@ -457,7 +497,7 @@ fun MainScreen() {
         publicProfileId != null -> PageTint.HOME
         else -> tabPageTint(selectedTab)
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().dockedTabBarExtension(!covered, selectedTab)) {
       // The page background reaches behind the status bar and the shared header; each tab
       // and pushed page repaints the same window-anchored pixels behind its own content.
       Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab() else Modifier).pageBackground(headerTint)) {

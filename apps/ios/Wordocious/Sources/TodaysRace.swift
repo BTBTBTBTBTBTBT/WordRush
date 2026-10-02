@@ -97,7 +97,7 @@ struct TodaysRaceCard: View {
                         NavigationLink(value: r.id) {
                             row(r, friend: f, anyPoints: anyPoints)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                     }
                 }
             }
@@ -140,7 +140,7 @@ struct TodaysRaceCard: View {
                             .background(Circle().fill(Theme.surfaceAlt))
                             .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.squish)
                     .accessibilityLabel("Nudge \(f.username)")
                 }
                 Button { onChallenge(f) } label: {
@@ -154,7 +154,7 @@ struct TodaysRaceCard: View {
                     .background(RoundedRectangle(cornerRadius: 8).fill(Self.pink.opacity(0.08)))
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Self.pink, lineWidth: 1.5))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .disabled(challenging != nil)
                 .opacity(challenging != nil && challenging != f.id ? 0.5 : 1)
                 .accessibilityLabel("Challenge \(f.username) to a VS Battle")

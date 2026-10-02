@@ -305,7 +305,10 @@ fun Modifier.pressScale(scaleTo: Float = 0.96f, onClick: () -> Unit): Modifier =
         if (pressed && !WTheme.reducedMotion) scaleTo else 1f,
         animationSpec = tween(if (WTheme.reducedMotion) 0 else 120), label = "pressScale",
     )
+    // A9: the shared squish (.92 on touch-down, a spring past 1 on release) replaces the
+    // old flat scale; [scaleTo] / [scale] are kept for the haptic-only call sites.
+    @Suppress("UNUSED_VARIABLE") val unused = scale
     this
-        .scale(scale)
+        .pressSquish(interaction)
         .clickable(interactionSource = interaction, indication = null, onClick = onClick)
 }

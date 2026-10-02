@@ -251,8 +251,8 @@ struct HubView: View {
                                onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showOverlay = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
-            cornerButton("house.fill") { dismiss() }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
-            cornerButton("questionmark") { showGuide = true }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+            cornerButton("house.fill") { dismiss() }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
+            cornerButton("questionmark") { showGuide = true }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .hub) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -299,7 +299,7 @@ struct HubView: View {
                 .padding(.horizontal, 12).padding(.vertical, 7)
                 .background(Capsule().fill(filled ? hubAccent : hubAccent.opacity(0.05)))
                 .overlay(Capsule().stroke(filled ? hubAccent : hubAccent.opacity(0.4), lineWidth: 1.5))
-        }.buttonStyle(.plain).accessibilityLabel(label)
+        }.buttonStyle(.squish).accessibilityLabel(label)
     }
 
     private var header: some View {
@@ -387,8 +387,10 @@ struct HubView: View {
 
     private static func tileSide(boardHeight h: CGFloat) -> CGFloat {
         let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + boardRowSpacing * CGFloat(boardFixedRows)
-        let remaining = max(0, h - reserved)
-        return min(tileMax, max(tileMin, (remaining / 3.3).rounded(.down)))
+        // FINISH_SPEC §B5: the shared sizing rule over the honeycomb's 3.3-tile height.
+        return CGFloat(BoardSizing.fitTile(widthUnits: 1, heightUnits: 3.3, fixedHeight: Double(reserved),
+                                           width: .infinity, height: Double(h), heightFill: 1,
+                                           maxTile: Double(tileMax), minTile: Double(tileMin))).rounded(.down)
     }
 
     /// The word in progress: 28 pt bold, center letter in the accent, placeholder when
@@ -458,8 +460,8 @@ struct HubView: View {
                     .padding(.vertical, 2)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if s.status == .won { Button { vm.end() } label: { Label("Finish", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(hubAccent).buttonStyle(.plain) }
-                else { Button { vm.end() } label: { Label("End puzzle and see answers", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(Theme.textMuted).buttonStyle(.plain) }
+                if s.status == .won { Button { vm.end() } label: { Label("Finish", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(hubAccent).buttonStyle(.squish) }
+                else { Button { vm.end() } label: { Label("End puzzle and see answers", systemImage: "flag").font(Brand.font(12, .bold)) }.foregroundStyle(Theme.textMuted).buttonStyle(.squish) }
             }
             .padding(.bottom, 6)
             .frame(width: geo.size.width, height: geo.size.height)

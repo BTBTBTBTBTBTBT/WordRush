@@ -2,6 +2,8 @@
 
 import { computeScoreBreakdown } from '@/lib/daily-service';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { SoftNum } from '@/components/ui/soft-number';
+import { cardBarStyle } from '@/lib/soft-surface';
 
 /** "Guess bonus" reads through the mode's guess semantics (More Games §11):
  *  Sudocious and Starsweep count mistakes, so their row says "Mistake bonus". */
@@ -62,21 +64,27 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
   const guessesLeft = Math.max(0, b.maxGuesses - guessCount);
   const timeUnder = Math.max(0, b.timeCap - timeSeconds);
 
+  // FINISH_SPEC B6: a lavender card with a purple top bar, dashed dividers,
+  // purple values and the total as a big soft number.
   return (
     <div
-      className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5"
+      className="w-full max-w-[400px] mx-auto mt-3 overflow-hidden"
       style={{
-        background: 'var(--color-bg)',
-        borderRadius: '12px',
-        border: '1px solid var(--color-border)',
+        background: 'linear-gradient(#7c3aed12, #7c3aed12), var(--color-card-base, #ffffff)',
+        borderRadius: 20,
+        border: '1.5px solid #e2d3ff',
+        boxShadow: '0 8px 20px rgba(60, 30, 110, 0.10)',
       }}
     >
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+      <div aria-hidden="true" style={{ ...cardBarStyle('#7c3aed'), background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }} />
+      <div className="px-3.5 pt-2.5 pb-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-black uppercase" style={{ letterSpacing: '0.12em', color: '#5b3c96' }}>
           Score Breakdown
         </span>
-        <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-          {b.total.toFixed(0)} pts
+        <span className="flex items-baseline gap-1.5" aria-label={`${b.total.toFixed(0)} points`}>
+          <SoftNum size={30}>{Math.round(b.total).toLocaleString('en-US')}</SoftNum>
+          <small className="font-black" style={{ fontSize: 12, letterSpacing: '0.1em', color: '#6d28d9' }}>PTS</small>
         </span>
       </div>
 
@@ -131,6 +139,7 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
           highlight={hintsUsed === 0 && completed ? 'pure' : undefined}
         />
       )}
+      </div>
     </div>
   );
 }
@@ -146,10 +155,10 @@ function Row({
   const sign = value > 0 ? '+' : value < 0 ? '−' : '';
   const abs = Math.abs(Math.round(value * 100) / 100);
   return (
-    <div className="flex items-baseline justify-between py-0.5">
+    <div className="flex items-baseline justify-between gap-2 py-1.5 px-0.5 [&+&]:border-t [&+&]:border-dashed" style={{ borderColor: 'rgba(124, 58, 237, 0.18)' }}>
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span
-          className="text-xs font-bold"
+          className="text-[14px] font-black"
           style={{
             color: highlight === 'pure' ? '#7c3aed' : 'var(--color-text)',
           }}
@@ -157,21 +166,21 @@ function Row({
           {label}
         </span>
         {detail && (
-          <span className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="text-[11.5px] font-bold truncate" style={{ color: '#7a6a95' }}>
             {detail}
           </span>
         )}
       </div>
       <span
-        className="text-xs font-black shrink-0 ml-2"
+        className="text-[15px] font-black shrink-0 ml-2 tabular-nums"
         style={{
           color:
-            value > 0 ? 'var(--color-text)'
+            value > 0 ? '#6d28d9'
             : value < 0 ? '#dc2626'
             : 'var(--color-text-muted)',
         }}
       >
-        {sign}{abs.toFixed(0)}
+        {sign}{abs.toLocaleString('en-US', { maximumFractionDigits: 0 })}
       </span>
     </div>
   );

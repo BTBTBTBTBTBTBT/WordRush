@@ -98,7 +98,14 @@ export type SceneName =
   /** Empty Friends ("add a friend"), invite sheet header. */
   | 'i-invite'
   /** Stats with no games yet. */
-  | 'd-nostats';
+  | 'd-nostats'
+  // celebration + popup art (OpenAI API, FINISH_SPEC §G)
+  | 'pro-crown'
+  | 'shield-guard'
+  | 'flawless-star'
+  | 'sweep-broom'
+  | 'banner-sweep'
+  | 'banner-flawless';
 export type SceneArtName = `art-scene-${SceneName}`;
 
 /** Which scene each empty / error / done state draws (§7), beside PAGE_HOSTS. */
@@ -130,7 +137,44 @@ export const GAME_TITLE_ART_IDS = [
 export type GameTitleArtId = (typeof GAME_TITLE_ART_IDS)[number];
 export type GameTitleArtName = `art-game-${GameTitleArtId}`;
 
-export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName;
+/**
+ * Cast poses (finishing build, docs/FINISH_SPEC.md A7 / C5): single-character
+ * pose images, 320 px square, transparent, `art-pose-<cast id>-<pose>`. Used
+ * for secondary spots (popups, share footers, empty states) so a screen never
+ * repeats the same character in the same image as its host.
+ */
+export const POSE_ART = {
+  w: ['cheer', 'fly', 'goodgame', 'hips', 'lean', 'point', 'proud', 'ready', 'sit', 'victory', 'waiting', 'wave'],
+  o1: ['cartwheel', 'cheer', 'goodgame', 'hug', 'jump', 'lean', 'ready', 'sit', 'victory', 'waiting'],
+  r: ['cheer', 'cocoa', 'goodgame', 'lean', 'ready', 'sit', 'sleepwalk', 'victory', 'waiting', 'wake'],
+  d: ['cheer', 'eureka', 'goodgame', 'lean', 'notes', 'ready', 'sit', 'skeptic', 'victory', 'waiting'],
+  o2: ['cheer', 'gasp', 'goodgame', 'lean', 'ready', 'sit', 'strut', 'twirl', 'victory', 'waiting'],
+  c: ['backpack', 'cheer', 'goodgame', 'lean', 'map', 'ready', 'sit', 'telescope', 'victory', 'waiting'],
+  i: ['cheer', 'giggle', 'goodgame', 'lean', 'reach', 'ready', 'sit', 'victory', 'waiting', 'water'],
+  o3: ['cushion', 'goodgame', 'handstand', 'laugh', 'mustache', 'ready', 'sit', 'sneak', 'victory', 'waiting'],
+  u: ['goodgame', 'lotus', 'meditate', 'ready', 'spin', 'stretch', 'tea', 'upside', 'victory', 'waiting'],
+  s: ['blocks', 'flex', 'goodgame', 'ready', 'sit', 'slide', 'stopwatch', 'trophy', 'victory', 'waiting'],
+} as const;
+type PoseTable = typeof POSE_ART;
+export type PoseCastId = keyof PoseTable;
+export type PoseArtName = { [K in PoseCastId]: `art-pose-${K}-${PoseTable[K][number]}` }[PoseCastId];
+/** Every pose's art name, in table order. */
+export const POSE_ART_NAMES: readonly PoseArtName[] = (Object.keys(POSE_ART) as PoseCastId[])
+  .flatMap((id) => POSE_ART[id].map((pose) => `art-pose-${id}-${pose}` as PoseArtName));
+/** Pose files are 320 px square. */
+export const POSE_SIZE = 320;
+
+/** A pose's art name, e.g. poseArt('s', 'trophy') → 'art-pose-s-trophy'. */
+export function poseArt<K extends PoseCastId>(id: K, pose: PoseTable[K][number]): PoseArtName {
+  return `art-pose-${id}-${pose}` as PoseArtName;
+}
+
+/** Public path of a pose image, e.g. poseSrc('u', 'lotus') → /art/art-pose-u-lotus.webp. */
+export function poseSrc<K extends PoseCastId>(id: K, pose: PoseTable[K][number]): string {
+  return artSrc(poseArt(id, pose));
+}
+
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName | PoseArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -176,6 +220,12 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-scene-o3-notfound': [374, 298],
   'art-scene-i-invite': [291, 340],
   'art-scene-d-nostats': [332, 277],
+  'art-scene-pro-crown': [600, 755],
+  'art-scene-shield-guard': [600, 520],
+  'art-scene-flawless-star': [600, 689],
+  'art-scene-sweep-broom': [600, 538],
+  'art-scene-banner-sweep': [600, 367],
+  'art-scene-banner-flawless': [600, 387],
   'art-game-practice': [900, 232],
   'art-game-gauntlet': [895, 208],
   'art-game-quordle': [900, 204],
@@ -218,6 +268,8 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-wall-game-cryptogram': [1179, 2556],
   'art-wall-game-wordsearch': [1179, 2556],
   'art-wall-game-regions': [1179, 2556],
+  // Finishing build: the 62 cast poses, all 320 px square.
+  ...(Object.fromEntries(POSE_ART_NAMES.map((n) => [n, [POSE_SIZE, POSE_SIZE] as const])) as Record<PoseArtName, readonly [number, number]>),
 };
 
 const GAME_TITLE_ART_SET: ReadonlySet<string> = new Set(GAME_TITLE_ART_IDS);
@@ -491,16 +543,17 @@ export const GAME_TILES_OPACITY = { light: 0.55, dark: 0.35 } as const;
 // ── Title art motion (§16) ──────────────────────────────────────────────────
 
 /**
- * How a title art animates when its page appears (§16): page titles
- * (art-title-*) and day titles (art-day-*) pop in (scale 0.94 → 1.03 → 1,
- * fade in, 420 ms) then float forever (0 → −2 px → 0 over 4 s); game title art
- * (art-game-*) only pops in (no float in game headers during play); everything
- * else (moments, scenes) is left alone. Reduce Motion (OS or the in-app
- * toggle) turns both off in globals.css.
+ * How a title art animates when its page appears (§16; FINISH_SPEC A6): page
+ * titles (art-title-*), day titles (art-day-*) and game title art (art-game-*)
+ * pop in once (scale 0.94 → 1.03 → 1, fade in, 420 ms) and then stay put — the
+ * old idle float is gone; everything else (moments, scenes) is left alone.
+ * Reduce Motion (OS or the in-app toggle) turns it off in globals.css.
  */
 export type ArtMotion = 'float' | 'pop' | 'none';
 export function artMotion(name: string): ArtMotion {
-  if (name.startsWith('art-title-') || name.startsWith('art-day-')) return 'float';
+  // FINISH_SPEC A6: page and day titles are headlines on the wallpaper — they
+  // pop in once and no longer float.
+  if (name.startsWith('art-title-') || name.startsWith('art-day-')) return 'pop';
   if (name.startsWith('art-game-')) return 'pop';
   return 'none';
 }

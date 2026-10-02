@@ -209,7 +209,7 @@ struct PublicProfileView: View {
                     : (requested ? Theme.surfaceAlt : Theme.primary)))
                 .overlay(Capsule().stroke(friend || requested ? Theme.border : Theme.primary, lineWidth: 1.5))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
         }
     }
 
@@ -368,7 +368,7 @@ struct PublicProfileView: View {
                         .padding(.horizontal, 18).padding(.vertical, 8)
                         .background(Capsule().fill(Theme.surfaceHover))
                         .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
             .padding(.horizontal, 12).padding(.top, 8)
             .padding(.bottom, chrome.bottomInset)
@@ -550,7 +550,7 @@ struct PublicProfileView: View {
             .padding(.horizontal, 14).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(.squish)
     }
 
     private func modeChip(_ m: HomeMode) -> some View {
@@ -560,7 +560,7 @@ struct PublicProfileView: View {
             GameTileSquare(accent: m.accent, label: ModeGen.byId(m.id)?.shortTitle ?? m.title, selected: active, side: 64) { chip in
                 ModeIconView(icon: m.icon, accent: m.accent, box: chip)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(.squish)
     }
 
     private var modeStatsCard: some View {
@@ -648,7 +648,7 @@ struct PublicProfileView: View {
                     Button { showAllRecent.toggle() } label: {
                         Text(showAllRecent ? "Show less" : "View all \(matches.count) ›")
                             .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
-                    }.buttonStyle(.plain).padding(.top, 2)
+                    }.buttonStyle(.squish).padding(.top, 2)
                 }
             }
         }

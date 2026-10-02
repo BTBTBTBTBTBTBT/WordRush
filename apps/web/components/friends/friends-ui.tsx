@@ -8,13 +8,20 @@ import { LetterTileAvatar, letterTileRadius } from '@/components/ui/letter-tile-
 import { GAME_ART_FILL } from '@/lib/art';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
+import { alphaHex, overAlpha } from '@/lib/soft-surface';
 
 // Shared pieces of the Friends tab and the pocket-game screens (Friends
 // overhaul §0): white cards with a soft shadow and no borders, caps section
 // labels, the OUTLINE game icons in colored rounded squares, avatars with the
 // green on-now ring, the flame streak and one bottom sheet.
 
-export const cardStyle: React.CSSProperties = { background: '#ffffff', borderRadius: 14, boxShadow: FR.cardShadow };
+/** FINISH_SPEC A1 / WHITE_AUDIT lever 2: Friends cards take a soft wash of the Friends pink (over white: the page is light-only). */
+export const cardStyle: React.CSSProperties = {
+  background: `linear-gradient(${alphaHex('#ec4899', 0.09)}, ${alphaHex('#ec4899', 0.09)}), #ffffff`,
+  border: `1.5px solid ${alphaHex('#ec4899', overAlpha(0.28, 0.09))}`,
+  borderRadius: 14,
+  boxShadow: FR.cardShadow,
+};
 
 export function SectionLabel({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (

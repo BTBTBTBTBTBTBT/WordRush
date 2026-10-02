@@ -379,13 +379,13 @@ extension View {
     func hidesBottomNav() -> some View { modifier(ImmersiveChrome()) }
 }
 
-/// Custom bottom navigation — 1:1 with the web BottomNav. ART_SPEC §18.3: a
-/// frosted floating pill — inset 12 pt from the sides and above the bottom safe
-/// area, radius 26, the surface at 78% over a background blur (solid 94% under
-/// Reduce Transparency), a soft shadow; the page shows around it.
+/// Custom bottom navigation. FINISH_SPEC §A4: DOCKED — flush to the bottom edge,
+/// edge to edge and opaque (the page content ends above it; nothing shows under
+/// it), a soft page-tinted gradient (lilac Home, warm Leaderboard, blue Stats, pink
+/// Friends) with a faint top line, and the home-indicator area is part of the bar.
+/// Each tab icon squishes on tap.
 private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
     // in D1): pushes were the only signal before — a missed push meant a request
     // nobody saw. Friends overhaul §5: + pocket games waiting on your move.
@@ -401,10 +401,9 @@ private struct BottomNav: View {
             item(.stats, .tabStats, "Stats")
             item(.friends, .tabFriends, "Friends", badge: pendingRequests)
         }
-        .padding(.top, 8).padding(.bottom, 4)
+        .padding(.top, 8).padding(.bottom, 2)
         .frame(maxWidth: .infinity)
-        .background(pill)
-        .padding(.horizontal, 12).padding(.bottom, 12)
+        .background(bar.ignoresSafeArea(edges: .bottom))
         .task {
             await FriendsService.load()
             await FriendlyGamesService.load()
@@ -414,25 +413,31 @@ private struct BottomNav: View {
         .onReceive(NotificationCenter.default.publisher(for: FriendlyGamesService.changed)) { _ in recount() }
     }
 
-    /// The frosted pill behind the tabs (§18.3).
-    private var pill: some View {
-        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
-        return ZStack {
-            if reduceTransparency {
-                shape.fill(Theme.surface.opacity(0.94))
-            } else {
-                shape.fill(.ultraThinMaterial)
-                shape.fill(Theme.surface.opacity(0.78))
-            }
+    /// The bar's tint for the page on screen (game-kit.html `.tabbar`).
+    private var tint: [Color] {
+        if Theme.isDark { return [Color(hex: 0x221A38), Color(hex: 0x181028)] }
+        switch selection {
+        case .home: return [Color(hex: 0xF7F1FF), Color(hex: 0xECE0FF)]
+        case .leaderboard: return [Color(hex: 0xFFF8EA), Color(hex: 0xFFEBC8)]
+        case .stats: return [Color(hex: 0xF1F6FF), Color(hex: 0xDFEAFF)]
+        case .friends: return [Color(hex: 0xFFF2F8), Color(hex: 0xFCE0EE)]
         }
-        .shadow(color: Color(hex: 0x7C3AED).opacity(0.14), radius: 16, x: 0, y: 6)
-        .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
     }
 
-    /// HEADER_SPEC §3: the 3D tab icons at 28 pt. Selected: full color, a −2 pt
-    /// lift and the label in #7c3aed 900 with a 3 pt purple underline pill under it
-    /// (ART_SPEC §18.3); unselected: the icon at 45% opacity and 60% saturation
-    /// with a grey label. Badges stay numeric.
+    /// Opaque, page-tinted, a faint top line and a soft upward shadow.
+    private var bar: some View {
+        LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color(hex: 0x7C3AED).opacity(0.14)).frame(height: 1)
+            }
+            .shadow(color: Color(hex: 0x4C1D95).opacity(0.08), radius: 8, x: 0, y: -6)
+            .animation(Theme.animation(.easeInOut(duration: 0.2)), value: selection)
+    }
+
+    /// HEADER_SPEC §3: the 3D tab icons at 28 pt. Selected: full color and the label
+    /// in #6d28d9 900 with a 3 pt purple underline pill under it; unselected: the
+    /// icon at 55% opacity and 60% saturation with a lilac-grey label. Badges stay
+    /// numeric. The icon squishes on press (§A3 / §A9).
     private func item(_ t: RootTabView.Tab, _ icon: Icon3DName, _ label: String, badge: Int = 0) -> some View {
         let active = selection == t
         return Button {
@@ -442,7 +447,7 @@ private struct BottomNav: View {
             VStack(spacing: 2) {
                 Icon3D(icon, size: 28)
                     .saturation(active ? 1 : 0.6)
-                    .opacity(active ? 1 : 0.45)
+                    .opacity(active ? 1 : 0.55)
                     .overlay(alignment: .topTrailing) {
                         if badge > 0 {
                             // Win purple (founder, Aug 11); §5 shows the count.
@@ -450,15 +455,14 @@ private struct BottomNav: View {
                                 .font(Brand.font(9, .black)).foregroundStyle(.white)
                                 .padding(.horizontal, 4).frame(minWidth: 15, minHeight: 15)
                                 .background(Capsule().fill(Color(hex: 0x7C3AED)))
-                                .overlay(Capsule().stroke(Theme.surface, lineWidth: 1.5))
+                                .overlay(Capsule().stroke(Color(hex: 0xF7F1FF), lineWidth: 1.5))
                                 .offset(x: 9, y: -5)
                                 .accessibilityLabel("\(badge) waiting")
                         }
                     }
-                    .offset(y: active ? -2 : 0)
                 Text(label)
-                    .font(Brand.font(10, active ? .black : .heavy))
-                    .foregroundStyle(active ? Color(hex: 0x7C3AED) : Theme.textMuted)
+                    .font(Brand.font(11, active ? .black : .heavy))
+                    .foregroundStyle(active ? Color(hex: 0x6D28D9) : (Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 // The selected tab's underline pill (a clear slot otherwise, so no tab shifts).
@@ -470,7 +474,7 @@ private struct BottomNav: View {
             .padding(.bottom, 4)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squishIcon)
         .accessibilityAddTraits(active ? .isSelected : [])
     }
 }

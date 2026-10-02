@@ -134,7 +134,7 @@ struct HomeBannerView: View {
                             Icon3D(.share, size: 24)
                                 .frame(width: 36, height: 36).contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.squish)
                         .accessibilityLabel("Share today's progress")
                     }
                 }
@@ -150,14 +150,15 @@ struct HomeBannerView: View {
             }
         }
         .padding(.top, 12).padding(.trailing, 8).padding(.bottom, 10).padding(.leading, 12)
-        // §18.4: frosted — white at 72% over a background blur (solid under Reduce Transparency).
+        // §18.4: frosted over a background blur (solid under Reduce Transparency) —
+        // FINISH_SPEC §A1: a lavender frost instead of plain white.
         .background {
             if reduceTransparency {
-                Color.white.opacity(0.9)
+                Color(hex: 0xF5EEFF).opacity(0.94)
             } else {
                 ZStack {
                     Rectangle().fill(.ultraThinMaterial)
-                    Color.white.opacity(0.72)
+                    Color(hex: 0xF5EEFF).opacity(0.74)
                 }
             }
         }
@@ -211,10 +212,12 @@ struct HomeBannerView: View {
                 .font(Brand.font(10.5, .black)).tracking(0.6)
                 .foregroundStyle(on ? (m == .daily ? Color(hex: 0x4C1D95) : Color(hex: 0x6D28D9)) : Color(hex: 0x7C3AED))
                 .padding(.horizontal, 10).frame(height: 26)
-                .background(Capsule().fill(on ? Color.white : Color.clear))
+                // §A1: the "on" segment is a soft lilac pill, not white.
+                .background(Capsule().fill(on ? Color(hex: 0xFBF8FF) : Color.clear)
+                    .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.14) : .clear, radius: 2, x: 0, y: 1))
                 .lineLimit(1).fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
@@ -234,7 +237,7 @@ struct HomeBannerView: View {
                 if streak > 0 {
                     HStack(spacing: 2) {
                         FlameMark(size: 12)
-                        Text("\(streak)").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        Text("\(streak)").softNumber(13)
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(streak)-day streak")
@@ -278,14 +281,16 @@ private struct BannerTile: View {
         let solid = !unlimited && result != nil
         Button(action: onTap) {
             ZStack {
+                // FINISH_SPEC §A1: game tiles are mini game cards in their accent.
                 if unlimited {
-                    shape.fill(Color.white.opacity(0.9))
-                        .shadow(color: Color(hex: 0x4C1D95).opacity(0.12), radius: 1.5, x: 0, y: 1)
+                    shape.fill(accent.wash(0.13))
+                        .overlay(shape.strokeBorder(accent.wash(0.34), lineWidth: 1.5))
+                        .shadow(color: accent.opacity(0.2), radius: 3, x: 0, y: 2)
                 } else if let result {
                     shape.fill(result.completed ? accent : Color(hex: 0x9CA3AF))
                         .shadow(color: result.completed ? accent.opacity(0.7) : .clear, radius: 4.5)
                 } else {
-                    shape.fill(Color.white.opacity(0.85))
+                    shape.fill(accent.wash(0.10))
                     shape.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
                 }
                 BannerGlyph(icon: mode.icon, ink: solid ? .white : accent, accent: accent, solid: solid, size: iconSize)
@@ -293,7 +298,7 @@ private struct BannerTile: View {
             .frame(width: size, height: size)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel(mode.title + (unlimited ? "" : result.map { $0.completed ? ", won" : ", played" } ?? ", not played yet"))
     }
 }
@@ -315,7 +320,7 @@ struct BannerGlyph: View {
             // own accent color.
             if solid {
                 ZStack {
-                    Circle().fill(Color.white.opacity(0.94)).frame(width: size * 1.3, height: size * 1.3)
+                    Circle().fill(accent.wash(0.12)).frame(width: size * 1.3, height: size * 1.3)
                         .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 1)
                     GameArtImage(asset: art, size: size * 1.12)
                 }

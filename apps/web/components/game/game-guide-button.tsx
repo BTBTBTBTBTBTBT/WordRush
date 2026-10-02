@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { HeaderBack, HEADER_SHADOW } from '@/components/ui/page-header';
+import { HeaderBack, HEADER_GLYPH } from '@/components/ui/page-header';
 import { getGuide } from '@/lib/guide-content';
 import { setGuidePaused } from '@/hooks/use-active-play-timer';
 import { Mascot } from '@/components/ui/mascot';
@@ -53,10 +53,9 @@ export function GameGuideButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="How to play"
-        className={`${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`}
-        style={{ background: '#ffffff', boxShadow: HEADER_SHADOW }}
+        className={`${positionClass} hdr-glyph w-11 h-11 flex items-center justify-center`}
       >
-        <Icon3D name="help" size={24} />
+        <Icon3D name="help" size={HEADER_GLYPH} priority />
       </button>
 
       {open && (

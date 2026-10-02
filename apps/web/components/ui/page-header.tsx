@@ -9,16 +9,20 @@ import type { MascotId } from '@/lib/mascots';
 // One header style for every page, screen and sheet (docs/HEADER_SPEC.md §4):
 // the title in caps 900 with the purple→pink gradient (or the page's accent:
 // VS teal, Friends pink, Leaderboard gold), the page's host beside it (§5:
-// only when no banner on the page already carries the host), the back/close
-// control as a soft white circle with the icon in #6d28d9, and right-side
-// actions as the same white circles using the 3D icon set.
+// only when no banner on the page already carries the host). FINISH_SPEC A3:
+// the back/close control and the right-side actions are the soft 3D icons
+// drawn BARE — no circle behind them — at 23 px with a 44 px tap area and the
+// icon squish on press (globals.css `.hdr-glyph`).
 // No hooks, so it renders in server components too.
 
 /** The back/close icon ink. */
 export const HEADER_INK = '#6d28d9';
 
-/** The soft shadow every header circle and stat pill sits on (no borders). */
+/** The soft shadow the old header circles sat on (kept for the few chips that still use it). */
 export const HEADER_SHADOW = '0 1px 2px rgba(76, 29, 149, 0.08), 0 3px 10px rgba(76, 29, 149, 0.12)';
+
+/** A3: the bare header icon height (px). */
+export const HEADER_GLYPH = 23;
 
 export type PageAccent = 'brand' | 'vs' | 'friends' | 'leaderboard';
 
@@ -30,14 +34,15 @@ export const PAGE_TITLE_GRADIENTS: Record<PageAccent, string> = {
   leaderboard: 'linear-gradient(135deg, #f59e0b, #b45309)',
 };
 
+// A3 / WHITE_AUDIT lever 3: no bubble — the slot keeps its size so layouts
+// don't move, and `.hdr-glyph` gives the 44 px tap area + the icon squish.
 const circleStyle = (size: number): React.CSSProperties => ({
   width: size,
   height: size,
-  background: '#ffffff',
-  boxShadow: HEADER_SHADOW,
+  background: 'transparent',
 });
 
-const circleClass = 'shrink-0 rounded-full flex items-center justify-center transition-transform active:scale-95';
+const circleClass = 'hdr-glyph shrink-0 flex items-center justify-center';
 
 interface HeaderCircleProps {
   /** Accessible name (the circle's content is decorative). */
@@ -50,7 +55,7 @@ interface HeaderCircleProps {
   children: React.ReactNode;
 }
 
-/** A soft white icon circle (header actions, back/close). A link when given `href`. */
+/** A bare header icon slot (header actions, back/close; A3: no circle). A link when given `href`. */
 export function HeaderCircle({ label, onClick, href, size = 34, className = '', style, children }: HeaderCircleProps) {
   const s = { ...circleStyle(size), ...style };
   if (href) {
@@ -74,16 +79,15 @@ export interface HeaderNav {
 }
 
 /**
- * The back or close (X) control: a white circle. Back draws the 3D back arrow
- * (docs/ART_SPEC.md §5, ~1.2× the old chevron since the art fills its square);
- * close keeps the X in #6d28d9.
+ * The back or close (X) control, bare (A3). Back draws the 3D back arrow
+ * (docs/ART_SPEC.md §5) at 23 px; close keeps a chunky X in #6d28d9.
  */
 export function HeaderBack({ kind = 'back', href, onClick, label, size = 34, className = '' }: HeaderNav & { kind?: 'back' | 'close'; size?: number; className?: string }) {
   return (
     <HeaderCircle label={label ?? (kind === 'back' ? 'Back' : 'Close')} href={href} onClick={onClick} size={size} className={className}>
       {kind === 'back'
-        ? <Icon3D name="back" size={Math.round(size * 0.66)} />
-        : <X aria-hidden="true" style={{ width: Math.round(size * 0.47), height: Math.round(size * 0.47), color: HEADER_INK }} strokeWidth={3} />}
+        ? <Icon3D name="back" size={HEADER_GLYPH} />
+        : <X aria-hidden="true" style={{ width: 22, height: 22, color: HEADER_INK, filter: 'drop-shadow(0 2px 3px rgba(76, 29, 149, 0.2))' }} strokeWidth={3.4} />}
     </HeaderCircle>
   );
 }

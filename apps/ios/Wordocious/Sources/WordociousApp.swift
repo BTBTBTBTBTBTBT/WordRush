@@ -55,6 +55,9 @@ struct WordociousApp: App {
                 // Theme.* token re-reads the new palette.
                 .preferredColorScheme(themeManager.colorScheme)
                 .id(themeManager.theme)
+                // FINISH_SPEC §F2: the cold-start intro picks up from the static
+                // launch screen (cold start only; outside the theme rebuild).
+                .overlay { ColdStartIntroHost() }
                 .task {
                     // Utility-thread warm-up ~2 s in: Unlimited save sweep, puzzle banks, definitions.
                     AppWarmup.start()

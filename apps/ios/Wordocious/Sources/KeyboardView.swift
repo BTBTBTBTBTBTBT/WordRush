@@ -20,6 +20,24 @@ struct KeyboardView: View {
     /// close to the 3-row layouts so tight boards (OctoWord) don't squeeze.
     private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
 
+    /// FINISH_SPEC §B2: keys take their new colors only after the reveal lands,
+    /// so the reveal stays a surprise. The states shown (refreshed one row-reveal
+    /// after each committed guess; instantly on appear, a new stage, or Reduce Motion).
+    @State private var shownKeys: [String: TileState] = [:]
+    @State private var shownBoards: [[String: TileState]] = []
+    @State private var primed = false
+
+    /// Committed guesses across boards — changes whenever a row commits.
+    private var guessSignature: Int { vm.boards.reduce(0) { $0 + $1.guesses.count } }
+
+    private func refreshKeys() {
+        var keys: [String: TileState] = [:]
+        for r in rows { for l in r { if let st = vm.keyState(for: l) { keys[l] = st } } }
+        shownKeys = keys
+        shownBoards = vm.boardKeyStates()
+        primed = true
+    }
+
     var body: some View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
@@ -55,6 +73,14 @@ struct KeyboardView: View {
             }
         }
         .padding(.horizontal, 4)
+        .onAppear { refreshKeys() }
+        .onChange(of: guessSignature) { [old = guessSignature] new in
+            // A new stage / board reset (fewer guesses) or Reduce Motion: now.
+            if new < old || Theme.reduceMotion { refreshKeys(); return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + TileMotion.rowReveal(columns: vm.wordLength)) {
+                refreshKeys()
+            }
+        }
         // Physical keyboard (founder, 2026-09-30) — web parity with every word
         // board's keydown: Enter / Backspace / A–Z, same actions as the keys
         // above (the view model's guards apply). Live while this keyboard is.
@@ -81,37 +107,28 @@ struct KeyboardView: View {
     /// Decorative space bar (§213): reacts like a key, does nothing.
     private func spaceKey() -> some View {
         Button { Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
-            Text("space")
-                .font(Brand.font(12, .semibold))
-                .foregroundStyle(Color(hex: 0x8A86A0))
-                .frame(maxWidth: .infinity)
-                .frame(height: keyHeight)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+            KeyCap(state: nil, height: keyHeight) {
+                Text("space").font(Brand.font(12, .heavy))
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel("Space (decorative)")
     }
 
+    /// §B2: the key is a tile — a lilac lip under a light face with dark purple
+    /// letters, taking purple / gold / slate after a reveal.
     private func letterKey(_ letter: String) -> some View {
-        let state = vm.keyState(for: letter)
-        let bg = state.map { Theme.keyColor(for: $0) } ?? Theme.keyDefault
-        // Theme.keyInk, not Theme.textPrimary: the unstated key's background is
-        // the fixed brand lavender, so a themed foreground rendered near-white
-        // on near-white in Dark and the letters vanished.
-        let fg: Color = state == nil ? Theme.keyInk : .white
+        let state = primed ? shownKeys[letter] : vm.keyState(for: letter)
         return Button {
             vm.type(letter)
             Haptics.tap()
             SoundManager.shared.playKeyTap()
         } label: {
-            Text(letter)
-                .font(Brand.font(18, .bold))
-                .foregroundStyle(fg)
-                .frame(maxWidth: .infinity)
-                .frame(height: keyHeight)
-                .background(RoundedRectangle(cornerRadius: 6).fill(bg))
+            KeyCap(state: state, height: keyHeight) {
+                Text(letter).font(Brand.font(18, .black))
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel(letter)
         .accessibilityValue(state?.a11yName ?? "")
     }
@@ -120,7 +137,7 @@ struct KeyboardView: View {
     /// QuadrantKey: a grid of sub-cells, one per board, each colored by that
     /// board's state for this letter; all-absent collapses to solid gray.
     private func quadrantKey(_ letter: String) -> some View {
-        let boards = vm.boardKeyStates()
+        let boards = primed ? shownBoards : vm.boardKeyStates()
         let count = max(1, boards.count)
         let cols = count <= 4 ? 2 : 4
         let rowCount = Int(ceil(Double(count) / Double(cols)))
@@ -128,13 +145,13 @@ struct KeyboardView: View {
         let present = states.compactMap { $0 }
         let hasAny = !present.isEmpty
         let allAbsent = hasAny && present.allSatisfy { $0 == .absent }
-        let fg: Color = hasAny ? .white : Color(hex: 0x374151)
+        let fg: Color = hasAny ? .white : FinishInk.softNumber
         return Button {
             vm.type(letter); Haptics.tap(); SoundManager.shared.playKeyTap()
         } label: {
             ZStack {
                 if allAbsent {
-                    Color(hex: 0x9CA3AF)
+                    LinearGradient(colors: [TilePalette.slate.light, TilePalette.slate.base], startPoint: .top, endPoint: .bottom)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(0..<rowCount, id: \.self) { r in
@@ -147,14 +164,16 @@ struct KeyboardView: View {
                         }
                     }
                 }
-                Text(letter).font(Brand.font(18, .bold)).foregroundStyle(fg)
+                Text(letter).font(Brand.font(18, .black)).foregroundStyle(fg)
                     .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
             }
-            .frame(maxWidth: .infinity).frame(height: keyHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.border, lineWidth: 1.5))
+            .frame(maxWidth: .infinity).frame(height: keyHeight - 3)
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            // §B2: the key's lilac lip under the quadrant face.
+            .padding(.bottom, 3)
+            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color(hex: 0xCDB9F0)))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel(letter)
         .accessibilityValue(quadrantA11yValue(states))
     }
@@ -172,33 +191,28 @@ struct KeyboardView: View {
         // Theme.correct/present are colorblind-aware — web's [data-colorblind]
         // overrides recolor the quadrant mini-cells too (they use the same
         // bg-green-500/yellow-500 classes the board tiles use).
-        let c: Color
+        let c: AnyShapeStyle
         switch st {
-        case .correct: c = Theme.correct
-        case .present: c = Theme.present
-        case .absent: c = Theme.keyAbsent
-        default: c = Theme.keyDefault
+        case .correct: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.correct.light, TilePalette.correct.base], startPoint: .top, endPoint: .bottom))
+        case .present, .hintUsed: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.present.light, TilePalette.present.base], startPoint: .top, endPoint: .bottom))
+        case .absent: c = AnyShapeStyle(TilePalette.slate.base)
+        default: c = AnyShapeStyle(Color.white.opacity(0.92))
         }
-        return c.frame(maxWidth: .infinity, maxHeight: .infinity)
+        return Rectangle().fill(c).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// §B2: ENTER (12 pt label) and the chunky purple backspace, as key tiles.
     private func actionKey(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Group {
+            KeyCap(state: nil, height: keyHeight, width: 54) {
                 if label == "⌫" {
-                    // Web parity: lucide Delete icon at h-5 (20px) — the "⌫" text
-                    // glyph at 14pt read as a comically tiny key.
-                    Image(systemName: "delete.left")
-                        .font(.system(size: 20, weight: .semibold))
+                    DeleteKeyIcon(width: 30)
                 } else {
-                    Text(label).font(Brand.font(14, .heavy))
+                    Text(label).font(Brand.font(12, .black)).tracking(0.5)
                 }
             }
-            .foregroundStyle(Theme.keyInk) // fixed key surface -> fixed ink (see above)
-            .frame(width: 54, height: keyHeight)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeyPressStyle())
         .accessibilityLabel(label == "⌫" ? "Delete" : "Submit guess")
     }
 }

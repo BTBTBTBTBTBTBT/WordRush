@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.miniGameCard
+
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.pageCardShadow
 import com.wordocious.app.ui.Icon3DName
@@ -85,7 +87,17 @@ fun VsSectionLabel(text: String, modifier: Modifier = Modifier, color: Color = V
 /** White, radius 14, soft shadow (the page accent on a tinted page, ART_SPEC §11), no border. */
 fun Modifier.vsCard(radius: Dp = 14.dp): Modifier =
     this.pageCardShadow(radius) { shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95)) }
-        .clip(RoundedCornerShape(radius)).background(Color.White)
+        .clip(RoundedCornerShape(radius))
+        // FINISH_SPEC A1: the VS page's teal wash + a faint teal line instead of white
+        // (dark mode keeps the card it had).
+        .background(if (com.wordocious.app.ui.theme.WTheme.isDark) Color.White else com.wordocious.app.ui.Wash.mix(VS_CARD_ACCENT, com.wordocious.app.ui.Wash.CARD))
+        .then(
+            if (com.wordocious.app.ui.theme.WTheme.isDark) Modifier
+            else Modifier.border(1.5.dp, com.wordocious.app.ui.Wash.mix(VS_CARD_ACCENT, com.wordocious.app.ui.Wash.LINE), RoundedCornerShape(radius))
+        )
+
+/** A1 the VS page accent the cards wash with (#0d9488). */
+private val VS_CARD_ACCENT = Color(0xFF0D9488)
 
 @Composable
 fun VsCard(modifier: Modifier = Modifier, padding: Dp = 12.dp, content: @Composable ColumnScope.() -> Unit) {
@@ -158,7 +170,8 @@ fun VsModeTile(mode: GameMode, size: Dp, selected: Boolean = false, modifier: Mo
         modifier.size(size)
             .then(
                 if (selected) Modifier.shadow(6.dp, shape, ambientColor = accent.copy(alpha = 0.6f), spotColor = accent.copy(alpha = 0.6f)).clip(shape).background(accent)
-                else Modifier.clip(shape).background(Color.White),
+                // FINISH_SPEC A1: an unselected tile is a mini game card (tint, line, 4 dp top bar).
+                else Modifier.miniGameCard(accent, size * 0.26f),
             ),
         Alignment.Center,
     ) { ModeGlyph(mode, if (selected) Color.White else accent, size) }

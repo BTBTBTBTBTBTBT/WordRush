@@ -249,7 +249,8 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
                     onClick={() => { setModeId(m.id); setModeOpen(false); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-left"
                     style={{
-                      background: m.id === modeId ? `${m.color}0d` : '#ffffff',
+                      // A1: a soft wash of the mode's color, stronger when chosen (never plain white).
+                      background: `linear-gradient(${m.color}${m.id === modeId ? '24' : '12'}, ${m.color}${m.id === modeId ? '24' : '12'}), var(--color-card-base, #ffffff)`,
                       borderLeft: `4px solid ${m.color}`,
                     }}
                   >

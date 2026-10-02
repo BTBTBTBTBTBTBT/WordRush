@@ -51,6 +51,25 @@ private fun Modifier.gameCardSurface(bg: Color, border: Color?): Modifier {
         .then(if (border != null) Modifier.border(1.5.dp, border, shape) else Modifier)
 }
 
+/**
+ * FINISH_SPEC A1: a game card is never plain white — an untouched card takes a soft
+ * wash of its accent (13% over white) with a 1.5 dp accent line (32%); a completed
+ * daily a stronger wash (20%) and line (45%). Dark mode keeps the dark surface (and
+ * the completed card's faint accent tint).
+ */
+internal fun gameCardBg(accent: Color, done: Boolean): Color = when {
+    WTheme.isDark -> if (done) accent.copy(alpha = 0.06f) else WTheme.surface
+    done -> Wash.mix(accent, 0.20f)
+    else -> Wash.mix(accent, Wash.CARD)
+}
+
+internal fun gameCardBorder(accent: Color, done: Boolean, locked: Boolean): Color? = when {
+    locked -> Color(0xFFD1D5DB)
+    WTheme.isDark -> if (done) accent.copy(alpha = 0.4f) else null
+    done -> Wash.mix(accent, 0.45f)
+    else -> Wash.mix(accent, Wash.LINE)
+}
+
 /** The thick colored top band across a game card (the card's clip rounds its corners). */
 @Composable
 private fun GameCardBand(color: Color) {
@@ -79,12 +98,13 @@ internal fun GameCardFrame(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.fillMaxWidth()
+        // A9: the whole card squishes (the press leads the chain).
+        modifier.then(if (onClick != null) Modifier.squishClickable(onClick = onClick) else Modifier)
+            .fillMaxWidth()
             .gameCardSurface(
-                bg = if (done) accent.copy(alpha = 0.06f) else WTheme.surface,
-                border = if (done) accent.copy(alpha = 0.4f) else null,
-            )
-            .then(if (onClick != null) Modifier.clickableNoRipple(onClick) else Modifier),
+                bg = gameCardBg(accent, done),
+                border = gameCardBorder(accent, done, locked = false),
+            ),
     ) {
         GameCardBand(accent)
         Column(Modifier.fillMaxWidth().padding(MODE_CARD_PADDING), content = content)
@@ -120,10 +140,10 @@ internal fun ModeCardView(
     val isDone = completion != null || vsDone
     val doneWon = completion?.completed ?: (vsWon == true)
     // Completed daily: soft tint in the mode's accent + accent border (web parity).
-    // Locked (free user, played today): dimmed 60% + gray border. ART_SPEC §18.2: an
-    // untouched card is plain white (no border), as in the mockup.
-    val cardBg = if (isDone) card.accent.copy(alpha = 0.06f) else WTheme.surface
-    val cardBorder = if (isLocked) Color(0xFFD1D5DB) else if (isDone) card.accent.copy(alpha = 0.4f) else null
+    // Locked (free user, played today): dimmed 60% + gray border. FINISH_SPEC A1: an
+    // untouched card takes its accent's soft wash + line (never plain white).
+    val cardBg = gameCardBg(card.accent, isDone)
+    val cardBorder = gameCardBorder(card.accent, isDone, isLocked)
 
     // ART_SPEC §18.2 (the ChatGPT home mockup): a white rounded card (radius 18) under a
     // THICK 10 dp accent band (the card's clip rounds its top corners), then one row —
@@ -134,11 +154,12 @@ internal fun ModeCardView(
     // iOS parity.
     CappedFontScale {
     Box(
+        // A9: the whole card squishes (the press leads the chain).
         modifier = modifier
+            .squishClickable(onClick = onClick)
             .heightIn(min = MODE_CARD_MIN_HEIGHT)
             .gameCardSurface(cardBg, cardBorder)
-            .then(if (isLocked) Modifier.alpha(0.6f) else Modifier)
-            .clickableNoRipple(onClick),
+            .then(if (isLocked) Modifier.alpha(0.6f) else Modifier),
     ) {
         Column {
             // The thick accent band across the top.

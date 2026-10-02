@@ -33,6 +33,23 @@ for prev, cur in zip(shots, shots[1:]):
         # overlap in half — prev keeps the top half, cur supplies the bottom half.
         half = ov // 2
         canvas[canvas.shape[0] - (ov - half):] = cur[TOP + half: TOP + ov]
+        # The pane's round scroll arrow (dark, ~34 px, centered near x=400) sits over the image at a
+        # fixed screen spot, so it lands on different image rows in each shot. Wherever the merged
+        # overlap still shows a dark arrow-sized blob, take those rows from the other shot.
+        reg_top = canvas.shape[0] - ov
+        for y in range(reg_top, canvas.shape[0]):
+            row = canvas[y, 360:440]
+            if (row.max(axis=1) < 60).sum() > 18:            # dark run across the arrow column
+                src_prev = y - (canvas.shape[0] - (h - BOT)) - best_dy   # this canvas row in prev...
+                cy = y - offset                                        # ...and in cur
+                for cand in ((prev, src_prev + best_dy if False else None), ):
+                    pass
+                pr = prev[(y - (canvas.shape[0] - ov)) + TOP + best_dy] if 0 <= (y - (canvas.shape[0] - ov)) + TOP + best_dy < h else None
+                cr = cur[(y - (canvas.shape[0] - ov)) + TOP] if 0 <= (y - (canvas.shape[0] - ov)) + TOP < h else None
+                for cand in (pr, cr):
+                    if cand is not None and (cand[360:440].max(axis=1) < 60).sum() <= 18:
+                        canvas[y, 360:440] = cand[360:440]
+                        break
     canvas = np.concatenate([canvas, new_rows], axis=0)
     print('dy', best_dy, 'err', round(float(best), 2))
 Image.fromarray(canvas.clip(0, 255).astype('uint8')).save(out_path)

@@ -1,19 +1,12 @@
 'use client';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 
-import { useReducer, useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
+import { useReducer, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
-import {
-  gameReducer,
-  initializeGame,
-  GameMode,
-  GameStatus,
-  GAUNTLET_STAGES,
-  isValidWord,
-  evaluateGuess,
-  getDailySeedDate,
-} from '@wordle-duel/core';
+import { gameReducer, initializeGame, GameMode, GameStatus, isValidWord, evaluateGuess, getDailySeedDate } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
+import { useBoardFit } from '@/hooks/use-board-fit';
+import { REVEAL } from '@/lib/tile-motion';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import Link from 'next/link';
 import { GameHomeButton } from '@/components/game/game-home-button';
@@ -134,26 +127,13 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // keyboard and hand the Board exact pixels that fit BOTH dimensions.
   // Deps include isSingleBoard so the observer re-attaches when a Classic
   // stage begins (the ref's div only exists during one).
+  // FINISH_SPEC B5: single-board stages size through the shared rule (hooks/use-board-fit.ts).
   const classicAreaRef = useRef<HTMLDivElement>(null);
-  const [classicSize, setClassicSize] = useState<{ w: number; h: number } | null>(null);
   const classicBoard = isSingleBoard ? state.boards[state.currentBoardIndex] : undefined;
   const classicCols = classicBoard?.solution.length ?? 5;
   const classicRows = classicBoard?.maxGuesses ?? 6;
-  useLayoutEffect(() => {
-    const el = classicAreaRef.current;
-    if (!el || !isSingleBoard) return;
-    const fit = () => {
-      const r = el.getBoundingClientRect();
-      const availW = Math.min(400, Math.max(0, r.width - 8));
-      const availH = Math.max(0, r.height - 8);
-      const w = Math.min(availW, (availH * classicCols) / classicRows);
-      if (w > 40) setClassicSize({ w, h: (w * classicRows) / classicCols });
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isSingleBoard, classicCols, classicRows, gauntlet.currentStage]);
+  const classicFit = useBoardFit(classicAreaRef, { cols: classicCols, rows: classicRows, vPad: 8 }, `${isSingleBoard}:${gauntlet.currentStage}`);
+  const classicSize = classicFit ? { w: classicFit.w, h: classicFit.h } : null;
 
   // For sequence stages, track the active board (first unsolved in order)
   const sequenceActiveBoardIndex = useMemo(() => {
@@ -476,6 +456,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         <div ref={classicAreaRef} className="flex flex-col items-center gap-1 w-full h-full justify-center">
           <Board
             sizePx={classicSize ?? undefined}
+            gap={classicFit?.gap}
             guesses={board.guesses}
             currentGuess={currentGuess}
             maxGuesses={board.maxGuesses}
@@ -543,7 +524,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             the Gauntlet mode card again. */}
         <GameHomeButton accentColor="#d97706" positionClass="absolute top-1 left-2 z-10" />
         <GameGuideButton slug="gauntlet" accentColor="#d97706" positionClass="absolute top-1 right-2 z-10" />
-        <SoundToggle accentColor="#d97706" positionClass="absolute top-1 right-2 z-10" />
+        <SoundToggle accentColor="#d97706" positionClass="absolute top-1 right-[52px] z-10" />
         <GauntletProgress
           stages={gauntlet.stages}
           currentStage={gauntlet.currentStage}
@@ -596,6 +577,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             onKey={handleKey}
             letterStates={letterStates}
             boardLetterStates={boardLetterStates}
+            revealDelayMs={REVEAL.end(5)}
           />
         </div>
       )}

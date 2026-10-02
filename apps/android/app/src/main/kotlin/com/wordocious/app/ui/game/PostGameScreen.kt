@@ -45,6 +45,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -198,7 +201,9 @@ fun PostGameScreen(
     Box(modifier = Modifier.fillMaxSize().gameBackground { appBackground() }.statusBarsPadding()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp).padding(top = 12.dp, bottom = 24.dp),
+                .padding(horizontal = 12.dp)
+                // B6: the controls row overlays the top; the title art (non-PN) clears it itself.
+                .padding(top = if (mode == GameMode.PROPERNOUNDLE) 12.dp else 0.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -249,12 +254,26 @@ fun PostGameScreen(
                     }
                 }
             } else {
-                FinishedStatsHeader(
-                    mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
+                // B6 / B4: the game's title art under the controls row, then the result line.
+                com.wordocious.app.ui.HostedGameTitle(mode.name) {
+                    Text(
+                        modeTitle(mode), fontSize = 28.sp, fontWeight = FontWeight.Black,
+                        style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito),
+                        modifier = Modifier.padding(top = com.wordocious.app.ui.GAME_CORNER_ROW),
+                    )
+                }
+                FinishedResultLine(
+                    won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
                     timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
-                    onHome = onBack, onShare = onSharePressed,
-                    onPlayAgain = playAgain,
+                    onShare = onSharePressed,
                 )
+                if (playAgain != null) {
+                    com.wordocious.app.ui.CandyButton(
+                        if (won) "Play again" else "Try again", onClick = playAgain,
+                        color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                        icon = com.wordocious.app.ui.CandyIcon.PLAY,
+                    )
+                }
                 // Daily-only, like iOS GameScreen (`if vm.isDaily`) — an Unlimited
                 // game's result has nothing to do with today's leaderboard.
                 // (ProperNoundle's badge sits under its action row instead, below.)
@@ -282,6 +301,7 @@ fun PostGameScreen(
                     SingleBoard(
                         board = board, currentGuess = "",
                         modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                        animateLastRow = false,
                         // The in-play board splits a multi-word ProperNoundle answer
                         // on its word boundaries (iOS NoundleBoard); omitting the
                         // groups here made the SAME answer collapse into one flat
@@ -356,16 +376,15 @@ fun PostGameScreen(
                 day = seed?.let { com.wordocious.core.getDailySeedDate(it) },
             )
 
-            // U3: next-daily handoff — DAILY games only (seed == today's daily
-            // seed for this mode; unlimited seeds are "unlimited-…" and VS has
-            // its own screen). Keeps the 9-mode daily loop moving.
-            if (onOpenDaily != null && seed == com.wordocious.app.todayLocalSeed(mode.name)) {
-                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
+            // B6: today's word on its green card (single-board modes; "No definition" fallback).
+            if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
+                DefinitionCard(solution, showTiles = true)
             }
 
-            // Single-board modes: word definition (with "No definition" fallback).
-            if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
-                DefinitionCard(solution)
+            // U3 / B6: the CTAs — next daily (gold), this game's leaderboard (purple), keep
+            // playing Unlimited (soft) — DAILY games only (seed == today's daily seed).
+            if (onOpenDaily != null && seed == com.wordocious.app.todayLocalSeed(mode.name)) {
+                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
             }
         }
 
@@ -385,7 +404,7 @@ private fun androidx.compose.foundation.layout.BoxScope.PostGameHelpButton(mode:
     CornerHelpButton(
         accent = accent,
         onClick = { showGuide = true },
-        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+        modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET),
     )
     if (showGuide) GuideSheet(mode = mode, onDismiss = { showGuide = false })
 }
@@ -393,7 +412,7 @@ private fun androidx.compose.foundation.layout.BoxScope.PostGameHelpButton(mode:
 /** Corner Home button (top-left) — the in-game one, inset 8 dp. */
 @Composable
 internal fun CornerHomeButton(accent: Color, onBack: () -> Unit) {
-    CornerHomeButton(accent, onClick = onBack, modifier = Modifier.padding(8.dp))
+    CornerHomeButton(accent, onClick = onBack, modifier = Modifier.padding(GAME_CONTROLS_INSET))
 }
 
 /**
@@ -468,22 +487,20 @@ private fun GauntletResultsScreen(
                     modifier = Modifier.riseIn(appeared, 150),
                 )
             }
+            // B6: no "Home" text link (the house in the controls row goes home); Share is the
+            // 3D share icon; Play Again a candy button (A8).
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.riseIn(appeared, 250),
             ) {
-                Text(
-                    "Home", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onHome),
-                )
-                Text(
-                    "Share", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6),
-                    textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onShare),
-                )
+                @Suppress("UNUSED_VARIABLE") val home = onHome
+                com.wordocious.app.ui.SoftControl(com.wordocious.app.ui.Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp)
                 if (onPlayAgain != null) {
-                    Text(
-                        "Play Again", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA855F7),
-                        textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onPlayAgain),
+                    com.wordocious.app.ui.CandyButton(
+                        "Play again", onClick = onPlayAgain,
+                        color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                        icon = com.wordocious.app.ui.CandyIcon.PLAY,
                     )
                 }
             }
@@ -551,9 +568,12 @@ private fun GauntletStatCard(
     icon: Any, color: Color,
     value: String, label: String, modifier: Modifier = Modifier,
 ) {
+    // A1 / A2: a tinted stat tile in its own color with a top bar and a soft number.
     Column(
-        modifier = modifier.clip(RoundedCornerShape(14.dp)).background(WTheme.surfaceHover)
-            .border(1.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(vertical = 14.dp),
+        modifier = modifier.clip(RoundedCornerShape(14.dp))
+            .background(com.wordocious.app.ui.accentWash(color, 0.12f))
+            .drawWithContent { drawContent(); drawRect(color, size = androidx.compose.ui.geometry.Size(size.width, 4.dp.toPx())) }
+            .border(1.5.dp, com.wordocious.app.ui.accentLine(color, 0.30f), RoundedCornerShape(14.dp)).padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -561,7 +581,7 @@ private fun GauntletStatCard(
             is com.wordocious.app.ui.Icon3DName -> com.wordocious.app.ui.Icon3D(icon, 22.dp)
             is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
         }
-        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+        com.wordocious.app.ui.SoftNumber(value, 22.sp)
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }
@@ -584,105 +604,87 @@ private fun pnTime(s: Int): String = if (s >= 60) "%d:%02d".format(s / 60, s % 6
  * generic underlined text links every other mode uses.
  */
 @Composable
-private fun PnResultActions(onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)?) {
-    val pnAccent = Color(0xFFDC2626)
+private fun PnResultActions(@Suppress("UNUSED_PARAMETER") onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)?) {
+    // B6 / A8: no text links — the 3D share icon and a candy Play Again (the house in
+    // the controls row goes home).
     Row(
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(top = 2.dp),
     ) {
-        PnAction(Icons.Filled.Home, "Home", pnAccent, onHome)
-        PnAction(Icons.Filled.Share, "Share", pnAccent, onShare)
-        // Amber, matching every other mode's Play Again.
-        onPlayAgain?.let { PnAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706), it) }
-    }
-}
-
-@Composable
-private fun PnAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    tint: Color,
-    onClick: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.clickableNoRipple(onClick),
-    ) {
-        // ART_SPEC §5: the result card's Share wears the 3D share icon (~1.2× the old glyph).
-        if (icon == Icons.Filled.Share) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.SHARE, 17.dp)
-        else Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
+        com.wordocious.app.ui.SoftControl(com.wordocious.app.ui.Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp)
+        onPlayAgain?.let {
+            com.wordocious.app.ui.CandyButton(
+                "Play again", onClick = it,
+                color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                icon = com.wordocious.app.ui.CandyIcon.PLAY,
+            )
+        }
     }
 }
 
 /**
- * Finished-game header (ports iOS FinishedStatsHeader): gradient mode title,
- * stat row (trophy+boards / guesses / clock+time), green/red summary line,
- * underlined Home / Share text links.
+ * FINISH_SPEC B6 the finished game's result line: tinted pills with 3D icons and soft
+ * numbers — guesses (purple), time (blue), plus boards solved (gold) on multi-board
+ * games — and the 3D share icon (no "Home" / "Share" text links: the house in the
+ * controls row goes home). A loss adds one short line under it.
  */
 @Composable
-private fun FinishedStatsHeader(
-    mode: GameMode, won: Boolean, guessCount: Int, maxGuesses: Int,
+private fun FinishedResultLine(
+    won: Boolean, guessCount: Int, maxGuesses: Int,
     timeSeconds: Int, boardsSolved: Int, totalBoards: Int,
-    onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)? = null,
+    onShare: () -> Unit,
 ) {
     val isMulti = totalBoards > 1
-    val timeStr = clock(timeSeconds)
-    val summary = when {
-        won && isMulti -> "All $totalBoards solved in $guessCount guesses  ·  $timeStr"
-        won -> "Solved in $guessCount guesses  ·  $timeStr"
-        isMulti -> "$boardsSolved/$totalBoards solved  ·  $timeStr"
-        else -> "Out of guesses  ·  $timeStr"
-    }
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            modeTitle(mode), fontSize = 28.sp, fontWeight = FontWeight.Black,
-            style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (isMulti) StatItem(com.wordocious.app.ui.Icon3DName.TROPHY, Color(0xFFD97706), "$boardsSolved/$totalBoards")
-            Text(
-                if (maxGuesses > 0) "$guessCount/$maxGuesses guesses" else "$guessCount guesses",
-                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-            )
-            StatItem(Icons.Filled.Schedule, Color(0xFF60A5FA), timeStr)
-        }
-        Text(
-            summary, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-            color = if (won) Color(0xFF7C3AED) else Color(0xFFF87171), textAlign = TextAlign.Center,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(
-                "Home", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onHome),
-            )
-            Text(
-                "Share", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6),
-                textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onShare),
-            )
-            // Pro Unlimited only (web: amber "Play Again" on non-daily games).
-            if (onPlayAgain != null) {
-                Text(
-                    if (won) "Play Again" else "Try Again",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706),
-                    textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onPlayAgain),
-                )
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        ) {
+            if (isMulti) {
+                ResultPill(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, "$boardsSolved/$totalBoards", "boards", Color(0xFFF5A524))
             }
+            ResultPill(
+                com.wordocious.app.ui.Icon3DName.CROWN,
+                if (won || maxGuesses <= 0) "$guessCount" else "$guessCount/$maxGuesses",
+                if (guessCount == 1) "guess" else "guesses", Color(0xFF7C3AED),
+            )
+            ResultPill(com.wordocious.app.ui.Icon3DName.TROPHY, clock(timeSeconds), "time", Color(0xFF2563EB))
+            com.wordocious.app.ui.SoftControl(
+                com.wordocious.app.ui.Icon3DName.SHARE, "Share", onClick = onShare, iconSize = 32.dp,
+            )
+        }
+        if (!won) {
+            Text(
+                if (isMulti) "$boardsSolved of $totalBoards solved" else "Out of guesses",
+                fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFE0526B), textAlign = TextAlign.Center,
+            )
         }
     }
 }
 
+/** B6 a result pill: the accent's wash + line, a 4 dp accent bar, a 3D icon, a soft number and its label. */
 @Composable
-private fun StatItem(icon: Any, color: Color, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        when (icon) {
-            is com.wordocious.app.ui.Icon3DName -> com.wordocious.app.ui.Icon3D(icon, 15.dp)
-            is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = color, modifier = Modifier.size(12.dp))
-        }
-        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+internal fun ResultPill(icon: com.wordocious.app.ui.Icon3DName, value: String, label: String, accent: Color) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier
+            .shadow(3.dp, shape, clip = false, ambientColor = Color(0x1A4C1D95), spotColor = Color(0x1A4C1D95))
+            .clip(shape)
+            .background(com.wordocious.app.ui.accentWash(accent, 0.12f))
+            .drawWithContent {
+                drawContent()
+                drawRect(accent, size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx()))
+            }
+            .border(1.5.dp, com.wordocious.app.ui.accentLine(accent, 0.30f), shape)
+            .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
+            .semantics(mergeDescendants = true) { contentDescription = "$value $label" },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        com.wordocious.app.ui.Icon3D(icon, 24.dp)
+        com.wordocious.app.ui.SoftNumber(value, 17.sp)
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.textMuted else Color(0xFF6F5F8F))
     }
 }
 
@@ -707,12 +709,14 @@ internal fun DailyRankBadge(mode: GameMode) {
     val badge = com.wordocious.app.ui.topPercentLabel(position, total)
     val gold = badge.gold
 
+    // A1: a tinted pill (gold at the top quarter, lavender otherwise), never white.
+    val tone = if (gold) Color(0xFFF5A524) else Color(0xFF7C3AED)
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(if (gold) Color(0xFFFEF3C7) else WTheme.surfaceHover)
-            .border(1.dp, if (gold) Color(0xFFFDE68A) else WTheme.border, RoundedCornerShape(50))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .background(com.wordocious.app.ui.accentWash(tone, 0.14f))
+            .border(1.dp, com.wordocious.app.ui.accentLine(tone, 0.32f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 13.dp, alpha = if (gold) 1f else 0.6f, colorFilter = if (gold) null else com.wordocious.app.ui.Icon3DMuted)
@@ -741,18 +745,31 @@ internal fun ScoreBreakdownCard(
     val guessesLeft = max(0, b.maxGuesses - guessCount)
     val timeUnder = max(0, b.timeCap - elapsedSeconds)
 
-    Column(
-        // iOS caps the card at 400pt so tablet/landscape doesn't stretch the rows.
-        modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp))
-            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+    // FINISH_SPEC B6: the score breakdown on a lavender card with a purple top bar,
+    // dashed dividers, purple values and a big soft total. iOS caps it at 400 pt.
+    com.wordocious.app.ui.TintedCard(
+        accent = Color(0xFF7C3AED),
+        modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth(),
+        tint = if (WTheme.isDark) WTheme.surface else com.wordocious.app.ui.FinishInk.lavender,
+        line = if (WTheme.isDark) WTheme.border else com.wordocious.app.ui.FinishInk.lavenderLine,
+        bar = Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFA855F7))),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("SCORE BREAKDOWN", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-            Text("${b.total.toInt()} pts", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text("SCORE BREAKDOWN", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.textMuted else Color(0xFF5B3C96), letterSpacing = 1.3.sp)
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "${b.total.toInt()} points" }) {
+                com.wordocious.app.ui.SoftNumber("%,d".format(b.total.toInt()), 30.sp)
+                Text("PTS", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9), letterSpacing = 1.2.sp, modifier = Modifier.padding(bottom = 3.dp))
+            }
         }
-        ScoreRow(if (won) "Win bonus" else "Did not finish", if (won) "" else "no win bonus", b.basePoints)
+        var first = true
+        @Composable
+        fun row(label: String, detail: String, value: Double, pure: Boolean = false) {
+            ScoreRow(label, detail, value, pure, divider = !first)
+            first = false
+        }
+        row(if (won) "Win bonus" else "Did not finish", if (won) "" else "no win bonus", b.basePoints)
         // The row reads through the mode's guess semantics (More Games §11):
         // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
         val bonusLabel = when (com.wordocious.app.ModeGen.byDbKey(mode.name)?.guessSemantics) {
@@ -763,8 +780,8 @@ internal fun ScoreBreakdownCard(
             "rank" -> "Rank bonus"
             else -> "Guess bonus"
         }
-        if (won && b.guessBonusApplies) ScoreRow(bonusLabel, "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
-        if (won) ScoreRow("Speed bonus", if (elapsedSeconds > b.timeCap) "${fmtSecs(elapsedSeconds - b.timeCap)} over ${fmtSecs(b.timeCap)}" else "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
+        if (won && b.guessBonusApplies) row(bonusLabel, "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
+        if (won) row("Speed bonus", if (elapsedSeconds > b.timeCap) "${fmtSecs(elapsedSeconds - b.timeCap)} over ${fmtSecs(b.timeCap)}" else "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
         if (b.completionBonus > 0) {
             val (compLabel, compDetail) = when {
                 won -> "Completion bonus" to (if (totalBoards > 1) "$boardsSolved/$totalBoards boards" else "puzzle solved")
@@ -775,26 +792,41 @@ internal fun ScoreBreakdownCard(
                 }
                 else -> "Completion bonus" to "$boardsSolved/$totalBoards boards"
             }
-            ScoreRow(compLabel, compDetail, b.completionBonus)
+            row(compLabel, compDetail, b.completionBonus)
         }
         if (b.hasHints) {
             val detail = if (hintsUsed > 0) "$hintsUsed hint${if (hintsUsed == 1) "" else "s"} × ${b.hintCost}" else "no hints — full credit"
-            ScoreRow("Hint penalty", detail, -b.hintPenalty, pure = won && hintsUsed == 0)
+            row("Hint penalty", detail, -b.hintPenalty, pure = won && hintsUsed == 0)
         }
     }
 }
 
+/** B6 a breakdown row: a dashed divider above, the label (+ small detail) and the purple value. */
 @Composable
-private fun ScoreRow(label: String, detail: String, value: Double, pure: Boolean = false) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+private fun ScoreRow(label: String, detail: String, value: Double, pure: Boolean = false, divider: Boolean = true) {
+    val dash = Color(0x2E7C3AED)
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .drawWithContent {
+                if (divider) drawLine(
+                    dash, androidx.compose.ui.geometry.Offset(0f, 0f), androidx.compose.ui.geometry.Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())),
+                )
+                drawContent()
+            }
+            .padding(vertical = 6.dp, horizontal = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f, fill = false)) {
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (pure) Color(0xFF7C3AED) else WTheme.text)
-            if (detail.isNotEmpty()) Text(detail, fontSize = 10.sp, color = WTheme.textMuted, maxLines = 1)
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (pure) Color(0xFF7C3AED) else if (WTheme.isDark) WTheme.text else Color(0xFF2A1650))
+            if (detail.isNotEmpty()) Text(detail, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (WTheme.isDark) WTheme.textMuted else Color(0xFF7A6A95), maxLines = 1)
         }
         val sign = if (value > 0) "+" else if (value < 0) "−" else ""
         Text(
-            "$sign${abs(value).toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black,
-            color = if (value > 0) WTheme.text else if (value < 0) Color(0xFFDC2626) else WTheme.textMuted,
+            "$sign${"%,d".format(abs(value).toInt())}", fontSize = 15.sp, fontWeight = FontWeight.Black,
+            style = TextStyle(fontFeatureSettings = "tnum", fontFamily = Nunito),
+            color = if (value > 0) Color(0xFF6D28D9) else if (value < 0) Color(0xFFDC2626) else WTheme.textMuted,
         )
     }
 }
@@ -855,122 +887,143 @@ internal fun NextDailyRow(
     // every gap); render nothing rather than a wrong claim if state is mid-flight.
     if (next == null && !allDone) return
 
-    // iOS renders a compact accent-tinted CAPSULE (two-tone label + arrow glyph),
-    // not a full-width neutral card.
+    // FINISH_SPEC B6 / A8: the CTAs are glossy candy buttons with icons — gold (amber)
+    // next daily, purple leaderboard, soft (peach) Unlimited — squishing on press.
     Column(
+        Modifier.widthIn(max = 440.dp).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (next != null) {
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(50))
-                    .background(next.accent.copy(alpha = 0.08f))
-                    .border(1.5.dp, next.accent.copy(alpha = 0.5f), RoundedCornerShape(50))
-                    .then(
-                        if (next.engineMode != null) Modifier.clickableNoRipple { onOpenDaily(next.engineMode) }
-                        else Modifier
-                    )
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Next Daily:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                Text(next.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = next.accent)
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = next.accent, modifier = Modifier.size(11.dp))
+            if (next.engineMode != null) {
+                com.wordocious.app.ui.CandyButton(
+                    "Next daily: ${next.title}",
+                    onClick = { onOpenDaily(next.engineMode) },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = com.wordocious.app.ui.CandyColor.AMBER,
+                    fill = true, fontSize = 16.sp, trailing = "›",
+                    leading = { CtaGameIcon(next.id) },
+                )
             }
         } else {
-            Text(
-                "All $sweepTotal dailies done — Sweep complete! 🏆",
-                fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
-                modifier = Modifier.padding(vertical = 4.dp),
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 20.dp)
+                Text(
+                    "All $sweepTotal dailies done. Sweep complete!",
+                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                )
+            }
+        }
+
+        // §214 (Lindsay): straight from the finish line to the scoreboard — this
+        // mode's daily board.
+        if (onOpenLeaderboard != null) {
+            val lbTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
+                ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
+            com.wordocious.app.ui.CandyButton(
+                "$lbTitle Leaderboard",
+                onClick = { onOpenLeaderboard(currentMode) },
+                modifier = Modifier.fillMaxWidth(),
+                color = com.wordocious.app.ui.CandyColor.PURPLE,
+                fill = true, fontSize = 16.sp, trailing = "›",
+                leading = { com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 26.dp) },
             )
         }
 
-        // §214 (Lindsay): straight from the finish line to the scoreboard — a
-        // capsule in the mode's accent that lands on this mode's daily board.
-        if (onOpenLeaderboard != null) {
-            val lbAccent = com.wordocious.app.ui.modeAccent(currentMode)
-            val lbTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
-                ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(50))
-                    .background(lbAccent.copy(alpha = 0.08f))
-                    .border(1.5.dp, lbAccent.copy(alpha = 0.5f), RoundedCornerShape(50))
-                    .clickableNoRipple { onOpenLeaderboard(currentMode) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 16.dp)
-                Text("View $lbTitle Leaderboard", fontSize = 12.sp, fontWeight = FontWeight.Black, color = lbAccent)
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = lbAccent, modifier = Modifier.size(11.dp))
-            }
-        }
-
-        // "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited
-        // game of the SAME mode the player just finished (tester-reported dead
-        // end: after the daily — especially a completed sweep — Pro players had
-        // no visible path to keep playing; the home Daily/Unlimited toggle went
-        // undiscovered). Same capsule chrome, in the CURRENT mode's accent.
+        // "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited game of
+        // the SAME mode the player just finished (tester-reported dead end after the
+        // daily sweep).
         if (onOpenUnlimited != null && AuthService.isProActive) {
-            val accent = com.wordocious.app.ui.modeAccent(currentMode)
             // Full mode name per founder ("Unlimited Succession", not "Succ.").
             val fullTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
                 ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(50))
-                    .background(accent.copy(alpha = 0.08f))
-                    .border(1.5.dp, accent.copy(alpha = 0.5f), RoundedCornerShape(50))
-                    .clickableNoRipple { onOpenUnlimited(currentMode) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Keep playing:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                Text("Unlimited $fullTitle", fontSize = 12.sp, fontWeight = FontWeight.Black, color = accent)
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = accent, modifier = Modifier.size(11.dp))
-            }
+            com.wordocious.app.ui.CandyButton(
+                "Keep playing: Unlimited $fullTitle",
+                onClick = { onOpenUnlimited(currentMode) },
+                modifier = Modifier.fillMaxWidth(),
+                color = com.wordocious.app.ui.CandyColor.PEACH,
+                fill = true, fontSize = 15.sp, trailing = "›",
+                leading = { CtaGameIcon(com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.id) },
+            )
         }
     }
 }
 
+/** A CTA's leading game icon (the glossy 3D game art), decorative. */
+@Composable
+private fun CtaGameIcon(modeId: String?) {
+    val art = com.wordocious.app.ui.gameArtRes(modeId)
+    if (art != null) {
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(art), contentDescription = null, modifier = Modifier.size(28.dp),
+        )
+    } else {
+        com.wordocious.app.ui.CandyGlyph(com.wordocious.app.ui.CandyIcon.ARROW, 20.dp)
+    }
+}
+
 /**
- * Dictionary definition card (ports iOS DefinitionCard). Always populates once
- * loaded — shows "No definition available for this word." rather than a blank
- * gap when the dictionary has no entry.
+ * FINISH_SPEC B6 today's word: the word spelled in purple tiles ([showTiles]) on a
+ * soft green card with a green top bar, a green part-of-speech chip and the
+ * definition (ports iOS DefinitionCard). Always populates once loaded — "No
+ * definition available for this word." rather than a blank gap.
  */
 @Composable
-internal fun DefinitionCard(word: String) {
+internal fun DefinitionCard(word: String, showTiles: Boolean = false) {
     var loaded by remember(word) { mutableStateOf(false) }
     val def by produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(initialValue = null, key1 = word) {
         value = com.wordocious.app.data.DefinitionService.fetch(word)
         loaded = true
     }
     if (!loaded) return
-
-    Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+    val green = Color(0xFF22A866)
+    val dark = WTheme.isDark
+    com.wordocious.app.ui.TintedCard(
+        accent = green,
+        modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth(),
+        tint = if (dark) WTheme.surface else Color(0xFFECFAF2),
+        line = if (dark) WTheme.border else Color(0xFFC9EFDA),
+        bar = Brush.horizontalGradient(listOf(green, Color(0xFF5ED59A))),
     ) {
+        Text(
+            "TODAY'S WORD", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.3.sp,
+            color = if (dark) Color(0xFF5ED59A) else Color(0xFF137A3D),
+        )
+        if (showTiles && word.isNotBlank()) {
+            Row(
+                Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = word },
+                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+            ) {
+                val tile = if (word.length > 8) 28.dp else 34.dp
+                word.forEach { ch ->
+                    GameTileFace(ch.toString(), TileFace.CORRECT, Modifier.size(tile))
+                }
+            }
+        }
         val d = def
         if (d != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (d.phonetic.isNotBlank()) Text(d.phonetic, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
                 if (d.partOfSpeech.isNotBlank()) {
+                    // The green part-of-speech chip with its little lip (0 2 0 #157a48).
                     Text(
-                        d.partOfSpeech.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-                        color = Color(0xFFA78BFA),
-                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(WTheme.border).padding(horizontal = 6.dp, vertical = 2.dp),
+                        d.partOfSpeech.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.1.sp,
+                        color = Color.White,
+                        modifier = Modifier
+                            .drawWithContent {
+                                drawRoundRect(Color(0xFF157A48), topLeft = androidx.compose.ui.geometry.Offset(0f, 2.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2))
+                                drawRoundRect(Brush.verticalGradient(listOf(Color(0xFF5ED59A), green)), cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2))
+                                drawContent()
+                            }
+                            .padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
+                if (d.phonetic.isNotBlank()) Text(d.phonetic, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
             }
             if (d.definition.isNotBlank()) {
-                Spacer(Modifier.height(6.dp))
-                // Themed, not a fixed #4A4A6A slate: on the Dark card that was
-                // 2.02:1 and the definition read as a rendering fault next to
-                // the muted lines beside it.
-                Text(d.definition, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary)
+                Text(
+                    d.definition, fontSize = 14.sp, fontWeight = FontWeight.Bold, lineHeight = 20.sp,
+                    color = if (dark) WTheme.textSecondary else Color(0xFF4B3D66),
+                )
             }
         } else {
             Text(

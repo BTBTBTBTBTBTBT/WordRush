@@ -84,7 +84,7 @@ struct CompletedDailyCard: View {
                         }
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .contentShape(Rectangle())   // whole header tappable
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
 
                     if expanded {
                         if mode == .gauntlet, let g = gauntlet {

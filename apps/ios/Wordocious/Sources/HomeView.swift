@@ -287,11 +287,9 @@ struct HomeView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 4)
-                        // Generous bottom clearance so the last items (Sign Out /
-                        // footer) always sit above the custom bottom nav and stay
-                        // tappable, regardless of safe-area-inset propagation.
-                        // Adds the ad banner height too when it's mounted (free).
-                        .padding(.bottom, 72)
+                        // FINISH_SPEC §A4: the docked tab bar insets the page, so
+                        // the content ends right above it (a small breathing gap).
+                        .padding(.bottom, 20)
                     }
                     // Anything that used to open the More Games sheet scrolls here instead.
                     .onReceive(DeepLink.shared.$puzzlesRequest) { req in
@@ -598,10 +596,10 @@ struct HomeView: View {
                         .padding(.horizontal, 14).padding(.vertical, 7)
                         .background(Capsule().fill(accent))
                         .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                     NavigationLink { HowToPlayView() } label: {
                         Text("How to play").font(Brand.font(11, .bold)).foregroundStyle(Theme.primary).underline()
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.squish)
                 }
                 .padding(.top, 8)
             }
@@ -609,7 +607,7 @@ struct HomeView: View {
             Button { firstGameCardDismissed = true } label: {
                 Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
                     .frame(width: 26, height: 26).contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
@@ -652,10 +650,10 @@ struct HomeView: View {
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(RoundedRectangle(cornerRadius: 8).fill(
                         LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
             Button { dismissProPrompt() } label: {
                 Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.squish)
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -729,7 +727,7 @@ struct HomeView: View {
                     Text("Play").font(Brand.font(12, .black)).foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0xEC4899)))
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
                 Button {
                     let id = top.id
                     pendingInvites.removeAll { $0.id == id }
@@ -738,7 +736,7 @@ struct HomeView: View {
                     Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0xA21CAF))
                         .frame(width: 28, height: 28)
                         .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Color(hex: 0xF5D0FE), lineWidth: 1.5))
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 14).fill(
@@ -754,7 +752,7 @@ struct HomeView: View {
             Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
     }
@@ -792,7 +790,7 @@ struct HomeView: View {
     /// the banner tiles and the widget's deep links take.
     private func card(_ mode: HomeMode) -> some View {
         Button { open(mode) } label: { cardBody(mode, locked: isLocked(mode)) }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
     }
 
     /// A daily this user has already finished (in Daily mode). Revisiting it
@@ -935,7 +933,7 @@ struct ModeLimitModal: View {
                     .background(RoundedRectangle(cornerRadius: 12)
                         .fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 4))
-                }.buttonStyle(.plain).padding(.bottom, 12)
+                }.buttonStyle(.squish).padding(.bottom, 12)
 
                 // Web parity: only show "View Solved Puzzle" when there IS a solved
                 // puzzle to review (VS has none) — otherwise a muted dismiss.

@@ -91,7 +91,8 @@ fun StreakShieldModal(
                 .graphicsLayer { scaleX = 0.9f + 0.1f * appear; scaleY = 0.9f + 0.1f * appear; alpha = appear }
                 .shadow(24.dp, cardShape, ambientColor = Color(0x404C1D95), spotColor = Color(0x404C1D95))
                 .clip(cardShape)
-                .background(Color.White)
+                // FINISH_SPEC A1: the lavender card, not white.
+                .background(accentWash(Color(0xFF7C3AED), 0.08f))
                 .clickableNoRipple { },
         ) {
             if (saved) {

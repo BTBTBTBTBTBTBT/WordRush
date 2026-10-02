@@ -101,7 +101,7 @@ struct GauntletCompletedView: View {
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(won ? greenBorder : redBorder, lineWidth: 1))
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squish)
             .disabled(!hasBoards)
 
             if isExpanded, let boards = result.boardsSnapshot, !boards.isEmpty {
@@ -278,7 +278,7 @@ struct GauntletResultsView: View {
     private func statCard(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {
         VStack(spacing: 4) {
             SymbolGlyph(icon, size: 18, color: color)
-            Text(value).font(Brand.font(22, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
+            Text(value).softNumber(22).lineLimit(1).minimumScaleFactor(0.6)
             Text(label).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 14)

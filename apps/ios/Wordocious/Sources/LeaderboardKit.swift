@@ -86,7 +86,7 @@ struct LbShareButton: View {
             Icon3D(.share, size: 18)
                 .frame(width: 30, height: 30).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .opacity(busy ? 0.4 : 1)
         .accessibilityLabel(label)
     }

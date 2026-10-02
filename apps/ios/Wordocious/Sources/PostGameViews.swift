@@ -76,43 +76,66 @@ struct FinishedStatsHeader: View {
     private var isMulti: Bool { totalBoards > 1 }
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .soloGameTitle(mode, fallbackInset: 52)
 
-            HStack(spacing: 12) {
-                if isMulti {
-                    statItem(icon: "trophy.fill", color: Color(hex: 0xD97706), text: "\(boardsSolved)/\(totalBoards)")
+            // FINISH_SPEC §B6: the result line is tinted pills (purple guesses, blue
+            // time; gold boards on multi-board games) with 3D icons + soft numbers,
+            // and Share is the bare 3D share icon. No "Home" text link (the house at
+            // the top already does that).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { pills; shareButton }
+                VStack(spacing: 6) {
+                    HStack(spacing: 8) { pills }
+                    shareButton
                 }
-                Text(maxGuesses > 0 ? "\(guessCount)/\(maxGuesses) guesses" : "\(guessCount) guesses")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                statItem(icon: "clock", color: Color(hex: 0x60A5FA), text: timeStr)
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(summary)
+
+            if !won {
+                Text(summary)
+                    .font(Brand.font(12, .bold))
+                    .foregroundStyle(Color(hex: 0xE11D48))
+                    .multilineTextAlignment(.center)
             }
 
-            Text(summary)
-                .font(Brand.font(12, .bold))
-                .foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xF87171))
-                .multilineTextAlignment(.center)
+            if let onPlayAgain {
+                Button(action: onPlayAgain) {
+                    CandyLabel(title: won ? "Play Again" : "Try Again", symbol: "arrow.clockwise")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium, fullWidth: false))
+            }
+        }
+    }
 
-            HStack(spacing: 16) {
-                Button("Home", action: onHome)
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).underline()
-                if let onShare {
-                    Button("Share") {
-                        if shareHasSpoilers { showShareOptions = true } else { onShare(false) }
-                    }
-                    .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
-                    .sheet(isPresented: $showShareOptions,
-                           onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
-                        ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
-                    }
-                }
-                if let onPlayAgain {
-                    Button(won ? "Play Again" : "Try Again", action: onPlayAgain)
-                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xD97706)).underline()
-                }
+    @ViewBuilder private var pills: some View {
+        if isMulti {
+            TintPill(icon: .trophy, value: "\(boardsSolved)/\(totalBoards)", label: "solved", accent: Color(hex: 0xF5A524))
+        }
+        TintPill(icon: .crown, value: maxGuesses > 0 && !won ? "\(guessCount)/\(maxGuesses)" : "\(guessCount)",
+                 label: guessCount == 1 ? "guess" : "guesses", accent: Color(hex: 0x7C3AED))
+        TintPill(icon: .trophy, value: timeStr, label: "time", accent: Color(hex: 0x2563EB))
+    }
+
+    @ViewBuilder private var shareButton: some View {
+        if let onShare {
+            Button {
+                if shareHasSpoilers { showShareOptions = true } else { onShare(false) }
+            } label: {
+                Icon3D(.share, size: 32)
+                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.2), radius: 2.5, x: 0, y: 3)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.squishIcon)
+            .accessibilityLabel("Share")
+            .sheet(isPresented: $showShareOptions,
+                   onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
+                ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
             }
         }
     }
@@ -126,13 +149,6 @@ struct FinishedStatsHeader: View {
         return isMulti
             ? "\(boardsSolved)/\(totalBoards) solved  ·  \(timeStr)"
             : "Out of guesses  ·  \(timeStr)"
-    }
-
-    private func statItem(icon: String, color: Color, text: String) -> some View {
-        HStack(spacing: 3) {
-            SymbolGlyph(icon, size: 11, color: color)
-            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-        }
     }
 }
 
@@ -190,39 +206,49 @@ struct ScoreBreakdownView: View {
                                        bestCorrectLetters: bestCorrectLetters, dateKey: day)
         let guessesLeft = max(0, b.maxGuesses - guessCount)
         let timeUnder = max(0, b.timeCap - timeSeconds)
-        return VStack(spacing: 2) {
-            HStack {
-                Text("SCORE BREAKDOWN").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+        // FINISH_SPEC §B6: a lavender card with a purple top bar, dashed dividers,
+        // purple values and the total as a big soft number.
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center) {
+                Text("SCORE BREAKDOWN").font(Brand.font(11, .black)).tracking(1.3)
+                    .foregroundStyle(Theme.isDark ? Color(hex: 0xC4B5FD) : Color(hex: 0x5B3C96))
                 Spacer()
-                Text("\(Int(b.total)) pts").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-            }
-            .padding(.bottom, 4)
-            row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints)
-            // The row reads through the mode's guess semantics (More Games §11):
-            // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
-            let bonusLabel: String = {
-                switch ModeGen.byDbKey(gameMode)?.guessSemantics {
-                case "mistakes": return "Mistake bonus"
-                case "checks": return "Check bonus"
-                case "misses": return "Miss bonus"
-                case "overPar": return "Par bonus"
-                case "rank": return "Rank bonus"
-                default: return "Guess bonus"
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text(Int(b.total).formatted()).softNumber(30)
+                    Text("PTS").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Self.valueInk)
                 }
-            }()
-            if completed && b.guessBonusApplies { row(bonusLabel, "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
-            if completed { row("Speed bonus", timeSeconds > b.timeCap ? "\(fmt(timeSeconds - b.timeCap)) over \(fmt(b.timeCap))" : "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
-            if b.completionBonus > 0 { completionRow(b.completionBonus) }
-            if b.hasHints {
-                let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"
-                row("Hint penalty", detail, -b.hintPenalty, pure: completed && hintsUsed == 0)
+                .accessibilityElement(children: .combine)
+            }
+            VStack(spacing: 0) {
+                row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints, first: true)
+                // The row reads through the mode's guess semantics (More Games §11):
+                // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
+                let bonusLabel: String = {
+                    switch ModeGen.byDbKey(gameMode)?.guessSemantics {
+                    case "mistakes": return "Mistake bonus"
+                    case "checks": return "Check bonus"
+                    case "misses": return "Miss bonus"
+                    case "overPar": return "Par bonus"
+                    case "rank": return "Rank bonus"
+                    default: return "Guess bonus"
+                    }
+                }()
+                if completed && b.guessBonusApplies { row(bonusLabel, "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
+                if completed { row("Speed bonus", timeSeconds > b.timeCap ? "\(fmt(timeSeconds - b.timeCap)) over \(fmt(b.timeCap))" : "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
+                if b.completionBonus > 0 { completionRow(b.completionBonus) }
+                if b.hasHints {
+                    let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"
+                    row("Hint penalty", detail, -b.hintPenalty, pure: completed && hintsUsed == 0)
+                }
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED), Color(hex: 0xA855F7)])
         .frame(maxWidth: 400)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
     }
+
+    private static var valueInk: Color { Theme.isDark ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9) }
 
     /// Completion / progress row — relabels on a loss (Gauntlet stage progress,
     /// single-board near-miss) to match the new loss-credit scoring.
@@ -246,15 +272,36 @@ struct ScoreBreakdownView: View {
         return row(label, detail, bonus)
     }
 
-    private func row(_ label: String, _ detail: String, _ value: Double, pure: Bool = false) -> some View {
+    private func row(_ label: String, _ detail: String, _ value: Double, pure: Bool = false, first: Bool = false) -> some View {
         let sign = value > 0 ? "+" : value < 0 ? "−" : ""
         let abs = Swift.abs((value * 100).rounded() / 100)
-        return HStack(alignment: .firstTextBaseline) {
-            Text(label).font(Brand.font(12, .bold)).foregroundStyle(pure ? Color(hex: 0x7C3AED) : Theme.textPrimary)
-            if !detail.isEmpty { Text(detail).font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted).lineLimit(1).minimumScaleFactor(0.7) }
-            Spacer()
-            Text("\(sign)\(Int(abs))").font(Brand.font(12, .black))
-                .foregroundStyle(value > 0 ? Theme.textPrimary : value < 0 ? Color(hex: 0xDC2626) : Theme.textMuted)
+        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label).font(Brand.font(14, .black))
+                .foregroundStyle(pure ? Color(hex: 0x7C3AED) : FinishInk.heading)
+            if !detail.isEmpty {
+                Text(detail).font(Brand.font(11.5, .bold)).foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x7A6A95))
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            Spacer(minLength: 6)
+            Text("\(sign)\(Int(abs).formatted())").font(Brand.font(15, .black)).monospacedDigit()
+                .foregroundStyle(value < 0 ? Color(hex: 0xDC2626) : (value > 0 ? Self.valueInk : Theme.textMuted))
+        }
+        .padding(.vertical, 6).padding(.horizontal, 2)
+        .overlay(alignment: .top) {
+            if !first {
+                Line().stroke(Color(hex: 0x7C3AED).opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .frame(height: 1)
+            }
+        }
+    }
+
+    /// A horizontal hairline (dashed by the caller's stroke style).
+    private struct Line: Shape {
+        func path(in rect: CGRect) -> Path {
+            var p = Path()
+            p.move(to: CGPoint(x: rect.minX, y: rect.midY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            return p
         }
     }
 
@@ -330,7 +377,7 @@ struct NextDailyCTA: View {
         Group {
             // Dailies only record for signed-in accounts; guests get nothing.
             if AuthService.shared.profile != nil {
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     if let next = nextMode, let key = next.dbKey {
                         Button {
                             dismiss()
@@ -340,24 +387,22 @@ struct NextDailyCTA: View {
                                 NotificationCenter.default.post(name: Self.playNextDaily, object: key)
                             }
                         } label: {
-                            HStack(spacing: 6) {
-                                Text("Next Daily:").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                                Text(next.title).font(Brand.font(12, .black)).foregroundStyle(next.accent)
-                                Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(next.accent)
-                            }
-                            .padding(.horizontal, 14).padding(.vertical, 8)
-                            .background(Capsule().fill(next.accent.opacity(0.08)))
-                            .overlay(Capsule().stroke(next.accent.opacity(0.5), lineWidth: 1.5))
+                            // FINISH_SPEC §B6 / §A8: the gold (amber) candy button
+                            // with the next game's icon.
+                            CandyLabel(title: "Next daily: \(next.title)") { gameIcon(next) }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(CandyButtonStyle(variant: .amber))
+                        .accessibilityLabel("Next daily: \(next.title)")
                     } else if nextMode == nil {
                         Text("All \(DailyCompletionsStore.totalDailyModes) dailies done — Sweep complete! 🏆")
-                            .font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                            .font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x7C3AED))
                             .padding(.vertical, 4)
                     }
                     viewLeaderboard
                     keepPlayingUnlimited
                 }
+                .frame(maxWidth: 400)
+                .padding(.top, 4)
             }
         }
         .task { await completions.load() }
@@ -377,16 +422,11 @@ struct NextDailyCTA: View {
                     NotificationCenter.default.post(name: Self.openLeaderboard, object: key)
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Icon3D(.trophy, size: 14)
-                    Text("View \(mode.title) Leaderboard").font(Brand.font(12, .black)).foregroundStyle(mode.accent)
-                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(Capsule().fill(mode.accent.opacity(0.08)))
-                .overlay(Capsule().stroke(mode.accent.opacity(0.5), lineWidth: 1.5))
+                // §B6 / §A8: the purple candy button with the 3D trophy.
+                CandyLabel(title: "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(CandyButtonStyle(variant: .purple))
+            .accessibilityLabel("View \(mode.title) Leaderboard")
         }
     }
 
@@ -408,20 +448,16 @@ struct NextDailyCTA: View {
                     NotificationCenter.default.post(name: Self.playUnlimited, object: key)
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Text("Keep playing:").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    // Full mode name per founder — rides the NEXT build (1.7);
-                    // deliberately not swapped into the 1.6 review queue.
-                    Text("Unlimited \(ModeGen.byDbKey(key)?.title ?? mode.title)")
-                        .font(Brand.font(12, .black)).foregroundStyle(mode.accent)
-                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(Capsule().fill(mode.accent.opacity(0.08)))
-                .overlay(Capsule().stroke(mode.accent.opacity(0.5), lineWidth: 1.5))
+                // §B6 / §A8: the soft (peach) candy button for the quiet action.
+                CandyLabel(title: "Keep playing: Unlimited \(ModeGen.byDbKey(key)?.title ?? mode.title)") { gameIcon(mode) }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(CandyButtonStyle(variant: .peach))
         }
+    }
+
+    /// A game's glossy icon at the candy label's icon size.
+    @ViewBuilder private func gameIcon(_ m: HomeMode) -> some View {
+        if let art = m.icon.gameArt { GameArtImage(asset: art, size: 26) }
     }
 }
 
@@ -437,17 +473,33 @@ struct NextDailyCTA: View {
 struct DefinitionCard: View {
     let solution: String
     var showWord: Bool = true
+    /// The card's small caps label (FINISH_SPEC §B6: "TODAY'S WORD" on a daily).
+    var label: String = "THE WORD"
     @State private var def: WordOfTheDayView.WordInfo?
     @State private var loaded = false
 
+    private static let green = Color(hex: 0x22A866)
+
     var body: some View {
-        VStack(spacing: 8) {
+        Group {
             if showWord {
-                Text(solution.uppercased()).font(Brand.font(18, .black)).tracking(2)
-                    .foregroundStyle(Theme.textPrimary)
-            }
-            if loaded {
-                box   // full width — matches the Score Breakdown card
+                // FINISH_SPEC §B6: the word spelled in purple tiles on a soft green
+                // card with a green part-of-speech chip + the definition.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(label).font(Brand.font(11, .black)).tracking(1.3)
+                        .foregroundStyle(Theme.isDark ? Color(hex: 0x86EFAC) : Color(hex: 0x137A3D))
+                    wordTiles.frame(maxWidth: .infinity)
+                    if loaded { details }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .tintedCard(accent: Self.green, bar: [Self.green, Color(hex: 0x5ED59A)])
+                .frame(maxWidth: 400)
+            } else if loaded {
+                details
+                    .padding(.horizontal, 12).padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .tintedCard(accent: Self.green, radius: 14)
             }
         }
         .task(id: solution) {
@@ -456,23 +508,42 @@ struct DefinitionCard: View {
         }
     }
 
-    @ViewBuilder private var box: some View {
+    private var wordTiles: some View {
+        let letters = Array(solution.uppercased())
+        return GeometryReader { g in
+            let n = CGFloat(max(1, letters.count))
+            let side = min(38, (g.size.width - (n - 1) * 5) / n)
+            HStack(spacing: 5) {
+                ForEach(letters.indices, id: \.self) { i in
+                    GlossyTile(face: .correct, letter: String(letters[i]), width: side)
+                }
+            }
+            .frame(width: g.size.width, height: g.size.height)
+        }
+        .frame(height: 38)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(solution.uppercased())
+    }
+
+    @ViewBuilder private var details: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let d = def {
                 HStack(spacing: 8) {
+                    if let pos = d.partOfSpeech, !pos.isEmpty {
+                        Text(pos.uppercased()).font(Brand.font(11, .black)).tracking(1.1)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10).padding(.vertical, 3)
+                            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0x5ED59A), Self.green],
+                                                                      startPoint: .top, endPoint: .bottom)))
+                            .background(Capsule().fill(Color(hex: 0x157A48)).offset(y: 2))
+                    }
                     if let p = d.phonetic, !p.isEmpty {
                         Text(p).font(Brand.font(12, .semibold)).foregroundStyle(Theme.textMuted)
                     }
-                    if let pos = d.partOfSpeech, !pos.isEmpty {
-                        Text(pos.uppercased()).font(Brand.font(10, .black)).tracking(0.6)
-                            .foregroundStyle(Color(hex: 0xA78BFA))
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(Theme.border))
-                    }
                 }
                 if let def = d.definition {
-                    // Themed: #4A4A6A on the Dark card is 2.0:1 and reads as a rendering fault.
-                    Text(def).font(Brand.font(14, .medium)).foregroundStyle(Theme.textSecondary)
+                    Text(def).font(Brand.font(14, .bold))
+                        .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x4B3D66))
                         .fixedSize(horizontal: false, vertical: true)
                 }
             } else {
@@ -480,9 +551,5 @@ struct DefinitionCard: View {
                     .font(Brand.font(13, .medium)).italic().foregroundStyle(Theme.textMuted)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
     }
 }

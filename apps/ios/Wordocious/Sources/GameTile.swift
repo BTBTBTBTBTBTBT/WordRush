@@ -15,27 +15,43 @@ struct GameTileChrome: ViewModifier {
     var selected: Bool = false
     var radius: CGFloat = 14
     var bar: CGFloat = 4
-    /// The surface under the tint: nil = the themed surface (dark mode keeps the
-    /// same alphas over the dark surface); `.white` on the light-only Friends / VS pages.
+    /// The surface under the tint: nil = themed (light: the white-based wash; dark:
+    /// the dark surface); `.white` on the light-only Friends / VS pages (always the
+    /// light wash).
     var base: Color? = nil
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius)
+        // FINISH_SPEC §A1: icon tiles are mini game cards — the accent's 13% wash
+        // (26% selected) over white, a 34% accent border (the full accent + a soft
+        // ring when selected), the 4-pt accent top bar and a soft accent shadow. The
+        // dark theme keeps its dark surface under the same alphas.
+        let dark = Theme.isDark && base == nil
         return content
             .background(
                 ZStack {
-                    shape.fill(base ?? Theme.surface)
-                    shape.fill(accent.opacity(selected ? 0.12 : 0.06))
+                    if dark {
+                        shape.fill(Theme.surface)
+                        shape.fill(accent.opacity(selected ? 0.18 : 0.08))
+                    } else {
+                        shape.fill(accent.wash(selected ? 0.26 : 0.13))
+                    }
                 }
             )
             .overlay(alignment: .top) {
-                LinearGradient(colors: [accent, accent.opacity(0.53)], startPoint: .leading, endPoint: .trailing)
+                accent
                     .frame(height: bar)
                     .allowsHitTesting(false)
             }
             .clipShape(shape)
-            .overlay(shape.stroke(selected ? accent : accent.opacity(0.4), lineWidth: selected ? 2 : 1.5))
-            .shadow(color: selected ? accent.opacity(0.4) : .clear, radius: 5)
+            .overlay(shape.stroke(selected ? accent : (dark ? accent.opacity(0.4) : accent.wash(0.34)),
+                                  lineWidth: selected ? 2 : 1.5))
+            .shadow(color: accent.opacity(selected ? 0.22 : 0.2), radius: 4, x: 0, y: selected ? 0 : 3)
+            .overlay {
+                if selected {
+                    shape.inset(by: -2.5).stroke(accent.opacity(0.22), lineWidth: 3).allowsHitTesting(false)
+                }
+            }
             .contentShape(shape)
     }
 }

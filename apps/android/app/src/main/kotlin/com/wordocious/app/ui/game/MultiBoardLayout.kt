@@ -60,9 +60,20 @@ fun MultiBoardLayout(
     BoxWithConstraints(modifier = modifier) {
         val containerW = maxWidth
         val containerH = maxHeight
+        // FINISH_SPEC B5: the whole grid is sized by the ONE shared rule — the full width
+        // (small side margin), as tall as square tiles need, centered in the height left;
+        // on a short space the tiles go a little wide instead of the grid shrinking.
+        val tileRows = boards.maxOfOrNull { (it.prefilledGuesses?.size ?: 0) + maxOf(it.maxGuesses, it.guesses.size) } ?: 9
+        val tileCols = boards.maxOfOrNull { it.solution.length } ?: 5
+        val fit = BoardSizing.fitGrid(
+            availW = containerW.value, availH = containerH.value,
+            boardCols = cols, boardRows = rows, tileCols = tileCols, tileRows = tileRows,
+            tileGap = 2f, boardChrome = MINI_BOARD_CHROME,
+        )
 
-        // Grid of mini boards filling width and height equally.
-        Column(modifier = Modifier.fillMaxSize()) {
+        // Grid of mini boards filling the fitted grid equally, centered in the space.
+        Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+        Column(modifier = Modifier.size(fit.width.dp, fit.height.dp)) {
             for (rowIdx in 0 until rows) {
                 Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     for (colIdx in 0 until cols) {
@@ -115,6 +126,8 @@ fun MultiBoardLayout(
             }
         }
 
+        }
+
         // OctoWord expanded overlay (web: fixed rect at center, dim backdrop,
         // animate-fade-in-scale). Web caps: w = min(0.9·availW, 384px),
         // h = min(0.95·availH, w·2.2).
@@ -157,7 +170,8 @@ fun MultiBoardLayout(
                         scaleX = 0.95f + 0.05f * zoomT
                         scaleY = 0.95f + 0.05f * zoomT
                     }
-                    .background(Color.White, RoundedCornerShape(12.dp))
+                    // FINISH_SPEC A1: the zoom card is the lavender page card, not white.
+                    .background(com.wordocious.app.ui.accentWash(Color(0xFF7C3AED), 0.08f), RoundedCornerShape(12.dp))
                     .clickableNoRipple { expandedIndex = null }
                     .padding(6.dp),
             ) {
@@ -176,6 +190,13 @@ fun MultiBoardLayout(
         }
     }
 }
+
+/**
+ * A mini board's fixed chrome on each axis (dp): the 4 dp cell gutter each side, the
+ * card's 2 dp border and 4 dp padding each side — what [BoardSizing.fitGrid] leaves
+ * around the tiles.
+ */
+internal const val MINI_BOARD_CHROME = 20f
 
 /**
  * Compute combined keyboard letter states from all PLAYING boards —

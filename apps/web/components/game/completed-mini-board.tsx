@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { GameStatus, TileState, type BoardState, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
+import { LetterTile, tileLook } from '@/components/game/letter-tile';
+import { miniBoardFrame } from '@/components/game/multi-board';
 
 // Shared compact "completed board" rendering — used by the Completed-Today
 // daily card, the solo post-game recap for multi-board modes, and the VS
@@ -14,8 +16,8 @@ export const getTileColor = (state: TileState) => {
     case TileState.CORRECT: return 'tile-correct';
     case TileState.PRESENT: return 'tile-present';
     case TileState.ABSENT: return 'tile-absent';
-    case TileState.HINT_USED: return 'bg-gray-100 border-gray-200';
-    default: return 'bg-white border-gray-300';
+    case TileState.HINT_USED: return 'bg-violet-50 border-violet-100';
+    default: return 'bg-violet-50/60 border-violet-200';
   }
 };
 
@@ -64,11 +66,10 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
 }) {
   const wordLen = liveStates ? (wordLength ?? liveStates[0]?.length ?? 5) : solution.length;
   const fontSize = Math.max(6, Math.round(tileSize * 0.5));
+  const fontVar = { ['--gt-font' as string]: `${fontSize}px` } as React.CSSProperties;
   if (liveStates) {
     return (
-      <div className={`relative p-0.5 rounded-lg border-2 transition-colors duration-300 ${
-        won ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-white'
-      }`}>
+      <div className="relative p-0.5 rounded-lg border-2 transition-colors duration-300" style={{ ...miniBoardFrame(won ? 'WON' : 'PLAYING'), ...fontVar }}>
         {won && (
           <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
             ✓
@@ -85,9 +86,11 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
               const st = (row?.[li] as TileState | undefined) ?? TileState.EMPTY;
               const flip = isNew && st !== TileState.EMPTY;
               return (
-                <div
+                <LetterTile
                   key={`${rowIndex}-${li}`}
-                  className={`border rounded ${getTileColor(st)} ${flip ? 'opp-tile-flip' : ''}`}
+                  look={tileLook(st, '')}
+                  pop={false}
+                  className={flip ? 'opp-tile-flip' : ''}
                   style={{ width: tileSize, height: tileSize, animationDelay: flip ? `${li * 55}ms` : undefined }}
                 />
               );
@@ -98,9 +101,7 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
     );
   }
   return (
-    <div className={`relative p-0.5 rounded-lg border-2 ${
-      won ? 'border-violet-400 bg-violet-50' : 'border-red-400 bg-red-50'
-    }`}>
+    <div className="relative p-0.5 rounded-lg border-2" style={{ ...miniBoardFrame(won ? 'WON' : 'LOST'), ...fontVar }}>
       {won && (
         <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
           ✓
@@ -130,15 +131,13 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
             const letter = (heTiles ? (heTiles[li]?.letter ?? '').trim() : guess[li]) || '';
             const tileState = isPast ? tiles[li] : TileState.EMPTY;
             return (
-              <div
+              <LetterTile
                 key={`${rowIndex}-${li}`}
-                className={`flex items-center justify-center border rounded font-bold leading-none ${
-                  tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
-                } ${getTileColor(tileState)}`}
-                style={{ width: tileSize, height: tileSize, fontSize }}
-              >
-                {letter.toUpperCase()}
-              </div>
+                letter={letter.toUpperCase()}
+                look={tileLook(tileState, isPast ? letter : '')}
+                pop={false}
+                style={{ width: tileSize, height: tileSize }}
+              />
             );
           });
         })}

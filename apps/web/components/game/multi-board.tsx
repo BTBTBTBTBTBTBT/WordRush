@@ -2,7 +2,9 @@
 
 import { memo, useState, useCallback, useRef, useMemo } from 'react';
 import { useSquareBoardFit } from '@/hooks/use-square-board-fit';
-import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
+import { BoardState, TileState } from '@wordle-duel/core';
+import { LetterTile, tileLook } from '@/components/game/letter-tile';
+import { tileFontPx } from '@/lib/board-fit';
 
 interface MultiBoardProps {
   boards: BoardState[];
@@ -12,15 +14,15 @@ interface MultiBoardProps {
   isShaking?: boolean;
 }
 
-const getTileColor = (state: TileState, colorBlind?: boolean) => {
-  // Colorblind palette flows through the .tile-* CSS vars ([data-colorblind]).
-  switch (state) {
-    case TileState.CORRECT: return 'tile-correct';
-    case TileState.PRESENT: return 'tile-present';
-    case TileState.ABSENT: return 'tile-absent';
-    default: return 'bg-white border-gray-300';
-  }
-};
+/**
+ * A mini board's frame (FINISH_SPEC A1, no plain white): frosted lavender
+ * while playing, a soft purple wash once solved, a soft red one when lost.
+ */
+export function miniBoardFrame(status: string): React.CSSProperties {
+  if (status === 'WON') return { background: 'rgba(237, 228, 255, 0.82)', borderColor: '#a78bfa' };
+  if (status === 'LOST') return { background: 'rgba(254, 232, 236, 0.82)', borderColor: '#f87171' };
+  return { background: 'rgba(245, 238, 255, 0.62)', borderColor: 'rgba(196, 181, 253, 0.6)' };
+}
 
 const evaluateGuess = (guess: string, solution: string) => {
   const result: TileState[] = Array(5).fill(TileState.EMPTY);
@@ -114,11 +116,12 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   // Gauntlet / single-board), not only the winning row.
   const lastSubmittedRow = board.guesses.length > 0 ? board.guesses.length - 1 : -1;
 
-  // In expanded mode, show larger text
-  const textSize = isExpanded ? 'text-base sm:text-lg' : 'text-[10px] sm:text-xs';
+  // FINISH_SPEC B1: the shared glossy tile; its glyph follows the tile size
+  // (expanded OctoWord overlay: a fixed larger glyph).
   const fixed = tileSize != null;
-  const tileStyle = fixed ? { width: tileSize, height: tileSize, fontSize: Math.max(8, Math.round(tileSize! * 0.45)) } : undefined;
+  const tileStyle = fixed ? { width: tileSize, height: tileSize } : { aspectRatio: 'auto' };
   const rowStyle = fixed ? { gridTemplateColumns: `repeat(5, ${tileSize}px)` } : undefined;
+  const fontVar = { ['--gt-font' as string]: fixed ? `${tileFontPx(tileSize!)}px` : isExpanded ? '18px' : '11px' } as React.CSSProperties;
 
   return (
     <div
@@ -137,13 +140,8 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         onClick ? 'cursor-pointer' : ''
       } ${
         invisible ? 'invisible' : ''
-      } ${
-        isWon
-          ? 'border-violet-400 bg-violet-50'
-          : isLost
-          ? 'border-red-400 bg-red-50'
-          : 'border-gray-200 bg-white'
       }`}
+      style={{ ...miniBoardFrame(board.status), ...fontVar }}
     >
       {isWon && (
         <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center z-10">
@@ -175,13 +173,14 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                 style={rowStyle}
               >
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
-                  <div
+                  <LetterTile
                     key={letterIndex}
-                    className={`flex items-center justify-center min-h-0 border rounded font-bold ${textSize} ${tile.state === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tile.state, colorBlind)}`}
+                    letter={tile.letter.toUpperCase()}
+                    look={tileLook(tile.state, tile.letter)}
+                    pop={false}
+                    className="min-h-0"
                     style={tileStyle}
-                  >
-                    {tile.letter.toUpperCase()}
-                  </div>
+                  />
                 ))}
               </div>
             );
@@ -193,33 +192,34 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
           const isLastSubmitted = isPastGuess && playerRowIndex === lastSubmittedRow;
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
 
+          const shakeRow = isCurrentRow && !!isShaking;
           return (
             <div
               key={rowIndex}
               role={isPastGuess ? 'img' : undefined}
               aria-label={isPastGuess ? describeRow(guess, tiles as TileState[]) : undefined}
-              className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}
+              className={`grid grid-cols-5 gap-[2px] min-h-0 ${shakeRow ? 'gt-nudge' : ''}`}
               style={rowStyle}
             >
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = isPastGuess ? tiles[letterIndex] : TileState.EMPTY;
-                const isInvalidTile = isCurrentRow && isInvalidWord && letter !== '';
+                const isInvalidTile = isCurrentRow && !!isInvalidWord && letter !== '';
+                const winRow = isLastSubmitted && isWon;
 
                 return (
-                  <div
+                  <LetterTile
                     key={letterIndex}
-                    className={`flex items-center justify-center min-h-0 border rounded font-bold ${textSize} ${
-                      isInvalidTile
-                        ? 'text-red-500 bg-red-50 border-red-400'
-                        : tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
-                    } ${!isInvalidTile ? getTileColor(tileState, colorBlind) : ''} ${
-                      isLastSubmitted ? 'animate-tile-flip-mini' : ''
-                    }`}
-                    style={{ ...(isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : {}), ...(tileStyle ?? {}) }}
-                  >
-                    {letter.toUpperCase()}
-                  </div>
+                    letter={letter.toUpperCase()}
+                    look={tileLook(tileState, letter)}
+                    flipIndex={isLastSubmitted ? letterIndex : undefined}
+                    hopIndex={winRow ? letterIndex : undefined}
+                    bad={shakeRow && letter !== ''}
+                    outIndex={4 - letterIndex}
+                    invalid={isInvalidTile}
+                    className="min-h-0"
+                    style={tileStyle}
+                  />
                 );
               })}
             </div>

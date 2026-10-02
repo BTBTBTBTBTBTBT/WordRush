@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { Guess, TileState } from './types';
 import { normalizeString } from './game-logic';
+import { LetterTile, type TileLook } from '@/components/game/letter-tile';
+import { REVEAL } from '@/lib/tile-motion';
+import { fitBoard, tileFontPx } from '@/lib/board-fit';
 
 interface NoundleBoardProps {
   guesses: Guess[];
@@ -13,58 +16,51 @@ interface NoundleBoardProps {
   shouldShake?: boolean;
 }
 
+/** A ProperNoundle tile state → the shared tile look (FINISH_SPEC B1). */
+function noundleLook(state: TileState, letter: string): TileLook {
+  switch (state) {
+    case 'correct': return 'correct';
+    case 'present': return 'present';
+    case 'absent': return 'absent';
+    case 'hint-used': return 'gap';
+    case 'tbd': return 'typed';
+    default: return letter ? 'typed' : 'empty';
+  }
+}
+
 function Tile({
   letter,
   state,
   index,
   shouldFlip = false,
   size = 56,
+  shake = false,
+  outIndex = 0,
 }: {
   letter: string;
   state: TileState;
   index: number;
   shouldFlip?: boolean;
   size?: number;
+  shake?: boolean;
+  outIndex?: number;
 }) {
-  const fontSize = size * 0.45;
-
-  const getStyles = (): { bg: string; border: string; text: string } => {
-    switch (state) {
-      case 'correct':
-        return { bg: 'var(--tile-correct)', border: 'var(--tile-correct-border)', text: '#ffffff' };
-      case 'present':
-        return { bg: 'var(--tile-present)', border: 'var(--tile-present-border)', text: '#ffffff' };
-      case 'absent':
-        return { bg: 'var(--tile-absent)', border: 'var(--tile-absent-border)', text: '#ffffff' };
-      case 'tbd':
-        return { bg: 'var(--color-surface)', border: 'var(--color-text-muted)', text: 'var(--color-text)' };
-      case 'hint-used':
-        return { bg: '#e5e7eb', border: '#d1d5db', text: '#9ca3af' };
-      default:
-        return { bg: 'var(--color-surface)', border: '#d1d5db', text: 'var(--color-text)' };
-    }
-  };
-
-  const styles = getStyles();
   const hasFlip = shouldFlip && (state === 'correct' || state === 'present' || state === 'absent' || state === 'hint-used');
-
   return (
-    <div
-      className={`flex items-center justify-center font-black uppercase rounded-md select-none ${hasFlip ? 'animate-tile-flip' : 'transition-colors'}`}
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        fontSize: `${fontSize}px`,
-        backgroundColor: styles.bg,
-        border: `2px solid ${styles.border}`,
-        color: styles.text,
-        ...(hasFlip ? { animationDelay: `${index * 150}ms` } : {}),
-      }}
-    >
-      {letter}
-    </div>
+    <LetterTile
+      letter={letter}
+      look={noundleLook(state, letter)}
+      flipIndex={hasFlip ? index : undefined}
+      bad={shake && !!letter}
+      outIndex={outIndex}
+      style={{ width: size, height: size, ['--gt-font' as string]: `${tileFontPx(size)}px` }}
+    />
   );
 }
+
+/** Gap between tiles and rows, and between the words of the answer (px). */
+const TILE_GAP = 5;
+const WORD_GAP = 12;
 
 export default memo(function NoundleBoard({
   guesses,
@@ -83,9 +79,12 @@ export default memo(function NoundleBoard({
     if (guesses.length > lastGuessCount) {
       setShouldFlipRow(guesses.length - 1);
       setLastGuessCount(guesses.length);
-      const timer = setTimeout(() => setShouldFlipRow(-1), 1000);
+      // Hold the reveal class until the last tile has turned over and glowed (B3).
+      const tiles = wordGroups.reduce((sum, count) => sum + count, 0);
+      const timer = setTimeout(() => setShouldFlipRow(-1), REVEAL.end(tiles) + REVEAL.bloomMs);
       return () => clearTimeout(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guesses.length, lastGuessCount]);
 
   const wordGroups = useMemo((): number[] => {
@@ -104,27 +103,21 @@ export default memo(function NoundleBoard({
     const el = containerRef.current;
     if (!el) return;
 
+    // B5: the shared board-sizing rule (lib/board-fit.ts), with the wider
+    // gaps between the words of a multi-word answer as extra row width.
     const calculateTileSize = () => {
-      const containerHeight = el.clientHeight;
-      const containerWidth = el.clientWidth;
-
-      const rowGap = 6;
-      const totalRowGaps = (maxGuesses - 1) * rowGap;
-      const maxTileHeightFromHeight = (containerHeight - totalRowGaps) / maxGuesses;
-
-      const wordGroupGap = 12;
-      const tileGap = 4;
       const totalTiles = wordGroups.reduce((sum, count) => sum + count, 0);
-      const totalGroupGaps = (wordGroups.length - 1) * wordGroupGap;
-      const totalTileGaps = (totalTiles - wordGroups.length) * tileGap;
-
-      const availableWidth = containerWidth - totalGroupGaps - totalTileGaps;
-      const maxTileWidthFromWidth = availableWidth / totalTiles;
-
-      const calculatedSize = Math.min(maxTileHeightFromHeight, maxTileWidthFromWidth, 48);
-      const finalSize = Math.max(calculatedSize, 16);
-
-      setTileSize(finalSize);
+      const fit = fitBoard({
+        width: el.clientWidth,
+        height: el.clientHeight,
+        cols: totalTiles,
+        rows: maxGuesses,
+        gap: TILE_GAP,
+        side: 0,
+        maxTile: 56,
+        extraWidth: (wordGroups.length - 1) * (WORD_GAP - TILE_GAP),
+      });
+      setTileSize(Math.max(fit?.tile ?? 16, 16));
     };
 
     const ro = new ResizeObserver(calculateTileSize);
@@ -143,9 +136,9 @@ export default memo(function NoundleBoard({
 
       let letterIndex = 0;
       return (
-        <div key={index} className={`flex gap-3 justify-center ${applyShake ? 'animate-shake' : ''}`}>
+        <div key={index} className={`flex justify-center ${applyShake ? 'gt-nudge' : ''}`} style={{ gap: WORD_GAP }}>
           {wordGroups.map((groupSize, groupIdx) => (
-            <div key={groupIdx} className="flex gap-1">
+            <div key={groupIdx} className="flex" style={{ gap: TILE_GAP }}>
               {Array(groupSize).fill('').map(() => {
                 const currentIndex = letterIndex++;
                 const letter = letters[currentIndex] || '';
@@ -175,9 +168,9 @@ export default memo(function NoundleBoard({
 
       let letterIndex = 0;
       return (
-        <div key={index} className={`flex gap-3 justify-center ${applyShake ? 'animate-shake' : ''}`}>
+        <div key={index} className={`flex justify-center ${applyShake ? 'gt-nudge' : ''}`} style={{ gap: WORD_GAP }}>
           {wordGroups.map((groupSize, groupIdx) => (
-            <div key={groupIdx} className="flex gap-1">
+            <div key={groupIdx} className="flex" style={{ gap: TILE_GAP }}>
               {Array(groupSize).fill('').map(() => {
                 const currentIndex = letterIndex++;
                 return (
@@ -187,6 +180,8 @@ export default memo(function NoundleBoard({
                     state={tiles[currentIndex] ? 'tbd' : 'empty'}
                     index={currentIndex}
                     size={tileSize}
+                    shake={applyShake}
+                    outIndex={totalTiles - 1 - currentIndex}
                   />
                 );
               })}
@@ -197,9 +192,9 @@ export default memo(function NoundleBoard({
     } else {
       let letterIndex = 0;
       return (
-        <div key={index} className="flex gap-3 justify-center">
+        <div key={index} className="flex justify-center" style={{ gap: WORD_GAP }}>
           {wordGroups.map((groupSize, groupIdx) => (
-            <div key={groupIdx} className="flex gap-1">
+            <div key={groupIdx} className="flex" style={{ gap: TILE_GAP }}>
               {Array(groupSize).fill('').map(() => {
                 const currentIndex = letterIndex++;
                 return (
@@ -220,7 +215,7 @@ export default memo(function NoundleBoard({
   };
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-1.5 w-full h-full justify-center">
+    <div ref={containerRef} className="flex flex-col w-full h-full justify-center" style={{ gap: TILE_GAP }}>
       {Array(maxGuesses)
         .fill(0)
         .map((_, i) => renderRow(i))}

@@ -384,9 +384,9 @@ struct CrosswordView: View {
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
             cornerButton("house.fill") { dismiss() }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 8).padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .sheet(isPresented: $showGuide) { GuideSheet(mode: .crossword) }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -424,7 +424,7 @@ struct CrosswordView: View {
                 .background(Capsule().fill(tint.opacity(0.05)))
                 .overlay(Capsule().stroke(tint.opacity(0.4), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .accessibilityLabel(label)
     }
 
@@ -517,10 +517,14 @@ struct CrosswordGridView: View {
 
     private let gap: CGFloat = 3
 
-    /// Cell side that fits `w` columns on the phone, capped like the web (42px).
+    /// Cell side that fits `w` columns on the phone, capped like the web (42px) —
+    /// FINISH_SPEC §B5's shared sizing rule (fixed 3-pt gaps).
     private var cell: CGFloat {
         let available = width ?? UIScreen.main.bounds.width - 40
-        return min(42, floor((available - gap * CGFloat(vm.state.w - 1)) / CGFloat(max(1, vm.state.w))))
+        let w = max(1, vm.state.w)
+        return floor(CGFloat(BoardSizing.fitTile(widthUnits: Double(w), fixedWidth: Double(gap * CGFloat(w - 1)),
+                                                 heightUnits: 1, width: Double(available) / BoardSizing.widthFill,
+                                                 height: nil, maxTile: 42, minTile: 8)))
     }
 
     var body: some View {
@@ -574,7 +578,7 @@ struct CrosswordGridView: View {
             .frame(width: side, height: side)
             .overlay(isSel ? RoundedRectangle(cornerRadius: radius + 3).stroke(crosswordAccent, lineWidth: 2).padding(-3) : nil)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(finished)
         .accessibilityLabel("\(number.map { "\($0), " } ?? "")\(letter.isEmpty ? "empty" : letter)\(locked ? ", locked" : "")")
         .accessibilityAddTraits(isSel ? .isSelected : [])
@@ -621,7 +625,7 @@ struct CrosswordClueColumns: View {
                     .padding(.horizontal, 4).padding(.vertical, 2)
                     .background(RoundedRectangle(cornerRadius: 6).fill(isActive ? crosswordAccent.opacity(0.08) : Color.clear))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squish)
                 .disabled(finished)
                 .accessibilityLabel("\(e.n) \(dir == .across ? "Across" : "Down"): \(e.clue)\(solved ? ", solved" : "")")
             }
@@ -651,7 +655,7 @@ struct CrosswordActiveClueBar: View {
             .background(RoundedRectangle(cornerRadius: 12).fill(crosswordAccent.opacity(0.07)))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(crosswordAccent.opacity(0.27), lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .frame(maxWidth: 700)
         .accessibilityLabel("Active clue \(entry.n) \(entry.dir == .across ? "Across" : "Down"): \(entry.clue). Tap to switch direction")
     }

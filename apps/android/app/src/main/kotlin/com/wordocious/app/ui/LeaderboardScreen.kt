@@ -995,30 +995,20 @@ internal fun <T> SoftSegment(options: List<Pair<T, String>>, selected: T, onChan
     }
 }
 
-/** The solid-accent caps CTA (Play / View) on the play card. */
+/**
+ * The play card's CTA (FINISH_SPEC A8 / C2): a medium glossy candy pill — purple
+ * PLAY with the play mark, or pink VIEW BOARD with the eye once today's daily is
+ * done (the route already reconstructs the completed board). Never the old blob.
+ */
 @Composable
-private fun LbPlayButton(accent: Color, played: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .gameTilePress(onClick = onClick)
-            .shadow(4.dp, RoundedCornerShape(50), ambientColor = accent.copy(alpha = 0.3f), spotColor = accent.copy(alpha = 0.3f))
-            .clip(RoundedCornerShape(50))
-            .background(accent)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        // Already finished today's daily for this mode → eye + VIEW (the route
-        // already reconstructs the completed board). iOS parity.
-        Icon(
-            if (played) Icons.Filled.Visibility else Icons.Filled.PlayArrow,
-            null, tint = Color.White, modifier = Modifier.size(12.dp),
-        )
-        Text(
-            if (played) "VIEW" else "PLAY", fontSize = 13.sp, fontWeight = FontWeight.Black,
-            letterSpacing = 0.6.sp, color = Color.White, maxLines = 1,
-        )
-    }
+private fun LbPlayButton(@Suppress("UNUSED_PARAMETER") accent: Color, played: Boolean, onClick: () -> Unit) {
+    CandyButton(
+        text = if (played) "VIEW BOARD" else "PLAY",
+        onClick = onClick,
+        color = if (played) CandyColor.PINK else CandyColor.PURPLE,
+        size = CandySize.MEDIUM,
+        icon = if (played) CandyIcon.EYE else CandyIcon.PLAY,
+    )
 }
 
 @Composable

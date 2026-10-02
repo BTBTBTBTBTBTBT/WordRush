@@ -33,10 +33,11 @@ struct GameScreen: View {
     /// stagger), matching BoardView's mini/full timing — used to delay the
     /// finished screen so the winning word animates first.
     private var revealDuration: Double {
-        let mini = vm.isMultiBoard
-        let dur = mini ? 0.3 : 0.5
-        let stagger = mini ? 0.08 : 0.15
-        return dur + Double(max(0, vm.wordLength - 1)) * stagger
+        // FINISH_SPEC §B3: every board reveals with the game kit's flip (720 ms,
+        // 300 ms apart) — plus the winning row's hop wave before the card.
+        TileMotion.rowReveal(columns: vm.wordLength)
+            + (vm.status == .won && !vm.isMultiBoard
+               ? TileMotion.hop + Double(max(0, vm.wordLength - 1)) * TileMotion.hopStagger : 0)
     }
 
     var body: some View {
@@ -83,7 +84,8 @@ struct GameScreen: View {
                                 }
                                 .frame(maxWidth: CompletedBoardLayout.maxWidth(vm.boardCount))
                             } else {
-                                BoardLayout(vm: vm, availableWidth: root.size.width - 20)
+                                // §B6: the finished board at the mockup's 86% width.
+                                BoardLayout(vm: vm, availableWidth: (root.size.width - 20) * 0.9)
                             }
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
@@ -92,11 +94,15 @@ struct GameScreen: View {
                                                stagesCompleted: vm.stagesCompletedForScore,
                                                bestCorrectLetters: vm.bestCorrectLettersForScore,
                                                day: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil)
-                            if vm.isDaily { NextDailyCTA(currentMode: mode.rawValue) }
+                            // FINISH_SPEC §B6: today's word (purple tiles on a soft green
+                            // card) above the three candy CTAs.
                             if vm.boardCount == 1 {
-                                DefinitionCard(solution: vm.boards[0].solution, showWord: false)
+                                DefinitionCard(solution: vm.boards[0].solution, showWord: true,
+                                               label: vm.isDaily ? "TODAY'S WORD" : "THE WORD")
                             }
+                            if vm.isDaily { NextDailyCTA(currentMode: mode.rawValue) }
                         }
+                        .padding(.horizontal, 2)
                         .padding(.bottom, 16)
                     }
                 } else {
@@ -125,27 +131,16 @@ struct GameScreen: View {
             }
             .padding(.horizontal, 10)
 
-            // Persistent corner Home button (matches the web GameHomeButton),
-            // visible during play and post-game.
+            // FINISH_SPEC §B4: the controls row tucked right under the status bar —
+            // Home on the left; sound + help on the right (every game, Gauntlet too).
             GameCornerButton(kind: .home) { dismiss() }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.top, 8).padding(.leading, 8)
+            .padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
 
-            // Help "?" button (top-right) — opens this mode's strategy guide.
-            // Matches the Home button's size/aesthetic; shifts left of the
-            // Gauntlet sound toggle so the two don't overlap.
             GameCornerButton(kind: .help) { showGuide = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .padding(.top, 8).padding(.trailing, vm.isGauntlet ? 60 : 8)
+            .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
             .sheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
-
-            // Sound toggle (top-right) — mirrors the web SoundToggle on the
-            // Gauntlet screen. Reads/writes the same `pref-sound` SoundManager key.
-            if vm.isGauntlet {
-                GauntletSoundToggle(accent: ModeStyle.accent(mode))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(.top, 8).padding(.trailing, 8)
-            }
 
             if let toast = vm.toast { toastView(toast) }
 
@@ -273,6 +268,9 @@ struct GameScreen: View {
         if vm.isGauntlet { gauntletHeader } else { standardHeader }
     }
 
+    /// The status line's ink (the mockup's #6a4fa0; themed in Dark).
+    private static var statusInk: Color { Theme.isDark ? Theme.textMuted : Color(hex: 0x6A4FA0) }
+
     private var standardHeader: some View {
         VStack(spacing: 4) {
             // The game's title art (lettering + host, ART_SPEC §10); text + host when it's missing.
@@ -281,13 +279,14 @@ struct GameScreen: View {
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .soloGameTitle(mode, fallbackInset: 52)
+            // FINISH_SPEC §B4: the status line sits right under the title art.
             HStack(spacing: 12) {
-                Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                Text(progressLabel).font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
                 if !vm.stageCleared {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 3) {
-                            Image(systemName: "clock").font(.system(size: 11)).foregroundStyle(Color(hex: 0x60A5FA))
-                            Text(timeString).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                            Image(systemName: "clock").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
+                            Text(timeString).font(Brand.font(12, .heavy)).monospacedDigit().foregroundStyle(Self.statusInk)
                         }
                     }
                 }
@@ -441,7 +440,7 @@ struct GameScreen: View {
                 .background(RoundedRectangle(cornerRadius: 10).fill(used ? Theme.surfaceHover : hintAccent.opacity(0.08)))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.squish)
         .disabled(used)
     }
 
@@ -573,19 +572,5 @@ struct StageTransitionOverlay: View {
             try? await Task.sleep(nanoseconds: nanos)
             onAdvance()
         }
-    }
-}
-
-/// Corner sound toggle (mirrors the web SoundToggle). Persists to the same
-/// `pref-sound` UserDefaults key SoundManager reads, so muting here also
-/// silences win/loss jingles.
-private struct GauntletSoundToggle: View {
-    let accent: Color
-    @AppStorage("pref-sound") private var soundOn = true
-    var body: some View {
-        // The same soft white circle as the corner Home / Help controls (HEADER_SPEC §4).
-        // ART_SPEC §5: the 3D sound icon, slashed + dimmed when muted.
-        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44,
-                           label: soundOn ? "Sound on" : "Sound off") { soundOn.toggle() }
     }
 }

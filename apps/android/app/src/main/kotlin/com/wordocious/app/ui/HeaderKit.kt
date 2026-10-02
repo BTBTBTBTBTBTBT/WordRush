@@ -3,6 +3,7 @@ package com.wordocious.app.ui
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -121,13 +122,19 @@ object PageAccent {
     val leaderboard = listOf(Color(0xFFF59E0B), Color(0xFFD97706))
 }
 
-/** White, soft shadow, no border (the header pills and circles). */
+/**
+ * The header pills' surface. FINISH_SPEC A1/A3 retired the white bubbles: what still
+ * uses this gets the soft lilac wash with a faint lilac line instead of plain white
+ * (dark mode: the themed surface).
+ */
 fun Modifier.softWhite(shape: androidx.compose.ui.graphics.Shape = CircleShape, elevation: Dp = 4.dp): Modifier =
     this.shadow(elevation, shape, ambientColor = HeaderInk.shadow, spotColor = HeaderInk.shadow)
-        .clip(shape).background(Color.White)
+        .clip(shape).background(accentWash(Color(0xFF7C3AED), 0.08f))
+        .border(1.dp, accentLine(Color(0xFF7C3AED), 0.18f), shape)
 
 /**
- * A round white header button (§1, §4): [size] circle, soft shadow, no border.
+ * A header button (FINISH_SPEC A3): NO bubble — the bare soft 3D icon in a [size]
+ * tap area (≥ 44 dp effective), squishing on press (.86 / .80 → 1.08 → 1).
  * [contentDescription] labels the whole button for TalkBack.
  */
 @Composable
@@ -139,18 +146,14 @@ fun HeaderCircle(
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
-        modifier.size(size).softWhite()
-            .clickableNoRipple(onClick)
-            .semantics(mergeDescendants = true) {
-                role = Role.Button
-                if (contentDescription != null) this.contentDescription = contentDescription
-            },
+        modifier.size(maxOf(size, SOFT_CONTROL_TAP))
+            .squishClickable(contentDescription, icon = true, onClick = onClick),
         contentAlignment = Alignment.Center,
         content = content,
     )
 }
 
-/** A header action from the icon set: a white circle with the 3D icon (22 dp in the 38 dp circle). */
+/** A header action from the icon set (A3): the bare 3D icon, 23 dp, in a 44 dp tap area. */
 @Composable
 fun HeaderIconButton(
     icon: Icon3DName,
@@ -158,14 +161,14 @@ fun HeaderIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 38.dp,
-    iconSize: Dp = size * 0.58f,
+    iconSize: Dp = SOFT_CONTROL_ICON,
 ) {
     HeaderCircle(onClick, contentDescription, modifier, size) { Icon3D(icon, iconSize) }
 }
 
 /**
- * The back (or close) control: a soft white circle (§4). Back wears the 3D `back`
- * icon (ART_SPEC §5, ~1.2× the old glyph); close keeps the X in #6d28d9.
+ * The back (or close) control (A3): the bare 3D `back` icon at 23 dp; close keeps the
+ * X in #6d28d9. No circle behind either.
  */
 @Composable
 fun HeaderBackButton(
@@ -177,9 +180,9 @@ fun HeaderBackButton(
 ) {
     HeaderCircle(onClick, contentDescription, modifier, size) {
         if (close) {
-            Icon(Icons.Filled.Close, contentDescription = null, tint = HeaderInk.control, modifier = Modifier.size(size * 0.5f))
+            Icon(Icons.Filled.Close, contentDescription = null, tint = HeaderInk.control, modifier = Modifier.size(24.dp))
         } else {
-            Icon3D(Icon3DName.BACK, size * 0.58f)
+            Icon3D(Icon3DName.BACK, SOFT_CONTROL_ICON)
         }
     }
 }

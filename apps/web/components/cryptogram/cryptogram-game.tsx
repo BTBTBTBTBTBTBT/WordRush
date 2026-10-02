@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -45,6 +44,8 @@ import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { candyClass } from '@/components/ui/candy-button';
 
 // Codebreaker (More Games §16): decode a saying written in a substitution
 // cipher. Three letters are given. Letters are pencil — set, change and clear
@@ -322,8 +323,9 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const conflicts = cryptogramConflicts(state.mapping);
   const holiday = holidayTitle(sessionPuzzle?.holiday ?? null);
   const checksLabel = state.checks === 0 ? 'No checks' : `${state.checks} check${state.checks === 1 ? '' : 's'}`;
-  const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${CRYPTOGRAM_ACCENT}66`, color: CRYPTOGRAM_ACCENT, background: `${CRYPTOGRAM_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean) => candyClass({ dim });
+  const capsuleStyle = (_dim: boolean) => undefined;
 
   return (
     <GameBackground mode="CRYPTOGRAM" className={`h-screen-stable flex flex-col relative ${finished || completion ? 'pb-[calc(env(safe-area-inset-bottom)+80px)]' : ''}`}>
@@ -408,7 +410,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
               <p className="text-center text-base font-extrabold max-w-md" style={{ color: 'var(--color-text)' }}>“{state.text}”</p>
             </div>
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={CRYPTOGRAM_ACCENT}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
                   style={{ backgroundColor: `${CRYPTOGRAM_ACCENT}15`, border: `2px solid ${CRYPTOGRAM_ACCENT}44`, color: CRYPTOGRAM_ACCENT }}>
                   {won ? (state.checks === 0 ? '✓' : state.checks) : '✗'}
@@ -420,14 +422,13 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
                   <span className="text-xs text-gray-400">
                     {`${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
                   </span>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="CRYPTOGRAM" />}
-                    {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: CRYPTOGRAM_ACCENT }}>Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard gameMode="CRYPTOGRAM" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
                 boardsSolved={won ? 1 : 0} totalBoards={CRYPTOGRAM_TOTAL_BOARDS} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
               {mode === 'daily' && <NextDailyCta currentMode="CRYPTOGRAM" />}

@@ -150,7 +150,7 @@ struct MenuSheet: View {
             ScrollView {
                 VStack(spacing: 8) {
                     ForEach(InfoMenuDestination.allCases) { d in
-                        Button { selection = d; dismiss() } label: { row(d) }.buttonStyle(.plain)
+                        Button { selection = d; dismiss() } label: { row(d) }.buttonStyle(.squish)
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
@@ -195,7 +195,7 @@ struct GuidesIndexView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(modes, id: \.self) { mode in
-                        Button { selected = ModeBox(mode: mode) } label: { row(mode) }.buttonStyle(.plain)
+                        Button { selected = ModeBox(mode: mode) } label: { row(mode) }.buttonStyle(.squish)
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
@@ -304,7 +304,7 @@ struct StrategyView: View {
                     ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
                 } else {
                     ForEach(service.articles) { a in
-                        Button { selected = a } label: { card(a) }.buttonStyle(.plain)
+                        Button { selected = a } label: { card(a) }.buttonStyle(.squish)
                     }
                 }
             }
@@ -422,7 +422,7 @@ struct WordsView: View {
                     ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
                 } else {
                     ForEach(service.words) { w in
-                        Button { selected = w } label: { row(w) }.buttonStyle(.plain)
+                        Button { selected = w } label: { row(w) }.buttonStyle(.squish)
                     }
                 }
             }
@@ -543,7 +543,7 @@ struct InfoFooterLinks: View {
             ForEach(row) { d in
                 Button { dest = d } label: {
                     Text(d.title).font(Brand.font(11, .bold)).textCase(.uppercase).foregroundStyle(Theme.textMuted)
-                }.buttonStyle(.plain)
+                }.buttonStyle(.squish)
             }
         }
     }

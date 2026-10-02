@@ -3,12 +3,14 @@ import fs from 'fs';
 import path from 'path';
 import { FRIENDLY_KINDS, leaderboardTitle } from '@wordle-duel/core';
 import {
-  ART_SIZE, DAY_ART, GAME_ART_IDS, GAME_TITLE_ART_HEIGHT, GAME_TITLE_ART_IDS, MOMENT_LABEL, PAGE_SCENES, PAGE_TILES, PAGE_TINTS,
-  POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey, gameTitleArtForGuide, gameTitleArtLabel,
-  isGameArtIcon, onPageShadow, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
+  ART_SIZE, DAY_ART, GAME_ART_IDS, GAME_TITLE_ART_HEIGHT, GAME_TITLE_ART_IDS, MOMENT_LABEL, PAGE_SCENES, PAGE_TILES,
+  PAGE_TINTS, POCKET_ART_KINDS, artSrc, dayArtName, gameArtSrc, gameTitleArt, gameTitleArtForDbKey,
+  gameTitleArtForGuide, gameTitleArtLabel, isGameArtIcon, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
   GAME_HEADER, GAME_TILES_OPACITY, accentCardShadow, artMotion, gameHeaderArtHeight, gameHeaderStyle, gameTint,
-  gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall, wideWallSrc, type WallArtName,
+  gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall, wideWallSrc,
+  type WallArtName, POSE_ART, POSE_ART_NAMES, POSE_SIZE, poseArt, poseSrc,
 } from './art';
+import { CAST } from './mascots';
 import { MODES } from './modes.generated';
 
 // The art pass (docs/ART_SPEC.md): every name the web table knows has its file
@@ -289,9 +291,10 @@ describe('game screen tints (§15)', () => {
 });
 
 describe('title art motion (§16)', () => {
-  it('floats page and day titles, only pops game titles, leaves moments and scenes alone', () => {
-    expect(artMotion('art-title-friends')).toBe('float');
-    expect(artMotion('art-day-friday')).toBe('float');
+  it('pops page, day and game titles in (no float, FINISH_SPEC A6), leaves moments and scenes alone', () => {
+    // FINISH_SPEC A6: page / day titles no longer float, they only pop in.
+    expect(artMotion('art-title-friends')).toBe('pop');
+    expect(artMotion('art-day-friday')).toBe('pop');
     expect(artMotion('art-game-quordle')).toBe('pop');
     expect(artMotion('art-moment-victory')).toBe('none');
     expect(artMotion('art-scene-r-asleep')).toBe('none');
@@ -301,5 +304,25 @@ describe('title art motion (§16)', () => {
     const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'globals.css'), 'utf8');
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.art-pop, \.art-float \{ animation: none !important; \}/);
     expect(css).toContain('[data-reduced-motion="true"] .art-float { animation: none !important; }');
+  });
+});
+
+describe('cast poses (finishing build)', () => {
+  it('records every shipped pose (at least the 62 of the first set), every file 320 px square', () => {
+    expect(POSE_ART_NAMES.length).toBeGreaterThanOrEqual(62);
+    expect(new Set(POSE_ART_NAMES).size).toBe(POSE_ART_NAMES.length);
+    for (const name of POSE_ART_NAMES) {
+      expect(ART_SIZE[name], name).toEqual([POSE_SIZE, POSE_SIZE]);
+      expect(fs.existsSync(pub(artSrc(name))), name).toBe(true);
+      expect(webpSize(pub(artSrc(name))), name).toEqual([POSE_SIZE, POSE_SIZE]);
+    }
+    const files = fs.readdirSync(pub('/art')).filter((f) => f.startsWith('art-pose-'));
+    expect(files.length).toBe(POSE_ART_NAMES.length);
+  });
+
+  it('has poses for every cast member and builds their paths', () => {
+    expect(Object.keys(POSE_ART).sort()).toEqual([...CAST].sort());
+    expect(poseArt('s', 'trophy')).toBe('art-pose-s-trophy');
+    expect(poseSrc('u', 'lotus')).toBe('/art/art-pose-u-lotus.webp');
   });
 });

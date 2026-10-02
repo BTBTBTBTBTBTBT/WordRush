@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
@@ -41,6 +40,8 @@ import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { ResultCard, ShareGlyph, PlayAgainButton } from '@/components/game/result-line';
+import { candyClass } from '@/components/ui/candy-button';
 
 // Spyglass (More Games §17): ten themed words hidden in a 10 × 10 grid, four
 // forward directions in the daily. Tap-start / tap-end or drag to select; a
@@ -224,8 +225,9 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
   const won = state.status === 'won';
   const gc = wordsearchGuessCount(state);
   const missLabel = formatGuessStat('misses', 10, gc);
-  const capsule = (dim: boolean) => `flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${dim ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'hover:opacity-80'}`;
-  const capsuleStyle = (dim: boolean) => dim ? undefined : { borderColor: `${WORDSEARCH_ACCENT}66`, color: WORDSEARCH_ACCENT, background: `${WORDSEARCH_ACCENT}0d` };
+  // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
+  const capsule = (dim: boolean) => candyClass({ dim });
+  const capsuleStyle = (_dim: boolean) => undefined;
 
   const renderWordList = (s: WordsearchState, done: boolean) => <SpyglassWordList state={s} done={done} />;
   const wordList = renderWordList(state, finished);
@@ -301,7 +303,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
               {wordList}
             </div>
             <div className="px-4 pb-4 animate-fade-in-up">
-              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+              <ResultCard accent={WORDSEARCH_ACCENT}>
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 text-xl font-black"
                   style={{ backgroundColor: `${WORDSEARCH_ACCENT}15`, border: `2px solid ${WORDSEARCH_ACCENT}44`, color: WORDSEARCH_ACCENT }}>
                   {state.found.length}/{state.words.length}
@@ -313,14 +315,13 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
                   <span className="text-xs text-gray-400">
                     {`${state.found.length}/${state.words.length} found · ${missLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`}
                   </span>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <Link href={MORE_HOME_HREF} className="text-gray-400 text-xs font-bold underline">Home</Link>
-                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <ShareGlyph onShare={handleShare} copied={copied} />
                     {mode === 'daily' && <DailyRankBadge gameMode="WORDSEARCH" />}
-                    {mode !== 'daily' && isPro && <button onClick={startPractice} className="text-xs font-bold underline" style={{ color: WORDSEARCH_ACCENT }}>Play Again</button>}
+                    {mode !== 'daily' && isPro && <PlayAgainButton onClick={startPractice} won />}
                   </div>
                 </div>
-              </div>
+              </ResultCard>
               <ScoreBreakdownCard gameMode="WORDSEARCH" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
                 boardsSolved={state.found.length} totalBoards={state.words.length} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
               {mode === 'daily' && <NextDailyCta currentMode="WORDSEARCH" />}
