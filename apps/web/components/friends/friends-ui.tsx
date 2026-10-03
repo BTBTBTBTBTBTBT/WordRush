@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { MOTION } from '@/lib/motion-spec';
+import { prefersReducedMotion } from '@/lib/motion';
 import { Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { PocketArt } from '@/components/ui/game-art';
@@ -224,23 +226,46 @@ export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKi
   );
 }
 
-/** The one bottom sheet (page color, grabber). Tapping the scrim or Escape closes it. */
-export function Sheet({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
+/**
+ * The one bottom sheet (page color, grabber). Tapping the scrim or Escape closes it.
+ * BJ10: it soft-pops like every app sheet — the dim fades in and the sheet springs up
+ * from its bottom center (0.94 → 1 + fade); closing plays the quick reverse
+ * (MOTION.popDismissMs) before `onClose`. Reduce Motion closes at once.
+ */
+export function Sheet({ onClose, children, label, tint }: {
+  onClose: () => void; children: React.ReactNode; label: string;
+  /** A calmer sheet color for one state (BJ13: the friend picker's lavender). */
+  tint?: string;
+}) {
+  const [closing, setClosing] = useState(false);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const close = useCallback(() => {
+    if (prefersReducedMotion()) { closeRef.current(); return; }
+    setClosing((was) => {
+      if (!was) window.setTimeout(() => closeRef.current(), MOTION.popDismissMs);
+      return true;
+    });
+  }, []);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+  }, [close]);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(42,22,80,0.35)' }} onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center animate-fade-in"
+      style={{ background: 'rgba(42,22,80,0.35)', transition: `opacity ${MOTION.popDismissMs}ms ease-in`, opacity: closing ? 0 : 1 }}
+      onClick={close}
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="w-full max-w-md overflow-y-auto"
-        style={{ background: softMix(FR_LOOK.pink, 0.08), borderTop: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(60,30,110,0.18)' }}
+        className={`w-full max-w-md overflow-y-auto ${closing ? 'soft-pop-out' : 'soft-pop'}`}
+        style={{ background: tint ?? softMix(FR_LOOK.pink, 0.08), transition: 'background-color 220ms ease-out', borderTop: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(60,30,110,0.18)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: softMix(FR_LOOK.pink, 0.4) }} />

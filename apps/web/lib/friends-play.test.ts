@@ -3,7 +3,7 @@ import { FRIENDLY_KINDS, friendsBannerHeadline, friendsBannerClockLine, newFrien
 import {
   KIND_COLOR, KIND_GRADIENT, KIND_SHORT, KIND_SUB, activityKeyForPath, bannerModel, bestFriendStreak, chainNeededLetter,
   chainPrecheck, doingLine, friendAction, friendLine, friendsBadgeCount, gameMomentText, gameSubLine, ghostRoundCard, ghostTiles,
-  kindForTitle, midnightClock, nobodyOnLine, onNow, passKeyStates, raceChips,
+  kindForTitle, pocketTitleArt, kindRules, midnightClock, pickerGrid, pickerStatus, nobodyOnLine, onNow, passKeyStates, raceChips,
   reactionChips, rivalryLine, scoreOf, screenHeadline, sortActiveGames, sortForPicker, toggleReaction, tttThreats,
 } from './friends-play';
 
@@ -238,5 +238,36 @@ describe('Ghost and Word Chain (spec §9)', () => {
     expect(gameSubLine(newFriendlyState('chain'), 'a', 'amy', false)).toBe('FIRST TO 30');
     expect(gameSubLine(chain, 'b', 'amy', false)).toBe('FIRST TO 30 · AMY PLAYED CRANE +5');
     expect(scoreOf(chain, 'b')).toEqual({ mine: 0, theirs: 5 });
+  });
+});
+
+describe('BJ13 pocket-game friend picker', () => {
+  it('prints one rules line per game from the core targets', () => {
+    expect(kindRules('rps')).toBe('Best of 3 · first to 2');
+    expect(kindRules('ttt')).toBe('Best of 3 · first to 2');
+    expect(kindRules('ghost')).toBe('Best of 3 · first to 2');
+    expect(kindRules('coin')).toBe('Best of 5 · first to 3');
+    expect(kindRules('chain')).toBe('First to 30 points');
+    expect(kindRules('pass')).toBe('Six guesses, shared board');
+  });
+  it('gives each cell one short status', () => {
+    const base = { id: 'x', username: 'x' };
+    expect(pickerStatus({ ...base, lastSeenAt: ago(30_000) }, NOW)).toEqual({ text: 'On now', online: true });
+    expect(pickerStatus({ ...base, lastSeenAt: ago(20 * MIN) }, NOW).text).toBe('20 min ago');
+    expect(pickerStatus({ ...base, lastSeenAt: ago(20 * 60 * MIN) }, NOW).text).toBe('20 h ago');
+    expect(pickerStatus({ ...base, lastSeenAt: ago(3 * 24 * 60 * MIN), playedToday: 2 }, NOW).text).toBe('Played today');
+    expect(pickerStatus({ ...base, h2hW: 5, h2hL: 3 }, NOW).text).toBe('You lead 5–3');
+    expect(pickerStatus(base, NOW)).toEqual({ text: 'Away', online: false });
+  });
+  it('fills the width: 3 across on phones, 4 on the wide sheet, the avatar tile fills its cell', () => {
+    expect(pickerGrid(343)).toEqual({ cols: 3, avatar: 109 });
+    expect(pickerGrid(370)).toEqual({ cols: 3, avatar: 118 });
+    expect(pickerGrid(416)).toEqual({ cols: 4, avatar: 98 });
+    expect(pickerGrid(900).avatar).toBeLessThanOrEqual(124);
+  });
+  it('picks the pocket title art up by name (the four shipped, the rest fall back)', () => {
+    expect(pocketTitleArt('rps')).toEqual([993, 229]);
+    expect(pocketTitleArt('coin')).not.toBeNull();
+    expect(pocketTitleArt('ghost')).toBeNull();
   });
 });

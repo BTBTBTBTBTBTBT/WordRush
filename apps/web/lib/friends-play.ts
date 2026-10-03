@@ -6,9 +6,10 @@
 // Pass the Puzzle key colors, Ghost tiles, Word Chain checks). No React, so vitest pins it.
 
 import {
-  CHAIN_TARGET, FRIENDLY_TITLES, WORD_MAX, WORD_MIN, applyFriendlyMove, friendlyHeadline, isOnline, presenceLine, tttLine, whoseTurn,
+  CHAIN_TARGET, FRIENDLY_TARGET, FRIENDLY_TITLES, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, applyFriendlyMove, friendlyHeadline, isOnline, presenceLine, tttLine, whoseTurn,
   type CellMark, type ChainState, type FriendlyKind, type FriendlyState, type FriendsBannerInput, type GhostState, type Side,
 } from '@wordle-duel/core';
+import { ART_SIZE } from './art';
 import { MODE_BY_DBKEY } from './modes.generated';
 import { MODE_ROUTES } from './mode-routes';
 import { rankToday, type RaceRow } from './todays-race';
@@ -164,6 +165,59 @@ export function sortForPicker<T extends PresenceFriend>(friends: T[], nowMs: num
     return a.username.localeCompare(b.username);
   });
 }
+
+// ── BJ13: the pocket-game friend picker (character-select grid) ────────────
+
+/** The one rules line under the game's title: "Best of 3 · first to 2", "First to 30 points". */
+export function kindRules(kind: FriendlyKind): string {
+  if (kind === 'pass') return `${PASS_MAX_GUESSES === 6 ? 'Six' : PASS_MAX_GUESSES} guesses, shared board`;
+  const t = FRIENDLY_TARGET[kind];
+  if (kind === 'chain') return `First to ${t} points`;
+  return `Best of ${2 * t - 1} · first to ${t}`;
+}
+
+/** A grid cell's one short status line: "On now", "20 min ago", "5 h ago", "Played today", a rivalry note, else "Away". */
+export function pickerStatus(f: PresenceFriend, nowMs: number): { text: string; online: boolean } {
+  if (friendOnline(f, nowMs)) return { text: 'On now', online: true };
+  const last = lastSeenMs(f);
+  if (last != null && nowMs >= last) {
+    const m = Math.floor((nowMs - last) / 60_000);
+    if (m < 60) return { text: `${Math.max(1, m)} min ago`, online: false };
+    if (m < 60 * 24) return { text: `${Math.floor(m / 60)} h ago`, online: false };
+  }
+  if ((f.playedToday ?? 0) > 0) return { text: 'Played today', online: false };
+  const w = f.h2hW ?? 0;
+  const l = f.h2hL ?? 0;
+  if (w + l > 0) return { text: w === l ? `Tied ${w}–${l}` : w > l ? `You lead ${w}–${l}` : `They lead ${l}–${w}`, online: false };
+  return { text: 'Away', online: false };
+}
+
+/** The grid's column gap (px / pt / dp, same number on every platform; founder mockup pick-friend-1). */
+export const PICKER_GAP = 8;
+/** Cells never grow wider than this before another column is added (wide web → 4 across). */
+export const PICKER_MAX_CELL = 96;
+/** The avatar tile fills its cell, capped. */
+export const PICKER_AVATAR_MAX = 124;
+
+/** Columns + avatar size for a grid `width` wide: 3 on phones, 4 once cells would pass PICKER_MAX_CELL. */
+export function pickerGrid(width: number): { cols: number; avatar: number } {
+  const cols = Math.max(3, Math.floor((width + PICKER_GAP) / (PICKER_MAX_CELL + PICKER_GAP)));
+  const cell = (width - PICKER_GAP * (cols - 1)) / cols;
+  return { cols, avatar: Math.floor(Math.min(PICKER_AVATAR_MAX, cell)) };
+}
+
+/**
+ * Title art for the picker, by name (docs/design/brand/titles/cast-colors/pocket-<kind>.png and
+ * pick-friend.png, shipped as public/art/art-titlecast-pocket-<kind>.webp and
+ * art-titlecast-pick-friend.webp). A kind without art draws its name in the live title
+ * lettering instead. To ship one: drop the webp in public/art and record its size in
+ * lib/art.ts ART_SIZE (art.test.ts already refuses an unrecorded file).
+ */
+export function pocketTitleArt(kind: FriendlyKind): readonly [number, number] | null {
+  return (ART_SIZE as Record<string, readonly [number, number] | undefined>)[`art-titlecast-pocket-${kind}`] ?? null;
+}
+export const PICK_FRIEND_TITLE_ART: readonly [number, number] | null =
+  (ART_SIZE as Record<string, readonly [number, number] | undefined>)['art-titlecast-pick-friend'] ?? null;
 
 /** The friend with the longest friend streak (shown in the banner's TODAY'S RACE row). */
 export function bestFriendStreak(friends: PresenceFriend[]): { name: string; days: number } | null {

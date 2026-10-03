@@ -1565,40 +1565,23 @@ lib/mode-coverage.test.ts (recording call sites, recent-match chrome, format par
 BJ13. Pocket-game friend picker = character-select grid under title art (founder 10-03: "I don't like the pick your opponent
 look of the new game, can we make this a little more finished looking? I don't like the right arrows either"; "There shouldn't
 be any plain text menus looking like this"; "as long as it fills out the space as it should, the icons look a bit spaced
-apart"). The quick-play sheet opened from a game tile (no friend yet) ×3: a centered header — the game's title art
-(art-titlecast-pocket-<rps|ttt|coin|pass|ghost|chain>, from docs/design/brand/titles/cast-colors/pocket-<id>.png; until it
-ships, the game's 3D icon + the name in the live title lettering, Friends palette), ONE rules line from core FRIENDLY_TARGET
-("Best of 3 · first to 2", Call It "Best of 5 · first to 3", Word Chain "First to 30 points", Pass the Puzzle "Six guesses,
-shared board"), then WHO ARE YOU PLAYING? (art-titlecast-pick-friend when it ships, else the live lettering). Under it the
-friends as a grid that fills the sheet (no list rows, chevrons, stripes or bordered card): 3 across on phones, a 4th column
-once cells would pass 96 (wide web), gap 10, the avatar ~76% of its cell (≤ 88) through the shared avatar component, the name
-(no @, one line) and one short status — "On now" in green with the green glow ring, else "20 min ago" / "5 h ago" / "Played
-today" / the rivalry ("You lead 5–3") / "Away". Online first, then most recent, then A–Z. Tap = squish, then the play state in
-the SAME sheet with the shared soft rise (MotionSpec rise: 0.96 → 1, up 14, fade, 0.34 s on the expo curve; Reduce Motion a
-0.22 s cross-fade); the sheet itself opens / closes with BJ10's soft pop (web's friends Sheet gained the pop + quick reverse).
-No friends: I's invite scene (BrandEmptyState). Android now matches iOS / web (a separate picker state, was a face strip above
-the full sheet). Title art is looked up BY NAME (iOS ArtAsset.exists, Android getIdentifier + res/raw/keep_pocket_titles.xml,
-web lib/friends-play.ts POCKET_TITLE_ART / PICK_FRIEND_TITLE_ART sizes), so shipping a file is a drop-in. Helpers: web
-friends-play.ts kindRules / pickerStatus / pickerGrid (vitest), iOS FriendsKit.rules / pickerStatus / PickerGrid, Android
-FriendsKit friendlyRules / pickerStatus / PickerGrid.
-BJ14. Game open/close long frame (perf harness 10-03: every game open had ONE main-thread frame of 300–490 ms a few frames
-after the tap; closes 64–219 ms). Cause, measured: (b) building the game hierarchy, not (a) the BJ9 transition. A/B with
-`--flag noXition` (DEBUG: present the cover with no overlay and no custom dismissal) still stalls — Classic open 381 → 283
-ms, OctoWord 574 → 413 — so the transition adds ~100 ms on top but is not the stall. A Time Profiler trace of the tour,
-samples cut to each "hitch" signpost, puts the whole long frame inside ONE SwiftUI update (graph instantiation of the new
-cover: GameScreen, BoardLayout / BoardView / GlossyTile bodies, KeyboardView / KeyCap, header); app-side setup
-(GameViewModel.init, seed / solution pool, persistence) is ~1% of it. The close stall is the cover's teardown in
-`completeTransition` at the END of the shrink (GameCoverDismissal finish closure), not the animation. Fix 1 (shipped iOS):
-multi-board games build their mini boards two per run-loop turn under the overlay (BoardLayout.builtBoards; a pending slot
-holds its exact cell size, so nothing shifts) — OctoWord open worst 574 / 491 → 212–223 ms, hitch 259 → 135–162 ms/s.
-Owed: Classic-family opens (the single board + keyboard + header still build on one frame: stage the keyboard / header art a
-turn later, or pre-instantiate a hidden GameScreen on Home idle), the close teardown (drop the game hierarchy a turn after
-the shell lands, or in pieces), and the ~100 ms the overlay adds (window snapshot + flush). Target stays < 50 ms open and
-close on Classic, OctoWord, Sudocious, Muddle, Crossword and a VS bot start.
-BJ8. Backgrounds never distract: fewer, smaller, fainter tiles; none behind boards/cards; static in games (founder 10-03:
-"the OctoWord background was too busy … I don't ever want the backgrounds to be a distraction"). The 3D letter tiles are no
-longer baked into the 92 wallpapers ×3 (docs/design/brand/walls/calm-walls.py: each wallpaper's own gradient + a soft
-bokeh glow, no tiles). The remaining tiles come from one config per platform (iOS BackdropTiles.swift, Android
-ui/BackdropTiles.kt, web lib/backdrop-tiles.ts): games 4 tiles of 10–12 pt at 0.2 opacity, 55% saturation, in the side
-gutters between header and keyboard; pages 6 tiles of 12–14 pt at 0.35, 75% saturation, in the 16-pt gutters; desaturated
-toward the page tint, static, drawn once (no blur, no motion).
+apart"; built toward ChatGPT mockup docs/design/brand/menus/pick-friend-1.png, option 1). The quick-play sheet opened from a
+game tile (no friend yet) ×3, on a calm lavender sheet (#f4f0ff; the play state keeps the Friends wash): the game's title art
+spanning the sheet (art-titlecast-pocket-<kind> from titles/cast-colors/pocket-<kind>.png — rps, ttt, coin, pass shipped;
+ghost / chain draw the name in the live title lettering, Friends palette, until theirs land), ONE rules line in dark ink from
+core FRIENDLY_TARGET ("Best of 3 · first to 2", Call It "Best of 5 · first to 3", Word Chain "First to 30 points", Pass the
+Puzzle "Six guesses, shared board"), then WHO ARE YOU PLAYING? in muted letter-spaced caps (art-titlecast-pick-friend once it
+ships). Under it the friends as a grid that fills the sheet — no list rows, chevrons, stripes or bordered card: 3 across on
+phones, a 4th column once cells would pass 96 (wide web), gap 8, each friend's REAL avatar (the shared resolver + avatar
+component: their mascot, photo or cast pick, never mockup art) as a tile filling its cell (≤ 124), the name (no @, one line,
+dark ink) and one short status centered under it — "On now" in green with a soft green glow around the tile (no outline), else
+"20 min ago" / "5 h ago" / "Played today" / the rivalry ("You lead 5–3") / "Away" in muted. Online first, then most recent,
+then A–Z. Tap = squish, then the play state in the SAME sheet with the shared soft rise (MotionSpec rise: 0.96 → 1, up 14,
+fade, 0.34 s on the expo curve; Reduce Motion a 0.22 s cross-fade); the sheet itself opens / closes with BJ10's soft pop (the
+web friends Sheet gained the pop + quick reverse). iOS opens the picker at a height that shows the header + two full rows
+(PickerGrid.twoRowHeight; medium for the empty state). No friends: I's invite scene (BrandEmptyState) ×3. Android now matches
+iOS / web (a separate picker state; was a face strip above the full sheet). Title art is looked up BY NAME — iOS
+ArtAsset.exists, Android getIdentifier (+ res/raw/keep_pocket_titles.xml), web lib/art.ts ART_SIZE — so shipping a new title is
+a file drop (+ its ART_SIZE line on web, which art.test.ts enforces). Helpers + tests: web friends-play.ts kindRules /
+pickerStatus / pickerGrid / pocketTitleArt (vitest), iOS FriendsKit.rules / pickerStatus / PickerGrid, Android FriendsKit
+friendlyRules / pickerStatus / PickerGrid.

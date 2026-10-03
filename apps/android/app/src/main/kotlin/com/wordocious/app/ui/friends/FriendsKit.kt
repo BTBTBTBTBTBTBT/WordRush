@@ -303,3 +303,51 @@ fun h2hWords(w: Int, l: Int): String? = when {
     w > l -> "You lead $w–$l"
     else -> "They lead $l–$w"
 }
+
+// ── BJ13: the pocket-game friend picker (web lib/friends-play.ts parity) ─────
+
+/** The one rules line under the game's title: "Best of 3 · first to 2", "First to 30 points". */
+fun friendlyRules(kind: FriendlyKind): String {
+    val t = com.wordocious.core.FRIENDLY_TARGET.getValue(kind)
+    return when (kind) {
+        FriendlyKind.PASS -> "${if (com.wordocious.core.PASS_MAX_GUESSES == 6) "Six" else com.wordocious.core.PASS_MAX_GUESSES.toString()} guesses, shared board"
+        FriendlyKind.CHAIN -> "First to $t points"
+        else -> "Best of ${2 * t - 1} · first to $t"
+    }
+}
+
+/** A grid cell's one short status: "On now", "20 min ago", "5 h ago", "Played today", a rivalry note, else "Away". */
+fun pickerStatus(f: com.wordocious.app.data.FriendsService.FriendProfile, nowMs: Long): Pair<String, Boolean> {
+    if (f.isOnline(nowMs)) return "On now" to true
+    val last = f.lastSeenMs
+    if (last != null && nowMs >= last) {
+        val m = (nowMs - last) / 60_000L
+        if (m < 60) return "${maxOf(1L, m)} min ago" to false
+        if (m < 60 * 24) return "${m / 60} h ago" to false
+    }
+    if ((f.playedToday ?: 0) > 0) return "Played today" to false
+    h2hWords(f.h2hW ?: 0, f.h2hL ?: 0)?.let { return it to false }
+    return "Away" to false
+}
+
+/** The grid's numbers (founder mockup pick-friend-1): an 8 dp gap, cells ≤ 96 wide before another column joins, the avatar tile fills its cell (≤ 124). */
+object PickerGrid {
+    const val GAP = 8f
+    const val MAX_CELL = 96f
+    const val AVATAR_MAX = 124f
+
+    /** Columns + avatar size (dp) for a grid [width] dp wide: 3 on phones, 4 on wide sheets. */
+    fun layout(width: Float): Pair<Int, Float> {
+        val cols = maxOf(3, ((width + GAP) / (MAX_CELL + GAP)).toInt())
+        val cell = (width - GAP * (cols - 1)) / cols
+        return cols to kotlin.math.floor(minOf(AVATAR_MAX, cell))
+    }
+}
+
+/**
+ * Title art for the picker, looked up BY NAME so dropping the file in res/drawable-nodpi
+ * ships it (docs/design/brand/titles/cast-colors/pocket-<kind>.png → art_titlecast_pocket_<kind>.webp,
+ * pick-friend.png → art_titlecast_pick_friend.webp; kept by res/raw/keep_pocket_titles.xml). 0 = not shipped.
+ */
+fun pocketTitleArtName(kind: FriendlyKind): String = "art_titlecast_pocket_${kind.raw}"
+const val PICK_FRIEND_TITLE_ART = "art_titlecast_pick_friend"

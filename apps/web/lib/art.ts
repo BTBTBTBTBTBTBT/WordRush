@@ -816,6 +816,11 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-titlecast-welcome': [949, 249],
   'art-titlecast-words': [809, 265],
   'art-titlecast-wotd': [973, 195],
+  // BJ13: the pocket-game titles over the quick-play friend picker (cast-colors/pocket-<kind>.png).
+  'art-titlecast-pocket-rps': [993, 229],
+  'art-titlecast-pocket-ttt': [986, 270],
+  'art-titlecast-pocket-coin': [738, 270],
+  'art-titlecast-pocket-pass': [991, 231],
   'art-badge-icon-clock-sprite': [256, 256],
   'art-frame-bronze': [256, 256],
   'art-frame-diamond': [256, 256],

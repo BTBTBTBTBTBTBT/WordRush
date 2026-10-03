@@ -93,6 +93,63 @@ enum FriendsKit {
         return "on now"
     }
 
+    // MARK: BJ13 — the pocket-game friend picker (web lib/friends-play.ts parity)
+
+    /// The one rules line under the game's title: "Best of 3 · first to 2", "First to 30 points".
+    static func rules(_ k: FriendlyKind) -> String {
+        switch k {
+        case .pass: return "\(FriendlyGames.passMaxGuesses == 6 ? "Six" : "\(FriendlyGames.passMaxGuesses)") guesses, shared board"
+        case .chain: return "First to \(k.target) points"
+        default: return "Best of \(2 * k.target - 1) · first to \(k.target)"
+        }
+    }
+
+    /// A grid cell's one short status: "On now", "20 min ago", "5 h ago", "Played today", a rivalry note, else "Away".
+    static func pickerStatus(_ f: FriendsService.FriendProfile, now: Date = Date()) -> (text: String, online: Bool) {
+        if f.isOnline(now: now) { return ("On now", true) }
+        if let last = FriendsService.ms(f.lastSeenAt) {
+            let nowMs = FriendsService.ms(now)
+            if nowMs >= last {
+                let m = (nowMs - last) / 60_000
+                if m < 60 { return ("\(max(1, m)) min ago", false) }
+                if m < 60 * 24 { return ("\(m / 60) h ago", false) }
+            }
+        }
+        if (f.playedToday ?? 0) > 0 { return ("Played today", false) }
+        if let r = rivalry(f) { return (r, false) }
+        return ("Away", false)
+    }
+
+    /// The grid's numbers (founder mockup pick-friend-1, 10-03): an 8 pt gap, cells ≤ 96
+    /// wide before another column joins (3 across on phones, 4 on wide sheets), and the
+    /// avatar tile FILLS its cell (≤ 124).
+    enum PickerGrid {
+        static let gap: CGFloat = 8
+        static let maxCell: CGFloat = 96
+        static let avatarMax: CGFloat = 124
+        /// Name + status + spacing under each tile.
+        static let captionHeight: CGFloat = 40
+        static let rowSpacing: CGFloat = 12
+
+        static func layout(width: CGFloat) -> (cols: Int, avatar: CGFloat) {
+            let cols = max(3, Int(((width + gap) / (maxCell + gap)).rounded(.down)))
+            let cell = (width - gap * CGFloat(cols - 1)) / CGFloat(cols)
+            return (cols, min(avatarMax, cell).rounded(.down))
+        }
+
+        /// The picker sheet's opening height: the header plus two full rows (never cut off).
+        static func twoRowHeight(width: CGFloat) -> CGFloat {
+            let a = layout(width: width).avatar
+            return 170 + 2 * (a + captionHeight) + rowSpacing + 28
+        }
+    }
+
+    /// The pocket game's title art (docs/design/brand/titles/cast-colors/pocket-<id>.png),
+    /// picked up by name once the image set ships.
+    static func pocketTitleAsset(_ k: FriendlyKind) -> String { "art-titlecast-pocket-\(k.rawValue)" }
+    /// WHO ARE YOU PLAYING? as title art (cast-colors/pick-friend.png), by name.
+    static let pickFriendTitleAsset = "art-titlecast-pick-friend"
+
     /// The friend row for an id (presence, streaks, rivalry).
     static func friend(_ id: String) -> FriendsService.FriendProfile? {
         FriendsService.friends.first { $0.id.caseInsensitiveCompare(id) == .orderedSame }

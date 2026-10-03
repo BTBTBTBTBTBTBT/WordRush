@@ -22,6 +22,8 @@ struct FriendsQuickPlaySheet: View {
     @State private var stake = FriendlyGames.coinStakes[0]
     @State private var starting = false
     @State private var error: String?
+    /// BJ13: the picker's measured width (the grid fills it).
+    @State private var gridWidth: CGFloat = 343
 
     init(friend: FriendsService.FriendProfile?, kind: FriendlyKind,
          onStarted: @escaping (FriendlyGameView) -> Void,
@@ -40,37 +42,59 @@ struct FriendsQuickPlaySheet: View {
                 Capsule().fill(FriendsInk.pink.wash(0.35)).frame(width: 40, height: 5)
                     .frame(maxWidth: .infinity).padding(.top, 8)
                 if let f = friend {
-                    header(f)
-                    gamesSection(f)
-                    wordociousSection(f)
-                    cta(f)
+                    // BJ13: a friend picked in this sheet soft-rises in (MotionSpec).
+                    VStack(alignment: .leading, spacing: 14) {
+                        header(f)
+                        gamesSection(f)
+                        wordociousSection(f)
+                        cta(f)
+                    }
+                    .transition(Self.riseIn)
                 } else {
-                    picker
+                    picker.transition(.opacity)
                 }
             }
             .padding(.horizontal, 16).padding(.bottom, 24)
         }
+        // BJ13 (mockup option 1): the picker sits on a calm lavender sheet; the play state
+        // keeps the Friends page wash.
+        .background { if friend == nil { Self.pickerSheet.ignoresSafeArea() } }
         .pageBackground(.friends, lightOnly: true)
-        .presentationDetents(friend == nil ? [.medium, .large] : [.large])
+        // No friends: the empty state needs only the medium height.
+        .presentationDetents(friend == nil ? [Self.pickerSource.isEmpty ? .medium : Self.pickerDetent, .large] : [.large])
     }
 
-    // MARK: Friend picker (from a game tile)
+    // MARK: Friend picker (from a game tile) — BJ13 character-select grid
+
+    /// The shared soft rise (BJ9's no-source motion): 0.96 → 1, up 14, fade;
+    /// Reduce Motion: a cross-fade.
+    private static var riseIn: AnyTransition {
+        if Theme.reduceMotion { return .opacity }
+        return .asymmetric(
+            insertion: .scale(scale: MotionSpec.riseScale, anchor: .top)
+                .combined(with: .offset(y: MotionSpec.riseOffset)).combined(with: .opacity),
+            removal: .opacity)
+    }
+
+    /// The rise's curve (web MOTION.growEase, ease-out-expo-like) / the cross-fade.
+    private static var riseAnimation: Animation {
+        Theme.reduceMotion ? .easeOut(duration: MotionSpec.crossFadeDuration)
+            : .timingCurve(0.16, 1, 0.3, 1, duration: MotionSpec.riseDuration)
+    }
 
     private var picker: some View {
-        let friends = FriendsService.friends.sorted { a, b in
-            let ao = a.isOnline(), bo = b.isOnline()
+        let now = Date()
+        // Online first, then the freshest presence, then A–Z (web sortForPicker).
+        let friends = Self.pickerSource.sorted { a, b in
+            let ao = a.isOnline(now: now), bo = b.isOnline(now: now)
             if ao != bo { return ao }
+            let la = FriendsService.ms(a.lastSeenAt) ?? 0, lb = FriendsService.ms(b.lastSeenAt) ?? 0
+            if la != lb { return la > lb }
             return a.username.localizedCaseInsensitiveCompare(b.username) == .orderedAscending
         }
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                gameIcon(kind, size: 44)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(kind.title.uppercased()).font(Brand.font(17, .black)).tracking(0.3).foregroundStyle(FriendsInk.heading)
-                    Text(FriendsKit.sub(kind)).font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
-                }
-            }
-            FriendsSectionHeader(title: "PICK A FRIEND")
+        let grid = FriendsKit.PickerGrid.layout(width: gridWidth)
+        return VStack(spacing: 12) {
+            pickerTitle
             if friends.isEmpty {
                 // §A7 empty state: I with the invite scene (not the page host O1).
                 // BI24: brand headline over I's voice line.
@@ -78,35 +102,89 @@ struct FriendsQuickPlaySheet: View {
                                 scene: .invite, artHeight: 110, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
                                 lineColor: FriendsInk.muted)
             } else {
-                // §C4: the friends list's lavender card with soft striped rows.
-                VStack(spacing: 0) {
-                    ForEach(Array(friends.enumerated()), id: \.element.id) { i, f in
-                        Button {
-                            if Theme.reduceMotion { friend = f }
-                            else { withAnimation(.easeOut(duration: 0.15)) { friend = f } }
-                        } label: {
-                            HStack(spacing: 10) {
-                                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 38, online: f.isOnline(), ring: false)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text("@\(f.username)").font(Brand.font(14, .black)).foregroundStyle(FriendsInk.heading).lineLimit(1)
-                                    Text(f.presenceLine() ?? FriendsKit.todayLine(f)).font(Brand.font(11, .bold))
-                                        .foregroundStyle(f.isOnline() ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
-                                }
-                                Spacer(minLength: 4)
-                                Image(systemName: "chevron.right").font(.system(size: 12, weight: .black))
-                                    .foregroundStyle(FriendsInk.purple.wash(0.55))
-                                    .accessibilityHidden(true)
-                            }
-                            .padding(.horizontal, 12).padding(.vertical, 9)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.squish)
-                        .friendsStripe(i, accent: FriendsInk.purple)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: FriendsKit.PickerGrid.gap, alignment: .top),
+                                         count: grid.cols),
+                          spacing: FriendsKit.PickerGrid.rowSpacing) {
+                    ForEach(friends, id: \.id) { f in
+                        pickerCell(f, avatar: grid.avatar, now: now)
                     }
                 }
-                .friendsCard(accent: FriendsInk.purple, radius: 18, tint: 0.075, line: 0.21)
             }
         }
+        .frame(maxWidth: .infinity)
+        .background(GeometryReader { g in
+            Color.clear
+                .onAppear { gridWidth = g.size.width }
+                .onChange(of: g.size.width) { gridWidth = $0 }
+        })
+    }
+
+    /// The friends the picker offers.
+    private static var pickerSource: [FriendsService.FriendProfile] { FriendsService.friends }
+
+    /// The calm lavender picker sheet (mockup option 1).
+    private static let pickerSheet = Color(hex: 0xF4F0FF)
+
+    /// Opens tall enough for the header + two full rows of tiles.
+    private static var pickerDetent: PresentationDetent {
+        .height(FriendsKit.PickerGrid.twoRowHeight(width: UIScreen.main.bounds.width - 32))
+    }
+
+    /// The game's title art spanning the sheet (else the name in the live title
+    /// lettering), the rules line in dark ink, then WHO ARE YOU PLAYING? in muted,
+    /// letter-spaced caps (its art once it ships).
+    private var pickerTitle: some View {
+        VStack(spacing: 6) {
+            let art = FriendsKit.pocketTitleAsset(kind)
+            if ArtAsset.exists(art) {
+                Image(art).resizable().interpolation(.high).scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: 84)
+                    .accessibilityLabel(kind.title).accessibilityAddTraits(.isHeader)
+            } else {
+                LiveHeadline(text: kind.title, palette: .friends, size: 32, maxLines: 1, minimumScale: 0.5)
+                    .frame(maxWidth: .infinity)
+            }
+            Text(FriendsKit.rules(kind)).font(Brand.font(15, .heavy)).foregroundStyle(FriendsInk.heading)
+            Group {
+                if ArtAsset.exists(FriendsKit.pickFriendTitleAsset) {
+                    Image(FriendsKit.pickFriendTitleAsset).resizable().interpolation(.high).scaledToFit()
+                        .frame(maxWidth: 260, maxHeight: 30)
+                        .accessibilityLabel("Who are you playing?").accessibilityAddTraits(.isHeader)
+                } else {
+                    Text("WHO ARE YOU PLAYING?").font(Brand.font(13, .black)).tracking(1.6)
+                        .foregroundStyle(FriendsInk.rowSub).accessibilityAddTraits(.isHeader)
+                }
+            }
+            .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// One character-select cell: the friend's REAL avatar (the shared resolver: their
+    /// mascot, photo or cast pick) as a tile filling the cell, a soft green glow when
+    /// they're on (no outline), the name (no @) and one short status, centered.
+    /// Tap = squish, then the play state.
+    private func pickerCell(_ f: FriendsService.FriendProfile, avatar: CGFloat, now: Date) -> some View {
+        let st = FriendsKit.pickerStatus(f, now: now)
+        return Button {
+            withAnimation(Self.riseAnimation) { friend = f }
+        } label: {
+            VStack(spacing: 1) {
+                AvatarView(url: f.avatar_url, username: f.username, size: avatar, emoji: f.avatar_emoji,
+                           castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id)
+                    .shadow(color: st.online ? FriendsKit.green.opacity(0.55) : .clear, radius: 10)
+                    .shadow(color: st.online ? FriendsKit.green.opacity(0.35) : .clear, radius: 4)
+                    .padding(.bottom, 5)
+                Text(f.username).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
+                    .lineLimit(1).truncationMode(.tail).minimumScaleFactor(0.8)
+                Text(st.text).font(Brand.font(12, .heavy))
+                    .foregroundStyle(st.online ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel("\(f.username), \(st.text)")
     }
 
     // MARK: Header

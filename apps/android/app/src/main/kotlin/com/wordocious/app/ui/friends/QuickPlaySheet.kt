@@ -3,6 +3,30 @@ package com.wordocious.app.ui.friends
 import com.wordocious.app.ui.SoftModalSheet
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.Icon3DName
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.draw.shadow
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
+import com.wordocious.app.ui.HeadlinePalette
+import com.wordocious.app.ui.LiveHeadline
+import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.MotionSpec
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -88,143 +112,237 @@ fun QuickPlaySheet(
     var stake by remember { mutableStateOf(COIN_STAKES[0]) }
     var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // BJ13: no friend chosen (or the one asked for isn't in your circle) → the picker.
     val friend = friends.firstOrNull { it.id == friendId }
-    // A picker when no friend was chosen (or the one asked for isn't in your circle).
-    val showPicker = remember { request.friendId == null || friends.none { it.id == request.friendId } }
 
     // A1: a pink-tinted sheet (no white).
     SoftModalSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, containerColor = SHEET_TINT,
+        // BJ13 (mockup option 1): the picker sits on a calm lavender sheet.
+        onDismissRequest = onDismiss, sheetState = sheetState,
+        containerColor = animateColorAsState(if (friend == null) PICKER_SHEET else SHEET_TINT, tween(MotionSpec.CROSS_FADE_MS), label = "sheetTint").value,
         dragHandle = {
             Box(Modifier.padding(top = 10.dp, bottom = 4.dp).size(width = 40.dp, height = 5.dp).clip(RoundedCornerShape(50)).background(friendsLine(FRIENDS_CARD_ACCENT, 0.5f)))
         },
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Friend picker (online friends first) — shown when the sheet opened from a game tile.
-            if (showPicker) {
-                FriendsLabel("PICK A FRIEND")
-                // On now first, then the freshest presence, then A–Z.
-                val ordered = friends.sortedWith(
-                    compareByDescending<FriendsService.FriendProfile> { it.isOnline(now) }
-                        .thenByDescending { it.lastSeenMs ?: 0L }.thenBy { it.username },
-                )
-                if (ordered.isEmpty()) {
-                    Text("Add a friend first — then pick a game.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
-                }
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ordered.forEach { f ->
-                        Column(
-                            Modifier.width(58.dp).squishClickable(
-                                label = "${f.username}${if (f.id == friendId) ", selected" else ""}", role = Role.RadioButton,
-                            ) { friendId = f.id },
-                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            FriendFace(
-                                f.username, f.avatarUrl, f.avatarEmoji, 44.dp, online = f.isOnline(now),
-                                ring = if (f.id == friendId) FriendsPink.solid else null, userId = f.id,
-                            )
-                            Text(
-                                f.username, fontSize = 10.sp, fontWeight = FontWeight.Black,
-                                color = if (f.id == friendId) FriendsPink.solid else FriendsPink.ink,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                            )
+            // BJ13: picking a friend moves to the play state with the shared soft rise (core
+            // MotionSpec: 0.96 → 1, up 14, fade; Reduce Motion: a cross-fade).
+            val reduced = WTheme.reducedMotion
+            val riseOffsetPx = with(LocalDensity.current) { MotionSpec.RISE_OFFSET_DP.dp.roundToPx() }
+            AnimatedContent(
+                targetState = friend == null,
+                transitionSpec = {
+                    if (reduced) {
+                        fadeIn(tween(MotionSpec.CROSS_FADE_MS)) togetherWith fadeOut(tween(MotionSpec.CROSS_FADE_MS))
+                    } else {
+                        (fadeIn(tween(MotionSpec.RISE_MS, easing = RISE_EASE)) +
+                            scaleIn(tween(MotionSpec.RISE_MS, easing = RISE_EASE), MotionSpec.RISE_SCALE, TransformOrigin(0.5f, 0f)) +
+                            slideInVertically(tween(MotionSpec.RISE_MS, easing = RISE_EASE)) { riseOffsetPx }) togetherWith
+                            fadeOut(tween(MotionSpec.POP_DISMISS_MS))
+                    }
+                },
+                label = "quickPlayPick",
+            ) { picking ->
+                if (picking) {
+                    FriendPicker(kind, friends, now) { friendId = it.id }
+                } else Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Friend header (C cheering beside it — A7: the banner's host is O1)
+                    if (friend != null) {
+                        val on = friend.isOnline(now)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            FriendFace(friend.username, friend.avatarUrl, friend.avatarEmoji, 48.dp, online = on, userId = friend.id)
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    "PLAY WITH @${friend.username.uppercase()}", fontSize = 17.sp, fontWeight = FontWeight.Black,
+                                    color = FriendsPink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                                presenceLine(friend.lastSeenMs, friend.activity, now)?.let {
+                                    Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) FriendsPink.green else FriendsPink.label, maxLines = 1)
+                                }
+                                val record = listOfNotNull(
+                                    h2hWords(friend.h2hW ?: 0, friend.h2hL ?: 0),
+                                    (friend.friendStreak ?: 0).takeIf { it > 0 }?.let { "$it-day friend streak" },
+                                ).joinToString(" · ")
+                                if (record.isNotEmpty()) {
+                                    Text(record, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, maxLines = 1)
+                                }
+                            }
+                            CastPose(MascotId.C, "cheer", 56.dp)
                         }
                     }
-                }
-            }
 
-            // Friend header (C cheering beside it — A7: the banner's host is O1)
-            if (friend != null) {
-                val on = friend.isOnline(now)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FriendFace(friend.username, friend.avatarUrl, friend.avatarEmoji, 48.dp, online = on, userId = friend.id)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            "PLAY WITH @${friend.username.uppercase()}", fontSize = 17.sp, fontWeight = FontWeight.Black,
-                            color = FriendsPink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
-                        presenceLine(friend.lastSeenMs, friend.activity, now)?.let {
-                            Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) FriendsPink.green else FriendsPink.label, maxLines = 1)
-                        }
-                        val record = listOfNotNull(
-                            h2hWords(friend.h2hW ?: 0, friend.h2hL ?: 0),
-                            (friend.friendStreak ?: 0).takeIf { it > 0 }?.let { "$it-day friend streak" },
-                        ).joinToString(" · ")
-                        if (record.isNotEmpty()) {
-                            Text(record, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, maxLines = 1)
+                    // QUICK GAMES
+                    FriendsLabel(if (friend?.isOnline(now) == true) "QUICK GAMES · LIVE WHILE THEY'RE ON" else "QUICK GAMES")
+                    // Six tiles, 3 across × 2 rows (§9, web parity).
+                    FRIENDLY_KINDS.chunked(3).forEach { row ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            row.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f)) { kind = k; error = null } }
                         }
                     }
-                    CastPose(MascotId.C, "cheer", 56.dp)
-                }
-            }
-
-            // QUICK GAMES
-            FriendsLabel(if (friend?.isOnline(now) == true) "QUICK GAMES · LIVE WHILE THEY'RE ON" else "QUICK GAMES")
-            // Six tiles, 3 across × 2 rows (§9, web parity).
-            FRIENDLY_KINDS.chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f)) { kind = k; error = null } }
-                }
-            }
-            if (kind == FriendlyKind.COIN) {
-                FriendsLabel("WHAT'S ON THE LINE")
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    COIN_STAKES.forEach { s ->
-                        // A1 / A9: a tinted chip in Call It's gold; selected = stronger tint + ring.
-                        val shape = RoundedCornerShape(50)
-                        val coin = FriendlyKind.COIN.color
-                        Text(
-                            s, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                            color = if (s == stake) FriendsPink.heading else FriendsPink.mid,
-                            modifier = Modifier
-                                .squishClickable(label = s + if (s == stake) ", selected" else "", role = Role.RadioButton) { stake = s }
-                                .clip(shape).background(friendsWash(coin, if (s == stake) 0.3f else 0.12f))
-                                .border(if (s == stake) 2.dp else 1.5.dp, if (s == stake) coin else friendsLine(coin), shape)
-                                .padding(horizontal = 12.dp, vertical = 7.dp),
-                        )
+                    if (kind == FriendlyKind.COIN) {
+                        FriendsLabel("WHAT'S ON THE LINE")
+                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            COIN_STAKES.forEach { s ->
+                                // A1 / A9: a tinted chip in Call It's gold; selected = stronger tint + ring.
+                                val shape = RoundedCornerShape(50)
+                                val coin = FriendlyKind.COIN.color
+                                Text(
+                                    s, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                                    color = if (s == stake) FriendsPink.heading else FriendsPink.mid,
+                                    modifier = Modifier
+                                        .squishClickable(label = s + if (s == stake) ", selected" else "", role = Role.RadioButton) { stake = s }
+                                        .clip(shape).background(friendsWash(coin, if (s == stake) 0.3f else 0.12f))
+                                        .border(if (s == stake) 2.dp else 1.5.dp, if (s == stake) coin else friendsLine(coin), shape)
+                                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                                )
+                            }
+                        }
                     }
-                }
-            }
 
-            // WORDOCIOUS
-            FriendsLabel("WORDOCIOUS")
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                WordociousCard(
-                    title = "VS Battle, live", sub = "Free for friends · Classic", solid = true,
-                    enabled = friend != null, modifier = Modifier.weight(1f),
-                ) { friend?.let { onVsBattle(it) } }
-                WordociousCard(
-                    title = "Race my run", sub = "They race your time", solid = false, locked = !AuthService.isProActive,
-                    enabled = friend != null, modifier = Modifier.weight(1f),
-                ) { friend?.let { onRaceRun(it.id) } }
-            }
-
-            error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.solid) }
-            PinkButton(
-                if (sending) "SENDING…" else "INVITE TO ${kind.title.uppercase()}",
-                modifier = Modifier.fillMaxWidth(), enabled = friend != null && !sending,
-            ) {
-                val f = friend ?: return@PinkButton
-                sending = true
-                error = null
-                scope.launch {
-                    when (val r = FriendlyGamesService.start(kind, f.id, if (kind == FriendlyKind.COIN) stake else null)) {
-                        is FriendlyGamesService.StartOutcome.Started -> onOpenGame(r.game.id)
-                        is FriendlyGamesService.StartOutcome.Failed -> error = r.message
+                    // WORDOCIOUS
+                    FriendsLabel("WORDOCIOUS")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        WordociousCard(
+                            title = "VS Battle, live", sub = "Free for friends · Classic", solid = true,
+                            enabled = friend != null, modifier = Modifier.weight(1f),
+                        ) { friend?.let { onVsBattle(it) } }
+                        WordociousCard(
+                            title = "Race my run", sub = "They race your time", solid = false, locked = !AuthService.isProActive,
+                            enabled = friend != null, modifier = Modifier.weight(1f),
+                        ) { friend?.let { onRaceRun(it.id) } }
                     }
-                    sending = false
+
+                    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.solid) }
+                    PinkButton(
+                        if (sending) "SENDING…" else "INVITE TO ${kind.title.uppercase()}",
+                        modifier = Modifier.fillMaxWidth(), enabled = friend != null && !sending,
+                    ) {
+                        val f = friend ?: return@PinkButton
+                        sending = true
+                        error = null
+                        scope.launch {
+                            when (val r = FriendlyGamesService.start(kind, f.id, if (kind == FriendlyKind.COIN) stake else null)) {
+                                is FriendlyGamesService.StartOutcome.Started -> onOpenGame(r.game.id)
+                                is FriendlyGamesService.StartOutcome.Failed -> error = r.message
+                            }
+                            sending = false
+                        }
+                    }
+                    Text(
+                        "${friend?.username?.replaceFirstChar { it.uppercaseChar() } ?: "Your friend"} gets a ping. If they're busy, it waits as your turn.",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(12.dp))
                 }
             }
-            Text(
-                "${friend?.username?.replaceFirstChar { it.uppercaseChar() } ?: "Your friend"} gets a ping. If they're busy, it waits as your turn.",
-                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
         }
+    }
+}
+
+/** BJ9's soft-rise curve (ease-out-expo-like; web MOTION.growEase). */
+private val RISE_EASE = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
+
+/**
+ * BJ13 (founder 10-03): the pocket-game friend picker as a character-select grid. Header:
+ * the game's title art (else its 3D icon + the name in the live title lettering), one
+ * rules line, then WHO ARE YOU PLAYING? (its art once it ships). The grid fills the sheet:
+ * 3 across on phones, 4 on wide sheets, avatars ~76% of the cell (PickerGrid); each cell =
+ * the avatar (green glow when on), the name and one short status. Online first, then most
+ * recent. No chevrons, stripes or bordered card. No friends: I's invite scene.
+ */
+@Composable
+private fun FriendPicker(
+    kind: FriendlyKind,
+    friends: List<FriendsService.FriendProfile>,
+    now: Long,
+    onPick: (FriendsService.FriendProfile) -> Unit,
+) {
+    val ctx = LocalContext.current
+    val titleRes = remember(kind) { ctx.resources.getIdentifier(pocketTitleArtName(kind), "drawable", ctx.packageName) }
+    val askRes = remember { ctx.resources.getIdentifier(PICK_FRIEND_TITLE_ART, "drawable", ctx.packageName) }
+    // On now first, then the freshest presence, then A–Z (web sortForPicker).
+    val ordered = friends.sortedWith(
+        compareByDescending<FriendsService.FriendProfile> { it.isOnline(now) }
+            .thenByDescending { it.lastSeenMs ?: 0L }.thenBy { it.username.lowercase() },
+    )
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (titleRes != 0) {
+            Image(
+                painterResource(titleRes), contentDescription = kind.title, contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth().heightIn(max = 84.dp).semantics { heading() },
+            )
+        } else {
+            LiveHeadline(kind.title, HeadlinePalette.FRIENDS, Modifier.fillMaxWidth(), maxSize = 32.sp, minSize = 18.sp, maxLines = 1)
+        }
+        Text(
+            friendlyRules(kind), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.heading,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        if (askRes != 0) {
+            Image(
+                painterResource(askRes), contentDescription = "Who are you playing?", contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth(0.64f).heightIn(max = 30.dp).semantics { heading() },
+            )
+        } else {
+            Text(
+                "WHO ARE YOU PLAYING?", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.6.sp,
+                color = FriendsPink.muted, modifier = Modifier.semantics { heading() },
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        if (ordered.isEmpty()) {
+            // §A7 / BI24: I with the invite scene, the brand headline over I's voice line.
+            com.wordocious.app.ui.BrandEmptyState(
+                title = "No friends yet", line = "Add a friend first, then pick a game and play.",
+                scene = com.wordocious.app.ui.SceneArt.INVITE, artHeight = 110.dp,
+                accent = com.wordocious.app.ui.PageAccent.friends, lineColor = FriendsPink.muted,
+            )
+        } else {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val (cols, avatar) = PickerGrid.layout(maxWidth.value)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ordered.chunked(cols).forEach { row ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(PickerGrid.GAP.dp)) {
+                            row.forEach { f -> PickerCell(f, avatar.dp, now, Modifier.weight(1f)) { onPick(f) } }
+                            repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+/**
+ * One character-select cell: the friend's REAL avatar (FriendFace → the shared resolver: their
+ * mascot, photo or cast pick) as a tile filling the cell, a soft green glow when they're on
+ * (no outline), the name (no @) and one short status, centered.
+ */
+@Composable
+private fun PickerCell(f: FriendsService.FriendProfile, avatar: Dp, now: Long, modifier: Modifier, onClick: () -> Unit) {
+    val (status, on) = pickerStatus(f, now)
+    Column(
+        modifier.squishClickable(label = "${f.username}, $status") { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val glow = if (on) {
+            Modifier.shadow(16.dp, com.wordocious.app.ui.avatarTileShape(avatar), clip = false, ambientColor = FriendsPink.green, spotColor = FriendsPink.green)
+        } else Modifier
+        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, avatar, online = false, modifier = glow, userId = f.id)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            f.username, fontSize = 15.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            status, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (on) FriendsPink.green else FriendsPink.muted,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -268,6 +386,9 @@ private fun WordociousCard(
         if (locked) Icon3D(Icon3DName.LOCK, 14.dp, contentDescription = "Pro") // ART_SPEC §5
     }
 }
+
+/** BJ13: the calm lavender picker sheet (founder mockup option 1). */
+private val PICKER_SHEET = Color(0xFFF4F0FF)
 
 /** A1 the quick-play sheet's soft pink wash. */
 private val SHEET_TINT = Color(0xFFFFF3F9)

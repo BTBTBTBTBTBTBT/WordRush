@@ -173,7 +173,6 @@ struct RootTabView: View {
         #if DEBUG
         // FINISH_SPEC BJ3: the perf tour's presenter (idle unless `-perfTour`).
         .background { PerfTourHost { tabSelection.wrappedValue = Self.tab($0) } }
-        .modifier(BJ13ShotHost()) // TEMP-BJ13
         #endif
         // Hide the nav while an immersive screen (a game / solved puzzle) is up
         // so it's full-screen like the web — it otherwise bleeds onto pushed

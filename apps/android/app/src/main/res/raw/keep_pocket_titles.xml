@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BJ13: the quick-play picker's title art is looked up by name (getIdentifier), so
+     resource shrinking must keep it once the files ship. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_titlecast_pocket_*,@drawable/art_titlecast_pick_friend" />
