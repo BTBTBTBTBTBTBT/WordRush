@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Sentry
 import Supabase
 import WordociousCore
@@ -167,6 +168,7 @@ enum GameResultsService {
         do {
             try await client.from("matches").insert(row).execute()
             PendingRecords.markDone(gameMode: gameMode.rawValue, seed: seed, part: .soloMatch)
+            postGameRecorded()
         } catch {
             // Pending payload stays — retried by drain(). Still worth a Sentry
             // breadcrumb: a systematic insert failure would otherwise be silent.
@@ -221,6 +223,7 @@ enum GameResultsService {
             completed_at: iso.string(from: now), forfeit: forfeit)
         do {
             try await client.from("matches").insert(row).execute()
+            postGameRecorded()
         } catch {
             // Best-effort stays (the match result itself recorded via record()),
             // but a failed shared-history insert is captured, not swallowed.
@@ -674,6 +677,16 @@ enum GameResultsService {
         let userId = session.user.id.uuidString
         await updateUserStats(client, userId: userId, mode: gameMode.rawValue, playType: "vs_cpu",
                               won: won, guessCount: guessCount, timeSeconds: timeSeconds)
+        postGameRecorded()
+    }
+
+    /// BJ12: ANY game just landed — a `matches` row (solo daily or Unlimited, VS)
+    /// or a bot result — not only today's daily (`completionRecorded`). Stats
+    /// re-reads its match list + totals on it (`onGameRecorded`), so Today's
+    /// Games, Recent Matches and People | Bots are never a game behind.
+    static let gameRecorded = Notification.Name("wordocious.game-recorded")
+    static func postGameRecorded() {
+        Task { @MainActor in NotificationCenter.default.post(name: gameRecorded, object: nil) }
     }
 
     private static func updateUserStats(
@@ -801,5 +814,13 @@ enum GameResultsService {
     }
     private static func localDayString(daysAgo: Int) -> String {
         localDayString(from: Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date())
+    }
+}
+
+extension View {
+    /// BJ12: re-run `action` once ANY game has landed (Unlimited, VS, bots, dailies) —
+    /// `GameResultsService.gameRecorded`. Dailies also post `completionRecorded`.
+    func onGameRecorded(_ action: @escaping () -> Void) -> some View {
+        onReceive(NotificationCenter.default.publisher(for: GameResultsService.gameRecorded)) { _ in action() }
     }
 }

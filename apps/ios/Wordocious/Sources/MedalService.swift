@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import WordociousCore
 
 /// Client-side daily reward awarding — 1:1 port of the web's
 /// checkAndAwardStreakMedals / checkAndAwardPerfectMedal /
@@ -46,17 +47,13 @@ enum MedalService {
                                   day: String, guessCount: Int, boardsSolved: Int,
                                   totalBoards: Int, completed: Bool) async {
         guard completed else { return }
-        let perfect: Bool
-        switch gameMode {
-        case "DUEL", "PROPERNOUNDLE", "DUEL_6", "DUEL_7": perfect = guessCount == 1
-        case "QUORDLE":  perfect = boardsSolved == 4 && guessCount <= 4
-        case "OCTORDLE": perfect = boardsSolved == 8 && guessCount <= 8
-        case "SEQUENCE": perfect = boardsSolved == 4 && guessCount <= 4
-        case "RESCUE":   perfect = boardsSolved == 4 && guessCount <= 4
-        case "GAUNTLET": perfect = boardsSolved == 21
-        default: perfect = false
-        }
-        guard perfect else { return }
+        // BJ12: the shared rule (Core ModeCoverage = packages/core mode-coverage).
+        // This was a hand-typed switch of the nine word modes, so no More Games
+        // puzzle ever earned Perfect (or its Moment) from iOS.
+        let meta = ModeGen.byDbKey(gameMode)
+        guard ModeCoverage.isPerfectDailyResult(gameMode: gameMode, group: meta?.group, guessBase: meta?.guessBase ?? 1,
+                                                guessCount: guessCount, boardsSolved: boardsSolved,
+                                                totalBoards: totalBoards, completed: completed) else { return }
         let existing: [IdRow] = (try? await client.from("medals")
             .select("id").eq("user_id", value: userId).eq("day", value: day)
             .eq("game_mode", value: gameMode).eq("medal_type", value: "perfect")

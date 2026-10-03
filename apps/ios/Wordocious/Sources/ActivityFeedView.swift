@@ -411,18 +411,22 @@ struct ActivityFeedView: View {
 
     /// "Doug took gold in Classic" / "You swept the dailies" / "Amy set the
     /// all-time Six Fastest Win · 42s" / "Doug hit a 7-day streak".
+    /// BJ12: the More Games dailies a More Games Sweep covers — catalog-driven
+    /// (the feed route counts the same set: enabled, daily, More Games).
+    static let moreSweepTotal = ModeGen.all.filter { $0.enabled && $0.group == "more" && $0.dailyEligible && $0.dbKey != nil }.count
+
     static func describe(_ e: FriendsService.FeedEvent) -> Description {
         let who = e.me ? "You" : e.username
-        let game = e.gameTitle ?? e.gameMode ?? ""
         switch e.type {
         case "flawless":
             return .init(text: "\(who) won every daily — Flawless Victory", symbol: "trophy.fill", color: Color(hex: 0xB45309))
         case "sweep":
             return .init(text: "\(who) swept the dailies", symbol: "sparkles", color: purple)
         case "more_flawless":
-            return .init(text: "\(who) — Flawless More Games, all ten won", symbol: "square.grid.2x2.fill", color: Color(hex: 0xB45309))
+            // BJ12: the count comes from the catalog (the feed route counts the same set).
+            return .init(text: ModeCoverage.moreSweepMomentText(who: who, flawless: true, total: moreSweepTotal), symbol: "square.grid.2x2.fill", color: Color(hex: 0xB45309))
         case "more_sweep":
-            return .init(text: "\(who) — More Games Sweep, all ten played", symbol: "square.grid.2x2", color: Color(hex: 0x4F46E5))
+            return .init(text: ModeCoverage.moreSweepMomentText(who: who, flawless: false, total: moreSweepTotal), symbol: "square.grid.2x2", color: Color(hex: 0x4F46E5))
         case "game":
             // Friends overhaul §6: "Doug beat you at Tic-Tac-Tile (2–1)" /
             // "You and Kate drew at Call It".
@@ -437,37 +441,26 @@ struct ActivityFeedView: View {
             // D3.4 (§294): a streak shield sent to a friend.
             return .init(text: "\(who) sent \(e.otherName ?? "a friend") a streak shield", symbol: "shield.fill", color: Color(hex: 0x0D9488))
         case "record":
-            let label = e.kind.map { RecordCatalog.labels[$0]?.label ?? $0 } ?? "record"
-            let value = (e.kind != nil && e.value != nil) ? recordValue(e.kind!, Int(e.value!), gameMode: e.gameMode) : ""
-            let title = e.gameTitle.map { "\($0) " } ?? ""
-            return .init(text: "\(who) set the all-time \(title)\(label)\(value.isEmpty ? "" : " · \(value)")",
+            // BJ12: the shared headline — "Fewest Mistakes · 0 mistakes" for Sudocious, never "Fewest Guesses".
+            let meta = e.gameMode.flatMap { ModeGen.byDbKey($0) }
+            let value = (e.kind != nil && e.value != nil)
+                ? ModeCoverage.recordValueText(e.kind!, value: Int(e.value!), semantics: meta?.guessSemantics, guessBase: meta?.guessBase ?? 1)
+                : nil
+            return .init(text: ModeCoverage.modeMomentHeadline(type: "record", me: e.me, username: e.username, kind: e.kind,
+                                                               gameMode: e.gameMode, gameTitle: e.gameTitle,
+                                                               semantics: meta?.guessSemantics, valueText: value),
                          symbol: "star.fill", color: Color(hex: 0xD97706))
         default:
+            // BJ12: the shared medal headline (Core ModeCoverage) — every game, every platform.
             let k = e.kind ?? ""
-            if k == "gold" { return .init(text: "\(who) took gold in \(game)", symbol: "crown.fill", color: Color(hex: 0xD97706)) }
-            if k == "silver" { return .init(text: "\(who) took silver in \(game)", symbol: "medal.fill", color: Color(hex: 0x9CA3AF)) }
-            if k == "bronze" { return .init(text: "\(who) took bronze in \(game)", symbol: "medal.fill", color: Color(hex: 0xB45309)) }
-            if k == "perfect" { return .init(text: "\(who) played a perfect \(game)", symbol: "star.fill", color: Theme.win) }
-            if k.hasPrefix("streak_") {
-                return .init(text: "\(who) hit a \(k.dropFirst(7))-day streak", symbol: "flame.fill", color: Color(hex: 0xF97316))
-            }
-            return .init(text: "\(who) earned a medal in \(game)", symbol: "medal", color: Theme.textMuted)
-        }
-    }
-
-    /// A record's value per type — the RECORD_LABELS formats, with
-    /// "fewest_guesses" read through the mode's guess semantics (records-ui
-    /// recordValue; iOS AllTimeRecord.formattedValue).
-    static func recordValue(_ type: String, _ v: Int, gameMode: String?) -> String {
-        switch type {
-        case "fastest_win": return v < 60 ? "\(v)s" : "\(v / 60)m \(v % 60)s"
-        case "fewest_guesses": return RecordCatalog.fewestValue(v, gameMode: gameMode)
-        case "most_games_played": return "\(v) games"
-        case "longest_streak": return "\(v) wins"
-        case "most_gold_medals": return "\(v) golds"
-        case "highest_level": return "Level \(v)"
-        case "most_daily_completions": return "\(v) dailies"
-        default: return "\(v)"
+            let text = ModeCoverage.modeMomentHeadline(type: e.type, me: e.me, username: e.username, kind: e.kind,
+                                                       gameMode: e.gameMode, gameTitle: e.gameTitle, semantics: nil, valueText: nil)
+            if k == "gold" { return .init(text: text, symbol: "crown.fill", color: Color(hex: 0xD97706)) }
+            if k == "silver" { return .init(text: text, symbol: "medal.fill", color: Color(hex: 0x9CA3AF)) }
+            if k == "bronze" { return .init(text: text, symbol: "medal.fill", color: Color(hex: 0xB45309)) }
+            if k == "perfect" { return .init(text: text, symbol: "star.fill", color: Theme.win) }
+            if k.hasPrefix("streak_") { return .init(text: text, symbol: "flame.fill", color: Color(hex: 0xF97316)) }
+            return .init(text: text, symbol: "medal", color: Theme.textMuted)
         }
     }
 

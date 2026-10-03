@@ -151,8 +151,9 @@ struct ProfileTab: View {
         guard let meta = ModeGen.byDbKey(dbKey) else { return false }
         return meta.engine == "word" || dbKey == "PROPERNOUNDLE"
     }
-    /// All-time's VS board picker: the sweep word games (web `vsModes`).
-    private var vsModes: [HomeMode] { dailyTiles.filter { hasVs($0.dbKey ?? "") } }
+    /// All-time's VS board picker: every game with live VS boards — the sweep word
+    /// games plus ProperNoundle (BJ12: it was missing; web `vsModes`).
+    private var vsModes: [HomeMode] { dailyModes.filter { hasVs($0.dbKey ?? "") } }
     /// The selected game page's catalog record (nil on Today / All-time).
     private var selectedMeta: HomeMode? { dailyModes.first { $0.dbKey == selected } }
     /// The play-type a game page scopes to: VS only where the game has a live board.
@@ -285,6 +286,7 @@ struct ProfileTab: View {
                 NavigationStack { CustomDailyView(id: m.id) }
             }
             .onDailyRecorded { reloadToken += 1 }
+            .onGameRecorded { reloadAfterGame() }
             .onAppear { if let uid = auth.profile?.id { seedFromMemo(uid) }; refreshToday(); prewarmBadges() }   // refresh: the day may have rolled over
             .onChange(of: auth.isProActive) { _ in refreshToday() }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
@@ -429,6 +431,31 @@ struct ProfileTab: View {
             if let v: YourRecordsData = memo.get("yourRecords:\(uid)") { yours = v }
             if let v: DayRunTotals = memo.get("puzzleTotals:\(uid)") { puzzleTotals = v }
             if let v: HomeStreaksService.QuizRecord = memo.get("quizRecord:\(uid)") { quizRecord = v }
+        }
+    }
+
+    /// BJ12: ANY recorded game (Unlimited, VS, bots — `onDailyRecorded` reloads the
+    /// whole page for dailies) re-reads just the match list and the per-game totals,
+    /// so Today's Games, Recent Matches and All-time never sit a game behind.
+    private func reloadAfterGame() {
+        guard let uid = auth.profile?.id else { return }
+        Task {
+            async let statsF = UserStatsService.fetch(userId: uid)
+            async let matchesF = PublicProfileService.recentMatches(id: uid)
+            let fStats = await statsF, fMatches = await matchesF
+            var fNames: [String: String] = [:]
+            if !fMatches.isEmpty { fNames = await PublicProfileService.usernames(ids: Array(Set(fMatches.compactMap { $0.opponentId(uid) }))) }
+            guard auth.profile?.id == uid else { return }
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) {
+                // BI19: an empty read is a failed fetch — keep what's showing.
+                if !fStats.isEmpty && fStats != statRows { statRows = fStats }
+                if !fMatches.isEmpty && fMatches != recentMatches { opponentNames = fNames; setRecent(fMatches) }
+            }
+            let memo = StatsMemo.shared
+            memo.set("statRows:\(uid)", statRows)
+            memo.set("recentMatches:\(uid)", recentMatches)
+            memo.set("opponentNames:\(uid)", opponentNames)
         }
     }
 

@@ -96,10 +96,9 @@ enum RecordCatalog {
     /// else formatGuessStat — Sudoku "0 mistakes", Letter Ladder "Par", Hubbub a
     /// rank name (web recordValue).
     static func fewestValue(_ v: Int, gameMode: String?) -> String {
-        if let m = gameMode, let meta = ModeGen.byDbKey(m), meta.guessSemantics != "guesses" {
-            return formatGuessStat(semantics: meta.guessSemantics, guessBase: meta.guessBase, guessCount: v)
-        }
-        return "\(v) guesses"
+        // BJ12: through formatGuessStat for every mode — "1 guess", never "1 guesses".
+        let meta = gameMode.flatMap { ModeGen.byDbKey($0) }
+        return formatGuessStat(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: v)
     }
 }
 
