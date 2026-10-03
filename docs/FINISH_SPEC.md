@@ -1388,6 +1388,23 @@ Causes found → fixes (×3 where the platform had the cause):
    every minute; Android/web 30 s); the finished screen's GeometryReader centering only re-lays out on size changes.
 The reveal pacing and finish hold (BI5) are unchanged — nothing is faster, only ordered. Android was not re-measured on the
 emulator this round (the machine was at its load limit); its changes mirror the measured iOS causes where Compose had them.
+BJ3. App-wide measured hitch hunt + reusable perf harness (docs/PERF_HARNESS.md). iOS: a DEBUG-only `-perfTour` autoplay
+(PerfTour.swift; `Perf` build config = Release optimization + DEBUG, simulator only) visits launch, Home, the four tabs,
+Settings, Help, a header popup, Word of the Day, Strategy, Classic / QuadWord / OctoWord (type, submit, reject, play to the
+win), Gauntlet (stage card), Hubbub, Sudocious, Muddle, Crossword, a VS bot start and the pocket-games sheet; each step an
+os_signpost interval with CADisplayLink frame gaps (> 25 / > 50 ms, worst, first frame), hitch ms/s and main busy %;
+AttributeGraph cycles counted from the log; `apps/ios/scripts/perf-tour.sh`. Android: `scripts/android-perf-tour.sh`
+(adb input + gfxinfo per step). Web: `scripts/web-perf-tour.mjs` (own headless Chrome over CDP, 4× CPU). Measured fixes
+(iOS sim, guest, before → after): AttributeGraph cycles ~14 per game → 1 per whole tour (the hardware-key catcher resigned
+first responder inside SwiftUI's graph update; found with a breakpoint on AG::Graph::print_cycle; now deferred a turn);
+OctoWord typing main busy 53–83% → 14–24% and QuadWord typing hitch 160–300 → 19–40 ms/s in the clean run (the typed-tile
+pop was a custom Animatable keyframe modifier re-running per frame on every tile — now two plain scale/opacity animations,
+off on 5+ board grids; settled rows and keys are Equatable views); OctoWord finish worst frame 507 → 141–172 ms (recap
+boards render one per frame, never built live first); widget snapshot / completions no longer rewrite or re-render when
+unchanged; LiveHeadline stops observing scroll state; the Home banner's 1 s tick is the clock line only; web: audio decode
+leaves the first touch (a Home scroll's first frame blocked 190 ms–2.9 s at 4× CPU). Still open: every game open has one
+~300 ms frame (title-art prewarm tested, no gain — reverted), Settings open 450 ms, OctoWord typing still shows 0–6 frames
+> 50 ms per word run to run.
 BJ4. Podium on every board with a finished stage backdrop (founder 10-03 on iOS 2.7 (241): "The podium only appears on classic
 right now" + "can we make the podium have a subtle background … it could use some finish"). ×3, every board — each game's
 daily board (Everyone AND Friends), the Sweep board (today + yesterday), Puzzles / More Games boards, Yesterday's Winners,
@@ -1544,3 +1561,30 @@ recorded score (notePuzzleFinish; a cross-midnight puzzle marked today done and 
 mode-coverage.test.ts (every mode in every generated catalog, a reachable Perfect, its Moments headlines, fixture freshness)
 + mode-coverage-fixtures.json pinned by iOS ModeCoverageFixtureTests and Android ModeCoverageFixtureTest; web
 lib/mode-coverage.test.ts (recording call sites, recent-match chrome, format parity with core, feed wiring).
+
+BJ13. Pocket-game friend picker = character-select grid under title art (founder 10-03: "I don't like the pick your opponent
+look of the new game, can we make this a little more finished looking? I don't like the right arrows either"; "There shouldn't
+be any plain text menus looking like this"; "as long as it fills out the space as it should, the icons look a bit spaced
+apart"). The quick-play sheet opened from a game tile (no friend yet) ×3: a centered header — the game's title art
+(art-titlecast-pocket-<rps|ttt|coin|pass|ghost|chain>, from docs/design/brand/titles/cast-colors/pocket-<id>.png; until it
+ships, the game's 3D icon + the name in the live title lettering, Friends palette), ONE rules line from core FRIENDLY_TARGET
+("Best of 3 · first to 2", Call It "Best of 5 · first to 3", Word Chain "First to 30 points", Pass the Puzzle "Six guesses,
+shared board"), then WHO ARE YOU PLAYING? (art-titlecast-pick-friend when it ships, else the live lettering). Under it the
+friends as a grid that fills the sheet (no list rows, chevrons, stripes or bordered card): 3 across on phones, a 4th column
+once cells would pass 96 (wide web), gap 10, the avatar ~76% of its cell (≤ 88) through the shared avatar component, the name
+(no @, one line) and one short status — "On now" in green with the green glow ring, else "20 min ago" / "5 h ago" / "Played
+today" / the rivalry ("You lead 5–3") / "Away". Online first, then most recent, then A–Z. Tap = squish, then the play state in
+the SAME sheet with the shared soft rise (MotionSpec rise: 0.96 → 1, up 14, fade, 0.34 s on the expo curve; Reduce Motion a
+0.22 s cross-fade); the sheet itself opens / closes with BJ10's soft pop (web's friends Sheet gained the pop + quick reverse).
+No friends: I's invite scene (BrandEmptyState). Android now matches iOS / web (a separate picker state, was a face strip above
+the full sheet). Title art is looked up BY NAME (iOS ArtAsset.exists, Android getIdentifier + res/raw/keep_pocket_titles.xml,
+web lib/friends-play.ts POCKET_TITLE_ART / PICK_FRIEND_TITLE_ART sizes), so shipping a file is a drop-in. Helpers: web
+friends-play.ts kindRules / pickerStatus / pickerGrid (vitest), iOS FriendsKit.rules / pickerStatus / PickerGrid, Android
+FriendsKit friendlyRules / pickerStatus / PickerGrid.
+BJ8. Backgrounds never distract: fewer, smaller, fainter tiles; none behind boards/cards; static in games (founder 10-03:
+"the OctoWord background was too busy … I don't ever want the backgrounds to be a distraction"). The 3D letter tiles are no
+longer baked into the 92 wallpapers ×3 (docs/design/brand/walls/calm-walls.py: each wallpaper's own gradient + a soft
+bokeh glow, no tiles). The remaining tiles come from one config per platform (iOS BackdropTiles.swift, Android
+ui/BackdropTiles.kt, web lib/backdrop-tiles.ts): games 4 tiles of 10–12 pt at 0.2 opacity, 55% saturation, in the side
+gutters between header and keyboard; pages 6 tiles of 12–14 pt at 0.35, 75% saturation, in the 16-pt gutters; desaturated
+toward the page tint, static, drawn once (no blur, no motion).

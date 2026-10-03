@@ -5,6 +5,15 @@ options:
     iOS: "16.0"
   createIntermediateGroups: true
 
+# FINISH_SPEC BJ3: `Perf` = Release optimization with DEBUG compiled in, ONLY so the
+# DEBUG-only perf tour (PerfTour.swift, docs/PERF_HARNESS.md) runs on an optimized
+# simulator build. Its intermediates live apart from Debug / Release, so a perf run
+# never invalidates anyone's Debug or Release build. Never archived or shipped.
+configs:
+  Debug: debug
+  Release: release
+  Perf: release
+
 packages:
   WordociousCore:
     path: .
@@ -139,6 +148,9 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Wordocious AppStore w/ groups"
+        # BJ3: simulator-only perf builds (see the top-level `configs`).
+        Perf:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
 
   WordociousWidget:
     type: app-extension

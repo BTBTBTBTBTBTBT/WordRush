@@ -142,6 +142,9 @@ struct TileView: View {
     /// Live "not a valid / already-guessed word" indicator on the typing row —
     /// red letters + ring (§B3), shown before Enter and while a rejection plays.
     var isInvalid: Bool = false
+    /// BJ3: the typed pop. Off on 5+ board grids (OctoWord-size tiles: the swell is
+    /// invisible there and 40 tiles popping per letter cost frames — smooth over flashy).
+    var pops: Bool = true
 
     private var face: GlossyFace {
         if isInvalid { return .bad }
@@ -152,9 +155,13 @@ struct TileView: View {
 
     var body: some View {
         let h = height ?? size
-        GlossyTile(face: face, letter: letter, width: size, height: h)
-            // §B3 type: the letter fades in as the tile swells (typing rows only).
-            .modifier(TypePop(letter: revealed ? "" : letter, size: CGSize(width: size, height: h)))
+        if pops {
+            GlossyTile(face: face, letter: letter, width: size, height: h)
+                // §B3 type: the letter fades in as the tile swells (typing rows only).
+                .modifier(TypePop(letter: revealed ? "" : letter, size: CGSize(width: size, height: h)))
+        } else {
+            GlossyTile(face: face, letter: letter, width: size, height: h)
+        }
     }
 }
 
@@ -279,7 +286,7 @@ struct BoardView: View {
                 ForEach(0..<vm.wordLength, id: \.self) { col in
                     let ch = col < letters.count ? String(letters[col]) : ""
                     TileView(letter: ch, state: .empty, revealed: false, size: tileSize, height: tileHeight,
-                             isInvalid: (invalid || rejecting) && !ch.isEmpty)
+                             isInvalid: (invalid || rejecting) && !ch.isEmpty, pops: vm.boardCount <= 4)
                 }
             }
             .shadow(color: Color(hex: 0xF0435F).opacity(0.6 * Double(rejectGlow)), radius: tileSize * 0.3 * rejectGlow)
@@ -290,22 +297,23 @@ struct BoardView: View {
             .accessibilityLabel(letters.isEmpty ? "Current guess row, empty"
                 : "Current guess: \(letters.map(String.init).joined(separator: ", "))\(invalid ? ". Not a valid word" : "")")
         } else {
-            HStack(spacing: spacing) {
-                ForEach(0..<vm.wordLength, id: \.self) { _ in
-                    TileView(letter: "", state: .empty, revealed: false, size: tileSize, height: tileHeight)
-                }
-            }
-            .accessibilityHidden(true)   // unused filler rows are noise to VoiceOver
+            settledRow(Array(repeating: "", count: vm.wordLength), Array(repeating: .empty, count: vm.wordLength), revealed: false)
+                .accessibilityHidden(true)   // unused filler rows are noise to VoiceOver
         }
+    }
+
+    /// FINISH_SPEC BJ3: a row that can't change on a keystroke (filler, masked, a
+    /// settled reveal) is ONE Equatable view — a keystroke re-diffs it with a single
+    /// comparison instead of rebuilding its tiles (OctoWord: 8 boards × 13 rows).
+    private func settledRow(_ letters: [String], _ states: [TileState], revealed: Bool) -> some View {
+        SettledTileRow(letters: letters, states: states, revealed: revealed, size: tileSize, height: tileHeight,
+                       spacing: spacing, colorblind: ThemeManager.shared.colorblind)
+            .equatable()
     }
 
     /// Locked Sequence board: previous guesses shown as masked bullets (web '•').
     private func maskedRow(_ count: Int) -> some View {
-        HStack(spacing: spacing) {
-            ForEach(0..<count, id: \.self) { _ in
-                TileView(letter: "•", state: .empty, revealed: false, size: tileSize, height: tileHeight)
-            }
-        }
+        settledRow(Array(repeating: "•", count: count), Array(repeating: .empty, count: count), revealed: false)
     }
 
     private func revealedRow(_ eval: GuessResult, animate: Bool = false) -> some View {
@@ -324,9 +332,10 @@ struct BoardView: View {
         let bloom = vm.boardCount <= 1
         let wins = animate && eval.isCorrect
         let sinks = animate && !eval.isCorrect && board.status == .lost
-        return HStack(spacing: spacing) {
-            ForEach(eval.tiles.indices, id: \.self) { col in
-                if animate {
+        return Group {
+            if animate {
+                HStack(spacing: spacing) {
+                    ForEach(eval.tiles.indices, id: \.self) { col in
                     FlipRevealTile(letter: eval.tiles[col].letter, state: eval.tiles[col].state,
                                    size: tileSize, height: tileHeight,
                                    delay: Double(col) * TileMotion.stagger(mini: mini),
@@ -334,13 +343,35 @@ struct BoardView: View {
                                    hopAt: wins ? landed + Double(col) * TileMotion.hopStagger : nil,
                                    sinkAt: sinks ? landed + Double(col) * TileMotion.sinkStagger : nil,
                                    hint: isHint && eval.tiles[col].state == .correct, bloom: bloom)
-                } else {
-                    TileView(letter: eval.tiles[col].letter, state: eval.tiles[col].state, revealed: true, size: tileSize, height: tileHeight)
+                    }
                 }
+            } else {
+                settledRow(eval.tiles.map(\.letter), eval.tiles.map(\.state), revealed: true)
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(a11yRowLabel(eval))
+    }
+}
+
+/// FINISH_SPEC BJ3: one settled row of tiles, compared as a whole (see `settledRow`).
+/// `colorblind` is part of the value so the palette switch still repaints it.
+private struct SettledTileRow: View, Equatable {
+    let letters: [String]
+    let states: [TileState]
+    let revealed: Bool
+    let size: CGFloat
+    let height: CGFloat?
+    let spacing: CGFloat
+    let colorblind: Bool
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            ForEach(letters.indices, id: \.self) { i in
+                // Settled: never typed into again, so no pop modifiers on it.
+                TileView(letter: letters[i], state: states[i], revealed: revealed, size: size, height: height, pops: false)
+            }
+        }
     }
 }
 

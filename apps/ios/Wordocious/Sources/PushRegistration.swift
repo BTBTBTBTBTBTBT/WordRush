@@ -14,6 +14,9 @@ final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNot
         // Route push taps (VS challenges carry `url: /vs/challenge/<code>`, the
         // "someone's looking" ping `url: /vs/live/<MODE>`).
         UNUserNotificationCenter.current().delegate = self
+        #if DEBUG
+        PerfTour.bootIfRequested()   // FINISH_SPEC BJ3: `-perfTour` (docs/PERF_HARNESS.md)
+        #endif
         return true
     }
 

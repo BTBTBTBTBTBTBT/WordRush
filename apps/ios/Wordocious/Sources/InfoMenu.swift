@@ -372,6 +372,9 @@ struct StrategyView: View {
             }
         }
         .task { await service.load() }
+        #if DEBUG
+        .onPerfTour { if case .strategyArticle(let i) = $0, i < service.articles.count { selected = service.articles[i] } }
+        #endif
     }
 
     private var list: some View {
@@ -460,6 +463,9 @@ struct WordsView: View {
             }
         }
         .task { await service.load() }
+        #if DEBUG
+        .onPerfTour { if case .wordDetail(let i) = $0, i < service.words.count { selected = service.words[i] } }
+        #endif
     }
 
     private var list: some View {

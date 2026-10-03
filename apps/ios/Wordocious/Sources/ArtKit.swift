@@ -672,6 +672,8 @@ struct PageBackground: View {
                         .scaledToFill()
                         .frame(width: geo.size.width, height: geo.size.height)
                         .clipped()
+                        // BJ8: the few calm tiles (one shared config), under the dark overlay.
+                        .overlay(BackdropTileLayer(tint: tint))
                         .overlay(overlay(dark: dark, a11y: a11y))
                         .overlay(alignment: .top) { headerFade(dark: dark) }
                 }

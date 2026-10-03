@@ -134,7 +134,19 @@ final class KeyCaptureView: UIView {
     var isActive = false {
         didSet {
             guard oldValue != isActive else { return }
-            if isActive { claimSoon() } else if isFirstResponder { resignFirstResponder() }
+            if isActive { claimSoon() } else { resignSoon() }
+        }
+    }
+
+    /// FINISH_SPEC BJ3: `isActive` is set from `updateUIView` / `dismantleUIView`, i.e.
+    /// INSIDE SwiftUI's graph update. Resigning there made UIKit ask the hosting view
+    /// `canBecomeFirstResponder`, which reads the responder graph mid-update —
+    /// "AttributeGraph: cycle detected" ~12× per game (measured with a breakpoint on
+    /// AG::Graph::print_cycle), each one an extra graph pass. Resign on the next turn.
+    private func resignSoon() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.isActive, self.isFirstResponder else { return }
+            self.resignFirstResponder()
         }
     }
     private var handled = Set<UIPress>()
@@ -160,7 +172,18 @@ final class KeyCaptureView: UIView {
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window != nil { startWatching(); claimSoon() } else { stopWatching() }
+        #if DEBUG
+        if window != nil { PerfTour.keyViews.add(self) }
+        #endif
     }
+
+    #if DEBUG
+    /// FINISH_SPEC BJ3: the perf tour's keystroke, under the same rules as a real press.
+    func perfSend(_ key: HardwareKey) -> Bool {
+        guard isActive, window != nil, isFrontmost, isVisible else { return false }
+        return onKey?(key) == true
+    }
+    #endif
 
     func claimSoon() {
         DispatchQueue.main.async { [weak self] in self?.claim() }

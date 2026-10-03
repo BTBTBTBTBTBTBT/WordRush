@@ -1,3 +1,4 @@
+import { BACKDROP_GAME, BACKDROP_PAGE, backdropColors, type BackdropLook } from '@/lib/backdrop-tiles';
 import { PAGE_TINTS, WALL_OVERLAY, accentCardShadow, artSrc, wideWallSrc, gameTintForDbKey, gameWallForDbKey, pageWall, type PageTint, type TintStops, type WallArtName } from '@/lib/art';
 
 // The one shared page background (docs/ART_SPEC.md §11, §19.1). It is the
@@ -61,7 +62,9 @@ export function PageBackground({
   } as React.CSSProperties;
   return (
     <div className={className} style={{ ...vars, ...style }} data-page-tint={colors ? 'game' : tint} data-page-scheme={scheme}>
-      <div className="page-bg" aria-hidden="true" />
+      <div className="page-bg" aria-hidden="true">
+        <BackdropTiles look={colors ? BACKDROP_GAME : BACKDROP_PAGE} accent={accent} />
+      </div>
       {children}
     </div>
   );
@@ -89,5 +92,34 @@ export function GameBackground({ mode, className = '', ...rest }: Omit<PageBackg
       className={`page-col ${className}`}
       {...rest}
     />
+  );
+}
+
+/**
+ * FINISH_SPEC BJ8: the few calm backdrop tiles (lib/backdrop-tiles.ts), inside the
+ * fixed wallpaper layer (so the dark overlay dims them too). Static, no motion.
+ */
+function BackdropTiles({ look, accent }: { look: BackdropLook; accent: string }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, opacity: look.opacity }}>
+      {look.tiles.map((t) => {
+        const c = backdropColors(t, look, accent);
+        return (
+          <span
+            key={t.letter + t.y}
+            style={{
+              position: 'absolute', top: `calc(${t.y * 100}% - ${t.size / 2}px)`,
+              [t.leading ? 'left' : 'right']: t.inset - t.size / 2,
+              width: t.size, height: t.size, borderRadius: t.size * 0.24,
+              background: `linear-gradient(${c.top}, ${c.face})`, boxShadow: `0 ${t.size * 0.08}px 0 ${c.lip}`,
+              transform: `rotate(${t.rotation}deg)`, color: '#fff', fontWeight: 900,
+              fontSize: t.size * 0.58, lineHeight: `${t.size}px`, textAlign: 'center',
+            }}
+          >
+            {t.letter}
+          </span>
+        );
+      })}
+    </div>
   );
 }

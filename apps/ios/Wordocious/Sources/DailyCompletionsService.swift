@@ -184,7 +184,12 @@ final class DailyCompletionsStore: ObservableObject {
         // WIPED today's completions and their cache, so every finished card on
         // Home read as unplayed until the network came back.
         guard let userId = localUserId() else {
-            byMode = [:]; optimistic = [:]; dataDay = today; Self.writeCache(nil)
+            // BJ3: assign only on a change — a @Published write re-renders all of Home,
+            // and this runs on every Home appear for a guest.
+            if !byMode.isEmpty { byMode = [:] }
+            optimistic = [:]
+            if dataDay != today { dataDay = today }
+            Self.writeCache(nil)
             WidgetBridge.update(completions: byMode)   // §AL: a fresh 0/N, ⭐ 0 widget
             return
         }
@@ -215,7 +220,7 @@ final class DailyCompletionsStore: ObservableObject {
             ledger.reconcile(server: Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a }),
                              stillPending: stillPending, today: today)
             if ledger.byMode != byMode { byMode = ledger.byMode }   // swap in only what changed
-            dataDay = today
+            if dataDay != today { dataDay = today }   // BJ3: no re-render when unchanged
             Self.writeCache(byMode)
             WidgetBridge.update(completions: byMode)
         } catch {

@@ -78,7 +78,9 @@ struct KeyboardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 7) {
+        // BJ3: the per-board key states once per render (not once per key).
+        let quadBoards = vm.useQuadrantKeyboard ? (primed ? shownBoards : vm.boardKeyStates()) : []
+        return VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
                     // standard: ENTER left / ⌫ right (every phone puts backspace
@@ -93,7 +95,7 @@ struct KeyboardView: View {
                         }
                     }
                     ForEach(rows[r], id: \.self) { letter in
-                        if vm.useQuadrantKeyboard { quadrantKey(letter) } else { letterKey(letter) }
+                        if vm.useQuadrantKeyboard { quadrantKey(letter, quadBoards) } else { letterKey(letter) }
                     }
                     if r == 2 {
                         switch layout {
@@ -154,89 +156,30 @@ struct KeyboardView: View {
 
     /// §B2: the key is a tile — a lilac lip under a light face with dark purple
     /// letters, taking purple / gold / slate after a reveal.
+    /// FINISH_SPEC BJ3: an Equatable key — a keystroke (which only changes the typing
+    /// row) re-diffs each key with one comparison instead of rebuilding its cap.
     private func letterKey(_ letter: String) -> some View {
         let state = primed ? shownKeys[letter] : vm.keyState(for: letter)
-        return Button {
+        let vm = vm
+        return LetterKeyView(letter: letter, state: state, height: keyHeight,
+                             colorblind: ThemeManager.shared.colorblind) {
             vm.type(letter)
             Haptics.tap()
             SoundManager.shared.playKeyTap()
-        } label: {
-            KeyCap(state: state, height: keyHeight) {
-                Text(letter).font(Brand.font(18, .black))
-            }
         }
-        .buttonStyle(KeyPressStyle())
-        .accessibilityLabel(letter)
-        .accessibilityValue(state?.a11yName ?? "")
+        .equatable()
     }
 
     /// Per-board quadrant key (QuadWord/OctoWord/Deliverance) — mirrors web
     /// QuadrantKey: a grid of sub-cells, one per board, each colored by that
     /// board's state for this letter; all-absent collapses to solid gray.
-    private func quadrantKey(_ letter: String) -> some View {
-        let boards = primed ? shownBoards : vm.boardKeyStates()
-        let count = max(1, boards.count)
-        let cols = count <= 4 ? 2 : 4
-        let rowCount = Int(ceil(Double(count) / Double(cols)))
-        let states: [TileState?] = boards.map { $0[letter] }
-        let present = states.compactMap { $0 }
-        let hasAny = !present.isEmpty
-        let allAbsent = hasAny && present.allSatisfy { $0 == .absent }
-        let fg: Color = hasAny ? .white : FinishInk.softNumber
-        return Button {
+    private func quadrantKey(_ letter: String, _ boards: [[String: TileState]]) -> some View {
+        let vm = vm
+        return QuadrantKeyView(letter: letter, states: boards.map { $0[letter] }, height: keyHeight,
+                               colorblind: ThemeManager.shared.colorblind) {
             vm.type(letter); Haptics.tap(); SoundManager.shared.playKeyTap()
-        } label: {
-            ZStack {
-                if allAbsent {
-                    LinearGradient(colors: [TilePalette.slate.light, TilePalette.slate.base], startPoint: .top, endPoint: .bottom)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(0..<rowCount, id: \.self) { r in
-                            HStack(spacing: 0) {
-                                ForEach(0..<cols, id: \.self) { c in
-                                    let idx = r * cols + c
-                                    quadColor(idx < states.count ? states[idx] : nil)
-                                }
-                            }
-                        }
-                    }
-                }
-                Text(letter).font(Brand.font(18, .black)).foregroundStyle(fg)
-                    .lineLimit(1).minimumScaleFactor(0.5)   // §AB: fits its key at 200% text
-                    .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
-            }
-            .frame(maxWidth: .infinity).frame(height: keyHeight - 3)
-            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-            // §B2: the key's lilac lip under the quadrant face.
-            .padding(.bottom, 3)
-            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color(hex: 0xCDB9F0)))
         }
-        .buttonStyle(KeyPressStyle())
-        .accessibilityLabel(letter)
-        .accessibilityValue(quadrantA11yValue(states))
-    }
-
-    /// Spoken per-board summary for a quadrant key, e.g. "board 1 correct, board 3 not in word".
-    private func quadrantA11yValue(_ states: [TileState?]) -> String {
-        let parts = states.enumerated().compactMap { i, st -> String? in
-            guard let st, !st.a11yName.isEmpty else { return nil }
-            return "board \(i + 1) \(st.a11yName)"
-        }
-        return parts.joined(separator: ", ")
-    }
-
-    private func quadColor(_ st: TileState?) -> some View {
-        // Theme.correct/present are colorblind-aware — web's [data-colorblind]
-        // overrides recolor the quadrant mini-cells too (they use the same
-        // bg-green-500/yellow-500 classes the board tiles use).
-        let c: AnyShapeStyle
-        switch st {
-        case .correct: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.correct.light, TilePalette.correct.base], startPoint: .top, endPoint: .bottom))
-        case .present, .hintUsed: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.present.light, TilePalette.present.base], startPoint: .top, endPoint: .bottom))
-        case .absent: c = AnyShapeStyle(TilePalette.slate.base)
-        default: c = AnyShapeStyle(Color.white.opacity(0.92))
-        }
-        return Rectangle().fill(c).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .equatable()
     }
 
     /// §B2: ENTER (12 pt label) and the chunky purple backspace, as key tiles.
@@ -256,3 +199,103 @@ struct KeyboardView: View {
 }
 
 // `Haptics` lives in SoundManager.swift (FINISH_SPEC §U: gated by the Haptics toggle).
+
+/// FINISH_SPEC BJ3: one letter key, compared by what it shows (the action is the
+/// same `vm.type(letter)` for the key's whole life, so it's left out of `==`).
+private struct LetterKeyView: View, Equatable {
+    let letter: String
+    let state: TileState?
+    let height: CGFloat
+    let colorblind: Bool
+    let action: () -> Void
+
+    static func == (a: Self, b: Self) -> Bool {
+        a.letter == b.letter && a.state == b.state && a.height == b.height && a.colorblind == b.colorblind
+    }
+
+    var body: some View {
+        Button(action: action) {
+            KeyCap(state: state, height: height) {
+                Text(letter).font(Brand.font(18, .black))
+            }
+        }
+        .buttonStyle(KeyPressStyle())
+        .accessibilityLabel(letter)
+        .accessibilityValue(state?.a11yName ?? "")
+    }
+}
+
+/// FINISH_SPEC BJ3: one quadrant key (a sub-cell per board), compared by its states.
+private struct QuadrantKeyView: View, Equatable {
+    let letter: String
+    let states: [TileState?]
+    let height: CGFloat
+    let colorblind: Bool
+    let action: () -> Void
+
+    static func == (a: Self, b: Self) -> Bool {
+        a.letter == b.letter && a.states == b.states && a.height == b.height && a.colorblind == b.colorblind
+    }
+
+    var body: some View {
+        let count = max(1, states.count)
+        let cols = count <= 4 ? 2 : 4
+        let rowCount = Int(ceil(Double(count) / Double(cols)))
+        let present = states.compactMap { $0 }
+        let hasAny = !present.isEmpty
+        let allAbsent = hasAny && present.allSatisfy { $0 == .absent }
+        let fg: Color = hasAny ? .white : FinishInk.softNumber
+        return Button(action: action) {
+            ZStack {
+                if allAbsent {
+                    LinearGradient(colors: [TilePalette.slate.light, TilePalette.slate.base], startPoint: .top, endPoint: .bottom)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(0..<rowCount, id: \.self) { r in
+                            HStack(spacing: 0) {
+                                ForEach(0..<cols, id: \.self) { c in
+                                    let idx = r * cols + c
+                                    Self.quadColor(idx < states.count ? states[idx] : nil)
+                                }
+                            }
+                        }
+                    }
+                }
+                Text(letter).font(Brand.font(18, .black)).foregroundStyle(fg)
+                    .lineLimit(1).minimumScaleFactor(0.5)   // §AB: fits its key at 200% text
+                    .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
+            }
+            .frame(maxWidth: .infinity).frame(height: height - 3)
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            // §B2: the key's lilac lip under the quadrant face.
+            .padding(.bottom, 3)
+            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color(hex: 0xCDB9F0)))
+        }
+        .buttonStyle(KeyPressStyle())
+        .accessibilityLabel(letter)
+        .accessibilityValue(Self.a11yValue(states))
+    }
+
+    /// Spoken per-board summary for a quadrant key, e.g. "board 1 correct, board 3 not in word".
+    static func a11yValue(_ states: [TileState?]) -> String {
+        let parts = states.enumerated().compactMap { i, st -> String? in
+            guard let st, !st.a11yName.isEmpty else { return nil }
+            return "board \(i + 1) \(st.a11yName)"
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    static func quadColor(_ st: TileState?) -> some View {
+        // Theme.correct/present are colorblind-aware — web's [data-colorblind]
+        // overrides recolor the quadrant mini-cells too (they use the same
+        // bg-green-500/yellow-500 classes the board tiles use).
+        let c: AnyShapeStyle
+        switch st {
+        case .correct: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.correct.light, TilePalette.correct.base], startPoint: .top, endPoint: .bottom))
+        case .present, .hintUsed: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.present.light, TilePalette.present.base], startPoint: .top, endPoint: .bottom))
+        case .absent: c = AnyShapeStyle(TilePalette.slate.base)
+        default: c = AnyShapeStyle(Color.white.opacity(0.92))
+        }
+        return Rectangle().fill(c).frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}

@@ -257,23 +257,62 @@ struct FinishedMiniGrid: View {
         let rowCount = CompletedMiniBoardView.sharedRows(boards, floor: self.rowCount)
         let tile = Self.tile(boardCount: n, wordLen: boards.first?.solution.count ?? 5, rowCount: rowCount,
                              size: size, revealMissed: revealMissed)
-        // FINISH_SPEC BJ2: the recap is static — rendered once into an image, so the
-        // screen's view graph holds one image instead of up to ~500 glossy tile views.
-        FlattenedStatic(size: size, pad: 12, label: accessibilitySummary) {
-            VStack(spacing: Self.gap) {
-                ForEach(0..<rows, id: \.self) { r in
-                    HStack(spacing: Self.gap) {
-                        ForEach(0..<cols, id: \.self) { c in
-                            let i = r * cols + c
-                            if i < n {
-                                CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: rowCount,
-                                                       revealMissed: revealMissed)
+        // FINISH_SPEC BJ2: the recap is static — shown as images, so the screen's view
+        // graph holds one image per board instead of up to ~500 glossy tile views.
+        // BJ3: each board renders in its OWN frame (one ImageRenderer pass per turn), and
+        // the live tiles are never built at all — measured, building the whole grid live
+        // and then rendering it in one pass stalled OctoWord's win card 0.4–0.8 s when
+        // the finished screen was prebuilt under it.
+        let key = "\(size.width)x\(size.height)x\(n)x\(tile)x\(rowCount)"
+        Group {
+            if images.count == n, imagesKey == key, images.allSatisfy({ $0 != nil }) {
+                VStack(spacing: Self.gap) {
+                    ForEach(0..<rows, id: \.self) { r in
+                        HStack(spacing: Self.gap) {
+                            ForEach(0..<cols, id: \.self) { c in
+                                let i = r * cols + c
+                                if i < n, let img = images[i] {
+                                    Image(uiImage: img)
+                                        .frame(width: img.size.width, height: img.size.height)
+                                        .padding(-Self.renderPad)
+                                }
                             }
                         }
                     }
                 }
+                .frame(width: size.width, height: size.height)
+                .transition(.opacity)
+            } else {
+                Color.clear.frame(width: size.width, height: size.height)
             }
-            .frame(width: size.width, height: size.height)
+        }
+        .accessibilityElement()
+        .accessibilityLabel(accessibilitySummary)
+        .task(id: key) { await renderBoards(key: key, tile: tile, rowCount: rowCount) }
+    }
+
+    @State private var images: [UIImage?] = []
+    @State private var imagesKey = ""
+    /// Room around each board for its ✓ badge / tray shadow overhang.
+    private static let renderPad: CGFloat = 10
+
+    @MainActor private func renderBoards(key: String, tile: CGFloat, rowCount: Int) async {
+        guard size.width > 0, size.height > 0 else { return }
+        var out: [UIImage?] = Array(repeating: nil, count: boards.count)
+        for (i, b) in boards.enumerated() {
+            // One board per turn of the run loop: the frame in between lands.
+            await Task.yield()
+            if i > 0 { try? await Task.sleep(nanoseconds: 8_000_000) }
+            if Task.isCancelled { return }
+            let r = ImageRenderer(content: CompletedMiniBoardView(board: b, tileSize: tile, rowCount: rowCount,
+                                                                  revealMissed: revealMissed)
+                .padding(Self.renderPad))
+            r.scale = UIScreen.main.scale
+            out[i] = r.uiImage
+        }
+        withAnimation(.easeOut(duration: 0.15)) {
+            images = out
+            imagesKey = key
         }
     }
 

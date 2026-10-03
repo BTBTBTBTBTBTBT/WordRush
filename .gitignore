@@ -47,3 +47,6 @@ play-publisher*.json
 
 # Generated report from validate-propernoundle.mjs — regenerate, do not edit.
 apps/web/scripts/propernoundle-validation.json
+
+# BJ3 perf tour reports (scripts/web-perf-tour.mjs)
+.perf/

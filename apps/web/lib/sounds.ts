@@ -128,7 +128,16 @@ function unlock(): void {
       unlisten();
     }
   } catch { /* try again on the next gesture */ }
-  decodeAll(ctx);
+  // FINISH_SPEC BJ3: the decodes wait for an idle moment — measured, the first
+  // touch of a Home scroll (which unlocks audio) blocked the main thread for
+  // 190 ms+ at 4x CPU while every sample decoded inside the gesture.
+  whenIdle(() => decodeAll(ctx));
+}
+
+function whenIdle(cb: () => void): void {
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+  if (typeof ric === 'function') ric(cb, { timeout: 2000 });
+  else setTimeout(cb, 300);
 }
 
 function listen(): void {
@@ -146,12 +155,9 @@ function unlisten(): void {
 // Arm once in the browser: listen for the first gesture, prefetch the bytes when idle.
 if (typeof window !== 'undefined') {
   listen();
-  const idle = (cb: () => void) => {
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-    if (typeof ric === 'function') ric(cb, { timeout: 4000 });
-    else setTimeout(cb, 1500);
-  };
-  idle(() => { if (isSoundEnabled()) prefetchAll(); });
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+  if (typeof ric === 'function') ric(() => { if (isSoundEnabled()) prefetchAll(); }, { timeout: 4000 });
+  else setTimeout(() => { if (isSoundEnabled()) prefetchAll(); }, 1500);
 }
 
 /** Whether `name` started playing within the last `ms`. */

@@ -111,7 +111,6 @@ struct LiveHeadline: View {
     var entranceDelay: Double = 0
 
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
-    @ObservedObject private var scroll = ScrollMotion.shared
     @State private var reveal: CGFloat = 1
     @State private var pop: CGFloat = 1
     @State private var sweep: CGFloat = -0.4
@@ -263,7 +262,9 @@ struct LiveHeadline: View {
         while !Task.isCancelled {
             try? await Task.sleep(nanoseconds: 6_000_000_000)
             guard !Task.isCancelled else { return }
-            if calm || scroll.scrolling { continue }
+            // BJ3: read, not observed — observing re-rendered every headline on the
+            // page at each scroll's start and end, exactly when a frame matters most.
+            if calm || ScrollMotion.shared.scrolling { continue }
             var t = Transaction()
             t.disablesAnimations = true
             withTransaction(t) { sweep = -0.4 }

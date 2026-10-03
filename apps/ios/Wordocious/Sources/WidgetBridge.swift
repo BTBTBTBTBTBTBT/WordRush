@@ -95,9 +95,17 @@ enum WidgetBridge {
                             username: auth.isAuthenticated ? auth.profile?.username : nil,
                             wordStreaks: HomeStreaksService.cachedStreaks(.word),
                             puzzleStreaks: HomeStreaksService.cachedStreaks(.puzzles))
-        guard let defaults = UserDefaults(suiteName: appGroup),
-              let data = try? JSONEncoder().encode(snap) else { return }
+        guard let data = try? JSONEncoder().encode(snap) else { return }
+        // FINISH_SPEC BJ3: Home calls this on every appear (each tab return, each game
+        // closed); an unchanged snapshot is neither rewritten nor sent to WidgetKit
+        // (the reload is an XPC round trip on the main thread, and it spends the
+        // widget's daily reload budget).
+        guard data != lastWritten, let defaults = UserDefaults(suiteName: appGroup) else { return }
+        lastWritten = data
         defaults.set(data, forKey: snapshotKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
+
+    /// BJ3: the last snapshot handed to the widget this launch.
+    @MainActor private static var lastWritten: Data?
 }

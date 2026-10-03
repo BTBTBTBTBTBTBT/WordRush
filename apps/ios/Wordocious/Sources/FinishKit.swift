@@ -879,21 +879,31 @@ struct NudgeEffect: GeometryEffect {
 /// as it swells to 1.07 and eases back (300 ms soft spring).
 struct TypePop: ViewModifier {
     let letter: String
+    /// Kept for the call sites (the keyframe version translated by size); unused now.
     let size: CGSize
-    @State private var progress: Double = 1
+    @State private var scale: CGFloat = 1
+    @State private var fade: Double = 1
 
+    // FINISH_SPEC BJ3: two plain scale / opacity animations (0.9 → 1.07 → 1, fade
+    // 0.6 → 1) instead of a custom Animatable keyframe modifier — that one re-ran its
+    // body every frame for every typed tile and carried six effects on EVERY tile even
+    // at rest (measured: OctoWord typing kept the main thread 55–70% busy, 5 stalls
+    // over 50 ms per word; the pop alone was most of it).
     func body(content: Content) -> some View {
         content
-            .modifier(KeyframeEffect(progress: progress, frames: TileMotion.popFrames, easing: TileMotion.popEasing,
-                                     size: size, fadeIn: progress < 1))
+            .scaleEffect(scale)
+            .opacity(fade)
             .onChange(of: letter) { new in
                 guard !new.isEmpty, !Theme.reduceMotion else { return }
                 var reset = Transaction()
                 reset.disablesAnimations = true
-                withTransaction(reset) { progress = 0 }
+                withTransaction(reset) { scale = 0.9; fade = 0.6 }
                 // Next runloop, so the reset renders before the pop animates.
                 DispatchQueue.main.async {
-                    withAnimation(.linear(duration: TileMotion.pop)) { progress = 1 }
+                    withAnimation(.easeOut(duration: TileMotion.pop * 0.55)) { scale = 1.07; fade = 1 }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + TileMotion.pop * 0.55) {
+                        withAnimation(.easeInOut(duration: TileMotion.pop * 0.45)) { scale = 1 }
+                    }
                 }
             }
     }

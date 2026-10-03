@@ -352,6 +352,9 @@ final class GameViewModel: ObservableObject {
         }
         recomputeEvaluations()
         restoreHintUI()
+        #if DEBUG
+        PerfTour.game = self   // FINISH_SPEC BJ3 (perf tour)
+        #endif
         accumulatedMs = isVersus ? 0 : GamePersistence.shared.loadElapsed(seed: effectiveSeed, mode: mode)
         // A game restored from disk that's already finished shouldn't re-post —
         // IF the server actually has it. The app dying between the finish and
