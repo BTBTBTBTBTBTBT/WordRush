@@ -18,3 +18,5 @@ Founder rules: on brand (purple/gold/grey glossy, soft 3D, Nunito-heavy letterin
 11. "Wordocious Polish Pass" design canvas: "small menus with flair" board + numbered proposals
 
 Then: docs/design/brand/NIGHT-ART-2026-10-03.md (what shipped where) + a bible entry. No builds or pushes overnight.
+
+Status 10-03 ~4:30 AM: 1–7, 9, 10, 11 done and shipped ×3 (see NIGHT-ART-2026-10-03.md); 8 skipped (no spec BH).
