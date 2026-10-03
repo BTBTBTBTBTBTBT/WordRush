@@ -1,6 +1,6 @@
 -- FINISH_SPEC BJ12 (2026-10-03) — More Games Perfect medals backfill.
--- ⚠️ NOT APPLIED. Brian applies by hand after a backup (scripts/db-backup.sh),
--- then reads back with the SELECT at the bottom. Idempotent — safe to re-run.
+-- APPLIED 2026-10-03 ~17:32 CT after backup 20261003T223050Z: INSERT 0 86, read back
+-- OK (counts match the header). No triggers on public.medals. Idempotent — safe to re-run.
 --
 -- Why: iOS (MedalService.swift) and Android (MedalService.kt) awarded the
 -- Perfect medal from a hand-typed switch of the nine word modes, so no More
