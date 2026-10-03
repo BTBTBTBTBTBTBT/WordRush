@@ -11,6 +11,7 @@ const PRECACHE_URLS = [
   '/favicon.ico',
   '/icon-192.png',
   '/icon-512.png',
+  '/badge-96.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -36,7 +37,9 @@ self.addEventListener('push', (event) => {
     body: data.body || "Your daily puzzles are ready!",
     // FINISH_SPEC K2: the app icon B; a large image (the event's cast pose) when the payload carries one.
     icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    // BJ11: the status-bar badge is a white W-mascot silhouette (Android masks it to alpha —
+    // a full-color icon there reads as a blank white square). Same shape as ic_stat_wordocious.
+    badge: '/badge-96.png',
     ...(data.image ? { image: data.image } : {}),
     data: { url: data.url || '/' },
   };

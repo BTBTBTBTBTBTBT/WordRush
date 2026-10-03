@@ -1,3 +1,7 @@
+# RETIRED (FINISH_SPEC BJ11, 2026-10-03): this draws the OLD white-W tile. The app icon
+# is icon B (logo/app-icon-B-1024.png) and logo/mark*.png are now icon-B rounded tiles,
+# so this script writes to logo/retired/ only — never back over the shipped marks.
+#
 # Logo concept I (founder-approved 2026-10-02), drawn in code so it is free and
 # razor sharp at any size: a purple-to-pink gradient (#a855f7 → #ec4899), a
 # chunky rounded white W in Nunito at its heaviest weight, a thin bright top
@@ -11,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..', '..'))
 FONT = os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources', 'Nunito.ttf')
-OUT = os.path.join(HERE, 'logo')
+OUT = os.path.join(HERE, 'logo', 'retired')
 os.makedirs(OUT, exist_ok=True)
 
 A = (0xa8, 0x55, 0xf7)
