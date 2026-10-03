@@ -16,7 +16,9 @@ import UIKit
 // check, to play = a pale wash of the color with the game's 3D icon). BI13b (founder
 // 10-03: "a little personality"): one small cast member peeking in — the small's mascot
 // corner, up from behind the top-right daily chip (medium) or the middle Puzzle chip (large,
-// beside the W header) — mood by state, pose by day (WidgetCast.peekPose). Two type sizes in Nunito Black (hero +
+// beside the W header) — mood by state, pose by day (WidgetCast.peekPose). BI13c: the player's
+// own look (an app-rendered PNG: mascot cutout or framed photo) heads the large widget in W's
+// place, and peeks in instead of the cast on big days (swept / streak milestone). Two type sizes in Nunito Black (hero +
 // small tracked caps), brand purple as the one accent, gold only for the streak and a
 // sweep. No boxes, outlines or frames around anything; system content margins.
 // Every game chip deep-links (wordocious://daily/<MODE>).
@@ -359,7 +361,7 @@ private struct ChipGrid: View {
     var linked = true
     var maxChip: CGFloat = 64
     /// BI13b: a cast member peeking up from behind the first-row chip at `index`.
-    var peek: (asset: String, index: Int)? = nil
+    var peek: (art: PeekArt, index: Int)? = nil
 
     var body: some View {
         GeometryReader { g in
@@ -380,7 +382,7 @@ private struct ChipGrid: View {
                 // Head and shoulders only, cut exactly at the chip's top edge, so it reads as
                 // standing behind the chip; it lives in the empty band above the grid.
                 let fig = side * 0.8, show = fig * 0.52
-                CastPeek(asset: peek.asset)
+                CastPeek(art: peek.art)
                     .frame(width: fig, height: fig)
                     .frame(width: fig, height: show, alignment: .top)
                     .clipped()
@@ -512,13 +514,50 @@ private struct MascotW: View {
     }
 }
 
+/// What peeks in: a bundled cast pose, or (BI13c, big days) the player's own pre-rendered look.
+enum PeekArt {
+    case asset(String)
+    case own(UIImage)
+}
+
 /// BI13b: the one cast member peeking in (WidgetCast.peekPose — mood by state, pose by day).
 private struct CastPeek: View {
-    let asset: String
+    let art: PeekArt
     var body: some View {
-        Image(UIImage(named: asset) != nil ? asset : "mascot-r")
-            .resizable().interpolation(.high).scaledToFit()
-            .accessibilityHidden(true)
+        Group {
+            switch art {
+            case .asset(let asset): Image(UIImage(named: asset) != nil ? asset : "mascot-r").resizable().interpolation(.high)
+            case .own(let img): Image(uiImage: img).resizable().interpolation(.high)
+            }
+        }
+        .scaledToFit()
+        .accessibilityHidden(true)
+    }
+}
+
+/// BI13c: the player's own look, pre-rendered by the app (WidgetAvatarSnapshot) into the
+/// app-group container — a mascot cutout or a framed photo; nil (→ W / the cast) when absent.
+enum OwnLook {
+    struct Look { let image: UIImage; let photo: Bool }
+    static var load: () -> Look? = {
+        guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else { return nil }
+        for (name, photo) in [(WidgetAvatar.mascotFile, false), (WidgetAvatar.photoFile, true)] {
+            if let img = UIImage(contentsOfFile: dir.appendingPathComponent(name).path) { return Look(image: img, photo: photo) }
+        }
+        return nil
+    }
+}
+
+/// BI13c: the large header's host — the player's own look (mascot cutout / framed photo), else W.
+private struct HeaderHost: View {
+    let date: Date
+    let own: OwnLook.Look?
+    var body: some View {
+        if let own {
+            Image(uiImage: own.image).resizable().interpolation(.high).scaledToFit().accessibilityHidden(true)
+        } else {
+            MascotW(date: date)
+        }
     }
 }
 
@@ -548,6 +587,16 @@ extension WSnapshot {
     func peekAsset(at date: Date) -> String {
         let day = localDay(date)
         return WidgetCast.peekAsset(WidgetCast.peekPose(played: word.played, total: modes.count, streak: streak, day: day), day: day)
+    }
+
+    /// BI13c: on a big day (swept / streak milestone) the player's own look peeks in instead of
+    /// the cast — a photo only where it shows whole (`photoOK`), never cut by a chip.
+    func peekArt(at date: Date, own: OwnLook.Look?, photoOK: Bool) -> PeekArt {
+        if let own, own.photo ? photoOK : true,
+           WidgetCast.ownPeekDay(played: word.played, total: modes.count, streak: streak) {
+            return .own(own.image)
+        }
+        return .asset(peekAsset(at: date))
     }
 
     /// The first unplayed daily (Wordocious first, then Puzzles).
@@ -604,7 +653,7 @@ struct SmallView: View {
                     Spacer(minLength: 2)
                     // BI13b: the day's cast member in the mascot corner (sleepy R before the
                     // first daily, a cheer on a sweep, S with a trophy on a milestone).
-                    CastPeek(asset: snap.peekAsset(at: date))
+                    CastPeek(art: snap.peekArt(at: date, own: OwnLook.load(), photoOK: true))
                         .frame(width: min(46, g.size.width - ring - 2), height: min(46, g.size.width - ring - 2))
                 }
                 Spacer(minLength: 4)
@@ -654,7 +703,7 @@ struct MediumView: View {
                         }
                     }
                     .frame(width: left)
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, peek: (snap.peekAsset(at: date), 3))
+                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, peek: (snap.peekArt(at: date, own: OwnLook.load(), photoOK: false), 3))
                 }
             }
             StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
@@ -677,7 +726,8 @@ struct LargeView: View {
         let muted = WInk.label(dark).opacity(0.75)
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                MascotW(date: date).frame(width: 42, height: 42)
+                // BI13c: the player's own look heads the large widget (W for guests / no look).
+                HeaderHost(date: date, own: OwnLook.load()).frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 3) {
                     Caps(text: "WORDOCIOUS", color: WInk.accent(dark), tracking: 1.6)
                     Caps(text: "TODAY'S DAILIES", color: muted)
@@ -705,7 +755,7 @@ struct LargeView: View {
                     Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: muted)
                 }
                 Spacer(minLength: 6).frame(maxHeight: 8)
-                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, peek: (snap.peekAsset(at: date), 2))
+                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, peek: (.asset(snap.peekAsset(at: date)), 2))
                     .frame(minHeight: 90, maxHeight: 116)
             }
             Spacer(minLength: 8)

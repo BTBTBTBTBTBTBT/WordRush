@@ -166,4 +166,20 @@ public enum WidgetCast {
         let costume = asset(id, day: day)
         return costume.hasPrefix("art-halloween-") ? costume : "art-pose-\(pose)"
     }
+
+    /// BI13c (founder 10-03): on a big day (all eight swept, or a streak milestone) the
+    /// player's OWN mascot peeks in instead of the day's cast member.
+    public static func ownPeekDay(played: Int, total: Int, streak: Int) -> Bool {
+        let mood = peekMood(played: played, total: total, streak: streak)
+        return mood == .swept || mood == .milestone
+    }
+}
+
+/// BI13c: the player's own look, pre-rendered by the app (WidgetAvatarSnapshot) into the
+/// app-group container — a full-body mascot cutout OR a framed photo portrait (never both),
+/// ~256 px PNG. Missing file → W. The widget composes nothing.
+public enum WidgetAvatar {
+    public static let mascotFile = "widget-avatar-mascot.png"
+    public static let photoFile = "widget-avatar-photo.png"
+    public static let side: Int = 256
 }

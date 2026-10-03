@@ -63,6 +63,8 @@ class MainActivity : ComponentActivity() {
         com.wordocious.app.data.Prewarm.dictionary()
         // BJ6: the Good Morning host's art (W's wave pose / the player's mascot) decoded before Home's first frame.
         com.wordocious.app.ui.HomeHostPrewarm.start(this)
+        // BI13c: the player's own look pre-rendered for the home-screen widget (W when none).
+        com.wordocious.app.widget.WidgetAvatarSnapshot.start(this)
         AuthService.initialize()
         // BI19: warm today's Leaderboard + Stats caches once launch settles.
         com.wordocious.app.data.TodayPrefetch.afterLaunch()

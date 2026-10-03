@@ -90,6 +90,11 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertEqual(WidgetCast.peekPose(played: 8, total: 8, streak: 14, day: "2026-10-05"), "i-cheer")
         // Never W, so the large header's W is never doubled.
         for pool in WidgetCast.peekPoses.values { XCTAssertFalse(pool.contains { $0.hasPrefix("w-") }) }
+        // BI13c: the player's own look takes the peek on big days only.
+        XCTAssertTrue(WidgetCast.ownPeekDay(played: 8, total: 8, streak: 3))
+        XCTAssertTrue(WidgetCast.ownPeekDay(played: 5, total: 8, streak: 14))
+        XCTAssertFalse(WidgetCast.ownPeekDay(played: 5, total: 8, streak: 12))
+        XCTAssertFalse(WidgetCast.ownPeekDay(played: 0, total: 8, streak: 14))
         XCTAssertEqual(WidgetCast.peekAsset("d-cheer", day: "2026-10-02"), "art-pose-d-cheer")
         XCTAssertEqual(WidgetCast.peekAsset("o1-cheer", day: "2026-10-30"), "art-halloween-o1")
     }

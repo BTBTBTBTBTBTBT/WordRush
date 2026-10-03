@@ -49,8 +49,10 @@ struct SettingsView: View {
             ZStack {
                 PageBackground(tint: .home)
                 ScrollView {
+                    // FINISH_SPEC BJ3: lazy — the sheet's presenting frame builds only the
+                    // sections on screen (measured: the gear's open stalled 240–580 ms).
                     // BJ7: 12 between sections (was 16).
-                    VStack(alignment: .leading, spacing: 12) {
+                    LazyVStack(alignment: .leading, spacing: 12) {
                         // FINISH_SPEC §AA3: the WORDOCIOUS PRO member card leads Settings
                         // (free players see the Go Pro upsell in the same slot).
                         SettingsProCard()

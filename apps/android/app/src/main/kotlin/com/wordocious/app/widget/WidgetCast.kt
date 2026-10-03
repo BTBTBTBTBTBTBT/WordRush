@@ -56,4 +56,8 @@ object WidgetCast {
         val pool = PEEK_POSES.getValue(peekMood(played, total, streak))
         return pool[Math.floorMod(epochDay, pool.size.toLong()).toInt()]
     }
+
+    /** BI13c: on a big day (swept / streak milestone) the player's OWN look peeks in instead. */
+    fun ownPeekDay(played: Int, total: Int, streak: Int): Boolean =
+        peekMood(played, total, streak).let { it == PeekMood.SWEPT || it == PeekMood.MILESTONE }
 }

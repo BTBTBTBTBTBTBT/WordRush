@@ -353,7 +353,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             return POSE_RES[pose] ?: R.drawable.art_pose_r_wake
         }
 
-        private val peekCache = HashMap<Int, Bitmap>()
+        private val peekCache = HashMap<Any, Bitmap>()
 
         /**
          * The peek for a chip-sized square (w_peek sits under the chip, nudged up 18dp): the figure
@@ -363,6 +363,12 @@ class DailyWidgetProvider : AppWidgetProvider() {
         private fun peekBitmap(context: Context, res: Int): Bitmap? {
             peekCache[res]?.let { return it }
             val art = com.wordocious.app.data.ShareFinish.decode(context, res) ?: return null
+            return peekBitmap(context, art, res)
+        }
+
+        /** [peekBitmap] from already-decoded [art] (BI13c: the player's own cutout), cached by [key]. */
+        private fun peekBitmap(context: Context, art: Bitmap, key: Any): Bitmap {
+            peekCache[key]?.let { return it }
             val px = chipPx(context)
             val s = px.toFloat()
             val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
@@ -372,12 +378,21 @@ class DailyWidgetProvider : AppWidgetProvider() {
             c.clipRect(0f, 0f, s, s * 0.42f)
             c.drawBitmap(art, null, RectF((s - w) / 2f, 0f, (s + w) / 2f, h), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
             if (peekCache.size > 4) peekCache.clear()
-            peekCache[res] = bmp
+            peekCache[key] = bmp
             return bmp
         }
 
-        private fun applyPeek(context: Context, views: RemoteViews, snap: WidgetBridge.Snapshot) {
-            val bmp = peekBitmap(context, peekRes(snap))
+        /** BI13c: whether the player's own look takes the peek today (big days only). */
+        private fun ownPeek(snap: WidgetBridge.Snapshot): Boolean =
+            WidgetCast.ownPeekDay(snap.modes.count { it.played }, snap.modes.size, snap.streak)
+
+        /**
+         * The chip peek: the day's cast member — or, on a big day, the player's own mascot cutout
+         * (a photo never peeks from behind a chip: it would be cut). [own] = WidgetAvatarSnapshot.load.
+         */
+        private fun applyPeek(context: Context, views: RemoteViews, snap: WidgetBridge.Snapshot, own: Pair<Bitmap, Boolean>? = null) {
+            val mine = own?.takeIf { !it.second && ownPeek(snap) }?.first
+            val bmp = if (mine != null) peekBitmap(context, mine, "own:${mine.generationId}") else peekBitmap(context, peekRes(snap))
             if (bmp != null) views.setImageViewBitmap(R.id.w_peek, bmp)
             views.setViewVisibility(R.id.w_peek, if (bmp != null) View.VISIBLE else View.GONE)
         }
@@ -396,8 +411,11 @@ class DailyWidgetProvider : AppWidgetProvider() {
             applyRing(context, views, snap, 78f)
             applyStreak(views, snap)
             // BI13b: the day's cast member in the mascot corner (sleepy R before the first
-            // daily, a cheer on a sweep, S with a trophy on a milestone).
-            views.setImageViewResource(R.id.w_mascot, peekRes(snap))
+            // daily, a cheer on a sweep, S with a trophy on a milestone). BI13c: on a big day the
+            // player's own look (cutout, or the framed photo whole) stands there instead.
+            val own = WidgetAvatarSnapshot.load(context)
+            if (own != null && ownPeek(snap)) views.setImageViewBitmap(R.id.w_mascot, own.first)
+            else views.setImageViewResource(R.id.w_mascot, peekRes(snap))
             views.setTextViewText(R.id.w_reset, "RESETS IN ${resetLabel(now)}")
             views.setContentDescription(R.id.w_reset, WidgetStats.countdownPhraseFor(now))
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
@@ -409,7 +427,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             applyRing(context, views, snap, 72f)
             applyStreak(views, snap)
             renderChips(context, views, DAILY_CHIPS, snap.modes, requestBase = 1)
-            applyPeek(context, views, snap)
+            applyPeek(context, views, snap, WidgetAvatarSnapshot.load(context))
             applyFooter(context, views, snap, now)
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
             return views
@@ -419,7 +437,9 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_daily_large)
             applyRing(context, views, snap, 84f)
             applyStreak(views, snap)
-            applyMascot(views)
+            // BI13c: the player's own look (mascot cutout / framed photo) heads the large widget; W otherwise.
+            val own = WidgetAvatarSnapshot.load(context)
+            if (own != null) views.setImageViewBitmap(R.id.w_mascot, own.first) else applyMascot(views)
             renderChips(context, views, DAILY_CHIPS, snap.modes, requestBase = 1)
             val puzzles = snap.puzzles.orEmpty()
             if (puzzles.isEmpty()) {

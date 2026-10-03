@@ -51,6 +51,13 @@ class WidgetPeekTest {
         assertEquals("i-cheer", WidgetCast.peekPose(8, 8, 14, day("2026-10-05")))
     }
 
+    @Test fun ownLookOnlyOnBigDays() {
+        assertEquals(true, WidgetCast.ownPeekDay(8, 8, 3))    // swept
+        assertEquals(true, WidgetCast.ownPeekDay(5, 8, 14))   // milestone
+        assertFalse(WidgetCast.ownPeekDay(5, 8, 12))
+        assertFalse(WidgetCast.ownPeekDay(0, 8, 14))          // nothing played yet: sleepy R
+    }
+
     @Test fun neverW() {
         for (pool in WidgetCast.PEEK_POSES.values) assertFalse(pool.any { it.startsWith("w-") })
     }
