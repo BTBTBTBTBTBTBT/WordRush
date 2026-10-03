@@ -44,6 +44,8 @@ enum PerfTour {
         case cover(Cover?)
         case strategyArticle(Int)
         case wordDetail(Int)
+        /// BJ14: zoom an OctoWord mini board in (index) / back out (nil).
+        case zoomBoard(Int?)
     }
 
     enum Sheet: String, Identifiable { case settings, help, strategy, words, quickPlay; var id: String { rawValue } }
@@ -456,6 +458,16 @@ enum PerfTourDriver {
             await step("octo.submit", hold: 2.0) { PerfDrive.enter() }
             await step("octo.type2", hold: 0.3) { await PerfDrive.type("SLOTH") }
             await step("octo.submit2", hold: 2.0) { PerfDrive.enter() }
+            // BJ14: the founder's zoom — tap a (partly filled) mini board, type in the
+            // zoomed board, back out.
+            let zoomHold = PerfTour.flag("slowZoom") ? 6.0 : 0.9
+            await step("octo.zoomIn", hold: zoomHold) { PerfTour.send(.zoomBoard(2)) }
+            await step("octo.zoomType", hold: 0.3) {
+                await PerfDrive.type("ST")
+                await PerfDrive.sleep(PerfTour.flag("slowZoom") ? 3 : 0)
+                _ = PerfTour.key(.delete); await PerfDrive.sleep(0.11); _ = PerfTour.key(.delete)
+            }
+            await step("octo.zoomOut", hold: zoomHold) { PerfTour.send(.zoomBoard(nil)) }
             // Solve every board: the win card, then (BJ2) the finished screen built under it.
             let answers = PerfTour.game?.boards.filter { $0.status == .playing }.map { $0.solution.uppercased() } ?? []
             await step("octo.solve", hold: 0.5) {

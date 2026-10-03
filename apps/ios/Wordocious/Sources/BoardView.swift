@@ -307,7 +307,7 @@ struct BoardView: View {
     /// comparison instead of rebuilding its tiles (OctoWord: 8 boards × 13 rows).
     private func settledRow(_ letters: [String], _ states: [TileState], revealed: Bool) -> some View {
         SettledTileRow(letters: letters, states: states, revealed: revealed, size: tileSize, height: tileHeight,
-                       spacing: spacing, colorblind: ThemeManager.shared.colorblind)
+                       spacing: spacing, colorblind: ThemeManager.shared.colorblind, canvas: !zoomed)
             .equatable()
     }
 
@@ -364,14 +364,70 @@ private struct SettledTileRow: View, Equatable {
     let height: CGFloat?
     let spacing: CGFloat
     let colorblind: Bool
+    /// BJ14: false on the zoomed OctoWord copy — it's scaled up, and a Canvas is a
+    /// bitmap at its layout size (it would blur); real tiles stay vector-crisp.
+    var canvas: Bool = true
 
     var body: some View {
-        HStack(spacing: spacing) {
-            ForEach(letters.indices, id: \.self) { i in
-                // Settled: never typed into again, so no pop modifiers on it.
-                TileView(letter: letters[i], state: states[i], revealed: revealed, size: size, height: height, pops: false)
+        #if DEBUG
+        let canvas = canvas && !PerfTour.flag("noCanvas")
+        #endif
+        if canvas, !revealed, letters.allSatisfy(\.isEmpty) {
+            // BJ14: an unplayed filler row is ONE Canvas, not N GlossyTile trees
+            // (OctoWord opened ~500 empty tiles = hundreds of SwiftUI views per frame).
+            EmptyTileRow(count: letters.count, width: size, height: height ?? size, spacing: spacing)
+        } else {
+            HStack(spacing: spacing) {
+                ForEach(letters.indices, id: \.self) { i in
+                    // Settled: never typed into again, so no pop modifiers on it.
+                    TileView(letter: letters[i], state: states[i], revealed: revealed, size: size, height: height, pops: false)
+                }
             }
         }
+    }
+}
+
+/// FINISH_SPEC BJ14: a row of EMPTY glossy tiles drawn in one Canvas — the same
+/// geometry as `GlossyTile(face: .empty)` (edge lip, face, ring, gloss), pixel for
+/// pixel, at a fraction of the view-graph cost.
+struct EmptyTileRow: View {
+    let count: Int
+    let width: CGFloat
+    let height: CGFloat
+    let spacing: CGFloat
+
+    var body: some View {
+        let st = GlossyTile.style(.empty)
+        let total = CGFloat(count) * width + CGFloat(max(0, count - 1)) * spacing
+        Canvas { ctx, _ in
+            let h = height
+            let s = min(width, h)
+            let r = s * 0.22
+            let lip = max(1.5, h * 0.07)
+            let faceH = h - lip
+            let lw = max(1, s * st.ringWidth)
+            let glossW = width * 0.84
+            let glossH = faceH * 0.38
+            let gloss = Gradient(colors: [Color.white.opacity(st.gloss), Color.white.opacity(0)])
+            for i in 0..<count {
+                let x = CGFloat(i) * (width + spacing)
+                let full = CGRect(x: x, y: 0, width: width, height: h)
+                let face = CGRect(x: x, y: 0, width: width, height: faceH)
+                ctx.fill(Path(roundedRect: full, cornerRadius: r, style: .continuous), with: .style(st.edge))
+                ctx.fill(Path(roundedRect: face, cornerRadius: r, style: .continuous), with: .style(st.face))
+                if let ring = st.ring {
+                    let inset = face.insetBy(dx: lw / 2, dy: lw / 2)
+                    ctx.stroke(Path(roundedRect: inset, cornerRadius: max(0, r - lw / 2), style: .continuous),
+                               with: .color(ring), lineWidth: lw)
+                }
+                let g = CGRect(x: x + (width - glossW) / 2, y: faceH * 0.06, width: glossW, height: glossH)
+                ctx.fill(Path(roundedRect: g, cornerRadius: s * 0.18, style: .continuous),
+                         with: .linearGradient(gloss, startPoint: CGPoint(x: g.midX, y: g.minY),
+                                               endPoint: CGPoint(x: g.midX, y: g.maxY)))
+            }
+        }
+        .frame(width: total, height: height)
+        .allowsHitTesting(false)
     }
 }
 
@@ -703,7 +759,13 @@ struct BoardLayout: View {
     /// turn instead of all on the presenting frame (OctoWord's open was one ~450 ms
     /// frame, most of it 520 glossy tiles). The game cover's overlay hides the
     /// staging; each pending slot holds its exact size, so nothing shifts.
-    @State private var builtBoards: Int = BoardLayout.firstBatch
+    @State private var builtBoards: Int = BoardLayout.initialBoards
+    private static var initialBoards: Int {
+        #if DEBUG
+        if PerfTour.flag("noStage") { return 99 }
+        #endif
+        return firstBatch
+    }
     private static let firstBatch = 2
 
     private func stageBoards() {
@@ -736,14 +798,39 @@ struct BoardLayout: View {
         // Zoom overlay covers only the board area (this view's frame), never the
         // keyboard below — matching the web backdrop.
         .overlay { if let i = expandedIndex { expandedOverlay(i) } }
+        #if DEBUG
+        .onPerfTour { c in
+            guard case .zoomBoard(let i) = c else { return }
+            if let i { if i < builtBoards { zoomIn(i) } } else if expandedIndex != nil { dismissExpanded() }
+        }
+        #endif
     }
 
-    private let zoomSpring: Animation = .spring(response: 0.45, dampingFraction: 0.82)
+    private var zoomSpring: Animation {
+        #if DEBUG
+        if PerfTour.flag("slowZoom") { return .spring(response: 4.5, dampingFraction: 0.82) }
+        #endif
+        return .spring(response: 0.45, dampingFraction: 0.82)
+    }
+
+    private func zoomIn(_ i: Int) {
+        guard canZoom else { return }
+        expandedIndex = i
+        zoomProgress = 0
+        // Render the overlay at the slot first, then grow it.
+        DispatchQueue.main.async {
+            withAnimation(Theme.animation(zoomSpring)) { zoomProgress = 1 }
+        }
+    }
 
     private func dismissExpanded() {
         withAnimation(Theme.animation(zoomSpring)) { zoomProgress = 0 }
         // Remove the overlay once the minimize animation has settled.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        var settle = 0.5
+        #if DEBUG
+        if PerfTour.flag("slowZoom") { settle = 5 }
+        #endif
+        DispatchQueue.main.asyncAfter(deadline: .now() + settle) {
             if zoomProgress == 0 { expandedIndex = nil }
         }
     }
@@ -818,15 +905,7 @@ struct BoardLayout: View {
                                 // Hide the mini while it's zoomed; the overlay copy morphs over it.
                                 .opacity(expandedIndex == i ? 0 : 1)
                                 .contentShape(Rectangle())
-                                .onTapGesture {
-                                    guard canZoom else { return }
-                                    expandedIndex = i
-                                    zoomProgress = 0
-                                    // Render the overlay at the slot first, then grow it.
-                                    DispatchQueue.main.async {
-                                        withAnimation(Theme.animation(zoomSpring)) { zoomProgress = 1 }
-                                    }
-                                }
+                                .onTapGesture { zoomIn(i) }
                         } else {
                             Color.clear.frame(width: cellW)
                         }
