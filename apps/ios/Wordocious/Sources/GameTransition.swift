@@ -444,6 +444,9 @@ private struct GameCoverItem<Item: Identifiable, Cover: View>: ViewModifier {
             return
         }
         if shown == nil {
+            #if DEBUG
+            if PerfTour.flag("noXition") { withTransaction(noSlide) { shown = next }; return }
+            #endif
             GameTransition.shared.beginOpen(color: defaultShellColor(color))
             let id = AnyHashable(next.id)
             DispatchQueue.main.async {
@@ -484,6 +487,9 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
             return
         }
         guard !shown else { return }
+        #if DEBUG
+        if PerfTour.flag("noXition") { withTransaction(noSlide) { shown = true }; return }
+        #endif
         GameTransition.shared.beginOpen(color: defaultShellColor(color))
         DispatchQueue.main.async {
             guard isPresented else { GameTransition.shared.cancelOpen(); return }
@@ -501,7 +507,12 @@ private struct GameCoverHook: UIViewRepresentable {
             super.didMoveToWindow()
             guard window != nil, !installed else { return }
             installed = true
-            if let vc = presentedRoot(of: self), let target = GameTransition.shared.lastOpened {
+            #if DEBUG
+            let skip = PerfTour.flag("noXition")
+            #else
+            let skip = false
+            #endif
+            if !skip, let vc = presentedRoot(of: self), let target = GameTransition.shared.lastOpened {
                 let delegate = GameCoverDismissal(target: target)
                 objc_setAssociatedObject(vc, &dismissalKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
                 vc.transitioningDelegate = delegate

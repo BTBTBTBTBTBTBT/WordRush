@@ -699,6 +699,21 @@ struct BoardLayout: View {
     @State private var zoomProgress: CGFloat = 0
     private var canZoom: Bool { vm.boardCount > 4 && fitHeight != nil }
 
+    /// BJ14: a fresh multi-board game builds its mini boards a pair per run-loop
+    /// turn instead of all on the presenting frame (OctoWord's open was one ~450 ms
+    /// frame, most of it 520 glossy tiles). The game cover's overlay hides the
+    /// staging; each pending slot holds its exact size, so nothing shifts.
+    @State private var builtBoards: Int = BoardLayout.firstBatch
+    private static let firstBatch = 2
+
+    private func stageBoards() {
+        guard builtBoards < vm.boardCount else { return }
+        DispatchQueue.main.async {
+            builtBoards = min(vm.boardCount, builtBoards + BoardLayout.firstBatch)
+            stageBoards()
+        }
+    }
+
     var body: some View {
         Group {
             if vm.boardCount == 1 {
@@ -794,7 +809,9 @@ struct BoardLayout: View {
                 HStack(spacing: boardGap) {
                     ForEach(0..<cols, id: \.self) { c in
                         let i = r * cols + c
-                        if i < n {
+                        if i < n, i >= builtBoards, fitHeight != nil {
+                            Color.clear.frame(width: cellW, height: pendingCellH)
+                        } else if i < n {
                             BoardView(vm: vm, boardIndex: i, tileSize: tileW, tileHeight: tileH, fillGap: tileGap,
                                       trayPadding: miniPad)
                                 .frame(width: cellW)
@@ -818,6 +835,15 @@ struct BoardLayout: View {
             }
         }
         .frame(width: CGFloat(m.gridWidth), alignment: .top)
+        .onAppear { stageBoards() }
+    }
+
+    /// BJ14: a pending mini board's slot height (the cell's sized height + its lip).
+    private var pendingCellH: CGFloat {
+        let m = multi
+        let areaH = fitHeight ?? availableWidth * 2.2
+        return m.cellHeight.map { CGFloat($0) + GameTray.lip }
+            ?? (areaH - CGFloat(boardRows - 1) * boardGap) / CGFloat(boardRows)
     }
 
     /// §B5: the largest square tile that fits the width (2% margins) and, in play,

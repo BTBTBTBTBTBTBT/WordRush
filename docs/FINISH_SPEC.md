@@ -1581,6 +1581,20 @@ the full sheet). Title art is looked up BY NAME (iOS ArtAsset.exists, Android ge
 web lib/friends-play.ts POCKET_TITLE_ART / PICK_FRIEND_TITLE_ART sizes), so shipping a file is a drop-in. Helpers: web
 friends-play.ts kindRules / pickerStatus / pickerGrid (vitest), iOS FriendsKit.rules / pickerStatus / PickerGrid, Android
 FriendsKit friendlyRules / pickerStatus / PickerGrid.
+BJ14. Game open/close long frame (perf harness 10-03: every game open had ONE main-thread frame of 300–490 ms a few frames
+after the tap; closes 64–219 ms). Cause, measured: (b) building the game hierarchy, not (a) the BJ9 transition. A/B with
+`--flag noXition` (DEBUG: present the cover with no overlay and no custom dismissal) still stalls — Classic open 381 → 283
+ms, OctoWord 574 → 413 — so the transition adds ~100 ms on top but is not the stall. A Time Profiler trace of the tour,
+samples cut to each "hitch" signpost, puts the whole long frame inside ONE SwiftUI update (graph instantiation of the new
+cover: GameScreen, BoardLayout / BoardView / GlossyTile bodies, KeyboardView / KeyCap, header); app-side setup
+(GameViewModel.init, seed / solution pool, persistence) is ~1% of it. The close stall is the cover's teardown in
+`completeTransition` at the END of the shrink (GameCoverDismissal finish closure), not the animation. Fix 1 (shipped iOS):
+multi-board games build their mini boards two per run-loop turn under the overlay (BoardLayout.builtBoards; a pending slot
+holds its exact cell size, so nothing shifts) — OctoWord open worst 574 / 491 → 212–223 ms, hitch 259 → 135–162 ms/s.
+Owed: Classic-family opens (the single board + keyboard + header still build on one frame: stage the keyboard / header art a
+turn later, or pre-instantiate a hidden GameScreen on Home idle), the close teardown (drop the game hierarchy a turn after
+the shell lands, or in pieces), and the ~100 ms the overlay adds (window snapshot + flush). Target stays < 50 ms open and
+close on Classic, OctoWord, Sudocious, Muddle, Crossword and a VS bot start.
 BJ8. Backgrounds never distract: fewer, smaller, fainter tiles; none behind boards/cards; static in games (founder 10-03:
 "the OctoWord background was too busy … I don't ever want the backgrounds to be a distraction"). The 3D letter tiles are no
 longer baked into the 92 wallpapers ×3 (docs/design/brand/walls/calm-walls.py: each wallpaper's own gradient + a soft
