@@ -662,7 +662,8 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, dimmed: Bool
             Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             Text(sub, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
         }
-        Switch(checked = checked, onCheckedChange = null, colors = settingsSwitchColors())
+        // The candy on/off switch (night art 10-03 sprites); the row owns the Switch role + tap.
+        CandySwitch(checked)
     }
 }
 

@@ -348,7 +348,8 @@ private fun DailyRecordsTab(
             // Solo | VS + Everyone | Friends (per-mode only — Sweep is solo-only, cross-mode).
             if (!isSweep) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SoftSegment(listOf("solo" to "Solo", "vs" to "VS"), playType) { select(pt = it) }
+                    // The candy toggle (night art 10-03 sprites).
+                    CandySegmentedToggle(listOf("solo" to "Solo", "vs" to "VS"), playType, { select(pt = it) })
                     if (userId != null) {
                         SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly) { select(friends = it) }
                     }

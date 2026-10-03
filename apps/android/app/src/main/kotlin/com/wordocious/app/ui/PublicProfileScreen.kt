@@ -587,23 +587,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
 
         // ── Game mode statistics ────────────────────────────────────────────────
         FinishLabel("GAME MODE STATISTICS")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
-                val active = playType == key
-                Text(
-                    label,
-                    fontSize = 12.sp, fontWeight = FontWeight.Black,
-                    color = if (active) Color(0xFF7C3AED) else WTheme.textMuted,
-                    // A1 / A9: a tinted segment, selected = stronger tint + the purple ring.
-                    modifier = Modifier
-                        .clickableNoRipple { playType = key }
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(accentWash(PROFILE_PURPLE, if (active) 0.22f else 0.08f))
-                        .border(1.5.dp, if (active) PROFILE_PURPLE else accentLine(PROFILE_PURPLE), RoundedCornerShape(10.dp))
-                        .padding(horizontal = 14.dp, vertical = 7.dp),
-                )
-            }
-        }
+        // The candy Solo | VS toggle (night art 10-03 sprites; was outlined chips with no Tab semantics).
+        CandySegmentedToggle(listOf("solo" to "Solo", "vs" to "VS"), playType, { playType = it })
         // Mode picker chips
         Row(
             Modifier.horizontalScroll(rememberScrollState()),

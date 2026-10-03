@@ -356,9 +356,9 @@ fun HomeScreen(
             // lock/badge rules). The More Games band and sheet are gone.
             // ART_SPEC §12 / §19.2: each section's header is its whole-cast title art (≈78%
             // width, max 340, centered) — DAILIES, PUZZLES, then WORD OF THE DAY above its card.
-            SectionTitleArt(TitleArt.DAILIES)
+            SectionTitleArt(TitleArt.DAILIES, scale = HomeCardSpec.SECTION_TITLE_SCALE)
             ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
-            SectionTitleArt(TitleArt.PUZZLES)
+            SectionTitleArt(TitleArt.PUZZLES, scale = HomeCardSpec.SECTION_TITLE_SCALE)
             ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = openCard)
 
             WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
@@ -847,8 +847,10 @@ private fun ModeCardGrid(
     isPro: Boolean,
     onOpen: (ModeCard) -> Unit,
 ) {
+    // FINISH_SPEC BH2: 10 dp gaps both ways between the compact cards.
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp)) {
     cards.chunked(2).forEach { rowCards ->
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp), modifier = Modifier.fillMaxWidth()) {
             rowCards.forEach { card ->
                 val completion = card.dbKey?.let { completions[it] }
                 val shownCompletion = if (unlimitedMode) null else completion
@@ -860,6 +862,7 @@ private fun ModeCardGrid(
             }
             if (rowCards.size == 1) Spacer(Modifier.weight(1f))
         }
+    }
     }
 }
 

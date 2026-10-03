@@ -34,6 +34,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -229,85 +232,117 @@ internal fun PnCategoryPill(category: String) {
 
 
 /**
- * Gauntlet 5-node stepper — 1:1 with iOS `gauntletStageNode` (GameScreen.swift
- * 330-347): a 20dp circle with a light tinted fill, a 2dp colored ring and a
- * colored glyph (✓ done / play active / number future), 16dp connectors, and a
- * pulsing halo on the active node (iOS StageGlow, 1.25s autoreversing).
+ * The Gauntlet header geometry (night art 10-03): `art_gauntlet_header` — the GAUNTLET lettering
+ * over a gold track of five silver sockets — with a medallion per stage set into its socket.
+ * Socket centers + diameters from docs/design/brand/gauntlet/header-slots.json (x, d: fractions of
+ * the header WIDTH; y: of its HEIGHT). Mirrors web lib/gauntlet-header.ts + iOS GauntletHeaderSpec.
+ */
+object GauntletHeaderSpec {
+    enum class Medal { CLEARED, CURRENT, LOCKED }
+
+    /** art_gauntlet_header's aspect (1200 × 416). */
+    const val ASPECT = 1200f / 416f
+    /** It takes the old stepper row + the stage-title row, so the boards don't move. */
+    const val HEIGHT = 52f
+    const val MEDAL_SCALE = 1.18f
+    const val NUMERAL_SCALE = 0.5f
+    /** (x, y, d) per socket. */
+    val SLOTS: List<FloatArray> = listOf(
+        floatArrayOf(0.1193f, 0.7678f, 0.1343f),
+        floatArrayOf(0.3115f, 0.7693f, 0.1327f),
+        floatArrayOf(0.5016f, 0.7693f, 0.1327f),
+        floatArrayOf(0.6914f, 0.7701f, 0.1332f),
+        floatArrayOf(0.8826f, 0.7701f, 0.1332f),
+    )
+
+    fun medals(stageCount: Int, current: Int, cleared: Set<Int>): List<Medal> =
+        (0 until stageCount).map { if (it in cleared) Medal.CLEARED else if (it == current) Medal.CURRENT else Medal.LOCKED }
+
+    fun label(current: Int, stageCount: Int, stageName: String): String =
+        "Gauntlet, stage ${minOf(current + 1, stageCount)} of $stageCount, $stageName"
+}
+
+/**
+ * The Gauntlet header (night art 10-03; was a row of code-drawn 20 dp nodes with a forever-pulsing
+ * halo + an 18 sp stage title): the art header with a medallion in each socket — cleared (gold +
+ * star), current (orange, white stage numeral with a soft orange shadow) and locked (silver, slate
+ * numeral) — so "stage 3 of 5" reads at a glance. 52 dp tall: it takes the old stepper + title
+ * rows. The current medallion scales in once when its stage starts (graphicsLayer transform only);
+ * nothing loops. `cleared` = the stages with a result (defaults to every stage before `current`).
  */
 @Composable
-fun GauntletStepper(current: Int, total: Int, modifier: Modifier = Modifier) {
-    val glow = Color(0xFFA855F7)
-    // Perf (2026-10-02 measured audit): the pulse is a State read ONLY in the halo's
-    // graphicsLayer block below — reading .value here recomposed the whole stepper (and
-    // its BoxWithConstraints subcomposition) on every frame of every Gauntlet stage.
-    val pulse: androidx.compose.runtime.State<Float> = if (WTheme.reducedMotion) remember { mutableStateOf(0f) } else {
-        val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "stageGlow")
-        transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                androidx.compose.animation.core.tween(1250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                androidx.compose.animation.core.RepeatMode.Reverse,
-            ),
-            label = "stageGlowRadius",
-        )
-    }
-    // iOS uses fixed 16pt connectors, but that only *just* fits between the
-    // corner buttons on a ≥390pt iPhone — on a 360dp phone (most Samsungs)
-    // the 5th node slid underneath the "?" button (Doug's screenshot). The
-    // connectors shrink to whatever width keeps the whole stepper clear of
-    // the corner-button gutters (44dp button + paddings ≈ 104dp each side).
-    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
-        val gutter = 104.dp
-        val nodesW = (20 * total).dp + (4 * (total - 1)).dp // nodes + connector h-padding
-        val connW = if (total > 1) {
-            ((this.maxWidth - gutter * 2 - nodesW) / (total - 1)).coerceIn(6.dp, 16.dp)
-        } else 16.dp
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.Center)) {
-        for (i in 0 until total) {
-            val done = i < current
-            val active = i == current
-            // iOS draws the connector BEFORE node i, colored by node i's state.
-            if (i > 0) {
-                Box(
-                    Modifier.padding(horizontal = 2.dp).width(connW).height(2.dp)
-                        .background(
-                            when {
-                                done -> Color(0xFF8B5CF6)
-                                active -> Color(0xFFD8B4FE)
-                                else -> Color(0xFFE5E7EB)
-                            },
-                        ),
-                )
-            }
-            val bg = when { done -> Color(0xFFEDE9FE); active -> Color(0xFFF3E8FF); else -> Color(0xFFF9FAFB) }
-            val ring = when { done -> Color(0xFF8B5CF6); active -> Color(0xFFC084FC); else -> Color(0xFFE5E7EB) }
-            val fg = when { done -> Color(0xFF6D28D9); active -> Color(0xFF9333EA); else -> Color(0xFF9CA3AF) }
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .then(
-                        // Same as Modifier.shadow(…), with the elevation read in the layer block.
-                        if (active) Modifier.graphicsLayer {
-                            shadowElevation = (3f + 5f * pulse.value).dp.toPx()
-                            shape = androidx.compose.foundation.shape.CircleShape
-                            clip = false
-                            ambientShadowColor = glow; spotShadowColor = glow
-                        } else Modifier,
+fun GauntletStepper(
+    current: Int,
+    total: Int,
+    modifier: Modifier = Modifier,
+    cleared: Set<Int> = (0 until current).toSet(),
+    stageName: String = "",
+) {
+    val h = GauntletHeaderSpec.HEIGHT.dp
+    val w = h * GauntletHeaderSpec.ASPECT
+    val medals = GauntletHeaderSpec.medals(total, current, cleared)
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.size(w, h).semantics(mergeDescendants = false) {
+                contentDescription = GauntletHeaderSpec.label(current, total, stageName)
+            },
+        ) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_gauntlet_header),
+                contentDescription = null, modifier = Modifier.matchParentSize(),
+            )
+            medals.take(GauntletHeaderSpec.SLOTS.size).forEachIndexed { i, medal ->
+                val slot = GauntletHeaderSpec.SLOTS[i]
+                val side = w * (slot[2] * GauntletHeaderSpec.MEDAL_SCALE)
+                androidx.compose.runtime.key(i, medal) {
+                    GauntletMedal(
+                        index = i, medal = medal, side = side,
+                        modifier = Modifier.offset(x = w * slot[0] - side / 2, y = h * slot[1] - side / 2),
                     )
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(bg)
-                    .border(2.dp, ring, androidx.compose.foundation.shape.CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                when {
-                    done -> com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp)
-                    active -> Icon(Icons.Filled.PlayArrow, null, tint = fg, modifier = Modifier.size(10.dp))
-                    else -> Text("${i + 1}", color = fg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun GauntletMedal(index: Int, medal: GauntletHeaderSpec.Medal, side: androidx.compose.ui.unit.Dp, modifier: Modifier) {
+    val res = when (medal) {
+        GauntletHeaderSpec.Medal.CLEARED -> com.wordocious.app.R.drawable.art_gauntlet_medal_cleared
+        GauntletHeaderSpec.Medal.CURRENT -> com.wordocious.app.R.drawable.art_gauntlet_medal_current
+        GauntletHeaderSpec.Medal.LOCKED -> com.wordocious.app.R.drawable.art_gauntlet_medal_locked
+    }
+    val animate = medal == GauntletHeaderSpec.Medal.CURRENT && !WTheme.reducedMotion
+    val scale = remember { androidx.compose.animation.core.Animatable(if (animate) 0.55f else 1f) }
+    if (animate) {
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            scale.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 420f))
+        }
+    }
+    Box(
+        modifier.size(side).graphicsLayer { scaleX = scale.value; scaleY = scale.value },
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(res), contentDescription = null, modifier = Modifier.matchParentSize(),
+        )
+        if (medal != GauntletHeaderSpec.Medal.CLEARED) {
+            val current = medal == GauntletHeaderSpec.Medal.CURRENT
+            Text(
+                "${index + 1}",
+                fontSize = (side.value * GauntletHeaderSpec.NUMERAL_SCALE).sp,
+                fontWeight = FontWeight.Black,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontFamily = com.wordocious.app.ui.theme.Nunito,
+                    color = if (current) Color.White else Color(0xFF64748B),
+                    shadow = androidx.compose.ui.graphics.Shadow(
+                        color = if (current) Color(0xBFC2410C) else Color(0x99FFFFFF),
+                        offset = androidx.compose.ui.geometry.Offset(0f, 2f),
+                        blurRadius = if (current) 3f else 0f,
+                    ),
+                ),
+            )
+        }
     }
 }
 
@@ -766,32 +801,25 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 modifier = Modifier.fillMaxWidth().padding(top = if (mode == GameMode.GAUNTLET) 8.dp else 4.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // Gauntlet gets a 5-node stepper above the stage name (spec line 102).
+                // Gauntlet: the art header with its stage medallions (night art 10-03) in place of
+                // the old stepper + stage-title rows; the stage name leads the status line below.
                 if (mode == GameMode.GAUNTLET) {
+                    val g = state.gauntlet
                     GauntletStepper(
-                        current = state.gauntlet?.currentStage ?: 0,
-                        total = state.gauntlet?.totalStages ?: 5,
+                        current = g?.currentStage ?: 0,
+                        total = g?.totalStages ?: 5,
+                        cleared = g?.stageResults?.map { it.stageIndex }?.toSet() ?: emptySet(),
+                        stageName = g?.let { it.stages.getOrNull(it.currentStage)?.name } ?: "",
                     )
-                    Spacer(Modifier.height(6.dp))
                 }
                 // iOS titles the CURRENT STAGE in Gauntlet (gauntletHeader) and
                 // draws ProperNoundle flat red at 24pt (ProperNoundleView header);
                 // every other mode gets the 28pt gradient mode title.
                 val stageName = state.gauntlet?.let { it.stages.getOrNull(it.currentStage)?.name }
-                // The game's title art (ART_SPEC §10: lettering + host); Gauntlet keeps its
-                // stage-name text with the host at its left (MASCOT_SPEC §5), static.
-                com.wordocious.app.ui.HostedGameTitle(mode.name, art = mode != GameMode.GAUNTLET) {
+                // The game's title art (ART_SPEC §10: lettering + host). Gauntlet's title is its art
+                // header above (the stage name rides the status line).
+                if (mode != GameMode.GAUNTLET) com.wordocious.app.ui.HostedGameTitle(mode.name, art = true) {
                 when {
-                    mode == GameMode.GAUNTLET -> Text(
-                        stageName ?: com.wordocious.app.ui.modeTitle(mode),
-                        fontSize = 18.sp, fontWeight = FontWeight.Black,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontFamily = com.wordocious.app.ui.theme.Nunito,
-                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                gauntletStageGradient(stageName ?: ""),
-                            ),
-                        ),
-                    )
                     mode == GameMode.PROPERNOUNDLE -> Text(
                         com.wordocious.app.ui.modeTitle(mode),
                         color = Color(0xFFDC2626),
@@ -838,6 +866,16 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                             color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         )
                     } else if (mode == GameMode.GAUNTLET) {
+                        Text(
+                            stageName ?: com.wordocious.app.ui.modeTitle(mode),
+                            fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontFamily = com.wordocious.app.ui.theme.Nunito,
+                                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    gauntletStageGradient(stageName ?: ""),
+                                ),
+                            ),
+                        )
                         if (state.boards.size > 1) {
                             val solved = state.boards.count { it.status == GameStatus.WON }
                             Row(verticalAlignment = Alignment.CenterVertically) {

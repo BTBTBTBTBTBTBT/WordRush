@@ -73,8 +73,10 @@ fun MascotAvatar(
 @Composable
 fun AvatarSquareFrame(frame: String, size: Dp, modifier: Modifier = Modifier) {
     if (MascotComposer.frameColors(frame) == null) return
+    // Night art 10-03: the tier's art-frame (bronze … diamond) when it shipped, iOS parity.
+    val context = androidx.compose.ui.platform.LocalContext.current
     Canvas(modifier.size(size).clearAndSetSemantics { }) {
-        drawIntoCanvas { MascotComposer.drawFrame(it.nativeCanvas, frame, this.size.minDimension) }
+        drawIntoCanvas { MascotComposer.drawFrame(it.nativeCanvas, frame, this.size.minDimension, context) }
     }
 }
 

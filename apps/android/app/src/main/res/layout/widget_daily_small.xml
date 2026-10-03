@@ -55,13 +55,28 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_ink"
                     android:text="DAY STREAK" />
-                <TextView
-                    android:id="@+id/w_reset"
-                    style="@style/WidgetCaps"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="RESETS IN 4H" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <!-- The gold clock sprite (night art 10-03) leads the countdown. -->
+                    <ImageView
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:layout_marginEnd="3dp"
+                        android:src="@drawable/art_badge_icon_clock_sprite"
+                        android:scaleType="fitCenter"
+                        android:importantForAccessibility="no"
+                        android:contentDescription="@null" />
+                    <TextView
+                        android:id="@+id/w_reset"
+                        style="@style/WidgetCaps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="RESETS IN 4H" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

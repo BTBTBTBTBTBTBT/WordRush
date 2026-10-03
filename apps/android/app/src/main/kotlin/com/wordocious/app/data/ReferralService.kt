@@ -85,6 +85,45 @@ object ReferralService {
         }
     }
 
+    /** Founder 10-03: the caller's dismissed credit notices on other devices (GET /api/referrals/dismiss). */
+    suspend fun dismissedIds(): List<String> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            val token = client.auth.currentSessionOrNull()?.accessToken ?: return@runCatching emptyList<String>()
+            val conn = URL("https://wordocious.com/api/referrals/dismiss").openConnection() as HttpURLConnection
+            conn.connectTimeout = 10_000; conn.readTimeout = 10_000
+            conn.setRequestProperty("Authorization", "Bearer $token")
+            val text = try { if (conn.responseCode == 200) conn.inputStream.bufferedReader().readText() else null } finally { conn.disconnect() }
+            val arr = text?.let { org.json.JSONObject(it).optJSONArray("ids") } ?: return@runCatching emptyList<String>()
+            (0 until arr.length()).map { arr.getString(it) }
+        }.getOrDefault(emptyList())
+    }
+
+    /** Founder 10-03: flag credit notices dismissed for the player's other devices (best effort). */
+    suspend fun dismiss(ids: List<String>) {
+        if (ids.isEmpty()) return
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            apiPost("/api/referrals/dismiss", org.json.JSONObject().put("ids", org.json.JSONArray(ids)).toString())
+        }
+    }
+
+    /** /join landing: GET /api/referrals/lookup → (status, inviter name). Null on a network failure. */
+    suspend fun lookup(code: String): Pair<String, String?>? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            val text = URL("https://wordocious.com/api/referrals/lookup?code=$code").readText()
+            val o = org.json.JSONObject(text)
+            o.optString("status", "notfound") to o.optString("inviterName").takeIf { it.isNotBlank() && it != "null" }
+        }.getOrNull()
+    }
+
+    /** /join landing: POST /api/referrals/redeem {code} → (ok, reason). reason "network" when unreachable. */
+    suspend fun redeem(code: String): Pair<Boolean, String?> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val text = apiPost("/api/referrals/redeem", """{"code":"$code"}""") ?: return@withContext false to "network"
+        runCatching {
+            val o = org.json.JSONObject(text)
+            o.optBoolean("ok", false) to o.optString("reason").takeIf { it.isNotBlank() }
+        }.getOrDefault(false to "network")
+    }
+
     private fun apiPost(path: String, body: String? = null): String? = runCatching {
         val token = client.auth.currentSessionOrNull()?.accessToken ?: return null
         val conn = URL("https://wordocious.com$path").openConnection() as HttpURLConnection

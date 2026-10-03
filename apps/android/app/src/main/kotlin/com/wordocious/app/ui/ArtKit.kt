@@ -86,6 +86,8 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     DAILIES(R.drawable.art_title_dailies, "Dailies"),
     /** FINISH_SPEC O1 the VS BATTLE Home section title (lettering only). */
     VSBATTLE(R.drawable.art_title_vsbattle, "VS Battle"),
+    /** Night art 10-03: the MENU lettering (the ? menu sheet; iOS InfoMenu parity). */
+    MENU(R.drawable.art_title_menu, "Menu"),
 }
 
 /**
@@ -107,13 +109,15 @@ fun PageTitleArt(
     maxWidth: Dp = TITLE_ART_MAX_WIDTH,
     contentDescription: String = art.label,
     alignment: Alignment = Alignment.Center,
+    /** FINISH_SPEC BH2: the compact DAILIES / PUZZLES titles (0.75). */
+    scale: Float = 1f,
 ) {
     val painter = painterResource(art.res)
     val intrinsic = painter.intrinsicSize
     val aspect = if (intrinsic.height > 0f && intrinsic.width > 0f) intrinsic.width / intrinsic.height else 4f
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = alignment) {
         val (w0, _) = HeadlineSize.fit(this.maxWidth.value, aspect)
-        val w = minOf(w0, maxWidth.value)
+        val w = minOf(w0, maxWidth.value) * scale
         Image(
             painter,
             contentDescription = contentDescription,
@@ -142,10 +146,12 @@ fun SectionTitleArt(
     art: TitleArt,
     modifier: Modifier = Modifier,
     below: (@Composable () -> Unit)? = null,
+    /** FINISH_SPEC BH2: DAILIES / PUZZLES sit ~25% smaller over the compact cards, with less air. */
+    scale: Float = 1f,
 ) {
     // FINISH_SPEC N1: the Home section titles follow the page-title rule (≈62% / ≤ 300 × 64).
-    Column(modifier.fillMaxWidth().padding(top = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        PageTitleArt(art, alignment = Alignment.Center)
+    Column(modifier.fillMaxWidth().padding(top = if (scale < 1f) 0.dp else 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        PageTitleArt(art, alignment = Alignment.Center, scale = scale)
         below?.invoke()
     }
 }

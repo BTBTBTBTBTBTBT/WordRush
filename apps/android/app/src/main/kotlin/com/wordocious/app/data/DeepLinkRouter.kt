@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 // App-link router — Android side of iOS DeepLink.swift. The manifest claims
-// only wordocious.com/vs/join + /vs/challenge paths (a VS invite's recipient usually has the
-// app); referral /join links stay in the browser on purpose, since their
-// audience is brand-new users and redemption is a web flow.
+// wordocious.com/vs/join + /vs/challenge paths (a VS invite's recipient usually has the
+// app) and the referral /join/<CODE> links: the native landing keeps the code across a
+// sign-up (signup attribution) and redeems it once signed in; without the app, the web.
 //
 // MainActivity feeds intents in; MainScreen collects [vsInvite] and presents
 // the private match through the same state the pending-invites banner uses.
@@ -26,6 +26,10 @@ object DeepLinkRouter {
     /** The "someone's looking" push (/vs/live/<MODE>, VS overhaul §13): MainScreen
      *  opens that mode's live search (same as LIVE in the lobby) and clears it. */
     val vsLive = MutableStateFlow<GameMode?>(null)
+    /** A referral / gift-a-week invite (wordocious.com/join/<CODE>): the native landing
+     *  (ui/JoinLanding.kt) shows it and clears it. The code is also kept in
+     *  [JoinLandingRules.PENDING_KEY] until redeemed, so a sign-up in between keeps it. */
+    val referralCode = MutableStateFlow<String?>(null)
     /** A recovery link established a session — show the native new-password dialog. */
     val showNewPassword = MutableStateFlow(false)
     /** Cross-device auth link (PKCE verifier on another client) — finish in the browser. */
@@ -54,6 +58,14 @@ object DeepLinkRouter {
 
         if (host != "wordocious.com" && host != "www.wordocious.com") return false
         val parts = uri.pathSegments
+
+        // Referral invite: /join/<CODE> (web app/join/[code]; codes are [A-Z2-9]{4,16}).
+        if (parts.size == 2 && parts[0] == "join") {
+            val code = JoinLandingRules.normalize(parts[1]) ?: return false
+            SettingsPref.set(JoinLandingRules.PENDING_KEY, code)
+            referralCode.value = code
+            return true
+        }
 
         if (parts.size == 3 && parts[0] == "vs" && parts[1] == "challenge") {
             vsChallenge.value = parts[2].uppercase()

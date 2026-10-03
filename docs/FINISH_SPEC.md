@@ -1130,6 +1130,30 @@ swipe still changes the GAME only, within the current scope). Put the scope×gam
 with tests (each of the 4 cells, toggle keeps game, pick keeps scope, re-tap clears game). Also audit the Stats page for
 any other stale/ mismatched data (e.g. a section still showing the previous game after a switch).
 
+## BH. Home game card trims + compact cards (founder 10-02: "get creative, even the outlines to the menu games";
+10-03: "they all look really bloated … the windows are a bit big … make that all more crisp")
+Every Home game card (DAILIES grid and PUZZLES grid; one shared card per platform) trades its flat colored top bar for a
+**candy cap trim** and gets ~30% more compact. Consistent across all cards, varying only by the game's color.
+BH1. Trim = ONE shape per card: a slim glossy band across the card's top in the game's accent (vertical gradient
+     lighter→accent→a touch deeper), whose bottom edge is a soft **frosting scallop** (a row of shallow round drips,
+     ~8 bumps across a card), with a soft white highlight streak baked into the same gradient (no second layer, no blur,
+     no shadow of its own). Clipped by the card's rounded corners. Band height 9 (iOS pt / Android dp / web px) +
+     the 4-unit drips (8 across a card); the icon + text row is centered in the rest of the card, the icon just
+     under the drip line (drawn in front of it). Shared geometry: web lib/card-trim.ts, iOS Core HomeCardLayout.swift,
+     Android ModeCardView.kt (CardTrimGeometry). VS Battle's window wears the same trim (the shared chrome).
+BH2. Compact card: height ~72–76 (was ~100–110); icon 40–44, vertically centered on the left; name 17 heavy, one line,
+     scales down for long names (Crosswordocious) and never wraps; subtitle ONE line, 13 medium, muted, ellipsis if
+     needed (long subtitles shortened in packages/core/modes.json, e.g. "4 words, one by one" → "4 words in a row");
+     the W / L / ✓ badge (22) rides the icon's bottom-right corner so the name gets the full width; inner padding
+     10–12; grid gaps 10; tap target ≥ 44. Section titles (DAILIES, PUZZLES) ~25% smaller with less space above/below.
+     The Good Morning card is unchanged.
+BH3. States keep working: played/completed (check / W / L / score chips) stay legible on the compact card; a completed
+     card's trim keeps its color (the card's existing done treatment stays as it is).
+BH4. Rules: no strokes or outlines around cards, no emoji, every card in a grid the same size, the existing squish
+     (AK) is the only motion (transform/opacity), and it stays cheap — one path per trim, no per-card blur/animated
+     shadow; Home scrolling must stay smooth. Layout tests updated (web `lib/home-card-layout.test.ts` and the
+     native equivalents).
+
 ## BI. Smooth as glass + finish-screen fixes (founder 10-02 late: 2.7 (239) pulled from review — "Gauntlet … plays
 really sluggish, the rest of them too … The load in intro graphic is not smooth"; "run a serious audit to make this seem
 smooth as glass and as fast as possible in all areas. that's your main priority"; then "The cleared screens need to be

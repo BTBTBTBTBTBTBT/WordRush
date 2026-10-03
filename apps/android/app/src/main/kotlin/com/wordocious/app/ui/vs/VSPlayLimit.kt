@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.vs
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -112,6 +113,11 @@ fun VsLimitWindow(
                         .semantics(mergeDescendants = true) { contentDescription = "Resets in $clock" },
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
+                    // The gold clock sprite (night art 10-03).
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_badge_icon_clock_sprite),
+                        contentDescription = null, modifier = Modifier.size(18.dp),
+                    )
                     VsCapsLabel("RESETS IN", color = Color(0xFF92400E), fontSize = 11.sp)
                     VsNumber(clock, 16.sp)
                 }

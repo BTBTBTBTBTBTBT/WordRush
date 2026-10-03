@@ -76,6 +76,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
+import io.github.jan.supabase.auth.auth
 import com.wordocious.app.data.FeedbackEvent
 import com.wordocious.app.data.ProActivation
 import com.wordocious.app.data.ProWelcomeRules
@@ -180,6 +181,44 @@ object ProWelcome {
         }
     }
 
+    @Volatile private var giftCheckedFor: String? = null
+
+    /**
+     * FINISH_SPEC AP (gifted weeks): Android never redeems a referral itself, so a gift redeemed
+     * on the web / another device is first seen here as a Pro profile. Once per account per run:
+     * when Pro is live, the account wasn't welcomed and the expiry has a gift week's shape, ask
+     * the server marker (GET /api/pro/gift, the caller's redeemed referral) and welcome the gift.
+     */
+    fun checkGift() {
+        val profile = AuthService.profile.value ?: return
+        val uid = profile.id
+        if (!AuthService.isProActive || SettingsPref.get(ProWelcomeRules.flagKey(uid), false)) return
+        val exp = profile.proExpiresAt?.let { AuthService.parseTimestamp(it)?.toEpochMilli() }
+        if (!ProWelcomeRules.giftShaped(exp, System.currentTimeMillis())) return
+        synchronized(lock) {
+            if (giftCheckedFor == uid || armed != null || _showing.value != null) return
+            giftCheckedFor = uid
+        }
+        scope.launch {
+            val token = com.wordocious.app.data.SupabaseConfig.client.auth.currentSessionOrNull()?.accessToken ?: return@launch
+            val redeemedAt = runCatching {
+                val conn = java.net.URL("https://wordocious.com/api/pro/gift").openConnection() as java.net.HttpURLConnection
+                conn.setRequestProperty("Authorization", "Bearer $token")
+                conn.connectTimeout = 10_000; conn.readTimeout = 10_000
+                val body = try { if (conn.responseCode == 200) conn.inputStream.bufferedReader().readText() else null } finally { conn.disconnect() }
+                body?.let { org.json.JSONObject(it).optJSONObject("gift")?.optString("redeemedAt") }
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { AuthService.parseTimestamp(it)?.toEpochMilli() }
+            }.getOrNull()
+            if (!ProWelcomeRules.giftWelcomeDue(redeemedAt, System.currentTimeMillis())) return@launch
+            if (AuthService.userId != uid || SettingsPref.get(ProWelcomeRules.flagKey(uid), false)) return@launch
+            SettingsPref.set(ProWelcomeRules.flagKey(uid), true)
+            synchronized(lock) {
+                if (armed == null && _showing.value == null) _showing.value = Request(ProActivation.GIFT, uid, null)
+            }
+        }
+    }
+
     /**
      * Run [action] after the welcome closes when one is armed or showing (returns true);
      * otherwise returns false and the caller runs it now.
@@ -216,6 +255,9 @@ object ProWelcome {
 /** AP the app-wide host (MainActivity, over everything): the welcome while it is up. */
 @Composable
 fun ProWelcomeHost() {
+    // AP gifted weeks: a Pro profile in a gift week's shape asks the server marker once.
+    val profile by AuthService.profile.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(profile?.id, profile?.proExpiresAt, profile?.isPro) { ProWelcome.checkGift() }
     val req by ProWelcome.showing.collectAsState()
     val r = req ?: return
     ReportPopup() // CelebrationGate: Pro welcome holds late celebrations

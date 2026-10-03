@@ -48,6 +48,22 @@ object ProWelcomeRules {
         }
     }
 
+    /** A gifted week's welcome window: redeemed within the gift week (+1 day of slack). */
+    const val GIFT_WELCOME_DAYS = 8L
+
+    /**
+     * The gifted week's server marker (GET /api/pro/gift → the caller's redeemed referral,
+     * web lib/pro-welcome giftWelcomeDue): due when it was redeemed within [GIFT_WELCOME_DAYS].
+     */
+    fun giftWelcomeDue(redeemedAtMs: Long?, nowMs: Long): Boolean {
+        if (redeemedAtMs == null) return false
+        return redeemedAtMs <= nowMs + 60_000 && nowMs - redeemedAtMs < GIFT_WELCOME_DAYS * 86_400_000L
+    }
+
+    /** Pro that ends at most ~8 days out: the shape of a gifted week (worth asking the server). */
+    fun giftShaped(expiresAtMs: Long?, nowMs: Long): Boolean =
+        expiresAtMs != null && expiresAtMs > nowMs && expiresAtMs - nowMs <= (GIFT_WELCOME_DAYS * 86_400_000L + 3_600_000L)
+
     /** The headline: the gift week reads as a gift. */
     fun headline(source: ProActivation): String = when (source) {
         ProActivation.PURCHASE -> "WELCOME TO PRO!"

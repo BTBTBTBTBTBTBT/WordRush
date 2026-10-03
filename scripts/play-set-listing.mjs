@@ -3,10 +3,10 @@
 //
 //   node scripts/play-set-listing.mjs            # write the listing + commit
 //   node scripts/play-set-listing.mjs --dry-run  # everything except the commit
+//   node scripts/play-set-listing.mjs --print    # print the parsed text + lengths, no network
 //
-// Copy is adapted from the LIVE iOS App Store description (asc.rb, 1.4
-// localization) so the two stores tell the same story; Apple's subscription
-// boilerplate is swapped for Play-appropriate phrasing. Graphics (icon,
+// The short + full description are read from docs/store/listing-2.7.md (the same text the
+// App Store uses), so the two stores tell the same story. Graphics (icon,
 // feature graphic, screenshots) are NOT set here — the console upload UI is
 // fine for one-time assets and screenshots should come from a real device.
 //
@@ -27,42 +27,49 @@ const API = 'https://androidpublisher.googleapis.com/androidpublisher/v3';
 const dryRun = process.argv.includes('--dry-run');
 
 const TITLE = 'Wordocious: Daily Word Games'; // 28 chars (max 30)
-const SHORT = 'Nine daily word puzzles, real-time VS battles, streaks and leaderboards.'; // 73 (max 80)
-const FULL = `Wordocious is the word puzzle that goes way beyond five letters. Guess the daily word across NINE distinct modes, climb global leaderboards, earn medals, and battle friends in real time.
 
-GAME MODES
-• Classic — the daily five-letter challenge
-• QuadWord — solve four boards at once
-• OctoWord — eight boards, one set of guesses
-• Succession — chain words one after another
-• Deliverance — rescue the word from prefilled clues
-• Six & Seven — six- and seven-letter twists with hints
-• Gauntlet — five escalating stages in a single run
-• ProperNoundle — guess famous names
+// SHORT + FULL come from the store listing doc (the single source of truth for both stores).
+// Override with LISTING_DOC=path. The doc hard-wraps prose at ~120 columns; those wraps are
+// joined back into paragraphs here (bullets, ALL-CAPS headings and blank lines stay as lines).
+const LISTING_DOC = process.env.LISTING_DOC
+  || new URL('../docs/store/listing-2.7.md', import.meta.url).pathname;
 
-PLAY EVERY DAY
-A fresh puzzle in every mode, every day. Keep your daily streak alive, sweep all nine modes for bonus XP, and chase a Flawless Victory.
+function section(md, heading) {
+  const lines = md.split('\n');
+  const i = lines.findIndex((l) => l.startsWith('## ') && l.includes(heading));
+  if (i < 0) fail(`listing doc: no "## ${heading}" section`);
+  const out = [];
+  for (const l of lines.slice(i + 1)) {
+    if (l.startsWith('## ')) break;
+    out.push(l);
+  }
+  return out;
+}
 
-COMPETE
-• Global daily leaderboards for every mode
-• Real-time VS battles — race a live opponent on the same puzzle
-• Private matches: invite friends by link or username
-• All-time records and a Hall of Fame
+export function unwrapListing(lines) {
+  const isHeading = (l) => /^[A-Z0-9 &()'!.,-]+$/.test(l.trim()) && /[A-Z]/.test(l);
+  const isBullet = (l) => l.trim().startsWith('\u2022 ');
+  const out = [];
+  for (const raw of lines) {
+    const l = raw.replace(/\s+$/, '');
+    const prev = out.length ? out[out.length - 1] : '';
+    const continuation = l.trim() !== '' && prev.trim() !== '' && !isBullet(l) && !isHeading(l) && !/https?:/.test(l)
+      && (/^\s+/.test(l) || (!isBullet(prev) && !isHeading(prev)));
+    if (continuation) out[out.length - 1] = `${prev} ${l.trim()}`;
+    else out.push(l.trim() === '' ? '' : l.trim());
+  }
+  return out.join('\n').replace(/^\n+|\n+$/g, '');
+}
 
-PROGRESS
-• Level up with XP and earn daily medals
-• Build win streaks and protect them with streak shields
-• Detailed per-mode stats and Pro insights
-
-WORDOCIOUS PRO — OPTIONAL SUBSCRIPTION
-Go ad-free, replay every mode unlimited, unlock VS on all nine modes, get streak shields, a Pro badge, and extended stats. Daily puzzles are always free to play without any purchase.
-• Wordocious Pro Monthly and Yearly subscriptions renew automatically unless cancelled in your Google Play subscription settings.
-• A one-time 24-hour Day Pass is also available.
-
-Free to play — sign in to save your progress and compete. New puzzles every day. How many can you solve?
-
-Privacy Policy: https://wordocious.com/privacy
-Terms: https://wordocious.com/terms`;
+const doc = fs.readFileSync(LISTING_DOC, 'utf8');
+const shortLine = section(doc, 'Short description').find((l) => l.includes('Play short'));
+const SHORT = shortLine?.match(/`([^`]+)`/)?.[1];
+if (!SHORT) fail('listing doc: no "Play short: `...`" line');
+const FULL = unwrapListing(section(doc, 'Full description'));
+if (process.argv.includes('--print')) {
+  console.log(`SHORT (${SHORT.length}/80): ${SHORT}\n\nFULL (${FULL.length}/4000):\n${FULL}`);
+  process.exit(0);
+}
 
 function fail(msg) {
   console.error(msg);

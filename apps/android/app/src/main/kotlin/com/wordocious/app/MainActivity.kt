@@ -239,6 +239,8 @@ class MainActivity : ComponentActivity() {
                                 com.wordocious.app.ui.CelebrationQueueHost()
                                 // FINISH_SPEC AP: the one-time "Welcome to Pro", full screen, over everything.
                                 com.wordocious.app.ui.ProWelcomeHost()
+                                // Referral / gift-a-week invites (wordocious.com/join/<CODE>).
+                                com.wordocious.app.ui.JoinLandingHost()
                             }
                         }
                         isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -564,8 +564,13 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (vm.mode == GameMode.GAUNTLET) {
-                GauntletStepper(current = state.gauntlet?.currentStage ?: 0, total = state.gauntlet?.totalStages ?: 5)
-                Spacer(Modifier.height(6.dp))
+                val g = state.gauntlet
+                GauntletStepper(
+                    current = g?.currentStage ?: 0, total = g?.totalStages ?: 5,
+                    cleared = g?.stageResults?.map { it.stageIndex }?.toSet() ?: emptySet(),
+                    stageName = g?.let { it.stages.getOrNull(it.currentStage)?.name } ?: "",
+                )
+                Spacer(Modifier.height(2.dp))
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 val stageName = state.gauntlet?.let { it.stages.getOrNull(it.currentStage)?.name }
@@ -730,7 +735,7 @@ private fun VsSoloTitle(mode: GameMode, stageName: String?, modifier: Modifier =
     val style: TextStyle
     when (mode) {
         GameMode.GAUNTLET -> {
-            text = stageName ?: modeTitle(mode); base = 18.sp
+            text = stageName ?: modeTitle(mode); base = 13.sp // the art header above is the title
             style = TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(gauntletStageGradient(stageName ?: "")))
         }
         GameMode.PROPERNOUNDLE -> {

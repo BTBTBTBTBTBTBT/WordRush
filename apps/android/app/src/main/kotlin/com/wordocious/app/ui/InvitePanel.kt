@@ -29,6 +29,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import com.wordocious.app.data.ReferralCredits
 import com.wordocious.app.data.ReferralService
 import com.wordocious.app.data.ShareEvents
 import com.wordocious.app.ui.theme.Nunito
@@ -59,6 +65,20 @@ fun InvitePanel() {
     var reload by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Founder 10-03: credit notices the player X'd (the local list + the server flag).
+    val uid = AuthService.userId
+    var dismissed by remember(uid) { mutableStateOf(uid?.let { ReferralCredits.read(it) } ?: emptySet()) }
+    LaunchedEffect(uid) {
+        val server = ReferralService.dismissedIds()
+        if (uid != null && server.isNotEmpty()) dismissed = ReferralCredits.write(uid, server)
+    }
+    fun dismissCredits(ids: List<String>) {
+        val u = uid ?: return
+        if (ids.isEmpty()) return
+        dismissed = ReferralCredits.write(u, ids)
+        scope.launch { ReferralService.dismiss(ids) }
+    }
 
     LaunchedEffect(reload) {
         invites = ReferralService.myInvites()
@@ -154,7 +174,25 @@ fun InvitePanel() {
             }
             error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
 
+            if (ReferralCredits.showClearAll(visible.filter { !(ReferralCredits.isCredit(it.status) && it.id in dismissed) }.map { it.status })) {
+                // Founder 10-03: a quiet Clear all once there are 2+ credit notices.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    Text(
+                        "Clear all", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Nunito, color = FinishInk.muted,
+                        modifier = Modifier.squishClickable("Clear all") {
+                            dismissCredits(visible.filter { ReferralCredits.isCredit(it.status) }.map { it.id })
+                        }.padding(horizontal = 8.dp, vertical = 6.dp),
+                    )
+                }
+            }
             visible.take(6).forEach { inv ->
+              // A dismissed notice fades out and its height closes (founder 10-03).
+              androidx.compose.animation.AnimatedVisibility(
+                  visible = !(ReferralCredits.isCredit(inv.status) && inv.id in dismissed),
+                  enter = androidx.compose.animation.EnterTransition.None,
+                  exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                      androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(220)),
+              ) {
                 // §251: settled rows lead with WHO — the code is noise once spent.
                 val inviteeName = inv.inviteeId?.let { inviteeNames[it] } ?: "A friend"
                 // Days → hours → "expired" ladder (iOS timeLeft): the last day of an
@@ -195,8 +233,21 @@ fun InvitePanel() {
                         }
                         // iOS marks a converted invite with trophy.fill, not a crown.
                         if (inv.status == "converted") Icon3D(Icon3DName.TROPHY, 14.dp)
+                        // Founder 10-03: X a credit notice away (soft circle, no outline, 44 dp tap area).
+                        Box(
+                            Modifier.size(44.dp).squishClickable("Dismiss", icon = true) { dismissCredits(listOf(inv.id)) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(Modifier.size(24.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Wash.mix(GIFT_GOLD, 0.22f)), contentAlignment = Alignment.Center) {
+                                androidx.compose.material3.Icon(
+                                    androidx.compose.material.icons.Icons.Filled.Close, contentDescription = null,
+                                    tint = Color(0xFF92400E), modifier = Modifier.size(14.dp),
+                                )
+                            }
+                        }
                     }
                 }
+              }
             }
         },
         footer = {

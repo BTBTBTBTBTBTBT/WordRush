@@ -83,4 +83,16 @@ class ProWelcomeRulesTest {
         assertEquals(490L, ProWelcomeRules.cardDelayMs(7))
         assertEquals(570L, ProWelcomeRules.cardDelayMs(1, baseMs = 500L))
     }
+
+    @Test fun giftServerMarker() {
+        val now = 1_790_000_000_000L
+        val day = 86_400_000L
+        assertTrue(ProWelcomeRules.giftWelcomeDue(now - 2 * day, now))
+        assertFalse(ProWelcomeRules.giftWelcomeDue(now - 10 * day, now))
+        assertFalse(ProWelcomeRules.giftWelcomeDue(null, now))
+        // Only a Pro window in a gift week's shape is worth asking the server about.
+        assertTrue(ProWelcomeRules.giftShaped(now + 6 * day, now))
+        assertFalse(ProWelcomeRules.giftShaped(now + 30 * day, now))
+        assertFalse(ProWelcomeRules.giftShaped(null, now))
+    }
 }

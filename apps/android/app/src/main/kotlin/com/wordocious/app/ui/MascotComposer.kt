@@ -104,7 +104,7 @@ object MascotComposer {
             MascotLayer.FACE_ACC -> drawAccessory(context, c, m, "face", cfg.face, body, anchors, base)
             MascotLayer.NECK_ACC -> drawAccessory(context, c, m, "neck", cfg.neck, body, anchors, base)
             MascotLayer.HEAD_ACC -> drawAccessory(context, c, m, "head", cfg.head, body, anchors, base)
-            MascotLayer.FRAME -> drawFrame(c, cfg.frame, size)
+            MascotLayer.FRAME -> drawFrame(c, cfg.frame, size, context)
         }
         if (key.crown) drawCrown(context, c, size)
         c.restore()
@@ -127,9 +127,22 @@ object MascotComposer {
         }
     }
 
-    /** The rounded-square frame (AN6) filling a [size] px box at the canvas origin ("none" draws nothing). */
-    fun drawFrame(c: Canvas, frame: String, size: Float) {
+    /**
+     * The rounded-square frame (AN6) filling a [size] px box at the canvas origin ("none" draws
+     * nothing). A level tier draws its `art_frame_<tier>` art (night art 10-03; outer edge = the
+     * canvas, iOS AvatarFrameRing parity) when [context] is given and the art shipped; else
+     * (and for "pro") the code-drawn metal.
+     */
+    fun drawFrame(c: Canvas, frame: String, size: Float, context: Context? = null) {
         if (frame == "none") return
+        if (context != null && frame != "pro") {
+            val id = drawableId(context, com.wordocious.app.data.AvatarFrame.artName(frame))
+            val art = if (id != 0) partBitmap(context, id) else null
+            if (art != null) {
+                c.drawBitmap(art, null, RectF(0f, 0f, size, size), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+                return
+            }
+        }
         val (light, base, deep) = frameColors(frame)?.toList() ?: return
         val w = frameWidth(size)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {

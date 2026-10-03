@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -562,45 +563,49 @@ internal fun Modifier.bannerShimmer(): Modifier {
  */
 @Composable
 private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (PlayMode) -> Unit) {
-    val purple = Color(0xFF7C3AED)
     val labelStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp)
     val unlimited = value == PlayMode.UNLIMITED
     val still = WTheme.reducedMotion
     val spec: androidx.compose.animation.core.AnimationSpec<Float> =
         if (still) androidx.compose.animation.core.snap()
-        else androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 500f)
+        else androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f)
     val pos by androidx.compose.animation.core.animateFloatAsState(if (unlimited) 1f else 0f, spec, label = "switchThumb")
-    val segH = BannerSlotSpec.SWITCH_SEGMENT_H.dp
+    val trackH = (BannerSlotSpec.SWITCH_SEGMENT_H + BannerSlotSpec.SWITCH_PAD * 2).toFloat()
+    // The candy toggle sprites (night art 10-03, proposal 1): the glossy track + a glossy thumb,
+    // three-sliced; the thumb sits inside the track's rim and is the only thing that moves.
+    val pad = candyPad(trackH).dp
+    val trackImg = candyBitmap(CandySprite.TRACK)
+    val thumbImg = candyBitmap(CandySprite.THUMB_ON)
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         val track = (maxWidth * 0.76f).coerceAtMost(280.dp)
-        val half = (track - (BannerSlotSpec.SWITCH_PAD * 2).dp) / 2
-        Box(
-            Modifier.width(track).height((BannerSlotSpec.SWITCH_SEGMENT_H + BannerSlotSpec.SWITCH_PAD * 2).dp)
-                .clip(RoundedCornerShape(50)).background(purple.copy(alpha = 0.12f))
-                .padding(BannerSlotSpec.SWITCH_PAD.dp),
-        ) {
-            // The sliding thumb: the only thing that moves.
+        val half = (track - pad * 2) / 2
+        Box(Modifier.width(track).height(trackH.dp).candyPill(trackImg).padding(pad)) {
             Box(
-                Modifier.offset(x = half * pos).width(half).height(segH)
-                    .clip(RoundedCornerShape(50)).background(accentWash(purple, 0.06f)),
+                Modifier.graphicsLayer { translationX = half.toPx() * pos }.width(half).fillMaxHeight()
+                    .candyPill(thumbImg),
             )
             Row {
                 listOf(PlayMode.DAILY to "DAILY", PlayMode.UNLIMITED to "UNLIMITED").forEach { (mode, label) ->
                     val on = value == mode
-                    // Selected UNLIMITED stays violet, never pink/red (founder veto).
-                    val ink = if (!on) purple else if (mode == PlayMode.DAILY) Color(0xFF4C1D95) else Color(0xFF6D28D9)
                     Row(
                         Modifier.squishClickable(
                             if (mode == PlayMode.UNLIMITED && locked) "unlimited, a Pro feature" else label.lowercase(),
                             role = androidx.compose.ui.semantics.Role.Tab,
                         ) { onChange(mode) }
                             .semantics { selected = on }
-                            .width(half).height(segH),
+                            .width(half).fillMaxHeight(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                     ) {
-                        Text(label, style = labelStyle, color = ink, maxLines = 1, softWrap = false)
-                        if (mode == PlayMode.UNLIMITED && locked) SwitchProChip()
+                        Text(label, style = labelStyle, color = if (on) CandyInk.ON else CandyInk.off, maxLines = 1, softWrap = false)
+                        // Proposal 1: the gold PRO crown sprite inside the Unlimited half, no pill
+                        // (AA4: only for players without Pro).
+                        if (mode == PlayMode.UNLIMITED && locked) {
+                            androidx.compose.foundation.Image(
+                                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_badge_pro_crown_sprite),
+                                contentDescription = null, modifier = Modifier.size(15.dp).offset(y = (-1).dp),
+                            )
+                        }
                     }
                 }
             }
@@ -608,31 +613,6 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
     }
 }
 
-/** BI21 the small gold crown + PRO chip inside the switch's UNLIMITED half (no outline). */
-@Composable
-private fun SwitchProChip() {
-    Row(
-        Modifier.clip(RoundedCornerShape(50))
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFE08A), Color(0xFFF5A524))))
-            .padding(horizontal = 5.dp, vertical = 1.5.dp)
-            .clearAndSetSemantics { },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        // A tiny drawn crown (three points over a band), in the chip's brown ink.
-        androidx.compose.foundation.Canvas(Modifier.width(8.dp).height(6.dp)) {
-            val w = size.width; val h = size.height
-            drawPath(
-                Path().apply {
-                    moveTo(0f, h); lineTo(0f, h * 0.15f); lineTo(w * 0.3f, h * 0.55f); lineTo(w * 0.5f, 0f)
-                    lineTo(w * 0.7f, h * 0.55f); lineTo(w, h * 0.15f); lineTo(w, h); close()
-                },
-                Color(0xFF7A3D00),
-            )
-        }
-        Text("PRO", fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF7A3D00), lineHeight = 9.sp)
-    }
-}
 
 /**
  * Z one mode's headline in the shared headline slot: the old WORDOCIOUS wordmark style
