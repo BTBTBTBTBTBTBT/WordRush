@@ -218,6 +218,12 @@ object LeaderboardService {
         @SerialName("avatar_url") val avatarUrl: String? = null,
         // §212: emoji avatar beats the initial on leaderboard rows.
         @SerialName("avatar_emoji") val avatarEmoji: String? = null,
+        // FINISH_SPEC BJ5: the look columns every board row now carries (null-safe: the
+        // select retries without them, and older disk caches decode them as null).
+        @SerialName("avatar_config") val avatarConfig: kotlinx.serialization.json.JsonElement? = null,
+        @SerialName("avatar_cast_id") val avatarCastId: String? = null,
+        @SerialName("avatar_frame") val avatarFrame: String? = null,
+        @SerialName("accent_color") val accentColor: String? = null,
     )
 
     @Serializable
@@ -322,8 +328,14 @@ object LeaderboardService {
             },
         ).decodeList<SweepEntry>()
             .filter { !ModerationService.isBlocked(it.userId) }
+            .also { rows -> lookUpSweepLooks(rows.map { it.userId }) }
             .let { rows -> if (offset == 0) mergeOptimisticSweep(rows, day) else rows }
     }.getOrElseNotCancelled { null }
+
+    /** BJ5: the sweep RPCs return only username / avatar_url — batch-look-up the rest by user id. */
+    private suspend fun lookUpSweepLooks(userIds: List<String>) {
+        runCatching { PlayerAvatars.lookupIds(userIds) }.onFailure { if (it is CancellationException) throw it }
+    }
 
     /** User's daily sweep rank + total (RPC daily_sweep_rank). Null if they
      *  didn't sweep today (the RPC returns no rows). */
@@ -440,6 +452,7 @@ object LeaderboardService {
             },
         ).decodeList<AllTimeSweepEntry>()
             .filter { !ModerationService.isBlocked(it.userId) }
+            .also { rows -> lookUpSweepLooks(rows.map { it.userId }) }
     }.getOrElseNotCancelled { null }
 
     /** User's all-time sweep rank + total (RPC alltime_sweep_rank). Null if the
@@ -455,6 +468,50 @@ object LeaderboardService {
     private const val COLS =
         "user_id,profiles!inner(username,avatar_url,avatar_emoji),composite_score,guess_count," +
         "time_seconds,boards_solved,total_boards,hints_used,vs_wins,vs_losses,vs_games,completed"
+
+    /** BJ5: the same rows with every player's look (avatar_config / cast / frame / accent). */
+    private const val COLS_LOOK =
+        "user_id,profiles!inner(username,avatar_url,avatar_emoji,avatar_config,avatar_cast_id,avatar_frame,accent_color),composite_score,guess_count," +
+        "time_seconds,boards_solved,total_boards,hints_used,vs_wins,vs_losses,vs_games,completed"
+
+    /** BJ5: whether the look columns are readable (flips false after one failed select this session). */
+    @Volatile private var lookColumnsOk = true
+
+    /** A board row's look for the shared avatar directory. */
+    fun avatarFields(e: LeaderboardEntry): AvatarFields = AvatarFields(
+        e.userId, e.profiles?.username, e.profiles?.avatarUrl, e.profiles?.avatarConfig,
+        e.profiles?.avatarCastId, e.profiles?.avatarFrame, e.profiles?.accentColor,
+    )
+
+    /**
+     * BJ5: after an avatar / profile save, patch the signed-in player's rows in every cached
+     * board (+ the disk copy) so a stale row can't flash before the refetch.
+     */
+    fun patchOwnAvatar(own: AvatarFields) {
+        val uid = own.userId ?: return
+        loadDisk()
+        fun fix(e: LeaderboardEntry): LeaderboardEntry =
+            if (!e.userId.equals(uid, ignoreCase = true)) e else e.copy(
+                profiles = (e.profiles ?: ProfileRef()).copy(
+                    username = own.username ?: e.profiles?.username,
+                    avatarUrl = own.avatarUrl, avatarConfig = own.config,
+                    avatarCastId = own.castId, avatarFrame = own.frame,
+                    accentColor = own.accentHex ?: e.profiles?.accentColor,
+                ),
+            )
+        var changed = false
+        for ((k, b) in boardCache.toMap()) {
+            if (b.entries.none { it.userId.equals(uid, true) } && b.rankWindow?.entries?.none { it.userId.equals(uid, true) } != false) continue
+            boardCache[k] = b.copy(entries = b.entries.map(::fix), rankWindow = b.rankWindow?.let { w -> w.copy(entries = w.entries.map(::fix)) })
+            changed = true
+        }
+        for ((k, b) in sweepCache.toMap()) {
+            if (b.entries.none { it.userId.equals(uid, true) }) continue
+            sweepCache[k] = b.copy(entries = b.entries.map { if (it.userId.equals(uid, true)) it.copy(avatarUrl = own.avatarUrl) else it })
+            changed = true
+        }
+        if (changed) persist()
+    }
 
     /** Today's daily leaderboard for a mode (mirrors getDailyLeaderboard). */
     suspend fun fetchDailyLeaderboard(
@@ -478,8 +535,8 @@ object LeaderboardService {
          *  board is then dense-ranked 1..N by the caller — no holes. */
         userIds: List<String>? = null,
     ): List<LeaderboardEntry>? = runCatching {
-        client.postgrest["daily_results"]
-            .select(Columns.raw(COLS)) {
+        suspend fun page(cols: String) = client.postgrest["daily_results"]
+            .select(Columns.raw(cols)) {
                 filter {
                     eq("game_mode", gameMode)
                     eq("play_type", playType)
@@ -494,6 +551,22 @@ object LeaderboardService {
                 range(offset.toLong()..(offset + limit - 1).toLong())
             }
             .decodeList<LeaderboardEntry>()
+        // BJ5: every row carries the player's look; a select that errors on those columns is
+        // retried once without them (columns exist in prod — stay null-safe).
+        var withLook = lookColumnsOk
+        val rows = if (lookColumnsOk) {
+            runCatching { page(COLS_LOOK) }.getOrElse { err ->
+                if (err is CancellationException) throw err
+                withLook = false
+                page(COLS).also {
+                    // Only a column error (not a network blip) retires the look columns for the session.
+                    val m = err.message.orEmpty()
+                    if (m.contains("avatar_") || m.contains("accent_color") || m.contains("42703") || m.contains("PGRST")) lookColumnsOk = false
+                }
+            }
+        } else page(COLS)
+        runCatching { PlayerAvatars.recordAll(rows.map { avatarFields(it).copy(complete = withLook) }) }
+        rows
             // App Review 1.2: hide players the signed-in user has blocked
             // (iOS LeaderboardService.fetch parity). Single choke point — the
             // top-50 list, rank window, and yesterday's winners all route here.

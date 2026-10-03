@@ -73,6 +73,10 @@ struct VSShareCardView: View {
         let solved: Bool
         /// Per board: rows of tile states (colors only).
         let grids: [[[TileState]]]
+        /// BJ5: the player's username → their resolved avatar (photo / mascot / frame);
+        /// a bot's cast art instead when `botArt` is set. nil both = no avatar.
+        var username: String? = nil
+        var botArt: String? = nil
     }
 
     let modeLabel: String     // e.g. "VS CLASSIC"
@@ -160,6 +164,12 @@ struct VSShareCardView: View {
 
     private func sideColumn(_ side: Side, accent: Color) -> some View {
         VStack(spacing: 8) {
+            // BJ5: each side's own avatar (the one resolver; a bot keeps its cast art).
+            if let art = side.botArt, ArtAsset.exists(art) {
+                Image(art).resizable().interpolation(.high).scaledToFit().frame(width: 96, height: 96)
+            } else if let name = side.username {
+                AvatarView(url: nil, username: name, size: 96, alwaysLight: true)
+            }
             HStack(spacing: 8) {
                 if side.won && !isDraw { Icon3D(.crown, size: 34, label: "Winner") }
                 Text(side.name).font(Brand.fixedFont(30, .black)).foregroundStyle(accent).lineLimit(1)

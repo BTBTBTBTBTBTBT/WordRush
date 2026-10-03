@@ -743,6 +743,16 @@
   animation: mascot-hop var(--mascot-dur, 1100ms) ease-in-out var(--mascot-delay, 0ms) var(--mascot-iter, 3) both;
   transform-origin: 50% 100%;
 }
+/* FINISH_SPEC BJ6: the Home host waves ONCE per launch (components/home/home-host.tsx) —
+   a 6 px hop with a +10 / -8 / +8 deg wag around its feet, ~220 ms beats, 350 ms after mount. */
+@keyframes home-host-wave {
+  0%   { transform: translateY(0) rotate(0deg); }
+  25%  { transform: translateY(-6px) rotate(10deg); }
+  50%  { transform: translateY(-6px) rotate(-8deg); }
+  75%  { transform: translateY(-3px) rotate(8deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+.home-host-wave { animation: home-host-wave 880ms ease-in-out 350ms 1 both; transform-origin: 50% 100%; }
 @media (prefers-reduced-motion: reduce) {
   .mascot { animation: none !important; }
 }
@@ -1414,6 +1424,8 @@
    caps labels — deep amber on the light washes, light amber on the dark theme. */
 .lb-gold-ink { color: #8a4a12; }
 [data-theme="dark"] .lb-gold-ink { color: #fcd34d; }
+/* FINISH_SPEC BJ4: the podium stage (components/leaderboard/podium.tsx) — same layers, lower alphas in dark. */
+[data-theme="dark"] .podium-stage { opacity: 0.6; }
 
 /* ── K1 · In-app notices (components/friends/activity-feed.tsx moments,
    components/invites/pending-invites-banner.tsx): a notice card slides in

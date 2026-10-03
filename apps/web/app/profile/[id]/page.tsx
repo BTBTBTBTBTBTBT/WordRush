@@ -465,6 +465,7 @@ export default function PublicProfilePage() {
               editable={false}
               avatarUrl={profile.avatar_url ?? null}
               username={profile.username}
+              userId={profile.id}
               emoji={(profile as any).avatar_emoji ?? null}
               accent={(profile as any).accent_color ?? null}
               config={(profile as any).avatar_config ?? null}
@@ -603,6 +604,7 @@ export default function PublicProfilePage() {
                 editable={false}
                 avatarUrl={profile.avatar_url ?? null}
                 username={profile.username}
+                userId={profile.id}
                 emoji={(profile as any).avatar_emoji ?? null}
                 accent={(profile as any).accent_color ?? null}
               config={(profile as any).avatar_config ?? null}

@@ -19,6 +19,7 @@ import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { CAST, mascotSrc, type MascotId } from '@/lib/mascots';
 import { choiceForConfig, saveProfileWithAvatar, type ProfilesUpdater } from '@/lib/avatar-cast';
+import { afterOwnAvatarSave } from '@/lib/avatar-directory';
 import { prefersReducedMotion } from '@/lib/motion';
 import { INTRO_RUNNING_ATTR } from '@/lib/intro';
 import { dailyHref } from '@/lib/mode-routes';
@@ -400,6 +401,7 @@ export function FirstRunTour() {
       setAvatarNote((res.error as { message?: string }).message ?? 'Could not save your mascot. Please try again.');
       return;
     }
+    afterOwnAvatarSave(p.id);
     await refreshProfile();
     goStep('done');
   };

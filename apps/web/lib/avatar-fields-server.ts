@@ -136,8 +136,11 @@ export async function fetchAvatarFields(
   /** A Supabase client (service-role or browser) or anything shaped like ProfilesReader. */
   client: object,
   ids: Iterable<string | null | undefined>,
-): Promise<Map<string, AvatarFields>> {
-  const out = new Map<string, AvatarFields>();
+  /** BJ5 (web boards only): also read accent_color (the seeded mascot's color). Server routes leave it off. */
+  opts?: { accent?: boolean },
+): Promise<Map<string, AvatarFields & { accent_color?: string | null }>> {
+  const out = new Map<string, AvatarFields & { accent_color?: string | null }>();
+  const cols = opts?.accent ? 'id, accent_color' : 'id';
   const unique = [...new Set([...ids].filter((id): id is string => typeof id === 'string' && id.length > 0))].slice(0, MAX_AVATAR_IDS);
   if (unique.length === 0) return out;
   const reader = client as ProfilesReader;
@@ -145,14 +148,19 @@ export async function fetchAvatarFields(
   for (let i = 0; i < unique.length; i += CHUNK) chunks.push(unique.slice(i, i + CHUNK));
   const results = await Promise.all(chunks.map(async (chunk) => {
     try {
-      return await selectWithAvatarColumns((extra) => reader.from('profiles').select(`id${extra}`).in('id', chunk));
+      return await selectWithAvatarColumns((extra) => reader.from('profiles').select(`${cols}${extra}`).in('id', chunk));
     } catch {
       return { data: null, error: { message: 'profiles lookup failed' } } as QueryResult<unknown[]>;
     }
   }));
   for (const res of results) {
     for (const row of (res.data ?? []) as Array<{ id?: unknown }>) {
-      if (row && typeof row.id === 'string') out.set(row.id, avatarFieldsOf(row));
+      if (row && typeof row.id === 'string') {
+        const accent = (row as { accent_color?: unknown }).accent_color;
+        out.set(row.id, opts?.accent
+          ? { ...avatarFieldsOf(row), accent_color: typeof accent === 'string' && accent.length > 0 ? accent : null }
+          : avatarFieldsOf(row));
+      }
     }
   }
   return out;
@@ -163,9 +171,10 @@ export async function mergeAvatarFields<T extends object>(
   client: object,
   rows: T[],
   idOf: (row: T) => string | null | undefined,
+  opts?: { accent?: boolean },
 ): Promise<Array<T & AvatarFields>> {
   if (rows.length === 0) return [];
-  const fields = await fetchAvatarFields(client, rows.map(idOf));
+  const fields = await fetchAvatarFields(client, rows.map(idOf), opts);
   return rows.map((r) => {
     const id = idOf(r);
     return withAvatarFields(r, id ? fields.get(id) : undefined);

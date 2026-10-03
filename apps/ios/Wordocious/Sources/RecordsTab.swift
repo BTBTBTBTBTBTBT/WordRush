@@ -808,18 +808,22 @@ struct YesterdayPodiumCard: View {
                     if open && known == nil {
                         LeaderboardSkeleton().lbCard()
                     } else if open {
-                        // The top three on the podium (letter-tile avatars, crown on 1st;
-                        // a place opens that player, as their row did), then the rest.
-                        let podium = top3.count >= 3
-                        let start = podium ? 3 : 0
+                        // BJ4: the leaders on the podium from one result up (open spots for
+                        // the free places, the stage in the game's color; a place opens that
+                        // player, as their row did), then the rest.
+                        let ranks = top3.indices.map { LeaderboardService.competitionRank(top3, $0) }
+                        let layout = PodiumLayout.layout(ranks)
+                        let start = layout.filled
                         VStack(spacing: 0) {
-                            if podium {
-                                PodiumView(entries: top3.prefix(3).map { e in
+                            if start > 0 {
+                                PodiumView(entries: top3.prefix(start).enumerated().map { i, e in
                                     PodiumEntry(id: e.userId,
                                                 name: e.userId == auth.profile?.id ? "You" : e.username,
-                                                username: e.username, emoji: e.profiles.avatarEmoji,
-                                                value: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore))
-                                }, onTap: { e in openProfile?(e.id) })
+                                                username: e.username, accentHex: e.profiles.accentColor,
+                                                emoji: e.profiles.avatarEmoji,
+                                                value: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore),
+                                                avatarUrl: e.profiles.avatarUrl, rank: ranks[i])
+                                }, open: layout.open, stage: ModeStyle.accent(mode), onTap: { e in openProfile?(e.id) })
                             }
                             ForEach(Array(top3.enumerated().dropFirst(start)), id: \.element.id) { i, e in
                                 RecordsBoardRow(rank: i + 1, entry: e, mode: mode,

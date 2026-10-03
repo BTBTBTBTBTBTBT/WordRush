@@ -175,5 +175,7 @@ final class MascotLooks: ObservableObject {
         recordRaw(row.username, row.avatar_config, hasPhoto: Self.hasPhoto(row.avatar_url))
     }
 
-    static func hasPhoto(_ url: String?) -> Bool { !(url?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) }
+    /// BJ5: a saved config without `display` defaults to the photo only for a CUSTOM (uploaded) photo
+    /// — core resolveAvatar parity (an OAuth picture is never the default).
+    static func hasPhoto(_ url: String?) -> Bool { AvatarResolve.isCustomPhotoUrl(url) }
 }

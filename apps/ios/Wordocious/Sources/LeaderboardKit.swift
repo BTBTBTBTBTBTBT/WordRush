@@ -22,11 +22,8 @@ enum LbStyle {
     static let gold = Color(hex: 0xF59E0B)
     static let goldInk = Color(hex: 0x8A4A12)
 
-    /// The podium only stands when the first three rows really are places 1, 2 and 3
-    /// (exact ties share a rank — then the plain rows tell it right).
-    static func podiumFits(_ ranks: [Int]) -> Bool {
-        ranks.count >= 3 && Array(ranks.prefix(3)) == [1, 2, 3]
-    }
+    // BJ4: the old `podiumFits` (podium only for exactly 1-2-3) is gone — every board
+    // stands its leaders from one result up (Core PodiumLayout).
 }
 
 // MARK: - Environment
@@ -322,7 +319,7 @@ func lbSolveLine(mode: GameMode, completed: Bool, guessCount: Int, timeSeconds: 
 // MARK: - §C2a The board row
 
 /// One board row (mockup `.lrow`): the rank (medal disc / muted number), the player's
-/// avatar (letter tile at 36), the name over a small subtitle (`info`, the link to
+/// avatar (BJ5: the one resolver, at 36), the name over a small subtitle (`info`, the link to
 /// the public profile), then §C2a the W / L badge in its own fixed column immediately
 /// left of the points (an empty slot when there is no badge, so the points line up),
 /// and the points as a soft number. `trailing` holds the taunt bell on the Friends board.
@@ -352,8 +349,10 @@ struct LbBoardRow<Info: View, Trailing: View>: View {
             // Only the player (avatar + name) links to the public profile.
             NavigationLink(value: userId) {
                 HStack(spacing: 10) {
+                    // BJ5: the one resolver (the own row resolves from the live profile).
                     AvatarView(url: avatarUrl, username: username, size: 36, emoji: emoji,
-                               pro: userId == AuthService.shared.profile?.id && AuthService.shared.isProActive)
+                               pro: userId == AuthService.shared.profile?.id && AuthService.shared.isProActive,
+                               userId: userId)
                     info()
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

@@ -132,11 +132,11 @@ struct HomeBannerView: View {
             }
             // BI21: both rows share one tile size (sized so 10 fit) and spread edge to edge.
             rowView(word, tier: wTier, label: "WORDOCIOUS")
-                .padding(.top, 8).padding(.horizontal, 12).padding(.bottom, hasPuzzles ? 3 : 12)
+                .padding(.top, 4).padding(.horizontal, 12).padding(.bottom, hasPuzzles ? 4 : 8)
             // Remote flags can switch the Puzzles off entirely; then the row goes too.
             if hasPuzzles {
                 rowView(puzzles, tier: pTier, label: "PUZZLES")
-                    .padding(.top, 5).padding(.horizontal, 12).padding(.bottom, 12)
+                    .padding(.top, 4).padding(.horizontal, 12).padding(.bottom, 6)
             }
         }
         .frame(maxWidth: .infinity)
@@ -159,16 +159,10 @@ struct HomeBannerView: View {
         }
         .shadow(color: double ? Color(hex: 0xF59E0B).opacity(0.8) : Color(hex: 0x4C1D95).opacity(0.08),
                 radius: double ? 13 : 7, x: 0, y: double ? 0 : 4)
-        if momentArt != nil {
-            // §A7: the celebration art already carries W, so the host steps aside
-            // (same top inset, so the page doesn't shift).
-            card.padding(.top, 12)
-        } else {
-            // The cast (docs/MASCOT_SPEC.md §1–§2): W hosts home, left of the share button.
-            // BI21: the share button lives at the strip's LEFT end now, so W always
-            // stands at the right corner.
-            card.bannerHost(Mascots.home, trailing: 10)
-        }
+        // FINISH_SPEC BJ6 plan A (founder 10-03: "the created mascot can be a little more
+        // prominent"): the host stands INSIDE the card on the strip's left (HomeHostMascot),
+        // so nothing peeks above the card any more.
+        card
     }
 
     // MARK: Background
@@ -194,54 +188,69 @@ struct HomeBannerView: View {
     // MARK: Frosted headline strip
 
     private var strip: some View {
-        // Ticks once a second for the clock line; the headline's greeting follows the hour.
-        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+        // The headline's greeting follows the hour (a minute timeline); only the clock
+        // line below ticks every second (FINISH_SPEC BJ3: a 1 s tick here used to
+        // rebuild and re-measure all four headline layouts every second).
+        TimelineView(.everyMinute) { ctx in
             let hour = Calendar.current.component(.hour, from: ctx.date)
             // §Z: both modes' headlines are laid out in one slot (the taller sets its
             // height) and crossfade, so the switch never changes the strip's height.
             let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false)
             let unlimitedHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: true)
-            let clockLine = HomeBanner.bannerClockLine(word.progress, puzzles.progress, clock: Self.countdown(), unlimited: unlimited)
             // FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look
             // even"): headline centered on the card's center line, then a centered wide
             // DAILY | UNLIMITED switch, then the centered meta line.
-            VStack(spacing: 6) {
-                ZStack(alignment: .leading) {
-                    // §Z: both modes' headlines share one slot and crossfade. Symmetric
-                    // side room (the W host's clearance on BOTH sides) keeps it centered.
-                    ZStack {
-                        headlineSlot(dailyHeadline, trophy: dailyDouble)
-                            .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
-                        headlineSlot(unlimitedHeadline, trophy: false)
-                            .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
-                    }
-                    .padding(.horizontal, Self.headlineSideClear)
-                    // §Z: the share slot stays in Unlimited (empty there). It sits at the
-                    // strip's left end, mirroring W at the right.
-                    if slots.hasShare {
-                        Button(action: onShare) {
-                            Icon3D(.share, size: 24)
-                                .frame(width: 36, height: 36).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.squish)
-                        .accessibilityLabel("Share today's progress")
-                        .opacity(slots.showsShare ? 1 : 0)
-                        .allowsHitTesting(slots.showsShare)
-                        .accessibilityHidden(!slots.showsShare)
-                    }
+            // BH3: one headline line, 8 above the slim switch, the meta line 4 under it.
+            // BJ6 plan A: the host (the player's portrait / mascot, else W) stands on the left
+            // on a soft floor shadow; the headline / switch / resets column centers in the rest.
+            HStack(alignment: .center, spacing: 2) {
+                HomeHostMascot(size: Self.hostSize)
+                    // §A7: during the celebration art (which carries W) a W host steps aside.
+                    .opacity(slots.showsMomentArt && AvatarDirectory.shared.ownHostChoice() == .w ? 0 : 1)
+            VStack(spacing: 0) {
+                // §Z: both modes' headlines share one slot and crossfade; symmetric room for
+                // the share button (top-right corner) keeps it centered in the column.
+                ZStack {
+                    headlineSlot(dailyHeadline, trophy: dailyDouble)
+                        .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
+                    headlineSlot(unlimitedHeadline, trophy: false)
+                        .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
                 }
+                .padding(.horizontal, slots.hasShare ? 28 : 0)
                 modeSwitch
                     .frame(maxWidth: Self.switchMaxWidth)
                     .frame(maxWidth: .infinity)
-                Text(clockLine)
-                    .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
-                    .foregroundStyle(subInk)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 8)
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    Text(HomeBanner.bannerClockLine(word.progress, puzzles.progress, clock: Self.countdown(), unlimited: unlimited))
+                        .font(Brand.font(11, .heavy).smallCaps()).tracking(0.4).monospacedDigit()
+                        .foregroundStyle(subInk)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .padding(.top, 4)
+            }
+            .frame(maxWidth: .infinity)
             }
         }
-        .padding(.top, 10).padding(.horizontal, 12).padding(.bottom, 8)
+        .padding(.top, 4).padding(.leading, 6).padding(.trailing, 12).padding(.bottom, 4)
+        // BJ6 plan A: the share button moves to the strip's top-right corner. §Z: the slot
+        // stays in Unlimited (empty there).
+        .overlay(alignment: .topTrailing) {
+            if slots.hasShare {
+                Button(action: onShare) {
+                    Icon3D(.share, size: 22)
+                        .frame(width: 34, height: 34).contentShape(Rectangle())
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("Share today's progress")
+                .opacity(slots.showsShare ? 1 : 0)
+                .allowsHitTesting(slots.showsShare)
+                .accessibilityHidden(!slots.showsShare)
+                .padding(.top, 2).padding(.trailing, 4)
+            }
+        }
         // §18.4: frosted over a background blur (solid under Reduce Transparency) —
         // FINISH_SPEC §A1: a lavender frost instead of plain white.
         // §AQ2: a flat frost — the live material blur re-sampled the page under it on
@@ -251,17 +260,17 @@ struct HomeBannerView: View {
         }
     }
 
-    /// BI21: the headline's room on EACH side (the W host's clearance, mirrored).
+    /// BI21: the headline's room on EACH side (kept for callers; BJ6 plan A moved the host
+    /// into the strip's left column).
     static let headlineSideClear: CGFloat = Mascots.bannerClearance
-    /// BI21: the centered switch spans ~75% of a phone-wide card, equal halves.
-    static let switchMaxWidth: CGFloat = 280
+    /// BJ6 plan A: the host's box — ~2× the old 52 pt corner host, the strip's full height.
+    static let hostSize: CGFloat = 84
+    /// BI21 / BH3: the centered switch spans ~64% of a phone-wide card, equal halves.
+    static let switchMaxWidth: CGFloat = 230
 
-    /// One mode's headline: one line, or up to two lines, always centered.
+    /// One mode's headline: BH3 (founder 10-03) ONE line, auto-fit (shrinks, never wraps), centered.
     private func headlineSlot(_ headline: String, trophy: Bool) -> some View {
-        ViewThatFits(in: .horizontal) {
-            headlineRow(headline, oneLine: true, trophy: trophy)
-            headlineRow(headline, oneLine: false, trophy: trophy)
-        }
+        headlineRow(headline, oneLine: true, trophy: trophy)
     }
 
     /// The headline (+ the double-flawless trophy; FINISH_SPEC §Y: Unlimited has no
@@ -274,12 +283,12 @@ struct HomeBannerView: View {
             // FINISH_SPEC §AR: the live lettering (purple → magenta, gold numbers, the
             // player's name in the accent, "·" as the star); the double-flawless gold
             // day takes the celebration palette.
-            LiveHeadline(text: headline, palette: trophy ? .celebration : .home, size: 22,
+            LiveHeadline(text: headline, palette: trophy ? .celebration : .home, size: 20,
                          names: [name], alignment: .center,
-                         maxLines: oneLine ? 1 : 2, minimumScale: oneLine ? 1 : 0.7)
-                .fixedSize(horizontal: oneLine, vertical: true)
+                         maxLines: 1, minimumScale: 0.55)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+        .frame(maxWidth: .infinity, minHeight: 32, alignment: .center)
     }
 
     private static func countdown() -> String {
@@ -293,8 +302,9 @@ struct HomeBannerView: View {
             segment(.daily, "DAILY")
             segment(.unlimited, "UNLIMITED")
         }
-        .padding(2)
-        .background(Capsule().fill(Color(hex: 0x7C3AED).opacity(0.12)))
+        .padding(CandySprite.pad(28))
+        // The candy toggle sprites (night art 10-03, proposal 1): the glossy track + thumb.
+        .background(CandyPill(sprite: .track))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Daily or Unlimited")
     }
@@ -305,33 +315,27 @@ struct HomeBannerView: View {
         return Button {
             if locked { unlimitedAfterPurchase = true; showPro = true } else { onModeChange(m) }
         } label: {
-            // BI21: equal halves; the PRO chip sits INSIDE the Unlimited half beside its label.
-            HStack(spacing: 5) {
+            // BI21: equal halves. Proposal 1 (night art 10-03): the gold PRO crown sprite rides
+            // INSIDE the Unlimited half, no pill (AA4: only for players without Pro).
+            HStack(spacing: 4) {
                 Text(label)
                     .font(Brand.font(11, .black)).tracking(0.6)
-                    .foregroundStyle(on ? (m == .daily ? Color(hex: 0x4C1D95) : Color(hex: 0x6D28D9)) : Color(hex: 0x7C3AED))
+                    .foregroundStyle(on ? CandyToggleInk.on : CandyToggleInk.off)
+                    .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.45) : .clear, radius: 0, x: 0, y: 1)
                 if locked {
-                    HStack(spacing: 2) {
-                        Image(systemName: "crown.fill").font(.system(size: 6.5, weight: .black))
-                        Text("PRO").font(Brand.font(7.5, .black))
-                    }
-                    .foregroundStyle(Color(hex: 0x7A3D00))
-                    .padding(.horizontal, 5).padding(.vertical, 2)
-                    .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFE08A), Color(hex: 0xF5A524)],
-                                                              startPoint: .top, endPoint: .bottom)))
-                    .accessibilityHidden(true)
+                    Image("art-badge-pro-crown-sprite").resizable().interpolation(.high)
+                        .frame(width: 15, height: 15).offset(y: -1)
+                        .accessibilityHidden(true)
                 }
             }
                 .lineLimit(1).fixedSize()
-                .frame(maxWidth: .infinity).frame(height: 26)
+                .frame(maxWidth: .infinity).frame(height: 28 - CandySprite.pad(28) * 2)
                 .contentShape(Capsule())
-                // §A1: the "on" segment is a soft lilac pill, not white. §Z: ONE thumb
-                // slides between the segments (matched geometry); the segments keep
-                // their width and weight in both states, so nothing reflows.
+                // §Z: ONE glossy candy thumb slides between the segments (matched geometry);
+                // the segments keep their width and weight in both states, so nothing reflows.
                 .background {
                     if on {
-                        Capsule().fill(Color(hex: 0xFBF8FF))
-                            .shadow(color: Color(hex: 0x4C1D95).opacity(0.14), radius: 2, x: 0, y: 1)
+                        CandyPill(sprite: .thumbOn)
                             .matchedGeometryEffect(id: "thumb", in: switchThumb)
                     }
                 }
@@ -355,9 +359,10 @@ struct HomeBannerView: View {
         let ink = Self.tierInk(tier)
         // FINISH_SPEC §AS7: no per-row streak flames — every streak lives in the
         // header flame's popup.
-        return VStack(alignment: .leading, spacing: 6) {
+        // BH3: label → icons 4.
+        return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Text(label).font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
+                Text(label).font(Brand.font(9.5, .black)).tracking(1).foregroundStyle(ink)
                 Text(unlimited ? HomeBanner.unlimitedGroupStatus(r.unlimitedPlayed) : HomeBanner.groupStatus(r.progress))
                     .font(Brand.font(10, .black)).tracking(0.5).foregroundStyle(ink)
                     .lineLimit(1).minimumScaleFactor(0.8)
@@ -441,7 +446,7 @@ private struct BannerTile: View {
 /// 10-tile rows share a size and both end flush).
 struct BannerSpreadRow: Layout {
     var slots: Int = 10
-    var maxTile: CGFloat = 32
+    var maxTile: CGFloat = 36 // BH3: up to 36 (10 across still fit)
     var minGap: CGFloat = 5
 
     func tile(_ width: CGFloat) -> CGFloat {

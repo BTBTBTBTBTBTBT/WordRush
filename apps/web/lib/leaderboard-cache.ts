@@ -20,7 +20,7 @@ import {
   type SweepDetails,
   type SweepEntry,
 } from './daily-service';
-import { dayInKey, persistentMap } from './page-cache';
+import { clearPageCacheNamespace, dayInKey, persistentMap } from './page-cache';
 import { reconcile, updateResultStore } from './optimistic-results';
 
 export type Rank = { rank: number; totalPlayers: number };
@@ -45,6 +45,18 @@ export interface SweepBoard {
 export const lbCache = persistentMap<ModeBoard>('lb', dayInKey);
 /** The overall (Sweep) board, keyed SWEEP:day:user. */
 export const sweepCache = persistentMap<SweepBoard>('lb-sweep', dayInKey);
+
+/** Every persisted board cache (Leaderboard + Records) — namespaces of lib/page-cache. */
+export const BOARD_CACHE_NAMESPACES = ['lb', 'lb-sweep', 'lb-yday', 'records-lb', 'records-sweep', 'records-podium', 'records-alltime-sweep'] as const;
+
+/**
+ * FINISH_SPEC BJ5: after the player saves their avatar / profile, forget the
+ * cached boards so a stale row can't flash (the own-avatar override already
+ * draws the new look on any row still on screen).
+ */
+export function invalidateBoardCaches(): void {
+  for (const ns of BOARD_CACHE_NAMESPACES) clearPageCacheNamespace(ns);
+}
 
 export function modeBoardKey(mode: string, day: string, userId: string | null | undefined, friends = false): string {
   return `${mode}:${day}:${userId ?? 'anon'}${friends ? ':friends' : ''}`;

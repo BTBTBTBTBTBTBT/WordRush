@@ -696,6 +696,11 @@ object ShareImage {
         val solved: Boolean,
         /** Per board: rows of tile states (colors only — no daily-VS spoilers). */
         val grids: List<List<List<TileState>>>,
+        /** BJ5: whose avatar heads the side (the shared resolver; "bot:<id>" = the bot's art). */
+        val userId: String? = null,
+        val avatarUrl: String? = null,
+        /** The username behind [name] (the side's label may be "You" / "X · Bot"). */
+        val username: String? = null,
     )
 
     /**
@@ -721,7 +726,10 @@ object ShareImage {
         val cardH = vsCardH(boardSide, sharedRows, sharedCols)
         val pillH = 58f
         val blockTop = pillH + 26f
-        val headerH = 212f
+        // BJ5: each side's resolved avatar (~72 px) heads the side, the crown above it.
+        val avatarPx = 72f
+        val avatarShift = avatarPx - 10f
+        val headerH = 212f + avatarShift
         val boardsTop = blockTop + headerH
         val boardsH = cardH * shownN + 16f * (shownN - 1)
         val more = if (me.grids.size > 2 || opp.grids.size > 2) 44f else 0f
@@ -739,11 +747,15 @@ object ShareImage {
                 c.textMid(label, cx, rect.centerY() + 3f, p)
             }
             fun side(s: VsShareSide, scx: Float) {
+                val avTop = blockTop + 40f
+                runCatching {
+                    ShareAvatars.draw(context, c, scx - avatarPx / 2f, avTop, avatarPx, s.userId, s.username ?: s.name, s.avatarUrl)
+                }
                 if (s.won && !isDraw) {
                     val cw = 48f
-                    ShareFinish.drawArtInto(context, c, R.drawable.icon3d_crown, RectF(scx - cw / 2f, blockTop, scx + cw / 2f, blockTop + cw))
+                    ShareFinish.drawArtInto(context, c, R.drawable.icon3d_crown, RectF(scx - cw / 2f, blockTop - 4f, scx + cw / 2f, blockTop - 4f + cw))
                 }
-                var y = blockTop + 48f + 38f
+                var y = blockTop + 48f + 38f + avatarShift
                 val name = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = 36f; color = ShareFinish.INK_HEADING; ShareFinish.softShadow(this) }
                 ShareFinish.fitText(name, s.name, w * 0.42f)
                 c.drawText(s.name, scx, y, name)

@@ -1,0 +1,534 @@
+{
+  "cases": [
+    {
+      "source": {
+        "username": "BMT",
+        "avatarUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "eyes": "happy",
+          "neck": "scarf",
+          "display": "photo"
+        }
+      },
+      "result": {
+        "kind": "photo",
+        "photoUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "pattern": "solid",
+          "patternColor": "mint",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "tiny",
+          "head": "none",
+          "face": "none",
+          "neck": "scarf",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "photo"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "BMT",
+        "avatarUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "eyes": "happy",
+          "neck": "scarf",
+          "display": "mascot"
+        }
+      },
+      "result": {
+        "kind": "config",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "pattern": "solid",
+          "patternColor": "mint",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "tiny",
+          "head": "none",
+          "face": "none",
+          "neck": "scarf",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "BMT",
+        "avatarUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "eyes": "happy",
+          "neck": "scarf"
+        }
+      },
+      "result": {
+        "kind": "photo",
+        "photoUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "pattern": "solid",
+          "patternColor": "mint",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "tiny",
+          "head": "none",
+          "face": "none",
+          "neck": "scarf",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "photo"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "BMT",
+        "avatarUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1"
+      },
+      "result": {
+        "kind": "photo",
+        "photoUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "bean",
+          "color": "purple",
+          "pattern": "solid",
+          "patternColor": "purple",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "tiny",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "photo"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "BMT",
+        "avatarUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "castId": "r",
+        "frame": "gold"
+      },
+      "result": {
+        "kind": "photo",
+        "photoUrl": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+        "config": {
+          "v": 1,
+          "body": "classic",
+          "color": "green",
+          "pattern": "solid",
+          "patternColor": "green",
+          "eyes": "beady",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "gold",
+          "bg": "auto",
+          "display": "photo"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "Ukrainian Cyclone",
+        "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocK-letter=s96-c"
+      },
+      "result": {
+        "kind": "seeded",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "classic",
+          "color": "purple",
+          "pattern": "solid",
+          "patternColor": "purple",
+          "eyes": "wink",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "Ukrainian Cyclone",
+        "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocK-letter=s96-c",
+        "config": {
+          "display": "photo"
+        }
+      },
+      "result": {
+        "kind": "photo",
+        "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocK-letter=s96-c",
+        "config": {
+          "v": 1,
+          "body": "classic",
+          "color": "purple",
+          "pattern": "solid",
+          "patternColor": "purple",
+          "eyes": "wink",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "photo"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "Ukrainian Cyclone",
+        "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocK-letter=s96-c",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "eyes": "happy",
+          "neck": "scarf"
+        }
+      },
+      "result": {
+        "kind": "config",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "pattern": "solid",
+          "patternColor": "mint",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "scarf",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "doug",
+        "avatarUrl": "   ",
+        "castId": "O2",
+        "frame": "Silver"
+      },
+      "result": {
+        "kind": "cast",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "classic",
+          "color": "pink",
+          "pattern": "solid",
+          "patternColor": "pink",
+          "eyes": "beady",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "silver",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "doug",
+        "castId": "zz",
+        "frame": "sparkly"
+      },
+      "result": {
+        "kind": "seeded",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "blob",
+          "color": "purple",
+          "pattern": "solid",
+          "patternColor": "purple",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "grin",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "doug",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "eyes": "happy",
+          "neck": "scarf",
+          "frame": "pro"
+        },
+        "frame": "bronze"
+      },
+      "result": {
+        "kind": "config",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "pattern": "solid",
+          "patternColor": "mint",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "grin",
+          "head": "none",
+          "face": "none",
+          "neck": "scarf",
+          "accColor": "default",
+          "frame": "pro",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "doug",
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "eyes": "happy",
+          "neck": "scarf"
+        },
+        "frame": "diamond"
+      },
+      "result": {
+        "kind": "config",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "star",
+          "color": "mint",
+          "pattern": "solid",
+          "patternColor": "mint",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "grin",
+          "head": "none",
+          "face": "none",
+          "neck": "scarf",
+          "accColor": "default",
+          "frame": "diamond",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "doug",
+        "config": "nope",
+        "accentHex": "#ec4899"
+      },
+      "result": {
+        "kind": "seeded",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "blob",
+          "color": "pink",
+          "pattern": "solid",
+          "patternColor": "pink",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "grin",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "doug",
+        "config": {},
+        "accentHex": "#22c55e",
+        "frame": "platinum"
+      },
+      "result": {
+        "kind": "seeded",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "blob",
+          "color": "green",
+          "pattern": "solid",
+          "patternColor": "green",
+          "eyes": "happy",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "grin",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "platinum",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "",
+        "avatarUrl": null
+      },
+      "result": {
+        "kind": "seeded",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "blob",
+          "color": "purple",
+          "pattern": "solid",
+          "patternColor": "purple",
+          "eyes": "wink",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "source": {
+        "username": "Oliver_22",
+        "accentHex": "#f59e0b",
+        "config": [
+          1,
+          2
+        ]
+      },
+      "result": {
+        "kind": "seeded",
+        "photoUrl": null,
+        "config": {
+          "v": 1,
+          "body": "classic",
+          "color": "yellow",
+          "pattern": "solid",
+          "patternColor": "yellow",
+          "eyes": "sparkly",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "none",
+          "face": "none",
+          "neck": "none",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    }
+  ],
+  "custom": [
+    {
+      "url": "https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1",
+      "custom": true
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/a/ACg8ocK-letter=s96-c",
+      "custom": false
+    },
+    {
+      "url": "",
+      "custom": false
+    },
+    {
+      "url": null,
+      "custom": false
+    },
+    {
+      "url": "https://example.com/avatars/x.png",
+      "custom": false
+    }
+  ]
+}

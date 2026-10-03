@@ -6,11 +6,13 @@ import {
   AVATAR_CAST_COLOR, AVATAR_CAST_IDS, AVATAR_CAST_NAME, AVATAR_FRAMES, FRAME_COLOR, avatarFrameFor, frameArtName,
   isAvatarCastId, isMissingColumnError, ownAvatarChoice, readAvatarChoice, readPendingChoice, retryPendingChoice,
   saveProfileWithAvatar, unlockedFrames, writePendingChoice, type ProfilesUpdater, type StorageLike,
-  avatarColumns, choiceForConfig, resolveAvatarConfig,
+  avatarColumns, choiceForConfig, resolveAvatarConfig, resolveRowAvatar,
 } from './avatar-cast';
 import { castPreset, defaultAvatar, validateAvatar } from '@wordle-duel/core';
 import { CAST, mascotSrc } from './mascots';
 import { ART_SIZE } from './art';
+
+const UPLOADED = 'https://x.supabase.co/storage/v1/object/public/avatars/u9/avatar.jpg';
 
 function memStorage(): StorageLike & { data: Map<string, string> } {
   const data = new Map<string, string>();
@@ -223,9 +225,43 @@ describe('the built mascot (FINISH_SPEC AN3)', () => {
     expect(resolveAvatarConfig({ avatar_cast_id: 'o2', avatar_frame: 'gold' }, 'u1')).toEqual({ ...castPreset('o2'), frame: 'gold' });
     expect(resolveAvatarConfig({}, 'u9', '#2563eb')).toEqual(defaultAvatar('u9', '#2563eb'));
     expect(resolveAvatarConfig(null, 'u9')).toEqual(defaultAvatar('u9'));
-    // A photo shows by default; a saved mascot choice wins over it.
-    expect(resolveAvatarConfig({ avatar_url: 'https://x/p.jpg' }, 'u9').display).toBe('photo');
-    expect(resolveAvatarConfig({ avatar_url: 'https://x/p.jpg', avatar_config: { ...cfg, display: 'mascot' } }, 'u9').display).toBe('mascot');
+    // BJ5: an UPLOADED photo shows by default; an OAuth picture with no saved config never does.
+    expect(resolveAvatarConfig({ avatar_url: UPLOADED }, 'u9').display).toBe('photo');
+    expect(resolveAvatarConfig({ avatar_url: 'https://lh3.googleusercontent.com/a/x=s96-c' }, 'u9')).toEqual(defaultAvatar('u9'));
+    // A saved mascot choice wins over the photo.
+    expect(resolveAvatarConfig({ avatar_url: UPLOADED, avatar_config: { ...cfg, display: 'mascot' } }, 'u9').display).toBe('mascot');
     expect(resolveAvatarConfig({ avatar_config: [1, 2] }, 'u9')).toEqual(defaultAvatar('u9'));
+  });
+
+  it('BJ5 precedence: saved config (photo only on display=photo) → uploaded photo → cast → seeded', () => {
+    const oauth = 'https://lh3.googleusercontent.com/a/x=s96-c';
+    // Founder "BMT": uploaded photo + saved config display 'photo' → the photo.
+    expect(resolveRowAvatar({ avatar_url: UPLOADED, avatar_config: { ...cfg, display: 'photo' } }, 'BMT')).toMatchObject({ kind: 'photo', photoUrl: UPLOADED });
+    // A saved config with display 'mascot' hides the photo.
+    expect(resolveRowAvatar({ avatar_url: UPLOADED, avatar_config: { ...cfg, display: 'mascot' } }, 'BMT')).toMatchObject({ kind: 'config', photoUrl: null });
+    // "Ukrainian Cyclone": an OAuth picture, no saved config → the seeded mascot, never the picture.
+    const uc = resolveRowAvatar({ avatar_url: oauth }, 'Ukrainian Cyclone');
+    expect(uc).toEqual({ kind: 'seeded', photoUrl: null, config: defaultAvatar('ukrainian cyclone') });
+    // An OAuth picture + a saved config that asks for the photo → the photo (the player chose it).
+    expect(resolveRowAvatar({ avatar_url: oauth, avatar_config: { ...cfg, display: 'photo' } }, 'x').kind).toBe('photo');
+    // Uploaded photo + worn cast → the photo, ringed in the cast preset's look.
+    expect(resolveRowAvatar({ avatar_url: UPLOADED, avatar_cast_id: 'r' }, 'x')).toMatchObject({ kind: 'photo', photoUrl: UPLOADED, config: { ...castPreset('r'), display: 'photo' } });
+    // Worn cast, no photo → the cast hero; the frame column rings it.
+    expect(resolveRowAvatar({ avatar_cast_id: ' R ', avatar_frame: 'Gold' }, 'x')).toEqual({ kind: 'cast', photoUrl: null, config: { ...castPreset('r'), frame: 'gold' } });
+    // Nothing → seeded by the lowercased username, in the accent.
+    expect(resolveRowAvatar(null, '  Zed ', '#2563eb')).toEqual({ kind: 'seeded', photoUrl: null, config: defaultAvatar('zed', '#2563eb') });
+  });
+
+  it('BJ5: web maps rows onto core resolveAvatar exactly (shared avatar-resolve fixtures)', () => {
+    const file = path.resolve(__dirname, '../../ios/Tests/Fixtures/avatar-resolve-fixtures.json');
+    const { cases } = JSON.parse(fs.readFileSync(file, 'utf8')) as {
+      cases: Array<{ source: { username?: string | null; avatarUrl?: string | null; config?: unknown; castId?: unknown; frame?: unknown; accentHex?: string | null }; result: unknown }>;
+    };
+    expect(cases.length).toBeGreaterThan(5);
+    for (const c of cases) {
+      const s = c.source;
+      const got = resolveRowAvatar({ avatar_url: s.avatarUrl, avatar_config: s.config, avatar_cast_id: s.castId, avatar_frame: s.frame }, s.username, s.accentHex);
+      expect(got).toEqual(c.result);
+    }
   });
 });

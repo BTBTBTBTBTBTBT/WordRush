@@ -68,7 +68,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** One intro/header/result player identity. Null avatar → letter tile (ART_SPEC §20). */
-data class IntroPlayer(val username: String, val avatarUrl: String?, val level: Int?, val accentHex: String? = null, val avatarEmoji: String? = null)
+data class IntroPlayer(val username: String, val avatarUrl: String?, val level: Int?, val accentHex: String? = null, val avatarEmoji: String? = null, val userId: String? = null)
 
 private const val INTRO_DURATION_MS = 2500L
 
@@ -172,11 +172,11 @@ private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Lon
             // D3: a bot stands in as its character, "ready" to play (the ghost: your faded tile).
             Box(Modifier.size(96.dp), Alignment.Center) { VsBotPose(botId, "ready", 96.dp) }
         } else {
-            val avatarShape = if (player.avatarUrl.isNullOrBlank()) com.wordocious.app.ui.letterTileShape(72.dp) else CircleShape
+            val avatarShape = com.wordocious.app.ui.letterTileShape(72.dp) // AN6: photos and mascots are both rounded squares
             Box(Modifier.padding(vertical = 12.dp).shadow(6.dp, avatarShape, ambientColor = Color(0x334C1D95), spotColor = Color(0x334C1D95))) {
                 VsAvatar(
                     player.username, player.avatarUrl, size = 72.dp, borderWidth = 3.dp, borderColor = Color.White,
-                    emoji = player.avatarEmoji, accentHex = player.accentHex,
+                    emoji = player.avatarEmoji, accentHex = player.accentHex, userId = player.userId,
                 )
             }
         }
@@ -257,8 +257,8 @@ private fun H2HLine(text: String) {
 }
 
 /**
- * Player avatar: a Coil image in a circle when avatarUrl is set, else the
- * ART_SPEC §20 letter tile (rounded square; the border follows its shape).
+ * The VS player avatar: a bot's cast art for "bot:<id>", else THE shared resolver
+ * (BJ5 — photo / saved mascot / worn cast / seeded) as a rounded square with its border.
  */
 @Composable
 fun VsAvatar(
@@ -267,6 +267,8 @@ fun VsAvatar(
     emoji: String? = null, accentHex: String? = null,
     /** AA2: the Pro ring + crown (match rows carry no Pro flag: the signed-in Pro player's own avatar). */
     pro: Boolean = com.wordocious.app.ui.isOwnProAvatar(username),
+    /** BJ5: the player's user id when the payload has it (own match + the batched lookup). */
+    userId: String? = null,
 ) {
     // Bot art (VS overhaul §9): "bot:<id>" draws the picture in the circle.
     if (avatarUrl?.startsWith("bot:") == true) {
@@ -278,19 +280,13 @@ fun VsAvatar(
         }
         return
     }
-    // AH/AN: a worn character or saved mascot beats the photo; no photo → the mascot (AN5).
+    // FINISH_SPEC BJ5: the player AND human opponents through THE shared resolver (photo /
+    // saved mascot / worn cast / seeded); name-only payloads are batch-looked-up by [userId] / name.
     val tile = com.wordocious.app.ui.avatarTileShape(size)
-    if (com.wordocious.app.data.MascotAvatars.wearsMascot(username) || avatarUrl.isNullOrBlank()) {
-        Box(Modifier.size(size)) {
-            com.wordocious.app.ui.LetterTileAvatar(username.ifBlank { "?" }, size, accentHex = accentHex, emoji = emoji, pro = pro)
-            Box(Modifier.matchParentSize().border(borderWidth, borderColor, tile))
-        }
-        return
-    }
-    // AN6: the photo is a rounded square with the player's frame.
+    @Suppress("UNUSED_VARIABLE") val retiredEmoji = emoji
     Box(Modifier.size(size)) {
-        com.wordocious.app.ui.PhotoAvatar(
-            avatarUrl, size, frame = com.wordocious.app.data.MascotAvatars.photoFrame(username),
+        com.wordocious.app.ui.PlayerAvatar(
+            username.ifBlank { "?" }, size, userId = userId, avatarUrl = avatarUrl, accentHex = accentHex,
             pro = pro, contentDescription = username,
         )
         Box(Modifier.matchParentSize().border(borderWidth, borderColor, tile))

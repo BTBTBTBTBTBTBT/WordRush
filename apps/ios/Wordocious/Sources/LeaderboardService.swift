@@ -23,8 +23,53 @@ struct LeaderboardEntry: Identifiable, Codable {
         let username: String
         let avatarUrl: String?
         var avatarEmoji: String?   // §212: emoji avatar beats the initial on rows
+        // FINISH_SPEC BJ5: the full look on every row (AvatarDirectory / AvatarResolve) —
+        // the board used to carry only the photo, so other players' mascots, cast heroes
+        // and frames never reached the podium or the rows.
+        var avatarConfig: AvatarConfigRaw? = nil
+        var avatarCastId: String? = nil
+        var avatarFrame: String? = nil
+        var accentColor: String? = nil
+        /// False when the row came from a select without the avatar columns (fallback, or an
+        /// older on-disk cache) — it then never clears a known look.
+        var carriesAvatarColumns: Bool = false
         enum CodingKeys: String, CodingKey {
             case username; case avatarUrl = "avatar_url"; case avatarEmoji = "avatar_emoji"
+            case avatarConfig = "avatar_config"; case avatarCastId = "avatar_cast_id"
+            case avatarFrame = "avatar_frame"; case accentColor = "accent_color"
+        }
+
+        init(username: String, avatarUrl: String?, avatarEmoji: String? = nil, avatarConfig: AvatarConfigRaw? = nil,
+             avatarCastId: String? = nil, avatarFrame: String? = nil, accentColor: String? = nil) {
+            self.username = username; self.avatarUrl = avatarUrl; self.avatarEmoji = avatarEmoji
+            self.avatarConfig = avatarConfig; self.avatarCastId = avatarCastId; self.avatarFrame = avatarFrame
+            self.accentColor = accentColor; carriesAvatarColumns = true
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            username = try c.decode(String.self, forKey: .username)
+            avatarUrl = try? c.decodeIfPresent(String.self, forKey: .avatarUrl)
+            avatarEmoji = try? c.decodeIfPresent(String.self, forKey: .avatarEmoji)
+            avatarConfig = try? c.decodeIfPresent(AvatarConfigRaw.self, forKey: .avatarConfig)
+            avatarCastId = try? c.decodeIfPresent(String.self, forKey: .avatarCastId)
+            avatarFrame = try? c.decodeIfPresent(String.self, forKey: .avatarFrame)
+            accentColor = try? c.decodeIfPresent(String.self, forKey: .accentColor)
+            carriesAvatarColumns = c.contains(.avatarConfig) || c.contains(.avatarCastId) || c.contains(.avatarFrame)
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(username, forKey: .username)
+            try c.encodeIfPresent(avatarUrl, forKey: .avatarUrl)
+            try c.encodeIfPresent(avatarEmoji, forKey: .avatarEmoji)
+            try c.encodeIfPresent(accentColor, forKey: .accentColor)
+            if carriesAvatarColumns {
+                // Written as explicit nulls so a cached row still says "the columns were read".
+                try c.encode(avatarConfig, forKey: .avatarConfig)
+                try c.encode(avatarCastId, forKey: .avatarCastId)
+                try c.encode(avatarFrame, forKey: .avatarFrame)
+            }
         }
     }
 
@@ -104,6 +149,8 @@ final class LeaderboardCache {
             try? FileManager.default.removeItem(at: url); return
         }
         for (k, d) in file.boards {
+            // BJ5: a cold launch's cached rows resolve every player's look before the refetch.
+            AvatarDirectory.shared.record(d.entries + (d.rankWindow?.entries ?? []))
             store[k] = Snapshot(
                 entries: d.entries, playerCount: d.playerCount,
                 userRank: d.userRank.map { ($0.rank, $0.total) },
@@ -180,28 +227,41 @@ enum LeaderboardService {
                       userIds: [String]? = nil) async throws -> [LeaderboardEntry] {
         // FRIENDS (§207): `userIds` restricts the board to friends∪me; the
         // caller then dense-ranks 1..N (no holes — it's your list).
-        var query = AuthService.shared.client
-            .from("daily_results")
-            .select("""
-                user_id, composite_score, guess_count, time_seconds, boards_solved,
-                total_boards, hints_used, vs_wins, vs_losses, vs_games, completed,
-                profiles!inner(username, avatar_url, avatar_emoji)
-                """)
-            .eq("day", value: day ?? todayLocal())
-            .eq("game_mode", value: gameMode.rawValue)
-            .eq("play_type", value: playType)
-        if let userIds, !userIds.isEmpty {
-            query = query.in("user_id", values: userIds)
+        // FINISH_SPEC BJ5: every row carries the player's full look (avatar_config / cast /
+        // frame / accent). A select naming those columns that fails is retried once without them.
+        func run(_ profileCols: String) async throws -> [LeaderboardEntry] {
+            var query = AuthService.shared.client
+                .from("daily_results")
+                .select("""
+                    user_id, composite_score, guess_count, time_seconds, boards_solved,
+                    total_boards, hints_used, vs_wins, vs_losses, vs_games, completed,
+                    profiles!inner(\(profileCols))
+                    """)
+                .eq("day", value: day ?? todayLocal())
+                .eq("game_mode", value: gameMode.rawValue)
+                .eq("play_type", value: playType)
+            if let userIds, !userIds.isEmpty {
+                query = query.in("user_id", values: userIds)
+            }
+            return try await query
+                .order("composite_score", ascending: false)
+                // §217: time then created_at — the daily-medals cron's ordering, so
+                // tied (score, time) groups are contiguous and match the podium.
+                .order("time_seconds", ascending: true)
+                .order("created_at", ascending: true)
+                .range(from: offset, to: offset + limit - 1)
+                .execute()
+                .value
         }
-        let rows: [LeaderboardEntry] = try await query
-            .order("composite_score", ascending: false)
-            // §217: time then created_at — the daily-medals cron's ordering, so
-            // tied (score, time) groups are contiguous and match the podium.
-            .order("time_seconds", ascending: true)
-            .order("created_at", ascending: true)
-            .range(from: offset, to: offset + limit - 1)
-            .execute()
-            .value
+        let base = "username, avatar_url, avatar_emoji"
+        let rows: [LeaderboardEntry]
+        do {
+            rows = try await run(base + ", accent_color, avatar_config, avatar_cast_id, avatar_frame")
+        } catch {
+            if (error as? CancellationError) != nil { throw error }
+            rows = try await run(base)
+        }
+        await AvatarDirectory.shared.record(rows)
         // App Review 1.2: hide players the signed-in user has blocked.
         return rows.filter { !ModerationService.isBlocked($0.userId) }
     }

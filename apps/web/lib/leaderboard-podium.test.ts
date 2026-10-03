@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { PODIUM_STEP_HEIGHT, podiumColumn, podiumTone, rowBadge, solvedLine, splitPodium, type Ranked } from './leaderboard-podium';
+import fs from 'fs';
+import path from 'path';
+import { PODIUM_STEP_HEIGHT, podiumColumn, podiumSlots, podiumTone, rowBadge, solvedLine, splitPodium, type Ranked } from './leaderboard-podium';
 
 const rows = (...ranks: number[]): Ranked<string>[] => ranks.map((rank, i) => ({ entry: `p${i}`, rank }));
 
@@ -30,7 +32,7 @@ describe('splitPodium', () => {
   it('handles short and empty boards', () => {
     expect(splitPodium(rows(1)).podium).toHaveLength(1);
     expect(splitPodium(rows(1, 2)).rest).toEqual([]);
-    expect(splitPodium([])).toEqual({ podium: [], rest: [] });
+    expect(splitPodium([])).toEqual({ podium: [], rest: [], open: [] });
   });
 });
 
@@ -70,5 +72,42 @@ describe('solvedLine', () => {
   });
   it('says so when the puzzle was missed', () => {
     expect(solvedLine('guesses', 1, 6, 160, false)).toBe('Not solved · 6 guesses · 2m 40s');
+  });
+});
+
+describe('BJ4: the podium for N results (open spots)', () => {
+  const kinds = (ranks: number[]) => podiumSlots(ranks).map((s) => (s.kind === 'place' ? `p${s.index}@${s.column}` : `open${s.place}@${s.column}`));
+
+  it('one result: 1st in the middle, open spots for #2 (left) and #3 (right)', () => {
+    expect(kinds([1])).toEqual(['p0@2', 'open2@1', 'open3@3']);
+    const open = podiumSlots([1]).filter((s) => s.kind === 'open');
+    expect(open.map((s) => (s.kind === 'open' ? [s.title, s.line] : null))).toEqual([['Open spot', 'Claim #2'], ['Open spot', 'Claim #3']]);
+  });
+
+  it('two results: 1st and 2nd stand, #3 is open; a tie for 1st leaves #3 open too', () => {
+    expect(kinds([1, 2])).toEqual(['p0@2', 'p1@1', 'open3@3']);
+    expect(kinds([1, 1])).toEqual(['p0@2', 'p1@1', 'open3@3']);
+  });
+
+  it('three or more results: a full podium, no open spots; the rest list below', () => {
+    expect(kinds([1, 2, 3, 4, 5])).toEqual(['p0@2', 'p1@1', 'p2@3']);
+    expect(splitPodium(rows(1, 2, 3, 4)).open).toEqual([]);
+    expect(splitPodium(rows(1)).open).toEqual([2, 3]);
+  });
+
+  it('no results (or only hidden leaders) → no podium at all', () => {
+    expect(podiumSlots([])).toEqual([]);
+    expect(podiumSlots([4, 5])).toEqual([]);
+  });
+
+  it('matches the shared podium-layout fixtures (iOS / Android parity)', () => {
+    const file = path.resolve(__dirname, '../../ios/Tests/Fixtures/podium-layout-fixtures.json');
+    const { cases } = JSON.parse(fs.readFileSync(file, 'utf8')) as { cases: Array<{ ranks: number[]; layout: { filled: number; open: number[] } }> };
+    expect(cases.length).toBeGreaterThan(3);
+    for (const c of cases) {
+      const split = splitPodium(rows(...c.ranks));
+      expect({ filled: split.podium.length, open: split.open }).toEqual(c.layout);
+      expect(podiumSlots(c.ranks).filter((s) => s.kind === 'place')).toHaveLength(c.layout.filled);
+    }
   });
 });

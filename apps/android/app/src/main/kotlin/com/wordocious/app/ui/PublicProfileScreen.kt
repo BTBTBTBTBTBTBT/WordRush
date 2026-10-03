@@ -105,6 +105,14 @@ data class PublicProfile(
     @SerialName("is_private") val isPrivate: Boolean = false,
     // FINISH_SPEC AN3 (additive; select * — the column may not exist yet → null).
     @SerialName("avatar_config") val avatarConfig: kotlinx.serialization.json.JsonElement? = null,
+    // FINISH_SPEC BJ5 (select *): the worn cast hero + tier frame for the shared resolver.
+    @SerialName("avatar_cast_id") val avatarCastId: String? = null,
+    @SerialName("avatar_frame") val avatarFrame: String? = null,
+)
+
+/** BJ5: this profile's look for the shared avatar resolver. */
+private fun PublicProfile.avatarFields() = com.wordocious.app.data.AvatarFields(
+    id, username, avatarUrl, avatarConfig, avatarCastId, avatarFrame, accentColor, complete = true,
 )
 
 private suspend fun fetchPublicProfile(id: String): PublicProfile? = runCatching {
@@ -113,6 +121,8 @@ private suspend fun fetchPublicProfile(id: String): PublicProfile? = runCatching
         .decodeSingleOrNull<PublicProfile>()
         // AN3: their mascot shows on every avatar of them from now on.
         ?.also { runCatching { com.wordocious.app.data.MascotAvatars.recordRaw(it.username, it.avatarConfig) } }
+        // BJ5: and the shared avatar directory (every surface that shows them).
+        ?.also { p -> runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { com.wordocious.app.data.PlayerAvatars.record(p.avatarFields()) } } }
 }.getOrNull()
 
 // Web social-links.tsx PLATFORMS — label, brand color, URL builder.
@@ -429,16 +439,13 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // carry no Pro flag yet).
             val proAvatar = isOwnProAvatar(p.username)
             // AN6: photo and mascot are both rounded squares (the ring follows).
-            val photo = avatarUrl?.takeIf { !com.wordocious.app.data.MascotAvatars.wearsMascot(p.username) }
+            // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded; own = local look).
             TodayRingAvatar(completed = todayCount, square = true, avatarSize = 96.dp) {
-                if (photo != null) {
-                    PhotoAvatar(
-                        photo, 96.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(p.username),
-                        pro = proAvatar, contentDescription = "Avatar",
-                    )
-                } else {
-                    LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji, pro = proAvatar)
-                }
+                val f = p.avatarFields()
+                PlayerAvatar(
+                    p.username ?: "P", 96.dp, userId = f.userId, avatarUrl = avatarUrl, config = f.config,
+                    castId = f.castId, frame = f.frame, accentHex = f.accentHex, pro = proAvatar, contentDescription = "Avatar",
+                )
             }
             if (customAccent) {
                 Text(p.username ?: "Player", fontSize = 30.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))
@@ -840,13 +847,11 @@ private fun PrivateProfileTeaser(p: PublicProfile) {
         Modifier.fillMaxWidth().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (avatarUrl != null && !com.wordocious.app.data.MascotAvatars.wearsMascot(p.username)) {
-            // AN6: a rounded-square photo.
-            PhotoAvatar(avatarUrl, 96.dp, contentDescription = "Avatar")
-        } else {
-            // AN5: no photo → the player's mascot.
-            LetterTileAvatar(p.username ?: "P", 96.dp, accentHex = p.accentColor, emoji = p.avatarEmoji)
-        }
+        // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded).
+        PlayerAvatar(
+            p.username ?: "P", 96.dp, userId = p.id, avatarUrl = avatarUrl, config = p.avatarConfig,
+            castId = p.avatarCastId, frame = p.avatarFrame, accentHex = p.accentColor, contentDescription = "Avatar",
+        )
         Spacer(Modifier.height(12.dp))
         if (customAccent) {
             Text(p.username ?: "Player", fontSize = 30.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))

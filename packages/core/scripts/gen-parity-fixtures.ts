@@ -39,7 +39,8 @@ import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline
 import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens } from '../src/headline-tokens';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
-import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, nearestAvatarColor, validateAvatar } from '../src/avatar-config';
+import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
+import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
@@ -782,6 +783,70 @@ export function renderAvatarConfigFixtures() {
   return { colors: AVATAR_COLORS, backdrops: AVATAR_BACKDROPS, defaults, withPhoto, display, nearest, fallback: fb, validate, pro, presets };
 }
 
+// FINISH_SPEC BJ5: the one avatar precedence (photo if display = photo → saved
+// mascot → worn cast hero → seeded default; avatar_frame fills a frameless config).
+export function renderAvatarResolveFixtures() {
+  const uploaded = 'https://eniiqqsxpmuyrspvepiw.supabase.co/storage/v1/object/public/avatars/aadf643e/avatar.jpg?t=1';
+  const oauth = 'https://lh3.googleusercontent.com/a/ACg8ocK-letter=s96-c';
+  const saved = { v: 1, body: 'star', color: 'mint', eyes: 'happy', neck: 'scarf' };
+  const sources = [
+    { username: 'BMT', avatarUrl: uploaded, config: { ...saved, display: 'photo' } },
+    { username: 'BMT', avatarUrl: uploaded, config: { ...saved, display: 'mascot' } },
+    { username: 'BMT', avatarUrl: uploaded, config: saved },
+    { username: 'BMT', avatarUrl: uploaded },
+    { username: 'BMT', avatarUrl: uploaded, castId: 'r', frame: 'gold' },
+    { username: 'Ukrainian Cyclone', avatarUrl: oauth },
+    { username: 'Ukrainian Cyclone', avatarUrl: oauth, config: { display: 'photo' } },
+    { username: 'Ukrainian Cyclone', avatarUrl: oauth, config: saved },
+    { username: 'doug', avatarUrl: '   ', castId: 'O2', frame: 'Silver' },
+    { username: 'doug', castId: 'zz', frame: 'sparkly' },
+    { username: 'doug', config: { ...saved, frame: 'pro' }, frame: 'bronze' },
+    { username: 'doug', config: saved, frame: 'diamond' },
+    { username: 'doug', config: 'nope', accentHex: '#ec4899' },
+    { username: 'doug', config: {}, accentHex: '#22c55e', frame: 'platinum' },
+    { username: '', avatarUrl: null },
+    { username: 'Oliver_22', accentHex: '#f59e0b', config: [1, 2] },
+  ];
+  const cases = sources.map((source) => ({ source, result: resolveAvatar(source) }));
+  const custom = [uploaded, oauth, '', null, 'https://example.com/avatars/x.png'].map((url) => ({ url, custom: isCustomPhotoUrl(url) }));
+  return { cases, custom };
+}
+
+// FINISH_SPEC BJ4: the podium for N results (open spots from 1 result up).
+export function renderPodiumLayoutFixtures() {
+  const boards: number[][] = [[], [1], [1, 2], [1, 1], [1, 2, 3], [1, 2, 3, 4, 5], [1, 1, 3, 4], [1, 2, 2, 4], [1, 1, 1, 1], [1, 1, 1], [2], [4, 5]];
+  const cases = boards.map((ranks) => ({ ranks, layout: podiumLayout(ranks) }));
+  const open = [1, 2, 3].map((place) => ({ place, ...podiumOpenSpot(place) }));
+  return { cases, open };
+}
+
+// Round 2 fit system: the layout every renderer draws (rects per layer), the conflict swaps and the
+// shared pattern shapes. Positions are rounded to 4 decimals; platforms compare within 1e-3.
+export function renderAvatarLayoutFixtures() {
+  const base = castPreset('w');
+  const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
+  const configs = [
+    {}, { body: 'tall', head: 'cowboy', neck: 'wings' }, { body: 'wide', head: 'witch', neck: 'supercape', accColor: 'teal' },
+    { body: 'star', eyes: 'glasses', face: 'mask', head: 'santa' }, { body: 'drop', cheeks: 'bandage', nose: 'piggy', face: 'curlymustache' },
+    { body: 'mini', head: 'astronaut', neck: 'guitar', eyes: 'sunglasses' }, { body: 'hex', head: 'headphones', neck: 'bubbletea', mouth: 'braces' },
+    { body: 'cloud', head: 'halo', neck: 'fairywings', cheeks: 'hearts' }, { body: 'pear', head: 'mohawk', neck: 'medal', face: 'starglasses' },
+    { body: 'chunky', head: 'flowercrown', neck: 'backpack', eyes: 'anime', mouth: 'laugh' }, { body: 'bean', head: 'tophat', neck: 'scarf', face: 'monocle' },
+    { body: 'blob', head: 'bearears', neck: 'chain', face: 'facepaint', cheeks: 'blush' },
+  ];
+  const cases = configs.flatMap((o) => [false, true].map((small) => ({ config: mk(o), small, layout: avatarLayout(mk(o), { small }) })));
+  const picks = [
+    [{}, 'face', 'mask'], [{ eyes: 'glasses' }, 'face', 'roundglasses'], [{ face: 'heart-glasses' }, 'eyes', 'sunglasses'],
+    [{ face: 'mustache' }, 'mouth', 'kissy'], [{ cheeks: 'blush' }, 'face', 'facepaint'], [{ face: 'facepaint' }, 'cheeks', 'sparkle'],
+    [{ head: 'astronaut' }, 'face', 'eyepatch'], [{ eyes: 'beady' }, 'face', 'monocle'],
+  ].map(([o, field, id]) => {
+    const c = mk(o as Record<string, string>);
+    return { config: c, field, id, conflict: avatarPickConflict(c, field as string, id as string), result: applyAvatarPick(c, field as keyof typeof c & string, id as string) };
+  });
+  const patterns = ['solid', 'twotone', 'stripes', 'dots', 'gradient', 'sparkle', 'hearts', 'stars', 'zigzag', 'checkers', 'tiedye', 'leopard', 'galaxy', 'colorblock']
+    .map((p) => ({ pattern: p, shapes: avatarPatternShapes(p) }));
+  return { manifest: AVATAR_MANIFEST, cases, picks, patterns };
+}
+
 // FINISH_SPEC AR: the live-headline token splitter.
 export function renderHeadlineTokenFixtures() {
   const cases: Array<[string, string[]]> = [
@@ -861,6 +926,8 @@ const FILES: Array<[string, unknown]> = [
   ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
   ['headline-tokens-fixtures.json', renderHeadlineTokenFixtures()],
   ['achievement-rules-fixtures.json', renderAchievementRuleFixtures()],
+  ['avatar-resolve-fixtures.json', renderAvatarResolveFixtures()],
+  ['podium-layout-fixtures.json', renderPodiumLayoutFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

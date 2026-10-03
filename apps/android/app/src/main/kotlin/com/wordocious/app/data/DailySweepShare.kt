@@ -275,13 +275,9 @@ object ProfileShare {
 
     /** AN5: the player's mascot avatar, [d] px square at ([left], [top]) (offscreen MascotComposer). */
     private fun drawMascot(context: Context, c: android.graphics.Canvas, input: ProfileInput, left: Float, top: Float, d: Float) {
-        val own = AuthService.profile.value?.takeIf { it.username.equals(input.username, ignoreCase = true) }
-        val look = CastAvatars.lookFor(input.username)
-        val cast = AvatarCast.normalize(input.castId ?: look?.castId)
-        val recorded = if (input.castId == null) MascotAvatars.configFor(input.username) else null
-        val cfg = MascotConfigRules.forDisplay(recorded, cast, look?.frame, input.username, own?.accentColor)
-        val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(input.username), 200f, d.toInt(), dark = false)
-        com.wordocious.app.ui.MascotComposer.draw(context, c, left, top, d, key)
+        // BJ5: the player's RESOLVED avatar (custom photo from the cache, else their mascot) —
+        // it used to draw only a worn cast hero / recorded mascot.
+        ShareAvatars.draw(context, c, left, top, d, userId = null, username = input.username, castId = input.castId)
     }
 
     /** S1: the stats card, image only (no hosted link, no caption). */

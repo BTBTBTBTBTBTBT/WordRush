@@ -753,7 +753,7 @@ class VSMatchViewModel(
         if (raced != null) {
             // Race: the opponent is the CHALLENGER (their name + avatar, not a
             // bot label); the intro shows your real head-to-head with them.
-            opponentInfo = HeadToHeadService.VsProfile(username = raced.challenger.username, avatarUrl = raced.challenger.avatarUrl)
+            opponentInfo = HeadToHeadService.VsProfile(id = raced.challenger.id, username = raced.challenger.username, avatarUrl = raced.challenger.avatarUrl)
             AuthService.userId?.let { myId ->
                 viewModelScope.launch { headToHead = HeadToHeadService.fetchHeadToHead(myId, raced.challenger.id) }
             }

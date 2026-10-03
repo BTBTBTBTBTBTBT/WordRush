@@ -239,6 +239,18 @@ export function avatarCrowned(frame: AvatarFrame, pro?: boolean | null): boolean
 
 /** The ONE body letter: the name's first letter or digit, uppercased ("?" when none). */
 export function avatarInitial(name: string | null | undefined): string {
+/**
+ * FINISH_SPEC BJ6 photo rule (founder 10-03: a photo is a portrait, never a face on a body):
+ * the frame a PHOTO wears — the chosen frame (clamped like any avatar; the Pro gold frame for a
+ * Pro player who chose none), else, when the level is known, the level's tier frame (its
+ * art-frame-<tier>), else none.
+ */
+export function portraitFrame(chosen: AvatarFrame, { pro, level }: { pro?: boolean | null; level?: number | null } = {}): AvatarFrame {
+  const f = effectiveAvatarFrame(chosen, { pro, level });
+  if (f !== 'none') return f;
+  return level != null && Number.isFinite(level) ? (levelTier(level) as AvatarFrame) : 'none';
+}
+
   for (const ch of Array.from((name ?? '').trim())) {
     if (/[\p{L}\p{N}]/u.test(ch)) return ch.toLocaleUpperCase();
   }

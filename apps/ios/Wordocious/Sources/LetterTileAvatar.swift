@@ -1,12 +1,11 @@
 import SwiftUI
 import WordociousCore
 
-/// FINISH_SPEC §AN (was ART_SPEC §20's letter tile): a player with NO photo
-/// showing is their build-your-own MASCOT (MascotAvatar) with their initial as the
-/// white body letter — the saved config (MascotLooks), else a worn AH cast hero's
-/// preset, else the deterministic default in their accent color. The one view
-/// every no-photo avatar draws, so it cannot drift. (§AM2: never an emoji.)
-/// The name and parameters are kept so every call site compiles unchanged.
+/// FINISH_SPEC §AN / BJ5 (was ART_SPEC §20's letter tile): a player's avatar when the
+/// call site knows only their name — drawn by AvatarView through the one resolver
+/// (AvatarDirectory), so it shows the same photo / mascot / frame as their rows. Never a
+/// plain letter tile, never an emoji (§AM2). The name and parameters are kept so every
+/// call site compiles unchanged.
 struct LetterTileAvatar: View {
     let username: String
     var size: CGFloat = 40
@@ -27,9 +26,6 @@ struct LetterTileAvatar: View {
     /// FINISH_SPEC §AN: an explicit mascot; nil = the saved one (MascotLooks) when `lookup`.
     var config: AvatarConfig? = nil
 
-    @ObservedObject private var looks = CastAvatars.shared
-    @ObservedObject private var mascots = MascotLooks.shared
-
     /// Corner radius as a fraction of the tile's side (rings match it).
     static let cornerFraction: CGFloat = 0.24
 
@@ -41,16 +37,12 @@ struct LetterTileAvatar: View {
     }
 
     var body: some View {
-        let look = lookup && (castId == nil || frame == nil) ? looks.lookFor(username) : nil
-        let cast = AvatarCastRules.normalize(castId ?? look?.castId)
-        let ring = AvatarFrameRules.normalize(frame ?? look?.frame)
-        let saved = config ?? (lookup ? mascots.configFor(username) : nil)
-        let shown = MascotLooks.display(saved: saved, castId: cast, frame: ring, username: username,
-                                        accentHex: Self.defaultAccentHex(username: username, accentHex: accentHex))
-        return MascotAvatar(config: shown, initial: AvatarCatalog.initial(username), size: size)
-            .frame(width: size, height: size)
-            // §AN6: the Pro gold frame + crown follows the rounded square (a "pro" frame already wears it).
-            .proAvatarMark(pro && shown.frame != "pro", size: size, tile: true)
+        // FINISH_SPEC BJ5: name-only call sites resolve through the same one resolver as
+        // AvatarView (the directory knows the player's photo / mascot / frame; the own
+        // avatar comes from the live profile) — so a name-only avatar can never disagree
+        // with the same player's row.
+        AvatarView(url: nil, username: username, size: size, accentHex: accentHex, emoji: emoji, pro: pro,
+                   castId: castId, frame: frame, lookup: lookup, mascot: config)
     }
 }
 

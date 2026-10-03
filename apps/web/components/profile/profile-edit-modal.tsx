@@ -17,6 +17,7 @@ import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { MascotBuilder } from '@/components/avatar/mascot-builder';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { choiceForConfig, saveProfileWithAvatar, type ProfilesUpdater } from '@/lib/avatar-cast';
+import { afterOwnAvatarSave } from '@/lib/avatar-directory';
 import { avatarInitial } from '@/lib/avatar-render';
 import type { AvatarConfig } from '@wordle-duel/core';
 import {
@@ -101,6 +102,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
       setAvatarNote((res.error as { message?: string }).message ?? 'Could not save your avatar. Please try again.');
       return false;
     }
+    afterOwnAvatarSave(profile.id);
     await refreshProfile();
     return true;
   };
@@ -193,6 +195,8 @@ export function ProfileEditModal({ open, onClose }: Props) {
       return;
     }
 
+    // BJ5: boards cached with the old name / accent are dropped.
+    afterOwnAvatarSave(profile.id);
     await refreshProfile();
     setSaving(false);
     onClose();

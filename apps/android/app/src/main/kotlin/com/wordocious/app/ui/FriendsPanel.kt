@@ -324,7 +324,7 @@ fun FriendsScreen(
             val f = friends.firstOrNull { (nf.id != null && it.id.equals(nf.id, ignoreCase = true)) || it.username.equals(nf.person.name, ignoreCase = true) }
             val me = myProfile
             NewFriendsCard(
-                me = InvitePerson(me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, me?.accentColor),
+                me = InvitePerson(me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, me?.accentColor, userId = me?.id),
                 friend = nf.person,
                 onSeeFriends = { newFriend = null },
                 // The existing challenge path (a private Classic VS battle, pushed to the friend).
@@ -373,7 +373,7 @@ fun FriendsScreen(
             onSentDone = { requestSentTo = null },
             onNewFriend = { name, id ->
                 val f = friends.firstOrNull { (id != null && it.id.equals(id, ignoreCase = true)) || it.username.equals(name, ignoreCase = true) }
-                newFriend = f?.let { NewFriend.of(it) } ?: NewFriend(id, InvitePerson(name))
+                newFriend = f?.let { NewFriend.of(it) } ?: NewFriend(id, InvitePerson(name, userId = id))
             },
         ) { note = it }
         InvitePanel()
@@ -468,7 +468,7 @@ private fun InvitesSection(
         // the NEW FRIENDS card (T3).
         incoming.forEachIndexed { i, r ->
             InviteReceivedCard(
-                inviter = InvitePerson(r.username, r.avatarUrl, r.avatarEmoji),
+                inviter = InvitePerson(r.username, r.avatarUrl, r.avatarEmoji, userId = r.id),
                 onAccept = { scope.launch { if (FriendsService.accept(r.id)) onAccepted(r) } },
                 onDecline = { scope.launch { FriendsService.decline(r.id) } },
                 modifier = Modifier.fillMaxWidth(),
@@ -537,7 +537,7 @@ private fun InvitesSection(
 /** T3 the friend the NEW FRIENDS card celebrates ([id] null = known by name only). */
 private data class NewFriend(val id: String?, val person: InvitePerson) {
     companion object {
-        fun of(f: FriendsService.FriendProfile) = NewFriend(f.id, InvitePerson(f.username, f.avatarUrl, f.avatarEmoji))
+        fun of(f: FriendsService.FriendProfile) = NewFriend(f.id, InvitePerson(f.username, f.avatarUrl, f.avatarEmoji, userId = f.id))
     }
 }
 
@@ -829,7 +829,7 @@ private fun YourFriendsSection(
                             .stripedRow(idx, Color(0xFF7C3AED), first = false)
                             .padding(horizontal = 12.dp, vertical = 9.dp),
                     ) {
-                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 38.dp, online = on)
+                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 38.dp, online = on, userId = f.id)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
@@ -1142,7 +1142,7 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 18.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                FriendFace(target.username, target.avatarUrl, target.avatarEmoji, 34.dp, online = false)
+                FriendFace(target.username, target.avatarUrl, target.avatarEmoji, 34.dp, online = false, userId = target.id)
                 Text(
                     "NUDGE ${target.username.uppercase()}",
                     fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading, letterSpacing = 0.08.em,
@@ -1300,16 +1300,10 @@ private fun friendversary(f: FriendsService.FriendProfile): Int? {
 // Shared with TodaysRace.kt / ActivityFeed.kt (§289/§290) — one avatar idiom.
 @Composable
 internal fun FriendAvatar(f: FriendsService.FriendProfile, accentHex: String? = null) {
-    val url = f.avatarUrl?.takeIf { it.isNotBlank() }
-    if (url == null) {
-        // ART_SPEC §20: no photo → the letter tile.
-        LetterTileAvatar(f.username, 32.dp, accentHex = accentHex, emoji = f.avatarEmoji)
-        return
-    }
-    coil.compose.AsyncImage(
-        model = url, contentDescription = f.username,
-        modifier = Modifier.size(32.dp).clip(CircleShape),
-        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+    // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded), a rounded square.
+    PlayerAvatar(
+        f.username, 32.dp, userId = f.id, avatarUrl = f.avatarUrl, config = f.avatarConfig,
+        castId = f.avatarCastId, frame = f.avatarFrame, accentHex = accentHex, contentDescription = f.username,
     )
 }
 

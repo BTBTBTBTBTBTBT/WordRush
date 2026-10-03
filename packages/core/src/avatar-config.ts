@@ -222,3 +222,85 @@ export function castPreset(castId: string): AvatarConfig {
   const color = nearestAvatarColor(member?.color);
   return { v: 1, body: 'classic', color, pattern: 'solid', patternColor: color, eyes: 'beady', nose: 'none', mouth: 'smile', head: 'none', face: 'none', neck: 'none', frame: 'none', bg: 'auto', display: 'mascot' };
 }
+
+// ---------------------------------------------------------------------------
+// FINISH_SPEC BJ5 (founder 10-03: "I updated my profile pic and it isn't
+// populating"): ONE avatar resolver, the same precedence on every surface of
+// every platform (boards, podiums, Friends, VS, profiles, records, shares):
+//   1. the player's custom photo when display = 'photo';
+//   2. else their saved mascot (avatar_config);
+//   3. else the cast hero they wear (avatar_cast_id) as its preset;
+//   4. else the deterministic seeded mascot (defaultAvatar by username).
+// avatar_frame fills a config without its own frame. A photo is "custom" when
+// the player chose it: uploaded to our avatars bucket, or explicitly picked
+// (a saved config with display = 'photo'). An OAuth provider picture with no
+// saved choice (Google's default is a plain colored letter) is never drawn —
+// the player gets their mascot instead, so no avatar is ever a plain letter tile.
+
+/** The ten cast heroes a player can wear (avatar_cast_id), WORDOCIOUS order. */
+export const AVATAR_CAST_IDS = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'] as const;
+
+/** True for a photo the player uploaded (the public `avatars` storage bucket). */
+export function isCustomPhotoUrl(url: string | null | undefined): boolean {
+  return typeof url === 'string' && url.includes('/storage/v1/object/public/avatars/');
+}
+
+/** Everything a row may carry about a player's look (any field may be missing). */
+export interface AvatarSource {
+  username?: string | null;
+  avatarUrl?: string | null;
+  /** profiles.avatar_config, any shape (validated). */
+  config?: unknown;
+  /** profiles.avatar_cast_id. */
+  castId?: unknown;
+  /** profiles.avatar_frame. */
+  frame?: unknown;
+  /** profiles.accent_color → the seeded mascot's color. */
+  accentHex?: string | null;
+}
+
+export type AvatarSourceKind = 'photo' | 'config' | 'cast' | 'seeded';
+
+export interface ResolvedAvatar {
+  /** Which rung of the precedence won. */
+  kind: AvatarSourceKind;
+  /** The photo to draw (kind 'photo' only), else null. */
+  photoUrl: string | null;
+  /** The mascot (drawn when photoUrl is null; its frame rings the photo otherwise). */
+  config: AvatarConfig;
+}
+
+function knownFrame(v: unknown): AvatarFrame | null {
+  if (typeof v !== 'string') return null;
+  const k = v.trim().toLowerCase();
+  return k !== 'none' && (AVATAR_FRAMES as readonly string[]).includes(k) ? (k as AvatarFrame) : null;
+}
+
+function knownCast(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const k = v.trim().toLowerCase();
+  return (AVATAR_CAST_IDS as readonly string[]).includes(k) ? k : null;
+}
+
+/** BJ5: the one avatar precedence (see above). Pure; pinned by avatar-resolve-fixtures.json. */
+export function resolveAvatar(src: AvatarSource): ResolvedAvatar {
+  const seed = (src.username ?? '').trim().toLowerCase();
+  const accent = src.accentHex ?? null;
+  const url = typeof src.avatarUrl === 'string' && src.avatarUrl.trim().length > 0 ? src.avatarUrl.trim() : null;
+  const custom = url !== null && isCustomPhotoUrl(url);
+  const frame = knownFrame(src.frame);
+  const cast = knownCast(src.castId);
+  const framed = (c: AvatarConfig): AvatarConfig => (c.frame === 'none' && frame ? { ...c, frame } : c);
+  const raw = src.config;
+  if (raw && typeof raw === 'object' && !Array.isArray(raw) && Object.keys(raw as object).length > 0) {
+    const saved = framed(validateAvatar(raw, defaultAvatar(seed, accent, custom)));
+    if (url !== null && saved.display === 'photo') return { kind: 'photo', photoUrl: url, config: saved };
+    return { kind: 'config', photoUrl: null, config: saved };
+  }
+  if (custom) {
+    const base = cast ? castPreset(cast) : defaultAvatar(seed, accent, true);
+    return { kind: 'photo', photoUrl: url, config: framed({ ...base, display: 'photo' }) };
+  }
+  if (cast) return { kind: 'cast', photoUrl: null, config: framed(castPreset(cast)) };
+  return { kind: 'seeded', photoUrl: null, config: framed(defaultAvatar(seed, accent, false)) };
+}

@@ -358,9 +358,14 @@ struct YouVsThemCard: View {
             HStack(alignment: .center) {
                 // §A2: the record as soft numbers.
                 HStack(spacing: 4) {
+                    // BJ5: both players' own avatars (the one resolver) flank the record.
+                    if let me = AuthService.shared.profile {
+                        AvatarView(url: me.avatarUrl, username: me.username, size: 28, userId: me.id).padding(.trailing, 2)
+                    }
                     Text("\(h2h.myWins)").softNumber(26)
                     Text("–").font(Brand.font(20, .black)).foregroundStyle(FinishInk.secondary)
                     Text("\(h2h.theirWins)").softNumber(26, color: Theme.isDark ? Color(hex: 0xF9A8D4) : Color(hex: 0x9D174D))
+                    AvatarView(url: target.avatarUrl, username: target.username, size: 28, userId: target.id).padding(.leading, 2)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("You \(h2h.myWins), \(target.username) \(h2h.theirWins)")

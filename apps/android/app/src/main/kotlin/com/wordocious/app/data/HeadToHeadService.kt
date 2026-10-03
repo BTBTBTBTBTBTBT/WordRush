@@ -17,6 +17,8 @@ object HeadToHeadService {
     /** Minimal public profile bits needed by the VS intro/header/result UI. */
     @Serializable
     data class VsProfile(
+        /** BJ5: the player's id (own match + the avatar directory). */
+        val id: String? = null,
         val username: String? = null,
         @SerialName("avatar_url") val avatarUrl: String? = null,
         val level: Int? = null,
@@ -69,11 +71,13 @@ object HeadToHeadService {
 
     /** Opponent's public profile (username/avatar/level) — null if not found. */
     suspend fun fetchVsProfile(userId: String): VsProfile? = runCatching {
+        // BJ5: the opponent's whole look (config / cast / frame) lands in the avatar directory.
+        runCatching { PlayerAvatars.lookupIds(listOf(userId)) }
         client.postgrest["profiles"]
             .select(Columns.raw("username, avatar_url, level")) {
                 filter { eq("id", userId) }
                 limit(1)
             }
-            .decodeSingleOrNull<VsProfile>()
+            .decodeSingleOrNull<VsProfile>()?.copy(id = userId)
     }.getOrNull()
 }

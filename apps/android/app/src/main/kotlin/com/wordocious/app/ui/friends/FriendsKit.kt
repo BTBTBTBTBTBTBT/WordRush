@@ -233,6 +233,8 @@ fun FriendFace(
     accentHex: String? = null,
     /** The pulsing green ring around an online face (off = just the green dot, C4 banner). */
     presenceRing: Boolean = true,
+    /** BJ5: the friend's user id (the shared avatar resolver). */
+    userId: String? = null,
 ) {
     // AQ2: the pulse is read in the draw pass only (no per-frame recomposition of the row),
     // and holds still while the page scrolls or is hidden.
@@ -240,11 +242,10 @@ fun FriendFace(
         val t = rememberInfiniteTransition(label = "onNowPulse")
         t.animateFloat(0.25f, 0.7f, infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "a")
     } else androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(0.45f) }
-    // AH/AN: a worn character or saved mascot beats the photo.
-    val worn = com.wordocious.app.data.MascotAvatars.wearsMascot(name)
-    val url = avatarUrl?.takeIf { it.isNotBlank() && !worn }
-    // ART_SPEC §20: no photo → letter tile; its ring, glow and presence dot follow the tile's rounded square.
-    val shape = com.wordocious.app.ui.avatarShape(hasPhoto = url != null || worn, size = size)
+    // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded) — a rounded square
+    // either way (AN6), so the ring, glow and presence dot follow the tile shape.
+    val shape = com.wordocious.app.ui.avatarTileShape(size)
+    @Suppress("UNUSED_VARIABLE") val retiredEmoji = avatarEmoji
     Box(modifier.size(size), Alignment.Center) {
         val ringColor = if (online && presenceRing) FriendsPink.green else ring
         val glow = if (online && presenceRing) Modifier.drawBehind {
@@ -257,28 +258,13 @@ fun FriendFace(
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(this.size.minDimension * 0.22f + grow),
             )
         } else Modifier
-        if (url != null) {
-            Box(
-                Modifier.size(size).then(glow)
-                    .clip(shape)
-                    .background(Color(0xFFEDE9FE))
-                    .then(if (ringColor != null) Modifier.border(2.dp, ringColor, shape) else Modifier),
-                Alignment.Center,
-            ) {
-                // AN6: the photo is a rounded square (never a circle) with the player's frame.
-                val inner = size - if (ringColor != null) 4.dp else 0.dp
-                com.wordocious.app.ui.PhotoAvatar(
-                    url, inner,
-                    frame = com.wordocious.app.data.MascotAvatars.photoFrame(name),
-                    contentDescription = name,
-                )
-            }
-        } else {
-            Box(Modifier.size(size).then(glow)) {
-                // AA2: the signed-in Pro player's own face wears the gold ring + crown.
-                com.wordocious.app.ui.LetterTileAvatar(name, size, accentHex = accentHex, emoji = avatarEmoji, pro = com.wordocious.app.ui.isOwnProAvatar(name))
-                if (ringColor != null) Box(Modifier.matchParentSize().border(2.dp, ringColor, shape))
-            }
+        Box(Modifier.size(size).then(glow)) {
+            // AA2: the signed-in Pro player's own face wears the gold ring + crown.
+            com.wordocious.app.ui.PlayerAvatar(
+                name, size, userId = userId, avatarUrl = avatarUrl, accentHex = accentHex,
+                pro = com.wordocious.app.ui.isOwnProAvatar(name), contentDescription = name,
+            )
+            if (ringColor != null) Box(Modifier.matchParentSize().border(2.dp, ringColor, shape))
         }
         if (online) {
             // C4: the green dot (#22c55e) in a 2 dp white ring.

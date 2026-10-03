@@ -7,7 +7,7 @@
 // when PostgREST doesn't know the columns (keeps the choice locally, retries).
 
 import {
-  BOT_CAST, castPreset, defaultAvatar, levelTier, validateAvatar, type AvatarConfig, type LevelTier,
+  BOT_CAST, levelTier, resolveAvatar, validateAvatar, type AvatarConfig, type LevelTier, type ResolvedAvatar,
 } from '@wordle-duel/core';
 import { CAST, type MascotId } from './mascots';
 
@@ -230,20 +230,32 @@ export interface AvatarRowFields {
 }
 
 /**
- * The avatar a player wears: their saved avatar_config (validated against
- * their own default), else an AH cast pick as that character's preset (in the
- * picked tier frame; the hero replaced the photo), else the deterministic
- * default seeded by `seed` (the lowercased username — see avatarSeed) in their accent color —
- * showing their photo when the row has one (display 'photo').
+ * FINISH_SPEC BJ5: the ONE avatar precedence (core resolveAvatar, pinned by
+ * the avatar-resolve fixtures shared with iOS + Android): a saved
+ * avatar_config (photo only when it says display 'photo' and there is a
+ * photo), else an UPLOADED photo (our avatars bucket), else a worn cast hero,
+ * else the seeded default mascot. An OAuth picture with no saved config is
+ * never drawn (it reads as a plain letter tile). `username` seeds the default
+ * (core trims + lowercases it).
  */
+export function resolveRowAvatar(
+  row: AvatarRowFields | null | undefined,
+  username: string | null | undefined,
+  accentHex?: string | null,
+): ResolvedAvatar {
+  return resolveAvatar({
+    username: username ?? '',
+    avatarUrl: typeof row?.avatar_url === 'string' ? row.avatar_url : null,
+    config: row?.avatar_config,
+    castId: row?.avatar_cast_id,
+    frame: row?.avatar_frame,
+    accentHex: accentHex ?? null,
+  });
+}
+
+/** The mascot a row wears (resolveRowAvatar's config; its display says whether the photo shows). */
 export function resolveAvatarConfig(row: AvatarRowFields | null | undefined, seed: string, accentHex?: string | null): AvatarConfig {
-  const hasPhoto = typeof row?.avatar_url === 'string' && row.avatar_url.length > 0;
-  const fallback = defaultAvatar(seed, accentHex, hasPhoto);
-  const raw = row?.avatar_config;
-  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return validateAvatar(raw, fallback);
-  const legacy = readAvatarChoice(row);
-  if (legacy.castId) return { ...castPreset(legacy.castId), frame: legacy.frame ?? 'none' };
-  return legacy.frame ? { ...fallback, frame: legacy.frame } : fallback;
+  return resolveRowAvatar(row, seed, accentHex).config;
 }
 
 /** The legacy AH columns a saved mascot writes alongside avatar_config (no cast pick; a tier frame or null). */

@@ -6,7 +6,7 @@ import type { AvatarConfig, AvatarFrame } from '@wordle-duel/core';
 import { artSrc, badgeSrc } from '@/lib/art';
 import {
   AVATAR_FRAME_COLOR, AVATAR_PARTS, FRAME_WIDTH, avatarArtNames, avatarConfigKey, avatarArtPending, avatarCrowned, avatarRadiusPx,
-  cachedMascotSvg, clampAvatarSize, effectiveAvatarFrame, withAvatarId,
+  cachedMascotSvg, clampAvatarSize, effectiveAvatarFrame, portraitFrame, withAvatarId,
 } from '@/lib/avatar-render';
 import { darkenHex } from '@/lib/avatar-tile';
 import { frameArtName, isAvatarFrame } from '@/lib/avatar-cast';
@@ -204,15 +204,19 @@ function PhotoTile({ url, size, frame, onError }: { url: string; size: number; f
 
 function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, label, shadow, className = '', style }: MascotAvatarProps) {
   const s = clampAvatarSize(size);
-  const worn = effectiveAvatarFrame(frame ?? config.frame, { pro, level });
+  const [photoFailed, setPhotoFailed] = React.useState(false);
+  React.useEffect(() => { setPhotoFailed(false); }, [photoUrl]);
+  const showPhoto = !!photoUrl && !photoFailed;
+  // BJ6 photo rule: a photo is a framed portrait (chosen frame, else the level's tier frame);
+  // the mascot keeps its own frame. The photo is never drawn on a mascot body.
+  const worn = showPhoto
+    ? portraitFrame(frame ?? config.frame, { pro, level })
+    : effectiveAvatarFrame(frame ?? config.frame, { pro, level });
   const crowned = avatarCrowned(worn, pro);
   const art = useAvatarArt(config);
   const frameArt = useFrameArt(worn);
   const rawId = React.useId();
   const id = `m${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const [photoFailed, setPhotoFailed] = React.useState(false);
-  React.useEffect(() => { setPhotoFailed(false); }, [photoUrl]);
-  const showPhoto = !!photoUrl && !photoFailed;
 
   const markup = React.useMemo(
     () => (showPhoto ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc }), id)),

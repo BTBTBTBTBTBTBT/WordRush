@@ -232,6 +232,11 @@ struct VSBotsView: View {
             case .cleared:
                 Icon3D(.badgeCheck, size: 26)
             case .next:
+                // BJ5: you, squaring up to the next bot — your own avatar (photo / mascot / frame).
+                if let me = auth.profile?.username {
+                    AvatarView(url: nil, username: me, size: 26, userId: auth.profile?.id)
+                        .accessibilityHidden(true)
+                }
                 VSCandyTag(title: "Play", symbol: isPro ? "play.fill" : nil, variant: .purple, showLock: !isPro)
             case .locked:
                 Icon3D(.lock, size: 22)

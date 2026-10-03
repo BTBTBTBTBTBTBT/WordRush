@@ -269,3 +269,81 @@ object AvatarPresets {
         return castPreset(id)
     }
 }
+
+// ---------------------------------------------------------------------------
+// FINISH_SPEC BJ5 (founder 10-03: "I updated my profile pic and it isn't
+// populating"): ONE avatar resolver, the same precedence on every surface of
+// every platform (boards, podiums, Friends, VS, profiles, records, shares):
+//   1. the player's custom photo when display = "photo";
+//   2. else their saved mascot (avatar_config);
+//   3. else the cast hero they wear (avatar_cast_id) as its preset;
+//   4. else the deterministic seeded mascot (defaultAvatar by username).
+// avatar_frame fills a config without its own frame. A photo is "custom" when the
+// player chose it: uploaded to our avatars bucket, or explicitly picked (a saved
+// config with display = "photo"). An OAuth provider picture with no saved choice is
+// never drawn — the player gets their mascot, so no avatar is ever a plain letter tile.
+// 1:1 port of packages/core/src/avatar-config.ts; pinned by avatar-resolve-fixtures.json.
+
+/** The ten cast heroes a player can wear (avatar_cast_id), WORDOCIOUS order. */
+val AVATAR_CAST_IDS: List<String> = listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s")
+
+/** True for a photo the player uploaded (the public `avatars` storage bucket). */
+fun isCustomPhotoUrl(url: String?): Boolean = url != null && url.contains("/storage/v1/object/public/avatars/")
+
+/** Everything a row may carry about a player's look (any field may be missing). */
+data class AvatarSource(
+    val username: String? = null,
+    val avatarUrl: String? = null,
+    /** profiles.avatar_config, any shape (validated). */
+    val config: JsonElement? = null,
+    /** profiles.avatar_cast_id. */
+    val castId: String? = null,
+    /** profiles.avatar_frame. */
+    val frame: String? = null,
+    /** profiles.accent_color → the seeded mascot's color. */
+    val accentHex: String? = null,
+)
+
+/** Which rung of the precedence won. */
+enum class AvatarSourceKind(val id: String) { PHOTO("photo"), CONFIG("config"), CAST("cast"), SEEDED("seeded") }
+
+data class ResolvedAvatar(
+    val kind: AvatarSourceKind,
+    /** The photo to draw (kind PHOTO only), else null. */
+    val photoUrl: String?,
+    /** The mascot (drawn when photoUrl is null; its frame rings the photo otherwise). */
+    val config: AvatarConfig,
+)
+
+private fun knownAvatarFrame(v: String?): String? {
+    val k = v?.trim()?.lowercase() ?: return null
+    return if (k != "none" && k in AvatarOptions.FRAMES) k else null
+}
+
+private fun knownAvatarCast(v: String?): String? {
+    val k = v?.trim()?.lowercase() ?: return null
+    return if (k in AVATAR_CAST_IDS) k else null
+}
+
+/** BJ5: the one avatar precedence (see above). Pure; pinned by avatar-resolve-fixtures.json. */
+fun resolveAvatar(src: AvatarSource): ResolvedAvatar {
+    val seed = (src.username ?: "").trim().lowercase()
+    val accent = src.accentHex
+    val url = src.avatarUrl?.trim()?.takeIf { it.isNotEmpty() }
+    val custom = url != null && isCustomPhotoUrl(url)
+    val frame = knownAvatarFrame(src.frame)
+    val cast = knownAvatarCast(src.castId)
+    fun framed(c: AvatarConfig): AvatarConfig = if (c.frame == "none" && frame != null) c.copy(frame = frame) else c
+    val raw = src.config
+    if (raw is JsonObject && raw.isNotEmpty()) {
+        val saved = framed(validateAvatar(raw, defaultAvatar(seed, accent, custom)))
+        if (url != null && saved.display == AvatarOptions.DISPLAY_PHOTO) return ResolvedAvatar(AvatarSourceKind.PHOTO, url, saved)
+        return ResolvedAvatar(AvatarSourceKind.CONFIG, null, saved)
+    }
+    if (custom) {
+        val base = if (cast != null) castPreset(cast) else defaultAvatar(seed, accent, true)
+        return ResolvedAvatar(AvatarSourceKind.PHOTO, url, framed(base.copy(display = AvatarOptions.DISPLAY_PHOTO)))
+    }
+    if (cast != null) return ResolvedAvatar(AvatarSourceKind.CAST, null, framed(castPreset(cast)))
+    return ResolvedAvatar(AvatarSourceKind.SEEDED, null, framed(defaultAvatar(seed, accent, false)))
+}

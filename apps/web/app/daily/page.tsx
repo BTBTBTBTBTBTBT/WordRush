@@ -26,7 +26,7 @@ import {
 } from '@/components/leaderboard/board-rows';
 import { boardAvatarFor } from '@/components/leaderboard/board-rows';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
-import { compactRankLine, rowBadge, solvedLine, splitPodium } from '@/lib/leaderboard-podium';
+import { compactRankLine, rowBadge, solvedLine, splitPodium, type Ranked } from '@/lib/leaderboard-podium';
 import { alphaHex, cardBarStyle, softCard } from '@/lib/soft-surface';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
@@ -703,34 +703,52 @@ export default function DailyPage() {
   // Blocked users are already filtered by the sweep service; the RPC's rank
   // field is authoritative (handles ties), so use it directly.
   const sweepSplit = splitPodium(sweepLeaderboard.map((entry) => ({ entry, rank: entry.rank })));
-  const lbPodium: PodiumPlace[] = lbSplit.podium.map(({ entry, rank }) => {
+  // BJ4 / BJ5: every podium place carries the row's avatar fields (the one resolver).
+  const lbPodiumFor = (podium: Ranked<LeaderboardEntry>[], labels: Map<number, string>): PodiumPlace[] => podium.map(({ entry, rank }) => {
     const me = !!user && entry.user_id === user.id;
     return {
+      avatar: boardAvatarFor(entry),
       key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
       avatarUrl: entry.avatar_url, avatarEmoji: entry.avatar_emoji, isMe: me,
-      points: lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score),
+      points: labels.get(entry.composite_score) ?? formatScore(entry.composite_score),
       badge: <WinLossBadge won={entry.completed} size={15} />,
       nameSuffix: weekCrown(entry.user_id),
       extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{lbStatsText(entry)}</span>,
+      // Friends board: the taunt bell stays reachable for friends on the podium.
       action: friendsOnly && user && !me ? tauntButton(entry) : undefined,
     };
   });
-  const sweepPodium: PodiumPlace[] = sweepSplit.podium.map(({ entry, rank }) => ({
+  const sweepPodiumFor = (
+    podium: Ranked<SweepEntry>[],
+    { details, streaks, labels, day }: { details: Map<string, SweepDetails>; streaks: Map<string, number>; labels: Map<number, string>; day: string },
+  ): PodiumPlace[] => podium.map(({ entry, rank }) => ({
     avatar: boardAvatarFor(entry),
     key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
     avatarUrl: entry.avatar_url, isMe: !!user && entry.user_id === user.id,
-    points: sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score),
+    points: labels.get(entry.total_score) ?? formatScore(entry.total_score),
     extra: (
       <div className="flex flex-col items-center gap-1 max-w-full">
-        <SweepBadge flawless={entry.is_flawless} streak={flawlessStreaks.get(entry.user_id) ?? 0} />
+        <SweepBadge flawless={entry.is_flawless} streak={streaks.get(entry.user_id) ?? 0} />
         <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>
-          {sweepStatsText(entry, sweepDetails.get(entry.user_id), boardDay)}
+          {sweepStatsText(entry, details.get(entry.user_id), day)}
         </span>
-        <SweepModeDots details={sweepDetails.get(entry.user_id)} day={boardDay} />
+        <SweepModeDots details={details.get(entry.user_id)} day={day} />
       </div>
     ),
   }));
   const sweepRowOpts = { details: sweepDetails, streaks: flawlessStreaks, labels: sweepScoreLabels, day: boardDay };
+  const lbPodium = lbPodiumFor(lbSplit.podium, lbScoreLabels);
+  const sweepPodium = sweepPodiumFor(sweepSplit.podium, sweepRowOpts);
+  // BJ4: Yesterday's Winners stand on the podium too (settled boards; same split).
+  const ySweepOpts = { details: ySweepDetails, streaks: yFlawlessStreaks, labels: ySweepScoreLabels, day: yesterday };
+  const ySweepSplit = splitPodium(yesterdaySweep.filter((e) => !isBlocked(e.user_id)).map((entry) => ({ entry, rank: entry.rank })));
+  const yLbSplit = splitPodium(
+    yesterdayLeaderboard
+      .map((entry, index) => ({ entry, rank: competitionRank(yesterdayLeaderboard, index) }))
+      .filter(({ entry }) => !isBlocked(entry.user_id)),
+  );
+  const ySweepPodium = sweepPodiumFor(ySweepSplit.podium, ySweepOpts);
+  const yLbPodium = lbPodiumFor(yLbSplit.podium, yLbScoreLabels);
 
   return (
     <PageBackground tint="leaderboard" className="min-h-screen pb-20">
@@ -861,7 +879,7 @@ export default function DailyPage() {
             )
           ) : (
             <div>
-              <Podium places={lbPodium} />
+              <Podium places={lbPodium} accent={color} />
               {/* Ranks 4+ (the stripes start after the podium). */}
               {lbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (lbPodium.length > 0 ? 1 : 0)))}
               {/* Friends who haven't played this mode today. */}
@@ -965,11 +983,10 @@ export default function DailyPage() {
                 </div>
               ) : (
                 <div>
-                  {/* Full sweep rows (founder ask, Aug 17): the RPC already
-                      returns time + modes for any day — shown like today's board. */}
-                  {yesterdaySweep
-                    .filter((e) => !isBlocked(e.user_id))
-                    .map((entry, i) => renderSweepRow(entry, i, { details: ySweepDetails, streaks: yFlawlessStreaks, labels: ySweepScoreLabels, day: yesterday }))}
+                  {/* BJ4: yesterday's top sweepers on the podium, then full sweep rows
+                      (founder ask, Aug 17) — shown like today's board. */}
+                  <Podium places={ySweepPodium} label="Yesterday's top sweepers" />
+                  {ySweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i + (ySweepPodium.length > 0 ? 1 : 0), ySweepOpts))}
                 </div>
               )
             ) : yesterdayLeaderboard.length === 0 ? (
@@ -978,12 +995,10 @@ export default function DailyPage() {
               </div>
             ) : (
               <div>
-                {/* Full daily rows (founder ask, Aug 11): clickable profiles,
-                    guesses + time detail, W/L badge — same renderer as today. */}
-                {yesterdayLeaderboard
-                  .map((entry, index) => ({ entry, rank: competitionRank(yesterdayLeaderboard, index) }))
-                  .filter(({ entry }) => !isBlocked(entry.user_id))
-                  .map(({ entry, rank }, i) => renderLbRow(entry, rank, i, yLbScoreLabels))}
+                {/* BJ4: yesterday's top three on the podium, then full daily rows (founder
+                    ask, Aug 11): clickable profiles, guesses + time, W/L — same renderer as today. */}
+                <Podium places={yLbPodium} accent={color} label="Yesterday's top three" />
+                {yLbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (yLbPodium.length > 0 ? 1 : 0), yLbScoreLabels))}
               </div>
             )}
           </BoardCard>

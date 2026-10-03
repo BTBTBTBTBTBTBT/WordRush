@@ -162,9 +162,9 @@ fun HomeBannerView(
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
     CappedFontScale {
-        // The host (W, MASCOT_SPEC §1–§2) peeks 12 dp over the strip's top edge, so the
-        // card sits 12 dp down inside this box and the headline row keeps clear of it.
-        Box(Modifier.fillMaxWidth().padding(top = HOME_HOST_PEEK)) {
+        // BJ6 Plan A (founder 10-03): the host stands INSIDE the card, left of the headline
+        // column — nothing peeks above the card any more (no top headroom).
+        Box(Modifier.fillMaxWidth()) {
         Column(
             Modifier.fillMaxWidth()
                 .bannerGlow(double)
@@ -187,10 +187,20 @@ fun HomeBannerView(
             // Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious
             // row's glow. ART_SPEC §18.4: white at 72% (the fill under it is a smooth gradient, so
             // a backdrop blur would change nothing on Android; no platform backdrop blur here).
-            Column(
+            // BJ6 Plan A: [host 84 dp | the headline column centered in the rest], the share
+            // button overlaid at the strip's top-right corner.
+            Box(
                 // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
-                Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f))
-                    .padding(start = 12.dp, top = 4.dp, end = 12.dp, bottom = 4.dp),
+                Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f)),
+            ) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, end = 12.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+            // The celebration art carries the cast on a swept day: a W host then hides (keeps its slot).
+            HomeHost(HOME_HOST_BOX, wVisible = slots.hostShown)
+            Column(
+                Modifier.weight(1f),
                 // BH3: one headline line, 8 above the slim switch, the meta line 4 under it.
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -199,25 +209,12 @@ fun HomeBannerView(
                 // even"): the headline centered on the card's center line (the W host's
                 // clearance reserved on BOTH sides), then a centered wide DAILY | UNLIMITED
                 // switch, then the centered meta line.
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
-                    Box(Modifier.fillMaxWidth().padding(horizontal = BANNER_HOST_CLEAR)) {
+                    // BJ6: symmetric side room so the corner share button never crowds it.
+                    Box(Modifier.fillMaxWidth().padding(horizontal = HOME_HEADLINE_SIDE)) {
                         BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited, name = name)
                         BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited, name = name)
-                    }
-                    // Nothing to share before the first finished game (iOS/web parity). Z: the
-                    // slot stays (empty) in Unlimited and before the first game. BI21: it sits at
-                    // the strip's LEFT end, mirroring W at the right.
-                    val canShare = !unlimited && word.progress.played + puzzles.progress.played > 0
-                    Box(
-                        Modifier.size(BannerSlotSpec.SHARE.dp)
-                            .graphicsLayer { alpha = 1f - modeFade }
-                            .then(if (canShare) Modifier.squishClickable("Share today's progress", icon = true) { onShare(headline) } else Modifier),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (word.progress.played + puzzles.progress.played > 0) {
-                            Icon3D(Icon3DName.SHARE, 22.dp, contentDescription = null, modifier = Modifier)
-                        }
                     }
                 }
                 // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
@@ -247,6 +244,21 @@ fun HomeBannerView(
                     )
                 }
             }
+            }
+            // Nothing to share before the first finished game (iOS/web parity). Z: the slot stays
+            // (empty) in Unlimited and before the first game. BJ6: the strip's TOP-RIGHT corner.
+            val canShare = !unlimited && word.progress.played + puzzles.progress.played > 0
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 4.dp).size(BannerSlotSpec.SHARE.dp)
+                    .graphicsLayer { alpha = 1f - modeFade }
+                    .then(if (canShare) Modifier.squishClickable("Share today's progress", icon = true) { onShare(headline) } else Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (word.progress.played + puzzles.progress.played > 0) {
+                    Icon3D(Icon3DName.SHARE, 22.dp, contentDescription = null, modifier = Modifier)
+                }
+            }
+            }
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
             val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
             BannerGroupRow(word, wTier, "WORDOCIOUS", tileSlots, unlimited, completions, onOpen,
@@ -256,8 +268,6 @@ fun HomeBannerView(
                 Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 6.dp),
                 flameSlot = slots.puzzlesFlameSlot, dailyTier = dailyPTier)
         }
-        // The scene art carries the cast on a swept day (A7: no second W host beside it).
-        if (slots.hostShown) BannerHost(Mascots.home, Modifier.align(Alignment.TopEnd), size = HOME_HOST_SIZE, peek = HOME_HOST_PEEK)
         }
     }
 }

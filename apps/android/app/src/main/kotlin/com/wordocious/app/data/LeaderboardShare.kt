@@ -783,8 +783,8 @@ object LeaderboardShare {
             }
             // AN5: every podium player's mascot (the same composer as the on-screen avatars).
             run {
-                val look = CastAvatars.lookFor(s.name)
-                val cfg = MascotConfigRules.forDisplay(MascotAvatars.configFor(s.name), look?.castId, look?.frame, s.name, null)
+                // BJ5: the shared resolver's mascot (share podiums stay mascot-only, never a letter tile).
+                val cfg = ShareAvatars.mascotConfig(null, s.name)
                 val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(s.name), 200f, a.toInt(), dark = false)
                 com.wordocious.app.ui.MascotComposer.draw(context, c, av.left, av.top, a, key)
             }

@@ -402,6 +402,8 @@ export interface LeaderboardEntry {
   avatar_frame?: string | null;
   avatar_config?: Record<string, unknown> | null;
   is_pro?: boolean;
+  /** BJ5: profiles.accent_color (the seeded mascot's color). */
+  accent_color?: string | null;
 }
 
 /**
@@ -442,7 +444,7 @@ export async function fetchDailyLeaderboard(
         vs_losses,
         vs_games,
         completed,
-        profiles!inner(username, avatar_url, avatar_emoji, is_banned${extra})
+        profiles!inner(username, avatar_url, avatar_emoji, accent_color, is_banned${extra})
       `)
       .eq('day', targetDay)
       .eq('game_mode', gameMode)
@@ -478,6 +480,7 @@ export async function fetchDailyLeaderboard(
     vs_losses: row.vs_losses ?? 0,
     vs_games: row.vs_games,
     completed: row.completed,
+    accent_color: row.profiles?.accent_color ?? null,
     ...avatarFieldsOf(row.profiles),
   }));
 }
@@ -650,6 +653,8 @@ export interface SweepEntry {
   avatar_frame?: string | null;
   avatar_config?: Record<string, unknown> | null;
   is_pro?: boolean;
+  /** BJ5: profiles.accent_color (the seeded mascot's color). */
+  accent_color?: string | null;
 }
 
 export interface AllTimeSweepEntry {
@@ -665,6 +670,8 @@ export interface AllTimeSweepEntry {
   avatar_frame?: string | null;
   avatar_config?: Record<string, unknown> | null;
   is_pro?: boolean;
+  /** BJ5: profiles.accent_color (the seeded mascot's color). */
+  accent_color?: string | null;
 }
 
 /**
@@ -702,7 +709,7 @@ export async function fetchDailySweepLeaderboard(
       rank: Number(row.rank),
     }));
   // FINISH_SPEC AH/AN3: the RPC returns no avatar columns; one batched read adds them.
-  return mergeAvatarFields(supabase, rows, (r) => r.user_id);
+  return mergeAvatarFields(supabase, rows, (r) => r.user_id, { accent: true });
 }
 
 // §223: per-mode detail behind the Sweep board's dot strip + guess/hint
@@ -844,7 +851,7 @@ export async function fetchAllTimeSweepLeaderboard(
       rank: Number(row.rank),
     }));
   // FINISH_SPEC AH/AN3: the RPC returns no avatar columns; one batched read adds them.
-  return mergeAvatarFields(supabase, rows, (r) => r.user_id);
+  return mergeAvatarFields(supabase, rows, (r) => r.user_id, { accent: true });
 }
 
 /**
@@ -1036,6 +1043,8 @@ export interface AllTimeRecord {
   holder_avatar_url?: string | null;
   /** FINISH_SPEC AH/AN3 (additive): the holder's avatar choice + active Pro. */
   holder_avatar?: AvatarFields;
+  /** BJ5: the holder's accent_color (the seeded mascot's color). */
+  holder_accent?: string | null;
   record_value: number;
   achieved_at: string;
   /** §254: resolved at read time from the record-setting matches row — the
@@ -1123,7 +1132,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
     .from('all_time_records')
     .select(`
       *,
-      profiles!inner(username, avatar_url, avatar_emoji, is_banned${extra})
+      profiles!inner(username, avatar_url, avatar_emoji, accent_color, is_banned${extra})
     `)
     .order('record_type'));
 
@@ -1139,6 +1148,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
     holder_username: row.profiles?.username,
     holder_avatar_url: row.profiles?.avatar_url,
     holder_avatar: avatarFieldsOf(row.profiles),
+    holder_accent: row.profiles?.accent_color ?? null,
     record_value: row.record_value,
     achieved_at: row.achieved_at,
   }));

@@ -215,6 +215,21 @@ export function removePageCache(key: string, opts: CacheOpts = {}): void {
   writeIndex(s, readIndex(s).filter((r) => r.k !== fk));
 }
 
+/**
+ * FINISH_SPEC BJ5: forget every entry of one namespace for this user (e.g. the
+ * leaderboard boards after an avatar save, so a stale row can't flash).
+ */
+export function clearPageCacheNamespace(namespace: string, opts: CacheOpts = {}): void {
+  const user = opts.user !== undefined ? opts.user : cacheUser();
+  const p = fullKey(user, `${namespace}:`);
+  for (const k of Array.from(memory.keys())) if (k.startsWith(p)) memory.delete(k);
+  const s = storage();
+  if (!s) return;
+  const rows = readIndex(s);
+  for (const r of rows) if (r.k.startsWith(p)) { try { s.removeItem(r.k); } catch {} }
+  writeIndex(s, rows.filter((r) => !r.k.startsWith(p)));
+}
+
 /** Sign-out: forget everything cached for this user (a shared device never shows it). */
 export function clearPageCacheForUser(userId: string): void {
   const p = `${PREFIX}${userId}:`;
@@ -253,6 +268,10 @@ export function persistentMap<V>(namespace: string, dayOf?: (key: string) => str
     },
     delete(key: string): void {
       removePageCache(k(key));
+    },
+    /** Forget every key of this map (this user). */
+    clear(): void {
+      clearPageCacheNamespace(namespace);
     },
   };
 }

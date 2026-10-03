@@ -1172,11 +1172,15 @@ struct VSGameView: View {
             isWin: isWin, isDraw: isDraw,
             me: .init(name: AuthService.shared.profile?.username ?? "You",
                       score: r.playerScore, won: isWin,
-                      solved: vm.myStatus == .won, grids: grids(vm.myGuessLog)),
+                      solved: vm.myStatus == .won, grids: grids(vm.myGuessLog),
+                      username: AuthService.shared.profile?.username),
             opponent: .init(name: vm.opponentName,
                             score: r.opponentScore, won: !isWin && !isDraw,
                             solved: VSResultBoards.solved(log: r.opponentGuessLog ?? [], solutions: solutions),
-                            grids: grids(r.opponentGuessLog ?? [])),
+                            grids: grids(r.opponentGuessLog ?? []),
+                            // BJ5: the opponent's own avatar (a bot keeps its cast art).
+                            username: vm.opponentInfo?.botArt == nil ? (vm.opponentInfo?.username ?? vm.opponentName) : nil,
+                            botArt: vm.opponentInfo?.botArt),
             dateStr: {
                 let f = DateFormatter(); f.dateFormat = "MMM d, yyyy"; return f.string(from: Date())
             }())

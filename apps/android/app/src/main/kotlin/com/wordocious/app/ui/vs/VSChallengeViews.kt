@@ -220,6 +220,8 @@ fun ChallengeResultView(
     onClose: () -> Unit,
     onChallengeBack: () -> Unit,
     onShare: (headline: String) -> Unit,
+    /** BJ5: the challenger's user id (the shared avatar resolver). */
+    theirUserId: String? = null,
     /** A line under the window (§14: the result is saved to send later). */
     note: String? = null,
 ) {
@@ -296,7 +298,7 @@ fun ChallengeResultView(
                 label = "You and @$theirName: " + (h2h?.let { vsRivalLine(it.myWins, it.theirWins, null) } ?: "loading") +
                     if (xp != null && xp > 0) ". Plus $xp XP" else "",
                 onClick = null,
-                avatar = { VsAvatar(theirName, theirAvatarUrl, size = 38.dp, borderColor = Color.Transparent) },
+                avatar = { VsAvatar(theirName, theirAvatarUrl, size = 38.dp, borderColor = Color.Transparent, userId = theirUserId) },
                 pose = when (outcome) {
                     VsOutcome.WIN -> com.wordocious.app.ui.MascotId.O1 to "cheer"
                     VsOutcome.LOSS -> com.wordocious.app.ui.MascotId.O2 to "gasp"
@@ -360,7 +362,7 @@ fun RaceResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -> Un
     ChallengeResultView(
         mode = vm.mode, outcome = outcome, mine = mine, theirs = c.run,
         solutions = c.run.solutions.ifEmpty { mine.solutions },
-        theirName = c.challenger.username, theirAvatarUrl = c.challenger.avatarUrl,
+        theirName = c.challenger.username, theirAvatarUrl = c.challenger.avatarUrl, theirUserId = c.challenger.id,
         h2h = vm.headToHead, xp = vm.xpResult?.totalXp,
         onClose = onHome,
         onChallengeBack = { if (AuthService.isProActive) onChallengeBack(c.challenger.id) else onGoPro() },
@@ -480,7 +482,7 @@ fun ChallengeRouteScreen(
         val outcome = when (entry.outcome) { "win" -> VsOutcome.WIN; "loss" -> VsOutcome.LOSS; else -> VsOutcome.DRAW }
         ChallengeResultView(
             mode = mode, outcome = outcome, mine = mine, theirs = c.run, solutions = c.run.solutions,
-            theirName = c.challenger.username, theirAvatarUrl = c.challenger.avatarUrl,
+            theirName = c.challenger.username, theirAvatarUrl = c.challenger.avatarUrl, theirUserId = c.challenger.id,
             h2h = h2h, xp = null, onClose = onHome,
             onChallengeBack = { if (AuthService.isProActive) onChallengeBack(c.challenger.id) else onGoPro() },
             onShare = { _ ->
@@ -556,7 +558,7 @@ private fun RaceIntroCard(c: VsChallengeService.ChallengeView, mode: GameMode, o
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VsAvatar(name, c.challenger.avatarUrl, size = 40.dp, borderColor = Color.Transparent)
+                VsAvatar(name, c.challenger.avatarUrl, size = 40.dp, borderColor = Color.Transparent, userId = c.challenger.id)
                 Text(
                     "RACE @${name.uppercase()}’S RUN", fontSize = 16.sp, fontWeight = FontWeight.Black, color = VsTeal.deep,
                     modifier = Modifier.weight(1f).semantics { heading() },

@@ -277,12 +277,14 @@ fun VSGameScreen(
                     level = profile?.level,
                     accentHex = profile?.accentColor,
                     avatarEmoji = profile?.avatarEmoji,
+                    userId = profile?.id,
                 ),
                 opponent = vm.opponentUserId?.let {
                     IntroPlayer(
                         username = vm.opponentInfo?.displayName ?: "…",
                         avatarUrl = vm.opponentInfo?.avatarUrl,
                         level = vm.opponentInfo?.level,
+                        userId = vm.opponentInfo?.id,
                     )
                 },
                 headToHead = vm.headToHead,
@@ -611,6 +613,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                 stageName = oppStageName,
                 stageGradient = oppStageName?.let { gauntletStageGradient(it) } ?: emptyList(),
                 avatarName = vm.race?.challenger?.username ?: vm.opponentName,
+                avatarUserId = vm.opponentInfo?.id,
             )
         }
 
@@ -936,14 +939,15 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                                     label = "a",
                                 )
                                 // ART_SPEC §20: around a letter tile the ring is a concentric rounded square.
-                                val ringShape = if (vm.opponentInfo?.avatarUrl.isNullOrBlank()) RoundedCornerShape(48.dp * 0.24f + 2.dp) else CircleShape
+                                // AN6 / BJ5: photos and mascots are both rounded squares.
+                                val ringShape = RoundedCornerShape(48.dp * 0.24f + 2.dp)
                                 Box(
                                     Modifier.size(52.dp)
                                         .graphicsLayer { scaleX = s; scaleY = s; alpha = a }
                                         .border(2.dp, VS_ACCENT, ringShape),
                                 )
                             }
-                            VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 48.dp, borderColor = Color.Transparent)
+                            VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 48.dp, borderColor = Color.Transparent, userId = vm.opponentInfo?.id)
                         }
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1398,7 +1402,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                         label = "$headName wants a rematch",
                         onClick = null,
                         modifier = Modifier.widthIn(max = 520.dp),
-                        avatar = { VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 38.dp, borderColor = Color.Transparent) },
+                        avatar = { VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 38.dp, borderColor = Color.Transparent, userId = vm.opponentInfo?.id) },
                         pose = vsSpareCast(vsBotMascot(vm.cpuCastId), preferred = listOf(com.wordocious.app.ui.MascotId.S, com.wordocious.app.ui.MascotId.O1)) to "ready",
                     ) {
                         Text("${headName.uppercase()} WANTS A REMATCH", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsPurple.deep)
@@ -1448,9 +1452,13 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                                     context, "VS $modeLabel", com.wordocious.app.data.ShareImage.accentFor(vm.mode),
                                     isWin = isWin, isDraw = isDraw,
                                     me = com.wordocious.app.data.ShareImage.VsShareSide(
-                                        myName, r.playerScore, isWin, mySolved, logToGrids(myLog, solutions)),
+                                        myName, r.playerScore, isWin, mySolved, logToGrids(myLog, solutions),
+                                        userId = com.wordocious.app.data.AuthService.userId,
+                                        username = com.wordocious.app.data.AuthService.profile.value?.username),
                                     opp = com.wordocious.app.data.ShareImage.VsShareSide(
-                                        oppName, r.opponentScore, !isWin && !isDraw, oppSolved, logToGrids(oppLog, solutions)),
+                                        oppName, r.opponentScore, !isWin && !isDraw, oppSolved, logToGrids(oppLog, solutions),
+                                        userId = vm.opponentInfo?.id, avatarUrl = vm.opponentInfo?.avatarUrl,
+                                        username = vm.race?.challenger?.username ?: vm.opponentInfo?.username),
                                     modeKey = vm.mode.name,
                                 )
                                 com.wordocious.app.data.ShareImage.shareVs(context, bmp, payload)

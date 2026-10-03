@@ -1340,3 +1340,46 @@ badge, and count-ups that play once per session (never replayed mid-scroll). And
 every card — now every card is its own keyed lazy item, one draw-phase alpha for the fade, the swipe on the list. Web: no
 scroll listener writes React state and nothing scrolling uses backdrop-filter; the below-the-fold All-time groups use
 content-visibility: auto (.stats-cv) so the browser skips their layout and paint until they near the viewport.
+BJ4. Podium on every board with a finished stage backdrop (founder 10-03 on iOS 2.7 (241): "The podium only appears on classic
+right now" + "can we make the podium have a subtle background … it could use some finish"). ×3, every board — each game's
+daily board (Everyone AND Friends), the Sweep board (today + yesterday), Puzzles / More Games boards, Yesterday's Winners,
+Records' yesterday podium and the Friends weekly race — stands its leaders on the podium as soon as ONE result is in. Core
+podiumLayout(ranks) (packages/core/src/podium-layout.ts; iOS Core PodiumLayout, Android core PodiumLayout; pinned by
+podium-layout-fixtures.json): the leading rows ranked within the top three stand on it (ties share a metal + height), at
+most three; the free places are open spots — the step in its metal softly dimmed (40%), R asleep (art-scene-r-asleep) where
+the avatar goes, "Open spot" over "Claim #N" (podiumOpenSpot), not tappable, no grey circle, no outline. Rows continue below
+from the first row off the podium. Friends on the podium keep the taunt bell under their name. The stage: one soft vertical
+wash in the game's accent (gold for the Sweep / the race) fading to nothing at the step base, ONE static shape layer (12
+faint sunburst rays fanning out from behind #1 + 8 tiny confetti dots in the cast colors) and a soft elliptical floor shadow
+under the steps — drawn once, no animation, no blur, no border; tighter top padding so the podium fills its card.
+BJ5. One avatar resolver everywhere; edits show instantly (founder 10-03: "I updated my profile pic and it isn't populating on
+there"). Why: the iOS podium drew only a mascot (it ignored avatar_url and the Pro mark), while rows drew the photo — so BMT
+(an uploaded photo, display = photo, Pro) was a plain B mascot on the Classic podium and his real picture + crown in the
+Gauntlet rows; and the daily board query carried only (username, avatar_url, avatar_emoji), so other players' mascots / cast
+heroes / frames resolved only if a friends list or a profile visit had recorded them. Ukrainian Cyclone's avatar_url is a
+Google sign-in picture (Google's default is a plain colored letter — the orange "W"), so rows showed a letter tile and the
+podium a seeded U. Now ONE precedence, core resolveAvatar (packages/core avatar-config.ts; iOS Core AvatarResolve; Android
+core; pinned by avatar-resolve-fixtures.json): the custom photo when display = photo → else the saved mascot (avatar_config)
+→ else the worn cast hero (avatar_cast_id) → else the seeded mascot; avatar_frame fills a frameless config. A photo is
+"custom" when the player chose it (uploaded to our avatars bucket, or a saved config with display = photo); an OAuth
+picture with no saved choice is never drawn — no avatar is ever a plain letter tile. One resolver per platform routes every
+avatar (podiums, rows, Sweep, Yesterday's Winners, Records, Friends, profiles + head-to-head, share images, and every VS
+surface: lobby / matchmaking, the intro slam cards, the HUD + opponent label, results / rematch, race-my-run challenges sent
++ received, the friend challenge sheet, the bot ladder's own card, the VS share image). The signed-in player's own avatar
+always comes from their live profile (photo, mascot, cast, frame, accent, Pro) wherever it appears — cached boards and the
+BI19 optimistic own row included — so an edit shows at once with no refetch. Board queries return avatar_config /
+avatar_cast_id / avatar_frame / accent_color on every row (retried without them if the select fails); RPC payloads (Sweep,
+VS, challenges) and name-only avatars are filled by a batched profiles lookup. No SQL needed.
+BJ6. Your mascot hosts the Good Morning card (founder 10-03: "swap the purple main character on the main page next to 'warming
+up' for your own created guy so mine would be sitting there", then "the created mascot can be a little more prominent on the
+main menu bar instead of the little version floating in the corner" and "my profile pic is an actual version I created on
+chat, so I don't just want the profile pics tacked on to a body as if it were a face"). ×3, plan A: the host stands INSIDE
+the card on the LEFT of the headline strip at ~84 pt (≈2× the old corner host) on a soft floor shadow; the headline /
+DAILY | UNLIMITED switch / resets column centers in the remaining width and the share button moves to the strip's top-right
+corner (nothing peeks above the card). Who stands there: a signed-in player whose avatar shows their uploaded photo → the
+photo whole as a framed portrait (their chosen frame, else their level tier's art-frame-<tier>); else a player with a custom
+mascot (saved avatar_config or a worn cast hero) → the full mascot; else (guests, no custom look) → W in its wave pose. It
+waves once per launch when Home appears (a small hop + wag, transform only, none under calm motion), then rests. During the
+celebration art a W host steps aside. One component (iOS HomeHostMascot, Android HomeHost, web Home host) so option B (the
+player at the end of the WORDOCIOUS cast row with a small "YOU" tag) is a placement change. Photo rule everywhere (the BJ5
+resolver): photo → framed portrait, mascot → full mascot; no renderer composites a photo onto a mascot body (audited ×3).

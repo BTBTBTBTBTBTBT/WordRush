@@ -412,7 +412,10 @@ struct FriendsPanelView: View {
             .padding(.horizontal, 14)
             // The podium (shared with the Leaderboard): gold / silver / bronze steps;
             // §225: podium columns open profiles too.
-            PodiumView(entries: podium.map(podiumEntry), compact: true, lightOnly: true) { e in profileTarget = e.id }
+            // BJ4: the free places as open spots once anyone is on it (ties keep plain order).
+            PodiumView(entries: podium.map(podiumEntry), compact: true, lightOnly: true,
+                       open: podium.isEmpty ? [] : Array(stride(from: podium.count + 1, through: 3, by: 1)),
+                       stage: FriendsInk.goldAccent) { e in profileTarget = e.id }
                 .padding(.horizontal, 4)
             // §238: everyone past the medals, ranked, on soft striped rows.
             if standings.count > 3 {
@@ -457,7 +460,7 @@ struct FriendsPanelView: View {
         return PodiumEntry(id: e.id, name: e.username,
                            username: e.isMe ? (me?.username ?? e.username) : e.username,
                            accentHex: e.isMe ? me?.accentColor : nil, emoji: e.avatarEmoji,
-                           value: "\(e.pts.formatted()) pts")
+                           value: "\(e.pts.formatted()) pts", avatarUrl: e.avatarUrl)
     }
 
     /// The small game icon on the Friends cards: the glossy 3D pocket art when it

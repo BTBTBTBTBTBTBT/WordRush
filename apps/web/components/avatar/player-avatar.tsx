@@ -7,19 +7,24 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { avatarConfigKey, avatarInitial } from '@/lib/avatar-render';
 import {
-  readPendingChoice, resolveAvatarConfig, retryPendingChoice, type AvatarRowFields, type ProfilesUpdater,
+  readPendingChoice, resolveRowAvatar, retryPendingChoice, type AvatarRowFields, type ProfilesUpdater,
 } from '@/lib/avatar-cast';
+import { useAvatarLookup } from '@/lib/avatar-directory';
+import { homeHostChoice, type HomeHostChoice } from '@/lib/home-host';
 import { MascotAvatar } from './mascot-avatar';
 
 /**
- * FINISH_SPEC AN3 / AN5: the avatar for ANY player. Resolves what they wear —
- * their photo (rounded square), else their mascot: the row's avatar_config,
- * else an AH cast pick as that character's preset, else the deterministic
- * default (core defaultAvatar seeded by the lowercased username, in their
- * accent) — and hands it to the one renderer (MascotAvatar). The signed-in
- * player's own avatar always comes from their profile (+ a choice kept on
- * this device while the avatar columns are missing), wherever it appears.
- * Emoji avatars are retired (AM2): avatar_emoji is never drawn.
+ * FINISH_SPEC AN3 / AN5 / BJ5: the avatar for ANY player, through the ONE
+ * precedence (core resolveAvatar via lib/avatar-cast resolveRowAvatar): a
+ * saved avatar_config (its photo only when display = 'photo'), else an
+ * uploaded photo, else a worn cast hero, else the seeded default mascot in
+ * their accent — handed to the one renderer (MascotAvatar). An OAuth picture
+ * with no saved config is never drawn. The signed-in player's own avatar
+ * always comes from their profile (+ a choice kept on this device while the
+ * avatar columns are missing), wherever it appears. A row drawn without its
+ * avatar fields (config / cast / frame all undefined) is filled from the
+ * avatar directory (lib/avatar-lookup.ts: by id, or by name when the caller
+ * says the name is a human player's). Emoji avatars are retired (AM2).
  */
 export interface PlayerAvatarInput {
   /** Username: the initial, the own-avatar match and the default mascot's seed (lowercased). */
@@ -39,6 +44,8 @@ export interface PlayerAvatarInput {
   level?: number | null;
   /** The row's Pro flag (is_pro) when known. */
   pro?: boolean | null;
+  /** BJ5: with no user id, look the player up by `name` (human players only — never a bot's name). */
+  lookupByName?: boolean;
 }
 
 export interface PlayerAvatarLook {
@@ -83,28 +90,84 @@ export function usePlayerAvatar(input: PlayerAvatarInput): PlayerAvatarLook {
       .then((r) => { if (r === 'saved') void refresh?.(); }, () => {});
   }, [ownId, hasPending, refresh]);
 
-  const resolved: AvatarConfig = own
-    ? (pending?.config ?? resolveAvatarConfig(
-      pending ? { avatar_url: profile!.avatar_url, avatar_config: profile!.avatar_config, avatar_cast_id: pending.castId, avatar_frame: pending.frame } : (profile as AvatarRowFields),
-      avatarSeed(String(profile!.username ?? '')),
+  // BJ5: a row that carries none of the avatar fields asks the directory (never for the own avatar).
+  const carried = input.config !== undefined || input.castId !== undefined || input.frame !== undefined;
+  const found = useAvatarLookup(!own && !carried, input.userId, input.name, !!input.lookupByName);
+
+  const ownName = own ? String(profile!.username ?? '') : '';
+  const resolved = own
+    ? resolveRowAvatar(
+      {
+        avatar_url: profile!.avatar_url,
+        avatar_config: pending?.config ?? profile!.avatar_config,
+        avatar_cast_id: pending ? pending.castId : profile!.avatar_cast_id,
+        avatar_frame: pending ? pending.frame : profile!.avatar_frame,
+      } as AvatarRowFields,
+      ownName,
       (profile!.accent_color as string | null | undefined) ?? null,
-    ))
-    : resolveAvatarConfig({ avatar_url: input.url, avatar_config: input.config, avatar_cast_id: input.castId, avatar_frame: input.frame }, avatarSeed(input.name), input.accent);
+    )
+    : found
+      ? resolveRowAvatar(found, found.username ?? input.name, found.accent_color ?? input.accent)
+      : resolveRowAvatar(
+        { avatar_url: input.url, avatar_config: input.config, avatar_cast_id: input.castId, avatar_frame: input.frame },
+        input.name,
+        input.accent,
+      );
   // Keep the object stable across renders (MascotAvatar is memoized).
-  const key = avatarConfigKey(resolved);
+  const key = avatarConfigKey(resolved.config);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const config = React.useMemo(() => resolved, [key]);
+  const config = React.useMemo(() => resolved.config, [key]);
 
   const ownLevel = own ? Number(profile!.level) : NaN;
-  // The own photo comes from the profile (fresher than a cached row); a photo shows only when display = 'photo'.
-  const photo = own ? ((profile!.avatar_url as string | null | undefined) ?? null) : input.url ?? null;
   return {
     config,
-    initial: avatarInitial(input.name ?? (own ? String(profile!.username ?? '') : '')),
-    url: config.display === 'photo' ? photo : null,
-    pro: own ? !!auth?.isProActive : input.pro ?? null,
-    level: own && Number.isFinite(ownLevel) ? ownLevel : input.level ?? null,
+    initial: avatarInitial(input.name ?? ownName),
+    url: resolved.photoUrl,
+    pro: own ? !!auth?.isProActive : input.pro ?? (found ? found.is_pro : null),
+    level: own && Number.isFinite(ownLevel) ? ownLevel : input.level ?? found?.level ?? null,
     own,
+  };
+}
+
+/**
+ * FINISH_SPEC BJ6: who hosts the Home card (lib/home-host.ts homeHostChoice)
+ * for the signed-in player — their photo as a framed portrait, else their
+ * saved / cast mascot, else W (guests and the seeded default). With their
+ * initial, level (the portrait's tier frame) and Pro state.
+ */
+export function useHomeHost(): { choice: HomeHostChoice; initial: string; level: number | null; pro: boolean | null } {
+  let auth: ReturnType<typeof useAuth> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    auth = useAuth();
+  } catch {
+    // No AuthProvider above.
+  }
+  const profile = (auth?.user ? auth.profile ?? null : null) as OwnProfile | null;
+  const pending = profile ? readPendingChoice(profile.id) : null;
+  const resolved = profile
+    ? resolveRowAvatar(
+      {
+        avatar_url: profile.avatar_url,
+        avatar_config: pending?.config ?? profile.avatar_config,
+        avatar_cast_id: pending ? pending.castId : profile.avatar_cast_id,
+        avatar_frame: pending ? pending.frame : profile.avatar_frame,
+      } as AvatarRowFields,
+      String(profile.username ?? ''),
+      (profile.accent_color as string | null | undefined) ?? null,
+    )
+    : null;
+  const next = homeHostChoice(resolved);
+  const key = next.kind === 'w' ? 'w' : `${next.kind}|${next.kind === 'photo' ? next.photoUrl : ''}|${avatarConfigKey(next.config)}`;
+  // Keep the object stable across renders (MascotAvatar is memoized).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const choice = React.useMemo(() => next, [key]);
+  const level = profile ? Number(profile.level) : NaN;
+  return {
+    choice,
+    initial: avatarInitial(String(profile?.username ?? '')),
+    level: Number.isFinite(level) ? level : null,
+    pro: profile ? !!auth?.isProActive : null,
   };
 }
 

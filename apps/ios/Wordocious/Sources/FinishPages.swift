@@ -417,25 +417,42 @@ struct WLBadgeSlot: View {
 
 /// One podium place.
 struct PodiumEntry: Identifiable {
+    /// The player's user id (taps open their profile; the own-avatar match, BJ5).
     let id: String
     let name: String
-    /// The letter tile's username (initials + color).
+    /// The player's username (their avatar's seed + directory key).
     let username: String
     var accentHex: String? = nil
     var emoji: String? = nil
     /// The points / score text under the name ("2,005").
     let value: String
+    /// FINISH_SPEC BJ5: the row's photo — the podium draws the SAME avatar as the rows
+    /// (it used to draw a mascot only, so a photo player looked like a stranger here).
+    var avatarUrl: String? = nil
+    /// The Pro mark, where the data says so (the own avatar wears it on its own).
+    var pro: Bool = false
+    /// The competition rank (ties share a metal + height); nil = the place index.
+    var rank: Int? = nil
+    /// The Friends board's taunt bell under the name (BJ4: friends stand on the podium too).
+    var bell: (() -> Void)? = nil
 }
 
-/// FINISH_SPEC §C2 / §C4: the top-three podium — letter-tile avatars on gold /
-/// silver / bronze steps (2 · 1 · 3), a 3D crown on first place, soft numbers.
-/// `compact` is the Friends race size. Rows after the top three list below it.
+/// FINISH_SPEC §C2 / §C4 / BJ4: the top-three podium — the players' avatars on gold /
+/// silver / bronze steps (2 · 1 · 3), a 3D crown on first place, soft numbers. From ONE
+/// result up (core PodiumLayout): the places still free stand as `open` spots (a softly
+/// dimmed step with R asleep, "Open spot" · "Claim #N"). `stage` = the board's accent:
+/// the finished stage backdrop behind it (BJ4). `compact` is the Friends race size.
+/// Rows after the podium list below it.
 struct PodiumView: View {
     /// First, second, third (fewer is fine).
     let entries: [PodiumEntry]
     var compact: Bool = false
     /// Light-only pages (Friends): keep the light inks in dark mode.
     var lightOnly: Bool = false
+    /// BJ4: places drawn as open spots (from PodiumLayout.layout(ranks).open).
+    var open: [Int] = []
+    /// BJ4: the stage backdrop in the game's accent (nil = none).
+    var stage: Color? = nil
     var onTap: ((PodiumEntry) -> Void)? = nil
 
     private static let gold = [Color(hex: 0xFFD66B), Color(hex: 0xF5A524)]
@@ -448,21 +465,28 @@ struct PodiumView: View {
             column(place: 1)
             column(place: 3)
         }
-        .padding(.horizontal, 10).padding(.top, 12)
+        .padding(.horizontal, 10).padding(.top, stage == nil ? 12 : 8)
+        .background { if let stage { PodiumStage(accent: stage) } }
+    }
+
+    private func colors(_ tone: Int) -> [Color] { tone <= 1 ? Self.gold : (tone == 2 ? Self.silver : Self.bronze) }
+    private func stepHeight(_ tone: Int) -> CGFloat {
+        let t = min(max(tone, 1), 3) - 1
+        return compact ? [62, 46, 34][t] : [74, 54, 40][t]
     }
 
     @ViewBuilder private func column(place: Int) -> some View {
         if place - 1 < entries.count {
             let e = entries[place - 1]
-            let first = place == 1
+            let tone = min(e.rank ?? place, 3)
+            let first = tone == 1
             let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 54 : 44)
-            let step: CGFloat = compact ? [62, 46, 34][place - 1] : [74, 54, 40][place - 1]
-            let colors = place == 1 ? Self.gold : (place == 2 ? Self.silver : Self.bronze)
             let content = VStack(spacing: 4) {
-                if first {
+                if place == 1 {
                     Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
                 }
-                LetterTileAvatar(username: e.username, size: avatar, accentHex: e.accentHex, emoji: e.emoji)
+                AvatarView(url: e.avatarUrl, username: e.username, size: avatar, accentHex: e.accentHex, emoji: e.emoji,
+                           pro: e.pro, userId: e.id)
                 Text(e.name)
                     .font(Brand.font(compact ? 12 : 13, .black))
                     .foregroundStyle(lightOnly ? FinishInk.title : FinishInk.heading)
@@ -471,27 +495,120 @@ struct PodiumView: View {
                     .font(Brand.font(compact ? 11 : 12, .heavy)).monospacedDigit()
                     .foregroundStyle(lightOnly ? FinishInk.muted : FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                ZStack {
-                    UnevenRoundedRect(top: 12)
-                        .fill(LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom))
-                    Text("\(place)")
-                        .font(Brand.font(compact ? 20 : 22, .black))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 2)
+            }
+            VStack(spacing: 4) {
+                Group {
+                    if let onTap {
+                        Button { onTap(e) } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
+                    } else {
+                        content
+                    }
                 }
-                .frame(height: step)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Place \(e.rank ?? place): \(e.name), \(e.value)")
+                if let bell = e.bell {
+                    Button(action: bell) {
+                        Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.squishIcon)
+                    .accessibilityLabel("Taunt \(e.name)")
+                }
+                step(tone: tone, label: "\(e.rank ?? place)")
             }
             .frame(maxWidth: .infinity)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Place \(place): \(e.name), \(e.value)")
-            if let onTap {
-                Button { onTap(e) } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
-            } else {
-                content
-            }
+        } else if open.contains(place) {
+            openSpot(place: place)
         } else {
             Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
         }
+    }
+
+    private func step(tone: Int, label: String) -> some View {
+        ZStack {
+            UnevenRoundedRect(top: 12)
+                .fill(LinearGradient(colors: colors(tone), startPoint: .top, endPoint: .bottom))
+            Text(label)
+                .font(Brand.font(compact ? 20 : 22, .black))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 2)
+        }
+        .frame(height: stepHeight(tone))
+    }
+
+    /// BJ4: an open place — R asleep where the avatar would be, quiet lines, the step
+    /// in its metal softly dimmed. Intentional, never a grey circle or an outline.
+    private func openSpot(place: Int) -> some View {
+        let copy = PodiumLayout.openSpot(place)
+        let h: CGFloat = compact ? 38 : 44
+        return VStack(spacing: 4) {
+            ArtThumbs.image("art-scene-r-asleep", points: h * 1.3)
+                .resizable().interpolation(.high).scaledToFit()
+                .frame(height: h)
+                .opacity(0.85)
+            Text(copy.title)
+                .font(Brand.font(compact ? 12 : 13, .black))
+                .foregroundStyle(lightOnly ? FinishInk.muted : FinishInk.secondary)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Text(copy.line)
+                .font(Brand.font(compact ? 11 : 12, .heavy))
+                .foregroundStyle((lightOnly ? FinishInk.muted : FinishInk.secondary).opacity(0.8))
+                .lineLimit(1).minimumScaleFactor(0.7)
+            step(tone: place, label: "\(place)").opacity(0.4)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Place \(place) is open")
+    }
+}
+
+/// FINISH_SPEC BJ4 (founder 10-03: "a subtle background … it could use some finish"):
+/// the podium's stage — one soft vertical wash in the board's accent, ONE static shape
+/// layer (faint sunburst rays fanning out from behind #1 plus a few tiny confetti dots),
+/// and a soft floor shadow under the steps. Static (drawn once), no blur, no outline.
+struct PodiumStage: View {
+    let accent: Color
+
+    private static let confetti: [(x: CGFloat, y: CGFloat, r: CGFloat, hex: UInt)] = [
+        (0.07, 0.20, 2.0, 0xEC4899), (0.17, 0.48, 1.6, 0x22C55E), (0.29, 0.12, 1.8, 0x2563EB),
+        (0.71, 0.10, 2.0, 0xF5A524), (0.82, 0.42, 1.6, 0x7C3AED), (0.93, 0.18, 1.9, 0xEC4899),
+        (0.40, 0.30, 1.4, 0x22C55E), (0.61, 0.34, 1.4, 0x2563EB),
+    ]
+
+    var body: some View {
+        let dark = Theme.isDark
+        ZStack(alignment: .bottom) {
+            LinearGradient(colors: [accent.opacity(dark ? 0.12 : 0.16), accent.opacity(0)],
+                           startPoint: .top, endPoint: .bottom)
+            Canvas { ctx, size in
+                // Sunburst: 12 thin wedges from just above the #1 column, fading outward.
+                let c = CGPoint(x: size.width / 2, y: size.height * 0.30)
+                let reach = max(size.width, size.height) * 0.75
+                var rays = Path()
+                for i in 0..<12 {
+                    let a = Double(i) / 12 * 2 * .pi
+                    let w = 0.09
+                    rays.move(to: c)
+                    rays.addLine(to: CGPoint(x: c.x + reach * cos(a - w), y: c.y + reach * sin(a - w)))
+                    rays.addLine(to: CGPoint(x: c.x + reach * cos(a + w), y: c.y + reach * sin(a + w)))
+                    rays.closeSubpath()
+                }
+                ctx.fill(rays, with: .radialGradient(
+                    Gradient(colors: [(dark ? Color.white : accent).opacity(dark ? 0.07 : 0.11), .clear]),
+                    center: c, startRadius: 8, endRadius: reach * 0.8))
+                for d in Self.confetti {
+                    let r = d.r
+                    ctx.fill(Path(ellipseIn: CGRect(x: d.x * size.width - r, y: d.y * size.height - r, width: r * 2, height: r * 2)),
+                             with: .color(Color(hex: d.hex).opacity(dark ? 0.35 : 0.5)))
+                }
+                // The floor shadow under the steps.
+                let floor = CGRect(x: size.width * 0.06, y: size.height - 9, width: size.width * 0.88, height: 14)
+                ctx.fill(Path(ellipseIn: floor), with: .radialGradient(
+                    Gradient(colors: [Color.black.opacity(dark ? 0.22 : 0.10), .clear]),
+                    center: CGPoint(x: floor.midX, y: floor.midY), startRadius: 0, endRadius: floor.width / 2))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

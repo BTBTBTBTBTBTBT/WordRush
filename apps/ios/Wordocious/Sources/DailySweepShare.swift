@@ -337,11 +337,11 @@ struct ProfileShareCardView: View {
                 if ArtAsset.exists(titleArt), let a = ArtAsset.aspect(titleArt), a > 0 {
                     ShareArt.title(titleArt, height: min(200, 756 / a), maxWidth: 756).padding(.top, 40)
                 }
-                // §AH: the player's worn hero on its tinted circle beside the name.
+                // BJ5: the player's own avatar (the one resolver: photo / mascot / cast / frame)
+                // beside the name — it used to draw only a worn cast hero.
                 HStack(spacing: 18) {
-                    if let cast = AvatarCastRules.normalize(input.castId) {
-                        CastAvatarFace(castId: cast, size: 96, alwaysLight: true)
-                    }
+                    AvatarView(url: nil, username: input.username, size: 96, castId: AvatarCastRules.normalize(input.castId),
+                               alwaysLight: true)
                     Text(input.username)
                         .font(Brand.fixedFont(76, .black)).foregroundStyle(accent)
                         .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)

@@ -644,7 +644,14 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         EmptyBoardCard("Finish all of today's dailies to land on this board.")
                     } else {
                         Column(Modifier.lbBoardCard()) {
-                            sweepEntries.forEachIndexed { index, entry ->
+                            // BJ4: the Sweep board's leaders on the podium too (gold stage).
+                            val sp = boardPodium(sweepEntries.indices.map { it + 1 })
+                            BoardPodium(
+                                sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile),
+                                sp.open, PODIUM_SWEEP_GOLD,
+                            )
+                            sweepEntries.drop(sp.filled).forEachIndexed { i, entry ->
+                                val index = sp.filled + i
                                 SweepRow(
                                     rank = index + 1, entry = entry,
                                     isCurrentUser = entry.userId == userId,
@@ -653,7 +660,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     details = sweepDetails[entry.userId],
                                     day = com.wordocious.app.todayLocalDate(),
                                     flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
-                                    index = index,
+                                    index = i, topRule = i > 0,
                                 )
                             }
                         }
@@ -694,25 +701,26 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     }
                 } else {
                     Column(Modifier.lbBoardCard()) {
-                        // C2: the top three on the medal podium (the Everyone board; the
-                        // Friends board keeps every friend as a tauntable row instead).
-                        val podium = !friendsOnly
-                        if (podium) {
-                            MedalPodium(
-                                entries.take(3).mapIndexed { i, e ->
-                                    PodiumSpot(
-                                        place = i + 1,
-                                        name = if (e.userId == userId) "You" else (e.username ?: "Player"),
-                                        points = lbScoreLabels[e.compositeScore] ?: formatScore(e.compositeScore),
-                                        username = e.username ?: "Player",
-                                        emoji = e.profiles?.avatarEmoji,
-                                        onClick = { onOpenProfile(e.userId) },
+                        // BJ4: the leaders on the podium on EVERY board (Everyone AND Friends,
+                        // every game) once one result is in; free places are open spots. The
+                        // Friends board keeps the taunt bell under each friend on the podium.
+                        val layout = boardPodium(entries.indices.map { LeaderboardService.competitionRank(entries, it) })
+                        val tauntOf: ((LeaderboardService.LeaderboardEntry) -> (() -> Unit)?) = { e ->
+                            if (friendsOnly && e.userId != userId) {
+                                {
+                                    tauntTarget = FriendsService.FriendProfile(
+                                        id = e.userId, username = e.username ?: "Player", avatarUrl = e.avatarUrl,
                                     )
-                                },
-                            )
+                                }
+                            } else null
                         }
-                        val rows = if (podium) entries.drop(3) else entries
-                        val first = if (podium) 3 else 0
+                        BoardPodium(
+                            lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile, tauntOf),
+                            layout.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
+                        )
+                        val podium = layout.filled > 0
+                        val rows = entries.drop(layout.filled)
+                        val first = layout.filled
                         rows.forEachIndexed { i, entry ->
                             val index = first + i
                             LeaderboardRow(
@@ -852,7 +860,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             if (yesterdaySweep.isEmpty()) {
                                 LbEmptyLine("Nobody swept every daily yesterday.", title = "NO SWEEPS YESTERDAY")
                             } else {
-                                yesterdaySweep.forEachIndexed { i, e ->
+                                // BJ4: yesterday's sweep leaders on the podium (gold stage).
+                                val ysp = boardPodium(yesterdaySweep.mapIndexed { i, e -> e.rank.toInt().takeIf { it > 0 } ?: (i + 1) })
+                                BoardPodium(
+                                    sweepPodiumSpots(yesterdaySweep.take(ysp.filled), userId, ySweepScoreLabels, onOpenProfile),
+                                    ysp.open, PODIUM_SWEEP_GOLD,
+                                )
+                                yesterdaySweep.drop(ysp.filled).forEachIndexed { i, e ->
                                     SweepRow(
                                         rank = e.rank.toInt(), entry = e,
                                         isCurrentUser = e.userId == userId,
@@ -868,9 +882,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         } else if (yesterday.isEmpty()) {
                             LbEmptyLine("No one finished this daily yesterday.", title = "NO RESULTS YESTERDAY")
                         } else {
-                            // Full daily rows (founder ask, Aug 11): profile
-                            // taps, guesses + time detail, W/L badge column.
-                            yesterday.forEachIndexed { i, e ->
+                            // BJ4: yesterday's leaders on the podium, then the full daily rows
+                            // (founder ask, Aug 11): profile taps, guesses + time, W/L column.
+                            val yl = boardPodium(yesterday.indices.map { LeaderboardService.competitionRank(yesterday, it) })
+                            BoardPodium(
+                                lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile),
+                                yl.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
+                            )
+                            yesterday.drop(yl.filled).forEachIndexed { j, e ->
+                                val i = yl.filled + j
                                 LeaderboardRow(
                                     // §217: exact (score, time) ties share the rank.
                                     rank = LeaderboardService.competitionRank(yesterday, i),
@@ -912,22 +932,63 @@ internal fun LbEmptyLine(text: String, title: String = "NOBODY YESTERDAY") {
     BrandEmptyState(title = title, line = text, scene = SceneArt.ASLEEP, artHeight = 72.dp, lineColor = lbSubInk())
 }
 
-/** §212: photo → emoji → initial, left of every username (web lbAvatar twin). */
+/**
+ * §212 → FINISH_SPEC BJ5: the board avatar — THE shared resolver (PlayerAvatar): the
+ * player's custom photo when they show it, else their saved mascot, worn cast hero or
+ * seeded mascot; the signed-in player's own look always from their local profile.
+ */
 @Composable
 internal fun LbAvatar(
     avatarUrl: String?, avatarEmoji: String?, username: String, size: Dp = 24.dp,
     /** AA2: the Pro ring + crown (rows carry no Pro flag, so: the signed-in Pro player's own rows). */
     pro: Boolean = isOwnProAvatar(username),
+    /** BJ5: the row's user id (own match + the batched profile lookup). */
+    userId: String? = null,
+    /** BJ5: the row's embedded profile (avatar_config / cast / frame / accent) when it has one. */
+    profile: LeaderboardService.ProfileRef? = null,
 ) {
-    // AH/AN: a worn character or saved mascot beats the photo.
-    val url = avatarUrl?.takeIf { it.isNotBlank() && !com.wordocious.app.data.MascotAvatars.wearsMascot(username) }
-    if (url == null) {
-        // AN5: no photo → the player's mascot with their initial.
-        LetterTileAvatar(username, size, emoji = avatarEmoji, pro = pro)
-        return
-    }
-    // AN6: the photo is a rounded square with the player's frame.
-    PhotoAvatar(url, size, frame = com.wordocious.app.data.MascotAvatars.photoFrame(username), pro = pro)
+    @Suppress("UNUSED_VARIABLE") val retiredEmoji = avatarEmoji
+    PlayerAvatar(
+        username, size, userId = userId, avatarUrl = avatarUrl ?: profile?.avatarUrl,
+        config = profile?.avatarConfig, castId = profile?.avatarCastId, frame = profile?.avatarFrame,
+        accentHex = profile?.accentColor, pro = pro,
+    )
+}
+
+/** BJ4: the Sweep / yesterday's-sweep stage gold. */
+internal val PODIUM_SWEEP_GOLD = Color(0xFFF5A524)
+
+/** BJ4: a daily board's leading rows as podium spots (BJ5 avatars from the row's profile). */
+internal fun lbPodiumSpots(
+    leaders: List<LeaderboardService.LeaderboardEntry>, userId: String?, labels: Map<Double, String>,
+    onOpenProfile: (String) -> Unit,
+    tauntOf: ((LeaderboardService.LeaderboardEntry) -> (() -> Unit)?)? = null,
+): List<BoardPodiumSpot> = leaders.mapIndexed { i, e ->
+    BoardPodiumSpot(
+        place = i + 1,
+        name = if (e.userId == userId) "You" else (e.username ?: "Player"),
+        points = labels[e.compositeScore] ?: formatScore(e.compositeScore),
+        username = e.username ?: "Player",
+        userId = e.userId, avatarUrl = e.profiles?.avatarUrl, config = e.profiles?.avatarConfig,
+        castId = e.profiles?.avatarCastId, frame = e.profiles?.avatarFrame, accentHex = e.profiles?.accentColor,
+        onClick = { onOpenProfile(e.userId) },
+        onTaunt = tauntOf?.invoke(e),
+    )
+}
+
+/** BJ4: a Sweep board's leading rows as podium spots (the RPC rows; the rest of the look is looked up by id). */
+internal fun sweepPodiumSpots(
+    leaders: List<LeaderboardService.SweepEntry>, userId: String?, labels: Map<Double, String>,
+    onOpenProfile: (String) -> Unit,
+): List<BoardPodiumSpot> = leaders.mapIndexed { i, e ->
+    BoardPodiumSpot(
+        place = i + 1,
+        name = if (e.userId == userId) "You" else (e.username ?: "Player"),
+        points = labels[e.totalScore] ?: formatScore(e.totalScore),
+        username = e.username ?: "Player",
+        userId = e.userId, avatarUrl = e.avatarUrl,
+        onClick = { onOpenProfile(e.userId) },
+    )
 }
 
 /** Section label (Records' caps labels): the board label style. */
@@ -1170,8 +1231,8 @@ internal fun SweepRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LbRankNumber(rank)
-        // §212: faces on the sweep boards too (RPCs have no emoji column).
-        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player", size = 34.dp)
+        // §212: faces on the sweep boards too (RPCs have no emoji column; BJ5 looks the rest up by id).
+        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player", size = 34.dp, userId = entry.userId)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             LbRowName(entry.username ?: "Player", isCurrentUser)
             Text(
@@ -1253,8 +1314,8 @@ internal fun AllTimeSweepRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LbRankNumber(rank)
-        // §212: faces on the sweep boards too (RPCs have no emoji column).
-        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player", size = 34.dp)
+        // §212: faces on the sweep boards too (RPCs have no emoji column; BJ5 looks the rest up by id).
+        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player", size = 34.dp, userId = entry.userId)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             LbRowName(entry.username ?: "Player", isCurrentUser)
             // iOS appends the time unprefixed and always (0 renders as "0s").
@@ -1327,7 +1388,7 @@ internal fun LeaderboardRow(
     ) {
         LbRankNumber(rank)
         // §212: photo → emoji → initial, left of every username.
-        LbAvatar(entry.profiles?.avatarUrl, entry.profiles?.avatarEmoji, entry.username ?: "Player", size = 36.dp)
+        LbAvatar(entry.profiles?.avatarUrl, entry.profiles?.avatarEmoji, entry.username ?: "Player", size = 36.dp, userId = entry.userId, profile = entry.profiles)
         // Doug's Aug-16 feedback: name on top, stats underneath, the score alone on the
         // right — the name gets the row's flexible width.
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -1374,7 +1435,10 @@ internal fun GhostFriendRow(
                 "–", fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.textMuted else LB_RANK_INK,
                 modifier = Modifier.width(28.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            LbAvatar(friend.avatarUrl, null, friend.username, size = 36.dp)
+            PlayerAvatar(
+                friend.username, 36.dp, userId = friend.id, avatarUrl = friend.avatarUrl, config = friend.avatarConfig,
+                castId = friend.avatarCastId, frame = friend.avatarFrame,
+            )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 LbRowName(friend.username, isCurrentUser = false)
                 Text("Hasn't played yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = lbSubInk(), maxLines = 1)

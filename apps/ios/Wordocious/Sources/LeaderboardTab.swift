@@ -378,13 +378,7 @@ struct LeaderboardTab: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
             .lbCard()
         } else {
-            VStack(spacing: 0) {
-                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, entry in
-                    sweepRow(rank: entry.rank, entry: entry)
-                        .stripedRow(idx, accent: LbStyle.gold)
-                }
-            }
-            .lbCard()
+            sweepPodiumBoard(sweepEntries, labels: sweepScoreLabels) { sweepRow(rank: $0.rank, entry: $0) }
         }
 
         sweepCtaCard
@@ -416,13 +410,7 @@ struct LeaderboardTab: View {
                                 scene: .asleep, artHeight: 90)
                     .lbCard()
             } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(yesterdaySweep.enumerated()), id: \.element.id) { idx, entry in
-                        yesterdaySweepRow(entry)
-                            .stripedRow(idx, accent: LbStyle.gold)
-                    }
-                }
-                .lbCard()
+                sweepPodiumBoard(yesterdaySweep, labels: ySweepScoreLabels) { yesterdaySweepRow($0) }
             }
         }
     }
@@ -570,12 +558,14 @@ struct LeaderboardTab: View {
                 // Full daily rows (founder ask, Aug 11): profile links, guesses + time
                 // detail, W/L badge — the top three on the podium when they're 1-2-3.
                 // §217: exact (score, time) ties share the rank.
+                // BJ4: the podium from one result up (Friends too), open spots for the rest.
                 let ranks = yesterday.indices.map { LeaderboardService.competitionRank(yesterday, $0) }
-                let podium = !friendsOnly && LbStyle.podiumFits(ranks)
-                let start = podium ? 3 : 0
+                let layout = PodiumLayout.layout(ranks)
+                let start = layout.filled
                 VStack(spacing: 0) {
-                    if podium {
-                        PodiumView(entries: yesterday.prefix(3).map { podiumEntry($0, labels: yLbScoreLabels) },
+                    if start > 0 {
+                        PodiumView(entries: yesterday.prefix(start).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: yLbScoreLabels) },
+                                   open: layout.open, stage: ModeStyle.accent(mode),
                                    onTap: { path.append($0.id) })
                     }
                     ForEach(Array(yesterday.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
@@ -588,20 +578,22 @@ struct LeaderboardTab: View {
         }
     }
 
-    /// Today's board in ONE cream card: the top three on the podium (letter-tile
-    /// avatars, crown on 1st — tapping a place opens that player, as their row did),
-    /// then the rest as soft striped rows. The Friends board keeps plain rows so every
-    /// friend keeps the taunt bell; exact ties at the top keep plain rows too.
+    /// Today's board in ONE cream card: FINISH_SPEC BJ4 — the leaders on the podium from
+    /// ONE result up (every game, Everyone AND Friends; ties share a step), the free places
+    /// as open spots, on the stage in the game's color (tapping a place opens that player,
+    /// as their row did; friends keep the taunt bell under their name), then the rest as
+    /// soft striped rows.
     private var todayBoard: some View {
         // §217: exact (score, time) ties share the rank.
         let ranks = entries.indices.map { LeaderboardService.competitionRank(entries, $0) }
-        let podium = !friendsOnly && LbStyle.podiumFits(ranks)
-        let start = podium ? 3 : 0
+        let layout = PodiumLayout.layout(ranks)
+        let start = layout.filled
         let shown = entries.count - start
         let windowCount = rankWindow?.entries.count ?? 0
         return VStack(spacing: 0) {
-            if podium {
-                PodiumView(entries: entries.prefix(3).map { podiumEntry($0, labels: lbScoreLabels) },
+            if start > 0 {
+                PodiumView(entries: entries.prefix(start).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
+                           open: layout.open, stage: ModeStyle.accent(mode),
                            onTap: { path.append($0.id) })
             }
             ForEach(Array(entries.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
@@ -630,12 +622,43 @@ struct LeaderboardTab: View {
         .lbCard()
     }
 
-    /// One podium place from a board row (tie-aware points).
-    private func podiumEntry(_ e: LeaderboardEntry, labels: [Double: String]) -> PodiumEntry {
-        let isMe = e.userId == auth.profile?.id
+    /// One podium place from a board row (tie-aware points). BJ5: the row's photo + look —
+    /// the same avatar the rows draw (the own place resolves from the live profile).
+    private func podiumEntry(_ e: LeaderboardEntry, rank: Int, labels: [Double: String]) -> PodiumEntry {
+        let isMe = e.userId.lowercased() == auth.profile?.id.lowercased()
+        let bell: (() -> Void)? = friendsOnly && !isMe ? {
+            tauntTarget = .init(id: e.userId, username: e.username, avatar_url: e.profiles.avatarUrl, level: 0,
+                                since: nil, requestedAt: nil)
+        } : nil
         return PodiumEntry(id: e.userId, name: isMe ? "You" : e.username, username: e.username,
-                           emoji: e.profiles.avatarEmoji,
-                           value: labels[e.compositeScore] ?? formatScore(e.compositeScore))
+                           accentHex: e.profiles.accentColor, emoji: e.profiles.avatarEmoji,
+                           value: labels[e.compositeScore] ?? formatScore(e.compositeScore),
+                           avatarUrl: e.profiles.avatarUrl, rank: rank, bell: bell)
+    }
+
+    /// One podium place from a Sweep row.
+    private func sweepPodiumEntry(_ e: SweepEntry, labels: [Double: String]) -> PodiumEntry {
+        let isMe = e.userId.lowercased() == auth.profile?.id.lowercased()
+        return PodiumEntry(id: e.userId, name: isMe ? "You" : e.username, username: e.username,
+                           value: labels[e.totalScore] ?? formatScore(e.totalScore),
+                           avatarUrl: e.avatarUrl, rank: e.rank)
+    }
+
+    /// BJ4: a Sweep board (today / yesterday) with its leaders on the gold stage.
+    @ViewBuilder private func sweepPodiumBoard(_ rows: [SweepEntry], labels: [Double: String],
+                                               row: @escaping (SweepEntry) -> some View) -> some View {
+        let layout = PodiumLayout.layout(rows.map(\.rank))
+        VStack(spacing: 0) {
+            if layout.filled > 0 {
+                PodiumView(entries: rows.prefix(layout.filled).map { sweepPodiumEntry($0, labels: labels) },
+                           open: layout.open, stage: GamePicker.sweepAccent,
+                           onTap: { path.append($0.id) })
+            }
+            ForEach(Array(rows.enumerated().dropFirst(layout.filled)), id: \.element.id) { idx, entry in
+                row(entry).stripedRow(idx - layout.filled, accent: LbStyle.gold)
+            }
+        }
+        .lbCard()
     }
 
     /// The player's own points on the selected board (their row, else today's cached result).

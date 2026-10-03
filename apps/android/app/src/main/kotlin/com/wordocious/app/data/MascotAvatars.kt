@@ -144,16 +144,21 @@ object MascotAvatars {
         }
     }
 
-    /** Whether [username]'s avatar shows their photo [photoUrl] (display "photo"), else their mascot. */
+    // FINISH_SPEC BJ5: the legacy photo-or-mascot helpers answer through THE shared resolver
+    // (PlayerAvatars → core resolveAvatar), so older call sites follow the same precedence —
+    // an OAuth picture with no saved choice is never shown, and the own look is the local one.
+
+    /** Whether [username]'s avatar shows their photo [photoUrl], else their mascot. */
     fun showPhoto(username: String?, photoUrl: String?): Boolean =
-        MascotConfigRules.showsPhoto(photoUrl, configFor(username), CastAvatars.lookFor(username)?.castId)
+        PlayerAvatars.resolve(AvatarFields(username = username, avatarUrl = photoUrl)).photoUrl != null
 
-    /** True when [username] shows the mascot even though they may have a photo. */
-    fun wearsMascot(username: String?): Boolean = !showPhoto(username, "photo")
+    /** True when [username] shows the mascot (the resolver drew no photo for them). */
+    fun wearsMascot(username: String?): Boolean =
+        PlayerAvatars.resolve(AvatarFields(username = username)).photoUrl == null
 
-    /** The frame [username]'s photo wears (config frame, else AH's tier frame), or null. */
+    /** The frame [username]'s photo wears (the resolved config's frame), or null. */
     fun photoFrame(username: String?): String? =
-        MascotConfigRules.photoFrame(configFor(username), CastAvatars.lookFor(username)?.frame)
+        PlayerAvatars.resolve(AvatarFields(username = username)).config.frame.takeIf { it != "none" }
 
     /** Record a row's raw avatar_config; absent / invalid never clears a known mascot. */
     fun recordRaw(username: String?, raw: JsonElement?) {
@@ -211,6 +216,8 @@ object MascotAvatars {
             AvatarSaveResult.FAILED -> return result
         }
         record(profile.username, clean)
+        // BJ5: the edit shows on every avatar (boards, podiums, VS, cached rows) at once.
+        runCatching { PlayerAvatars.patchOwn(config = clean) }
         return result
     }
 }

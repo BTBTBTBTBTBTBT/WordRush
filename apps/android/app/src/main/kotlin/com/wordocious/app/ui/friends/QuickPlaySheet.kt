@@ -123,7 +123,7 @@ fun QuickPlaySheet(
                         ) {
                             FriendFace(
                                 f.username, f.avatarUrl, f.avatarEmoji, 44.dp, online = f.isOnline(now),
-                                ring = if (f.id == friendId) FriendsPink.solid else null,
+                                ring = if (f.id == friendId) FriendsPink.solid else null, userId = f.id,
                             )
                             Text(
                                 f.username, fontSize = 10.sp, fontWeight = FontWeight.Black,
@@ -139,7 +139,7 @@ fun QuickPlaySheet(
             if (friend != null) {
                 val on = friend.isOnline(now)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FriendFace(friend.username, friend.avatarUrl, friend.avatarEmoji, 48.dp, online = on)
+                    FriendFace(friend.username, friend.avatarUrl, friend.avatarEmoji, 48.dp, online = on, userId = friend.id)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             "PLAY WITH @${friend.username.uppercase()}", fontSize = 17.sp, fontWeight = FontWeight.Black,

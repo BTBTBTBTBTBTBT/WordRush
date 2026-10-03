@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CandyBadge } from '@/components/ui/candy-badge';
-import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
+import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { SoftNum } from '@/components/ui/soft-number';
 import { GREEN_CANDY, INVITE_BAR, SceneArt } from '@/components/friends/invite-screens';
 import { SOFT_INK, cardBarStyle, softBackground, softBorder, softShadow } from '@/lib/soft-surface';
@@ -59,7 +59,8 @@ export function PendingInvitesBanner({ userId }: Props) {
       <div aria-hidden="true" style={{ ...cardBarStyle(ACCENT, 6), background: INVITE_BAR, borderRadius: '14.5px 14.5px 0 0' }} />
       <div className="flex items-center gap-3 px-3 pt-2 pb-1.5">
         <span className="relative shrink-0 inline-flex">
-          <LetterTileAvatar name={name} size={38} />
+          {/* BJ5: the inviter's resolved avatar (looked up by id through the avatar directory). */}
+          <PlayerAvatar name={name} userId={top.inviter_id} size={38} />
           {/* M: the waiting-invite candy badge (the headline says it). */}
           <CandyBadge count={invites.length} size={16} style={{ position: 'absolute', top: -6, right: -6 }} />
         </span>

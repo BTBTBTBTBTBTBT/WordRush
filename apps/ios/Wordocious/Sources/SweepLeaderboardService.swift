@@ -182,6 +182,9 @@ enum SweepLeaderboardService {
                                    p_limit: limit, p_offset: offset))
             .execute()
             .value
+        // BJ5: the RPC returns only the photo — look the rest (mascot / cast / frame) up in
+        // one batch so the podium and rows draw each player's real avatar.
+        await AvatarDirectory.shared.want(userIds: rows.map(\.userId))
         // App Review 1.2: hide players the signed-in user has blocked (parity
         // with the per-mode board's client-side filter).
         return rows.filter { !ModerationService.isBlocked($0.userId) }
@@ -204,6 +207,7 @@ enum SweepLeaderboardService {
             .rpc("alltime_sweep_leaderboard", params: AllTimeParams(p_limit: limit, p_offset: offset))
             .execute()
             .value
+        await AvatarDirectory.shared.want(userIds: rows.map(\.userId))   // BJ5
         return rows.filter { !ModerationService.isBlocked($0.userId) }
     }
 

@@ -445,19 +445,25 @@ export const VS_MORE_H = 30;
 /** The widest a side's board may be (two columns at 27% / 73% of the card). */
 export const VS_COL_MAX = 420;
 export const VS_HEAD_BLOCK_H = VS_NAME_H + 4 + VS_WINDOW_H + 18;
+/** BJ5: each side's resolved avatar above its name (72 px at the 1080 canvas) + its gap. */
+export const VS_AVATAR_PX = 72;
+export const VS_AVATAR_BLOCK = VS_AVATAR_PX + 8;
 export function vsBodyGeometry(
   shownBoards: number,
   rows: number,
   cols: number,
   maxH: number,
   hasMore: boolean,
+  /** BJ5: room above each name for the player's avatar (VS_AVATAR_BLOCK when drawn). */
+  headExtra = 0,
 ): { maxSide: number; cardH: number; h: number } {
   const more = hasMore ? VS_MORE_H : 0;
-  if (shownBoards <= 0) return { maxSide: 0, cardH: 0, h: VS_HEAD_BLOCK_H + more };
-  const budget = maxH - VS_HEAD_BLOCK_H - more - VS_BOARD_GAP * (shownBoards - 1);
+  const head = VS_HEAD_BLOCK_H + headExtra;
+  if (shownBoards <= 0) return { maxSide: 0, cardH: 0, h: head + more };
+  const budget = maxH - head - more - VS_BOARD_GAP * (shownBoards - 1);
   const maxSide = Math.max(80, Math.min(VS_COL_MAX, budget / shownBoards));
   const { cardH } = vsBoardGeometry(maxSide, rows, cols);
-  return { maxSide, cardH, h: VS_HEAD_BLOCK_H + shownBoards * cardH + VS_BOARD_GAP * (shownBoards - 1) + more };
+  return { maxSide, cardH, h: head + shownBoards * cardH + VS_BOARD_GAP * (shownBoards - 1) + more };
 }
 
 // ── The board block per result layout ───────────────────────────────────────

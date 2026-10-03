@@ -254,22 +254,15 @@ fun InviteCodeTiles(
 }
 
 /** A player for the avatars on the invite cards: their photo, else their letter tile. */
-data class InvitePerson(val name: String, val url: String? = null, val emoji: String? = null, val accentHex: String? = null)
+data class InvitePerson(val name: String, val url: String? = null, val emoji: String? = null, val accentHex: String? = null, val userId: String? = null)
 
 /** A player's avatar: their photo (a circle with a white ring) or their letter tile. Decorative. */
 @Composable
 fun InviteAvatar(person: InvitePerson, size: Dp, modifier: Modifier = Modifier) {
-    val url = person.url?.takeIf { it.isNotBlank() }
-    if (url == null) {
-        LetterTileAvatar(person.name, size, modifier.clearAndSetSemantics { }, accentHex = person.accentHex, emoji = person.emoji)
-        return
-    }
-    coil.compose.AsyncImage(
-        model = url, contentDescription = null,
-        modifier = modifier.size(size)
-            .shadow(4.dp, CircleShape, clip = false, ambientColor = INVITE_ACCENT.copy(alpha = 0.25f), spotColor = INVITE_ACCENT.copy(alpha = 0.25f))
-            .clip(CircleShape).border(3.dp, Color.White, CircleShape),
-        contentScale = ContentScale.Crop,
+    // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded) — never the raw URL.
+    PlayerAvatar(
+        person.name, size, modifier.clearAndSetSemantics { }, userId = person.userId,
+        avatarUrl = person.url, accentHex = person.accentHex,
     )
 }
 

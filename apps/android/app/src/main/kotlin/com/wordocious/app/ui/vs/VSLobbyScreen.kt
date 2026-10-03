@@ -333,7 +333,7 @@ private fun LobbyMain(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).stripedRow(i, VS_ACCENT).padding(horizontal = 6.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                VsAvatar(r.username, null, size = 32.dp, borderColor = Color.Transparent)
+                                VsAvatar(r.username, null, size = 32.dp, borderColor = Color.Transparent, userId = r.opponentId)
                                 Column(Modifier.weight(1f)) {
                                     Text("@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1)
                                     Text(
@@ -432,7 +432,7 @@ private fun IncomingCard(c: VsChallengeService.ChallengeView, onRace: () -> Unit
         accent = VS_ACCENT,
         label = "Challenge from @${c.challenger.username}. $summary",
         onClick = onRace,
-        avatar = { VsAvatar(c.challenger.username, c.challenger.avatarUrl, size = 38.dp, borderColor = Color.Transparent) },
+        avatar = { VsAvatar(c.challenger.username, c.challenger.avatarUrl, size = 38.dp, borderColor = Color.Transparent, userId = c.challenger.id) },
         pose = MascotId.S to "ready",
         action = { VsTealButton("RACE", icon = com.wordocious.app.ui.CandyIcon.PLAY, size = com.wordocious.app.ui.CandySize.SMALL, onClick = onRace) },
     ) {

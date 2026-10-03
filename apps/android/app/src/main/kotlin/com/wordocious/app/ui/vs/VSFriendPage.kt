@@ -149,7 +149,7 @@ fun VsFriendPage(
                             else -> "Never played · new friend"
                         }
                         PickRow(on, index = i, label = "@${f.username}, $h2h", onClick = { picked = if (on) picked - id else picked + id }) {
-                            VsAvatar(f.username, f.avatarUrl, size = 38.dp, borderColor = Color.Transparent)
+                            VsAvatar(f.username, f.avatarUrl, size = 38.dp, borderColor = Color.Transparent, userId = f.id)
                             Column(Modifier.weight(1f)) {
                                 Text("@${f.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 1)
                                 Text(h2h, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1)

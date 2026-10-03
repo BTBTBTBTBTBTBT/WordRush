@@ -172,6 +172,8 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 runCatching {
                     SupabaseConfig.client.postgrest["profiles"].update({ set("avatar_url", url) }) { filter { eq("id", AuthService.userId!!) } }
                 }
+                // BJ5: the new photo shows everywhere at once (boards, podiums, VS), before the reload.
+                com.wordocious.app.data.PlayerAvatars.patchOwn(avatarUrl = url)
                 AuthService.refreshProfile()
                 avatarOverride = url
                 // AH / AN: a fresh photo means "show my photo" — kept right away on a saved
@@ -259,6 +261,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                         SupabaseConfig.client.postgrest["profiles"]
                                             .update({ set("avatar_url", null as String?) }) { filter { eq("id", uid) } }
                                     }
+                                    com.wordocious.app.data.PlayerAvatars.patchOwn(avatarUrl = "") // BJ5
                                     AuthService.refreshProfile()
                                     avatarOverride = null
                                     mascot = mascot?.copy(display = AvatarOptions.DISPLAY_MASCOT)
@@ -338,6 +341,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                 com.wordocious.app.data.CastAvatars.storeLocal(uid, c, f)
                             }
                             com.wordocious.app.data.CastAvatars.record(t, castVal, frameVal)
+                            com.wordocious.app.data.PlayerAvatars.patchOwn(castId = castVal ?: "", frame = frameVal ?: "") // BJ5
                             // AN3/AN4: the mascot (profiles.avatar_config; kept locally while the column is missing).
                             val mascotResult = AvatarSave.saveConfig(plan.look)
                             AuthService.refreshProfile()
@@ -637,6 +641,7 @@ private suspend fun saveMascotLook(uid: String, username: String?, plan: MascotP
         com.wordocious.app.data.CastAvatars.storeLocal(uid, c, f)
     }
     com.wordocious.app.data.CastAvatars.record(username, plan.castId, plan.frame)
+    com.wordocious.app.data.PlayerAvatars.patchOwn(castId = plan.castId ?: "", frame = plan.frame ?: "") // BJ5
     AuthService.refreshProfile()
     return r
 }

@@ -200,6 +200,12 @@ object CastAvatars {
     }
 
     private fun syncFriends() {
+        // BJ5: the shared avatar directory learns every friend's look (by id + name).
+        runCatching {
+            PlayerAvatars.recordAll((FriendsService.friends + FriendsService.incoming + FriendsService.outgoingProfiles).map {
+                AvatarFields(it.id, it.username, it.avatarUrl, it.avatarConfig, it.avatarCastId, it.avatarFrame)
+            })
+        }
         // AN3: friends rows that carry avatar_config.
         runCatching { MascotAvatars.recordFriends(FriendsService.friends + FriendsService.incoming + FriendsService.outgoingProfiles) }
         runCatching {

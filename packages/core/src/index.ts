@@ -28,5 +28,6 @@ export * from './push-copy';
 export * from './avatar-config';
 export * from './friendly-games';
 export * from './leaderboard-title';
+export * from './podium-layout';
 export * from './headline-tokens';
 export * from './achievement-rules';

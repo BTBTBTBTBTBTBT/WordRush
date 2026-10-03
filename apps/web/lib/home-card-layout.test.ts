@@ -71,11 +71,14 @@ describe('Home game card (§21)', () => {
 
   it('rebalances the Home banner card (FINISH_SPEC BI21)', () => {
     const s = src('components/home/home-banner.tsx');
-    // Centered headline with the host clearance mirrored on both sides.
-    expect(s).toContain('paddingLeft: tierArt || seasonArt ? slots.shareWidth + 6 : HEADLINE_SIDE_CLEAR');
+    // BJ6 (plan A): the host stands inside the strip on the left; the headline centers in the
+    // remaining column with symmetric side room, the share button in the strip's top-right corner.
+    expect(s).toContain('<HomeHost');
+    expect(s).toContain('paddingLeft: HEADLINE_SIDE_CLEAR');
+    expect(s).toContain('const HEADLINE_SIDE_CLEAR = 28');
     expect(s).toContain('justify-center text-center');
-    // BH3: a slimmer centered switch (~64% wide), equal halves, the PRO crown inside the Unlimited half.
-    expect(s).toContain("width: '64%', maxWidth: 260");
+    // The centered switch fills its (narrower) column up to 260, equal halves, the PRO crown inside the Unlimited half.
+    expect(s).toContain("width: '100%', maxWidth: 260");
     expect(s).toContain("flex: '1 1 0'");
     expect(s).not.toMatch(/translateX\(\$\{switchBox/);
     // Centered meta line with tabular digits.

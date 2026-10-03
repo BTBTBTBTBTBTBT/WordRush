@@ -1,3 +1,4 @@
+import { podiumLayout, podiumOpenSpot } from '@wordle-duel/core';
 import { formatGuessStat, formatShortTime } from './format';
 
 // The finished Leaderboard board (docs/FINISH_SPEC.md C2, C2a; mockup
@@ -18,11 +19,35 @@ export interface Ranked<T> {
  * into the podium and the rest. The podium takes the leading rows whose rank
  * is within the top `size` — at most `size` of them — so ties share a step
  * (1, 1, 3) and a hole left by a hidden row never puts rank 4 on a step.
+ * FINISH_SPEC BJ4: the split is core podiumLayout (parity with iOS / Android);
+ * `open` = the places still free, drawn as open spots.
  */
-export function splitPodium<T>(rows: readonly Ranked<T>[], size = 3): { podium: Ranked<T>[]; rest: Ranked<T>[] } {
-  let k = 0;
-  while (k < rows.length && k < size && rows[k].rank <= size) k++;
-  return { podium: rows.slice(0, k), rest: rows.slice(k) };
+export function splitPodium<T>(rows: readonly Ranked<T>[], size = 3): { podium: Ranked<T>[]; rest: Ranked<T>[]; open: number[] } {
+  const { filled, open } = podiumLayout(rows.map((r) => r.rank), size);
+  return { podium: rows.slice(0, filled), rest: rows.slice(filled), open };
+}
+
+/** One podium column: a player standing on a step, or an open spot (BJ4). */
+export type PodiumSlot =
+  | { kind: 'place'; index: number; column: 1 | 2 | 3 }
+  | { kind: 'open'; place: number; column: 1 | 2 | 3; title: string; line: string };
+
+/**
+ * FINISH_SPEC BJ4: what the podium draws for N leading places — each place in
+ * its column (1st middle, 2nd left, 3rd right; DOM keeps board order) and
+ * every free place as an open spot in the column its place would take.
+ * Empty (no podium) when nobody stands on it.
+ */
+export function podiumSlots(ranks: readonly number[]): PodiumSlot[] {
+  const { filled, open } = podiumLayout(ranks);
+  if (filled === 0) return [];
+  const slots: PodiumSlot[] = [];
+  for (let i = 0; i < filled; i++) slots.push({ kind: 'place', index: i, column: podiumColumn(i) });
+  for (const place of open) {
+    const spot = podiumOpenSpot(place);
+    slots.push({ kind: 'open', place, column: podiumColumn(place - 1), title: spot.title, line: spot.line });
+  }
+  return slots;
 }
 
 /**

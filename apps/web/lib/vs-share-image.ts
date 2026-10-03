@@ -14,13 +14,14 @@ import type { OpponentGuessLogEntry } from '@/lib/adapters/match-service';
 import { ART_SIZE, PAGE_TINTS, artSrc, pageWall, resultMoment, type ArtName } from './art';
 import { STAT_TONES, TILE_GLOSS, shareShortDate } from './share-look';
 import {
-  SHARE_SPACE, SHARE_W, TITLE_MAX_W, VS_BOARD_GAP, VS_NAME_H, VS_WINDOW_H,
+  SHARE_SPACE, SHARE_W, TITLE_MAX_W, VS_AVATAR_BLOCK, VS_AVATAR_PX, VS_BOARD_GAP, VS_NAME_H, VS_WINDOW_H,
   planShareCard, titleBoxHeight, vsBoardGeometry, vsBodyGeometry,
 } from './share-fit';
 import {
   canvasToPng, drawCastWordmark, drawGlossTile, drawImageContain, drawInfoLine, drawStatWindow,
   drawWallpaper, loadCastImages, loadShareImage, resolveCanvasFontStack, roundRectPath, shareFont,
 } from './share-canvas';
+import { drawShareAvatar, loadShareAvatar, type ShareAvatar } from './share-avatar';
 
 const LOSS_FG = '#e11d48';
 const WIN_FG = '#7c3aed';
@@ -42,6 +43,8 @@ export interface VsShareSide {
   solved: boolean;
   /** Per board: rows of tile-state strings (colors only). */
   grids: string[][][];
+  /** BJ5: the side's resolved avatar (bot cast art, photo, else mascot), drawn above the name. */
+  avatar?: ShareAvatar | null;
 }
 
 export interface VsShareInput {
@@ -121,14 +124,18 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   const now = new Date();
   const outcome = input.isDraw ? 'draw' : input.isWin ? 'win' : 'loss';
   const momentName = `art-moment-${resultMoment(outcome)}` as ArtName;
-  const [wall, title, moment, castImgs, crownImg] = await Promise.all([
+  const [wall, title, moment, castImgs, crownImg, meAvatar, oppAvatar] = await Promise.all([
     loadShareImage([artSrc(pageWall('vs'))]),
     loadShareImage([artSrc('art-title-vs')]),
     loadShareImage([artSrc(momentName)]),
     loadCastImages(),
     // The winner's crown is our 3D crown art, never a phone emoji (FINISH_SPEC AM3).
     loadShareImage([artSrc('art-badge-crown')]),
+    loadShareAvatar(input.me.avatar, VS_AVATAR_PX * 2),
+    loadShareAvatar(input.opponent.avatar, VS_AVATAR_PX * 2),
   ]);
+  // BJ5: both sides get the avatar row when either has one (the columns stay level).
+  const headExtra = meAvatar || oppAvatar ? VS_AVATAR_BLOCK : 0;
 
   // S2: the canvas is as tall as its content.
   const titleNat: readonly [number, number] | null = title
@@ -151,10 +158,10 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   const hasMore = input.me.grids.length > 2 || input.opponent.grids.length > 2;
   const plan = planShareCard(
     { titleH, headH, footH: 0 },
-    (maxH) => vsBodyGeometry(shownN, sharedRows, sharedCols, maxH, hasMore).h,
+    (maxH) => vsBodyGeometry(shownN, sharedRows, sharedCols, maxH, hasMore, headExtra).h,
   );
   const H = plan.height;
-  const body = vsBodyGeometry(shownN, sharedRows, sharedCols, plan.boardH, hasMore);
+  const body = vsBodyGeometry(shownN, sharedRows, sharedCols, plan.boardH, hasMore, headExtra);
   const maxSideB = body.maxSide;
 
   const dpr = 2;
@@ -214,8 +221,10 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   const sideCX = [W * 0.27, W * 0.73];
   const blockTop = plan.boardTop + Math.max(0, (plan.boardH - body.h) / 2);
 
-  const drawSide = (side: VsShareSide, accent: string, tone: typeof OPP_TONE | undefined, cx: number) => {
+  const drawSide = (side: VsShareSide, accent: string, tone: typeof OPP_TONE | undefined, cx: number, avatar: Awaited<ReturnType<typeof loadShareAvatar>>) => {
     let sy = blockTop;
+    if (avatar) drawShareAvatar(ctx, avatar, cx - VS_AVATAR_PX / 2, sy, VS_AVATAR_PX);
+    sy += headExtra;
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -260,8 +269,8 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
       ctx.restore();
     }
   };
-  drawSide(input.me, ME_ACCENT, undefined, sideCX[0]);
-  drawSide(input.opponent, OPP_ACCENT, OPP_TONE, sideCX[1]);
+  drawSide(input.me, ME_ACCENT, undefined, sideCX[0], meAvatar);
+  drawSide(input.opponent, OPP_ACCENT, OPP_TONE, sideCX[1], oppAvatar);
 
   // Center VS — level with the score windows.
   ctx.save();
@@ -271,7 +280,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   ctx.lineJoin = 'round';
   ctx.lineWidth = 10;
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
-  const vsY = blockTop + VS_NAME_H + 4 + VS_WINDOW_H / 2;
+  const vsY = blockTop + headExtra + VS_NAME_H + 4 + VS_WINDOW_H / 2;
   ctx.strokeText('VS', W / 2, vsY);
   ctx.fillStyle = VS_INK;
   ctx.fillText('VS', W / 2, vsY);

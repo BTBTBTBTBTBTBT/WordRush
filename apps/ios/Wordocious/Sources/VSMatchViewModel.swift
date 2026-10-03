@@ -795,12 +795,15 @@ final class VSMatchViewModel: ObservableObject {
         } else if let c = raceChallenge {
             // Challenge ghost: the challenger themself (never a bot label) + head-to-head.
             opponentInfo = VsProfile(username: c.challenger.username, avatarUrl: c.challenger.avatarUrl, level: 0)
+            // BJ5: their full look (mascot / cast / frame) lands before the intro slams in.
+            AvatarDirectory.shared.want(userIds: [c.challenger.id])
             if let myId = AuthService.shared.profile?.id {
                 Task { [weak self] in
                     self?.headToHead = await HeadToHeadService.fetchHeadToHead(myId: myId, opponentId: c.challenger.id)
                 }
             }
         } else if let oppId = data.opponentUserId {
+            AvatarDirectory.shared.want(userIds: [oppId])   // BJ5: their full look before the intro
             Task { [weak self] in
                 if let p = await HeadToHeadService.fetchVsProfile(userId: oppId) {
                     self?.opponentInfo = p

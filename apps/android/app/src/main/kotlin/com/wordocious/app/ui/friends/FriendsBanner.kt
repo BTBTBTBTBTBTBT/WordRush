@@ -155,7 +155,7 @@ fun FriendsBannerView(
                                             label = "${f.username}, on now${f.activity?.let { ", in $it" } ?: ""}. Play a game",
                                         ) { onFace(f) },
                                     ) {
-                                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 34.dp, online = true, presenceRing = false)
+                                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 34.dp, online = true, presenceRing = false, userId = f.id)
                                     }
                                 }
                                 Text(

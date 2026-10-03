@@ -23,7 +23,7 @@ import {
   BoardAvatar, BoardCard, BoardRow, DisclosureHeader, ResultCard, RowBadge, SECTION_LABEL, SWEEP_BADGE_COL, SegmentedPill, SweepBadge, YOUR_ROW,
 } from '@/components/leaderboard/board-rows';
 import { boardAvatarFor } from '@/components/leaderboard/board-rows';
-import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
+import { Podium, STAGE_GOLD, type PodiumPlace } from '@/components/leaderboard/podium';
 import { rowBadge, solvedLine, splitPodium } from '@/lib/leaderboard-podium';
 import { cardBarStyle, softCard } from '@/lib/soft-surface';
 import { GameTileChip, GameTileGlyph } from '@/components/ui/game-tile';
@@ -152,7 +152,7 @@ function RecordCard({
           href={`/profile/${record!.holder_id}`}
           className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity"
         >
-          <BoardAvatar url={record!.holder_avatar_url} name={record!.holder_username || '?'} size={20} />
+          <BoardAvatar url={record!.holder_avatar_url} name={record!.holder_username || '?'} userId={record!.holder_id} size={20} {...boardAvatarFor({ ...record!.holder_avatar, accent_color: record!.holder_accent })} />
           <span className="text-[11px] font-extrabold truncate" style={{ color: isCurrentUser ? '#d97706' : 'var(--color-text)' }}>
             {record!.holder_username || 'Unknown'}
           </span>
@@ -630,7 +630,7 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
           />
         ) : (
           <div>
-            <Podium places={lbPodium} />
+            <Podium places={lbPodium} accent={color} />
             {lbSplit.rest.map(({ entry, rank }, i) => (
               <BoardRow
                 key={entry.user_id}
@@ -698,6 +698,20 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
   const top3 = cachedTop3 ?? [];
   if (cachedTop3 && top3.length === 0) return null;
   const podiumScoreLabels = tieAwareScoreLabels(top3.map((e) => e.composite_score));
+  const accent = modeByKey(mode)?.accentColor ?? STAGE_GOLD;
+  const ySplit = splitPodium(
+    top3
+      .map((entry, index) => ({ entry, rank: index + 1 }))
+      .filter(({ entry }) => !isBlocked(entry.user_id)),
+  );
+  const yPodium: PodiumPlace[] = ySplit.podium.map(({ entry, rank }) => ({
+    avatar: boardAvatarFor(entry),
+    key: entry.user_id, rank, userId: entry.user_id, username: entry.username,
+    avatarUrl: entry.avatar_url, avatarEmoji: entry.avatar_emoji, isMe: !!userId && entry.user_id === userId,
+    points: podiumScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score),
+    badge: rowBadge(entry, playType) ? <WinLossBadge won={entry.completed} size={15} /> : undefined,
+    extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{recordsStatsText(entry, mode, playType)}</span>,
+  }));
 
   const handleShare = async () => {
     if (sharing) return;
@@ -743,10 +757,10 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
           {!cachedTop3 ? (
             <LeaderboardSkeleton />
           ) : (
-            top3
-              .map((entry, index) => ({ entry, rank: index + 1 }))
-              .filter(({ entry }) => !isBlocked(entry.user_id))
-              .map(({ entry, rank }, i) => (
+            // BJ4: yesterday's top three on the podium (open spots when fewer), the rest as rows.
+            <div>
+              <Podium places={yPodium} accent={accent} label="Yesterday's top three" />
+              {ySplit.rest.map(({ entry, rank }, i) => (
                 <BoardRow
                   key={entry.user_id}
                   rank={rank}
@@ -759,10 +773,11 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
                   stats={<span className="truncate">{recordsStatsText(entry, mode, playType)}</span>}
                   badge={<RowBadge kind={rowBadge(entry, playType)} />}
                   score={podiumScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
-                  stripe={i % 2 === 0}
-                  divider={i > 0}
+                  stripe={(i + (yPodium.length > 0 ? 1 : 0)) % 2 === 0}
+                  divider={i > 0 || yPodium.length > 0}
                 />
-              ))
+              ))}
+            </div>
           )}
         </BoardCard>
       )}

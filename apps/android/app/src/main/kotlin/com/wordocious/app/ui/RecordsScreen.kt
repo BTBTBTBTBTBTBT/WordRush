@@ -395,7 +395,11 @@ private fun DailyRecordsTab(
                 } else {
                     // TIE-AWARE score display (daily-board parity).
                     val sweepScoreLabels = tieAwareScoreLabels(sweepEntries.map { it.totalScore })
-                    sweepEntries.forEachIndexed { i, entry ->
+                    // BJ4: the leaders on the podium (gold stage), the rest below from #4.
+                    val sp = boardPodium(sweepEntries.indices.map { it + 1 })
+                    BoardPodium(sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile), sp.open, PODIUM_SWEEP_GOLD)
+                    sweepEntries.drop(sp.filled).forEachIndexed { j, entry ->
+                        val i = sp.filled + j
                         // §232: pass the per-user details + day so the words-not-
                         // codes stats, dot strip, and pill render here too.
                         SweepRow(
@@ -404,7 +408,7 @@ private fun DailyRecordsTab(
                             details = sweepDetails[entry.userId],
                             day = com.wordocious.app.todayLocalDate(),
                             flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
-                            index = i,
+                            index = j, topRule = j > 0,
                         )
                     }
                 }
@@ -424,8 +428,12 @@ private fun DailyRecordsTab(
                 val lbScoreLabels = tieAwareScoreLabels(
                     entries.map { it.compositeScore } + (rankWindow?.entries?.map { it.compositeScore } ?: emptyList()),
                 )
-                entries.forEachIndexed { i, entry ->
-                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile, showHints = true, scoreLabel = lbScoreLabels[entry.compositeScore], index = i)
+                // BJ4: the leaders on the podium (Everyone AND Friends, Solo AND VS), the rest below.
+                val layout = boardPodium(entries.indices.map { it + 1 })
+                BoardPodium(lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile), layout.open, accent)
+                entries.drop(layout.filled).forEachIndexed { j, entry ->
+                    val i = layout.filled + j
+                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile, showHints = true, scoreLabel = lbScoreLabels[entry.compositeScore], index = j, topRule = j > 0)
                 }
                 // "Your neighborhood" — rows around the user's rank when they
                 // placed past the top 50 (web/iOS parity).
@@ -548,7 +556,14 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
         }
         if (open) {
             val podiumScoreLabels = tieAwareScoreLabels(top3.map { it.compositeScore })
-            top3.forEachIndexed { i, e ->
+            // BJ4: yesterday's leaders on the podium, any rest below.
+            val yl = boardPodium(top3.indices.map { LeaderboardService.competitionRank(top3, it) })
+            BoardPodium(
+                lbPodiumSpots(top3.take(yl.filled), userId, podiumScoreLabels, onOpenProfile), yl.open,
+                modeCardForKey(mode)?.accent ?: Color(0xFF7C3AED),
+            )
+            top3.drop(yl.filled).forEachIndexed { j, e ->
+                val i = yl.filled + j
                 LeaderboardRow(
                     // §217: exact (score, time) ties share the rank.
                     rank = LeaderboardService.competitionRank(top3, i),
@@ -731,7 +746,7 @@ private fun RecordHolder(record: LeaderboardService.AllTimeRecord, isCurrentUser
         Modifier.squishClickable(label = "$name's profile") { record.holderId?.let(onOpenProfile) },
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        LbAvatar(record.profiles?.avatarUrl, record.profiles?.avatarEmoji, name, size = 22.dp)
+        LbAvatar(record.profiles?.avatarUrl, record.profiles?.avatarEmoji, name, size = 22.dp, userId = record.holderId, profile = record.profiles)
         Text(
             name, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
             color = if (isCurrentUser) Color(0xFFD97706) else lbNameInk(),

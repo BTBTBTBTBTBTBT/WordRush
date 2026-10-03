@@ -19,8 +19,9 @@ import {
 } from '@wordle-duel/core';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
-import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
-import { PAGE_HOSTS } from '@/lib/mascots';
+import { useHomeHost } from '@/components/avatar/player-avatar';
+import { HomeHost } from '@/components/home/home-host';
+import { homeHostHidden } from '@/lib/home-host';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
 
@@ -158,8 +159,10 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
 
 /** BH3: the one-line headline's lettering (~30 px line), shrinking to fit. */
 const HEAD_SIZE = 20;
-/** BI21: the headline's room on EACH side (the W host's clearance, mirrored). */
-const HEADLINE_SIDE_CLEAR = BANNER_HOST_CLEARANCE - 8;
+/** BJ6: the headline's symmetric side room (the share button sits in the strip's top-right corner). */
+const HEADLINE_SIDE_CLEAR = 28;
+/** BJ6: the gap between the host and the centered headline column. */
+const HOST_GAP = 6;
 
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen, onShare }: Props) {
   const unlimited = playMode === 'unlimited';
@@ -189,6 +192,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // renders nothing until the file exists). Same in both modes, so the
   // Daily/Unlimited switch never moves anything; a tier's art wins.
   const season = useSeason();
+  const host = useHomeHost();
   const [seasonArtOk, setSeasonArtOk] = useState(false);
   const seasonSlot = season === 'halloween' && !tierArt;
   const seasonArt = seasonSlot && seasonArtOk;
@@ -279,12 +283,23 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       {/* FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look even"):
           the headline centered on the card's center line, then a centered wide
           DAILY | UNLIMITED switch, then the centered meta line. */}
-      <div className="banner-frost relative flex flex-col" style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
+      {/* BJ6 (plan A): the host stands INSIDE the strip on its left (84 px, on a soft floor
+          shadow); the headline / switch / meta column centers in the remaining width. */}
+      <div className="banner-frost relative flex items-center" style={{ gap: HOST_GAP, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
+      <HomeHost
+        choice={host.choice}
+        initial={host.initial}
+        level={host.level}
+        pro={host.pro}
+        // The celebration art carries the cast: W steps out (keeps his slot); your own host stays.
+        hidden={homeHostHidden(host.choice, !!(tierArt || seasonArt))}
+      />
+      <div className="flex-1 min-w-0 flex flex-col" style={{ gap: BANNER_SLOT.stripGap }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
-        {/* BI21: the W host's clearance on BOTH sides keeps the headline centered; the
-            share button sits at the strip's LEFT end, mirroring W at the right. */}
-        <div className="relative flex items-start" style={{ paddingLeft: tierArt || seasonArt ? slots.shareWidth + 6 : HEADLINE_SIDE_CLEAR, paddingRight: tierArt || seasonArt ? 0 : HEADLINE_SIDE_CLEAR }}>
+        {/* BJ6: symmetric side room keeps the headline centered in its column; the share
+            button sits in the strip's top-right corner. */}
+        <div className="relative flex items-start" style={{ paddingLeft: HEADLINE_SIDE_CLEAR, paddingRight: tierArt || seasonArt ? 0 : HEADLINE_SIDE_CLEAR }}>
           {/* Z + BH3: the headline box is one line tall in both modes (the lettering scales to fit). */}
           <div className="flex-1 min-w-0 flex items-center justify-center text-center gap-1.5" style={{ height: slots.headline }}>
             {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
@@ -305,19 +320,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
               />
             </FitOneLine>
           </div>
-          {/* Nothing to share before the first finished game (iOS/Android parity).
-              Z: the share box stays reserved (empty) when there is nothing to share. */}
-          {content.showShare ? (
-            <button
-              type="button"
-              onClick={onShare}
-              aria-label="Share today's progress"
-              className="mode-xfade absolute left-0 flex items-center justify-center active:opacity-60"
-              style={{ top: (slots.headline - slots.shareWidth) / 2, width: slots.shareWidth, height: slots.shareWidth }}
-            >
-              <Icon3D name="share" size={24} />
-            </button>
-          ) : null}
         </div>
       </div>
       {seasonSlot && (
@@ -365,7 +367,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             role="group"
             aria-label="Daily or Unlimited"
             className="relative flex"
-            style={{ padding: MODE_SWITCH.pad, width: '64%', maxWidth: 260, height: BANNER_SLOT.switchRow }}
+            style={{ padding: MODE_SWITCH.pad, width: '100%', maxWidth: 260, height: BANNER_SLOT.switchRow }}
           >
             {/* The candy toggle sprites (night art 10-03): the glossy track + a sliding glossy thumb, three-sliced. */}
             <span aria-hidden="true" className="absolute inset-0 pointer-events-none" style={threeSlice('track', BANNER_SLOT.switchRow, '--candy-track')} />
@@ -391,6 +393,20 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           </div>
         </div>
       </div>
+      {/* Nothing to share before the first finished game (iOS/Android parity). BJ6: the share
+          button lives in the strip's top-right corner. */}
+      {content.showShare ? (
+        <button
+          type="button"
+          onClick={onShare}
+          aria-label="Share today's progress"
+          className="mode-xfade absolute flex items-center justify-center active:opacity-60"
+          style={{ top: slots.stripTop + (slots.headline - slots.shareWidth) / 2, right: 6, width: slots.shareWidth, height: slots.shareWidth, zIndex: 2 }}
+        >
+          <Icon3D name="share" size={24} />
+        </button>
+      ) : null}
+      </div>
 
       <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px 12px ${BANNER_SLOT.wordPadBottom}px` }}>
         {row(word, wTier, 'WORDOCIOUS')}
@@ -401,19 +417,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
     </div>
   );
 
-  // The home host (W) stands at the strip's right end; Flawless crowns him.
-  // G4: a swept / flawless banner carries the cast in its art instead.
-  if (tierArt || seasonArt) return <div className="relative shrink-0" style={{ paddingTop: 16 }}>{card}</div>;
-  return (
-    // BJ6: a signed-in player with a custom mascot hosts their own banner (mascot only, never the photo).
-    <BannerHost
-      id={PAGE_HOSTS.home}
-      pose="art-pose-w-wave"
-      crown={wTier === 'flawless'}
-    >
-      {card}
-    </BannerHost>
-  );
+  // BJ6: the host stands inside the card now — nothing peeks above it (the slots' headroom stays).
+  return <div className="relative shrink-0" style={{ paddingTop: slots.headroom }}>{card}</div>;
 }
 
 /**

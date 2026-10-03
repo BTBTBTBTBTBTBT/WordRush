@@ -1,5 +1,6 @@
 'use client';
 
+import { afterOwnAvatarSave } from '@/lib/avatar-directory';
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
@@ -103,6 +104,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
         .update({ avatar_url: freshUrl })
         .eq('id', profile.id);
 
+      afterOwnAvatarSave(profile.id);
       await refreshProfile();
       onUploaded?.();
     } catch (err) {

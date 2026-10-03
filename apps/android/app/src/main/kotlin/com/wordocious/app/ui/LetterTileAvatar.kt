@@ -100,6 +100,7 @@ fun letterTileShape(size: Dp): Shape = RoundedCornerShape(size * 0.22f)
 fun avatarShape(hasPhoto: Boolean, size: Dp): Shape = avatarTileShape(size)
 
 /**
+ * FINISH_SPEC BJ5: with [lookup] (the default) this is [PlayerAvatar] — the one resolver.
  * FINISH_SPEC AN5: every no-photo avatar is the player's MASCOT (MascotAvatar) with
  * their initial as the white body letter — the saved config (MascotAvatars, by
  * username), else a worn AH character's preset, else the deterministic default seeded
@@ -130,6 +131,12 @@ fun LetterTileAvatar(
     config: com.wordocious.core.AvatarConfig? = null,
 ) {
     @Suppress("UNUSED_VARIABLE") val retiredEmoji = emoji
+    if (lookup && config == null) {
+        // FINISH_SPEC BJ5: every looked-up avatar goes through THE shared resolver (photo /
+        // saved mascot / worn cast / seeded; the own look from the local profile).
+        PlayerAvatar(username, size, modifier, castId = castId, frame = frame, accentHex = accentHex, pro = pro)
+        return
+    }
     val look = if (lookup && (castId == null || frame == null)) com.wordocious.app.data.CastAvatars.lookFor(username) else null
     val recorded = if (lookup && config == null && castId == null) com.wordocious.app.data.MascotAvatars.configFor(username) else null
     val cast = com.wordocious.app.data.AvatarCast.normalize(castId ?: look?.castId)
