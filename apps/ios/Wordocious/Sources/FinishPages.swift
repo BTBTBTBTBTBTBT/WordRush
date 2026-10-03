@@ -168,6 +168,60 @@ struct SoftSegmented<Key: Hashable>: View {
     }
 }
 
+/// FINISH_SPEC BB2: a real candy segmented control — a tinted track, a filled thumb
+/// in `accent` that slides between the options (white bold label on it), the other
+/// labels in a legible dark ink, 38 pt tall, squishing on press. `selection` matching
+/// no option shows no thumb (e.g. Stats with a game picked).
+struct CandySegmented<Key: Hashable>: View {
+    let options: [(key: Key, label: String)]
+    let selection: Key?
+    var accent: Color = Color(hex: 0x2563EB)
+    var accessibilityLabel: String = ""
+    let onSelect: (Key) -> Void
+    @Namespace private var ns
+
+    var body: some View {
+        let dark = Theme.isDark
+        HStack(spacing: 0) {
+            ForEach(options, id: \.key) { opt in
+                let on = opt.key == selection
+                Button {
+                    guard !on else { return }
+                    Haptics.tap()
+                    withAnimation(Theme.animation(Motion.spring)) { onSelect(opt.key) }
+                } label: {
+                    Text(opt.label)
+                        .font(Brand.font(13, .black)).tracking(0.3)
+                        // Off: dark ink on the light track (≥ 4.5:1).
+                        .foregroundStyle(on ? Color.white : (dark ? Theme.textPrimary : FinishInk.heading))
+                        .shadow(color: on ? .black.opacity(0.25) : .clear, radius: 0, x: 0, y: 1)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                        .background {
+                            if on {
+                                ZStack {
+                                    Capsule().fill(Color.black.mixed(over: accent, 0.28)).offset(y: 2)
+                                    Capsule().fill(LinearGradient(colors: [Color.white.mixed(over: accent, 0.22), accent],
+                                                                  startPoint: .top, endPoint: .bottom))
+                                }
+                                .matchedGeometryEffect(id: "thumb", in: ns)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.squish)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .frame(height: 38)
+        .background(Capsule().fill(dark ? Color.white.opacity(0.10) : accent.wash(0.16)))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
 // MARK: - §C2 / §C3 The game picker window
 
 /// FINISH_SPEC §C2 / §C2b / §C3: ONE game picker window for the Leaderboard and the
@@ -218,51 +272,24 @@ struct GamePickerCard<Header: View>: View {
                 .padding(.horizontal, 14).padding(.vertical, 9)
                 .frame(maxWidth: .infinity)
                 .background(dark ? Color.white.opacity(0.04) : accent.wash(0.10))
-            if compact {
-                compactRow(words: words, puzzles: puzzles)
-            } else {
-            VStack(alignment: .leading, spacing: 8) {
+            // FINISH_SPEC BB3: the same two-row grid everywhere (every game visible, no
+            // sideways scroll); `compact` (the Leaderboard) shrinks the tiles + gaps.
+            VStack(alignment: .leading, spacing: compact ? 5 : 8) {
                 FinishLabel("Wordocious", color: ink)
-                PickerTileRow(gap: 6, maxSide: 44) {
+                PickerTileRow(gap: compact ? 5 : 6, maxSide: compact ? 32 : 44) {
                     ForEach(words) { m in tile(m) }
                     if showSweep { sweepTile }
                 }
                 if !puzzles.isEmpty {
-                    FinishLabel("Puzzles", color: ink).padding(.top, 4)
-                    PickerTileRow(gap: 5, maxSide: 40) {
+                    FinishLabel("Puzzles", color: ink).padding(.top, compact ? 1 : 4)
+                    PickerTileRow(gap: compact ? 4 : 5, maxSide: compact ? 30 : 40) {
                         ForEach(puzzles) { m in tile(m) }
                     }
                 }
             }
-            .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 14)
-            }
+            .padding(.horizontal, 12).padding(.top, compact ? 8 : 12).padding(.bottom, compact ? 9 : 14)
         }
         .tintedCard(accent: accent, tint: 0.07, line: 0.22)
-    }
-
-    /// §AU2: the one-row picker — fixed 38-pt tiles that scroll sideways, the selected
-    /// tile scrolled into view.
-    private func compactRow(words: [HomeMode], puzzles: [HomeMode]) -> some View {
-        let side: CGFloat = 38
-        return ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(words) { m in tile(m).frame(width: side, height: side).id(m.dbKey ?? m.id) }
-                    if showSweep { sweepTile.frame(width: side, height: side).id(GamePicker.sweep) }
-                    if !puzzles.isEmpty {
-                        Capsule().fill(ink.opacity(0.25)).frame(width: 2, height: side * 0.7)
-                            .padding(.horizontal, 3)
-                            .accessibilityHidden(true)
-                        ForEach(puzzles) { m in tile(m).frame(width: side, height: side).id(m.dbKey ?? m.id) }
-                    }
-                }
-                .padding(.horizontal, 12).padding(.top, 9).padding(.bottom, 9)
-            }
-            .onAppear { proxy.scrollTo(selection, anchor: .center) }
-            .onChange(of: selection) { key in
-                withAnimation(Theme.animation(.easeInOut(duration: 0.25))) { proxy.scrollTo(key, anchor: .center) }
-            }
-        }
     }
 
     private func tile(_ m: HomeMode) -> some View {

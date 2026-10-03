@@ -43,12 +43,16 @@ interface GamePickerProps {
   label?: string;
   /** AU2: 'strip' = ONE horizontally scrolling row of smaller tiles (Wordocious, a divider, Puzzles). */
   layout?: 'rows' | 'strip';
+  /** BB3: 'compact' rows — tiles ≤ 32 px, tighter gaps (the Leaderboard). */
+  density?: 'regular' | 'compact';
+  /** BB1: a title above the header row (the selected game's title art). */
+  title?: ReactNode;
 }
 
 const BADGE_BG: Record<GamePickerBadge['kind'], string> = { won: '#7c3aed', lost: '#6b7891', done: '#7c3aed' };
 const BADGE_TEXT: Record<GamePickerBadge['kind'], string> = { won: 'W', lost: 'L', done: '✓' };
 
-function Tile({ t, on, badge, onSelect, size }: { t: PickerTile; on: boolean; badge?: GamePickerBadge; onSelect: (k: string) => void; size?: number }) {
+function Tile({ t, on, badge, onSelect, size, maxSize = 44 }: { t: PickerTile; on: boolean; badge?: GamePickerBadge; onSelect: (k: string) => void; size?: number; maxSize?: number }) {
   return (
     <button
       type="button"
@@ -56,7 +60,7 @@ function Tile({ t, on, badge, onSelect, size }: { t: PickerTile; on: boolean; ba
       aria-pressed={on}
       onClick={() => onSelect(t.key)}
       className="relative flex items-center justify-center min-w-0"
-      style={{ ...softIconTile(t.accent, { selected: on, radius: size ? 9 : 11 }), ...(size ? { flex: 'none', width: size, height: size } : { flex: '1 1 0', aspectRatio: '1 / 1', maxWidth: 44 }), padding: 0 }}
+      style={{ ...softIconTile(t.accent, { selected: on, radius: size ? 9 : 11 }), ...(size ? { flex: 'none', width: size, height: size } : { flex: '1 1 0', aspectRatio: '1 / 1', maxWidth: maxSize }), padding: 0 }}
     >
       <GameArt id={t.artId} size={64} style={{ width: '74%', height: '74%', marginTop: 2 }} />
       {badge && (
@@ -73,18 +77,19 @@ function Tile({ t, on, badge, onSelect, size }: { t: PickerTile; on: boolean; ba
 }
 
 export function GamePicker({
-  selected, onSelect, accent = '#f59e0b', header, wordociousExtra, sweep = true, badges, ink, bar = false, className = '', label = 'Pick a game', layout = 'rows',
+  selected, onSelect, accent = '#f59e0b', header, wordociousExtra, sweep = true, badges, ink, bar = false, className = '', label = 'Pick a game', layout = 'rows', density = 'regular', title,
 }: GamePickerProps) {
+  const compact = density === 'compact';
   const { isOn } = useFlags();
   const rows = useMemo(() => pickerRows(isOn, { sweep }), [isOn, sweep]);
   const labelInk = ink ?? alphaHex(accent, 1);
   const rowLabel = (text: string) => (
-    <span className="text-[11px] font-black picker-label" style={{ letterSpacing: '0.12em', color: labelInk }}>{text}</span>
+    <span className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-black picker-label`} style={{ letterSpacing: '0.12em', color: labelInk }}>{text}</span>
   );
   const row = (tiles: PickerTile[]) => (
-    <div className="flex" style={{ gap: 5 }} role="group">
+    <div className={`flex ${compact ? 'justify-center' : ''}`} style={{ gap: compact ? 4 : 5 }} role="group">
       {tiles.map((t) => (
-        <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} />
+        <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} maxSize={compact ? 32 : 44} />
       ))}
     </div>
   );
@@ -112,10 +117,11 @@ export function GamePicker({
   return (
     <div className={`relative overflow-hidden ${className}`} style={softCard(accent, { radius: 20 })} role="group" aria-label={label}>
       {bar && <div aria-hidden="true" style={cardBarStyle(accent, SOFT.bar)} />}
+      {title != null && <div className="flex justify-center" style={{ padding: '8px 12px 0' }}>{title}</div>}
       {header != null && (
-        <div style={{ padding: '10px 14px', background: alphaHex(accent, 0.08) }}>{header}</div>
+        <div style={{ padding: compact ? '6px 12px' : '10px 14px', background: alphaHex(accent, 0.08) }}>{header}</div>
       )}
-      <div className="grid" style={{ gap: 8, padding: '12px 12px 14px' }}>
+      <div className="grid" style={{ gap: compact ? 4 : 8, padding: compact ? '6px 10px 8px' : '12px 12px 14px' }}>
         <div className="flex items-center justify-between gap-2">
           {rowLabel('WORDOCIOUS')}
           {wordociousExtra}
@@ -123,7 +129,7 @@ export function GamePicker({
         {row(rows.wordocious)}
         {rows.puzzles.length > 0 && (
           <>
-            <div style={{ marginTop: 4 }}>{rowLabel('PUZZLES')}</div>
+            <div style={{ marginTop: compact ? 2 : 4 }}>{rowLabel('PUZZLES')}</div>
             {row(rows.puzzles)}
           </>
         )}

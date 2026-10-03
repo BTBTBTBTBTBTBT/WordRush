@@ -252,15 +252,18 @@ struct LeaderboardTab: View {
     /// "YESTERDAY’S WINNERS" + chevron (the collapsible toggle) as a tinted chip.
     private var yesterdayToggle: some View {
         Button { showYesterday.toggle() } label: {
+            // Founder: full width (collapsed and expanded), the other cards' width.
             HStack(spacing: 6) {
                 LbSectionLabel("YESTERDAY\u{2019}S WINNERS")
+                Spacer(minLength: 4)
                 Image(systemName: showYesterday ? "chevron.up" : "chevron.down")
                     .font(.system(size: 10, weight: .black))
                     .foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x8A6A55))
             }
-            .padding(.horizontal, 12).frame(height: 30)
-            .tintedPill(LbStyle.gold)
-            .contentShape(Capsule())
+            .padding(.horizontal, 14).frame(height: 34)
+            .frame(maxWidth: .infinity)
+            .tintedPill(LbStyle.gold, radius: 14)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
     }
@@ -288,7 +291,7 @@ struct LeaderboardTab: View {
                 // window (date + reset clock + ALL-TIME on its header strip; the Sweep
                 // is the 9th WORDOCIOUS tile).
                 LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
-                                      onAllTime: { showRecords = true }, bleed: 16)
+                                      bleed: 16)
                 if isSweep {
                     sweepBoard
                 } else {
@@ -390,9 +393,7 @@ struct LeaderboardTab: View {
 
         // Yesterday's Winners — same toggle as the per-mode board, but the
         // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
-        HStack(spacing: 8) {
-            yesterdayToggle
-            Spacer(minLength: 4)
+        yesterdayToggle.overlay(alignment: .trailing) {
             // §231: settled sweep-podium share — only once the dropdown is
             // open with rows (per-mode parity).
             if showYesterday && !yesterdaySweep.isEmpty {
@@ -404,6 +405,7 @@ struct LeaderboardTab: View {
                         userId: auth.profile?.id)
                     sharingPodium = false
                 }
+                .padding(.trailing, 28)   // left of the chevron, inside the full-width bar
             }
         }
         .padding(.top, 4)
@@ -539,9 +541,7 @@ struct LeaderboardTab: View {
         // §AS4: the game + Play / View board as ONE compact row under the standings.
         playCtaCard
 
-        HStack(spacing: 8) {
-            yesterdayToggle
-            Spacer(minLength: 4)
+        yesterdayToggle.overlay(alignment: .trailing) {
             // Settled-podium share — only once the dropdown is open with rows.
             if showYesterday && !yesterday.isEmpty {
                 shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
@@ -555,6 +555,7 @@ struct LeaderboardTab: View {
                         sharingPodium = false
                     }
                 }
+                .padding(.trailing, 28)   // left of the chevron, inside the full-width bar
             }
         }
         if showYesterday {

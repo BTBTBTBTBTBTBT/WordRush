@@ -36,6 +36,18 @@ public enum WidgetStats {
         return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
+    /// FINISH_SPEC BC: the last-resort short form — "10.8K" (≥ 10,000), "1.2M";
+    /// below 10,000 the full number.
+    public static func pointsCompact(_ n: Int) -> String {
+        func one(_ v: Double, _ unit: String) -> String {
+            let r = (v * 10).rounded() / 10
+            return (r == r.rounded() ? String(Int(r)) : String(format: "%.1f", r)) + unit
+        }
+        if n >= 1_000_000 { return one(Double(n) / 1_000_000, "M") }
+        if n >= 10_000 { return one(Double(n) / 1_000, "K") }
+        return pointsText(n)
+    }
+
     /// "5/8".
     public static func solvedText(_ s: WidgetDayStats) -> String { "\(s.played)/\(s.total)" }
 

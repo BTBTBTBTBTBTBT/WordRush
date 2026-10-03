@@ -405,15 +405,19 @@ private struct PeekingCast: View {
     let date: Date
     var size: CGFloat = 26
     var count: Int = 3
+    /// BC: spread evenly along the whole bottom edge (else huddled together).
+    var spread: Bool = false
 
     var body: some View {
         let ids = WidgetCast.peekers(dayNumber: WidgetCast.dayNumber(localDay(date)), host: dayHostId(date), count: count)
-        HStack(spacing: -size * 0.12) {
+        HStack(spacing: spread ? 0 : -size * 0.12) {
             ForEach(Array(ids.enumerated()), id: \.offset) { i, id in
+                if spread { Spacer(minLength: 0) }
                 Image(castAsset(id, date)).resizable().interpolation(.high).scaledToFit()
                     .frame(width: size, height: size)
                     .rotationEffect(.degrees(i == 1 ? 0 : (i == 0 ? -8 : 8)))
             }
+            if spread { Spacer(minLength: 0) }
         }
         .offset(y: size * 0.5)
         .accessibilityHidden(true)
@@ -569,20 +573,23 @@ private struct TileRow: View {
     var maxSize: CGFloat
     var gap: CGFloat = 4
     var linked = true
+    /// BC: span the full width evenly (the leftover goes into the gaps).
+    var justify = true
 
     var body: some View {
         GeometryReader { geo in
             let n = CGFloat(max(list.count, 1))
             let tile = max(14, min(maxSize, (geo.size.width - gap * (n - 1) - 3) / n))
-            HStack(spacing: gap) {
+            let spread = justify && n > 1 ? max(gap, (geo.size.width - 3 - tile * n) / (n - 1)) : gap
+            HStack(spacing: spread) {
                 ForEach(list, id: \.key) { m in
                     if linked { LinkedTile(mode: m, size: tile) } else { GameTile(mode: m, size: tile) }
                 }
-                Spacer(minLength: 0)
+                if !justify { Spacer(minLength: 0) }
             }
-            .frame(height: geo.size.height, alignment: .bottom)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .bottomLeading)
         }
-        .frame(height: maxSize + 3)
+        .frame(height: min(maxSize, 60) + 3)
     }
 }
 
@@ -607,45 +614,42 @@ struct SmallView: View {
         // number + small caps label); the day host leans in from the top-right; a
         // daily trio of cast heads peeks up over the bottom edge.
         ZStack(alignment: .topLeading) {
-            PeekingCast(date: date, size: 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(.trailing, 8)
-            VStack(alignment: .leading, spacing: 4) {
+            // BC: the peeking trio spread evenly along the bottom edge — only the top
+            // half shows, inside the bottom margin, so it never covers any text.
+            PeekingCast(date: date, size: 20, spread: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            VStack(alignment: .leading, spacing: 3) {
                 // The streak, big, with the flame art (no chip).
                 HStack(alignment: .center, spacing: 4) {
-                    StatIconView(icon: .flame, size: 24)
+                    StatIconView(icon: .flame, size: 22)
                     VStack(alignment: .leading, spacing: -2) {
-                        SoftNumber(text: "\(snap.streak)", size: 24)
+                        SoftNumber(text: "\(snap.streak)", size: 22)
                         Text("DAY STREAK").font(.system(size: 8, weight: .black, design: .rounded)).tracking(0.6)
                             .foregroundStyle(WInk.label(dark))
                     }
                 }
-                .padding(.trailing, 58)   // clear of the leaning host
+                .padding(.trailing, 46)   // clear of the leaning host
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(snap.streak) day streak")
                 Spacer(minLength: 0)
-                // §AL: the tile mini-grid shrinks to one row so the three stats always fit.
-                TileRow(list: snap.modes, maxSize: 17, gap: 2, linked: false)
-                if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
-                Spacer(minLength: 0)
-                // Solved · points on one line with a soft divider dot.
-                HStack(spacing: 4) {
-                    floatStat(.check, WidgetStats.solvedText(stats), "SOLVED", dark)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(WidgetStats.solvedPhrase(stats))
-                    Circle().fill(WInk.label(dark).opacity(0.45)).frame(width: 3, height: 3)
-                    floatStat(.star, WidgetStats.pointsText(stats.points), "PTS", dark)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(WidgetStats.pointsPhrase(stats))
+                // BC: the eight Wordocious tiles as two rows of four big tiles; the
+                // Puzzles dot strip under them only when it fits.
+                ViewThatFits(in: .vertical) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        tileGrid
+                        if !snap.puzzleModes.isEmpty { dots(snap.puzzleModes) }
+                    }
+                    tileGrid
                 }
-                .lineLimit(1).minimumScaleFactor(0.6)
-                // The countdown (the peeking cast sits behind its right side).
+                Spacer(minLength: 0)
+                statsLine(stats, dark)
+                // The countdown.
                 HStack(spacing: 4) {
-                    StatIconView(icon: .clock, size: 14)
+                    StatIconView(icon: .clock, size: 13)
                     Text(timerInterval: date...midnight, countsDown: true)
-                        .font(.system(size: 13, weight: .black, design: .rounded)).monospacedDigit()
+                        .font(.system(size: 12, weight: .black, design: .rounded)).monospacedDigit()
                         .foregroundStyle(WInk.number(dark))
-                        .frame(maxWidth: 56, alignment: .leading)
+                        .frame(maxWidth: 52, alignment: .leading)
                     Text("NEW IN").font(.system(size: 8, weight: .black, design: .rounded)).tracking(0.6)
                         .foregroundStyle(WInk.label(dark))
                 }
@@ -653,12 +657,12 @@ struct SmallView: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(WidgetStats.countdownPhrase(seconds: Int(midnight.timeIntervalSince(date))))
             }
-            .padding(10)
-            // The day's host, bigger (~40% of the height), leaning in from the top-right.
+            .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 11)
+            // The day's host, leaning in from the top-right (kept inside the top row).
             Image(dayHostAsset(date)).resizable().interpolation(.high).scaledToFit()
-                .frame(width: 64, height: 64)
+                .frame(width: 50, height: 50)
                 .rotationEffect(.degrees(-10))
-                .offset(x: 8, y: -8)
+                .offset(x: 6, y: -8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .accessibilityHidden(true)
         }
@@ -667,11 +671,45 @@ struct SmallView: View {
         .widgetURL(nextPlayableURL)
     }
 
+    /// BC: two rows of four big tiles filling the width.
+    private var tileGrid: some View {
+        let first = Array(snap.modes.prefix(4)), second = Array(snap.modes.dropFirst(4).prefix(4))
+        return VStack(alignment: .leading, spacing: 4) {
+            TileRow(list: first, maxSize: 34, gap: 4, linked: false)
+            if !second.isEmpty { TileRow(list: second, maxSize: 34, gap: 4, linked: false) }
+        }
+    }
+
+    /// BC: "✓ 7/18 SOLVED · ★ 10,779 PTS" — never truncated: it shrinks a step at a
+    /// time, and only as the last resort shows the short points ("10.8K").
+    private func statsLine(_ stats: WidgetDayStats, _ dark: Bool) -> some View {
+        let solved = WidgetStats.solvedText(stats)
+        let full = WidgetStats.pointsText(stats.points)
+        let short = WidgetStats.pointsCompact(stats.points)
+        return ViewThatFits(in: .horizontal) {
+            statsRow(solved, full, 14, dark)
+            statsRow(solved, full, 12, dark)
+            statsRow(solved, full, 11, dark)
+            statsRow(solved, short, 11, dark)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(WidgetStats.solvedPhrase(stats)). \(WidgetStats.pointsPhrase(stats))")
+    }
+
+    private func statsRow(_ solved: String, _ points: String, _ size: CGFloat, _ dark: Bool) -> some View {
+        HStack(spacing: 4) {
+            floatStat(.check, solved, "SOLVED", dark, size: size)
+            Circle().fill(WInk.label(dark).opacity(0.45)).frame(width: 3, height: 3)
+            floatStat(.star, points, "PTS", dark, size: size)
+        }
+        .fixedSize()
+    }
+
     /// §AV: a borderless stat — icon, soft number, small caps label.
-    private func floatStat(_ icon: StatIcon, _ value: String, _ label: String, _ dark: Bool) -> some View {
+    private func floatStat(_ icon: StatIcon, _ value: String, _ label: String, _ dark: Bool, size: CGFloat = 14) -> some View {
         HStack(spacing: 3) {
-            StatIconView(icon: icon, size: 13)
-            SoftNumber(text: value, size: 14)
+            StatIconView(icon: icon, size: size - 1)
+            SoftNumber(text: value, size: size)
             Text(label).font(.system(size: 8, weight: .black, design: .rounded)).tracking(0.5)
                 .foregroundStyle(WInk.label(dark))
         }
@@ -702,24 +740,23 @@ struct MediumView: View {
     private var next: WSnapshot.Mode? { (snap.modes + snap.puzzleModes).first(where: { !$0.played }) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        // FINISH_SPEC BC: no empty bands — the cast row, then BOTH tile rows spanning the
+        // full width evenly (8 Wordocious, then the Puzzles), then the stats chips.
+        VStack(alignment: .leading, spacing: 5) {
             // The ten cast heroes spelling WORDOCIOUS (`.wcast`).
             HStack(spacing: 2) {
                 ForEach(["w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s"], id: \.self) { id in
-                    Image("mascot-\(id)").resizable().interpolation(.high).scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: 26)
+                    Image(castAsset(id, date)).resizable().interpolation(.high).scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: 22)
                 }
             }
-            .frame(height: 26)
+            .frame(height: 22)
             .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 4) {
-                TileRow(list: snap.modes, maxSize: 26)
-                if !snap.puzzleModes.isEmpty {
-                    TileRow(list: snap.puzzleModes, maxSize: 20, gap: 3)
-                }
+            TileRow(list: snap.modes, maxSize: 34, gap: 5)
+            if !snap.puzzleModes.isEmpty {
+                TileRow(list: snap.puzzleModes, maxSize: 28, gap: 4)
             }
-            Spacer(minLength: 0)
             // §AL addendum: a row of four labeled chips — streak, solved, points, countdown.
             let stats = snap.dayStats(at: date)
             let midnight = nextLocalMidnight(after: date)
@@ -742,11 +779,10 @@ struct MediumView: View {
                 }
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        // §AV: the daily trio peeks up over the bottom edge, behind the stats row.
-        .background(alignment: .bottomTrailing) {
-            PeekingCast(date: date, size: 26).padding(.trailing, 14)
-        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        // Any spare height splits evenly above and below (never one empty band).
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        // BC addendum: no peeking cast on the medium (it has the cast row on top).
     }
 }
 

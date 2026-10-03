@@ -17,8 +17,8 @@ export interface HeadlineRule {
 /** Page / section titles. */
 export const HEADLINE: HeadlineRule = { widthPct: 62, maxWidth: 300, maxHeight: 64 };
 /** The Leaderboard day title (one host drawn in). */
-/** AU2: ≤ 110 tall (was 150) so the podium shows on arrival. */
-export const DAY_HEADLINE: HeadlineRule = { widthPct: 58, maxWidth: 360, maxHeight: 110 };
+/** AU2 + BB3: ≤ 90 tall (was 150) so the podium shows on arrival under the two-row picker. */
+export const DAY_HEADLINE: HeadlineRule = { widthPct: 58, maxWidth: 360, maxHeight: 90 };
 
 /** The widest an art of `w`×`h` may draw under a rule: the width cap, or the width at which it hits the height cap. */
 export function headlineMaxWidth(w: number, h: number, rule: HeadlineRule = HEADLINE): number {

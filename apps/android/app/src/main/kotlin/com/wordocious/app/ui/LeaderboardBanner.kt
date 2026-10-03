@@ -103,25 +103,27 @@ internal fun LeaderboardHeadline(bleed: Dp) {
 internal fun LeaderboardPicker(
     selected: String,
     onSelect: (String) -> Unit,
-    onOpenRecords: () -> Unit,
+    @Suppress("UNUSED_PARAMETER") onOpenRecords: () -> Unit = {},
 ) {
     GamePickerCard(
         selected = selected,
         onSelect = onSelect,
-        compact = true, // AU2: one scrolling row of smaller tiles
+        // BB3: the SAME two-row grid as Stats (every game visible, no sideways scroll), dense
+        // (~30–32 dp tiles, tight gaps) so the podium still shows on arrival.
+        dense = true,
         accent = LB_GOLD,
         labelColor = LB_LABEL,
         withSweep = true,
         sweepKey = SWEEP_ID,
         header = {
+            // BB4: no ALL-TIME door here (all-time lives in Stats).
             ResetClockLabel(Modifier.weight(1f))
-            HeaderLink("ALL-TIME", "All-time records", onOpenRecords)
         },
     )
 }
 
 /** AU2 the Leaderboard day title's height cap. */
-private val LB_TITLE_MAX = 110.dp
+private val LB_TITLE_MAX = 90.dp // BB3 (was 110)
 
 /** "OCT 2 · RESETS IN 12:41:17" — reads the ticking clock in its own scope so only it recomposes. */
 @Composable

@@ -31,6 +31,17 @@ val RAIL_LOSS_RED = Color(0xFFDC2626)
 fun statsPageOrder(wordKeys: List<String>, puzzleKeys: List<String>, withSweep: Boolean = true): List<String> =
     (listOf(RAIL_TODAY, RAIL_ALL) + wordKeys + (if (withSweep) listOf(RAIL_SWEEP) else emptyList()) + puzzleKeys).distinct()
 
+/**
+ * Founder 10-02: a finished drag of [dx] × [dy] px switches the Stats page only when it is
+ * CLEARLY horizontal — at least [thresholdPx] wide and at least twice as wide as tall. Returns
+ * forward (swiped left) / back (swiped right), or null (a scroll, a tap, a diagonal drag).
+ */
+fun statsSwipeForward(dx: Float, dy: Float, thresholdPx: Float): Boolean? {
+    val ax = kotlin.math.abs(dx)
+    if (ax < thresholdPx || ax < 2f * kotlin.math.abs(dy)) return null
+    return dx < 0f
+}
+
 /** The page one swipe away from [selected] along [order] ([forward] = toward the end); null at either end. */
 fun statsSwipeTarget(order: List<String>, selected: String, forward: Boolean): String? {
     val i = order.indexOf(selected)

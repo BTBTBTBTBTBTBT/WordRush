@@ -3,6 +3,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { headlineTokens, type HeadlineToken } from '@wordle-duel/core';
 import { badgeSrc } from '@/lib/art';
+import { darken, softMix } from '@/lib/soft-surface';
 import { feedback } from '@/lib/sound-events';
 import { prefersReducedMotion } from '@/lib/motion';
 import { HEADLINE_NUMBER, HEADLINE_OUTLINE, HEADLINE_PALETTES, headlineFit, type HeadlinePalette } from '@/lib/live-headline';
@@ -36,6 +37,8 @@ export interface LiveHeadlineProps {
   calm?: boolean;
   className?: string;
   style?: CSSProperties;
+  /** BB1: a game's own accent in place of the palette's fill (light → accent, darkened edge). */
+  accent?: string;
 }
 
 function Glyphs({ word, start, kind }: { word: string; start: number; kind: HeadlineToken['kind'] }) {
@@ -53,7 +56,7 @@ function Glyphs({ word, start, kind }: { word: string; start: number; kind: Head
 }
 
 export const LiveHeadline = memo(function LiveHeadline({
-  text, palette = 'home', names, size = '1.5rem', level = 2, align = 'center', calm = false, className = '', style,
+  text, palette = 'home', names, size = '1.5rem', level = 2, align = 'center', calm = false, className = '', style, accent,
 }: LiveHeadlineProps) {
   const shown = text.toUpperCase();
   const nameKey = (names ?? []).join('\u0001');
@@ -86,7 +89,8 @@ export const LiveHeadline = memo(function LiveHeadline({
     return () => ro.disconnect();
   }, [shown, nameKey]);
 
-  const p = HEADLINE_PALETTES[palette];
+  const base = HEADLINE_PALETTES[palette];
+  const p = accent ? { ...base, top: softMix(accent, 0.55), bottom: accent, deep: darken(accent, 0.45) } : base;
   const vars = {
     '--lh-size': typeof size === 'number' ? `${size}px` : size,
     '--lh-top': p.top, '--lh-bottom': p.bottom, '--lh-deep': p.deep,

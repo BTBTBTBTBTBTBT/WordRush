@@ -20,11 +20,11 @@ import { SeasonArt } from '@/components/ui/season-art';
 // the day's title art (core leaderboardTitle — "FRIDAY’S FINEST"; on a
 // holiday the whole cast around LEADERBOARD with "<HOLIDAY> HEROES" under it)
 // as a full-width headline right on the wallpaper, then the ONE game picker
-// card in gold, topped by the date · reset clock and the ALL-TIME → link. The
+// card in gold, topped by the date · reset clock (BB4: no ALL-TIME link — all-time lives in Stats). The
 // WORDOCIOUS row ends with the Sweep broom tile (no separate SWEEP pill). The
 // Records page (records-banner.tsx) reuses the clock and the headline rules.
 
-/** The day headline's height cap (FINISH_SPEC N1 + AU2: ≈58% width, ≤ 110 tall). */
+/** The day headline's height cap (FINISH_SPEC N1 + BB3: ≈58% width, ≤ 90 tall). */
 export const DAY_HEADLINE_MAX_HEIGHT = DAY_HEADLINE.maxHeight;
 const NBSP = ' ';
 
@@ -50,7 +50,7 @@ export function dayTitle(today: string): string {
 export const PICKER_HEADER_CLASS = 'flex items-center gap-2 font-extrabold lb-gold-ink';
 export const PICKER_HEADER_STYLE: React.CSSProperties = { fontSize: 11, letterSpacing: 0.5 };
 
-/** A small tinted chip link in the picker header (ALL-TIME →, ← TODAY). */
+/** A small tinted chip link in a picker header (the Records page's ← TODAY). */
 export function HeaderChipLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
@@ -124,19 +124,20 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         </h1>
       ) : (
         // Until the local day is known, hold the headline's slot so it doesn't jump.
-        <div aria-hidden="true" className="mb-3" style={{ height: 'min(40vw, 110px)' }} />
+        <div aria-hidden="true" className="mb-3" style={{ height: 'min(34vw, 90px)' }} />
       )}
 
       <GamePicker
         selected={selectedMode}
         onSelect={onSelect}
         accent={LB_GOLD}
-        layout="strip"
+        // BB3: the same two-row grid as Stats (every game visible, no sideways
+        // scroll) at compact ≤ 32 px tiles; BB4: no all-time button (it lives in Stats).
+        density="compact"
         label="Pick a leaderboard"
         header={
           <div className={PICKER_HEADER_CLASS} style={PICKER_HEADER_STYLE}>
-            <span className="flex-1 min-w-0 truncate"><ResetLine lead={date} /></span>
-            <HeaderChipLink href="/records">ALL-TIME →</HeaderChipLink>
+            <span className="flex-1 min-w-0 truncate text-center"><ResetLine lead={date} /></span>
           </div>
         }
       />

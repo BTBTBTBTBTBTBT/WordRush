@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- FINISH_SPEC E2 + AL small widget (finishing-touches `.wsmall`, 2x2): the Home wallpaper,
-     the streak chip (3D flame + soft number + DAY STREAK), four of today's dailies as mini
-     game-card tiles (bitmaps; a purple check on finished ones), and the three stats it must
-     ALWAYS show as labeled chips: solved (5/18 SOLVED), today's points (3,420 PTS) and a
-     full-width live countdown to local midnight (NEW IN 7:42:10). Info first: the tile row
-     is the only thing that shrinks (to nothing) when the widget is short. -->
+<!-- FINISH_SPEC E2 + AL + AV + BC small widget (2x2): the Home wallpaper (with today's host leaning in
+     top-right and three cast heads peeking up along the bottom edge, painted into the wall
+     bitmap), the streak (3D flame + soft number + DAY STREAK, no box), the 8 Wordocious
+     dailies as TWO rows of four big tiles filling the middle (BC: they take the empty band),
+     ONE stat line ([check] 7/18 SOLVED · [star] 10,779 PTS, auto-sized, never truncated) and
+     the live countdown to local midnight (NEW IN 7:42:10). The bottom 12 dp is left to the
+     peeking cast so it never sits under text. Tiles are what shrink when the widget is short. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -23,23 +24,22 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="9dp">
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp">
 
-        <!-- Streak: [flame] 12 DAY STREAK -->
+        <!-- Streak: [flame] 12 DAY STREAK (no box). -->
         <LinearLayout
             android:id="@+id/w_streak_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="@drawable/widget_chip_flame"
-            android:paddingStart="4dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+            android:paddingEnd="4dp">
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="19dp"
+                android:layout_height="19dp"
                 android:src="@drawable/icon3d_flame"
                 android:contentDescription="@null" />
             <TextView
@@ -60,23 +60,29 @@
                 android:text="DAY STREAK" />
         </LinearLayout>
 
-        <!-- Tiles: takes whatever height is left (drops to nothing before any stat does). -->
+        <!-- BC: the 8 dailies as two rows of four big tiles; they take whatever height is left. -->
         <LinearLayout
             android:id="@+id/w_tiles"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="3dp"
-            android:layout_marginBottom="3dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp"
+            android:orientation="vertical"
+            android:gravity="center">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical">
             <ImageView
                 android:id="@+id/w_t0"
                 android:src="@drawable/game_practice"
-                android:padding="5dp"
+                android:padding="4dp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:maxHeight="44dp"
+                android:maxHeight="40dp"
                 android:adjustViewBounds="true"
                 android:layout_weight="1"
                 android:scaleType="fitCenter"
@@ -84,10 +90,10 @@
             <ImageView
                 android:id="@+id/w_t1"
                 android:src="@drawable/game_gauntlet"
-                android:padding="5dp"
+                android:padding="4dp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:maxHeight="44dp"
+                android:maxHeight="40dp"
                 android:adjustViewBounds="true"
                 android:layout_weight="1"
                 android:scaleType="fitCenter"
@@ -95,10 +101,10 @@
             <ImageView
                 android:id="@+id/w_t2"
                 android:src="@drawable/game_quordle"
-                android:padding="5dp"
+                android:padding="4dp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:maxHeight="44dp"
+                android:maxHeight="40dp"
                 android:adjustViewBounds="true"
                 android:layout_weight="1"
                 android:scaleType="fitCenter"
@@ -106,131 +112,174 @@
             <ImageView
                 android:id="@+id/w_t3"
                 android:src="@drawable/game_octordle"
-                android:padding="5dp"
+                android:padding="4dp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:maxHeight="44dp"
+                android:maxHeight="40dp"
                 android:adjustViewBounds="true"
                 android:layout_weight="1"
                 android:scaleType="fitCenter"
                 android:contentDescription="@null" />
         </LinearLayout>
-
-        <!-- Two stacked chips: [check] 5/18 / SOLVED · [star] 3,420 / PTS -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/w_t4"
+                android:src="@drawable/game_sequence"
+                android:padding="4dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:maxHeight="40dp"
+                android:adjustViewBounds="true"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t5"
+                android:src="@drawable/game_rescue"
+                android:padding="4dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:maxHeight="40dp"
+                android:adjustViewBounds="true"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t6"
+                android:src="@drawable/game_six"
+                android:padding="4dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:maxHeight="40dp"
+                android:adjustViewBounds="true"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t7"
+                android:src="@drawable/game_seven"
+                android:padding="4dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:maxHeight="40dp"
+                android:adjustViewBounds="true"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+        </LinearLayout>
+        </LinearLayout>
 
+        <!-- ONE stat line: [check] 7/18 SOLVED · [star] 10,779 PTS (numbers auto-size, never truncate). -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="18dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
             <LinearLayout
                 android:id="@+id/w_solved_chip"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:background="@drawable/widget_chip_solved"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-                    <ImageView
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:src="@drawable/icon3d_badge_check"
-                        android:contentDescription="@null" />
-                    <TextView
-                        android:id="@+id/w_solved"
-                        style="@style/WidgetNumber"
-                        android:layout_width="0dp"
-                        android:layout_height="18dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="3dp"
-                        android:gravity="center_vertical"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="9sp"
-                        android:autoSizeMaxTextSize="15sp"
-                        android:importantForAccessibility="no"
-                        android:text="0/18" />
-                </LinearLayout>
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/icon3d_badge_check"
+                    android:contentDescription="@null" />
+                <TextView
+                    android:id="@+id/w_solved"
+                    style="@style/WidgetNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="7sp"
+                    android:autoSizeMaxTextSize="14sp"
+                    android:importantForAccessibility="no"
+                    android:text="0/18" />
                 <TextView
                     style="@style/WidgetLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:textSize="8.5sp"
+                    android:layout_marginStart="2dp"
+                    android:textSize="7.5sp"
                     android:textColor="#6D28D9"
                     android:text="SOLVED" />
             </LinearLayout>
 
+            <TextView
+                style="@style/WidgetLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
+                android:textColor="#8A78AD"
+                android:importantForAccessibility="no"
+                android:text="·" />
+
             <LinearLayout
                 android:id="@+id/w_points_chip"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:orientation="vertical"
-                android:background="@drawable/widget_chip_points"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-                    <ImageView
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:src="@drawable/art_badge_icon_star_sprite"
-                        android:contentDescription="@null" />
-                    <TextView
-                        android:id="@+id/w_points"
-                        style="@style/WidgetNumber"
-                        android:layout_width="0dp"
-                        android:layout_height="18dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="3dp"
-                        android:gravity="center_vertical"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="9sp"
-                        android:autoSizeMaxTextSize="15sp"
-                        android:importantForAccessibility="no"
-                        android:text="0" />
-                </LinearLayout>
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/art_badge_icon_star_sprite"
+                    android:contentDescription="@null" />
+                <TextView
+                    android:id="@+id/w_points"
+                    style="@style/WidgetNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="7sp"
+                    android:autoSizeMaxTextSize="14sp"
+                    android:importantForAccessibility="no"
+                    android:text="0" />
                 <TextView
                     style="@style/WidgetLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:textSize="8.5sp"
+                    android:layout_marginStart="2dp"
+                    android:textSize="7.5sp"
                     android:textColor="#B45309"
                     android:text="PTS" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Full-width countdown: [clock] NEW IN 7:42:10 (a live Chronometer to local midnight). -->
+        <!-- The countdown: [clock] NEW IN 7:42:10 (a live Chronometer to local midnight). -->
         <LinearLayout
             android:id="@+id/w_clock_chip"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="@drawable/widget_chip_clock"
             android:paddingStart="5dp"
             android:paddingEnd="6dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp">
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp">
             <ImageView
                 android:id="@+id/w_clock_icon"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="13dp"
+                android:layout_height="13dp"
                 android:contentDescription="@null" />
             <TextView
                 style="@style/WidgetLabel"
@@ -245,13 +294,13 @@
                 android:id="@+id/w_countdown"
                 style="@style/WidgetNumber"
                 android:layout_width="0dp"
-                android:layout_height="17dp"
+                android:layout_height="16dp"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
                 android:gravity="center_vertical|end"
                 android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="9sp"
-                android:autoSizeMaxTextSize="14sp" />
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

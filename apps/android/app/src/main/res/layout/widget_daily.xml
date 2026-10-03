@@ -27,103 +27,22 @@
         android:orientation="vertical"
         android:padding="10dp">
 
-        <ImageView
-            android:id="@+id/w_cast"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:maxHeight="34dp"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:contentDescription="@null" />
-
+        <!-- The cast spelling WORDOCIOUS + today's rank chip (GONE when unknown). -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_height="0dp"
+            android:layout_weight="0.8"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
             <ImageView
-                android:id="@+id/w_t0"
-                android:src="@drawable/game_practice"
-                android:padding="5dp"
+                android:id="@+id/w_cast"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:maxHeight="34dp"
+                android:adjustViewBounds="true"
                 android:scaleType="fitCenter"
                 android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t1"
-                android:src="@drawable/game_gauntlet"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t2"
-                android:src="@drawable/game_quordle"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t3"
-                android:src="@drawable/game_octordle"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t4"
-                android:src="@drawable/game_sequence"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t5"
-                android:src="@drawable/game_rescue"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t6"
-                android:src="@drawable/game_six"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_t7"
-                android:src="@drawable/game_seven"
-                android:padding="5dp"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null" />
-            </LinearLayout>
-
             <!-- Today's Daily Sweep rank as a labeled chip ([trophy] #3 / RANK); GONE when unknown. -->
             <LinearLayout
                 android:id="@+id/w_side"
@@ -169,6 +88,189 @@
                     android:textColor="#B45309"
                     android:text="RANK" />
             </LinearLayout>
+        </LinearLayout>
+
+        <!-- BC: the 8 Wordocious dailies across the FULL width, grown to fill. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.2"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/w_t0"
+                android:src="@drawable/game_practice"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t1"
+                android:src="@drawable/game_gauntlet"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t2"
+                android:src="@drawable/game_quordle"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t3"
+                android:src="@drawable/game_octordle"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t4"
+                android:src="@drawable/game_sequence"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t5"
+                android:src="@drawable/game_rescue"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t6"
+                android:src="@drawable/game_six"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t7"
+                android:src="@drawable/game_seven"
+                android:padding="3dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+        </LinearLayout>
+
+        <!-- BC: the 10 Puzzles dailies across the FULL width (no empty band above the stats). -->
+        <LinearLayout
+            android:id="@+id/w_puzzles"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginBottom="3dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/w_p0"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p1"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p2"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p3"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p4"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p5"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p6"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p7"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p8"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p9"
+                android:src="@drawable/game_practice"
+                android:padding="2dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
         </LinearLayout>
 
         <!-- AL: the four labeled stat chips (always shown). -->

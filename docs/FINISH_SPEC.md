@@ -1030,3 +1030,33 @@ BA1. Short screens (height < 700 pt/dp, e.g. iPhone SE / 360×640): the "Keep pl
      freed height (QuadWord ≈ 15 pt tiles, OctoWord ≈ 10 pt). Tall screens unchanged.
 BA2. Gauntlet results fit one screen: hero card + stars + stat pills + buttons; the score breakdown and stage
      breakdown move behind the "More" chip like the other games.
+
+## BB. Stats + Leaderboard picker polish (founder 10-02 on 237, screenshots of the Stats picker)
+BB1. Stats: the selected game's name ("CLASSIC", tiny plain caps) must be prominent: show that game's own title art
+     (art-game-<mode>, the game's lettering title with its host) ~44–52 pt tall as the card's header (centered),
+     falling back to LiveHeadline in the game's accent when there's no title art (Sweep, puzzles without art).
+     It swaps with a quick pop when another game is picked.
+BB2. Stats Today | All-time toggle: a real candy segmented control — tinted track, a filled sliding thumb in the
+     game's accent (white bold label on it), the other label clearly legible (≥ 4.5:1), 36–40 pt tall, squish — not
+     two floating words.
+BB3. Leaderboard picker: use the SAME two-row grid as Stats (WORDOCIOUS row incl. Sweep, then PUZZLES row, every
+     game visible, no sideways scroll) instead of the one long scrolling row — at a compact tile size (~30–32 pt) so
+     the podium is STILL visible on arrival at 390×844 (take the room from the day title, ≤ 90 pt, and tighter gaps).
+BB4. Remove the ALL-TIME button from the Leaderboard (all-time lives only in Stats, as planned).
+
+## BC. Small widget fill (founder 10-02 on 237: "fill out the widget better so the games cover more of that empty
+space"; screenshot: one thin row of tiny game tiles + dots with a big empty band, "10,7… PTS" truncated, the peeking
+cast squeezed into the bottom-right corner)
+- Game tiles take the empty middle: TWO rows of four big tiles (the 8 Wordocious dailies, ~30–34 pt each, edge to
+  edge with small gaps), each with its check / ✕ / unplayed state; the Puzzles row stays as the thin colored dot
+  strip under them (or drop it on the small size if space is tight — tiles first).
+- Numbers never truncate: auto-shrink the stat line to fit ("7/18 SOLVED · 10,779 PTS"), shorten labels before
+  numbers, use compact thousands (10.8K) only as a last resort.
+- The peeking cast sits along the bottom edge evenly across the width, behind/below the countdown line, never
+  overlapping text; the day host stays top-right.
+- Medium: same tile rule (one row of 8 at a bigger size) — no empty bands.
+BC addendum — MEDIUM widget (founder screenshot: tile rows fill only the left ~2/3, empty block on the right and a
+gap above the stats, peeking cast crammed bottom-right): both game rows span the FULL width evenly (Wordocious 8
+tiles across, Puzzles 10 tiles across, sized up to fill — tiles grow until the width is used), vertical space
+distributed so there's no empty band between the rows and the stat chips; the medium already has the full cast row
+at the top, so DROP the peeking cast on medium (keep it on small only).

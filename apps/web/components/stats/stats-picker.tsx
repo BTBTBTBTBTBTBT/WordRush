@@ -1,7 +1,11 @@
 'use client';
 
 import { GamePicker, type GamePickerBadge } from '@/components/ui/game-picker';
-import { TintSegment } from '@/components/stats/tint-segment';
+import { CandySegment } from '@/components/ui/candy-segment';
+import { ArtTitle } from '@/components/ui/art-title';
+import { LiveHeadline } from '@/components/ui/live-headline';
+import { gameTitleArtForDbKey, gameTitleArtLabel } from '@/lib/art';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { VIEW_ALL, VIEW_TODAY, pickerKeyForView, viewForPickerKey } from '@/lib/stats-view';
 
 // The Stats tab's game picker (docs/FINISH_SPEC.md C3, founder): the SAME
@@ -24,11 +28,30 @@ interface Props {
   wordociousExtra?: React.ReactNode;
 }
 
+/** BB1: the selected game's lettering title (~48 px) or, without title art, its name in live lettering in its accent. */
+function SelectedTitle({ pickerKey }: { pickerKey: string | null }) {
+  if (!pickerKey) return null;
+  const art = gameTitleArtForDbKey(pickerKey);
+  const meta = MODE_BY_DBKEY[pickerKey];
+  return (
+    // Keyed by the game: a quick pop each time another game is picked.
+    <div key={pickerKey} className="intro-pop w-full flex justify-center" style={{ minHeight: 48 }}>
+      {art ? (
+        <ArtTitle name={art} label={gameTitleArtLabel(art)} maxHeight={48} maxWidth={320} as="div" level={2} priority={false} motion="none" />
+      ) : (
+        <LiveHeadline text={meta?.title ?? 'Daily Sweep'} accent={meta?.accentHex ?? '#7c3aed'} size={26} level={2} />
+      )}
+    </div>
+  );
+}
+
 export function StatsPicker({ view, onSelect, badges, wordociousExtra }: Props) {
   const seg: 'today' | 'all' | '' = view === VIEW_TODAY ? 'today' : view === VIEW_ALL ? 'all' : '';
+  const pickerKey = pickerKeyForView(view);
+  const accent = (pickerKey && MODE_BY_DBKEY[pickerKey]?.accentHex) || STATS_ACCENT;
   return (
     <GamePicker
-      selected={pickerKeyForView(view)}
+      selected={pickerKey}
       onSelect={(key) => onSelect(viewForPickerKey(key))}
       accent={STATS_ACCENT}
       ink={INK}
@@ -36,13 +59,15 @@ export function StatsPicker({ view, onSelect, badges, wordociousExtra }: Props) 
       badges={badges}
       wordociousExtra={wordociousExtra}
       label="Stats pages"
+      title={<SelectedTitle pickerKey={pickerKey} />}
       header={
-        <TintSegment<'today' | 'all' | ''>
+        // BB2: a candy segmented control with a sliding thumb (in the game's
+        // accent when a game is picked; then neither half is chosen).
+        <CandySegment<'today' | 'all'>
           options={[{ key: 'today', label: 'Today' }, { key: 'all', label: 'All-time' }]}
           value={seg}
           onChange={(k) => onSelect(k === 'all' ? VIEW_ALL : VIEW_TODAY)}
-          accent={STATS_ACCENT}
-          ink={INK}
+          accent={seg ? STATS_ACCENT : accent}
           label="Today or all-time"
           className="w-full"
         />

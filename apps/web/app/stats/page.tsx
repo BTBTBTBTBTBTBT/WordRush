@@ -65,7 +65,7 @@ import { StatsPicker } from '@/components/stats/stats-picker';
 import { TintSegment } from '@/components/stats/tint-segment';
 import { TodayCard } from '@/components/stats/today-card';
 import { pickerRows, SWEEP_KEY } from '@/lib/game-picker';
-import { VIEW_TODAY, VIEW_ALL, VIEW_SWEEP, VIEW_VS, VIEW_PARAM, parseViewParam, viewUrl, swipeOrder, swipeNeighbor, todayBadges } from '@/lib/stats-view';
+import { VIEW_TODAY, VIEW_ALL, VIEW_SWEEP, VIEW_VS, VIEW_PARAM, parseViewParam, viewUrl, swipeOrder, swipeNeighbor, isPageSwipe, todayBadges } from '@/lib/stats-view';
 import { useFlags } from '@/hooks/use-flags';
 import type { Database } from '@/lib/database.types';
 
@@ -323,13 +323,23 @@ export default function StatsPage() {
   // Swipe on the page moves one step through the picker (founder: no 19-page
   // swipe — but a swipe between neighbors is the natural gesture).
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => { const t = e.touches[0]; touchStart.current = { x: t.clientX, y: t.clientY }; };
+  const onTouchStart = (e: React.TouchEvent) => {
+    // A swipe that starts in a sideways scroller (the VS game tiles) scrolls it, never the page.
+    let el = e.target as HTMLElement | null;
+    while (el && el !== e.currentTarget) {
+      const ox = getComputedStyle(el).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth) { touchStart.current = null; return; }
+      el = el.parentElement;
+    }
+    const t = e.touches[0]; touchStart.current = { x: t.clientX, y: t.clientY };
+  };
   const onTouchEnd = (e: React.TouchEvent) => {
     const s = touchStart.current; touchStart.current = null;
     if (!s) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - s.x, dy = t.clientY - s.y;
-    if (Math.abs(dx) < 70 || Math.abs(dy) > 50) return;
+    // Founder 10-02: a diagonal scroll no longer flips the page (which snapped the view back to the picker).
+    if (!isPageSwipe(dx, dy)) return;
     const next = swipeNeighbor(order, selected, dx < 0 ? 1 : -1);
     if (next) setSelected(next);
   };

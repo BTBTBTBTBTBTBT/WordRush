@@ -218,8 +218,10 @@ fun GamePickerCard(
     badgeShown: ((String) -> Boolean)? = null,
     sweepLabel: String = "Daily Sweep board",
     header: (@Composable RowScope.() -> Unit)? = null,
-    /** AU2: ONE horizontally scrolling row of smaller tiles (Wordocious · divider · Puzzles). */
-    compact: Boolean = false,
+    /** BB3: the dense grid (tighter padding / gaps, smaller labels — the Leaderboard's ~30–32 dp tiles). */
+    dense: Boolean = false,
+    /** BB1: the card's centered title under the header strip (Stats: the selected game's title art). */
+    title: (@Composable () -> Unit)? = null,
 ) {
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
@@ -248,15 +250,16 @@ fun GamePickerCard(
                     content = header,
                 )
             }
-            if (compact) {
-                CompactPickerRow(words, puzzles, selected, onSelect, accent, badge, badgeShown, sweepLabel)
-            } else Column(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            if (title != null) {
+                Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 12.dp, end = 12.dp), contentAlignment = Alignment.Center) { title() }
+            }
+            Column(
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = if (dense) 7.dp else 12.dp, bottom = if (dense) 9.dp else 14.dp),
+                verticalArrangement = Arrangement.spacedBy(if (dense) 4.dp else 8.dp),
             ) {
                 PickerLabel("WORDOCIOUS", labelColor)
                 PickerRow(words, selected, onSelect, gap = 6.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel)
-                PickerLabel("PUZZLES", labelColor, Modifier.padding(top = 4.dp))
+                PickerLabel("PUZZLES", labelColor, Modifier.padding(top = if (dense) 2.dp else 4.dp))
                 PickerRow(puzzles, selected, onSelect, gap = 5.dp, corner = 10.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel)
             }
         }
@@ -288,49 +291,6 @@ private fun PickerRow(
     Row(Modifier.fillMaxWidth().padding(horizontal = 1.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
         tiles.forEach { t ->
             PickerTileBox(t, Modifier.weight(1f).aspectRatio(1f), t.key == selected, onSelect, corner, badge, badgeShown, sweepLabel)
-        }
-    }
-}
-
-/**
- * AU2 the compact picker: one horizontally scrolling row of 46 dp tiles — the Wordocious
- * dailies (+ the Sweep), a divider, the Puzzles — opening scrolled to the selected tile.
- */
-@Composable
-private fun CompactPickerRow(
-    words: List<PickerTile>,
-    puzzles: List<PickerTile>,
-    selected: String?,
-    onSelect: (String) -> Unit,
-    accent: Color,
-    badge: ((String) -> Boolean?)?,
-    badgeShown: ((String) -> Boolean)?,
-    sweepLabel: String,
-) {
-    val state = androidx.compose.foundation.lazy.rememberLazyListState()
-    LaunchedEffect(Unit) {
-        val wi = words.indexOfFirst { it.key == selected }
-        val pi = puzzles.indexOfFirst { it.key == selected }
-        val idx = when { wi >= 0 -> wi; pi >= 0 -> words.size + 1 + pi; else -> 0 }
-        if (idx > 2) state.scrollToItem(idx - 2)
-    }
-    androidx.compose.foundation.lazy.LazyRow(
-        state = state,
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        items(words.size, key = { "w-" + words[it].key }) { i ->
-            val t = words[i]
-            PickerTileBox(t, Modifier.size(46.dp), t.key == selected, onSelect, 11.dp, badge, badgeShown, sweepLabel)
-        }
-        if (puzzles.isNotEmpty()) item(key = "divider") {
-            Box(Modifier.padding(horizontal = 2.dp).width(2.dp).height(30.dp).clip(RoundedCornerShape(1.dp)).background(accentLine(accent, 0.45f)))
-        }
-        items(puzzles.size, key = { "p-" + puzzles[it].key }) { i ->
-            val t = puzzles[i]
-            PickerTileBox(t, Modifier.size(46.dp), t.key == selected, onSelect, 11.dp, badge, badgeShown, sweepLabel)
         }
     }
 }

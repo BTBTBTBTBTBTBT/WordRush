@@ -26,3 +26,17 @@ class WidgetCastTest {
         assertEquals(emptyList<Char>(), WidgetCast.peekers(listOf('W'), 'W', 3))
     }
 }
+
+/** FINISH_SPEC BC: the points never truncate — full number first, compact only as a last resort. */
+class WidgetPointsFitTest {
+    @Test fun fullNumberWheneverItFits() {
+        assertEquals("10,779", WidgetStats.pointsLabelFit(10_779))
+        assertEquals("999,999", WidgetStats.pointsLabelFit(999_999))
+        assertEquals("0", WidgetStats.pointsLabelFit(0))
+    }
+
+    @Test fun compactOnlyWhenTheFullNumberCannotFit() {
+        assertEquals("1.2M", WidgetStats.pointsLabelFit(1_234_567))
+        assertEquals("10.8K", WidgetStats.pointsLabelFit(10_779, maxChars = 5))
+    }
+}

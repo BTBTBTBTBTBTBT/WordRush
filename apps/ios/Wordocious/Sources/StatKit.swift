@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// Shared visual grammar for the Profile + Records stat pages — ports
 /// components/profile/stat-kit.tsx. Every section uses SectionHeader; every
@@ -195,9 +196,7 @@ struct StatGrid: View {
 
     var body: some View {
         KitCard(accent: accent) {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: cols), spacing: 12) {
-                ForEach(Array(stats.enumerated()), id: \.offset) { _, s in s }
-            }
+            EagerGrid(items: stats, columns: cols, rowSpacing: 12) { s in s }
         }
     }
 }
@@ -434,6 +433,30 @@ struct ActionWrapRow: Layout {
                 x += sizes[k].width + spacing
             }
             y += rowH + lineSpacing
+        }
+    }
+}
+
+/// Stats scroll-jump fix: a NON-lazy grid (core `GridRows`) for the Stats page — rows of
+/// equal-width cells, top-aligned, built up front so the page's content height never
+/// swings while scrolling (a LazyVGrid inside the page's plain ScrollView did).
+struct EagerGrid<Item, Cell: View>: View {
+    let items: [Item]
+    var columns: Int
+    var spacing: CGFloat = 8
+    var rowSpacing: CGFloat = 8
+    @ViewBuilder var cell: (Item) -> Cell
+
+    var body: some View {
+        VStack(spacing: rowSpacing) {
+            ForEach(GridRows.chunk(items.count, columns: columns), id: \.self) { row in
+                HStack(alignment: .top, spacing: spacing) {
+                    ForEach(row, id: \.self) { i in cell(items[i]).frame(maxWidth: .infinity) }
+                    ForEach(0..<max(0, columns - row.count), id: \.self) { _ in
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: 0)
+                    }
+                }
+            }
         }
     }
 }

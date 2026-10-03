@@ -37,9 +37,8 @@ describe('records fold into Stats', () => {
     expect(records).not.toContain('YourRecordsView');
     expect(records).not.toContain("['you', 'You']");
   });
-  it('the Leaderboard page links to the all-time records', () => {
-    // The ALL-TIME → link lives in the Leaderboard banner (docs/LEADERBOARD_REDESIGN_SPEC.md §1).
+  it('the Leaderboard page no longer links to the all-time records (FINISH_SPEC BB4: all-time lives in Stats)', () => {
     expect(read('app/daily/page.tsx')).toContain('<LeaderboardBanner');
-    expect(read('components/leaderboard/leaderboard-banner.tsx')).toContain('href="/records"');
+    expect(read('components/leaderboard/leaderboard-banner.tsx')).not.toContain('href="/records"');
   });
 });

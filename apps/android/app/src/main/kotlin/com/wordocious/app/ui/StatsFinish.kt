@@ -1,5 +1,12 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -154,36 +161,89 @@ fun StatsSegmented(
     fill: Color = StatsInk.segment,
     fontSize: TextUnit = 12.sp,
 ) {
+    // BB2 (founder 10-02): a real candy segmented control — a tinted track, a filled candy
+    // thumb that SLIDES to the picked segment (spring, transform only), white bold label on it,
+    // the other labels in the track's dark ink (≥ 4.5:1), 38 dp tall, squishing on press. No
+    // selection (a game picked) parks the thumb faded out.
     val dark = WTheme.isDark
     val shape = RoundedCornerShape(50)
-    Row(
-        modifier.clip(shape)
+    val n = options.size.coerceAtLeast(1)
+    val idx = options.indexOfFirst { it.first == selected }
+    val pos by androidx.compose.animation.core.animateFloatAsState(
+        idx.coerceAtLeast(0).toFloat(),
+        if (WTheme.reducedMotion) androidx.compose.animation.core.snap() else Motion.springIn(), label = "segThumb",
+    )
+    val thumbAlpha by androidx.compose.animation.core.animateFloatAsState(if (idx >= 0) 1f else 0f, label = "segThumbAlpha")
+    androidx.compose.foundation.layout.BoxWithConstraints(
+        modifier.height(38.dp).clip(shape)
             .background(if (dark) WTheme.surfaceAlt else Wash.mix(track, 0.12f))
             .border(1.5.dp, if (dark) WTheme.border else Wash.mix(track, 0.30f), shape)
             .padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        options.forEach { (key, label) ->
-            val on = key == selected
-            Box(
-                Modifier.weight(1f)
-                    .squishClickable(onClick = { onSelect(key) })
-                    .clip(shape)
-                    .background(if (on) fill else Color.Transparent)
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                    .semantics(mergeDescendants = true) {
-                        role = Role.Tab
-                        this.selected = on
-                        contentDescription = label
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label, fontSize = fontSize, fontWeight = FontWeight.Black, maxLines = 1,
-                    color = if (on) Color.White else if (dark) WTheme.textSecondary else darkenInk(track),
-                    overflow = TextOverflow.Ellipsis,
+        val segW = maxWidth / n
+        // The candy thumb: a lip under a glossy face in [fill].
+        Box(
+            Modifier.width(segW).fillMaxHeight()
+                .graphicsLayer { translationX = pos * segW.toPx(); alpha = thumbAlpha }
+                .drawBehind {
+                    val r = androidx.compose.ui.geometry.CornerRadius(size.height / 2f)
+                    drawRoundRect(Color(TintMath.over(0xFF000000.toInt(), 0.28f, fill.copy(alpha = 1f).toArgb())), cornerRadius = r)
+                    drawRoundRect(
+                        Brush.verticalGradient(listOf(Color(TintMath.over(0xFFFFFFFF.toInt(), 0.22f, fill.copy(alpha = 1f).toArgb())), fill)),
+                        size = androidx.compose.ui.geometry.Size(size.width, size.height - 2.5.dp.toPx()), cornerRadius = r,
+                    )
+                },
+        )
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+            options.forEach { (key, label) ->
+                val on = key == selected
+                Box(
+                    Modifier.weight(1f).fillMaxHeight()
+                        .squishClickable(onClick = { onSelect(key) })
+                        .semantics(mergeDescendants = true) {
+                            role = Role.Tab
+                            this.selected = on
+                            contentDescription = label
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label, fontSize = fontSize, fontWeight = FontWeight.Black, maxLines = 1,
+                        color = if (on) Color.White else if (dark) WTheme.textSecondary else darkenInk(track),
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp).padding(bottom = if (on) 2.dp else 0.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * BB1 the Stats picker card's header when a game (or the Sweep) is picked: that game's own
+ * title art ~48 dp tall, centered; no art (the Sweep, puzzles without art) = the name in the
+ * live lettering. Pops in on each new pick.
+ */
+@Composable
+fun StatsPickerTitle(key: String) {
+    androidx.compose.runtime.key(key) {
+        val still = WTheme.reducedMotion
+        val pop = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (still) 1f else 0.82f) }
+        androidx.compose.runtime.LaunchedEffect(Unit) { if (!still) pop.animateTo(1f, Motion.springIn()) }
+        val label = if (key == RAIL_SWEEP) "Daily Sweep" else gameTitleLabelForKey(key)
+        val art = if (key == RAIL_SWEEP) null else gameTitleArtResForKey(key)
+        Box(
+            Modifier.fillMaxWidth().height(48.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (art != null) {
+                androidx.compose.foundation.Image(
+                    artPainter(art, 260.dp), contentDescription = label,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    modifier = Modifier.fillMaxHeight().semantics { heading() },
                 )
+            } else {
+                LiveHeadline(label.uppercase(), HeadlinePalette.STATS, Modifier.fillMaxWidth(), maxSize = 24.sp, minSize = 14.sp, maxLines = 1)
             }
         }
     }

@@ -326,18 +326,20 @@ export function CompactResultRow({ line, won, delta }: { line: string; won: bool
  */
 export function DisclosureHeader({ label, open, onToggle, right }: { label: ReactNode; open: boolean; onToggle: () => void; right?: ReactNode }) {
   return (
-    <div className="w-full mt-5 mb-2 flex items-center gap-1.5">
+    // Founder 10-02: the bar is ALWAYS full width (collapsed and open), like the
+    // cards around it — the share icon sits inside it, left of the chevron.
+    <div className="relative w-full mt-5 mb-2">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex-1 flex items-center justify-between gap-1.5 text-left"
-        style={{ ...softPill(LB_GOLD, { radius: 14, bar: false }), ...SECTION_LABEL, padding: '9px 14px' }}
+        className="w-full flex items-center justify-between gap-1.5 text-left"
+        style={{ ...softPill(LB_GOLD, { radius: 14, bar: false }), ...SECTION_LABEL, padding: '9px 14px', minHeight: 44 }}
       >
         {label}
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
-      {right}
+      {right && <div className="absolute top-1/2 -translate-y-1/2 flex items-center" style={{ right: 36 }}>{right}</div>}
     </div>
   );
 }

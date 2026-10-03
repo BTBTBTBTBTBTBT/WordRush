@@ -26,6 +26,8 @@ struct ProfileTab: View {
     @State private var selected: String = StatsRailKey.today
     /// Bumped by select(.vs): content() scrolls All-time to its VS section.
     @State private var vsScrollToken = 0
+    /// A drag started in a horizontal-scrolling row — it never pages the game.
+    @State private var pageSwipeBlocked = false
     /// The All-time VS section's per-game board — one word game at a time (Classic by default).
     @State private var vsMode: GameMode = .duel
     /// Today's daily VS outcome (nil = not played) — the Today card's VS pill
@@ -411,10 +413,19 @@ struct ProfileTab: View {
                     }
                 }
                 .id("page-\(selected)-\(activeTab)")
+                // Scroll-jump fix (founder, build 237): the swipe is measured in SCREEN
+                // space (in the scrolling content's own space a vertical scroll's travel
+                // cancels out, so a slightly diagonal scroll past Achievements read as a
+                // sideways swipe, swapped the game page and snapped the page back up to
+                // the picker). Only a clearly horizontal swipe pages (core StatsSwipe), and
+                // never one that started in a horizontal-scrolling row.
                 .simultaneousGesture(
-                    DragGesture(minimumDistance: 24).onEnded { v in
-                        guard abs(v.translation.width) >= 70, abs(v.translation.height) <= 50 else { return }
-                        step(v.translation.width < 0 ? 1 : -1)
+                    DragGesture(minimumDistance: 24, coordinateSpace: .global).onEnded { v in
+                        defer { pageSwipeBlocked = false }
+                        guard !pageSwipeBlocked,
+                              let dir = StatsSwipe.step(dx: Double(v.translation.width), dy: Double(v.translation.height))
+                        else { return }
+                        step(dir)
                     }
                 )
             }
@@ -608,6 +619,10 @@ struct ProfileTab: View {
                 }
                 .padding(.horizontal, 4).padding(.vertical, 6)
             }
+            // A drag that starts in this sideways row never pages the game.
+            .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in
+                if !pageSwipeBlocked { pageSwipeBlocked = true }
+            })
             // People | Bots — the soft segmented toggle (§A9 squish per option).
             SoftSegmented(options: [(key: "vs", label: "People"), (key: "vs_cpu", label: "Bots")],
                           selection: Binding(get: { vsSectionTab }, set: { setVsSectionTab($0) }),
@@ -815,16 +830,38 @@ struct ProfileTab: View {
                        results: todayResults,
                        sweepResult: completions.allDone ? true : nil,
                        onSelect: { select($0) }) {
-            HStack(spacing: 8) {
-                FinishLabel(pickerTitle, color: Self.pickerInk)
-                Spacer(minLength: 8)
-                SoftSegmented(options: [(key: StatsRailKey.today, label: "Today"), (key: StatsRailKey.all, label: "All-time")],
-                              selection: Binding(
-                                get: { selected == StatsRailKey.today || selected == StatsRailKey.all ? selected : "" },
-                                set: { select($0) }),
-                              accent: Self.pickerAccent,
-                              accessibilityLabel: "Today or all-time")
+            VStack(spacing: 8) {
+                // FINISH_SPEC BB1: the selected game's own title art as the header
+                // (LiveHeadline in its accent when there's no art); pops on change.
+                pickerHeadline
+                    .id(selected)
+                    .frame(maxWidth: .infinity)
+                // BB2: the candy Today | All-time control (no thumb while a game is picked).
+                CandySegmented(options: [(key: StatsRailKey.today, label: "Today"), (key: StatsRailKey.all, label: "All-time")],
+                               selection: selected == StatsRailKey.today || selected == StatsRailKey.all ? selected : nil,
+                               accent: pickerHeadAccent,
+                               accessibilityLabel: "Today or all-time") { select($0) }
+                    .frame(maxWidth: 280)
             }
+        }
+    }
+
+    /// BB1/BB2: the selected game's accent (the page blue on Today / All-time).
+    private var pickerHeadAccent: Color {
+        if selected == GamePicker.sweep { return GamePicker.sweepAccent }
+        return selectedMeta?.accent ?? Self.pickerAccent
+    }
+
+    /// BB1: the header — a game's title art (~48 pt), else the live lettering.
+    @ViewBuilder private var pickerHeadline: some View {
+        if let g = ModeGen.byDbKey(selected), ArtAsset.exists("art-game-\(g.id)") {
+            // Any game with its lettering art (word games and Puzzles alike).
+            GameTitleArtView(asset: "art-game-\(g.id)", label: g.shareLabel, maxHeight: 48, minHeight: 40)
+                .padding(.horizontal, 8)
+        } else {
+            LiveHeadline(text: pickerTitle.uppercased(),
+                         palette: selectedMeta == nil && selected != GamePicker.sweep ? .stats : .accent(pickerHeadAccent),
+                         size: 24, maxLines: 1, minimumScale: 0.6)
         }
     }
 
@@ -1158,9 +1195,8 @@ struct ProfileTab: View {
                             Text(cat.label.uppercased()).font(Brand.font(11, .black)).tracking(0.4).foregroundStyle(Color(hex: cat.color))
                             Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                         }
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                            ForEach(items) { achievementCell($0, color: Color(hex: cat.color)) }
-                        }
+                        // Eager (not lazy): no estimated heights to correct mid-scroll.
+                        EagerGrid(items: items, columns: 3) { achievementCell($0, color: Color(hex: cat.color)) }
                     }
                 }
             }
@@ -1357,14 +1393,12 @@ struct ProfileTab: View {
             semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1,
             aggregates: known?.aggregates ?? .empty
         ).map { ($0.label, $0.value) }
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
-            ForEach(cells, id: \.0) { c in
-                VStack(spacing: 2) {
-                    // §A2: every big number is a soft number.
-                    Text(c.1).softNumber(18).lineLimit(1).minimumScaleFactor(0.6)
-                    Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
-                        .multilineTextAlignment(.center)
-                }
+        return EagerGrid(items: cells, columns: 4, rowSpacing: 12) { c in
+            VStack(spacing: 2) {
+                // §A2: every big number is a soft number.
+                Text(c.1).softNumber(18).lineLimit(1).minimumScaleFactor(0.6)
+                Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
+                    .multilineTextAlignment(.center)
             }
         }
         .padding(16)

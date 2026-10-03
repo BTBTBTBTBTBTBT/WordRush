@@ -58,6 +58,20 @@ object WidgetStats {
     /** "3,420" — the points chip's soft number (grouped, US separators; 0 before the first game). */
     fun pointsLabel(points: Int): String = String.format(Locale.US, "%,d", points)
 
+    /**
+     * BC the points as they fit in [maxChars]: the full grouped number ("10,779") whenever it
+     * fits — the line auto-shrinks first — and compact thousands ("10.8K", "1.2M") only as the
+     * last resort.
+     */
+    fun pointsLabelFit(points: Int, maxChars: Int = 7): String {
+        val full = pointsLabel(points)
+        if (full.length <= maxChars) return full
+        return when {
+            points >= 1_000_000 -> String.format(Locale.US, "%.1fM", points / 1_000_000.0)
+            else -> String.format(Locale.US, "%.1fK", points / 1_000.0)
+        }
+    }
+
     // ── TalkBack phrases (each chip reads as one full sentence) ─────────────
 
     fun streakPhrase(streak: Int): String = if (streak == 1) "1 day streak" else "$streak day streak"

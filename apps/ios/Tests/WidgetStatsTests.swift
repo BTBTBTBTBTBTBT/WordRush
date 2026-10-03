@@ -55,4 +55,13 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-02"), "mascot-w")
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-01"), "art-halloween-w")
     }
+
+    /// FINISH_SPEC BC: the short points form is a last resort only.
+    func testPointsCompact() {
+        XCTAssertEqual(WidgetStats.pointsCompact(10_779), "10.8K")
+        XCTAssertEqual(WidgetStats.pointsCompact(9_999), "9,999")
+        XCTAssertEqual(WidgetStats.pointsCompact(20_000), "20K")
+        XCTAssertEqual(WidgetStats.pointsCompact(1_250_000), "1.3M")
+        XCTAssertEqual(WidgetStats.pointsCompact(0), "0")
+    }
 }

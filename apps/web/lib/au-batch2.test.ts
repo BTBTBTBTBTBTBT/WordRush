@@ -21,9 +21,12 @@ describe('AU2 the compact rank row', () => {
     expect(compactRankLine({ rank: 7, total: 40, points: '9,100', detail: 'Swept · 8/8 · 6m' })).toBe('#7 of 40 · 9,100 PTS · Swept · 8/8 · 6m');
   });
 
-  it('keeps the day title ≤ 110 tall and the picker in one scrolling row', () => {
-    expect(read('components/leaderboard/leaderboard-banner.tsx')).toContain('layout="strip"');
-    expect(read('components/ui/game-picker.tsx')).toContain("overflow-x-auto");
+  it('BB3/BB4: the Leaderboard picker is the compact two-row grid with no ALL-TIME button', () => {
+    const banner = read('components/leaderboard/leaderboard-banner.tsx');
+    expect(banner).toContain('density="compact"');
+    expect(banner).not.toContain('layout="strip"');
+    expect(banner).not.toContain('href="/records"');
+    expect(read('components/ui/game-picker.tsx')).toContain('maxSize={compact ? 32 : 44}');
   });
 });
 
@@ -57,5 +60,35 @@ describe('AX bigger game-page header buttons', () => {
       expect(src, f).toContain('size={GAME_HEADER_GLYPH}');
       expect(src, f).toContain('hdr-glyph w-11 h-11');
     }
+  });
+});
+
+describe('BB Stats picker polish', () => {
+  it('BB1 shows the selected game title art (~48 px) with a live-lettering fallback in the game accent', () => {
+    const src = read('components/stats/stats-picker.tsx');
+    expect(src).toContain('maxHeight={48}');
+    expect(src).toMatch(/<LiveHeadline[^>]*accent=/);
+    expect(src).toContain('className="intro-pop');
+  });
+  it('BB2 is a candy segmented control with a sliding (transform-only) accent thumb, 36–40 px', () => {
+    const src = read('components/ui/candy-segment.tsx');
+    expect(src).toContain('transform: `translateX(');
+    expect(src).toMatch(/height = (3[6-9]|40)/);
+    expect(read('components/stats/stats-picker.tsx')).toContain('<CandySegment');
+  });
+});
+
+describe('Stats never jumps back to the picker (founder 10-02)', () => {
+  it('a diagonal scroll is not a page swipe; a clear sideways swipe is', async () => {
+    const { isPageSwipe } = await import('./stats-view');
+    expect(isPageSwipe(80, 45)).toBe(false);   // passed the old |dy| ≤ 50 rule
+    expect(isPageSwipe(-120, 30)).toBe(true);
+    expect(isPageSwipe(60, 0)).toBe(false);
+  });
+  it('the picker and its title never scroll the page', () => {
+    for (const f of ['components/ui/game-picker.tsx', 'components/stats/stats-picker.tsx', 'components/ui/candy-segment.tsx', 'components/ui/live-headline.tsx']) {
+      expect(read(f), f).not.toMatch(/scrollIntoView|\.focus\(|window\.scroll/);
+    }
+    expect(read('app/stats/page.tsx')).toContain('if (!isPageSwipe(dx, dy)) return;');
   });
 });

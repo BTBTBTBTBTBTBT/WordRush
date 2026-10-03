@@ -1,5 +1,9 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -392,19 +396,32 @@ fun ProfileScreen(
     }
     // Swipe on the page moves one item along the picker order (founder: no 19-page
     // swipe — but a swipe between neighbors is the natural gesture).
+    // Founder 10-02 (the Stats "jumps back to the picker" bug — web found the cause): a slightly
+    // diagonal VERTICAL scroll counted as a sideways swipe, switched the game page and pulled the
+    // view up. Now the page only changes on a CLEARLY horizontal swipe (≥ 70 dp and at least twice
+    // as wide as tall, decided on release); nothing is consumed, so the vertical scroll always
+    // wins; a gesture a child consumed (a horizontally scrolling row) never switches.
     val swipeModifier = Modifier.pointerInput(pageOrder, selected) {
         val threshold = 70.dp.toPx()
-        var total = 0f
-        detectHorizontalDragGestures(
-            onDragStart = { total = 0f },
-            onDragCancel = { total = 0f },
-            onDragEnd = {
-                if (kotlin.math.abs(total) >= threshold) {
-                    statsSwipeTarget(pageOrder, selected, forward = total < 0)?.let { selected = it }
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            var dx = 0f
+            var dy = 0f
+            var childTook = false
+            while (true) {
+                val ev = awaitPointerEvent()
+                val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+                if (ch.isConsumed) childTook = true
+                val d = ch.position - ch.previousPosition
+                dx += d.x; dy += d.y
+                if (!ch.pressed) break
+            }
+            if (!childTook) {
+                statsSwipeForward(dx, dy, threshold)?.let { fwd ->
+                    statsSwipeTarget(pageOrder, selected, forward = fwd)?.let { selected = it }
                 }
-                total = 0f
-            },
-        ) { _, dragAmount -> total += dragAmount }
+            }
+        }
     }
 
     val isGuest by AuthService.isGuest.collectAsState()
@@ -498,6 +515,8 @@ fun ProfileScreen(
                 withSweep = true,
                 sweepKey = RAIL_SWEEP,
                 badge = { key -> todayDailies[key]?.completed },
+                // BB1: the picked game's title art as the card's header (none on Today / All-time).
+                title = if (statsSegmentFor(selected) == null) ({ StatsPickerTitle(selected) }) else null,
                 header = {
                     StatsSegmented(
                         options = listOf(RAIL_TODAY to "Today", RAIL_ALL to "All-time"),
@@ -519,7 +538,10 @@ fun ProfileScreen(
         item {
             val page = selected; val tab = pageTab; val mode = pageMode
             androidx.compose.runtime.key(page, tab, mode) {
-                Column(Modifier.fillMaxWidth().then(swipeModifier), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    Modifier.fillMaxWidth().then(swipeModifier),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     when {
                         // ── Today: your day in one card (TodayCard.kt). ──
                         // The Sweep tile shows the Today page (it holds the sweep), tile highlighted.

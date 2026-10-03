@@ -54,6 +54,12 @@ struct HeadlinePalette: Equatable {
     static let stats = HeadlinePalette(top: Color(hex: 0x60A5FA), bottom: Color(hex: 0x8B5CF6), deep: Color(hex: 0x3730A3),
                                        outline: gold, nameTop: Color(hex: 0xF472B6), nameBottom: Color(hex: 0xDB2777),
                                        numberTop: goldTop, numberBottom: goldBottom)
+    /// FINISH_SPEC BB1: a game's own accent (light → accent, a deep edge).
+    static func accent(_ c: Color) -> HeadlinePalette {
+        HeadlinePalette(top: Color.white.mixed(over: c, 0.3), bottom: c, deep: Color.black.mixed(over: c, 0.45),
+                        outline: Color(hex: 0xF5C542), nameTop: Color(hex: 0xF472B6), nameBottom: Color(hex: 0xDB2777),
+                        numberTop: Color(hex: 0xFFE07A), numberBottom: Color(hex: 0xF5A524))
+    }
     /// Celebrations (DOUBLE SWEEP!, FLAWLESS): gold with sparkle.
     static let celebration = HeadlinePalette(top: Color(hex: 0xFFE07A), bottom: Color(hex: 0xF59E0B), deep: Color(hex: 0x92400E),
                                              outline: Color(hex: 0xFFF7D6), nameTop: Color(hex: 0xA855F7), nameBottom: Color(hex: 0x6D28D9),

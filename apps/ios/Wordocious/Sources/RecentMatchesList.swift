@@ -53,7 +53,7 @@ struct RecentMatchesList: View {
             .frame(maxWidth: .infinity).padding(.vertical, 16)
         } else {
             let shown = (showAll && onSeeAll == nil) ? matches : Array(matches.prefix(limit))
-            LazyVStack(spacing: 8) {
+            VStack(spacing: 8) {   // eager: no mid-scroll height swings on Stats
                 ForEach(shown) { m in
                     RecentMatchRow(
                         match: m, profileId: profileId,
@@ -140,7 +140,7 @@ struct TodayGamesList: View {
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
         } else {
-            LazyVStack(spacing: 8) {
+            VStack(spacing: 8) {   // eager: no mid-scroll height swings on Stats
                 ForEach(entries) { e in
                     switch e {
                     case .single(let m): row(m)

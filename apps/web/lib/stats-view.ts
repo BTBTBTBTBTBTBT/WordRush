@@ -75,3 +75,13 @@ export function todayBadges(
   }
   return out;
 }
+
+/**
+ * A finger move that should flip the Stats page: clearly sideways (≥ 70 px and
+ * at least twice as wide as tall). A diagonal scroll — common while scrolling
+ * past the achievements — used to pass the old |dy| ≤ 50 test, swap the page
+ * under the finger, and snap the page back up to the picker (founder 10-02).
+ */
+export function isPageSwipe(dx: number, dy: number): boolean {
+  return Math.abs(dx) >= 70 && Math.abs(dx) >= 2 * Math.abs(dy);
+}

@@ -88,7 +88,10 @@ class DailyWidgetProvider : AppWidgetProvider() {
 
         // Explicit view-id tables (no getIdentifier: resource shrinking must see every id).
         private val MEDIUM_TILES = intArrayOf(R.id.w_t0, R.id.w_t1, R.id.w_t2, R.id.w_t3, R.id.w_t4, R.id.w_t5, R.id.w_t6, R.id.w_t7)
-        private val SMALL_TILES = intArrayOf(R.id.w_t0, R.id.w_t1, R.id.w_t2, R.id.w_t3)
+        /** BC: the small widget shows all 8 Wordocious dailies (two rows of four). */
+        private val SMALL_TILES = MEDIUM_TILES
+        /** BC addendum: the medium widget's full-width Puzzles row (10 tiles). */
+        private val PUZZLE_TILES = intArrayOf(R.id.w_p0, R.id.w_p1, R.id.w_p2, R.id.w_p3, R.id.w_p4, R.id.w_p5, R.id.w_p6, R.id.w_p7, R.id.w_p8, R.id.w_p9)
 
         // ── Render ──────────────────────────────────────────────────────────
 
@@ -190,10 +193,10 @@ class DailyWidgetProvider : AppWidgetProvider() {
          * the top-right corner, and three cast heads peeking up over the bottom edge (Halloween
          * skins in season). One small bitmap (the wall's 1/4 scale), cached per day.
          */
-        private fun wallBitmap(context: Context, aspect: Float): Bitmap? {
+        private fun wallBitmap(context: Context, aspect: Float, peek: Boolean): Bitmap? {
             val day = com.wordocious.app.todayLocalDate()
             val season = com.wordocious.app.ui.SeasonSkins.current()
-            val key = "%.2f|%s|%s".format(aspect, day, season ?: "")
+            val key = "%.2f|%s|%s|%b".format(aspect, day, season ?: "", peek)
             wallCache[key]?.let { return it }
             if (wallCache.size > 4) wallCache.clear()
             val src = ShareFinish.decode(context, R.drawable.art_wall_home, sample = 4) ?: return null
@@ -204,22 +207,24 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val c = Canvas(out)
             val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
             c.drawBitmap(src, android.graphics.Rect(0, top, targetW, top + targetH), RectF(0f, 0f, targetW.toFloat(), targetH.toFloat()), p)
-            runCatching { drawWidgetCast(context, c, targetW.toFloat(), targetH.toFloat(), day, season, p) }
+            runCatching { drawWidgetCast(context, c, targetW.toFloat(), targetH.toFloat(), day, season, p, peek) }
             wallCache[key] = out
             return out
         }
 
         /** AV the host leaning in at the top-right + the peeking trio along the bottom edge. */
-        private fun drawWidgetCast(context: Context, c: Canvas, w: Float, h: Float, day: String, season: String?, p: Paint) {
+        private fun drawWidgetCast(context: Context, c: Canvas, w: Float, h: Float, day: String, season: String?, p: Paint, peekers: Boolean) {
             val host = WidgetCast.host(day)
             val epochDay = runCatching { java.time.LocalDate.parse(day).toEpochDay() }.getOrDefault(0L)
             val peek = WidgetCast.peekers(com.wordocious.app.ui.Mascots.cast, host, epochDay)
             fun art(id: com.wordocious.app.ui.MascotId) = ShareFinish.decode(context, com.wordocious.app.ui.SeasonSkins.fullRes(id, season), sample = 4)
-            // The peekers: only the top half of each head shows, like over a ledge.
-            val headSize = minOf(h * 0.30f, w * 0.20f)
-            peek.forEachIndexed { i, id ->
+            // The peekers (small widget only): only the top half of each head shows, like over a
+            // ledge, spread EVENLY across the width inside the layout's 12 dp bottom band (≈ 8%
+            // of a 2x2's height), so they never sit under text.
+            val headSize = h * 0.16f
+            if (peekers) peek.forEachIndexed { i, id ->
                 val bmp = art(id) ?: return@forEachIndexed
-                val cx = w * (0.16f + 0.17f * i)
+                val cx = w * (i + 1) / (peek.size + 1)
                 c.drawBitmap(bmp, null, RectF(cx - headSize / 2f, h - headSize * 0.5f, cx + headSize / 2f, h + headSize * 0.5f), p)
             }
             // The day host, ~40% of the height, overlapping the top-right edges, leaning in.
@@ -235,9 +240,9 @@ class DailyWidgetProvider : AppWidgetProvider() {
         }
 
         /** The wallpaper fill (API 31+: clipped to the corners; older launchers keep the tinted card). */
-        private fun applyWall(context: Context, views: RemoteViews, aspect: Float) {
+        private fun applyWall(context: Context, views: RemoteViews, aspect: Float, peek: Boolean) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val wall = wallBitmap(context, aspect)
+                val wall = wallBitmap(context, aspect, peek)
                 if (wall != null) {
                     views.setImageViewBitmap(R.id.w_fill, wall)
                     views.setBoolean(R.id.w_fill, "setClipToOutline", true)
@@ -270,7 +275,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             views.setContentDescription(R.id.w_streak_row, WidgetStats.streakPhrase(snap.streak))
             views.setTextViewText(R.id.w_solved, WidgetStats.solvedLabel(day))
             views.setContentDescription(R.id.w_solved_chip, WidgetStats.solvedPhrase(day))
-            views.setTextViewText(R.id.w_points, WidgetStats.pointsLabel(day.points))
+            views.setTextViewText(R.id.w_points, WidgetStats.pointsLabelFit(day.points))
             views.setContentDescription(R.id.w_points_chip, WidgetStats.pointsPhrase(day.points))
             clockIcon(context)?.let { views.setImageViewBitmap(R.id.w_clock_icon, it) }
             applyCountdown(views, now)
@@ -319,7 +324,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
         }
 
         /** Tiles into [slots] for [modes] (window [range]); each deep-links into its daily. */
-        private fun renderTiles(context: Context, views: RemoteViews, slots: IntArray, modes: List<WidgetBridge.ModeEntry>, range: IntRange) {
+        private fun renderTiles(context: Context, views: RemoteViews, slots: IntArray, modes: List<WidgetBridge.ModeEntry>, range: IntRange, requestBase: Int = 1) {
             for ((slot, id) in slots.withIndex()) {
                 val i = range.first + slot
                 val m = modes.getOrNull(i)
@@ -335,15 +340,18 @@ class DailyWidgetProvider : AppWidgetProvider() {
                 views.setContentDescription(id, "${m.title}, ${if (!m.played) "not played yet" else if (m.won) "won" else "played"}")
                 // Every tile deep-links into that mode's daily as today (spec §5):
                 // a finished one opens its solved board, like the home card.
-                views.setOnClickPendingIntent(id, dailyIntent(context, 1 + i, m.key))
+                views.setOnClickPendingIntent(id, dailyIntent(context, requestBase + i, m.key))
             }
         }
 
         private fun buildMedium(context: Context, snap: WidgetBridge.Snapshot, now: Calendar): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_daily)
-            applyWall(context, views, 2.1f)
+            // BC addendum: the medium has the full cast row up top, so no peeking cast.
+            applyWall(context, views, 2.1f, peek = false)
             castBitmap(context)?.let { views.setImageViewBitmap(R.id.w_cast, it) }
             renderTiles(context, views, MEDIUM_TILES, snap.modes, 0 until MEDIUM_TILES.size)
+            val puzzles = snap.puzzles.orEmpty()
+            renderTiles(context, views, PUZZLE_TILES, puzzles, 0 until PUZZLE_TILES.size, requestBase = 20)
 
             val rank = snap.rank
             if (rank != null && rank > 0) {
@@ -364,9 +372,9 @@ class DailyWidgetProvider : AppWidgetProvider() {
 
         private fun buildSmall(context: Context, snap: WidgetBridge.Snapshot, now: Calendar): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_daily_small)
-            applyWall(context, views, 1f)
-            val window = com.wordocious.app.data.SharePicks.smallWindow(snap.modes.map { it.played })
-            renderTiles(context, views, SMALL_TILES, snap.modes, window)
+            applyWall(context, views, 1f, peek = true)
+            // BC: all 8 Wordocious dailies, two rows of four big tiles.
+            renderTiles(context, views, SMALL_TILES, snap.modes, 0 until SMALL_TILES.size)
             applyStats(context, views, snap, now)
             views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context, 0))
             return views

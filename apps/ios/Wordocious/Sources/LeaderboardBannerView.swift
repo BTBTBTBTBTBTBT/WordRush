@@ -12,17 +12,16 @@ import WordociousCore
 struct LeaderboardBannerView: View {
     @Binding var selected: GameMode
     @Binding var isSweep: Bool
-    let onAllTime: () -> Void
     /// The page's horizontal padding (the headline bleeds past it to the screen edges).
     var bleed: CGFloat = 16
 
     private static let ink = Color(hex: 0x8A4A12)
 
     var body: some View {
-        // FINISH_SPEC §AU2: a compact top so the podium shows on arrival — the day
-        // title ≤ 110 pt and the one-row scrolling picker.
-        VStack(spacing: 8) {
-            LeaderboardHeadline(bleed: bleed, maxHeight: 110)
+        // FINISH_SPEC §AU2 / BB3: a compact top so the podium shows on arrival — the
+        // day title ≤ 90 pt and the compact two-row picker grid.
+        VStack(spacing: 6) {
+            LeaderboardHeadline(bleed: bleed, maxHeight: 90)
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
                            accent: LbStyle.gold, ink: Self.ink, compact: true,
                            onSelect: select) {
@@ -50,25 +49,12 @@ struct LeaderboardBannerView: View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
             let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
             HStack(spacing: 8) {
+                // FINISH_SPEC BB4: no ALL-TIME button — all-time lives in Stats only.
                 Text("\(date) · RESETS IN \(Self.resetClock())")
                     .font(Brand.font(12, .black)).tracking(0.7).monospacedDigit()
                     .foregroundStyle(Theme.isDark ? Theme.textSecondary : Self.ink)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Button(action: onAllTime) {
-                    HStack(spacing: 4) {
-                        Icon3D(.trophy, size: 16)
-                        Text("ALL-TIME")
-                            .font(Brand.font(11, .black)).tracking(0.8)
-                            .foregroundStyle(Theme.isDark ? Theme.textPrimary : Self.ink)
-                            .lineLimit(1).fixedSize()
-                    }
-                    .padding(.horizontal, 10).frame(height: 28)
-                    .tintedPill(LbStyle.gold)
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.squish)
-                .accessibilityLabel("All-time records")
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
