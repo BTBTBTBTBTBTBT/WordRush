@@ -101,3 +101,15 @@ class HomeHeadlineFitTest {
         assertFalse(homeHeadlineFixedSize("HOME STRETCH · 2 LEFT", "BMT", stacked = false))
     }
 }
+
+class HomeHostCutoutTest {
+    @Test
+    fun custom_mascot_host_is_a_frameless_cutout_and_avatars_elsewhere_keep_their_tile() {
+        val cfg = com.wordocious.core.AvatarConfig(body = "star", frame = "gold", bg = "galaxy")
+        val k = homeHostMascotKey(cfg, "B", 264, dark = false)
+        assertTrue(k.cutout)
+        assertEquals("none", k.config.frame)
+        // The default (every row, podium, profile) is the tiled avatar.
+        assertFalse(MascotKey.of(cfg, "B", 44f, 132, dark = false).cutout)
+    }
+}

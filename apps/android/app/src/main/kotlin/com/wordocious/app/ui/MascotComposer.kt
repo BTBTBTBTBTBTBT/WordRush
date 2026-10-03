@@ -104,7 +104,7 @@ object MascotComposer {
         }
         c.save()
         c.translate(left, top)
-        val fw = if (cfg.frame != "none") frameWidth(size) else 0f
+        val fw = if (cfg.frame != "none" && !key.cutout) frameWidth(size) else 0f
         // The content square (inside the frame).
         val cs = size - fw * 2f
         // The body box: square, lower when a hat needs the headroom.
@@ -116,7 +116,7 @@ object MascotComposer {
         val anchors = m.anchors(cfg.body)
 
         for (layer in layers) when (layer) {
-            MascotLayer.TILE -> drawTile(c, size, fw, base, cfg.bg, key.dark)
+            MascotLayer.TILE -> if (!key.cutout) drawTile(c, size, fw, base, cfg.bg, key.dark)
             MascotLayer.BACK_ACC -> drawAccessory(context, c, m, "neck", cfg.neck, body, anchors, base)
             MascotLayer.BODY -> drawBody(context, c, cfg, body, base, m)
             MascotLayer.PATTERN -> Unit // drawn inside the body's multiply layer
@@ -127,7 +127,7 @@ object MascotComposer {
             MascotLayer.FACE_ACC -> drawAccessory(context, c, m, "face", cfg.face, body, anchors, base)
             MascotLayer.NECK_ACC -> drawAccessory(context, c, m, "neck", cfg.neck, body, anchors, base)
             MascotLayer.HEAD_ACC -> drawAccessory(context, c, m, "head", cfg.head, body, anchors, base)
-            MascotLayer.FRAME -> drawFrame(c, cfg.frame, size, context)
+            MascotLayer.FRAME -> if (!key.cutout) drawFrame(c, cfg.frame, size, context)
         }
         if (key.crown) drawCrown(context, c, size)
         c.restore()
@@ -189,12 +189,13 @@ object MascotComposer {
         val layout: AvatarLayout = AvatarFit.layout(cfg, small, fm)
         c.save()
         c.translate(left, top)
-        val fw = if (cfg.frame != "none") frameWidth(size) else 0f
+        val fw = if (cfg.frame != "none" && !key.cutout) frameWidth(size) else 0f
         val cs = size - fw * 2f
         fun box(r: AvatarRect) = RectF(fw + (r.x * cs).toFloat(), fw + (r.y * cs).toFloat(), fw + ((r.x + r.w) * cs).toFloat(), fw + ((r.y + r.h) * cs).toFloat())
-        drawTile(c, size, fw, base, cfg.bg, key.dark)
+        // BJ6 round 5: a cutout (the Good Morning host) has no tile and no tile-floor shadow.
+        if (!key.cutout) drawTile(c, size, fw, base, cfg.bg, key.dark)
         val b = box(layout.body)
-        c.drawOval(RectF(b.centerX() - b.width() * 0.3f, b.top + b.height() * 0.95f, b.centerX() + b.width() * 0.3f, b.top + b.height() * 1.0f),
+        if (!key.cutout) c.drawOval(RectF(b.centerX() - b.width() * 0.3f, b.top + b.height() * 0.95f, b.centerX() + b.width() * 0.3f, b.top + b.height() * 1.0f),
             solidPaint(withAlpha(AColor.BLACK, 0.12f)))
         val acc = if (cfg.accColor == "default") null else AvatarOptions.swatch(cfg.accColor)
         val patInk = if (cfg.patternColor == cfg.color) mix(base, AColor.WHITE, 0.5f) else colorOf(avatarColorHex(cfg.patternColor), base)
@@ -213,7 +214,7 @@ object MascotComposer {
             if (l.tint && acc != null) drawTinted(c, bmp, r, swatchPaint(acc, r))
             else c.drawBitmap(bmp, null, r, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
         }
-        drawFrame(c, cfg.frame, size, context)
+        if (!key.cutout) drawFrame(c, cfg.frame, size, context)
         if (key.crown) drawCrown(context, c, size)
         c.restore()
     }

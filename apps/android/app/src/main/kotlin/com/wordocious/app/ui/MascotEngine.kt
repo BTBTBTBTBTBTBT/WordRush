@@ -85,11 +85,16 @@ data class MascotKey(
     val px: Int,
     val dark: Boolean,
     val crown: Boolean = false,
+    /**
+     * BJ6 round 5: a full-body CUTOUT on a transparent canvas — no tile / backdrop, no clip,
+     * no frame (the Good Morning host only; every avatar elsewhere keeps its tile + frame).
+     */
+    val cutout: Boolean = false,
 ) {
     companion object {
         /** The cache key for drawing [config] at [sizeDp] (= [px] pixels): small sizes share a simplified key. */
-        fun of(config: AvatarConfig, initial: String, sizeDp: Float, px: Int, dark: Boolean, crown: Boolean = false): MascotKey =
-            MascotKey(MascotLayers.simplify(config, sizeDp), initial.take(2).ifEmpty { "?" }, px.coerceAtLeast(1), dark, crown)
+        fun of(config: AvatarConfig, initial: String, sizeDp: Float, px: Int, dark: Boolean, crown: Boolean = false, cutout: Boolean = false): MascotKey =
+            MascotKey(MascotLayers.simplify(config, sizeDp), initial.take(2).ifEmpty { "?" }, px.coerceAtLeast(1), dark, crown, cutout)
     }
 
     /** The bitmap's size in bytes (ARGB_8888). */

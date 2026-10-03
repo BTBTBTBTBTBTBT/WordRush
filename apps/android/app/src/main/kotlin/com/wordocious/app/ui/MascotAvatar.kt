@@ -58,13 +58,15 @@ fun MascotAvatar(
     size: Dp,
     modifier: Modifier = Modifier,
     pro: Boolean = false,
+    /** BJ6 round 5: a full-body cutout (no tile, backdrop or frame) — the Good Morning host only. */
+    cutout: Boolean = false,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
     val dark = WTheme.isDark
     val px = with(density) { size.roundToPx() }.coerceAtLeast(1)
-    val drawn = if (pro && config.frame == "none") config.copy(frame = "pro") else config
-    val key = remember(drawn, initial, px, dark, size) { MascotKey.of(drawn, initial, size.value, px, dark) }
+    val drawn = if (pro && config.frame == "none" && !cutout) config.copy(frame = "pro") else config
+    val key = remember(drawn, initial, px, dark, size, cutout) { MascotKey.of(drawn, initial, size.value, px, dark, cutout = cutout) }
     // A cache hit draws at once; a miss composes (decode + layers) on Dispatchers.Default and the
     // avatar appears whole when ready — no part-by-part pop-in, no stand-in frame, nothing on main.
     var image by remember(key) { mutableStateOf(MascotComposer.cached(key)) }

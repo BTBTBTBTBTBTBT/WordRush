@@ -80,6 +80,13 @@ internal fun rememberHomeHostPick(): HomeHostPick {
 /** BJ6: the header's share control shows only in Daily once a game is finished (absent otherwise). */
 internal fun homeShareVisible(unlimited: Boolean, playedToday: Int): Boolean = !unlimited && playedToday > 0
 
+/**
+ * BJ6 round 5: the custom-mascot host's bitmap key — a full-body cutout (no tile, backdrop or
+ * frame) at the host's box. [HomeHost] (via MascotAvatar) and [HomeHostPrewarm] build the same key.
+ */
+internal fun homeHostMascotKey(config: com.wordocious.core.AvatarConfig, initial: String, px: Int, dark: Boolean): MascotKey =
+    MascotKey.of(config.copy(frame = "none"), initial, HOME_HOST_BOX.value, px, dark, cutout = true)
+
 /** BJ6: the host waves once per app launch (process-level). */
 internal object HomeHostWave {
     @Volatile var played = false
@@ -155,7 +162,8 @@ internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Mo
                 val initial = remember(p?.username) { MascotConfigRules.initialOf(p?.username) }
                 // A host, not a list tile: no frame ring around the mascot.
                 val drawn = remember(pick.config) { pick.config.copy(frame = "none") }
-                MascotAvatar(drawn, initial, size, motion)
+                // BJ6 round 5: a full-body CUTOUT — no tile, backdrop, clip or frame (not a boxed sticker).
+                MascotAvatar(drawn, initial, size, motion, cutout = true)
             }
             HomeHostPick.W -> Image(
                 artPainter(com.wordocious.app.R.drawable.art_pose_w_wave, size), contentDescription = null,
@@ -186,11 +194,8 @@ object HomeHostPrewarm {
                 runCatching {
                     val pick = AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = p.level)
                     if (pick is HomeHostPick.Mascot) {
-                        val drawn = pick.config.copy(frame = "none")
                         val initial = MascotConfigRules.initialOf(p.username)
-                        for (dark in listOf(false, true)) {
-                            MascotComposer.image(app, MascotKey.of(drawn, initial, HOME_HOST_BOX.value, px, dark))
-                        }
+                        for (dark in listOf(false, true)) MascotComposer.image(app, homeHostMascotKey(pick.config, initial, px, dark))
                     }
                 }
             }
