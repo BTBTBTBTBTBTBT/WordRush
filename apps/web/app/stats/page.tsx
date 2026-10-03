@@ -491,7 +491,8 @@ export default function StatsPage() {
         {/* A6: the STATS title is a headline — full width, edge to edge, right on the wallpaper. */}
         <PageHeadline name="art-title-stats" label="Stats" className="pt-1" />
 
-        <div className="page-grid-2 space-y-4">
+        {/* Desktop website (≥ 1024 px): the same two columns, the left one phone-width (globals.css .stats-desk). */}
+        <div className="page-grid-2 stats-desk space-y-4">
         <div className="page-sticky space-y-4">
 
         {/* ── Player card (C3 cont): lavender wash, purple→pink 10 px top bar, the level bar in

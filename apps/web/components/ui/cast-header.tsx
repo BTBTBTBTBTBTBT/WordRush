@@ -68,11 +68,15 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
         last = id;
         const el = row.querySelector<HTMLElement>(`[data-cast="${id}"]`);
         const cls = CAST_MOVES[id].cls;
-        if (el) {
-          el.classList.remove(cls);
-          void el.offsetWidth;
+        // Smoothness pass: no forced reflow to restart a move. Every move is
+        // shorter than the shortest gap (and never the same character twice in
+        // a row), so its class is always gone by the time it is picked again;
+        // a still-running move is simply left alone.
+        if (el && !el.classList.contains(cls)) {
           el.classList.add(cls);
-          el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+          const done = () => { el.classList.remove(cls); el.removeEventListener('animationend', done); el.removeEventListener('animationcancel', done); };
+          el.addEventListener('animationend', done);
+          el.addEventListener('animationcancel', done);
         }
       }
       timer = setTimeout(tick, nextCastDelay());

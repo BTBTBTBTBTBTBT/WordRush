@@ -67,7 +67,8 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
       const stepFrac = Math.min(1, ms / (STEP_IN_SECONDS * 1000));
       const ringFrac = hasStepIn ? stepFrac : (ms % 60000) / 60000;
       ringRef.current?.setAttribute('stroke-dashoffset', String(ringLen * (1 - ringFrac)));
-      if (barRef.current) barRef.current.style.width = `${stepFrac * 100}%`;
+      // Smoothness pass: the fill slides (transform) instead of growing its width (a layout per frame).
+      if (barRef.current) barRef.current.style.transform = `translateX(${(stepFrac - 1) * 100}%)`;
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -137,9 +138,9 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
                   ref={(el) => {
                     barRef.current = el;
                     // Mount at the live position (no jump from 0 on first paint).
-                    if (el) el.style.width = `${Math.min(1, elapsedMsRef.current / (STEP_IN_SECONDS * 1000)) * 100}%`;
+                    if (el) el.style.transform = `translateX(${(Math.min(1, elapsedMsRef.current / (STEP_IN_SECONDS * 1000)) - 1) * 100}%)`;
                   }}
-                  className="h-full rounded-full"
+                  className="h-full w-full rounded-full"
                   style={{ background: stepIn.color }}
                 />
               </div>

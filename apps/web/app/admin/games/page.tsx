@@ -45,7 +45,7 @@ export default function AdminGamesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Games</h1>
+      <h1 className="text-2xl font-black text-gray-900">Games &amp; Leaderboards</h1>
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">

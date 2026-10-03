@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const admin = getAdminSupabase();
   const userId = params.id;
 
-  const [profileRes, statsRes, matchesRes, auditRes, authRes, refRes, devicesRes, sentRes, reportsRes] = await Promise.all([
+  const [profileRes, statsRes, matchesRes, auditRes, authRes, refRes, devicesRes, sentRes, reportsRes, achievementsRes, friendsRes] = await Promise.all([
     admin.from('profiles').select('*').eq('id', userId).single(),
     admin.from('user_stats').select('*').eq('user_id', userId),
     admin.from('matches').select('*').or(`player1_id.eq.${userId},player2_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
@@ -26,6 +26,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     admin.from('device_tokens').select('platform, created_at').eq('user_id', userId),
     admin.from('referrals').select('status, created_at, invitee:profiles!referrals_invitee_id_fkey(username)').eq('inviter_id', userId).order('created_at', { ascending: false }),
     admin.from('reports').select('id, reporter_id, reported_user_id, reason, context, created_at').or(`reporter_id.eq.${userId},reported_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
+    // Progression + social context for the newer tabs (Achievements, Friends).
+    admin.from('achievements').select('achievement_key, unlocked_at').eq('user_id', userId).order('unlocked_at', { ascending: false }),
+    admin.from('friendships').select('status', { count: 'exact' }).or(`requester_id.eq.${userId},addressee_id.eq.${userId}`).eq('status', 'accepted'),
   ]);
 
   if (profileRes.error || !profileRes.data) {
@@ -50,6 +53,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       ...r, direction: r.reporter_id === userId ? 'filed' : 'against',
     })),
     stats: statsRes.data || [],
+    achievements: (achievementsRes as any).data || [],
+    friendCount: (friendsRes as any).error ? null : ((friendsRes as any).count ?? 0),
     recentMatches: matchesRes.data || [],
     auditLog: auditRes.data || [],
   });

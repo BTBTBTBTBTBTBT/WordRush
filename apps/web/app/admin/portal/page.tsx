@@ -14,7 +14,7 @@ export const metadata = { title: 'Portal — Wordocious Admin', robots: { index:
 
 export default function PortalPage() {
   return (
-    <div className="h-full -m-6">
+    <div className="h-full -mx-4 -my-6 sm:-mx-6">
       <iframe
         src="/admin/portal/doc"
         title="Wordocious Engineering Portal"

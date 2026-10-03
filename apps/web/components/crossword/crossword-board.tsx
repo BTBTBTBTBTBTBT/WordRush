@@ -123,6 +123,7 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
             >
               {n !== undefined && <span className="pz-num" aria-hidden="true">{n}</span>}
               <b>{ch}</b>
+              {motion?.kind === 'hint' && <span className="gt-glow-hint" aria-hidden="true" />}
               {flip && <span className="gt-cover" aria-hidden="true"><b>{ch}</b></span>}
             </button>
           );

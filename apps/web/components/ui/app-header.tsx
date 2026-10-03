@@ -1,7 +1,7 @@
 'use client';
 
 import { CLOSE_OVERLAYS_EVENT } from '@/lib/nav-home';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -17,6 +17,11 @@ import { readLinkReturn } from '@/lib/identity-linking';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { useFlags } from '@/hooks/use-flags';
 import { EMPTY_STREAK_SUMMARY, type StreakSummary } from '@/lib/streak-summary';
+import { DesktopTabs } from '@/components/ui/desktop-tabs';
+import { tabTint } from '@/components/ui/tab-nav';
+import { afterIntro } from '@/lib/intro';
+import { warmTabWallpapers } from '@/lib/predecode';
+import { DESKTOP_MIN, minWidthQuery } from '@/lib/desktop-layout';
 
 // The home header (docs/HEADER_SPEC.md §1; FINISH_SPEC A3, A5, C1, C5), shared
 // by Home, Leaderboard, Records, Stats and Pro. AS2: Row 1 is the controls —
@@ -26,6 +31,11 @@ import { EMPTY_STREAK_SUMMARY, type StreakSummary } from '@/lib/streak-summary';
 // them playing its move every few seconds (Pro: W wears the crown). The
 // counters open the streak / shield / flawless popups (C5), portaled to <body>
 // full screen (AS6); the streak popup carries every streak (AS7).
+// Desktop website (≥ 1024 px, lib/desktop-layout.ts; globals.css .app-hdr):
+// the same pieces become ONE sticky top bar — the cast wordmark on the left,
+// the candy pill tabs in the middle (DesktopTabs; the bottom bar hides on these
+// pages), the counters + help + settings on the right. Below 1024 px the extra
+// tabs are hidden and the header is exactly the phone header.
 
 export function AppHeader() {
   const { profile, isProActive, isGuest, exitGuest } = useAuth();
@@ -131,12 +141,35 @@ export function AppHeader() {
     setFlawlessOpen((prev) => !prev);
   };
 
+  // Desktop: publish the sticky top bar's height (--desk-hdr-h) so sticky side
+  // columns and scroll anchors clear it.
+  const headerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty('--desk-hdr-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => { ro.disconnect(); root.style.removeProperty('--desk-hdr-h'); };
+  }, []);
+
+  // Desktop website: once the intro has landed and the browser is idle, fetch +
+  // decode the four tabs' wide wallpapers so a tab switch never paints a cold
+  // 2400 × 1500 image in its first frames (phones skip it: no extra data).
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function' || !window.matchMedia(minWidthQuery(DESKTOP_MIN)).matches) return;
+    return afterIntro(() => warmTabWallpapers(true));
+  }, []);
+
   return (
     <>
-      {/* FINISH_SPEC AG: on desktop web the header is the 560 px centered column, so the cast row stays 90% of it. */}
-      <header className="pb-1 page-col" style={{ paddingTop: CAST_ROW.topMargin }}>
+      {/* FINISH_SPEC AG: on desktop web the header is the 560 px centered column, so the cast row stays 90% of it.
+          ≥ 1024 px it is the website's sticky top bar (globals.css .app-hdr). */}
+      <header className="app-hdr pb-1 page-col" ref={headerRef} data-tab-tint={tabTint(pathname)} style={{ paddingTop: CAST_ROW.topMargin }}>
         {/* AS2 Row 1: the controls — the bare 3D counters left, help + settings right. */}
-        <div className="relative flex items-center justify-between gap-2 px-3">
+        <div className="hdr-row relative flex items-center justify-between gap-2 px-3">
           <div className="flex items-center gap-1 min-w-0">
             {/* Guest — prominent Sign In entry (returns to the landing/login). */}
             {isGuest && !profile && (
@@ -174,9 +207,11 @@ export function AppHeader() {
         </div>
         {/* AS2 Row 2: the living cast header (under the controls) — FINISH_SPEC N3: ≈90% of the width,
             centered, with a soft ground shadow. The link home is the old wordmark's tap. */}
-        <Link href="/" aria-label="Wordocious home" className="block mx-auto" style={{ width: `${CAST_ROW.widthPct}%`, marginTop: CAST_ROW.controlsGap }} data-no-squish="">
+        <Link href="/" aria-label="Wordocious home" className="hdr-cast block mx-auto" style={{ width: `${CAST_ROW.widthPct}%`, marginTop: CAST_ROW.controlsGap }} data-no-squish="">
           <CastHeader crown={isPro} ground />
         </Link>
+        {/* Desktop website: the four tabs as candy pills (hidden below 1024 px). */}
+        <DesktopTabs />
 
       </header>
 

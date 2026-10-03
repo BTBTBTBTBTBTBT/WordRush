@@ -10,6 +10,7 @@ import { MODE_CARDS, MORE_CARDS, type HomeCard } from '@/components/home/mode-ch
 import { ModeCard, modeCardState } from '@/components/home/mode-card';
 import { HomeBanner, type BannerRow } from '@/components/home/home-banner';
 import { WordOfTheDay } from '@/components/home/word-of-the-day';
+import { HomeTodayCard } from '@/components/home/today-card';
 import { VSLiveTile } from '@/components/home/vs-live-tile';
 import { moreSweepTier } from '@/lib/more-games';
 import { useFlags } from '@/hooks/use-flags';
@@ -26,7 +27,7 @@ import { FirstGameCard } from '@/components/ui/first-game-card';
 import type { PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
-import { getSecondsUntilMidnightLocal, getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
+import { getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { shareTodayProgress } from '@/lib/daily-share';
@@ -39,13 +40,6 @@ import { bannerHeadline, type GroupProgress } from '@wordle-duel/core';
 const SWEEP_KEYS = new Set<string>(SWEEP_MODES.map((m) => m.dbKey as string));
 const sweepEntries = <T,>(m: Map<string, T>): Array<[string, T]> => Array.from(m.entries()).filter(([k]) => SWEEP_KEYS.has(k));
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
-
-/** HH:MM:SS from seconds; the banner's live countdown. */
-function hms(secs: number | null): string {
-  if (secs === null) return '--:--:--';
-  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), x = secs % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`;
-}
 
 /** Today's progress over a set of cards: finished and won among their daily modes. */
 function progressOf(cards: HomeCard[], today: Map<string, DailyCompletion>): GroupProgress {
@@ -250,10 +244,24 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [user?.id, playMode]);
 
-  // Countdown for locked cards and the banner's clock — the shared global timer.
-  const resetSecs = useCountdown(getResetSeconds);
+  // Countdown for locked cards ("Play again in HH:MM:SS") — the shared global
+  // timer, subscribed ONLY while a card shows it: the page no longer re-renders
+  // every second for nothing (the banner's and the desktop Today card's clocks
+  // are leaves, components/home/home-clock.tsx).
+  const cardState = (card: HomeCard, resetText: string) => modeCardState({
+    card,
+    playMode,
+    dailyResult: playMode === 'daily' && card.dbKey ? todayDailies.get(card.dbKey) : undefined,
+    vsWon: null,
+    playedToday: hasPlayedModeToday(card.id),
+    isPro,
+    signedIn: !!user,
+    resetCountdownText: resetText,
+    subtitleOverride: null,
+  });
+  const needsResetClock = [...visibleCards, ...puzzleCards].some((c) => { const st = cardState(c, ''); return st.isLocked && !st.isDailyDone; });
+  const resetSecs = useCountdown(getResetSeconds, needsResetClock);
   const resetCountdownText = resetSecs !== null ? formatCountdown(resetSecs) : '';
-  const clock = hms(useCountdown(getSecondsUntilMidnightLocal));
 
   const handleVsClick = (vsHref: string) => {
     router.push(vsHref);
@@ -264,17 +272,7 @@ export default function HomePage() {
   const hrefFor = (card: HomeCard) => (playMode === 'unlimited'
     ? (card.id === 'vs' ? '/vs' : card.href.split('?')[0])
     : card.href);
-  const stateFor = (card: HomeCard) => modeCardState({
-    card,
-    playMode,
-    dailyResult: playMode === 'daily' && card.dbKey ? todayDailies.get(card.dbKey) : undefined,
-    vsWon: null,
-    playedToday: hasPlayedModeToday(card.id),
-    isPro,
-    signedIn: !!user,
-    resetCountdownText,
-    subtitleOverride: null,
-  });
+  const stateFor = (card: HomeCard) => cardState(card, resetCountdownText);
   const open = (card: HomeCard) => {
     const href = hrefFor(card);
     if (stateFor(card).isLocked) {
@@ -289,9 +287,18 @@ export default function HomePage() {
   const wordRow: BannerRow = { cards: wordCards, progress: progressOf(wordCards, todayDailies), streaks: sweepStreaks, unlimitedPlayed: unlimitedPlayed(wordCards) };
   const puzzleRow: BannerRow = { cards: puzzleCards, progress: progressOf(puzzleCards, todayDailies), streaks: puzzleStreaks, unlimitedPlayed: unlimitedPlayed(puzzleCards) };
   const name = profile?.username ?? '';
+  // Desktop Today card: the next daily to play (Daily mode), else share.
+  const nextCard = playMode === 'daily'
+    ? [...wordCards, ...puzzleCards].find((c) => c.dbKey && !todayDailies.get(c.dbKey) && !stateFor(c).isLocked)
+    : undefined;
+  const shareToday = () => {
+    const headline = bannerHeadline(wordRow.progress, puzzleRow.progress, { hour: new Date().getHours(), name });
+    shareTodayProgress(todayDailies, headline);
+  };
 
+  // home-cards: 2 columns on phones; 3–4 on the desktop website (globals.css).
   const grid = (cards: HomeCard[]) => (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="home-cards grid grid-cols-2 gap-2">
       {cards.map((card) => {
         const state = stateFor(card);
         const href = hrefFor(card);
@@ -322,7 +329,10 @@ export default function HomePage() {
       {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): the
           scroller stays full width, its content centers at up to 1100 px; the
           banner keeps the 560 column; DAILIES | PUZZLES and WORD OF THE DAY |
-          VS BATTLE sit side by side as two-column grids (globals.css .page-*). */}
+          VS BATTLE sit side by side as two-column grids (globals.css .page-*).
+          Desktop website (≥ 1024 px, lib/desktop-layout.ts): a dashboard up to
+          1180 px — the hero (banner | the Today card), then DAILIES and PUZZLES
+          each in 3–4 columns of the same cards, then WORD OF THE DAY | VS BATTLE. */}
       {/* AY: right after a Home-button tap, a tap on a card here is the same finger
           falling through — ignore it (HOME_TAP_GUARD_MS). */}
       <div
@@ -330,6 +340,8 @@ export default function HomePage() {
         style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
         onClickCapture={(e) => { if (homeCardTapBlocked()) { e.preventDefault(); e.stopPropagation(); } }}
       >
+        {/* home-hero: display: contents on phones (no box, nothing moves); the desktop hero row. */}
+        <div className="home-hero">
         <div className="page-col flex flex-col gap-2">
         <PendingInvitesBanner userId={user?.id} />
         <FirstGameCard />
@@ -344,18 +356,30 @@ export default function HomePage() {
           isPro={isPro}
           onModeChange={setPlayMode}
           name={name}
-          clock={clock}
           onOpen={open}
-          onShare={() => {
-            const headline = bannerHeadline(wordRow.progress, puzzleRow.progress, { hour: new Date().getHours(), name });
-            shareTodayProgress(todayDailies, headline);
-          }}
+          onShare={shareToday}
         />
+        </div>
+        {/* Desktop website only (hidden below 1024 px): today's progress beside the banner. */}
+        <div className="dk-only">
+          <HomeTodayCard
+            word={wordRow.progress}
+            puzzles={puzzleRow.progress}
+            unlimited={playMode === 'unlimited'}
+            wordPlayed={wordRow.unlimitedPlayed}
+            puzzlesPlayed={puzzleRow.unlimitedPlayed}
+            streak={profile?.daily_login_streak ?? 0}
+            next={nextCard}
+            onOpen={open}
+            onShare={shareToday}
+            canShare={wordRow.progress.played + puzzleRow.progress.played > 0}
+          />
+        </div>
         </div>
 
         {/* DAILIES and PUZZLES: the whole-cast title art (docs/ART_SPEC.md §2,
             §12, §19.2), one header style, ~78% width, centered. */}
-        <div className="page-grid-2 flex flex-col gap-2">
+        <div className="home-games page-grid-2 flex flex-col gap-2">
         <div className="flex flex-col gap-2">
         <HomeSectionTitle name="art-title-dailies" label="Dailies" />
         {grid(wordCards)}

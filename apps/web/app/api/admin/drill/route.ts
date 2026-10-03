@@ -532,5 +532,64 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // ── Progression: who unlocked one achievement ─────────────────────────────
+  if (metric === 'achievement' && key) {
+    const { data } = await admin
+      .from('achievements')
+      .select('user_id, unlocked_at')
+      .eq('achievement_key', key)
+      .order('unlocked_at', { ascending: false })
+      .limit(300);
+    const names = await nameOf((data ?? []).map((r) => r.user_id));
+    const rows = (data ?? []).map((r) => ({
+      userId: r.user_id,
+      player: names.get(r.user_id) ?? r.user_id,
+      unlocked: fmtTime(r.unlocked_at),
+    }));
+    return ok(`Achievement — ${key}`, `${rows.length} unlock${rows.length === 1 ? '' : 's'}, newest first${capped(rows.length, 300)}`, [
+      { key: 'player', label: 'Player' },
+      { key: 'unlocked', label: 'Unlocked' },
+    ], rows);
+  }
+
+  // ── Progression: saved mascots, optionally one part choice ("head:crown") ──
+  if (metric === 'avatars') {
+    let q = admin
+      .from('profiles')
+      .select('id, username, avatar_config, avatar_url, level, is_pro')
+      .not('avatar_config', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(300);
+    const [part, value] = (key ?? '').split(':');
+    if (part && value && /^[a-zA-Z]+$/.test(part)) q = q.eq(`avatar_config->>${part}`, value);
+    const { data, error } = await q;
+    if (error) return ok('Saved mascots', 'avatar_config is not in the database yet (docs/sql/20261002-avatar-cast.sql)', [], []);
+    const rows = (data ?? []).map((r) => {
+      const c = (r.avatar_config ?? {}) as Record<string, string>;
+      return {
+        userId: r.id,
+        player: r.username ?? r.id,
+        body: c.body ?? '—',
+        hat: c.head ?? '—',
+        backdrop: c.bg ?? '—',
+        shows: c.display ?? (r.avatar_url ? 'photo' : 'mascot'),
+        pro: r.is_pro ? 'Pro' : '',
+      };
+    });
+    return ok(
+      part && value ? `Mascots — ${part} = ${value}` : 'Saved mascots',
+      `${rows.length} player${rows.length === 1 ? '' : 's'}, newest accounts first${capped(rows.length, 300)}`,
+      [
+        { key: 'player', label: 'Player' },
+        { key: 'body', label: 'Body' },
+        { key: 'hat', label: 'Hat' },
+        { key: 'backdrop', label: 'Backdrop' },
+        { key: 'shows', label: 'Shows' },
+        { key: 'pro', label: 'Pro' },
+      ],
+      rows,
+    );
+  }
+
   return NextResponse.json({ error: `Unknown metric "${metric}"` }, { status: 400 });
 }

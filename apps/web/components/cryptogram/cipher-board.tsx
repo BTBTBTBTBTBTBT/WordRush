@@ -118,6 +118,7 @@ export const CipherBoard = memo(function CipherBoard({ state, selected, onSelect
               } as CSSProperties}
             >
               <b>{plain}</b>
+              {motion?.kind === 'hint' && <span className="gt-glow-hint" aria-hidden="true" />}
               {flip && <span className="gt-cover" aria-hidden="true"><b>{plain}</b></span>}
             </span>
             <span

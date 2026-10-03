@@ -17,6 +17,7 @@ import type { MascotId } from '@/lib/mascots';
 import type { MomentName } from '@/lib/art';
 import { SOFT_INK, alphaHex, darken, softMix } from '@/lib/soft-surface';
 import { answerTileSize, countUpValue, popupFormatTime } from '@/lib/result-popup';
+import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 
 // The win / lose popup (docs/FINISH_SPEC.md R1) — ONE component for every
 // game (VictoryAnimation and GameOverAnimation both render it), so every
@@ -97,6 +98,17 @@ function useCountUp(target: number | undefined, ms = 700): { value: number; done
   return state;
 }
 
+/**
+ * The points counting up — its own tiny component, so the per-frame count-up
+ * re-renders just this number (smoothness pass: the hook used to live in the
+ * popup itself, re-rendering the whole card — host, answer tiles, chips — on
+ * every frame of its spring-in).
+ */
+function CountUpPoints({ target }: { target: number }) {
+  const pts = useCountUp(target);
+  return <>{Math.round(pts.value).toLocaleString()}{pts.done && <span className="rp-sparkle" aria-hidden="true">✦</span>}</>;
+}
+
 function Chip({ accent, icon, value, label, className = '' }: { accent: string; icon: ReactNode; value: ReactNode; label: string; className?: string }) {
   return (
     <div
@@ -122,7 +134,6 @@ export function ResultPopup(p: ResultPopupProps) {
   const { outcome, accent, host, moment } = p;
   const win = outcome === 'win';
   const hasActions = !!p.actions && p.actions.length > 0;
-  const pts = useCountUp(p.points);
   // FINISH_SPEC U: the popup opens with a `whoosh`, then `win` (success haptic)
   // or `lose` (soft); a streak chip adds `streak` once the chip pops. Runs
   // before the wrappers' legacy calls, which then collapse into these.
@@ -131,6 +142,8 @@ export function ResultPopup(p: ResultPopupProps) {
     feedback(win ? 'win' : 'lose');
     return p.streakDay != null ? scheduleFeedback('streak', 900) : undefined;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // AZ: the host + lettering are decoded before the spring-in starts.
+  const { ref: entranceRef, waiting } = useDecodedEntrance<HTMLDivElement>();
   const words = p.solution ? [p.solution] : p.solutions ?? [];
   const tile = answerTileSize(words);
   const multi = words.length > 1;
@@ -142,7 +155,8 @@ export function ResultPopup(p: ResultPopupProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-5 animate-fade-in"
+      ref={entranceRef}
+      className={`fixed inset-0 z-50 flex items-center justify-center px-5 animate-fade-in${waiting ? ' motion-wait' : ''}`}
       // AU1: centered in the SAFE AREA, vertically too.
       style={{ backgroundColor: 'rgba(30, 15, 60, 0.55)', paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       onClick={hasActions ? undefined : p.onContinue}
@@ -236,7 +250,7 @@ export function ResultPopup(p: ResultPopupProps) {
                   <Chip
                     accent="#f5a524"
                     icon={<StarGlyph />}
-                    value={<>{Math.round(pts.value).toLocaleString()}{pts.done && <span className="rp-sparkle" aria-hidden="true">✦</span>}</>}
+                    value={<CountUpPoints target={p.points} />}
                     label="Points"
                   />
                 )}

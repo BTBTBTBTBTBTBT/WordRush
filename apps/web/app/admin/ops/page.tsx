@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, Webhook, Swords, ExternalLink } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
-import { FlagsCard } from '../components/flags-card';
-import { RunwayCard } from '../components/runway-card';
+import Link from 'next/link';
 import { modeLabel } from '@/lib/mode-labels';
 
 // Operational health — the "is anything quietly broken" page: cron heartbeats,
@@ -52,13 +51,15 @@ export default function AdminOpsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Ops</h1>
-
-      {/* Remote feature flags — the More Games kill switch + tester gate */}
-      <FlagsCard />
-
-      {/* Content runway — days of unplayed dailies left in every bundled bank */}
-      <RunwayCard />
+      <div>
+        <h1 className="text-2xl font-black text-gray-900">Ops Health</h1>
+        <p className="text-sm text-gray-500 font-medium mt-1">
+          Is anything quietly broken: cron heartbeats, the store-webhook ledger, the anti-cheat watchlist and VS match health.
+          Feature flags and the content runway moved to{' '}
+          <Link href="/admin/flags" className="font-bold text-purple-700">Feature Flags</Link> and{' '}
+          <Link href="/admin/banks" className="font-bold text-purple-700">Content Banks</Link>.
+        </p>
+      </div>
 
       {/* Cron heartbeats */}
       <div className="bg-white border border-gray-200 rounded-xl p-4">

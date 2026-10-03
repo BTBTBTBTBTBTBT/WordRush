@@ -130,7 +130,8 @@ function MatchRow({ match, opponentNames, profileId }: { match: Match; opponentN
   const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
   const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
   return (
-    <div key={match.id} className="flex items-center gap-3 p-3" style={rowStyle(cfg?.color)}>
+    // cv-row: a long history skips layout + paint for rows far off-screen (globals.css).
+    <div key={match.id} className="cv-row flex items-center gap-3 p-3" style={rowStyle(cfg?.color)}>
       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alphaHex(cfg?.color ?? BRAND_ACCENT, 0.16) }}>
         {(() => {
           if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;

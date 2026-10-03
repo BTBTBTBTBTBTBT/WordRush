@@ -158,9 +158,10 @@
   background-color: var(--page-bg-dark-2);
   background-image: var(--page-wall, none), linear-gradient(to bottom right, var(--page-bg-dark-1), var(--page-bg-dark-2), var(--page-bg-dark-3));
 }
-/* Landscape (desktop) windows get the 2400×1500 twin so cover-fit never blows a
+/* Landscape (desktop) windows — and every desktop-website width (≥ 1024 px,
+   lib/desktop-layout.ts) — get the 2400×1500 twin so cover-fit never blows a
    portrait wallpaper up 3×. */
-@media (min-aspect-ratio: 1/1) {
+@media (min-aspect-ratio: 1/1), (min-width: 1024px) {
   .page-bg {
     background-image: var(--page-wall-wide, var(--page-wall, none)), linear-gradient(to bottom right, var(--page-bg-1), var(--page-bg-2), var(--page-bg-3));
   }
@@ -458,22 +459,17 @@
     }
   }
 
+  /* A pre-drawn gold halo (::after) whose opacity breathes (was an animated box-shadow). */
   @keyframes glow-pulse {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-    }
-    50% {
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
-    }
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
   }
 
+  /* The Gauntlet progress dot's glow (components/gauntlet/gauntlet-progress.tsx):
+     a pre-drawn halo whose opacity breathes (was an animated box-shadow). */
   @keyframes gauntlet-glow {
-    0%, 100% {
-      box-shadow: 0 0 3px rgba(168, 85, 247, 0.3);
-    }
-    50% {
-      box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 14px rgba(168, 85, 247, 0.25);
-    }
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
   }
 
   .animate-gradient-x {
@@ -518,7 +514,14 @@
     animation: confetti 3s ease-out forwards;
   }
 
-  .animate-glow-pulse {
+  .animate-glow-pulse { position: relative; }
+  .animate-glow-pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    pointer-events: none;
     animation: glow-pulse 2s ease-in-out infinite;
   }
 
@@ -803,16 +806,14 @@
 .min-h-screen.pb-20 { padding-bottom: max(5rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-24 { padding-bottom: max(6rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
 .min-h-screen.pb-32 { padding-bottom: max(8rem, calc(var(--bottom-nav-h, 0px) + 16px)); }
-/* The Home banner's frosted headline strip (§18.4): white at 72% with a blur. */
-.banner-frost { background: rgba(245, 238, 255, 0.78); }
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .banner-frost {
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-  }
-}
+/* The Home banner's frosted headline strip (§18.4). Smoothness pass: no live
+   backdrop blur any more — the only thing behind the strip is the card's own
+   gradient and its looping shimmer band, so the 12 px blur re-rasterized the
+   strip on every shimmer frame for no visible difference. A slightly denser
+   static wash reads the same. */
+.banner-frost { background: rgba(245, 238, 255, 0.82); }
 @media (prefers-reduced-transparency: reduce) {
-  .banner-frost { background: rgba(245, 238, 255, 0.94); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .banner-frost { background: rgba(245, 238, 255, 0.94); }
 }
 
 /* Game screen headers wearing title art (docs/ART_SPEC.md §14, §19.3;
@@ -1001,25 +1002,37 @@
 @keyframes gt-pop { 0% { transform: scale(0.9); opacity: 0.6; } 55% { transform: scale(1.07); opacity: 1; } 100% { transform: scale(1); } }
 /* reveal (AQ1): each tile turns over in 220 ms (70 ms apart through --gt-d), the color swaps at the half, then a soft glow blooms (600 ms) */
 .gt-flip { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both; }
-/* AU4: GPU-only — the flip is a transform on its own layer (no layout or paint
-   properties animate); the glow is a pre-drawn shadow layer whose OPACITY
-   blooms (was an animated box-shadow, a repaint per frame per tile). */
-.gt-flip { will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: translateZ(0); }
+/* AU4: GPU-only — the flip animates only transform (no layout or paint
+   properties); the glow is a pre-drawn shadow layer whose OPACITY blooms (was
+   an animated box-shadow, a repaint per frame per tile). Smoothness pass: NO
+   permanent will-change / translateZ / backface layer on .gt-flip, .gt-glow or
+   .gt-cover — the browser promotes a tile only while its animation runs. The
+   last submitted row keeps these classes until the next guess, so the old
+   static hints left 3 GPU layers per tile alive (OctoWord: 8 boards × 5 tiles
+   × 3 = 120 layers) through the whole game. */
 .gt-glow {
   position: absolute; inset: 0 0 7% 0; z-index: 0; border-radius: 22%; pointer-events: none;
   box-shadow: 0 0 16px 3px var(--gt-glow, rgba(124, 58, 237, 0.55));
-  opacity: 0; will-change: opacity;
+  opacity: 0;
   animation: gt-glow 600ms ease-out calc(var(--gt-d, 0ms) + 220ms) both;
 }
-.gt-cover { will-change: opacity; }
 @keyframes gt-flip { 0% { transform: perspective(420px) rotateX(0) scale(1); } 50% { transform: perspective(420px) rotateX(-90deg) scale(1.05); } 100% { transform: perspective(420px) rotateX(0) scale(1); } }
 @keyframes gt-glow { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
 /* not a word: the row nudges (360 ms), its letters turn red with a red glow, then clear right to left (--gt-out-d) */
 .gt-nudge { animation: gt-nudge 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @keyframes gt-nudge { 15%, 85% { transform: translateX(-2px); } 30%, 70% { transform: translateX(5px); } 45%, 55% { transform: translateX(-6px); } }
-.gtile.gt-bad { --gt-glyph: #c2183a; }
-.gtile.gt-bad::before { animation: gt-bad var(--gt-bad-ms, 700ms) ease-in-out forwards; }
-@keyframes gt-bad { 0% { box-shadow: inset 0 0 0 2.5px #8b5cf6, 0 0 0 0 rgba(240, 67, 95, 0); } 35% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 18px 4px rgba(240, 67, 95, 0.6); } 70% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 10px 2px rgba(240, 67, 95, 0.35); } 100% { box-shadow: inset 0 0 0 3px #f0435f, 0 0 0 0 rgba(240, 67, 95, 0); } }
+.gtile.gt-bad { --gt-glyph: #c2183a; --gt-ring: inset 0 0 0 3px #f0435f; }
+/* Smoothness pass: the red ring is set at once and the red glow is a pre-drawn
+   shadow layer (.gt-glow-bad, letter-tile.tsx) whose OPACITY blooms and fades —
+   was an animated box-shadow on every tile of the row (a repaint per frame,
+   right while the player is typing fast). */
+.gt-glow-bad {
+  position: absolute; inset: 0 0 7% 0; z-index: 0; border-radius: 22%; pointer-events: none;
+  box-shadow: 0 0 18px 4px rgba(240, 67, 95, 0.6);
+  opacity: 0;
+  animation: gt-bad var(--gt-bad-ms, 700ms) ease-in-out forwards;
+}
+@keyframes gt-bad { 0% { opacity: 0; } 35% { opacity: 1; } 70% { opacity: 0.55; } 100% { opacity: 0; } }
 .gtile.gt-out > b { animation: gt-outb 160ms cubic-bezier(0.5, 0, 0.75, 0) var(--gt-out-d, 0ms) forwards; }
 @keyframes gt-outb { to { transform: scale(0.4); opacity: 0; } }
 /* win: a hop wave (400 ms each, 60 ms apart through --gt-hop-d) after the reveal */
@@ -1030,9 +1043,16 @@
 .gt-sink { animation: gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
 .gt-flip.gt-sink { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
 @keyframes gt-sink { 40% { transform: rotate(-4deg); } 70% { transform: rotate(3deg) translateY(3%); } 100% { transform: rotate(0) translateY(2%); filter: saturate(0.7); } }
-/* hint: flips in purple with a gold glow, twice */
-.gtile.gt-hint::before { animation: gt-hint 1.2s ease-in-out 2; }
-@keyframes gt-hint { 50% { box-shadow: inset 0 0 0 3px #f5c542, 0 0 18px 4px rgba(245, 197, 66, 0.7); } }
+/* hint: flips in purple with a gold glow, twice — a pre-drawn gold ring + glow
+   layer (.gt-glow-hint, letter-tile.tsx) whose opacity pulses (was an animated
+   box-shadow). */
+.gt-glow-hint {
+  position: absolute; inset: 0 0 7% 0; z-index: 1; border-radius: 22%; pointer-events: none;
+  box-shadow: inset 0 0 0 3px #f5c542, 0 0 18px 4px rgba(245, 197, 66, 0.7);
+  opacity: 0;
+  animation: gt-hint 1.2s ease-in-out 2;
+}
+@keyframes gt-hint { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 
 /* ── B2 · Keyboard keys are tiles too: lilac lip, light face, dark purple letters, state colors after a reveal ── */
 .kkey {
@@ -1200,10 +1220,14 @@
 /* ── A5 · The living cast header (components/ui/cast-header.tsx): ten heroes
    spelling WORDOCIOUS edge to edge; one character at a time plays its move. */
 .castrow { display: flex; align-items: flex-end; width: 100%; }
-.castrow .cm { position: relative; min-width: 0; width: 0; margin-right: -2.2%; transform-origin: 50% 85%; filter: drop-shadow(0 3px 4px rgba(60, 30, 110, 0.18)); }
+.castrow .cm { position: relative; min-width: 0; width: 0; margin-right: -2.2%; transform-origin: 50% 85%; }
 .castrow .cm:nth-child(even) { margin-bottom: 7px; }
 .castrow .cm:last-child { margin-right: 0; }
-.castrow .cm > img { position: absolute; max-width: none; pointer-events: none; user-select: none; }
+/* Smoothness pass: the soft drop shadow sits on the (still) image inside the
+   cell, not on the cell that hops / spins — a filter on the moving element is
+   re-applied every frame of every move (and of the intro's pop + glide); on the
+   image it is painted once into the cell's layer. */
+.castrow .cm > img { position: absolute; max-width: none; pointer-events: none; user-select: none; filter: drop-shadow(0 3px 4px rgba(60, 30, 110, 0.18)); }
 .cm.act-o1 { animation: m-spin 900ms cubic-bezier(0.45, 0, 0.25, 1); transform-origin: 50% 55%; }
 @keyframes m-spin { 0% { transform: rotate(0); } 85% { transform: rotate(372deg); } 100% { transform: rotate(360deg); } }
 .cm.act-w { animation: m-hop 700ms cubic-bezier(0.3, 1.5, 0.5, 1); }
@@ -1236,7 +1260,7 @@
 @keyframes gt-fade { 50% { opacity: 0.4; } }
 @media (prefers-reduced-motion: reduce) {
   .gt-flip, .gt-flip.gt-hop, .gt-flip.gt-sink { animation: none !important; }
-  .gt-glow, .gt-pop, .gt-hop, .gt-sink, .gt-nudge, .gtile.gt-hint::before,
+  .gt-glow, .gt-pop, .gt-hop, .gt-sink, .gt-nudge, .gt-glow-hint, .gt-glow-bad,
   .castrow .cm, .intro-pop, .intro-bounce { animation: none !important; }
   .gt-cover { display: none; }
 }
@@ -1248,7 +1272,8 @@
 [data-reduced-motion="true"] .gt-hop,
 [data-reduced-motion="true"] .gt-sink,
 [data-reduced-motion="true"] .gt-nudge,
-[data-reduced-motion="true"] .gtile.gt-hint::before,
+[data-reduced-motion="true"] .gt-glow-hint,
+[data-reduced-motion="true"] .gt-glow-bad,
 [data-reduced-motion="true"] .castrow .cm,
 [data-reduced-motion="true"] .intro-pop,
 [data-reduced-motion="true"] .intro-bounce { animation: none !important; }
@@ -1361,14 +1386,16 @@
 .ss-tile[data-m] { z-index: 1; }
 .ss-tile[data-m="pop"] .ss-piece { animation: gt-pop 300ms cubic-bezier(0.34, 1.45, 0.64, 1); }
 .ss-tile[data-m="right"] .ss-piece, .ss-tile[data-m="wrong"] .ss-piece, .ss-tile[data-m="hint"] .ss-piece { animation: ss-flip 520ms cubic-bezier(0.3, 1.3, 0.5, 1) both; }
-.ss-tile[data-m="right"] .ss-glow { animation: ss-glow-right 900ms ease-out 360ms both; }
-.ss-tile[data-m="wrong"] .ss-glow { animation: ss-glow-wrong 1000ms ease-in-out 300ms both; }
+/* Smoothness pass: each glow is a pre-drawn shadow whose OPACITY animates
+   (was an animated box-shadow — a repaint per frame). */
+.ss-tile[data-m="right"] .ss-glow { box-shadow: inset 0 0 0 2px rgba(124, 58, 237, 0.55), 0 0 14px 3px rgba(150, 90, 255, 0.65); opacity: 0; animation: ss-glow-right 900ms ease-out 360ms both; }
+.ss-tile[data-m="wrong"] .ss-glow { box-shadow: inset 0 0 0 2.5px #f0435f, 0 0 16px 4px rgba(240, 67, 95, 0.6); opacity: 0; animation: ss-glow-wrong 1000ms ease-in-out 300ms both; }
 .ss-tile[data-m="wrong"] { animation: ss-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 380ms; }
-.ss-tile[data-m="hint"] .ss-glow { animation: ss-glow-hint 1.2s ease-in-out 360ms 2; }
+.ss-tile[data-m="hint"] .ss-glow { box-shadow: inset 0 0 0 2.5px #f5c542, 0 0 16px 4px rgba(245, 197, 66, 0.7); opacity: 0; animation: ss-glow-hint 1.2s ease-in-out 360ms 2; }
 @keyframes ss-flip { 0% { transform: perspective(300px) rotateY(90deg) scale(0.85); opacity: 0.4; } 60% { transform: perspective(300px) rotateY(-12deg) scale(1.08); opacity: 1; } 100% { transform: none; opacity: 1; } }
-@keyframes ss-glow-right { 0% { box-shadow: 0 0 0 0 rgba(150, 90, 255, 0); } 35% { box-shadow: inset 0 0 0 2px rgba(124, 58, 237, 0.55), 0 0 14px 3px rgba(150, 90, 255, 0.65); } 100% { box-shadow: 0 0 0 0 rgba(150, 90, 255, 0); } }
-@keyframes ss-glow-wrong { 0% { box-shadow: 0 0 0 0 rgba(240, 67, 95, 0); } 35% { box-shadow: inset 0 0 0 2.5px #f0435f, 0 0 16px 4px rgba(240, 67, 95, 0.6); } 70% { box-shadow: inset 0 0 0 2.5px #f0435f, 0 0 8px 2px rgba(240, 67, 95, 0.35); } 100% { box-shadow: 0 0 0 0 rgba(240, 67, 95, 0); } }
-@keyframes ss-glow-hint { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 197, 66, 0); } 50% { box-shadow: inset 0 0 0 2.5px #f5c542, 0 0 16px 4px rgba(245, 197, 66, 0.7); } }
+@keyframes ss-glow-right { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ss-glow-wrong { 0% { opacity: 0; } 35% { opacity: 1; } 70% { opacity: 0.55; } 100% { opacity: 0; } }
+@keyframes ss-glow-hint { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 @keyframes ss-shake { 15%, 85% { transform: translateX(-1px); } 30%, 70% { transform: translateX(3px); } 45%, 55% { transform: translateX(-4px); } }
 @media (prefers-reduced-motion: reduce) { .ss-tile[data-m], .ss-tile[data-m] .ss-piece, .ss-tile[data-m] .ss-glow { animation: none !important; } }
 [data-reduced-motion="true"] .ss-tile[data-m],
@@ -1477,18 +1504,31 @@
 }
 .candy-badge-pop { animation: candy-badge-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 @keyframes candy-badge-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
-.candy-badge-pulse { animation: candy-badge-pulse 4s ease-in-out infinite; }
-.candy-badge-pop.candy-badge-pulse { animation: candy-badge-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both, candy-badge-pulse 4s ease-in-out 420ms infinite; }
+/* The glow pulse while unseen: a pre-drawn halo (::after) whose OPACITY
+   breathes — was an infinite animated box-shadow on the always-visible tab bar
+   (a repaint every frame, forever, while anything was waiting). */
+.candy-badge-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 4px rgba(255, 95, 162, 0.28), 0 3px 12px rgba(240, 67, 95, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  animation: candy-badge-pulse 4s ease-in-out infinite;
+}
+.candy-badge-pop.candy-badge-pulse::after { animation-delay: 420ms; }
 @keyframes candy-badge-pulse {
-  0%, 70%, 100% { box-shadow: inset 0 0 0 1.5px #f5c542, 0 2px 0 #a8263b, 0 3px 6px rgba(240, 67, 95, 0.35); }
-  85% { box-shadow: inset 0 0 0 1.5px #f5c542, 0 2px 0 #a8263b, 0 0 0 4px rgba(255, 95, 162, 0.28), 0 3px 12px rgba(240, 67, 95, 0.55); }
+  0%, 70%, 100% { opacity: 0; }
+  85% { opacity: 1; }
 }
 /* The Friends tab icon's happy wiggle when a new item arrives (±8°, two swings). */
 .tab-wiggle { animation: tab-wiggle 640ms ease-in-out; }
 @keyframes tab-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 45% { transform: rotate(8deg); } 70% { transform: rotate(-6deg); } 85% { transform: rotate(4deg); } }
-@media (prefers-reduced-motion: reduce) { .candy-badge-pop, .candy-badge-pulse, .tab-wiggle { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .candy-badge-pop, .candy-badge-pulse, .candy-badge-pulse::after, .tab-wiggle { animation: none !important; } }
 [data-reduced-motion="true"] .candy-badge-pop,
 [data-reduced-motion="true"] .candy-badge-pulse,
+[data-reduced-motion="true"] .candy-badge-pulse::after,
 [data-reduced-motion="true"] .tab-wiggle { animation: none !important; }
 
 /* ── K1 · In-app notices (components/ui/announcements-banner.tsx,
@@ -1549,8 +1589,9 @@
 .rp-bob { animation: rp-bob 2.6s ease-in-out 700ms infinite; }
 @keyframes rp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 .rp-gloss { overflow: hidden; }
+/* The band travels by transform (−40% → 120% of the lettering = 160 / 30 ≈ 533% of its own width); was an animated `left` (layout per frame). */
 .rp-gloss::after { content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0)); transform: skewX(-18deg); opacity: 0; animation: rp-gloss 700ms ease-out 900ms 1 both; pointer-events: none; }
-@keyframes rp-gloss { 0% { left: -40%; opacity: 1; } 100% { left: 120%; opacity: 1; } }
+@keyframes rp-gloss { 0% { transform: translateX(0) skewX(-18deg); opacity: 1; } 100% { transform: translateX(533%) skewX(-18deg); opacity: 1; } }
 .rp-sparkle { display: inline-block; margin-left: 2px; color: #f5a524; font-size: 0.7em; vertical-align: super; animation: rp-sparkle 600ms cubic-bezier(0.3, 1.6, 0.5, 1) both; }
 @keyframes rp-sparkle { 0% { opacity: 0; transform: scale(0) rotate(-45deg); } 70% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: none; } }
 .rp-pop { animation: candy-badge-pop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
@@ -1708,11 +1749,18 @@ a, button, [role="button"], [data-squish] { touch-action: manipulation; }
 /* ── FINISH_SPEC AQ2 · loops pause off-screen and while scrolling
    (components/providers/motion-pause.tsx; class list = lib/motion-pause.ts LOOP_CLASSES). ── */
 [data-offscreen="true"], [data-offscreen="true"]::before, [data-offscreen="true"]::after { animation-play-state: paused !important; }
-html[data-scrolling="true"] .animate-gradient-x, html[data-scrolling="true"] .animate-gradient-slow, html[data-scrolling="true"] .animate-pulse-slow, html[data-scrolling="true"] .animate-pulse-slow-delayed, html[data-scrolling="true"] .animate-shimmer, html[data-scrolling="true"] .animate-sparkle, html[data-scrolling="true"] .animate-float, html[data-scrolling="true"] .animate-glow-pulse, html[data-scrolling="true"] .animate-blob, html[data-scrolling="true"] .animate-blob-reverse, html[data-scrolling="true"] .animate-title-pulse, html[data-scrolling="true"] .animate-foil-sweep, html[data-scrolling="true"] .animate-banner-shimmer, html[data-scrolling="true"] .mascot-bob, html[data-scrolling="true"] .art-float, html[data-scrolling="true"] .celebrate-glow, html[data-scrolling="true"] .candy-badge-pulse, html[data-scrolling="true"] .champ-in, html[data-scrolling="true"] .loop-wobble, html[data-scrolling="true"] .rp-rays, html[data-scrolling="true"] .rp-bob, html[data-scrolling="true"] .lh-sweep,
-html[data-scrolling="true"] .animate-gradient-x::before, html[data-scrolling="true"] .animate-gradient-slow::before, html[data-scrolling="true"] .animate-pulse-slow::before, html[data-scrolling="true"] .animate-pulse-slow-delayed::before, html[data-scrolling="true"] .animate-shimmer::before, html[data-scrolling="true"] .animate-sparkle::before, html[data-scrolling="true"] .animate-float::before, html[data-scrolling="true"] .animate-glow-pulse::before, html[data-scrolling="true"] .animate-blob::before, html[data-scrolling="true"] .animate-blob-reverse::before, html[data-scrolling="true"] .animate-title-pulse::before, html[data-scrolling="true"] .animate-foil-sweep::before, html[data-scrolling="true"] .animate-banner-shimmer::before, html[data-scrolling="true"] .mascot-bob::before, html[data-scrolling="true"] .art-float::before, html[data-scrolling="true"] .celebrate-glow::before, html[data-scrolling="true"] .candy-badge-pulse::before, html[data-scrolling="true"] .champ-in::before, html[data-scrolling="true"] .loop-wobble::before, html[data-scrolling="true"] .rp-rays::before, html[data-scrolling="true"] .rp-bob::before, html[data-scrolling="true"] .lh-sweep::before,
-html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="true"] .animate-gradient-slow::after, html[data-scrolling="true"] .animate-pulse-slow::after, html[data-scrolling="true"] .animate-pulse-slow-delayed::after, html[data-scrolling="true"] .animate-shimmer::after, html[data-scrolling="true"] .animate-sparkle::after, html[data-scrolling="true"] .animate-float::after, html[data-scrolling="true"] .animate-glow-pulse::after, html[data-scrolling="true"] .animate-blob::after, html[data-scrolling="true"] .animate-blob-reverse::after, html[data-scrolling="true"] .animate-title-pulse::after, html[data-scrolling="true"] .animate-foil-sweep::after, html[data-scrolling="true"] .animate-banner-shimmer::after, html[data-scrolling="true"] .mascot-bob::after, html[data-scrolling="true"] .art-float::after, html[data-scrolling="true"] .celebrate-glow::after, html[data-scrolling="true"] .candy-badge-pulse::after, html[data-scrolling="true"] .champ-in::after, html[data-scrolling="true"] .loop-wobble::after, html[data-scrolling="true"] .rp-rays::after, html[data-scrolling="true"] .rp-bob::after, html[data-scrolling="true"] .lh-sweep::after { animation-play-state: paused !important; }
+/* Smoothness pass: past MAX_RUNNING_LOOPS visible loops, the extras wait (lib/motion-pause.ts capLoops). */
+[data-loop-capped="true"], [data-loop-capped="true"]::before, [data-loop-capped="true"]::after { animation-play-state: paused !important; }
+html[data-scrolling="true"] .animate-gradient-x, html[data-scrolling="true"] .animate-gradient-slow, html[data-scrolling="true"] .animate-pulse-slow, html[data-scrolling="true"] .animate-pulse-slow-delayed, html[data-scrolling="true"] .animate-shimmer, html[data-scrolling="true"] .animate-sparkle, html[data-scrolling="true"] .animate-float, html[data-scrolling="true"] .animate-glow-pulse, html[data-scrolling="true"] .animate-blob, html[data-scrolling="true"] .animate-blob-reverse, html[data-scrolling="true"] .animate-title-pulse, html[data-scrolling="true"] .animate-foil-sweep, html[data-scrolling="true"] .animate-banner-shimmer, html[data-scrolling="true"] .mascot-bob, html[data-scrolling="true"] .art-float, html[data-scrolling="true"] .celebrate-glow, html[data-scrolling="true"] .candy-badge-pulse, html[data-scrolling="true"] .champ-in, html[data-scrolling="true"] .loop-wobble, html[data-scrolling="true"] .rp-rays, html[data-scrolling="true"] .rp-bob, html[data-scrolling="true"] .gauntlet-glow, html[data-scrolling="true"] .lh-sweep, html[data-scrolling="true"] .animate-pulse, html[data-scrolling="true"] .animate-ping, html[data-scrolling="true"] .animate-spin,
+html[data-scrolling="true"] .animate-gradient-x::before, html[data-scrolling="true"] .animate-gradient-slow::before, html[data-scrolling="true"] .animate-pulse-slow::before, html[data-scrolling="true"] .animate-pulse-slow-delayed::before, html[data-scrolling="true"] .animate-shimmer::before, html[data-scrolling="true"] .animate-sparkle::before, html[data-scrolling="true"] .animate-float::before, html[data-scrolling="true"] .animate-glow-pulse::before, html[data-scrolling="true"] .animate-blob::before, html[data-scrolling="true"] .animate-blob-reverse::before, html[data-scrolling="true"] .animate-title-pulse::before, html[data-scrolling="true"] .animate-foil-sweep::before, html[data-scrolling="true"] .animate-banner-shimmer::before, html[data-scrolling="true"] .mascot-bob::before, html[data-scrolling="true"] .art-float::before, html[data-scrolling="true"] .celebrate-glow::before, html[data-scrolling="true"] .candy-badge-pulse::before, html[data-scrolling="true"] .champ-in::before, html[data-scrolling="true"] .loop-wobble::before, html[data-scrolling="true"] .rp-rays::before, html[data-scrolling="true"] .rp-bob::before, html[data-scrolling="true"] .gauntlet-glow::before, html[data-scrolling="true"] .lh-sweep::before, html[data-scrolling="true"] .animate-pulse::before, html[data-scrolling="true"] .animate-ping::before, html[data-scrolling="true"] .animate-spin::before,
+html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="true"] .animate-gradient-slow::after, html[data-scrolling="true"] .animate-pulse-slow::after, html[data-scrolling="true"] .animate-pulse-slow-delayed::after, html[data-scrolling="true"] .animate-shimmer::after, html[data-scrolling="true"] .animate-sparkle::after, html[data-scrolling="true"] .animate-float::after, html[data-scrolling="true"] .animate-glow-pulse::after, html[data-scrolling="true"] .animate-blob::after, html[data-scrolling="true"] .animate-blob-reverse::after, html[data-scrolling="true"] .animate-title-pulse::after, html[data-scrolling="true"] .animate-foil-sweep::after, html[data-scrolling="true"] .animate-banner-shimmer::after, html[data-scrolling="true"] .mascot-bob::after, html[data-scrolling="true"] .art-float::after, html[data-scrolling="true"] .celebrate-glow::after, html[data-scrolling="true"] .candy-badge-pulse::after, html[data-scrolling="true"] .champ-in::after, html[data-scrolling="true"] .loop-wobble::after, html[data-scrolling="true"] .rp-rays::after, html[data-scrolling="true"] .rp-bob::after, html[data-scrolling="true"] .gauntlet-glow::after, html[data-scrolling="true"] .lh-sweep::after, html[data-scrolling="true"] .animate-pulse::after, html[data-scrolling="true"] .animate-ping::after, html[data-scrolling="true"] .animate-spin::after { animation-play-state: paused !important; }
 /* Long lists skip layout + paint for rows far off-screen. */
 .cv-row { content-visibility: auto; contain-intrinsic-size: auto 64px; }
+/* The Gauntlet progress dot's glow: a steady soft ring + a pre-drawn halo whose opacity breathes. */
+.gauntlet-glow { box-shadow: 0 0 3px rgba(168, 85, 247, 0.3); }
+.gauntlet-glow::after { content: ''; position: absolute; inset: -2px; border-radius: inherit; box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 14px rgba(168, 85, 247, 0.25); opacity: 0; pointer-events: none; animation: gauntlet-glow 2.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .gauntlet-glow::after { animation: none !important; } }
+[data-reduced-motion="true"] .gauntlet-glow::after { animation: none !important; }
 
 /* ── FINISH_SPEC AR · LiveHeadline (components/ui/live-headline.tsx): the title-art
    lettering for dynamic headlines. Per glyph: a gold text-stroke copy + stacked
@@ -1756,19 +1804,23 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 .lh-ch[data-k="number"] .lh-fill { background-image: linear-gradient(180deg, var(--lh-num-top), var(--lh-num-bottom)); }
 .lh-ch[data-k="name"] .lh-fill { background-image: linear-gradient(180deg, var(--lh-name-top), var(--lh-name-bottom)); }
 .lh-star { width: 0.78em; height: 0.78em; margin: 0 0.12em; vertical-align: -0.04em; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(146, 64, 14, 0.35)); }
-.lh-sweep .lh-gloss { animation: lh-sweep 6s ease-in-out infinite; animation-delay: calc(1.2s + var(--i, 0) * 30ms); }
+/* Smoothness pass: the idle gloss sweep is ONE short run (840 ms) that the
+   component starts every ~6 s (lib/gloss-sweep.ts: on screen, not scrolling, at
+   most two headlines at once) — it used to be an infinite background-position
+   loop on EVERY glyph of EVERY headline (Friends alone had dozens running),
+   restyled on the main thread every frame even while nothing moved. */
+.lh-sweeping .lh-gloss { animation: lh-sweep 840ms ease-in-out both; animation-delay: calc(var(--i, 0) * 30ms); }
 @keyframes lh-pop { 0% { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: none; } }
-@keyframes lh-sweep { 0% { background-position: 0 0, 150% 0; } 14%, 100% { background-position: 0 0, -50% 0; } }
+@keyframes lh-sweep { 0% { background-position: 0 0, 150% 0; } 100% { background-position: 0 0, -50% 0; } }
 .lh-calm .lh-ch { animation: none; }
-[data-offscreen="true"] .lh-gloss, html[data-scrolling="true"] .lh-sweep .lh-gloss { animation-play-state: paused !important; }
-@media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweep .lh-gloss { animation: none !important; } }
-[data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweep .lh-gloss { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweeping .lh-gloss { animation: none !important; } }
+[data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweeping .lh-gloss { animation: none !important; }
 
 /* ── FINISH_SPEC AU3 · the Gauntlet stage card (components/gauntlet/stage-transition.tsx):
    one fade + slide/spring in, one fade + lift out — transforms and opacity only
    (the old backdrop blur re-rasterized the board under it every frame). ── */
 .st-overlay { animation: st-fade 220ms ease-out both; }
-.st-card { animation: st-card-in var(--m-spring-ms) var(--m-spring) both; will-change: transform, opacity; contain: layout style; }
+.st-card { animation: st-card-in var(--m-spring-ms) var(--m-spring) both; contain: layout style; }
 .st-leaving { animation: st-fade-out 260ms ease-in forwards; }
 .st-leaving .st-card { animation: st-card-out 260ms ease-in forwards; }
 @keyframes st-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -1780,8 +1832,9 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 
 /* ── FINISH_SPEC AZ · one motion family (lib/motion-tokens.ts MOTION): the
    spring-in, the fade and the matching exit; popups animate only transform +
-   opacity on their own layer (will-change + contain), and nothing blurs live
-   under a moving popup. ── */
+   opacity (the browser layers them while the animation runs; no permanent
+   will-change — smoothness pass), contained, and nothing blurs live under a
+   moving popup. ── */
 :root {
   --m-spring: cubic-bezier(0.3, 1.35, 0.5, 1);
   --m-spring-ms: 380ms;
@@ -1790,10 +1843,143 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   --m-ease-in: cubic-bezier(0.5, 0, 0.75, 0);
   --m-exit-ms: 200ms;
 }
-.animate-modal-content, .animate-fade-in-scale, .result-pop, .page-pop { will-change: transform, opacity; contain: layout style; }
+.animate-modal-content, .animate-fade-in-scale, .result-pop, .page-pop { contain: layout style; }
 .motion-leaving { animation: m-scrim-out var(--m-exit-ms) var(--m-ease-in) forwards !important; pointer-events: none; }
 .motion-leaving .page-pop, .motion-leaving .animate-fade-in-scale { animation: m-card-out var(--m-exit-ms) var(--m-ease-in) forwards !important; }
 @keyframes m-scrim-out { to { opacity: 0; } }
 @keyframes m-card-out { to { opacity: 0; transform: translateY(8px) scale(0.96); } }
 .confetti-piece { will-change: transform, opacity; }
 @media (prefers-reduced-motion: reduce) { .motion-leaving, .motion-leaving .page-pop { animation: none !important; } }
+
+/* ── Desktop website (≥ 1024 px; lib/desktop-layout.ts holds the numbers,
+   lib/desktop-layout.test.ts holds this block to them). Below 1024 px none of
+   these rules apply except the three hide/contents defaults at the top, which
+   draw nothing on a phone (.dk-tabs / .dk-only are desktop-only pieces;
+   .home-hero is display: contents, so its children lay out exactly as before).
+   - .app-hdr: the shared AppHeader becomes ONE sticky top bar — the cast
+     wordmark left, the candy pill tabs (.dk-tabs, components/ui/desktop-tabs.tsx)
+     in the middle, the counters + help + settings right — on a page-tinted
+     surface like the docked tab bar's; the docked bottom bar hides on those
+     pages (body:has(.app-hdr)); game screens keep it.
+   - Tab pages up to 1180 px (--page-wide). Home: the hero (banner | the Today
+     card), DAILIES and PUZZLES stacked in 3 (4 from 1280 px) columns of the
+     same cards, WORD OF THE DAY | VS BATTLE. From 1200 px (when every column
+     is at least phone-width) Leaderboard: picker | today's board | the rest
+     (.lb-desk); Friends: banner | the two AG columns (.fr-desk). Stats: the AG
+     two columns, the left one phone-width
+     (.stats-desk). Side columns stay in view under the bar on tall windows.
+   - Game screens keep the 560 px column; popups stay capped at 440 px. ── */
+:root {
+  --desk-max: 1180px;
+  --desk-gutter: 24px;
+}
+.dk-tabs, .dk-only { display: none; }
+.home-hero { display: contents; }
+@media (min-width: 1024px) {
+  :root { --page-wide: var(--desk-max); }
+
+  /* The sticky top bar. */
+  .app-hdr.page-col {
+    --tab-dock-1: #f7f1ff;
+    --tab-dock-2: #ece0ff;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    max-width: none;
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 16px;
+    padding: 8px max(var(--desk-gutter), calc((100% - var(--desk-max)) / 2)) 10px !important;
+    background: linear-gradient(var(--tab-dock-1), var(--tab-dock-2));
+    border-bottom: 1px solid rgba(124, 58, 237, 0.14);
+    box-shadow: 0 6px 16px rgba(76, 29, 149, 0.08);
+  }
+  .app-hdr[data-tab-tint="leaderboard"] { --tab-dock-1: #fff8ea; --tab-dock-2: #ffeccc; border-bottom-color: rgba(217, 119, 6, 0.18); }
+  .app-hdr[data-tab-tint="stats"] { --tab-dock-1: #f2f6ff; --tab-dock-2: #e2ebff; border-bottom-color: rgba(37, 99, 235, 0.16); }
+  .app-hdr[data-tab-tint="friends"] { --tab-dock-1: #fff3f9; --tab-dock-2: #fde2f0; border-bottom-color: rgba(236, 72, 153, 0.16); }
+  [data-theme="dark"] .app-hdr.page-col {
+    --tab-dock-1: #2a2a4a;
+    --tab-dock-2: #222240;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+  .app-hdr > .hdr-cast { grid-row: 1; grid-column: 1; justify-self: start; width: 220px !important; margin: 0 !important; }
+  .app-hdr > .dk-tabs { grid-row: 1; grid-column: 2; display: flex; align-items: center; gap: 8px; }
+  .app-hdr > .hdr-row { grid-row: 1; grid-column: 3; justify-self: end; justify-content: flex-end; gap: 10px; padding: 0; min-width: 0; }
+  .dk-tab.candy img { width: 18px !important; height: 18px !important; }
+  .dk-tabs .dk-tab > .dk-tab-badge { position: absolute; top: -7px; right: -7px; }
+  .dk-tab[aria-current="page"] { cursor: default; }
+
+  /* The tab pages carry the tabs in the top bar: no docked bottom bar there. */
+  body:has(.app-hdr) .tab-dock { display: none; }
+  body:has(.app-hdr) .pb-tab-clear::after { height: 2.5rem; }
+
+  .dk-only { display: block; }
+
+  /* Home: the hero, then the stacked card grids. */
+  .home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, var(--page-col)) minmax(0, 1fr);
+    column-gap: var(--page-grid-gap);
+    align-items: stretch;
+  }
+  .home-hero > .page-col { max-width: none; margin: 0; }
+  .home-hero > .dk-only { padding-top: 16px; }
+  .home-games.page-grid-2 { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
+  .home-cards.grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+  /* Stats: a phone-width side column (player card + picker) and the page. */
+  .page-grid-2.stats-desk {
+    grid-template-columns: minmax(320px, 380px) minmax(0, 760px);
+    justify-content: center;
+  }
+}
+/* Three columns once each one is at least phone-width (≥ 1200 px; 1024–1199
+   keeps the AG two columns under the top bar). */
+@media (min-width: 1200px) {
+  /* Leaderboard: picker | today's board | play card + your board + yesterday. */
+  .lb-desk {
+    display: grid;
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--page-grid-gap);
+    align-items: start;
+  }
+  .lb-desk > .page-col { max-width: none; margin: 0; }
+  .lb-desk > .page-grid-2 { display: contents; }
+
+  /* Friends: the headline across, then banner | the two AG columns. */
+  .fr-desk {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--page-grid-gap);
+    row-gap: 14px;
+    align-items: start;
+  }
+  .fr-desk > * { margin-top: 0 !important; }
+  .fr-desk > :first-child { grid-column: 1 / -1; }
+  .fr-desk > .page-col { max-width: none; margin: 0; }
+  .fr-desk > .page-grid-2 { display: contents; }
+}
+@media (min-width: 1280px) {
+  .app-hdr > .hdr-cast { width: 288px !important; }
+  .dk-tab.candy { --candy-h: 40px; --candy-lip-h: 4px; --candy-ring: 2px; font-size: 14px; gap: 6px; }
+  .dk-tab.candy img { width: 22px !important; height: 22px !important; }
+  .home-cards.grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* Side columns stay in view under the sticky bar where the window is tall enough. */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .page-sticky { top: calc(var(--desk-hdr-h, 72px) + 12px); }
+}
+@media (min-width: 1200px) and (min-height: 760px) {
+  .lb-desk > .page-col,
+  .fr-desk > .page-col { position: sticky; top: calc(var(--desk-hdr-h, 72px) + 12px); }
+}
+
+/* ── Smoothness pass · a popup held on its first frame while its art decodes
+   (hooks/use-decoded-entrance.ts, at most lib/predecode.ts DECODE_WAIT_MS):
+   invisible, every animation inside it paused at 0, so the entrance starts
+   from frame 1 with the art ready. ── */
+.motion-wait { visibility: hidden; }
+.motion-wait, .motion-wait *, .motion-wait *::before, .motion-wait *::after { animation-play-state: paused !important; }

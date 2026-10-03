@@ -18,6 +18,7 @@ import { BadgeArt } from './badge-art';
 import { levelTierLabel } from '@wordle-duel/core';
 import { type BadgeCelebration } from '@/lib/badges';
 import { alphaHex, darken } from '@/lib/soft-surface';
+import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 
 // The unlock moment (docs/FINISH_SPEC.md V2, and the V3 new-tier popup) in the
 // R1 card language: the accent's soft gradient over the warm cream (a deep
@@ -57,17 +58,21 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
   const [shareNote, setShareNote] = useState<string | null>(null);
   const total = ACHIEVEMENTS.length;
   const have = isTier ? null : seenCount();
+  // AZ: the badge + host art are decoded before the spring-in starts.
+  const { ref: entranceRef, waiting } = useDecodedEntrance<HTMLDivElement>();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
-    ref.current?.focus();
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+  // Focus once the card is visible (a held first frame can't take focus).
+  useEffect(() => { if (!waiting) ref.current?.focus(); }, [waiting]);
 
   return (
     <div
-      className="fixed inset-0 z-[65] flex items-center justify-center px-5 animate-fade-in"
+      ref={entranceRef}
+      className={`fixed inset-0 z-[65] flex items-center justify-center px-5 animate-fade-in${waiting ? ' motion-wait' : ''}`}
       style={{ backgroundColor: 'rgba(30, 15, 60, 0.55)' }}
       onClick={onClose}
     >

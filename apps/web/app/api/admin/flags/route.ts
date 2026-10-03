@@ -4,7 +4,7 @@ import { verifyAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
-/** Admin read of every flag row (admin > Ops > Feature flags). */
+/** Admin read of every flag row (admin > Content & Ops > Feature Flags). */
 export async function GET(request: NextRequest) {
   const auth = await verifyAdmin(request);
   if ('error' in auth) return auth.error;

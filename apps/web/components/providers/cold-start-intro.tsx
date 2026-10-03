@@ -35,6 +35,13 @@ import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTR
 // INTRO_PRELOAD_MAX_MS), the glide animates only transform (translate +
 // scale, lib/intro.ts glideTransform) instead of left / top / width, and heavy
 // startup work waits for the landing (afterIntro, INTRO_DONE_EVENT).
+// Smoothness pass (web "choppy" report): the W's soft drop shadow stays on the
+// still <img> while a wrapper does the bounce / shrink (a filter on the moving
+// element was re-applied every frame); the real header row's own images are
+// decoded while the row assembles, so they are ready the frame it turns
+// visible; and the landing waits for the glide's transitionend (a fixed timer
+// could cut a glide that started a frame or two late on a busy main thread,
+// so the row snapped the last few px).
 
 /** Fetch + decode an image off the main thread; never rejects. */
 function decodeImage(src: string): Promise<void> {
@@ -132,7 +139,14 @@ export function ColdStartIntro() {
         at(INTRO.reducedHoldMs + INTRO.reducedFadeMs, () => { landed.current = true; setPhase('off'); });
         return;
       }
-      at(INTRO.rowAt, () => setPhase('row'));
+      at(INTRO.rowAt, () => {
+        setPhase('row');
+        // The real header row's images (next/image URLs, not the intro's) —
+        // decode them now so the landing frame never waits on a decode.
+        document.querySelectorAll<HTMLImageElement>('[data-cast-row] img').forEach((img) => {
+          if (typeof img.decode === 'function') img.decode().catch(() => {});
+        });
+      });
       at(INTRO.glideAt, () => {
         // Step 2: measure the real row and glide onto EXACTLY its frame — transform only.
         const row = rowRef.current;
@@ -157,6 +171,14 @@ export function ColdStartIntro() {
         });
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
+            // Land when the glide has actually finished (the timer below is the safety net).
+            const el = rowRef.current;
+            const onEnd = (e: TransitionEvent) => {
+              if (e.target !== el || e.propertyName !== 'transform') return;
+              el?.removeEventListener('transitionend', onEnd);
+              land();
+            };
+            el?.addEventListener('transitionend', onEnd);
             setFrame({
               position: 'fixed', left: a.left, top: a.top, width: a.width, transformOrigin: '0 0', willChange: 'transform',
               transform: `translate3d(${t.x}px, ${t.y}px, 0) scale(${t.scale})`,
@@ -164,7 +186,7 @@ export function ColdStartIntro() {
             });
           });
         });
-        at(INTRO.glideMs + 30, land);
+        at(INTRO.glideMs + 250, land);
       });
     };
     // AU5: fetch + decode the W and every cast image before the first intro
@@ -201,23 +223,27 @@ export function ColdStartIntro() {
         }}
       />
       {/* The app-icon W, same spot as the static screen: bounces, then hands over to the row. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={SPLASH.icon}
-        alt=""
-        width={SPLASH.size}
-        height={SPLASH.size}
+      {/* The wrapper moves; the image (with its shadow, exactly the static screen's) stays still inside it. */}
+      <div
         className={phase === 'w' && !reduced && started ? 'intro-bounce' : ''}
         style={{
           position: 'absolute',
           width: SPLASH.size,
           height: SPLASH.size,
-          filter: 'drop-shadow(0 12px 24px rgba(76, 29, 149, 0.25))',
           opacity: hideIcon ? 0 : 1,
           transform: showRow ? 'scale(0.55)' : 'none',
           transition: `opacity ${reduced ? INTRO.reducedFadeMs : 220}ms ease-out, transform 260ms cubic-bezier(0.3, 1.4, 0.5, 1)`,
         }}
-      />
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={SPLASH.icon}
+          alt=""
+          width={SPLASH.size}
+          height={SPLASH.size}
+          style={{ display: 'block', width: SPLASH.size, height: SPLASH.size, filter: 'drop-shadow(0 12px 24px rgba(76, 29, 149, 0.25))' }}
+        />
+      </div>
       {/* The cast row assembling, then gliding into the header's exact frame. */}
       {showRow && (
         <div

@@ -86,7 +86,10 @@ describe('reveal timing (AQ1: ~30% tighter)', () => {
       expect(f, name).not.toBe('');
       expect(f, name).not.toMatch(/box-shadow|width|height|top|left|margin|padding/);
     }
-    expect(css).toMatch(/\.gt-flip \{ will-change: transform; backface-visibility: hidden;/);
+    // Smoothness pass: no permanent layer hints — the last row keeps .gt-flip until
+    // the next guess, so a static will-change kept 3 GPU layers per tile alive.
+    expect(css).not.toMatch(/\.gt-flip \{[^}]*(will-change|translateZ|backface-visibility)/);
+    expect(css).not.toMatch(/\.gt-(glow|cover) \{[^}]*will-change/);
     expect(css).not.toContain('gt-bloom');
   });
 });

@@ -30,7 +30,7 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
             <div
               className={`
                 relative flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold
-                transition-all duration-300 border-2
+                transition-colors duration-300 border-2 ${isActive ? 'gauntlet-glow' : ''}
                 ${isCompleted
                   ? 'bg-violet-500 border-violet-500 text-white'
                   : isActive
@@ -38,9 +38,6 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
                     : 'bg-gray-50 border-gray-200 text-gray-400'
                 }
               `}
-              style={isActive ? {
-                animation: 'gauntlet-glow 2.5s ease-in-out infinite',
-              } : undefined}
             >
               {isCompleted ? (
                 <Check className="w-2.5 h-2.5" />

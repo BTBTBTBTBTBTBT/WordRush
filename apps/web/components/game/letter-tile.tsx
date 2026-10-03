@@ -76,6 +76,9 @@ export const LetterTile = memo(function LetterTile({
       {...aria}
     >
       <b>{letter}</b>
+      {/* Pre-drawn glows whose opacity animates (globals.css; never an animated box-shadow). */}
+      {bad && <span className="gt-glow-bad" aria-hidden="true" />}
+      {hint && <span className="gt-glow-hint" aria-hidden="true" />}
       {flip && look !== 'typed' && look !== 'empty' && (
         <>
           <span className="gt-glow" aria-hidden="true" />

@@ -31,13 +31,16 @@ function stopGlobalTimer() {
  * Returns the current value of `getSeconds()`, updated once per second
  * via a shared global timer. Multiple calls to this hook share one
  * setInterval — no matter how many countdown displays are on screen.
+ * `enabled = false` doesn't subscribe at all (returns null): a page that only
+ * sometimes shows a countdown doesn't re-render every second for nothing.
  */
-export function useCountdown(getSeconds: () => number): number | null {
+export function useCountdown(getSeconds: () => number, enabled = true): number | null {
   const [secs, setSecs] = useState<number | null>(null);
   const getSecondsRef = useRef(getSeconds);
   getSecondsRef.current = getSeconds;
 
   useEffect(() => {
+    if (!enabled) { setSecs(null); return; }
     // Initial read
     setSecs(getSecondsRef.current());
 
@@ -49,7 +52,7 @@ export function useCountdown(getSeconds: () => number): number | null {
       listeners.delete(listener);
       if (listeners.size === 0) stopGlobalTimer();
     };
-  }, []);
+  }, [enabled]);
 
   return secs;
 }

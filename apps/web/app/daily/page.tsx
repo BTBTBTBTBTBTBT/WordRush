@@ -740,8 +740,10 @@ export default function DailyPage() {
           1100 px wide — the day headline + picker keep the 560 column across
           the top, then two columns. AS4: the compact play row, YOUR result and
           TODAY'S BOARD on the left (first on a phone), then your finished board +
-          YESTERDAY'S WINNERS. */}
-      <div className="max-w-lg page-wide mx-auto px-4">
+          YESTERDAY'S WINNERS. Desktop website (≥ 1024 px, lib/desktop-layout.ts):
+          three columns — the day headline + picker (kept in view), TODAY'S BOARD,
+          then the play card, your board and YESTERDAY'S WINNERS (globals.css .lb-desk). */}
+      <div className="lb-desk max-w-lg page-wide mx-auto px-4">
         {/* A6 + C2: the day's title as the headline on the wallpaper, then the
             one game picker card (date · reset clock + ALL-TIME → on top, the
             WORDOCIOUS row with the Sweep broom tile, then PUZZLES). */}

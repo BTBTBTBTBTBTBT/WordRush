@@ -56,7 +56,7 @@ export default function AdminPuzzlesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-gray-900">Puzzles</h1>
+        <h1 className="text-2xl font-black text-gray-900">Puzzle Analytics</h1>
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}

@@ -12,7 +12,7 @@ const LEVEL: Record<RunwayRow['level'], { pill: string; label: string }> = {
 };
 
 /**
- * admin > Ops > Content runway (More Games §11; founder 2026-09-23). One row
+ * admin > Content & Ops > Content Banks (More Games §11; founder 2026-09-23). One row
  * per bundled daily bank: dailies shipped, days of unplayed puzzles left, and
  * the date the bank starts replaying from its first entry. Amber under 90
  * days (the nightly cron also flags it), red under 60 (CI is already failing).

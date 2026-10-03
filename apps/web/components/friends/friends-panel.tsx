@@ -416,7 +416,10 @@ export function FriendsPanel() {
   const [addW, addH] = ART_SIZE[ADD_POSE];
 
   return (
-    <div className="space-y-3.5">
+    // Desktop website (≥ 1024 px, lib/desktop-layout.ts; globals.css .fr-desk):
+    // three columns under the headline — the banner (kept in view), then the
+    // two AG columns.
+    <div className="fr-desk space-y-3.5">
       {/* 1. FRIENDS headline (FINISH_SPEC A6 + C4b): the whole-cast title art full
           width, edge to edge, right on the wallpaper — nothing beside it. The bell
           (notification prefs) moved into Settings → Notifications; "Add a friend" is

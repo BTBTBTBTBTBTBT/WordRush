@@ -21,6 +21,7 @@ import type { HomeCard } from './mode-chrome';
 import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
 import { PAGE_HOSTS } from '@/lib/mascots';
 import { MODE_SWITCH, homeBannerContent, homeBannerSlots, modeSwitchLayout } from '@/lib/stationary-layout';
+import { HomeClock } from '@/components/home/home-clock';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
 // docs/HOME_REDESIGN_SPEC.md). One window: a frosted headline strip over a
@@ -66,8 +67,6 @@ interface Props {
   onModeChange: (mode: 'daily' | 'unlimited') => void;
   /** The player's username; empty for a guest. */
   name: string;
-  /** Live HH:MM:SS to local midnight. */
-  clock: string;
   onOpen: (card: HomeCard) => void;
   onShare: () => void;
 }
@@ -136,7 +135,7 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
 
 const HEAD_SIZE = 22;
 
-export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, clock, onOpen, onShare }: Props) {
+export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen, onShare }: Props) {
   const unlimited = playMode === 'unlimited';
   // FINISH_SPEC Z: the slots (frame, headline box, share box, art box, rows)
   // come from today's DAILY state only, so the switch never moves the tiles or
@@ -149,7 +148,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const pTier = content.puzzleTier;
   const double = wTier === 'flawless' && pTier === 'flawless';
   const headline = bannerHeadline(word.progress, puzzles.progress, { hour: new Date().getHours(), name, unlimited });
-  const clockLine = bannerClockLine(word.progress, puzzles.progress, clock, unlimited);
   const topColor = wTier === 'none' ? '#ece8ff' : TIER_COLOR[wTier];
   const bottomColor = pTier === 'none' ? '#e2e6ff' : TIER_COLOR[pTier];
   const background = unlimited
@@ -327,7 +325,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             style={{ fontSize: 10.5, letterSpacing: 0.4, lineHeight: '12px', maxHeight: slots.controls, color: subInk,
                      overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
           >
-            {clockLine}
+            {/* The live clock is a leaf (components/home/home-clock.tsx): only this line re-renders each second. */}
+            <HomeClock render={(clock) => bannerClockLine(word.progress, puzzles.progress, clock, unlimited)} />
           </div>
           <div
             role="group"

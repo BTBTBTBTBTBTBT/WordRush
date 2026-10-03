@@ -72,7 +72,7 @@ export default function AdminReferralsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-black text-gray-900">Referrals</h1>
+        <h1 className="text-2xl font-black text-gray-900">Referrals &amp; Gifts</h1>
         <div className="h-40 bg-gray-100 rounded animate-pulse" />
       </div>
     );
@@ -90,9 +90,9 @@ export default function AdminReferralsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-gray-900">Referrals</h1>
+        <h1 className="text-2xl font-black text-gray-900">Referrals &amp; Gifts</h1>
         <p className="text-xs text-gray-400 font-medium mt-0.5">
-          Gift-trial program — friends get 7 days of Pro; inviters earn +3 days per join
+          Gift a week of Pro: friends get 7 days of Pro; inviters earn +3 days per join
           (first 5), +4 shields at 3 joins, and a free month per monthly subscription —
           3 free months per annual.
         </p>

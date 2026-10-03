@@ -18,6 +18,7 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
+import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 
 // One-time full-screen celebration shown when the player completes every daily
 // in the current sweep (docs/FINISH_SPEC.md G3): a full-screen overlay tinted
@@ -82,6 +83,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   };
 
   const [aw, ah] = ART_SIZE[look.art];
+  // AZ: the scene + lettering are decoded before the spring-in starts.
+  const { ref: entranceRef, waiting } = useDecodedEntrance<HTMLDivElement>();
   const stats: { value: string; label: string }[] = [
     { value: `${totals.won}/${totals.total}`, label: 'Won' },
     { value: fmtTime(totals.totalTimeSeconds), label: 'Total Time' },
@@ -90,7 +93,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
 
   return (
     <div
-      className="fixed inset-0 z-[60] overflow-y-auto animate-fade-in"
+      ref={entranceRef}
+      className={`fixed inset-0 z-[60] overflow-y-auto animate-fade-in${waiting ? ' motion-wait' : ''}`}
       style={{ background: look.overlay }}
       onClick={onClose}
     >

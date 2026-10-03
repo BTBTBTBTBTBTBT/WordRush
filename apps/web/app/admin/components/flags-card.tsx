@@ -8,7 +8,7 @@ import { MODES } from '@/lib/modes.generated';
 interface FlagRow extends AppFlag { note: string | null; updated_at: string }
 
 /**
- * admin > Ops > Feature flags (More Games §7 + §10). One row per app_flags
+ * admin > Content & Ops > Feature Flags (More Games §7 + §10). One row per app_flags
  * key: the enabled switch (off = kill switch, everyone) and the audience
  * (testers = the TestFlight / Play-internal gate; all = public launch — no
  * rebuild). The catalog column shows whether this deploy even compiles the

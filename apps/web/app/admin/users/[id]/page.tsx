@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Crown, ShieldBan, ShieldCheck, Gamepad2, History } from 'lucide-react';
 import { modeLabel } from '@/lib/mode-labels';
+import { UserProgressionCard } from '../../components/user-progression-card';
 
 interface UserDetail {
   profile: any;
@@ -16,6 +17,8 @@ interface UserDetail {
   devices: { platform: string; created_at: string }[];
   invitesSent: { invitee: string | null; status: string; created_at: string }[];
   reports: { id: string; direction: 'filed' | 'against'; reason: string; context: string; created_at: string }[];
+  achievements?: { achievement_key: string; unlocked_at: string }[];
+  friendCount?: number | null;
 }
 
 // Mode names via the SHARED lib/mode-labels (this page's local copy was
@@ -121,6 +124,15 @@ export default function AdminUserDetailPage() {
           <div><span className="text-gray-400">Pro Expires:</span> {p.pro_expires_at ? new Date(p.pro_expires_at).toLocaleString() : 'N/A'}</div>
         </div>
       </div>
+
+      {/* Progression + social: level tier, friends, mascot, achievements (+ grant) */}
+      <UserProgressionCard
+        userId={userId}
+        profile={p}
+        achievements={data.achievements ?? []}
+        friendCount={data.friendCount ?? null}
+        onChanged={fetchUser}
+      />
 
       {/* CRM: billing, reachability, referral activity, moderation context */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

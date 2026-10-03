@@ -7,6 +7,7 @@ import { darken, softMix } from '@/lib/soft-surface';
 import { feedback } from '@/lib/sound-events';
 import { prefersReducedMotion } from '@/lib/motion';
 import { HEADLINE_NUMBER, HEADLINE_OUTLINE, HEADLINE_PALETTES, headlineFit, type HeadlinePalette } from '@/lib/live-headline';
+import { scheduleGlossSweep } from '@/lib/gloss-sweep';
 
 // FINISH_SPEC AR: ANY dynamic headline in the title-art lettering, drawn in
 // code (they change all day, so they can't be pre-made art). Nunito Black, all
@@ -17,7 +18,8 @@ import { HEADLINE_NUMBER, HEADLINE_OUTLINE, HEADLINE_PALETTES, headlineFit, type
 // the glyph). Tokens (packages/core headline-tokens.ts): numbers in gold soft
 // numbers a touch bigger, names in the palette's accent gradient, "·" as the
 // gold star sprite. Letters pop in left → right (25 ms apart) whenever the
-// text changes, with a tiny `tick`; idle = a slow gloss sweep (~6 s). Reduce
+// text changes, with a tiny `tick`; idle = a slow gloss sweep (~6 s; one
+// short run at a time, scheduled by lib/gloss-sweep.ts, never a loop). Reduce
 // Motion / calm: no pop, no sweep. Shrinks to fit on one line before wrapping
 // (max 2 balanced lines). Screen readers get the plain text as a heading.
 
@@ -69,6 +71,13 @@ export const LiveHeadline = memo(function LiveHeadline({
     if (first.current) { first.current = false; return; }
     if (!calm && !prefersReducedMotion()) feedback('tick');
   }, [shown, calm]);
+
+  // The idle gloss sweep: one short run every ~6 s while on screen (lib/gloss-sweep.ts).
+  useEffect(() => {
+    const root = rootRef.current;
+    if (calm || !root) return;
+    return scheduleGlossSweep(root);
+  }, [calm]);
 
   // Shrink to fit on one line, else wrap to two balanced lines.
   useLayoutEffect(() => {

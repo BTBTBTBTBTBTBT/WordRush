@@ -48,7 +48,7 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Payments</h1>
+      <h1 className="text-2xl font-black text-gray-900">Pro &amp; Payments</h1>
 
       {/* CS crib sheet — where a request can actually be executed */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 font-medium">
