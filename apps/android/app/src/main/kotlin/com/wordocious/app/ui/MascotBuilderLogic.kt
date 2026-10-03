@@ -2,6 +2,8 @@ package com.wordocious.app.ui
 
 import com.wordocious.app.data.AvatarCast
 import com.wordocious.core.AvatarConfig
+import com.wordocious.core.AvatarFit
+import com.wordocious.core.AvatarFitManifest
 import com.wordocious.core.AvatarOptions
 import com.wordocious.core.AvatarPresets
 import com.wordocious.core.LevelTier
@@ -23,6 +25,7 @@ enum class BuilderTab(val label: String) {
     PATTERN("Pattern"),
     EYES("Eyes"),
     NOSE("Nose"),
+    CHEEKS("Cheeks"),
     MOUTH("Mouth"),
     HATS("Hats"),
     EXTRAS("Extras"),
@@ -40,14 +43,35 @@ data class BuilderOption(val slot: String, val id: String)
 object MascotBuilderLogic {
     const val NONE = "none"
 
+    /** The fit manifest (set by the screen from the bundled avatar-parts.json): conflicting picks swap out. */
+    @Volatile var fit: AvatarFitManifest? = null
+
+    /** The swatch slots (glossy round grid, grouped by row). */
+    val SWATCH_SLOTS = setOf("color", "patternColor", "accColor")
+
+    /** The swatch ids of a picker row (core AvatarSwatch.group), in order. */
+    fun swatchRow(group: String): List<String> = AvatarOptions.SWATCHES.filter { it.group == group }.map { it.id }
+
+    /** True while a white (tintable) accessory is worn: the accessory color row shows. */
+    fun tintableWorn(c: AvatarConfig): Boolean = c.head in AvatarOptions.TINTABLE || c.neck in AvatarOptions.TINTABLE
+
+    private val PART_SLOTS = setOf("eyes", "nose", "cheeks", "mouth", "head", "face", "neck")
+
+    /** The (slot, id) a pick would swap out (it doesn't fit with it), else null. */
+    fun conflict(config: AvatarConfig, o: BuilderOption): Pair<String, String>? {
+        val m = fit ?: return null
+        return if (o.slot in PART_SLOTS) AvatarFit.pickConflict(config, o.slot, o.id, m) else null
+    }
+
     /** The tiles a tab shows, in order. Optional slots start with their "none" / "auto" tile. */
     fun options(tab: BuilderTab): List<BuilderOption> = when (tab) {
         BuilderTab.PRESETS -> AvatarPresets.IDS.map { BuilderOption("preset", it) }
         BuilderTab.BODY -> AvatarOptions.BODIES.map { BuilderOption("body", it) }
-        BuilderTab.COLOR -> AvatarOptions.COLORS.map { BuilderOption("color", it) }
+        BuilderTab.COLOR -> emptyList()   // the glossy swatch grid (SwatchGrid) instead of tiles
         BuilderTab.PATTERN -> AvatarOptions.PATTERNS.map { BuilderOption("pattern", it) }
         BuilderTab.EYES -> AvatarOptions.EYES.map { BuilderOption("eyes", it) }
         BuilderTab.NOSE -> AvatarOptions.NOSES.map { BuilderOption("nose", it) }
+        BuilderTab.CHEEKS -> AvatarOptions.CHEEKS.map { BuilderOption("cheeks", it) }
         BuilderTab.MOUTH -> AvatarOptions.MOUTHS.map { BuilderOption("mouth", it) }
         BuilderTab.HATS -> listOf(BuilderOption("head", NONE)) +
             AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }
@@ -72,12 +96,10 @@ object MascotBuilderLogic {
             // The pattern color follows the body color while it matches it (its default).
             "color" -> config.copy(color = o.id, patternColor = if (config.patternColor == config.color) o.id else config.patternColor)
             "pattern" -> config.copy(pattern = o.id)
-            "eyes" -> config.copy(eyes = o.id)
-            "nose" -> config.copy(nose = o.id)
-            "mouth" -> config.copy(mouth = o.id)
-            "head" -> config.copy(head = o.id)
-            "face" -> config.copy(face = o.id)
-            "neck" -> config.copy(neck = o.id)
+            "patternColor" -> config.copy(patternColor = o.id)
+            "accColor" -> config.copy(accColor = o.id)
+            "eyes", "nose", "cheeks", "mouth", "head", "face", "neck" ->
+                fit?.let { AvatarFit.applyPick(config, o.slot, o.id, it) } ?: AvatarFit.setting(config, o.slot, o.id)
             "extras" -> config.copy(face = NONE, neck = NONE)
             "bg" -> config.copy(bg = o.id)
             "frame" -> config.copy(frame = o.id)
@@ -101,6 +123,9 @@ object MascotBuilderLogic {
         "pattern" -> config.pattern == o.id
         "eyes" -> config.eyes == o.id
         "nose" -> config.nose == o.id
+        "cheeks" -> config.cheeks == o.id
+        "patternColor" -> config.patternColor == o.id
+        "accColor" -> config.accColor == o.id
         "mouth" -> config.mouth == o.id
         "head" -> config.head == o.id
         "face" -> config.face == o.id
@@ -119,7 +144,8 @@ object MascotBuilderLogic {
         AvatarPresets.IDS.firstOrNull { isSelected(config, BuilderOption("preset", it)) }
 
     /** AA4 + addendum ★: the option is Pro only (crown / halo / tiara, wings / gold chain, aurora / galaxy, diamond / Pro frames). */
-    fun isProOnly(o: BuilderOption): Boolean = AvatarOptions.isProOnly(o.slot, o.id)
+    fun isProOnly(o: BuilderOption): Boolean =
+        AvatarOptions.isProOnly(if (o.slot in SWATCH_SLOTS) "color" else o.slot, o.id)
 
     /** A free player sees the PRO pill and the tap opens the paywall. Pro players are never locked. */
     fun proLocked(o: BuilderOption, isPro: Boolean): Boolean = !isPro && isProOnly(o)
@@ -157,23 +183,27 @@ object MascotBuilderLogic {
         fun <T> List<T>.any(r: Random): T = this[r.nextInt(size)]
         fun wearable(slot: String, ids: List<String>) = ids.filter { it != NONE && canWear(BuilderOption(slot, it), isPro, level) }
         val kept = sanitize(current, isPro, level)
+        val colors = AvatarOptions.COLORS.filter { isPro || !AvatarOptions.isProOnly("color", it) }
         repeat(8) {
-            val color = AvatarOptions.COLORS.any(random)
+            val color = colors.any(random)
             val pattern = if (random.nextInt(100) < 45) "solid" else AvatarOptions.PATTERNS.any(random)
-            val patternColor = if (pattern == "solid") color else AvatarOptions.COLORS.filter { it != color }.any(random)
+            val patternColor = if (pattern == "solid") color else colors.filter { it != color }.any(random)
             val next = kept.copy(
                 body = AvatarOptions.BODIES.any(random),
                 color = color,
                 pattern = pattern,
                 patternColor = patternColor,
                 eyes = AvatarOptions.EYES.any(random),
-                nose = AvatarOptions.NOSES.any(random),
+                nose = if (random.nextInt(100) < 50) NONE else AvatarOptions.NOSES.any(random),
+                cheeks = if (random.nextInt(100) < 50) NONE else AvatarOptions.CHEEKS.any(random),
                 mouth = AvatarOptions.MOUTHS.any(random),
                 head = if (random.nextInt(100) < 55) wearable("head", AvatarOptions.HEADS).any(random) else NONE,
                 face = if (random.nextInt(100) < 25) wearable("face", AvatarOptions.FACES).any(random) else NONE,
                 neck = if (random.nextInt(100) < 25) wearable("neck", AvatarOptions.NECKS).any(random) else NONE,
             )
-            if (next != current) return next
+            // never a combination the fit system rules out (the face extra yields)
+            val fitted = if (conflict(next, BuilderOption("face", next.face)) != null) next.copy(face = NONE) else next
+            if (fitted != current) return fitted
         }
         return kept.copy(color = AvatarOptions.COLORS.first { it != current.color })
     }

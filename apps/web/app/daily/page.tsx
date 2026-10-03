@@ -17,7 +17,8 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
 import { MASCOT_LINES } from '@/lib/mascots';
-import { PAGE_SCENES } from '@/lib/art';
+import { PAGE_SCENES, artSrc } from '@/lib/art';
+import { preloadMascotArt } from '@/components/avatar/mascot-avatar';
 import { GameArt } from '@/components/ui/game-art';
 import { GameTileGlyph } from '@/components/ui/game-tile';
 import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
@@ -26,7 +27,7 @@ import {
 } from '@/components/leaderboard/board-rows';
 import { boardAvatarFor } from '@/components/leaderboard/board-rows';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
-import { compactRankLine, rowBadge, solvedLine, splitPodium, type Ranked } from '@/lib/leaderboard-podium';
+import { compactRankLine, preloadPodiumArt, rowBadge, solvedLine, splitPodium, type Ranked } from '@/lib/leaderboard-podium';
 import { alphaHex, cardBarStyle, softCard } from '@/lib/soft-surface';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
@@ -168,6 +169,8 @@ export default function DailyPage() {
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => {
     setToday(getTodayLocal());
+    preloadPodiumArt(artSrc);   // podium art 10-03: pedestals + floor decoded before the boards land
+    preloadMascotArt();         // + every body and the common parts, so row avatars compose at once
   }, []);
 
   // Load the signed-in user's block list (session-cached) so blocked users'

@@ -1,23 +1,21 @@
 package com.wordocious.app.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -41,7 +39,10 @@ import com.wordocious.core.PodiumLayout
 import com.wordocious.core.podiumLayout
 import com.wordocious.core.podiumOpenSpot
 import kotlinx.serialization.json.JsonElement
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 // FINISH_SPEC BJ4 (founder 10-03: "The podium only appears on classic right now") —
@@ -74,6 +75,69 @@ data class BoardPodiumSpot(
 
 /** BJ4: the podium split for a board's competition ranks (score-desc order). */
 fun boardPodium(ranks: List<Int>): PodiumLayout = podiumLayout(ranks)
+
+/**
+ * The podium art (10-03, docs/design/brand/podium/make-pedestals.py): glossy gold / silver /
+ * bronze pedestals — `art_podium_N` wears its numeral, `art_podium_N_plain` is blank — and
+ * the lilac floor plate they stand on. Same step heights as the code-drawn steps; the
+ * width follows the art. Decoded off main ([prewarm]) before Home / the Leaderboard show it.
+ */
+object PodiumArt {
+    /** The pedestal's display bucket (its longer side). */
+    val PEDESTAL: Dp = 96.dp
+    /** The floor plate's display bucket. */
+    val FLOOR: Dp = 360.dp
+    /** How far the floor plate rises under the pedestals' feet. */
+    val FLOOR_RISE: Dp = 10.dp
+
+    fun pedestal(place: Int, numbered: Boolean = true): Int = when (place.coerceIn(1, 3)) {
+        1 -> if (numbered) com.wordocious.app.R.drawable.art_podium_1 else com.wordocious.app.R.drawable.art_podium_1_plain
+        2 -> if (numbered) com.wordocious.app.R.drawable.art_podium_2 else com.wordocious.app.R.drawable.art_podium_2_plain
+        else -> if (numbered) com.wordocious.app.R.drawable.art_podium_3 else com.wordocious.app.R.drawable.art_podium_3_plain
+    }
+
+    val FLOOR_RES: Int get() = com.wordocious.app.R.drawable.art_podium_floor
+
+    /** BJ2: the pedestals + floor into [ArtBitmaps] on the IO pool (same buckets as [PodiumPedestal]). */
+    suspend fun prewarm(context: android.content.Context, density: Float) = withContext(Dispatchers.IO) {
+        val ped = ArtBitmaps.bucketPx((PEDESTAL.value * density).roundToInt())
+        (1..3).forEach { runCatching { ArtBitmaps.get(context, pedestal(it), ped) } }
+        runCatching { ArtBitmaps.get(context, FLOOR_RES, ArtBitmaps.bucketPx((FLOOR.value * density).roundToInt())) }
+        Unit
+    }
+}
+
+/**
+ * One pedestal at [height] (the column's step height), centered in its column. A [label]
+ * other than the place's own number takes the plain pedestal with the label on it.
+ */
+@Composable
+fun PodiumPedestal(place: Int, height: Dp, modifier: Modifier = Modifier, label: String? = null) {
+    val numbered = label == null || label == "${place.coerceIn(1, 3)}"
+    Box(modifier.fillMaxWidth().height(height).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
+        Image(
+            artPainter(PodiumArt.pedestal(place, numbered), PodiumArt.PEDESTAL), contentDescription = null,
+            contentScale = ContentScale.Fit, modifier = Modifier.matchParentSize(),
+        )
+        if (!numbered && label != null) {
+            Text(
+                label, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White,
+                modifier = Modifier.offset(y = height * 0.12f),
+                style = androidx.compose.ui.text.TextStyle(shadow = Shadow(Color(0x2E000000), Offset(0f, 2f), 0f)),
+            )
+        }
+    }
+}
+
+/** The floor plate behind a podium row: full width, [PodiumArt.FLOOR_RISE] × 2 + 4 dp tall, at the bottom. */
+@Composable
+fun PodiumFloor(modifier: Modifier = Modifier) {
+    Image(
+        artPainter(PodiumArt.FLOOR_RES, PodiumArt.FLOOR), contentDescription = null,
+        contentScale = ContentScale.FillBounds,
+        modifier = modifier.fillMaxWidth().height(PodiumArt.FLOOR_RISE * 2 + 4.dp).clearAndSetSemantics { },
+    )
+}
 
 /** The sleepy cast member on an open spot (art-scene-r-asleep, ~373×302). */
 private const val ASLEEP_ASPECT = 373f / 302f
@@ -150,8 +214,10 @@ fun BoardPodium(
 ) {
     val byPlace = spots.associateBy { it.place }
     val dark = WTheme.isDark
+    Box(modifier.fillMaxWidth().podiumStage(accent, dark).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
+    PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
-        modifier.fillMaxWidth().podiumStage(accent, dark).padding(start = 10.dp, end = 10.dp, top = 8.dp),
+        Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -212,21 +278,11 @@ fun BoardPodium(
                         maxLines = 1, textAlign = TextAlign.Center,
                     )
                 }
-                Box(
-                    Modifier.fillMaxWidth().height(stepH)
-                        .alpha(if (s == null) 0.4f else 1f)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .background(Brush.verticalGradient(PodiumInk.step(place)))
-                        .clearAndSetSemantics { },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "$place", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        style = androidx.compose.ui.text.TextStyle(shadow = Shadow(Color(0x26000000), Offset(0f, 2f), 0f)),
-                    )
-                }
+                // Open spots: the pedestal art softly dimmed.
+                PodiumPedestal(place, stepH, Modifier.alpha(if (s == null) 0.45f else 1f))
             }
         }
+    }
     }
 }
 

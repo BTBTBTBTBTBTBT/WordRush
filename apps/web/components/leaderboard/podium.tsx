@@ -4,9 +4,9 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { BoardAvatar, type BoardAvatarData } from '@/components/leaderboard/board-rows';
 import { LevelBadge } from '@/components/badges/badge-art';
-import { PODIUM_STEP_HEIGHT, podiumColumn, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
+import { PODIUM_STEP_HEIGHT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
 import { alphaHex } from '@/lib/soft-surface';
-import { artSrc } from '@/lib/art';
+import { ART_SIZE, artSrc } from '@/lib/art';
 import { AVATAR_CAST_COLOR } from '@/lib/avatar-cast';
 
 // The top-3 podium (docs/FINISH_SPEC.md C2; mockup
@@ -20,6 +20,8 @@ import { AVATAR_CAST_COLOR } from '@/lib/avatar-cast';
 // where the avatar goes: "Open spot" · "Claim #N"; not tappable), and the
 // whole podium stands on a static stage (accent gradient, faint sunburst rays
 // + a few confetti dots in ONE svg layer, a soft floor shadow). No motion.
+// Podium art 10-03: the steps are the glossy pedestal sprites (art-podium-N) on
+// the floor plate (art-podium-floor); same heights, open spots dimmed.
 
 export interface PodiumPlace {
   key: string;
@@ -44,32 +46,68 @@ export interface PodiumPlace {
   action?: ReactNode;
 }
 
-const STEP: Record<PodiumTone, string> = {
-  gold: 'linear-gradient(#ffd66b, #f5a524)',
-  silver: 'linear-gradient(#e4e8f0, #aab3c5)',
-  bronze: 'linear-gradient(#ffc9a0, #d9844a)',
-};
-const STEP_LIP: Record<PodiumTone, string> = { gold: '#c9821a', silver: '#8c95a8', bronze: '#b0683a' };
-
-function Step({ tone, rank, dim = false }: { tone: PodiumTone; rank: number; dim?: boolean }) {
+/**
+ * One glossy pedestal (podium art 10-03) at `height` px, centered in its column, the
+ * width following the art. A `label` other than the place's own number takes the plain
+ * pedestal with the label on it. Explicit width/height + async decode: no layout shift.
+ */
+export function PodiumPedestal({ place, height, label, dim = false }: { place: number; height: number; label?: number; dim?: boolean }) {
+  const name = podiumPedestalArt(place, label);
+  const [aw, ah] = ART_SIZE[name];
+  const w = Math.round((height * aw) / ah);
+  const plain = name.endsWith('-plain');
   return (
     <div
-      className="w-full flex items-center justify-center font-black text-white tabular-nums"
-      style={{
-        height: PODIUM_STEP_HEIGHT[tone],
-        marginTop: 2,
-        borderRadius: '12px 12px 0 0',
-        background: STEP[tone],
-        boxShadow: `inset 0 -4px 0 ${STEP_LIP[tone]}55, inset 0 3px 0 rgba(255,255,255,0.35)`,
-        fontSize: 22,
-        textShadow: '0 2px 0 rgba(0,0,0,0.15)',
-        opacity: dim ? 0.4 : undefined,
-      }}
+      className="relative w-full flex items-center justify-center"
+      style={{ height, marginTop: 2, opacity: dim ? 0.45 : undefined }}
       aria-hidden="true"
     >
-      {rank}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={artSrc(name)}
+        alt=""
+        width={w}
+        height={height}
+        decoding="async"
+        draggable={false}
+        className="select-none pointer-events-none"
+        style={{ width: w, height, maxWidth: '100%', objectFit: 'contain' }}
+      />
+      {plain && label !== undefined && (
+        <span
+          className="absolute font-black text-white tabular-nums"
+          style={{ fontSize: 20, top: '56%', transform: 'translateY(-50%)', textShadow: '0 2px 0 rgba(0,0,0,0.18)' }}
+        >
+          {label}
+        </span>
+      )}
     </div>
   );
+}
+
+/** How far the floor plate rises under the pedestals' feet (px). */
+export const PODIUM_FLOOR_RISE = 10;
+
+/** The glossy floor plate the pedestals stand on (absolute, at the bottom of a `relative` podium). */
+export function PodiumFloor({ inset = 12 }: { inset?: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={artSrc('art-podium-floor')}
+      alt=""
+      aria-hidden="true"
+      width={ART_SIZE['art-podium-floor'][0]}
+      height={PODIUM_FLOOR_RISE * 2 + 4}
+      decoding="async"
+      draggable={false}
+      className="absolute select-none pointer-events-none"
+      style={{ left: inset, right: inset, bottom: 0, width: `calc(100% - ${inset * 2}px)`, height: PODIUM_FLOOR_RISE * 2 + 4, zIndex: 0 }}
+    />
+  );
+}
+
+function Step({ tone, rank, dim = false }: { tone: PodiumTone; rank: number; dim?: boolean }) {
+  return <PodiumPedestal place={PODIUM_TONE_PLACE[tone]} height={PODIUM_STEP_HEIGHT[tone]} label={rank} dim={dim} />;
 }
 
 function Column({ place, index }: { place: PodiumPlace; index: number }) {
@@ -188,7 +226,8 @@ export function Podium({ places, label = 'Top three', accent = STAGE_GOLD }: { p
   return (
     <div role="group" aria-label={label} className="relative overflow-hidden" style={{ padding: '8px 12px 0' }}>
       <Stage accent={accent} />
-      <div className="relative grid items-end" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, zIndex: 1 }}>
+      <PodiumFloor />
+      <div className="relative grid items-end" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, zIndex: 1, paddingBottom: PODIUM_FLOOR_RISE }}>
         {slots.map((s) => (s.kind === 'place'
           ? <Column key={shown[s.index].key} place={shown[s.index]} index={s.index} />
           : <OpenSpot key={`open-${s.place}`} place={s.place} column={s.column} title={s.title} line={s.line} />))}

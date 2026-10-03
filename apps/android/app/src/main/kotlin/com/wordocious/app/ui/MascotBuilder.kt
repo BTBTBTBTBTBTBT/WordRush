@@ -108,6 +108,11 @@ fun MascotBuilder(
     anchor: ((String, androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
 ) {
     var tab by rememberSaveable { mutableStateOf(BuilderTab.PRESETS) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); true }
+    /** "Mask doesn't fit with Round glasses, so it came off" (the fit system swaps conflicting picks). */
+    var note by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(note) { if (note != null) { kotlinx.coroutines.delay(2600); note = null } }
     var paywallFor by remember { mutableStateOf<BuilderOption?>(null) }
     val accent = swatchColor(config.color)
 
@@ -154,7 +159,12 @@ fun MascotBuilder(
                             tab, o, config, initial, isPro, level, accent, Modifier.weight(1f),
                             onTap = {
                                 if (MascotBuilderLogic.proLocked(o, isPro)) paywallFor = o
-                                else onChange(MascotBuilderLogic.tap(config, o))
+                                else {
+                                    note = MascotBuilderLogic.conflict(config, o)?.let { (slot, id) ->
+                                        "${optionName(o)} doesn't fit with ${optionName(BuilderOption(slot, id))}, so it came off"
+                                    }
+                                    onChange(MascotBuilderLogic.tap(config, o))
+                                }
                             },
                         )
                     }
@@ -162,8 +172,17 @@ fun MascotBuilder(
                 }
             }
         }
+        note?.let {
+            Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BUILDER_PURPLE, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        }
+        if (tab == BuilderTab.COLOR) SwatchGrid("color", config, isPro, onChange) { paywallFor = it }
         if (tab == BuilderTab.PATTERN && config.pattern != "solid") {
-            PatternColorRow(config, onChange)
+            FinishLabel("PATTERN COLOR", Modifier.semantics { heading() })
+            SwatchGrid("patternColor", config, isPro, onChange) { paywallFor = it }
+        }
+        if ((tab == BuilderTab.HATS || tab == BuilderTab.EXTRAS) && MascotBuilderLogic.tintableWorn(config)) {
+            FinishLabel("ACCESSORY COLOR", Modifier.semantics { heading() })
+            SwatchGrid("accColor", config, isPro, onChange) { paywallFor = it }
         }
         if (tab == BuilderTab.FRAME) {
             Text(
@@ -345,6 +364,65 @@ private fun optionName(o: BuilderOption): String {
     } ?: return MascotBuilderLogic.fallbackName(o)
     return runCatching { AvatarParts.label(category, id) }.getOrNull()?.takeIf { it.isNotBlank() && it != id }
         ?: MascotBuilderLogic.fallbackName(o)
+}
+
+private val ROW_TITLES = mapOf("bright" to "BRIGHTS", "pastel" to "PASTELS", "deep" to "DEEPS", "neutral" to "NEUTRALS", "special" to "PRO SPECIALS")
+
+/** Glossy round swatches grouped by row (no tiles, no outlines): selected = a white check + a gentle scale. */
+@Composable
+private fun SwatchGrid(slot: String, config: AvatarConfig, isPro: Boolean, onChange: (AvatarConfig) -> Unit, onPaywall: (BuilderOption) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        val rows = (if (slot == "accColor") listOf("" to listOf("default")) else emptyList()) +
+            AvatarOptions.COLOR_GROUPS.map { it to MascotBuilderLogic.swatchRow(it) }
+        rows.forEach { (group, ids) ->
+            if (group.isNotEmpty()) Text(ROW_TITLES[group] ?: group.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+            ids.chunked(8).forEach { line ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    line.forEach { id ->
+                        val o = BuilderOption(slot, id)
+                        val sel = MascotBuilderLogic.isSelected(config, o)
+                        val locked = MascotBuilderLogic.proLocked(o, isPro)
+                        val sw = AvatarOptions.swatch(id)
+                        val brush = when {
+                            id == "default" -> Brush.verticalGradient(listOf(Color.White, Color.White))
+                            sw.stops.size >= 2 -> if (sw.dir == "h") Brush.horizontalGradient(sw.stops.map { avatarColor(it) })
+                                else Brush.linearGradient(sw.stops.map { avatarColor(it) })
+                            else -> Brush.verticalGradient(listOf(avatarColor(sw.hex), avatarColor(sw.hex)))
+                        }
+                        val light = id in setOf("default", "white", "cream", "butter", "seafoam")
+                        val scale by androidx.compose.animation.core.animateFloatAsState(if (sel) 1.14f else 1f, label = "swatch")
+                        Box(
+                            Modifier.size(40.dp)
+                                .squishClickable(label = "${optionName(BuilderOption("color", id))}" + (if (locked) ", Pro only" else "") + if (sel) ", selected" else "", role = Role.RadioButton) {
+                                    if (locked) onPaywall(o) else onChange(MascotBuilderLogic.apply(config, o))
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(
+                                Modifier.size(32.dp).graphicsLayer { scaleX = scale; scaleY = scale }
+                                    .shadow(3.dp, CircleShape, clip = false, spotColor = avatarColor(sw.hex).copy(alpha = 0.5f))
+                                    .clip(CircleShape).background(brush)
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0f)),
+                                            center = Offset(size.width * 0.35f, size.height * 0.28f), radius = size.width * 0.45f))
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (sel) Canvas(Modifier.size(16.dp)) {
+                                    val p = androidx.compose.ui.graphics.Path().apply {
+                                        moveTo(size.width * 0.18f, size.height * 0.52f); lineTo(size.width * 0.4f, size.height * 0.74f); lineTo(size.width * 0.82f, size.height * 0.28f)
+                                    }
+                                    drawPath(p, if (light) BUILDER_PURPLE else Color.White, style = Stroke(size.width * 0.16f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                                } else if (id == "default") Text("AUTO", fontSize = 8.sp, fontWeight = FontWeight.Black, color = BUILDER_PURPLE)
+                            }
+                            if (locked) ProPill(Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp).graphicsLayer { scaleX = 0.7f; scaleY = 0.7f })
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /** Under the Pattern grid: the pattern's second color (Auto = the body color, its default). */

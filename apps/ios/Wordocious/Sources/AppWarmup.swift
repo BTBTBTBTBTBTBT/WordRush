@@ -29,6 +29,9 @@ enum AppWarmup {
     static func start() {
         // FINISH_SPEC BJ2: the win / lose card's art, decoded off main ahead of time.
         FinishArt.prewarm()
+        // Avatar parts + the podium pedestals, decoded off main before Home / the Leaderboard paint them.
+        MascotArtCache.prewarm()
+        PodiumView.prewarm()
         Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             GamePersistence.shared.sweepStalePracticeSaves()

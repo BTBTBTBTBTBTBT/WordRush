@@ -9,6 +9,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,12 +65,19 @@ fun MascotAvatar(
     val px = with(density) { size.roundToPx() }.coerceAtLeast(1)
     val drawn = if (pro && config.frame == "none") config.copy(frame = "pro") else config
     val key = remember(drawn, initial, px, dark, size) { MascotKey.of(drawn, initial, size.value, px, dark) }
-    val image = remember(key) { MascotComposer.image(context, key) }
+    // A cache hit draws at once; a miss composes (decode + layers) on Dispatchers.Default and the
+    // avatar appears whole when ready — no part-by-part pop-in, no stand-in frame, nothing on main.
+    var image by remember(key) { mutableStateOf(MascotComposer.cached(key)) }
+    if (image == null) {
+        LaunchedEffect(key) { image = withContext(Dispatchers.Default) { MascotComposer.compose(context, key) } }
+    }
     Box(modifier.size(size)) {
-        Image(
-            image, contentDescription = null, contentScale = ContentScale.Fit, filterQuality = FilterQuality.High,
-            modifier = Modifier.fillMaxSize().clearAndSetSemantics { },
-        )
+        image?.let {
+            Image(
+                it, contentDescription = null, contentScale = ContentScale.Fit, filterQuality = FilterQuality.High,
+                modifier = Modifier.fillMaxSize().clearAndSetSemantics { },
+            )
+        }
         if (pro) ProAvatarCrown(size)
     }
 }
@@ -144,7 +157,7 @@ object AvatarParts {
         "beady" to "Beady", "happy" to "Happy", "sparkly" to "Sparkly", "sleepy" to "Sleepy", "wink" to "Wink",
         "hearts" to "Hearts", "stars" to "Stars", "glasses" to "Round glasses", "cyclops" to "Cyclops",
         // nose / cheeks
-        "button" to "Button nose", "red" to "Red nose", "blush" to "Blush", "freckles" to "Freckles",
+        "button" to "Button nose", "red" to "Red nose", "blush" to "Rosy cheeks", "freckles" to "Freckles",
         // mouths
         "smile" to "Smile", "grin" to "Big grin", "tongue" to "Tongue out", "o" to "Little o", "cat" to "Cat",
         "toothy" to "Toothy grin", "smirk" to "Smirk", "tiny" to "Tiny smile", "gasp" to "Gasp",
@@ -162,6 +175,21 @@ object AvatarParts {
         "lemon" to "Lemon", "peach" to "Peach", "cloud" to "Cloud", "night" to "Night", "sunset" to "Sunset",
         "ocean" to "Ocean", "cottoncandy" to "Cotton candy", "aurora" to "Aurora", "galaxy" to "Galaxy",
         "polka" to "Polka", "starry" to "Starry", "sunburst" to "Sunburst", "checkers" to "Checkers", "confetti" to "Confetti",
+        // round 2
+        "drop" to "Drop", "pear" to "Pear", "chunky" to "Chunky", "mini" to "Mini", "hex" to "Hexagon",
+        "zigzag" to "Zigzag", "tiedye" to "Tie-dye", "leopard" to "Leopard spots", "colorblock" to "Color block",
+        "sunglasses" to "Shades", "determined" to "Determined", "anime" to "Sparkle eyes", "joy" to "Joyful", "droopy" to "Droopy",
+        "biground" to "Big round", "sideglance" to "Side glance", "dizzy" to "Dizzy",
+        "laugh" to "Big laugh", "whistle" to "Whistle", "fang" to "Little fang", "kissy" to "Kissy", "braces" to "Braces",
+        "oops" to "Oops", "tongueside" to "Silly tongue", "teeth" to "Toothy smile",
+        "pointy" to "Pointy nose", "bignose" to "Big nose", "piggy" to "Piggy nose", "clownstar" to "Star nose",
+        "starfreckles" to "Star freckles", "bandage" to "Bandage",
+        "cap" to "Baseball cap", "beret" to "Beret", "minicrown" to "Mini crown", "flowercrown" to "Flower crown", "bucket" to "Bucket hat",
+        "santa" to "Santa hat", "witch" to "Witch hat", "astronaut" to "Space helmet", "bigbow" to "Big bow", "pombeanie" to "Pom beanie",
+        "bearears" to "Bear ears", "mohawk" to "Mohawk", "starglasses" to "Star shades", "roundglasses" to "Round glasses",
+        "eyepatch" to "Eye patch", "facepaint" to "Face paint", "mask" to "Party mask", "curlymustache" to "Curly mustache",
+        "medal" to "Medal", "backpack" to "Backpack", "bubbletea" to "Bubble tea", "guitar" to "Guitar", "supercape" to "Hero cape",
+        "fairywings" to "Fairy wings", "default" to "Original",
         // frames
         "bronze" to "Bronze", "silver" to "Silver", "gold" to "Gold", "platinum" to "Platinum",
         "diamond" to "Diamond", "pro" to "Pro gold",

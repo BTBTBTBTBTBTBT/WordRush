@@ -41,7 +41,54 @@ enum MascotParts {
 
     /// Neck / back extras drawn BEHIND the body.
     static let behind: Set<String> = ["cape", "wings"]
+
+    /// Round 2: the fit manifest (avatar-parts.json v2) the core layout positions every part from.
+    static let fit: AvatarManifest? = {
+        guard let url = Bundle.main.url(forResource: "avatar-parts", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return try? AvatarManifest.decode(data)
+    }()
 }
+
+#if canImport(UIKit)
+/// Decoded avatar-part bitmaps: the art painter draws these instead of `Image(name)`, so
+/// each part decodes once — off main when prewarmed (Home / the Leaderboard first appear;
+/// the composed avatars themselves are cached per config in `MascotImageCache`).
+enum MascotArtCache {
+    private static let cache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>()
+        c.totalCostLimit = 48 << 20   // bytes; a 640² body is 1.6 MB
+        return c
+    }()
+
+    static func uiImage(_ name: String) -> UIImage? {
+        if let hit = cache.object(forKey: name as NSString) { return hit }
+        guard let ui = UIImage(named: name) else { return nil }
+        let decoded = ui.preparingForDisplay() ?? ui
+        let px = Int(decoded.size.width * decoded.scale * decoded.size.height * decoded.scale) * 4
+        cache.setObject(decoded, forKey: name as NSString, cost: px)
+        return decoded
+    }
+
+    static func image(_ name: String) -> Image {
+        if let ui = uiImage(name) { return Image(uiImage: ui) }
+        return Image(name)
+    }
+
+    /// Decode every body plus the parts the defaults and cast presets wear, on a utility thread.
+    static func prewarm() {
+        guard let fit = MascotParts.fit else { return }
+        var names = Set(fit.bodies.keys.map { "art-av-body-\($0)" })
+        let configs = [AvatarCatalog.defaultAvatar(userId: "warm")] + ["w", "o1", "r", "d"].map(AvatarCatalog.castPreset)
+        for c in configs {
+            for small in [false, true] { AvatarFit.layout(c, small: small, manifest: fit).layers.forEach { names.insert($0.art) } }
+        }
+        DispatchQueue.global(qos: .utility).async {
+            for n in names { _ = uiImage(n) }
+        }
+    }
+}
+#endif
 
 // MARK: - The view
 
@@ -168,6 +215,14 @@ struct MascotComposition: View {
     let dark: Bool
 
     var body: some View {
+        if let fit = MascotParts.fit, MascotParts.art("body", config.body) != nil {
+            MascotArtComposition(config: config, initial: initial, size: size, dark: dark, fit: fit)
+        } else {
+            placeholder
+        }
+    }
+
+    @ViewBuilder private var placeholder: some View {
         let framed = config.frame != "none"
         let inner = framed ? size - AvatarCastArt.frameWidth(size) * 2 : size
         let hasHat = config.head != "none"
@@ -191,6 +246,145 @@ struct MascotComposition: View {
             if framed { MascotFrame(frame: config.frame, size: size) }
         }
         .frame(width: size, height: size)
+    }
+}
+
+/// Round 2: the mascot drawn from art at the core FIT layout (WordociousCore AvatarFit, parity with web +
+/// Android): every layer's rect is a fraction of the content square inside the frame band; the white body
+/// and white accessories are tinted by multiply (flat or a Pro gradient); the pattern is clipped to the body
+/// art and multiplied; the composition never spills past its padded tile.
+struct MascotArtComposition: View {
+    let config: AvatarConfig
+    let initial: String
+    let size: CGFloat
+    let dark: Bool
+    let fit: AvatarManifest
+
+    var body: some View {
+        let framed = config.frame != "none"
+        let inner = framed ? size - AvatarCastArt.frameWidth(size) * 2 : size
+        let base = Color(hex: AvatarCatalog.colorValue(config.color))
+        let shape = AvatarOutline(tile: true)
+        let small = size <= MascotParts.smallSize
+        let layout = AvatarFit.layout(config, small: small, manifest: fit)
+        ZStack {
+            ZStack {
+                MascotBackdrop(bg: config.bg, base: base, dark: dark)
+                Canvas { ctx, _ in
+                    MascotArtPainter.paint(ctx, side: inner, layout: layout, config: config, initial: initial, small: small)
+                }
+                .frame(width: inner, height: inner)
+            }
+            .frame(width: inner, height: inner)
+            .clipShape(shape)
+            .overlay(framed ? nil : shape.strokeBorder(base.opacity(dark ? 0.55 : 0.32), lineWidth: max(1, size * 0.03)))
+            if framed { MascotFrame(frame: config.frame, size: size) }
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+enum MascotArtPainter {
+    static func rect(_ r: AvatarRect, _ side: CGFloat) -> CGRect {
+        CGRect(x: r.x * side, y: r.y * side, width: r.w * side, height: r.h * side)
+    }
+
+    static func color(_ hex: String) -> Color { Color(hex: UInt(hex.dropFirst(), radix: 16) ?? 0x7C3AED) }
+
+    /// A swatch's shading: its flat color, or its gradient across `r`.
+    static func shading(_ c: AvatarColor, in r: CGRect) -> GraphicsContext.Shading {
+        guard c.stops.count >= 2 else { return .color(color(c.hex)) }
+        let end: CGPoint = c.dir == "h" ? CGPoint(x: r.maxX, y: r.minY) : c.dir == "d" ? CGPoint(x: r.maxX, y: r.maxY) : CGPoint(x: r.minX, y: r.maxY)
+        return .linearGradient(Gradient(colors: c.stops.map(color)), startPoint: r.origin, endPoint: end)
+    }
+
+    /// The white art `name` in `r`, multiplied by `fill` (+ extra shapes) over its own alpha.
+    static func tinted(_ ctx: GraphicsContext, _ name: String, _ r: CGRect, fill: GraphicsContext.Shading, extra: ((inout GraphicsContext) -> Void)? = nil) {
+        let img = ctx.resolve(MascotArtCache.image(name))
+        ctx.draw(img, in: r)
+        var paint = ctx
+        paint.blendMode = .multiply
+        paint.drawLayer { layer in
+            layer.clipToLayer { $0.draw(img, in: r) }
+            layer.fill(Path(r), with: fill)
+            extra?(&layer)
+        }
+    }
+
+    static func paint(_ ctx: GraphicsContext, side: CGFloat, layout: AvatarLayout, config c: AvatarConfig, initial: String, small: Bool) {
+        let bodyColor = AvatarCatalog.color(c.color)
+        let ink = color(AvatarCatalog.color(c.patternColor == c.color ? c.color : c.patternColor).hex)
+        let baseC = color(bodyColor.hex)
+        let patInk = c.patternColor == c.color ? Color.white.mixed(over: baseC, 0.5) : ink
+        let acc = c.accColor == "default" ? nil : AvatarCatalog.color(c.accColor)
+        // ground shadow
+        let b = rect(layout.body, side)
+        ctx.fill(Path(ellipseIn: CGRect(x: b.midX - b.width * 0.3, y: b.minY + b.height * 0.95, width: b.width * 0.6, height: max(1, b.height * 0.05))),
+                 with: .color(Color(hex: 0x2A1745).opacity(0.14)))
+        for l in layout.layers {
+            let r = rect(l.rect, side)
+            if l.layer == "body" {
+                tinted(ctx, l.art, r, fill: shading(bodyColor, in: r)) { layer in
+                    guard !small, c.pattern != "solid" else { return }
+                    pattern(&layer, AvatarFit.patternShapes(c.pattern), in: r, ink: patInk, base: baseC)
+                }
+                letter(ctx, initial, rect(layout.letter, side), base: baseC)
+                continue
+            }
+            guard ArtAsset.exists(l.art) else { continue }
+            if l.tint, let acc { tinted(ctx, l.art, r, fill: shading(acc, in: r)) } else { ctx.draw(MascotArtCache.image(l.art), in: r) }
+        }
+    }
+
+    static func letter(_ ctx: GraphicsContext, _ initial: String, _ box: CGRect, base: Color) {
+        let glyph = String(initial.prefix(1)).uppercased()
+        let wide = glyph == "W" || glyph == "M"
+        let fontSize = min(box.height * 1.08, box.width * (wide ? 0.95 : 1.15))
+        let center = CGPoint(x: box.midX, y: box.midY)
+        var l = ctx
+        l.addFilter(.shadow(color: Color.black.mixed(over: base, 0.45).opacity(0.55), radius: max(0.5, box.height * 0.04), x: 0, y: max(0.5, box.height * 0.07)))
+        l.draw(Text(glyph).font(Brand.fixedFont(fontSize, .black)).foregroundColor(.white), at: center, anchor: .center)
+    }
+
+    /// The shared pattern shapes (body-square units → `r`).
+    static func pattern(_ g: inout GraphicsContext, _ shapes: [AvatarFit.Shape], in r: CGRect, ink: Color, base: Color) {
+        func col(_ c: String) -> Color { c == "ink" ? ink : c == "base" ? base : .white }
+        func P(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: r.minX + x * r.width, y: r.minY + y * r.height) }
+        for s in shapes {
+            switch s {
+            case let .rect(x, y, w, h, c, a):
+                g.fill(Path(CGRect(origin: P(x, y), size: CGSize(width: w * r.width, height: h * r.height))), with: .color(col(c).opacity(a)))
+            case let .circle(x, y, rr, c, a):
+                let p = P(x, y)
+                g.fill(Path(ellipseIn: CGRect(x: p.x - rr * r.width, y: p.y - rr * r.width, width: 2 * rr * r.width, height: 2 * rr * r.width)), with: .color(col(c).opacity(a)))
+            case let .star(x, y, ro, ri, n, c, a):
+                var path = Path()
+                for k in 0..<(n * 2) {
+                    let rad = k % 2 == 0 ? ro : ri
+                    let ang = -Double.pi / 2 + Double(k) * Double.pi / Double(n)
+                    let p = P(x + rad * cos(ang), y + rad * sin(ang))
+                    if k == 0 { path.move(to: p) } else { path.addLine(to: p) }
+                }
+                path.closeSubpath()
+                g.fill(path, with: .color(col(c).opacity(a)))
+            case let .heart(x, y, k, c, a):
+                var path = Path()
+                path.move(to: P(x, y + k))
+                path.addLine(to: P(x - k * 0.97, y - k * 0.1))
+                path.addArc(center: P(x - k * 0.5, y - k * 0.25), radius: k * 0.5 * r.width, startAngle: .degrees(160), endAngle: .degrees(-20), clockwise: false)
+                path.addArc(center: P(x + k * 0.5, y - k * 0.25), radius: k * 0.5 * r.width, startAngle: .degrees(200), endAngle: .degrees(20), clockwise: false)
+                path.closeSubpath()
+                g.fill(path, with: .color(col(c).opacity(a)))
+            case let .poly(pts, c, a):
+                var path = Path()
+                for (i, pt) in pts.enumerated() { if i == 0 { path.move(to: P(pt.0, pt.1)) } else { path.addLine(to: P(pt.0, pt.1)) } }
+                path.closeSubpath()
+                g.fill(path, with: .color(col(c).opacity(a)))
+            case let .grad(x1, y1, x2, y2, stops):
+                g.fill(Path(r), with: .linearGradient(Gradient(stops: stops.map { Gradient.Stop(color: col($0.1).opacity($0.2), location: $0.0) }),
+                                                      startPoint: P(x1, y1), endPoint: P(x2, y2)))
+            }
+        }
     }
 }
 

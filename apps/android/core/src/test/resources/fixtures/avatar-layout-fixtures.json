@@ -1,0 +1,6750 @@
+{
+  "manifest": {
+    "version": 2,
+    "placeholder": false,
+    "frame": "square",
+    "note": "Fit manifest v2 (docs/design/brand/avatar/compose-avatar.py; layout = packages/core/src/avatar-layout.ts). Body units: fractions of the body art square. Items are placed by anchor at their slot point, width = w x the slot base width; the whole composition is scaled to the tile by `fit`.",
+    "fit": {
+      "pad": 0.05,
+      "maxBody": 0.86,
+      "minBody": 0.5
+    },
+    "layerOrder": [
+      "back",
+      "body",
+      "pattern",
+      "letter",
+      "cheeks",
+      "eyes",
+      "nose",
+      "mouth",
+      "face",
+      "head",
+      "neckFront"
+    ],
+    "bodies": {
+      "classic": {
+        "faceCenter": [
+          0.499,
+          0.4621
+        ],
+        "eyeY": 0.3898,
+        "mouthY": 0.5343,
+        "cheekY": 0.491,
+        "headTop": {
+          "x": 0.5015,
+          "y": 0.1544,
+          "w": 0.6143
+        },
+        "neckY": 0.574,
+        "letterBox": [
+          0.289,
+          0.5849,
+          0.42,
+          0.2457
+        ],
+        "face": {
+          "x": 0.499,
+          "w": 0.5844
+        },
+        "mustacheY": 0.5199,
+        "shoulderW": 0.7305,
+        "back": {
+          "x": 0.499,
+          "y": 0.4259,
+          "w": 0.9375
+        },
+        "cape": {
+          "y": 0.2814
+        },
+        "hand": {
+          "x": 0.9378,
+          "y": 0.6025
+        },
+        "bounds": [
+          0.0303,
+          0.1514,
+          0.9678,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "tall": {
+        "faceCenter": [
+          0.498,
+          0.3124
+        ],
+        "eyeY": 0.246,
+        "mouthY": 0.3787,
+        "cheekY": 0.3373,
+        "headTop": {
+          "x": 0.4995,
+          "y": 0.0407,
+          "w": 0.3037
+        },
+        "neckY": 0.4327,
+        "letterBox": [
+          0.387,
+          0.4451,
+          0.2221,
+          0.3319
+        ],
+        "face": {
+          "x": 0.498,
+          "w": 0.2953
+        },
+        "mustacheY": 0.3663,
+        "shoulderW": 0.3701,
+        "back": {
+          "x": 0.4995,
+          "y": 0.3456,
+          "w": 0.5889
+        },
+        "cape": {
+          "y": 0.1796
+        },
+        "hand": {
+          "x": 0.7639,
+          "y": 0.6156
+        },
+        "bounds": [
+          0.2051,
+          0.0303,
+          0.7939,
+          0.9678
+        ],
+        "overrides": {
+          "acc:backpack": {
+            "scale": 1.3
+          }
+        }
+      },
+      "wide": {
+        "faceCenter": [
+          0.499,
+          0.5927
+        ],
+        "eyeY": 0.5329,
+        "mouthY": 0.6525,
+        "cheekY": 0.6145,
+        "headTop": {
+          "x": 0.5039,
+          "y": 0.3581,
+          "w": 0.6328
+        },
+        "neckY": 0.6824,
+        "letterBox": [
+          0.289,
+          0.6906,
+          0.42,
+          0.174
+        ],
+        "face": {
+          "x": 0.499,
+          "w": 0.6109
+        },
+        "mustacheY": 0.6389,
+        "shoulderW": 0.8457,
+        "back": {
+          "x": 0.499,
+          "y": 0.5601,
+          "w": 0.9375
+        },
+        "cape": {
+          "y": 0.4514
+        },
+        "hand": {
+          "x": 0.9378,
+          "y": 0.6677
+        },
+        "bounds": [
+          0.0303,
+          0.3535,
+          0.9678,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "blob": {
+        "faceCenter": [
+          0.4985,
+          0.4595
+        ],
+        "eyeY": 0.3847,
+        "mouthY": 0.5342,
+        "cheekY": 0.4894,
+        "headTop": {
+          "x": 0.5005,
+          "y": 0.1702,
+          "w": 0.4463
+        },
+        "neckY": 0.5753,
+        "letterBox": [
+          0.2885,
+          0.5865,
+          0.42,
+          0.2392
+        ],
+        "face": {
+          "x": 0.4985,
+          "w": 0.5523
+        },
+        "mustacheY": 0.5193,
+        "shoulderW": 0.7129,
+        "back": {
+          "x": 0.499,
+          "y": 0.4071,
+          "w": 0.9375
+        },
+        "cape": {
+          "y": 0.2576
+        },
+        "hand": {
+          "x": 0.9378,
+          "y": 0.6158
+        },
+        "bounds": [
+          0.0303,
+          0.123,
+          0.9678,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "bean": {
+        "faceCenter": [
+          0.5522,
+          0.3497
+        ],
+        "eyeY": 0.2792,
+        "mouthY": 0.4202,
+        "cheekY": 0.3787,
+        "headTop": {
+          "x": 0.5913,
+          "y": 0.0686,
+          "w": 0.333
+        },
+        "neckY": 0.4742,
+        "letterBox": [
+          0.4043,
+          0.4866,
+          0.2959,
+          0.2987
+        ],
+        "face": {
+          "x": 0.5522,
+          "w": 0.3898
+        },
+        "mustacheY": 0.4078,
+        "shoulderW": 0.4932,
+        "back": {
+          "x": 0.499,
+          "y": 0.3456,
+          "w": 0.6992
+        },
+        "cape": {
+          "y": 0.1796
+        },
+        "hand": {
+          "x": 0.8186,
+          "y": 0.5771
+        },
+        "bounds": [
+          0.1494,
+          0.0303,
+          0.8496,
+          0.9678
+        ],
+        "overrides": {
+          "acc:supercape": {
+            "scale": 1.2
+          }
+        }
+      },
+      "star": {
+        "faceCenter": [
+          0.5005,
+          0.4381
+        ],
+        "eyeY": 0.3719,
+        "mouthY": 0.5043,
+        "cheekY": 0.4573,
+        "headTop": {
+          "x": 0.5015,
+          "y": 0.0949,
+          "w": 0.2471
+        },
+        "neckY": 0.5384,
+        "letterBox": [
+          0.356,
+          0.5512,
+          0.2891,
+          0.205
+        ],
+        "face": {
+          "x": 0.5005,
+          "w": 0.4517
+        },
+        "mustacheY": 0.4893,
+        "shoulderW": 0.8711,
+        "back": {
+          "x": 0.4995,
+          "y": 0.3548,
+          "w": 0.9092
+        },
+        "cape": {
+          "y": 0.184
+        },
+        "hand": {
+          "x": 0.9241,
+          "y": 0.597
+        },
+        "bounds": [
+          0.0449,
+          0.0303,
+          0.9541,
+          0.9688
+        ],
+        "overrides": {}
+      },
+      "drop": {
+        "faceCenter": [
+          0.4985,
+          0.4892
+        ],
+        "eyeY": 0.4206,
+        "mouthY": 0.5577,
+        "cheekY": 0.5161,
+        "headTop": {
+          "x": 0.5,
+          "y": 0.1629,
+          "w": 0.248
+        },
+        "neckY": 0.5909,
+        "letterBox": [
+          0.4195,
+          0.6034,
+          0.1581,
+          0.1993
+        ],
+        "face": {
+          "x": 0.4985,
+          "w": 0.4762
+        },
+        "mustacheY": 0.5452,
+        "shoulderW": 0.4941,
+        "back": {
+          "x": 0.499,
+          "y": 0.3459,
+          "w": 0.8027
+        },
+        "cape": {
+          "y": 0.1798
+        },
+        "hand": {
+          "x": 0.8704,
+          "y": 0.6258
+        },
+        "bounds": [
+          0.0977,
+          0.0303,
+          0.9004,
+          0.9688
+        ],
+        "overrides": {}
+      },
+      "pear": {
+        "faceCenter": [
+          0.501,
+          0.4182
+        ],
+        "eyeY": 0.3456,
+        "mouthY": 0.4908,
+        "cheekY": 0.4451,
+        "headTop": {
+          "x": 0.5005,
+          "y": 0.0826,
+          "w": 0.2412
+        },
+        "neckY": 0.5405,
+        "letterBox": [
+          0.3803,
+          0.553,
+          0.2414,
+          0.2489
+        ],
+        "face": {
+          "x": 0.501,
+          "w": 0.3031
+        },
+        "mustacheY": 0.4762,
+        "shoulderW": 0.4023,
+        "back": {
+          "x": 0.4995,
+          "y": 0.3456,
+          "w": 0.7881
+        },
+        "cape": {
+          "y": 0.1796
+        },
+        "hand": {
+          "x": 0.8636,
+          "y": 0.6348
+        },
+        "bounds": [
+          0.1055,
+          0.0303,
+          0.8936,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "cloud": {
+        "faceCenter": [
+          0.4995,
+          0.5499
+        ],
+        "eyeY": 0.4856,
+        "mouthY": 0.6142,
+        "cheekY": 0.5756,
+        "headTop": {
+          "x": 0.5034,
+          "y": 0.3574,
+          "w": 0.6201
+        },
+        "neckY": 0.6495,
+        "letterBox": [
+          0.2895,
+          0.6592,
+          0.42,
+          0.1736
+        ],
+        "face": {
+          "x": 0.4995,
+          "w": 0.5992
+        },
+        "mustacheY": 0.6013,
+        "shoulderW": 0.752,
+        "back": {
+          "x": 0.499,
+          "y": 0.4856,
+          "w": 0.9375
+        },
+        "cape": {
+          "y": 0.357
+        },
+        "hand": {
+          "x": 0.9378,
+          "y": 0.6576
+        },
+        "bounds": [
+          0.0303,
+          0.2412,
+          0.9678,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "chunky": {
+        "faceCenter": [
+          0.498,
+          0.4315
+        ],
+        "eyeY": 0.3581,
+        "mouthY": 0.505,
+        "cheekY": 0.4609,
+        "headTop": {
+          "x": 0.5,
+          "y": 0.1408,
+          "w": 0.6406
+        },
+        "neckY": 0.5528,
+        "letterBox": [
+          0.288,
+          0.5638,
+          0.42,
+          0.2498
+        ],
+        "face": {
+          "x": 0.498,
+          "w": 0.575
+        },
+        "mustacheY": 0.4903,
+        "shoulderW": 0.7197,
+        "back": {
+          "x": 0.499,
+          "y": 0.4169,
+          "w": 0.9375
+        },
+        "cape": {
+          "y": 0.2699
+        },
+        "hand": {
+          "x": 0.9378,
+          "y": 0.5964
+        },
+        "bounds": [
+          0.0303,
+          0.1377,
+          0.9688,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "mini": {
+        "faceCenter": [
+          0.4976,
+          0.6255
+        ],
+        "eyeY": 0.5709,
+        "mouthY": 0.6801,
+        "cheekY": 0.6453,
+        "headTop": {
+          "x": 0.4985,
+          "y": 0.451,
+          "w": 0.3486
+        },
+        "neckY": 0.7074,
+        "letterBox": [
+          0.3227,
+          0.7148,
+          0.3498,
+          0.1488
+        ],
+        "face": {
+          "x": 0.4976,
+          "w": 0.3852
+        },
+        "mustacheY": 0.6677,
+        "shoulderW": 0.583,
+        "back": {
+          "x": 0.499,
+          "y": 0.5957,
+          "w": 0.6973
+        },
+        "cape": {
+          "y": 0.4965
+        },
+        "hand": {
+          "x": 0.8177,
+          "y": 0.7112
+        },
+        "bounds": [
+          0.1504,
+          0.4072,
+          0.8477,
+          0.9678
+        ],
+        "overrides": {}
+      },
+      "hex": {
+        "faceCenter": [
+          0.4961,
+          0.4639
+        ],
+        "eyeY": 0.3919,
+        "mouthY": 0.5359,
+        "cheekY": 0.4927,
+        "headTop": {
+          "x": 0.499,
+          "y": 0.1755,
+          "w": 0.416
+        },
+        "neckY": 0.5755,
+        "letterBox": [
+          0.2861,
+          0.5863,
+          0.42,
+          0.2304
+        ],
+        "face": {
+          "x": 0.4961,
+          "w": 0.5281
+        },
+        "mustacheY": 0.5215,
+        "shoulderW": 0.7246,
+        "back": {
+          "x": 0.4985,
+          "y": 0.4279,
+          "w": 0.9385
+        },
+        "cape": {
+          "y": 0.2839
+        },
+        "hand": {
+          "x": 0.9378,
+          "y": 0.6288
+        },
+        "bounds": [
+          0.0293,
+          0.1543,
+          0.9678,
+          0.9678
+        ],
+        "overrides": {}
+      }
+    },
+    "parts": {
+      "eyes": {
+        "slot": "eyeY",
+        "scale": 0.37
+      },
+      "mouth": {
+        "slot": "mouthY",
+        "scale": 0.19
+      },
+      "nose": {
+        "slot": "cheekY",
+        "scale": 0.12
+      },
+      "cheeks": {
+        "slot": "cheekY",
+        "scale": 0.5
+      },
+      "head": {
+        "slot": "headTop",
+        "scale": 1
+      },
+      "face": {
+        "slot": "eyeY",
+        "scale": 0.4
+      },
+      "neck": {
+        "slot": "neckY",
+        "scale": 0.32
+      }
+    },
+    "items": {
+      "eyes:beady": {
+        "w": 0.62,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.3333
+      },
+      "eyes:happy": {
+        "w": 0.62,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.2891
+      },
+      "eyes:sparkly": {
+        "w": 0.64,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4323
+      },
+      "eyes:sleepy": {
+        "w": 0.64,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.3828
+      },
+      "eyes:wink": {
+        "w": 0.62,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.3464
+      },
+      "eyes:hearts": {
+        "w": 0.66,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4089
+      },
+      "eyes:stars": {
+        "w": 0.68,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4948
+      },
+      "eyes:glasses": {
+        "w": 0.8,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4427
+      },
+      "eyes:cyclops": {
+        "w": 0.36,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 1
+      },
+      "eyes:sunglasses": {
+        "w": 0.82,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.3724
+      },
+      "eyes:determined": {
+        "w": 0.6,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4349
+      },
+      "eyes:anime": {
+        "w": 0.66,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.5026
+      },
+      "eyes:joy": {
+        "w": 0.64,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.2474
+      },
+      "eyes:droopy": {
+        "w": 0.64,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4766
+      },
+      "eyes:biground": {
+        "w": 0.66,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.5026
+      },
+      "eyes:sideglance": {
+        "w": 0.66,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.4766
+      },
+      "eyes:dizzy": {
+        "w": 0.66,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "eyes",
+        "layer": "eyes",
+        "aspect": 0.5156
+      },
+      "mouth:smile": {
+        "w": 0.36,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.3984
+      },
+      "mouth:grin": {
+        "w": 0.36,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.5521
+      },
+      "mouth:tongue": {
+        "w": 0.34,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.7031
+      },
+      "mouth:o": {
+        "w": 0.16,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 1.0817
+      },
+      "mouth:cat": {
+        "w": 0.32,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.375
+      },
+      "mouth:toothy": {
+        "w": 0.38,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.4714
+      },
+      "mouth:smirk": {
+        "w": 0.32,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.4688
+      },
+      "mouth:tiny": {
+        "w": 0.2,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.5052
+      },
+      "mouth:gasp": {
+        "w": 0.18,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 1.2
+      },
+      "mouth:laugh": {
+        "w": 0.4,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.6276
+      },
+      "mouth:whistle": {
+        "w": 0.16,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.9271
+      },
+      "mouth:fang": {
+        "w": 0.34,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.4323
+      },
+      "mouth:kissy": {
+        "w": 0.2,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.8698
+      },
+      "mouth:braces": {
+        "w": 0.4,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.5286
+      },
+      "mouth:oops": {
+        "w": 0.18,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.9531
+      },
+      "mouth:tongueside": {
+        "w": 0.36,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.513
+      },
+      "mouth:teeth": {
+        "w": 0.36,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mouth",
+        "layer": "mouth",
+        "aspect": 0.4818
+      },
+      "nose:button": {
+        "w": 0.12,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.7656
+      },
+      "nose:red": {
+        "w": 0.18,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.9948
+      },
+      "nose:pointy": {
+        "w": 0.17,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.6693
+      },
+      "nose:bignose": {
+        "w": 0.2,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.9583
+      },
+      "nose:cat": {
+        "w": 0.13,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.7031
+      },
+      "nose:piggy": {
+        "w": 0.2,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.7526
+      },
+      "nose:clownstar": {
+        "w": 0.19,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "nose",
+        "layer": "nose",
+        "aspect": 0.9271
+      },
+      "cheeks:blush": {
+        "w": 0.92,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "cheeks",
+        "aspect": 0.2682
+      },
+      "cheeks:freckles": {
+        "w": 0.82,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "cheeks",
+        "aspect": 0.2135
+      },
+      "cheeks:hearts": {
+        "w": 0.86,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "cheeks",
+        "aspect": 0.3047
+      },
+      "cheeks:starfreckles": {
+        "w": 0.88,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "cheeks",
+        "aspect": 0.4479
+      },
+      "cheeks:sparkle": {
+        "w": 0.92,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "cheeks",
+        "aspect": 0.3151
+      },
+      "cheeks:bandage": {
+        "w": 0.26,
+        "anchor": [
+          -0.5385,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "cheeks",
+        "aspect": 0.6823
+      },
+      "acc:heart-glasses": {
+        "w": 0.92,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face",
+        "aspect": 0.388
+      },
+      "acc:starglasses": {
+        "w": 0.94,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face",
+        "aspect": 0.4505
+      },
+      "acc:roundglasses": {
+        "w": 0.88,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face",
+        "aspect": 0.4427
+      },
+      "acc:mask": {
+        "w": 0.98,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face",
+        "aspect": 0.4531
+      },
+      "acc:eyepatch": {
+        "w": 0.74,
+        "anchor": [
+          0.5,
+          0.45
+        ],
+        "slot": "glasses",
+        "layer": "face",
+        "aspect": 0.4557
+      },
+      "acc:monocle": {
+        "w": 0.3,
+        "anchor": [
+          -0.38,
+          0.32
+        ],
+        "slot": "glasses",
+        "layer": "face",
+        "aspect": 1.0667
+      },
+      "acc:mustache": {
+        "w": 0.48,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mustache",
+        "layer": "face",
+        "aspect": 0.3281
+      },
+      "acc:curlymustache": {
+        "w": 0.52,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "mustache",
+        "layer": "face",
+        "aspect": 0.3672
+      },
+      "acc:facepaint": {
+        "w": 0.86,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "cheeks",
+        "layer": "face",
+        "aspect": 0.2891
+      },
+      "acc:crown": {
+        "w": 0.74,
+        "anchor": [
+          0.5,
+          0.88
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.12,
+        "aspect": 0.8438
+      },
+      "acc:party": {
+        "w": 0.5,
+        "anchor": [
+          0.5,
+          0.95
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.05,
+        "aspect": 1.2347
+      },
+      "acc:beanie": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.7
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3,
+        "aspect": 0.8906
+      },
+      "acc:sprout": {
+        "w": 0.5,
+        "anchor": [
+          0.5,
+          0.98
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.02,
+        "aspect": 0.6875
+      },
+      "acc:nightcap": {
+        "w": 1.05,
+        "anchor": [
+          0.5,
+          0.75
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.25,
+        "aspect": 0.7396
+      },
+      "acc:headphones": {
+        "w": 1.18,
+        "anchor": [
+          0.5,
+          0.45
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.55,
+        "overFace": true,
+        "aspect": 0.7552
+      },
+      "acc:bow": {
+        "w": 0.62,
+        "anchor": [
+          0.5,
+          0.9
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.1,
+        "aspect": 0.6172
+      },
+      "acc:wizard": {
+        "w": 0.9,
+        "anchor": [
+          0.5,
+          0.88
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.12,
+        "aspect": 0.8333
+      },
+      "acc:pirate": {
+        "w": 1.05,
+        "anchor": [
+          0.5,
+          0.8
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.2,
+        "aspect": 0.5885
+      },
+      "acc:cowboy": {
+        "w": 1.15,
+        "anchor": [
+          0.5,
+          0.8
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.2,
+        "aspect": 0.5573
+      },
+      "acc:chef": {
+        "w": 0.85,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.15,
+        "tint": true,
+        "aspect": 0.9193
+      },
+      "acc:grad": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.15,
+        "aspect": 0.6875
+      },
+      "acc:halo": {
+        "w": 0.8,
+        "anchor": [
+          0.5,
+          1.35
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": -0.35,
+        "aspect": 0.3932
+      },
+      "acc:flower": {
+        "w": 0.5,
+        "anchor": [
+          0.5,
+          0.9
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.1,
+        "aspect": 0.9453
+      },
+      "acc:tophat": {
+        "w": 0.75,
+        "anchor": [
+          0.5,
+          0.88
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.12,
+        "aspect": 0.7396
+      },
+      "acc:propeller": {
+        "w": 0.9,
+        "anchor": [
+          0.5,
+          0.8
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.2,
+        "aspect": 0.8776
+      },
+      "acc:catears": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.15,
+        "aspect": 0.6693
+      },
+      "acc:bunnyears": {
+        "w": 0.85,
+        "anchor": [
+          0.5,
+          0.9
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.1,
+        "aspect": 1.024
+      },
+      "acc:tiara": {
+        "w": 0.8,
+        "anchor": [
+          0.5,
+          0.8
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.2,
+        "aspect": 0.6146
+      },
+      "acc:viking": {
+        "w": 1.1,
+        "anchor": [
+          0.5,
+          0.75
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.25,
+        "aspect": 0.6458
+      },
+      "acc:sweatband": {
+        "w": 1.02,
+        "anchor": [
+          0.5,
+          0.1
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.9,
+        "aspect": 0.4062
+      },
+      "acc:cap": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.75
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.25,
+        "aspect": 0.6693
+      },
+      "acc:beret": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.7
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3,
+        "aspect": 0.625
+      },
+      "acc:minicrown": {
+        "w": 0.55,
+        "anchor": [
+          0.5,
+          0.9
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.1,
+        "aspect": 0.7734
+      },
+      "acc:flowercrown": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.55
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.45,
+        "aspect": 0.4323
+      },
+      "acc:bucket": {
+        "w": 1.05,
+        "anchor": [
+          0.5,
+          0.7
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3,
+        "aspect": 0.6432
+      },
+      "acc:santa": {
+        "w": 1.05,
+        "anchor": [
+          0.5,
+          0.75
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.25,
+        "aspect": 0.7318
+      },
+      "acc:witch": {
+        "w": 0.95,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.15,
+        "aspect": 0.8047
+      },
+      "acc:astronaut": {
+        "w": 1.1,
+        "anchor": [
+          0.5,
+          0.7
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3,
+        "tint": true,
+        "aspect": 0.8724
+      },
+      "acc:bigbow": {
+        "w": 0.7,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.15,
+        "aspect": 0.6146
+      },
+      "acc:pombeanie": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.7
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3,
+        "aspect": 0.8802
+      },
+      "acc:bearears": {
+        "w": 1.05,
+        "anchor": [
+          0.5,
+          0.8
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.2,
+        "aspect": 0.5755
+      },
+      "acc:mohawk": {
+        "w": 0.6,
+        "anchor": [
+          0.5,
+          0.9
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.1,
+        "aspect": 0.8385
+      },
+      "acc:bowtie": {
+        "w": 0.38,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "neck",
+        "layer": "neckFront",
+        "aspect": 0.6146
+      },
+      "acc:chain": {
+        "w": 0.7,
+        "anchor": [
+          0.5,
+          0.12
+        ],
+        "slot": "neck",
+        "layer": "neckFront",
+        "aspect": 0.8151
+      },
+      "acc:scarf": {
+        "w": 0.86,
+        "anchor": [
+          0.5,
+          0.28
+        ],
+        "slot": "neck",
+        "layer": "neckFront",
+        "aspect": 0.8411
+      },
+      "acc:medal": {
+        "w": 0.42,
+        "anchor": [
+          0.5,
+          0.1
+        ],
+        "slot": "neck",
+        "layer": "neckFront",
+        "aspect": 1.1228
+      },
+      "acc:bubbletea": {
+        "w": 0.24,
+        "anchor": [
+          0.35,
+          0.62
+        ],
+        "slot": "hand",
+        "layer": "neckFront",
+        "aspect": 1.4601
+      },
+      "acc:cape": {
+        "w": 1.32,
+        "anchor": [
+          0.5,
+          0.04
+        ],
+        "slot": "cape",
+        "layer": "back",
+        "aspect": 0.6094
+      },
+      "acc:supercape": {
+        "w": 1.32,
+        "anchor": [
+          0.5,
+          0.04
+        ],
+        "slot": "cape",
+        "layer": "back",
+        "tint": true,
+        "aspect": 0.5547
+      },
+      "acc:wings": {
+        "w": 1.5,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "back",
+        "tint": true,
+        "aspect": 0.5328
+      },
+      "acc:fairywings": {
+        "w": 1.42,
+        "anchor": [
+          0.5,
+          0.52
+        ],
+        "slot": "back",
+        "layer": "back",
+        "aspect": 0.7406
+      },
+      "acc:backpack": {
+        "w": 1.12,
+        "anchor": [
+          0.5,
+          0.62
+        ],
+        "slot": "back",
+        "layer": "back",
+        "tint": true,
+        "aspect": 0.9359
+      },
+      "acc:guitar": {
+        "w": 0.92,
+        "anchor": [
+          0.45,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "back",
+        "aspect": 0.8672
+      }
+    },
+    "conflicts": [
+      {
+        "a": "eyes",
+        "aIds": [
+          "glasses",
+          "sunglasses",
+          "cyclops"
+        ],
+        "b": "face",
+        "bIds": [
+          "heart-glasses",
+          "starglasses",
+          "roundglasses",
+          "mask",
+          "monocle",
+          "eyepatch"
+        ]
+      },
+      {
+        "a": "mouth",
+        "aIds": [
+          "whistle",
+          "kissy",
+          "laugh",
+          "braces"
+        ],
+        "b": "face",
+        "bIds": [
+          "mustache",
+          "curlymustache"
+        ]
+      },
+      {
+        "a": "nose",
+        "aIds": [
+          "piggy",
+          "bignose",
+          "clownstar"
+        ],
+        "b": "face",
+        "bIds": [
+          "mustache",
+          "curlymustache"
+        ]
+      },
+      {
+        "a": "cheeks",
+        "aIds": [
+          "*"
+        ],
+        "b": "face",
+        "bIds": [
+          "facepaint"
+        ]
+      },
+      {
+        "a": "head",
+        "aIds": [
+          "astronaut",
+          "headphones"
+        ],
+        "b": "face",
+        "bIds": [
+          "eyepatch"
+        ]
+      }
+    ],
+    "art": [
+      "art-av-acc-astronaut",
+      "art-av-acc-backpack",
+      "art-av-acc-beanie",
+      "art-av-acc-bearears",
+      "art-av-acc-beret",
+      "art-av-acc-bigbow",
+      "art-av-acc-bow",
+      "art-av-acc-bowtie",
+      "art-av-acc-bubbletea",
+      "art-av-acc-bucket",
+      "art-av-acc-bunnyears",
+      "art-av-acc-cap",
+      "art-av-acc-cape",
+      "art-av-acc-catears",
+      "art-av-acc-chain",
+      "art-av-acc-chef",
+      "art-av-acc-cowboy",
+      "art-av-acc-crown",
+      "art-av-acc-curlymustache",
+      "art-av-acc-eyepatch",
+      "art-av-acc-facepaint",
+      "art-av-acc-fairywings",
+      "art-av-acc-flower",
+      "art-av-acc-flowercrown",
+      "art-av-acc-grad",
+      "art-av-acc-guitar",
+      "art-av-acc-halo",
+      "art-av-acc-headphones",
+      "art-av-acc-heart-glasses",
+      "art-av-acc-mask",
+      "art-av-acc-medal",
+      "art-av-acc-minicrown",
+      "art-av-acc-mohawk",
+      "art-av-acc-monocle",
+      "art-av-acc-mustache",
+      "art-av-acc-nightcap",
+      "art-av-acc-party",
+      "art-av-acc-pirate",
+      "art-av-acc-pombeanie",
+      "art-av-acc-propeller",
+      "art-av-acc-roundglasses",
+      "art-av-acc-santa",
+      "art-av-acc-scarf",
+      "art-av-acc-sprout",
+      "art-av-acc-starglasses",
+      "art-av-acc-supercape",
+      "art-av-acc-sweatband",
+      "art-av-acc-tiara",
+      "art-av-acc-tophat",
+      "art-av-acc-viking",
+      "art-av-acc-wings",
+      "art-av-acc-witch",
+      "art-av-acc-wizard",
+      "art-av-body-bean",
+      "art-av-body-blob",
+      "art-av-body-chunky",
+      "art-av-body-classic",
+      "art-av-body-cloud",
+      "art-av-body-drop",
+      "art-av-body-hex",
+      "art-av-body-mini",
+      "art-av-body-pear",
+      "art-av-body-star",
+      "art-av-body-tall",
+      "art-av-body-wide",
+      "art-av-cheeks-bandage",
+      "art-av-cheeks-blush",
+      "art-av-cheeks-freckles",
+      "art-av-cheeks-hearts",
+      "art-av-cheeks-sparkle",
+      "art-av-cheeks-starfreckles",
+      "art-av-eyes-anime",
+      "art-av-eyes-beady",
+      "art-av-eyes-biground",
+      "art-av-eyes-cyclops",
+      "art-av-eyes-determined",
+      "art-av-eyes-dizzy",
+      "art-av-eyes-droopy",
+      "art-av-eyes-glasses",
+      "art-av-eyes-happy",
+      "art-av-eyes-hearts",
+      "art-av-eyes-joy",
+      "art-av-eyes-sideglance",
+      "art-av-eyes-sleepy",
+      "art-av-eyes-sparkly",
+      "art-av-eyes-stars",
+      "art-av-eyes-sunglasses",
+      "art-av-eyes-wink",
+      "art-av-mouth-braces",
+      "art-av-mouth-cat",
+      "art-av-mouth-fang",
+      "art-av-mouth-gasp",
+      "art-av-mouth-grin",
+      "art-av-mouth-kissy",
+      "art-av-mouth-laugh",
+      "art-av-mouth-o",
+      "art-av-mouth-oops",
+      "art-av-mouth-smile",
+      "art-av-mouth-smirk",
+      "art-av-mouth-teeth",
+      "art-av-mouth-tiny",
+      "art-av-mouth-tongue",
+      "art-av-mouth-tongueside",
+      "art-av-mouth-toothy",
+      "art-av-mouth-whistle",
+      "art-av-nose-bignose",
+      "art-av-nose-button",
+      "art-av-nose-cat",
+      "art-av-nose-clownstar",
+      "art-av-nose-piggy",
+      "art-av-nose-pointy",
+      "art-av-nose-red"
+    ]
+  },
+  "cases": [
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0187,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3194,
+          "y": 0.5218,
+          "w": 0.3612,
+          "h": 0.2113
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "classic",
+            "art": "art-av-body-classic",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0187,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3442,
+              "y": 0.302,
+              "w": 0.3116,
+              "h": 0.1039
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4095,
+              "y": 0.4422,
+              "w": 0.1809,
+              "h": 0.0721
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.1489,
+          "w": 0.8063,
+          "h": 0.7021
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0187,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3194,
+          "y": 0.5218,
+          "w": 0.3612,
+          "h": 0.2113
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "classic",
+            "art": "art-av-body-classic",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0187,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3442,
+              "y": 0.302,
+              "w": 0.3116,
+              "h": 0.1039
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4095,
+              "y": 0.4422,
+              "w": 0.1809,
+              "h": 0.0721
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.1489,
+          "w": 0.8063,
+          "h": 0.7021
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "tall",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.8312,
+        "body": {
+          "x": 0.0848,
+          "y": 0.1456,
+          "w": 0.8312,
+          "h": 0.8312
+        },
+        "letter": {
+          "x": 0.4065,
+          "y": 0.5155,
+          "w": 0.1846,
+          "h": 0.2759
+        },
+        "layers": [
+          {
+            "layer": "back",
+            "field": "neck",
+            "id": "wings",
+            "art": "art-av-acc-wings",
+            "rect": {
+              "x": 0.1329,
+              "y": 0.2373,
+              "w": 0.7342,
+              "h": 0.3912
+            },
+            "tint": true
+          },
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "tall",
+            "art": "art-av-body-tall",
+            "rect": {
+              "x": 0.0848,
+              "y": 0.1456,
+              "w": 0.8312,
+              "h": 0.8312
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.4227,
+              "y": 0.3247,
+              "w": 0.1522,
+              "h": 0.0507
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4546,
+              "y": 0.4428,
+              "w": 0.0884,
+              "h": 0.0352
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "cowboy",
+            "art": "art-av-acc-cowboy",
+            "rect": {
+              "x": 0.3549,
+              "y": 0.05,
+              "w": 0.2903,
+              "h": 0.1618
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.1329,
+          "y": 0.05,
+          "w": 0.7342,
+          "h": 0.9
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "tall",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.8312,
+        "body": {
+          "x": 0.0848,
+          "y": 0.1456,
+          "w": 0.8312,
+          "h": 0.8312
+        },
+        "letter": {
+          "x": 0.4065,
+          "y": 0.5155,
+          "w": 0.1846,
+          "h": 0.2759
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "tall",
+            "art": "art-av-body-tall",
+            "rect": {
+              "x": 0.0848,
+              "y": 0.1456,
+              "w": 0.8312,
+              "h": 0.8312
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.4227,
+              "y": 0.3247,
+              "w": 0.1522,
+              "h": 0.0507
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4546,
+              "y": 0.4428,
+              "w": 0.0884,
+              "h": 0.0352
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "cowboy",
+            "art": "art-av-acc-cowboy",
+            "rect": {
+              "x": 0.3549,
+              "y": 0.05,
+              "w": 0.2903,
+              "h": 0.1618
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.2553,
+          "y": 0.05,
+          "w": 0.4894,
+          "h": 0.9
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "wide",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "witch",
+        "face": "none",
+        "neck": "supercape",
+        "accColor": "teal",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.7273,
+        "body": {
+          "x": 0.1371,
+          "y": 0.1155,
+          "w": 0.7273,
+          "h": 0.7273
+        },
+        "letter": {
+          "x": 0.3473,
+          "y": 0.6178,
+          "w": 0.3055,
+          "h": 0.1265
+        },
+        "layers": [
+          {
+            "layer": "back",
+            "field": "neck",
+            "id": "supercape",
+            "art": "art-av-acc-supercape",
+            "rect": {
+              "x": 0.05,
+              "y": 0.4239,
+              "w": 0.9,
+              "h": 0.4992
+            },
+            "tint": true
+          },
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "wide",
+            "art": "art-av-body-wide",
+            "rect": {
+              "x": 0.1371,
+              "y": 0.1155,
+              "w": 0.7273,
+              "h": 0.7273
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3623,
+              "y": 0.4572,
+              "w": 0.2755,
+              "h": 0.0918
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.42,
+              "y": 0.5582,
+              "w": 0.1599,
+              "h": 0.0637
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "witch",
+            "art": "art-av-acc-witch",
+            "rect": {
+              "x": 0.285,
+              "y": 0.0769,
+              "w": 0.4372,
+              "h": 0.3518
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.05,
+          "y": 0.0769,
+          "w": 0.9,
+          "h": 0.8462
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "wide",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "witch",
+        "face": "none",
+        "neck": "supercape",
+        "accColor": "teal",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.1067,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3194,
+          "y": 0.7006,
+          "w": 0.3612,
+          "h": 0.1496
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "wide",
+            "art": "art-av-body-wide",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.1067,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3371,
+              "y": 0.5107,
+              "w": 0.3257,
+              "h": 0.1086
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4054,
+              "y": 0.6301,
+              "w": 0.1891,
+              "h": 0.0754
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "witch",
+            "art": "art-av-acc-witch",
+            "rect": {
+              "x": 0.2457,
+              "y": 0.061,
+              "w": 0.517,
+              "h": 0.416
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.061,
+          "w": 0.8063,
+          "h": 0.878
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "glasses",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "santa",
+        "face": "mask",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0704,
+          "y": 0.1038,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3766,
+          "y": 0.5779,
+          "w": 0.2486,
+          "h": 0.1763
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "star",
+            "art": "art-av-body-star",
+            "rect": {
+              "x": 0.0704,
+              "y": 0.1038,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "glasses",
+            "art": "art-av-eyes-glasses",
+            "rect": {
+              "x": 0.3455,
+              "y": 0.3549,
+              "w": 0.3108,
+              "h": 0.1376
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4309,
+              "y": 0.5097,
+              "w": 0.1398,
+              "h": 0.0557
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "santa",
+            "art": "art-av-acc-santa",
+            "rect": {
+              "x": 0.3902,
+              "y": 0.063,
+              "w": 0.2231,
+              "h": 0.1633
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.109,
+          "y": 0.063,
+          "w": 0.7819,
+          "h": 0.874
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "glasses",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "santa",
+        "face": "mask",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0704,
+          "y": 0.1038,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3766,
+          "y": 0.5779,
+          "w": 0.2486,
+          "h": 0.1763
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "star",
+            "art": "art-av-body-star",
+            "rect": {
+              "x": 0.0704,
+              "y": 0.1038,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "glasses",
+            "art": "art-av-eyes-glasses",
+            "rect": {
+              "x": 0.3455,
+              "y": 0.3549,
+              "w": 0.3108,
+              "h": 0.1376
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4309,
+              "y": 0.5097,
+              "w": 0.1398,
+              "h": 0.0557
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "santa",
+            "art": "art-av-acc-santa",
+            "rect": {
+              "x": 0.3902,
+              "y": 0.063,
+              "w": 0.2231,
+              "h": 0.1633
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.109,
+          "y": 0.063,
+          "w": 0.7819,
+          "h": 0.874
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "drop",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "piggy",
+        "cheeks": "bandage",
+        "mouth": "smile",
+        "head": "none",
+        "face": "curlymustache",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0704,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.4316,
+          "y": 0.5893,
+          "w": 0.136,
+          "h": 0.1714
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "drop",
+            "art": "art-av-body-drop",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0704,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "cheeks",
+            "field": "cheeks",
+            "id": "bandage",
+            "art": "art-av-cheeks-bandage",
+            "rect": {
+              "x": 0.5569,
+              "y": 0.4779,
+              "w": 0.1065,
+              "h": 0.0727
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3726,
+              "y": 0.3898,
+              "w": 0.2539,
+              "h": 0.0846
+            },
+            "tint": false
+          },
+          {
+            "layer": "nose",
+            "field": "nose",
+            "id": "piggy",
+            "art": "art-av-nose-piggy",
+            "rect": {
+              "x": 0.4586,
+              "y": 0.4834,
+              "w": 0.0819,
+              "h": 0.0616
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4258,
+              "y": 0.5206,
+              "w": 0.1474,
+              "h": 0.0587
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.1548,
+          "y": 0.0964,
+          "w": 0.6903,
+          "h": 0.8071
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "drop",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "piggy",
+        "cheeks": "bandage",
+        "mouth": "smile",
+        "head": "none",
+        "face": "curlymustache",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0704,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.4316,
+          "y": 0.5893,
+          "w": 0.136,
+          "h": 0.1714
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "drop",
+            "art": "art-av-body-drop",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0704,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3726,
+              "y": 0.3898,
+              "w": 0.2539,
+              "h": 0.0846
+            },
+            "tint": false
+          },
+          {
+            "layer": "nose",
+            "field": "nose",
+            "id": "piggy",
+            "art": "art-av-nose-piggy",
+            "rect": {
+              "x": 0.4586,
+              "y": 0.4834,
+              "w": 0.0819,
+              "h": 0.0616
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4258,
+              "y": 0.5206,
+              "w": 0.1474,
+              "h": 0.0587
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.1548,
+          "y": 0.0964,
+          "w": 0.6903,
+          "h": 0.8071
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "mini",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sunglasses",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "astronaut",
+        "face": "none",
+        "neck": "guitar",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.069,
+          "y": 0.0127,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3466,
+          "y": 0.6274,
+          "w": 0.3008,
+          "h": 0.128
+        },
+        "layers": [
+          {
+            "layer": "back",
+            "field": "neck",
+            "id": "guitar",
+            "art": "art-av-acc-guitar",
+            "rect": {
+              "x": 0.2499,
+              "y": 0.2857,
+              "w": 0.5517,
+              "h": 0.4784
+            },
+            "tint": false
+          },
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "mini",
+            "art": "art-av-body-mini",
+            "rect": {
+              "x": 0.069,
+              "y": 0.0127,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "sunglasses",
+            "art": "art-av-eyes-sunglasses",
+            "rect": {
+              "x": 0.3612,
+              "y": 0.4531,
+              "w": 0.2716,
+              "h": 0.1012
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4373,
+              "y": 0.5738,
+              "w": 0.1193,
+              "h": 0.0475
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "astronaut",
+            "art": "art-av-acc-astronaut",
+            "rect": {
+              "x": 0.3329,
+              "y": 0.155,
+              "w": 0.3298,
+              "h": 0.2877
+            },
+            "tint": true
+          }
+        ],
+        "bounds": {
+          "x": 0.1984,
+          "y": 0.155,
+          "w": 0.6032,
+          "h": 0.6899
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "mini",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sunglasses",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "astronaut",
+        "face": "none",
+        "neck": "guitar",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0127,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3483,
+          "y": 0.6274,
+          "w": 0.3008,
+          "h": 0.128
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "mini",
+            "art": "art-av-body-mini",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0127,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "sunglasses",
+            "art": "art-av-eyes-sunglasses",
+            "rect": {
+              "x": 0.3629,
+              "y": 0.4531,
+              "w": 0.2716,
+              "h": 0.1012
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4391,
+              "y": 0.5738,
+              "w": 0.1193,
+              "h": 0.0475
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "astronaut",
+            "art": "art-av-acc-astronaut",
+            "rect": {
+              "x": 0.3346,
+              "y": 0.155,
+              "w": 0.3298,
+              "h": 0.2877
+            },
+            "tint": true
+          }
+        ],
+        "bounds": {
+          "x": 0.2002,
+          "y": 0.155,
+          "w": 0.5997,
+          "h": 0.6899
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "hex",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "braces",
+        "head": "headphones",
+        "face": "none",
+        "neck": "bubbletea",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.8532,
+        "body": {
+          "x": 0.025,
+          "y": 0.0835,
+          "w": 0.8532,
+          "h": 0.8532
+        },
+        "letter": {
+          "x": 0.2691,
+          "y": 0.5837,
+          "w": 0.3583,
+          "h": 0.1966
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "hex",
+            "art": "art-av-body-hex",
+            "rect": {
+              "x": 0.025,
+              "y": 0.0835,
+              "w": 0.8532,
+              "h": 0.8532
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3086,
+              "y": 0.3713,
+              "w": 0.2793,
+              "h": 0.0931
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "braces",
+            "art": "art-av-mouth-braces",
+            "rect": {
+              "x": 0.3581,
+              "y": 0.493,
+              "w": 0.1802,
+              "h": 0.0953
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "headphones",
+            "art": "art-av-acc-headphones",
+            "rect": {
+              "x": 0.2413,
+              "y": 0.0909,
+              "w": 0.4188,
+              "h": 0.3163
+            },
+            "tint": false
+          },
+          {
+            "layer": "neckFront",
+            "field": "neck",
+            "id": "bubbletea",
+            "art": "art-av-acc-bubbletea",
+            "rect": {
+              "x": 0.7578,
+              "y": 0.446,
+              "w": 0.1922,
+              "h": 0.2806
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.05,
+          "y": 0.0909,
+          "w": 0.9,
+          "h": 0.8183
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "hex",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "braces",
+        "head": "headphones",
+        "face": "none",
+        "neck": "bubbletea",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0712,
+          "y": 0.0801,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3173,
+          "y": 0.5843,
+          "w": 0.3612,
+          "h": 0.1981
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "hex",
+            "art": "art-av-body-hex",
+            "rect": {
+              "x": 0.0712,
+              "y": 0.0801,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3571,
+              "y": 0.3702,
+              "w": 0.2816,
+              "h": 0.0939
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "braces",
+            "art": "art-av-mouth-braces",
+            "rect": {
+              "x": 0.4071,
+              "y": 0.493,
+              "w": 0.1817,
+              "h": 0.096
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "headphones",
+            "art": "art-av-acc-headphones",
+            "rect": {
+              "x": 0.2893,
+              "y": 0.0876,
+              "w": 0.4222,
+              "h": 0.3188
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0964,
+          "y": 0.0876,
+          "w": 0.8071,
+          "h": 0.8248
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "cloud",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "hearts",
+        "mouth": "smile",
+        "head": "halo",
+        "face": "none",
+        "neck": "fairywings",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.6761,
+        "body": {
+          "x": 0.1626,
+          "y": 0.182,
+          "w": 0.6761,
+          "h": 0.6761
+        },
+        "letter": {
+          "x": 0.3584,
+          "y": 0.6277,
+          "w": 0.2839,
+          "h": 0.1174
+        },
+        "layers": [
+          {
+            "layer": "back",
+            "field": "neck",
+            "id": "fairywings",
+            "art": "art-av-acc-fairywings",
+            "rect": {
+              "x": 0.05,
+              "y": 0.1637,
+              "w": 0.9,
+              "h": 0.6665
+            },
+            "tint": false
+          },
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "cloud",
+            "art": "art-av-body-cloud",
+            "rect": {
+              "x": 0.1626,
+              "y": 0.182,
+              "w": 0.6761,
+              "h": 0.6761
+            },
+            "tint": false
+          },
+          {
+            "layer": "cheeks",
+            "field": "cheeks",
+            "id": "hearts",
+            "art": "art-av-cheeks-hearts",
+            "rect": {
+              "x": 0.3261,
+              "y": 0.5181,
+              "w": 0.3484,
+              "h": 0.1062
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3748,
+              "y": 0.4684,
+              "w": 0.2512,
+              "h": 0.0837
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4274,
+              "y": 0.5682,
+              "w": 0.1458,
+              "h": 0.0581
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "halo",
+            "art": "art-av-acc-halo",
+            "rect": {
+              "x": 0.3353,
+              "y": 0.2456,
+              "w": 0.3354,
+              "h": 0.1319
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.05,
+          "y": 0.1637,
+          "w": 0.9,
+          "h": 0.6726
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "cloud",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "hearts",
+        "mouth": "smile",
+        "head": "halo",
+        "face": "none",
+        "neck": "fairywings",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0434,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3198,
+          "y": 0.6103,
+          "w": 0.3612,
+          "h": 0.1493
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "cloud",
+            "art": "art-av-body-cloud",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0434,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3406,
+              "y": 0.4078,
+              "w": 0.3195,
+              "h": 0.1065
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4076,
+              "y": 0.5347,
+              "w": 0.1855,
+              "h": 0.0739
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "halo",
+            "art": "art-av-acc-halo",
+            "rect": {
+              "x": 0.2904,
+              "y": 0.1243,
+              "w": 0.4266,
+              "h": 0.1678
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.1243,
+          "w": 0.8063,
+          "h": 0.7514
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "pear",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "mohawk",
+        "face": "starglasses",
+        "neck": "medal",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0704,
+          "y": 0.0953,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3974,
+          "y": 0.5709,
+          "w": 0.2076,
+          "h": 0.2141
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "pear",
+            "art": "art-av-body-pear",
+            "rect": {
+              "x": 0.0704,
+              "y": 0.0953,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.4204,
+              "y": 0.3656,
+              "w": 0.1616,
+              "h": 0.0539
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4543,
+              "y": 0.4987,
+              "w": 0.0938,
+              "h": 0.0374
+            },
+            "tint": false
+          },
+          {
+            "layer": "face",
+            "field": "face",
+            "id": "starglasses",
+            "art": "art-av-acc-starglasses",
+            "rect": {
+              "x": 0.3787,
+              "y": 0.3373,
+              "w": 0.245,
+              "h": 0.1104
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "mohawk",
+            "art": "art-av-acc-mohawk",
+            "rect": {
+              "x": 0.4386,
+              "y": 0.0724,
+              "w": 0.1245,
+              "h": 0.1044
+            },
+            "tint": false
+          },
+          {
+            "layer": "neckFront",
+            "field": "neck",
+            "id": "medal",
+            "art": "art-av-acc-medal",
+            "rect": {
+              "x": 0.4286,
+              "y": 0.5438,
+              "w": 0.1453,
+              "h": 0.1632
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.1611,
+          "y": 0.0724,
+          "w": 0.6778,
+          "h": 0.8552
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "pear",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "mohawk",
+        "face": "starglasses",
+        "neck": "medal",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0704,
+          "y": 0.0953,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3974,
+          "y": 0.5709,
+          "w": 0.2076,
+          "h": 0.2141
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "pear",
+            "art": "art-av-body-pear",
+            "rect": {
+              "x": 0.0704,
+              "y": 0.0953,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.4204,
+              "y": 0.3656,
+              "w": 0.1616,
+              "h": 0.0539
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4543,
+              "y": 0.4987,
+              "w": 0.0938,
+              "h": 0.0374
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "mohawk",
+            "art": "art-av-acc-mohawk",
+            "rect": {
+              "x": 0.4386,
+              "y": 0.0724,
+              "w": 0.1245,
+              "h": 0.1044
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.1611,
+          "y": 0.0724,
+          "w": 0.6778,
+          "h": 0.8552
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "chunky",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "anime",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "laugh",
+        "head": "flowercrown",
+        "face": "none",
+        "neck": "backpack",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.7757,
+        "body": {
+          "x": 0.1129,
+          "y": 0.1992,
+          "w": 0.7757,
+          "h": 0.7757
+        },
+        "letter": {
+          "x": 0.3363,
+          "y": 0.6366,
+          "w": 0.3258,
+          "h": 0.1938
+        },
+        "layers": [
+          {
+            "layer": "back",
+            "field": "neck",
+            "id": "backpack",
+            "art": "art-av-acc-backpack",
+            "rect": {
+              "x": 0.0927,
+              "y": 0.05,
+              "w": 0.8145,
+              "h": 0.7623
+            },
+            "tint": true
+          },
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "chunky",
+            "art": "art-av-body-chunky",
+            "rect": {
+              "x": 0.1129,
+              "y": 0.1992,
+              "w": 0.7757,
+              "h": 0.7757
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "anime",
+            "art": "art-av-eyes-anime",
+            "rect": {
+              "x": 0.352,
+              "y": 0.403,
+              "w": 0.2944,
+              "h": 0.148
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "laugh",
+            "art": "art-av-mouth-laugh",
+            "rect": {
+              "x": 0.41,
+              "y": 0.535,
+              "w": 0.1784,
+              "h": 0.112
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "flowercrown",
+            "art": "art-av-acc-flowercrown",
+            "rect": {
+              "x": 0.2523,
+              "y": 0.1789,
+              "w": 0.4969,
+              "h": 0.2148
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0927,
+          "y": 0.05,
+          "w": 0.8145,
+          "h": 0.9
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "chunky",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "anime",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "laugh",
+        "head": "flowercrown",
+        "face": "none",
+        "neck": "backpack",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0704,
+          "y": 0.0951,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3181,
+          "y": 0.58,
+          "w": 0.3612,
+          "h": 0.2148
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "chunky",
+            "art": "art-av-body-chunky",
+            "rect": {
+              "x": 0.0704,
+              "y": 0.0951,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "anime",
+            "art": "art-av-eyes-anime",
+            "rect": {
+              "x": 0.3355,
+              "y": 0.3211,
+              "w": 0.3264,
+              "h": 0.164
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "laugh",
+            "art": "art-av-mouth-laugh",
+            "rect": {
+              "x": 0.3998,
+              "y": 0.4673,
+              "w": 0.1978,
+              "h": 0.1241
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "flowercrown",
+            "art": "art-av-acc-flowercrown",
+            "rect": {
+              "x": 0.2249,
+              "y": 0.0726,
+              "w": 0.5509,
+              "h": 0.2382
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0964,
+          "y": 0.0726,
+          "w": 0.8071,
+          "h": 0.8548
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "tophat",
+        "face": "monocle",
+        "neck": "scarf",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.8477,
+        "body": {
+          "x": 0.0766,
+          "y": 0.1296,
+          "w": 0.8477,
+          "h": 0.8477
+        },
+        "letter": {
+          "x": 0.4193,
+          "y": 0.5421,
+          "w": 0.2508,
+          "h": 0.2532
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "bean",
+            "art": "art-av-body-bean",
+            "rect": {
+              "x": 0.0766,
+              "y": 0.1296,
+              "w": 0.8477,
+              "h": 0.8477
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.4422,
+              "y": 0.3322,
+              "w": 0.2049,
+              "h": 0.0683
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4852,
+              "y": 0.4621,
+              "w": 0.119,
+              "h": 0.0474
+            },
+            "tint": false
+          },
+          {
+            "layer": "face",
+            "field": "face",
+            "id": "monocle",
+            "art": "art-av-acc-monocle",
+            "rect": {
+              "x": 0.5823,
+              "y": 0.3325,
+              "w": 0.0991,
+              "h": 0.1057
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "tophat",
+            "art": "art-av-acc-tophat",
+            "rect": {
+              "x": 0.472,
+              "y": 0.05,
+              "w": 0.2117,
+              "h": 0.1566
+            },
+            "tint": false
+          },
+          {
+            "layer": "neckFront",
+            "field": "neck",
+            "id": "scarf",
+            "art": "art-av-acc-scarf",
+            "rect": {
+              "x": 0.3649,
+              "y": 0.4469,
+              "w": 0.3595,
+              "h": 0.3024
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.2032,
+          "y": 0.05,
+          "w": 0.5935,
+          "h": 0.9
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "bean",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "tophat",
+        "face": "monocle",
+        "neck": "scarf",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.8477,
+        "body": {
+          "x": 0.0766,
+          "y": 0.1296,
+          "w": 0.8477,
+          "h": 0.8477
+        },
+        "letter": {
+          "x": 0.4193,
+          "y": 0.5421,
+          "w": 0.2508,
+          "h": 0.2532
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "bean",
+            "art": "art-av-body-bean",
+            "rect": {
+              "x": 0.0766,
+              "y": 0.1296,
+              "w": 0.8477,
+              "h": 0.8477
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.4422,
+              "y": 0.3322,
+              "w": 0.2049,
+              "h": 0.0683
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.4852,
+              "y": 0.4621,
+              "w": 0.119,
+              "h": 0.0474
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "tophat",
+            "art": "art-av-acc-tophat",
+            "rect": {
+              "x": 0.472,
+              "y": 0.05,
+              "w": 0.2117,
+              "h": 0.1566
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.2032,
+          "y": 0.05,
+          "w": 0.5935,
+          "h": 0.9
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "blush",
+        "mouth": "smile",
+        "head": "bearears",
+        "face": "facepaint",
+        "neck": "chain",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.1034,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3189,
+          "y": 0.6078,
+          "w": 0.3612,
+          "h": 0.2057
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "blob",
+            "art": "art-av-body-blob",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.1034,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "cheeks",
+            "field": "cheeks",
+            "id": "blush",
+            "art": "art-av-cheeks-blush",
+            "rect": {
+              "x": 0.281,
+              "y": 0.4657,
+              "w": 0.437,
+              "h": 0.1172
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3523,
+              "y": 0.3852,
+              "w": 0.2945,
+              "h": 0.0982
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.414,
+              "y": 0.5288,
+              "w": 0.171,
+              "h": 0.0681
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "bearears",
+            "art": "art-av-acc-bearears",
+            "rect": {
+              "x": 0.2997,
+              "y": 0.0643,
+              "w": 0.403,
+              "h": 0.2319
+            },
+            "tint": false
+          },
+          {
+            "layer": "neckFront",
+            "field": "neck",
+            "id": "chain",
+            "art": "art-av-acc-chain",
+            "rect": {
+              "x": 0.2849,
+              "y": 0.5562,
+              "w": 0.4292,
+              "h": 0.3498
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.0643,
+          "w": 0.8063,
+          "h": 0.8715
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "blob",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "blush",
+        "mouth": "smile",
+        "head": "bearears",
+        "face": "facepaint",
+        "neck": "chain",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.1034,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3189,
+          "y": 0.6078,
+          "w": 0.3612,
+          "h": 0.2057
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "blob",
+            "art": "art-av-body-blob",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.1034,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          },
+          {
+            "layer": "eyes",
+            "field": "eyes",
+            "id": "beady",
+            "art": "art-av-eyes-beady",
+            "rect": {
+              "x": 0.3523,
+              "y": 0.3852,
+              "w": 0.2945,
+              "h": 0.0982
+            },
+            "tint": false
+          },
+          {
+            "layer": "mouth",
+            "field": "mouth",
+            "id": "smile",
+            "art": "art-av-mouth-smile",
+            "rect": {
+              "x": 0.414,
+              "y": 0.5288,
+              "w": 0.171,
+              "h": 0.0681
+            },
+            "tint": false
+          },
+          {
+            "layer": "head",
+            "field": "head",
+            "id": "bearears",
+            "art": "art-av-acc-bearears",
+            "rect": {
+              "x": 0.2997,
+              "y": 0.0643,
+              "w": 0.403,
+              "h": 0.2319
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.0643,
+          "w": 0.8063,
+          "h": 0.8715
+        }
+      }
+    }
+  ],
+  "picks": [
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "face",
+      "id": "mask",
+      "conflict": null,
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "mask",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "glasses",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "face",
+      "id": "roundglasses",
+      "conflict": {
+        "field": "eyes",
+        "id": "glasses"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "roundglasses",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "heart-glasses",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "eyes",
+      "id": "sunglasses",
+      "conflict": {
+        "field": "face",
+        "id": "heart-glasses"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "sunglasses",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "mustache",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "mouth",
+      "id": "kissy",
+      "conflict": {
+        "field": "face",
+        "id": "mustache"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "kissy",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "blush",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "face",
+      "id": "facepaint",
+      "conflict": {
+        "field": "cheeks",
+        "id": "blush"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "facepaint",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "facepaint",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "cheeks",
+      "id": "sparkle",
+      "conflict": {
+        "field": "face",
+        "id": "facepaint"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "sparkle",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "astronaut",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "face",
+      "id": "eyepatch",
+      "conflict": {
+        "field": "head",
+        "id": "astronaut"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "eyepatch",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "field": "face",
+      "id": "monocle",
+      "conflict": null,
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "monocle",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    }
+  ],
+  "patterns": [
+    {
+      "pattern": "solid",
+      "shapes": []
+    },
+    {
+      "pattern": "twotone",
+      "shapes": [
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.56,
+          "w": 1,
+          "h": 0.44,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "stripes",
+      "shapes": [
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.1,
+          "w": 1,
+          "h": 0.065,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.25,
+          "w": 1,
+          "h": 0.065,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.4,
+          "w": 1,
+          "h": 0.065,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.55,
+          "w": 1,
+          "h": 0.065,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.7,
+          "w": 1,
+          "h": 0.065,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.85,
+          "w": 1,
+          "h": 0.065,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "dots",
+      "shapes": [
+        {
+          "t": "circle",
+          "x": 0.085,
+          "y": 0.085,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.255,
+          "y": 0.085,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.425,
+          "y": 0.085,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.595,
+          "y": 0.085,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.765,
+          "y": 0.085,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.935,
+          "y": 0.085,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.17,
+          "y": 0.255,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.34,
+          "y": 0.255,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.51,
+          "y": 0.255,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.68,
+          "y": 0.255,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.85,
+          "y": 0.255,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 1.02,
+          "y": 0.255,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.085,
+          "y": 0.425,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.255,
+          "y": 0.425,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.425,
+          "y": 0.425,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.595,
+          "y": 0.425,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.765,
+          "y": 0.425,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.935,
+          "y": 0.425,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.17,
+          "y": 0.595,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.34,
+          "y": 0.595,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.51,
+          "y": 0.595,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.68,
+          "y": 0.595,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.85,
+          "y": 0.595,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 1.02,
+          "y": 0.595,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.085,
+          "y": 0.765,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.255,
+          "y": 0.765,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.425,
+          "y": 0.765,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.595,
+          "y": 0.765,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.765,
+          "y": 0.765,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.935,
+          "y": 0.765,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.17,
+          "y": 0.935,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.34,
+          "y": 0.935,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.51,
+          "y": 0.935,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.68,
+          "y": 0.935,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.85,
+          "y": 0.935,
+          "r": 0.045,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 1.02,
+          "y": 0.935,
+          "r": 0.045,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "gradient",
+      "shapes": [
+        {
+          "t": "grad",
+          "x1": 0.5,
+          "y1": 0.2,
+          "x2": 0.5,
+          "y2": 0.92,
+          "stops": [
+            [
+              0,
+              "ink",
+              0
+            ],
+            [
+              1,
+              "ink",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "pattern": "sparkle",
+      "shapes": [
+        {
+          "t": "star",
+          "x": 0.22,
+          "y": 0.22,
+          "r": 0.05,
+          "inner": 0.0175,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.72,
+          "y": 0.18,
+          "r": 0.04,
+          "inner": 0.014,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.84,
+          "y": 0.46,
+          "r": 0.05,
+          "inner": 0.0175,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.16,
+          "y": 0.56,
+          "r": 0.04,
+          "inner": 0.014,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.5,
+          "y": 0.3,
+          "r": 0.03,
+          "inner": 0.0105,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.32,
+          "y": 0.8,
+          "r": 0.05,
+          "inner": 0.0175,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.7,
+          "y": 0.74,
+          "r": 0.04,
+          "inner": 0.014,
+          "n": 4,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.58,
+          "y": 0.9,
+          "r": 0.03,
+          "inner": 0.0105,
+          "n": 4,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "hearts",
+      "shapes": [
+        {
+          "t": "heart",
+          "x": 0.1,
+          "y": 0.1,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.3,
+          "y": 0.1,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.5,
+          "y": 0.1,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.7,
+          "y": 0.1,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.9,
+          "y": 0.1,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.2,
+          "y": 0.3,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.4,
+          "y": 0.3,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.6,
+          "y": 0.3,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.8,
+          "y": 0.3,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 1,
+          "y": 0.3,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.1,
+          "y": 0.5,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.3,
+          "y": 0.5,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.5,
+          "y": 0.5,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.7,
+          "y": 0.5,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.9,
+          "y": 0.5,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.2,
+          "y": 0.7,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.4,
+          "y": 0.7,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.6,
+          "y": 0.7,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.8,
+          "y": 0.7,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 1,
+          "y": 0.7,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.1,
+          "y": 0.9,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.3,
+          "y": 0.9,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.5,
+          "y": 0.9,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.7,
+          "y": 0.9,
+          "s": 0.075,
+          "c": "ink"
+        },
+        {
+          "t": "heart",
+          "x": 0.9,
+          "y": 0.9,
+          "s": 0.075,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "stars",
+      "shapes": [
+        {
+          "t": "star",
+          "x": 0.1,
+          "y": 0.1,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.3,
+          "y": 0.1,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.5,
+          "y": 0.1,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.7,
+          "y": 0.1,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.9,
+          "y": 0.1,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.2,
+          "y": 0.3,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.4,
+          "y": 0.3,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.6,
+          "y": 0.3,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.8,
+          "y": 0.3,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 1,
+          "y": 0.3,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.1,
+          "y": 0.5,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.3,
+          "y": 0.5,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.5,
+          "y": 0.5,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.7,
+          "y": 0.5,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.9,
+          "y": 0.5,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.2,
+          "y": 0.7,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.4,
+          "y": 0.7,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.6,
+          "y": 0.7,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.8,
+          "y": 0.7,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 1,
+          "y": 0.7,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.1,
+          "y": 0.9,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.3,
+          "y": 0.9,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.5,
+          "y": 0.9,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.7,
+          "y": 0.9,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        },
+        {
+          "t": "star",
+          "x": 0.9,
+          "y": 0.9,
+          "r": 0.055,
+          "inner": 0.024,
+          "n": 5,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "zigzag",
+      "shapes": [
+        {
+          "t": "poly",
+          "pts": [
+            [
+              0,
+              0.165
+            ],
+            [
+              0.1,
+              0.075
+            ],
+            [
+              0.2,
+              0.165
+            ],
+            [
+              0.3,
+              0.075
+            ],
+            [
+              0.4,
+              0.165
+            ],
+            [
+              0.5,
+              0.075
+            ],
+            [
+              0.6,
+              0.165
+            ],
+            [
+              0.7,
+              0.075
+            ],
+            [
+              0.8,
+              0.165
+            ],
+            [
+              0.9,
+              0.075
+            ],
+            [
+              1,
+              0.165
+            ],
+            [
+              1,
+              0.225
+            ],
+            [
+              0.9,
+              0.135
+            ],
+            [
+              0.8,
+              0.225
+            ],
+            [
+              0.7,
+              0.135
+            ],
+            [
+              0.6,
+              0.225
+            ],
+            [
+              0.5,
+              0.135
+            ],
+            [
+              0.4,
+              0.225
+            ],
+            [
+              0.3,
+              0.135
+            ],
+            [
+              0.2,
+              0.225
+            ],
+            [
+              0.1,
+              0.135
+            ],
+            [
+              0,
+              0.225
+            ]
+          ],
+          "c": "ink"
+        },
+        {
+          "t": "poly",
+          "pts": [
+            [
+              0,
+              0.365
+            ],
+            [
+              0.1,
+              0.275
+            ],
+            [
+              0.2,
+              0.365
+            ],
+            [
+              0.3,
+              0.275
+            ],
+            [
+              0.4,
+              0.365
+            ],
+            [
+              0.5,
+              0.275
+            ],
+            [
+              0.6,
+              0.365
+            ],
+            [
+              0.7,
+              0.275
+            ],
+            [
+              0.8,
+              0.365
+            ],
+            [
+              0.9,
+              0.275
+            ],
+            [
+              1,
+              0.365
+            ],
+            [
+              1,
+              0.425
+            ],
+            [
+              0.9,
+              0.335
+            ],
+            [
+              0.8,
+              0.425
+            ],
+            [
+              0.7,
+              0.335
+            ],
+            [
+              0.6,
+              0.425
+            ],
+            [
+              0.5,
+              0.335
+            ],
+            [
+              0.4,
+              0.425
+            ],
+            [
+              0.3,
+              0.335
+            ],
+            [
+              0.2,
+              0.425
+            ],
+            [
+              0.1,
+              0.335
+            ],
+            [
+              0,
+              0.425
+            ]
+          ],
+          "c": "ink"
+        },
+        {
+          "t": "poly",
+          "pts": [
+            [
+              0,
+              0.565
+            ],
+            [
+              0.1,
+              0.475
+            ],
+            [
+              0.2,
+              0.565
+            ],
+            [
+              0.3,
+              0.475
+            ],
+            [
+              0.4,
+              0.565
+            ],
+            [
+              0.5,
+              0.475
+            ],
+            [
+              0.6,
+              0.565
+            ],
+            [
+              0.7,
+              0.475
+            ],
+            [
+              0.8,
+              0.565
+            ],
+            [
+              0.9,
+              0.475
+            ],
+            [
+              1,
+              0.565
+            ],
+            [
+              1,
+              0.625
+            ],
+            [
+              0.9,
+              0.535
+            ],
+            [
+              0.8,
+              0.625
+            ],
+            [
+              0.7,
+              0.535
+            ],
+            [
+              0.6,
+              0.625
+            ],
+            [
+              0.5,
+              0.535
+            ],
+            [
+              0.4,
+              0.625
+            ],
+            [
+              0.3,
+              0.535
+            ],
+            [
+              0.2,
+              0.625
+            ],
+            [
+              0.1,
+              0.535
+            ],
+            [
+              0,
+              0.625
+            ]
+          ],
+          "c": "ink"
+        },
+        {
+          "t": "poly",
+          "pts": [
+            [
+              0,
+              0.765
+            ],
+            [
+              0.1,
+              0.675
+            ],
+            [
+              0.2,
+              0.765
+            ],
+            [
+              0.3,
+              0.675
+            ],
+            [
+              0.4,
+              0.765
+            ],
+            [
+              0.5,
+              0.675
+            ],
+            [
+              0.6,
+              0.765
+            ],
+            [
+              0.7,
+              0.675
+            ],
+            [
+              0.8,
+              0.765
+            ],
+            [
+              0.9,
+              0.675
+            ],
+            [
+              1,
+              0.765
+            ],
+            [
+              1,
+              0.825
+            ],
+            [
+              0.9,
+              0.735
+            ],
+            [
+              0.8,
+              0.825
+            ],
+            [
+              0.7,
+              0.735
+            ],
+            [
+              0.6,
+              0.825
+            ],
+            [
+              0.5,
+              0.735
+            ],
+            [
+              0.4,
+              0.825
+            ],
+            [
+              0.3,
+              0.735
+            ],
+            [
+              0.2,
+              0.825
+            ],
+            [
+              0.1,
+              0.735
+            ],
+            [
+              0,
+              0.825
+            ]
+          ],
+          "c": "ink"
+        },
+        {
+          "t": "poly",
+          "pts": [
+            [
+              0,
+              0.965
+            ],
+            [
+              0.1,
+              0.875
+            ],
+            [
+              0.2,
+              0.965
+            ],
+            [
+              0.3,
+              0.875
+            ],
+            [
+              0.4,
+              0.965
+            ],
+            [
+              0.5,
+              0.875
+            ],
+            [
+              0.6,
+              0.965
+            ],
+            [
+              0.7,
+              0.875
+            ],
+            [
+              0.8,
+              0.965
+            ],
+            [
+              0.9,
+              0.875
+            ],
+            [
+              1,
+              0.965
+            ],
+            [
+              1,
+              1.025
+            ],
+            [
+              0.9,
+              0.935
+            ],
+            [
+              0.8,
+              1.025
+            ],
+            [
+              0.7,
+              0.935
+            ],
+            [
+              0.6,
+              1.025
+            ],
+            [
+              0.5,
+              0.935
+            ],
+            [
+              0.4,
+              1.025
+            ],
+            [
+              0.3,
+              0.935
+            ],
+            [
+              0.2,
+              1.025
+            ],
+            [
+              0.1,
+              0.935
+            ],
+            [
+              0,
+              1.025
+            ]
+          ],
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "checkers",
+      "shapes": [
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.25,
+          "y": 0,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.5,
+          "y": 0,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.75,
+          "y": 0,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.125,
+          "y": 0.125,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.375,
+          "y": 0.125,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.625,
+          "y": 0.125,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.875,
+          "y": 0.125,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.25,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.25,
+          "y": 0.25,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.75,
+          "y": 0.25,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.125,
+          "y": 0.375,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.375,
+          "y": 0.375,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.625,
+          "y": 0.375,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.875,
+          "y": 0.375,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.5,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.25,
+          "y": 0.5,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.5,
+          "y": 0.5,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.75,
+          "y": 0.5,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.125,
+          "y": 0.625,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.375,
+          "y": 0.625,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.625,
+          "y": 0.625,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.875,
+          "y": 0.625,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0,
+          "y": 0.75,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.25,
+          "y": 0.75,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.5,
+          "y": 0.75,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.75,
+          "y": 0.75,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.125,
+          "y": 0.875,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.375,
+          "y": 0.875,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.625,
+          "y": 0.875,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        },
+        {
+          "t": "rect",
+          "x": 0.875,
+          "y": 0.875,
+          "w": 0.125,
+          "h": 0.125,
+          "c": "ink"
+        }
+      ]
+    },
+    {
+      "pattern": "tiedye",
+      "shapes": [
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.77,
+          "c": "ink",
+          "a": 0.85
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.66,
+          "c": "light",
+          "a": 0.5
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.55,
+          "c": "ink",
+          "a": 0.85
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.44,
+          "c": "light",
+          "a": 0.5
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.33,
+          "c": "ink",
+          "a": 0.85
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.22,
+          "c": "light",
+          "a": 0.5
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.46,
+          "r": 0.11,
+          "c": "ink",
+          "a": 0.85
+        }
+      ]
+    },
+    {
+      "pattern": "leopard",
+      "shapes": [
+        {
+          "t": "circle",
+          "x": 0.09,
+          "y": 0.11,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.102,
+          "y": 0.102,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.31,
+          "y": 0.11,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.322,
+          "y": 0.102,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.53,
+          "y": 0.11,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.542,
+          "y": 0.102,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.75,
+          "y": 0.11,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.762,
+          "y": 0.102,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.97,
+          "y": 0.11,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.982,
+          "y": 0.102,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.24,
+          "y": 0.33,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.252,
+          "y": 0.322,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.46,
+          "y": 0.33,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.472,
+          "y": 0.322,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.68,
+          "y": 0.33,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.692,
+          "y": 0.322,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.9,
+          "y": 0.33,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.912,
+          "y": 0.322,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.09,
+          "y": 0.55,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.102,
+          "y": 0.542,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.31,
+          "y": 0.55,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.322,
+          "y": 0.542,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.53,
+          "y": 0.55,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.542,
+          "y": 0.542,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.75,
+          "y": 0.55,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.762,
+          "y": 0.542,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.97,
+          "y": 0.55,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.982,
+          "y": 0.542,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.24,
+          "y": 0.77,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.252,
+          "y": 0.762,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.46,
+          "y": 0.77,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.472,
+          "y": 0.762,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.68,
+          "y": 0.77,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.692,
+          "y": 0.762,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.9,
+          "y": 0.77,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.912,
+          "y": 0.762,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.09,
+          "y": 0.99,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.102,
+          "y": 0.982,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.31,
+          "y": 0.99,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.322,
+          "y": 0.982,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.53,
+          "y": 0.99,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.542,
+          "y": 0.982,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.75,
+          "y": 0.99,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.762,
+          "y": 0.982,
+          "r": 0.03,
+          "c": "base"
+        },
+        {
+          "t": "circle",
+          "x": 0.97,
+          "y": 0.99,
+          "r": 0.055,
+          "c": "ink"
+        },
+        {
+          "t": "circle",
+          "x": 0.982,
+          "y": 0.982,
+          "r": 0.03,
+          "c": "base"
+        }
+      ]
+    },
+    {
+      "pattern": "galaxy",
+      "shapes": [
+        {
+          "t": "grad",
+          "x1": 0,
+          "y1": 0,
+          "x2": 1,
+          "y2": 1,
+          "stops": [
+            [
+              0,
+              "ink",
+              0.95
+            ],
+            [
+              1,
+              "ink",
+              0.55
+            ]
+          ]
+        },
+        {
+          "t": "circle",
+          "x": 0.18,
+          "y": 0.2,
+          "r": 0.012,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.7,
+          "y": 0.14,
+          "r": 0.016,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.42,
+          "y": 0.34,
+          "r": 0.01,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.86,
+          "y": 0.38,
+          "r": 0.012,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.25,
+          "y": 0.55,
+          "r": 0.014,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.6,
+          "y": 0.6,
+          "r": 0.01,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.8,
+          "y": 0.78,
+          "r": 0.014,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.35,
+          "y": 0.85,
+          "r": 0.012,
+          "c": "light"
+        },
+        {
+          "t": "circle",
+          "x": 0.12,
+          "y": 0.74,
+          "r": 0.01,
+          "c": "light"
+        },
+        {
+          "t": "star",
+          "x": 0.55,
+          "y": 0.24,
+          "r": 0.04,
+          "inner": 0.012,
+          "n": 4,
+          "c": "light"
+        },
+        {
+          "t": "star",
+          "x": 0.2,
+          "y": 0.4,
+          "r": 0.04,
+          "inner": 0.012,
+          "n": 4,
+          "c": "light"
+        },
+        {
+          "t": "star",
+          "x": 0.72,
+          "y": 0.5,
+          "r": 0.04,
+          "inner": 0.012,
+          "n": 4,
+          "c": "light"
+        },
+        {
+          "t": "star",
+          "x": 0.5,
+          "y": 0.82,
+          "r": 0.04,
+          "inner": 0.012,
+          "n": 4,
+          "c": "light"
+        }
+      ]
+    },
+    {
+      "pattern": "colorblock",
+      "shapes": [
+        {
+          "t": "rect",
+          "x": 0.5,
+          "y": 0,
+          "w": 0.5,
+          "h": 1,
+          "c": "ink"
+        }
+      ]
+    }
+  ]
+}

@@ -69,6 +69,37 @@ export function podiumTone(rank: number): PodiumTone {
 /** A step's height (px) by metal (mockup `.s1` 74, `.s2` 54, `.s3` 40). */
 export const PODIUM_STEP_HEIGHT: Record<PodiumTone, number> = { gold: 74, silver: 54, bronze: 40 };
 
+/** The place number a metal stands for (gold 1, silver 2, bronze 3). */
+export const PODIUM_TONE_PLACE: Record<PodiumTone, 1 | 2 | 3> = { gold: 1, silver: 2, bronze: 3 };
+
+/**
+ * The pedestal art (10-03, docs/design/brand/podium): `art-podium-N` wears its numeral;
+ * a step whose label isn't its metal's number takes the plain pedestal (the label drawn on it).
+ */
+export function podiumPedestalArt(place: number, label?: number): `art-podium-${1 | 2 | 3}${'' | '-plain'}` {
+  const p = (place <= 1 ? 1 : place === 2 ? 2 : 3) as 1 | 2 | 3;
+  return label === undefined || label === p ? `art-podium-${p}` : `art-podium-${p}-plain`;
+}
+
+/** The sprites every podium shows first (the numbered pedestals + the floor plate). */
+export const PODIUM_PRELOAD = ['art-podium-1', 'art-podium-2', 'art-podium-3', 'art-podium-floor'] as const;
+
+let podiumPreloaded = false;
+/**
+ * Warm the podium sprites into the image cache (decoded off the main thread via
+ * `img.decode()`) when the Leaderboard / Home first mount, so the podium never pops in.
+ */
+export function preloadPodiumArt(src: (name: string) => string): void {
+  if (podiumPreloaded || typeof window === 'undefined' || typeof Image === 'undefined') return;
+  podiumPreloaded = true;
+  for (const name of PODIUM_PRELOAD) {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src(name);
+    img.decode?.().catch(() => {});
+  }
+}
+
 /** C2a: the result badge a row shows in its badge column, or null (the column stays, empty). */
 export type RowBadgeKind = 'won' | 'lost' | null;
 

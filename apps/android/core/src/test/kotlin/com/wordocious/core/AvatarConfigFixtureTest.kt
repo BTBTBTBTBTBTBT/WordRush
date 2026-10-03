@@ -83,7 +83,8 @@ class AvatarConfigFixtureTest {
         val c = fb.copy(head = "crown", frame = "diamond", neck = "wings", bg = "aurora")
         for (r in root["pro"]!!.jsonArray.map { it.jsonObject }) {
             val isPro = r["isPro"]!!.jsonPrimitive.booleanOrNull!!
-            assertConfig("pro($isPro)", r["result"]!!.jsonObject, enforceAvatarPro(c, isPro))
+            val input = r["input"]?.let { validateAvatar(it, fb) } ?: c
+            assertConfig("pro($isPro)", r["result"]!!.jsonObject, enforceAvatarPro(input, isPro))
         }
         for (r in root["presets"]!!.jsonArray.map { it.jsonObject }) {
             val id = str(r["castId"])!!

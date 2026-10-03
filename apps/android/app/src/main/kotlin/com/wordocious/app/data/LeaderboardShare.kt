@@ -3,6 +3,7 @@ package com.wordocious.app.data
 import io.github.jan.supabase.postgrest.postgrest
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -736,24 +737,38 @@ object LeaderboardShare {
         val colW = (right - left - gap * 2) / 3f
         val k = (h / 380f).coerceIn(0.6f, 1.2f)
         val stepH = mapOf(1 to 130f * k, 2 to 96f * k, 3 to 70f * k)
-        val bottom = top + h
+        // The podium art (10-03): the floor plate across the block's foot, the glossy pedestals on it.
+        val rise = 14f * k
+        val bottom = top + h - rise
+        val bmpPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        runCatching { BitmapFactory.decodeResource(context.resources, com.wordocious.app.ui.PodiumArt.FLOOR_RES) }.getOrNull()?.let { floor ->
+            c.drawBitmap(floor, null, RectF(left, bottom - rise - 4f, right, bottom + rise), bmpPaint)
+        }
         listOf(2, 1, 3).forEachIndexed { colIdx, place ->
             val s = spots.getOrNull(place - 1) ?: return@forEachIndexed
             val x = left + colIdx * (colW + gap)
             val cx = x + colW / 2f
             val sh = stepH.getValue(place)
             val step = RectF(x, bottom - sh, x + colW, bottom)
-            val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                shader = android.graphics.LinearGradient(0f, step.top, 0f, step.bottom, stepColors(place), null, android.graphics.Shader.TileMode.CLAMP)
-                setShadowLayer(10f, 0f, 4f, 0x263C1E6E)
+            val numbered = s.rank == place
+            val ped = runCatching { BitmapFactory.decodeResource(context.resources, com.wordocious.app.ui.PodiumArt.pedestal(place, numbered)) }.getOrNull()
+            if (ped != null) {
+                val pw = min(colW, sh * ped.width / ped.height.toFloat())
+                c.drawBitmap(ped, null, RectF(cx - pw / 2f, step.top, cx + pw / 2f, step.bottom), bmpPaint)
+            } else {
+                val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    shader = android.graphics.LinearGradient(0f, step.top, 0f, step.bottom, stepColors(place), null, android.graphics.Shader.TileMode.CLAMP)
+                }
+                val rr = 12f * U / 1.5f
+                c.drawPath(Path().apply { addRoundRect(step, floatArrayOf(rr, rr, rr, rr, 0f, 0f, 0f, 0f), Path.Direction.CW) }, sp)
             }
-            val rr = 12f * U / 1.5f
-            c.drawPath(Path().apply { addRoundRect(step, floatArrayOf(rr, rr, rr, rr, 0f, 0f, 0f, 0f), Path.Direction.CW) }, sp)
-            val num = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = min(56f, sh * 0.5f); color = Color.WHITE
-                setShadowLayer(0.01f, 0f, 4f, 0x26000000)
+            if (!numbered || ped == null) {
+                val num = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = min(48f, sh * 0.42f); color = Color.WHITE
+                    setShadowLayer(0.01f, 0f, 4f, 0x2E000000)
+                }
+                c.textV("${s.rank}", cx, step.centerY() + sh * 0.12f, num)
             }
-            c.textV("${s.rank}", cx, step.centerY(), num)
             // Name, soft points, dots — stacked up from the step.
             var y = step.top - 10f
             if (!s.dots.isNullOrEmpty()) {

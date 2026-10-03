@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Lock } from 'lucide-react';
-import { avatarColorHex, castPreset, enforceAvatarPro, type AvatarConfig, type AvatarFrame } from '@wordle-duel/core';
+import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPickConflict, castPreset, enforceAvatarPro, type AvatarConfig, type AvatarFrame } from '@wordle-duel/core';
 
 import { CandyButton, candyClass } from '@/components/ui/candy-button';
 import { ProPill } from '@/components/game/finished-kit';
@@ -13,8 +13,8 @@ import { softBackground, softBorder, softMix } from '@/lib/soft-surface';
 import { AVATAR_CAST_IDS, AVATAR_CAST_NAME } from '@/lib/avatar-cast';
 import { MASCOT_LETTER } from '@/lib/mascots';
 import {
-  BUILDER_TABS, FRAME_UNLOCK_LEVEL, avatarConfigKey, avatarOptionIds, avatarOptionLabel, avatarProOnly,
-  effectiveAvatarFrame, frameLevelLocked, randomAvatar, type BuilderField, type BuilderTab,
+  BUILDER_TABS, FRAME_UNLOCK_LEVEL, SWATCH_FIELDS, SWATCH_ROWS, avatarConfigKey, avatarOptionIds, avatarOptionLabel, avatarProOnly,
+  effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
 
@@ -61,15 +61,24 @@ const TAB_FIELDS: Record<BuilderTab, Array<{ field: BuilderField; heading?: stri
   pattern: [{ field: 'pattern' }, { field: 'patternColor', heading: 'Pattern color' }],
   eyes: [{ field: 'eyes' }],
   nose: [{ field: 'nose' }],
+  cheeks: [{ field: 'cheeks' }],
   mouth: [{ field: 'mouth' }],
-  head: [{ field: 'head' }],
-  extras: [{ field: 'face', heading: 'Face' }, { field: 'neck', heading: 'Neck and back' }],
+  head: [{ field: 'head' }, { field: 'accColor', heading: 'Accessory color' }],
+  extras: [{ field: 'face', heading: 'Face' }, { field: 'neck', heading: 'Neck and back' }, { field: 'accColor', heading: 'Accessory color' }],
   bg: [{ field: 'bg' }],
   frame: [{ field: 'frame' }],
 };
 
 export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl, saving = false, onSave, onBack }: MascotBuilderProps) {
   const [tab, setTab] = React.useState<BuilderTab>('body');
+  /** "Swapped out the heart shades" — a pick that doesn't fit with something worn replaces it (fit system). */
+  const [note, setNote] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!note) return;
+    const t = window.setTimeout(() => setNote(null), 2600);
+    return () => window.clearTimeout(t);
+  }, [note]);
+  const PART_FIELDS: readonly string[] = ['eyes', 'nose', 'cheeks', 'mouth', 'head', 'face', 'neck'];
   const stageRef = React.useRef<HTMLSpanElement>(null);
   const key = avatarConfigKey(value);
   const first = React.useRef(true);
@@ -99,13 +108,71 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
       return;
     }
     if (field === 'frame' && frameLevelLocked(id as AvatarFrame, level)) return;
-    const next = { ...value, [field]: id } as AvatarConfig;
+    let next = { ...value, [field]: id } as AvatarConfig;
+    if (PART_FIELDS.includes(field)) {
+      const hit = avatarPickConflict(value, field, id);
+      next = applyAvatarPick(value, field as keyof AvatarConfig & string, id);
+      setNote(hit ? `${avatarOptionLabel(field, id)} doesn't fit with ${avatarOptionLabel(hit.field as BuilderField, hit.id)}, so it came off` : null);
+    }
     // A pattern in the body's own color would vanish: start it in a contrasting swatch.
     if (field === 'pattern' && id !== 'solid' && next.patternColor === next.color) {
       next.patternColor = next.color === 'lilac' ? 'purple' : 'lilac';
     }
     onChange(next);
   };
+
+  /** A glossy round swatch (no tile, no outline): selected = a white check + a gentle scale. */
+  const swatchTile = (field: BuilderField, id: string) => {
+    const selected = value[field as keyof AvatarConfig] === id;
+    const proLocked = !isPro && avatarProOnly(field, id);
+    const label = avatarOptionLabel(field, id);
+    const hex = id === 'default' ? '#ffffff' : avatarColorHex(id);
+    return (
+      <button
+        key={`${field}-${id}`}
+        type="button"
+        onClick={() => set(field, id)}
+        aria-label={proLocked ? `${label}, Pro only` : label}
+        aria-pressed={selected}
+        disabled={saving}
+        className="relative flex items-center justify-center"
+        style={{ width: 44, height: 44, borderRadius: '50%', background: 'transparent', border: 0, padding: 0 }}
+      >
+        <span
+          aria-hidden="true"
+          className="rounded-full flex items-center justify-center"
+          style={{
+            width: 36, height: 36,
+            background: `radial-gradient(circle at 35% 28%, rgba(255,255,255,0.6), rgba(255,255,255,0) 46%), ${swatchCss(id)}`,
+            boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.16), 0 3px 7px ${hex}66`,
+            transform: selected ? 'scale(1.14)' : 'scale(1)',
+            transition: 'transform 180ms cubic-bezier(0.3, 1.4, 0.5, 1)',
+          }}
+        >
+          {selected && (
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke={id === 'default' || id === 'white' || id === 'cream' ? '#7c3aed' : '#ffffff'} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+          {id === 'default' && !selected && <span className="text-[9px] font-black" style={{ color: '#7c3aed' }}>AUTO</span>}
+        </span>
+        {proLocked && <span className="absolute" style={{ top: -6, right: -8 }}><ProPill /></span>}
+      </button>
+    );
+  };
+
+  /** The swatch grid, one row per color family. */
+  const swatchGrid = (field: BuilderField) => (
+    <div className="flex flex-col gap-1.5">
+      {field === 'accColor' && <div className="flex flex-wrap gap-1">{swatchTile(field, 'default')}</div>}
+      {SWATCH_ROWS.map((row) => (
+        <div key={row.group}>
+          <div className="text-[9px] font-extrabold uppercase tracking-wide mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{row.label}</div>
+          <div className="flex flex-wrap gap-1">{AVATAR_COLORS.filter((c) => c.group === row.group).map((c) => swatchTile(field, c.id))}</div>
+        </div>
+      ))}
+    </div>
+  );
 
   const tile = (field: BuilderField, id: string) => {
     // Pro players always wear a frame (AA2): their "none" is the Pro gold frame.
@@ -237,14 +304,22 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
 
       {/* The option grid for the tab. */}
       <div id="mascot-tabpanel" role="tabpanel" aria-labelledby={`mascot-tab-${tab}`}>
-        {TAB_FIELDS[tab].map(({ field, heading: h }) => (
+        {TAB_FIELDS[tab]
+          // the accessory color row only shows when a white (tintable) accessory is worn
+          .filter(({ field }) => field !== 'accColor' || [value.head, value.neck].some((x) => AVATAR_TINTABLE.includes(x)))
+          .map(({ field, heading: h }) => (
           <div key={field}>
             {h ? heading(h) : <div className="h-2" />}
-            <div className="grid grid-cols-4 gap-2" role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>
-              {avatarOptionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none')).map((id) => tile(field, id))}
-            </div>
+            {SWATCH_FIELDS.includes(field) ? (
+              <div role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>{swatchGrid(field)}</div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2" role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>
+                {avatarOptionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none')).map((id) => tile(field, id))}
+              </div>
+            )}
           </div>
         ))}
+        {note && <p role="status" className="text-xs font-bold mt-2 text-center" style={{ color: '#6d28d9' }}>{note}</p>}
       </div>
 
       <div className="flex gap-2 mt-4">

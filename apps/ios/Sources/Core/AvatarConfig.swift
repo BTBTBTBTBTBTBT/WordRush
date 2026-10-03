@@ -23,10 +23,14 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
     public var patternColor: String
     public var eyes: String
     public var nose: String
+    /// Round 2: blush / freckles moved here from `nose` (old configs migrate on decode + validate).
+    public var cheeks: String
     public var mouth: String
     public var head: String
     public var face: String
     public var neck: String
+    /// The tint for white accessories (`AvatarCatalog.tintable`): a swatch id, or "default".
+    public var accColor: String
     public var frame: String
     /// The backdrop id (`AvatarCatalog.backdropIds`); "auto" = a light tint of the body color.
     public var bg: String
@@ -36,15 +40,15 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
     public var display: String
 
     public init(v: Int = 1, body: String, color: String, pattern: String, patternColor: String, eyes: String,
-                nose: String, mouth: String, head: String, face: String, neck: String, frame: String,
-                bg: String = "auto", display: String = "mascot") {
+                nose: String, cheeks: String = "none", mouth: String, head: String, face: String, neck: String,
+                accColor: String = "default", frame: String, bg: String = "auto", display: String = "mascot") {
         self.v = v; self.body = body; self.color = color; self.pattern = pattern; self.patternColor = patternColor
-        self.eyes = eyes; self.nose = nose; self.mouth = mouth; self.head = head; self.face = face
-        self.neck = neck; self.frame = frame; self.bg = bg; self.display = display
+        self.eyes = eyes; self.nose = nose; self.cheeks = cheeks; self.mouth = mouth; self.head = head; self.face = face
+        self.neck = neck; self.accColor = accColor; self.frame = frame; self.bg = bg; self.display = display
     }
 
     private enum CodingKeys: String, CodingKey {
-        case v, body, color, pattern, patternColor, eyes, nose, mouth, head, face, neck, frame, bg, display
+        case v, body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg, display
     }
 
     public init(from decoder: Decoder) throws {
@@ -56,10 +60,18 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         patternColor = try c.decode(String.self, forKey: .patternColor)
         eyes = try c.decode(String.self, forKey: .eyes)
         nose = try c.decode(String.self, forKey: .nose)
+        if let ch = try? c.decodeIfPresent(String.self, forKey: .cheeks) {
+            cheeks = ch
+        } else if nose == "blush" || nose == "freckles" {
+            cheeks = nose; nose = "none"
+        } else {
+            cheeks = "none"
+        }
         mouth = try c.decode(String.self, forKey: .mouth)
         head = try c.decode(String.self, forKey: .head)
         face = try c.decode(String.self, forKey: .face)
         neck = try c.decode(String.self, forKey: .neck)
+        accColor = (try? c.decodeIfPresent(String.self, forKey: .accColor)) ?? "default"
         frame = try c.decode(String.self, forKey: .frame)
         bg = (try? c.decodeIfPresent(String.self, forKey: .bg)) ?? "auto"
         display = (try? c.decodeIfPresent(String.self, forKey: .display)) ?? "mascot"
@@ -70,8 +82,10 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         try c.encode(1, forKey: .v)
         try c.encode(body, forKey: .body); try c.encode(color, forKey: .color)
         try c.encode(pattern, forKey: .pattern); try c.encode(patternColor, forKey: .patternColor)
-        try c.encode(eyes, forKey: .eyes); try c.encode(nose, forKey: .nose); try c.encode(mouth, forKey: .mouth)
+        try c.encode(eyes, forKey: .eyes); try c.encode(nose, forKey: .nose); try c.encode(cheeks, forKey: .cheeks)
+        try c.encode(mouth, forKey: .mouth)
         try c.encode(head, forKey: .head); try c.encode(face, forKey: .face); try c.encode(neck, forKey: .neck)
+        try c.encode(accColor, forKey: .accColor)
         try c.encode(frame, forKey: .frame); try c.encode(bg, forKey: .bg)
         try c.encode(display, forKey: .display)
     }
@@ -79,14 +93,28 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
     /// The config as a JSON object (what profiles.avatar_config stores).
     public var jsonObject: [String: Any] {
         var o: [String: Any] = ["v": 1, "body": body, "color": color, "pattern": pattern, "patternColor": patternColor,
-                                "eyes": eyes, "nose": nose, "mouth": mouth, "head": head, "face": face, "neck": neck,
-                                "frame": frame, "bg": bg, "display": display]
+                                "eyes": eyes, "nose": nose, "cheeks": cheeks, "mouth": mouth, "head": head, "face": face, "neck": neck,
+                                "accColor": accColor, "frame": frame, "bg": bg, "display": display]
         return o
     }
 
     /// A stable string key for the DRAWN mascot (caches; `display` doesn't change the drawing).
     public var cacheKey: String {
-        [body, color, pattern, patternColor, eyes, nose, mouth, head, face, neck, frame, bg].joined(separator: "|")
+        [body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg].joined(separator: "|")
+    }
+}
+
+/// A body / pattern / accessory swatch (packages/core AvatarColor): `hex` is the flat tint; Pro specials carry
+/// gradient `stops` (`dir` h = left→right, v = top→bottom, d = diagonal) multiplied onto the white art.
+public struct AvatarColor: Equatable {
+    public let id: String
+    public let hex: String
+    public let group: String
+    public let pro: Bool
+    public let stops: [String]
+    public let dir: String
+    public init(_ id: String, _ hex: String, _ group: String, pro: Bool = false, stops: [String] = [], dir: String = "v") {
+        self.id = id; self.hex = hex; self.group = group; self.pro = pro; self.stops = stops; self.dir = dir
     }
 }
 
@@ -146,19 +174,30 @@ public struct AvatarConfigRaw: Codable, Equatable {
 
 /// The option catalogs + rules (packages/core avatar-config.ts).
 public enum AvatarCatalog {
-    public static let bodies = ["classic", "tall", "wide", "blob", "bean", "star"]
-    public static let patterns = ["solid", "twotone", "stripes", "dots", "gradient", "sparkle"]
-    public static let eyes = ["beady", "happy", "sparkly", "sleepy", "wink", "hearts", "stars", "glasses", "cyclops"]
-    public static let mouths = ["smile", "grin", "tongue", "o", "cat", "toothy", "smirk", "tiny", "gasp"]
-    public static let noses = ["none", "button", "red", "blush", "freckles"]
-    /// Hats (AN addendum: 21 + none). Pro-only: crown, halo, tiara.
+    // Round 2 (founder 10-03): ~2× every category, CHEEKS, 33 colors + 5 Pro specials, 14 patterns, accColor.
+    public static let bodies = ["classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex"]
+    public static let patterns = ["solid", "twotone", "stripes", "dots", "gradient", "sparkle",
+                                  "hearts", "stars", "zigzag", "checkers", "tiedye", "leopard", "galaxy", "colorblock"]
+    public static let eyes = ["beady", "happy", "sparkly", "sleepy", "wink", "hearts", "stars", "glasses", "cyclops",
+                              "sunglasses", "determined", "anime", "joy", "droopy", "biground", "sideglance", "dizzy"]
+    public static let mouths = ["smile", "grin", "tongue", "o", "cat", "toothy", "smirk", "tiny", "gasp",
+                                "laugh", "whistle", "fang", "kissy", "braces", "oops", "tongueside", "teeth"]
+    public static let noses = ["none", "button", "red", "pointy", "bignose", "cat", "piggy", "clownstar"]
+    public static let cheeks = ["none", "blush", "freckles", "hearts", "starfreckles", "sparkle", "bandage"]
+    /// Hats (AN addendum: 21 + round 2: 12, + none). Pro-only: crown, halo, tiara.
     public static let heads = ["none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "bow", "wizard", "pirate",
                                "cowboy", "chef", "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara",
-                               "viking", "sweatband"]
-    /// Face extras (AN addendum).
-    public static let faces = ["none", "mustache", "heart-glasses", "monocle"]
-    /// Neck / back extras (AN addendum). Pro-only: wings, chain.
-    public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain"]
+                               "viking", "sweatband",
+                               "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow",
+                               "pombeanie", "bearears", "mohawk"]
+    /// Face extras (AN addendum + round 2).
+    public static let faces = ["none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch",
+                               "facepaint", "mask", "curlymustache"]
+    /// Neck / back extras (AN addendum + round 2). Pro-only: wings, chain.
+    public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar",
+                               "supercape", "fairywings"]
+    /// White glossy accessories that take the accessory color.
+    public static let tintable = ["supercape", "backpack", "wings", "chef", "astronaut"]
     public static let frames = ["none", "bronze", "silver", "gold", "platinum", "diamond", "pro"]
     /// "Which avatar shows" for players with a photo.
     public static let displays = ["mascot", "photo"]
@@ -187,20 +226,37 @@ public enum AvatarCatalog {
     public static var backdropIds: [String] { ["auto"] + backdrops.map(\.id) }
     public static func backdrop(_ id: String) -> AvatarBackdrop? { backdrops.first { $0.id == id } }
 
-    /// The 16 swatches: the cast palette (12) + 4 extras. Ids are stable (stored); hexes are the tint.
-    public static let colors: [(id: String, hex: String)] = [
-        ("purple", "#7c3aed"), ("violet", "#8b5cf6"), ("pink", "#ec4899"), ("red", "#ef4444"),
-        ("orange", "#f97316"), ("amber", "#f5a524"), ("yellow", "#eab308"), ("green", "#22c55e"),
-        ("emerald", "#10b981"), ("teal", "#0d9488"), ("sky", "#0ea5e9"), ("blue", "#2563eb"),
-        ("lilac", "#c4b5fd"), ("peach", "#fdba74"), ("mint", "#86efac"), ("slate", "#64748b"),
+    /// The swatches in rows (packages/core AVATAR_COLORS): the original 16 first (stable ids; the seeded
+    /// default only picks from them), then round 2's 17 and the 5 Pro-only specials (gradient `stops`).
+    public static let colors: [AvatarColor] = [
+        .init("purple", "#7c3aed", "bright"), .init("violet", "#8b5cf6", "bright"), .init("pink", "#ec4899", "bright"), .init("red", "#ef4444", "bright"),
+        .init("orange", "#f97316", "bright"), .init("amber", "#f5a524", "bright"), .init("yellow", "#eab308", "bright"), .init("green", "#22c55e", "bright"),
+        .init("emerald", "#10b981", "bright"), .init("teal", "#0d9488", "bright"), .init("sky", "#0ea5e9", "bright"), .init("blue", "#2563eb", "bright"),
+        .init("lilac", "#c4b5fd", "pastel"), .init("peach", "#fdba74", "pastel"), .init("mint", "#86efac", "pastel"), .init("slate", "#64748b", "neutral"),
+        .init("rose", "#fb7185", "bright"), .init("lime", "#84cc16", "bright"),
+        .init("bubblegum", "#f9a8d4", "pastel"), .init("babyblue", "#93c5fd", "pastel"), .init("butter", "#fde68a", "pastel"),
+        .init("coral", "#fca5a5", "pastel"), .init("seafoam", "#99f6e4", "pastel"),
+        .init("navy", "#1e3a8a", "deep"), .init("plum", "#6b21a8", "deep"), .init("forest", "#166534", "deep"),
+        .init("maroon", "#881337", "deep"), .init("charcoal", "#374151", "deep"), .init("chocolate", "#78350f", "deep"),
+        .init("white", "#f8fafc", "neutral"), .init("cream", "#fef3c7", "neutral"), .init("sand", "#d6c7a1", "neutral"), .init("stone", "#a8a29e", "neutral"),
+        .init("gold", "#f5b82e", "special", pro: true, stops: ["#fff1b8", "#f5b82e", "#b7791f"], dir: "v"),
+        .init("silver", "#cbd5e1", "special", pro: true, stops: ["#ffffff", "#cbd5e1", "#7c8798"], dir: "v"),
+        .init("rainbow", "#a855f7", "special", pro: true, stops: ["#ef4444", "#f97316", "#eab308", "#22c55e", "#0ea5e9", "#8b5cf6"], dir: "h"),
+        .init("holo", "#c4b5fd", "special", pro: true, stops: ["#f9a8d4", "#c4b5fd", "#99f6e4", "#fde68a", "#f9a8d4"], dir: "d"),
+        .init("neon", "#39ff14", "special", pro: true, stops: ["#d9ff6b", "#39ff14", "#00e5a0"], dir: "d"),
     ]
+    public static let colorGroups = ["bright", "pastel", "deep", "neutral", "special"]
     public static var colorIds: [String] { colors.map(\.id) }
+    public static var proOnlyColors: [String] { colors.filter(\.pro).map(\.id) }
+    /// A swatch by id (unknown → purple).
+    public static func color(_ id: String) -> AvatarColor { colors.first { $0.id == id } ?? colors[0] }
 
     /// Pro-only options (free players see the gold PRO pill → the Go Pro page).
     public static let proOnlyHeads = ["crown", "halo", "tiara"]
     public static let proOnlyNecks = ["wings", "chain"]
     public static let proOnlyFrames = ["diamond", "pro"]
     public static let proOnlyBackdrops = ["aurora", "galaxy"]
+    public static func isProOnly(color: String) -> Bool { proOnlyColors.contains(color) }
 
     /// The friendly subsets the deterministic default picks from (never the odd ones).
     static let defaultEyes = ["beady", "happy", "sparkly", "wink"]
@@ -232,7 +288,7 @@ public enum AvatarCatalog {
         guard let accentHex, let a = hexRgb(accentHex) else { return "purple" }
         var best = colors[0].id
         var bestD = Int.max
-        for c in colors {
+        for c in colors.prefix(16) {
             guard let b = hexRgb(c.hex) else { continue }
             let d = (a.0 - b.0) * (a.0 - b.0) + (a.1 - b.1) * (a.1 - b.1) + (a.2 - b.2) * (a.2 - b.2)
             if d < bestD { bestD = d; best = c.id }
@@ -252,9 +308,9 @@ public enum AvatarCatalog {
             body: defaultBodies[Int(h & 0xff) % defaultBodies.count],
             color: color, pattern: "solid", patternColor: color,
             eyes: defaultEyes[Int((h >> 8) & 0xff) % defaultEyes.count],
-            nose: "none",
+            nose: "none", cheeks: "none",
             mouth: defaultMouths[Int((h >> 16) & 0xff) % defaultMouths.count],
-            head: "none", face: "none", neck: "none", frame: "none", bg: "auto",
+            head: "none", face: "none", neck: "none", accColor: "default", frame: "none", bg: "auto",
             display: hasPhoto ? "photo" : "mascot")
     }
 
@@ -271,17 +327,23 @@ public enum AvatarCatalog {
         let ids = colorIds
         let color = (r["color"] as? String).flatMap { ids.contains($0) ? $0 : nil } ?? fallback.color
         let patternColor = (r["patternColor"] as? String).flatMap { ids.contains($0) ? $0 : nil } ?? color
+        // Round 2: blush / freckles were noses; a config without `cheeks` carries them over (nose → none).
+        let rawNose = r["nose"] as? String
+        let legacyCheeks: String? = r["cheeks"] == nil && (rawNose == "blush" || rawNose == "freckles") ? rawNose : nil
+        let acc = (r["accColor"] as? String).flatMap { $0 == "default" || ids.contains($0) ? $0 : nil } ?? fallback.accColor
         return AvatarConfig(
             body: pick(r["body"], bodies, fallback.body),
             color: color,
             pattern: pick(r["pattern"], patterns, fallback.pattern),
             patternColor: patternColor,
             eyes: pick(r["eyes"], eyes, fallback.eyes),
-            nose: pick(r["nose"], noses, fallback.nose),
+            nose: legacyCheeks != nil ? "none" : pick(r["nose"], noses, fallback.nose),
+            cheeks: legacyCheeks ?? pick(r["cheeks"], cheeks, fallback.cheeks),
             mouth: pick(r["mouth"], mouths, fallback.mouth),
             head: pick(r["head"], heads, fallback.head),
             face: pick(r["face"], faces, fallback.face),
             neck: pick(r["neck"], necks, fallback.neck),
+            accColor: acc,
             frame: pick(r["frame"], frames, fallback.frame),
             bg: pick(r["bg"], backdropIds, fallback.bg),
             display: (r["display"] as? String).flatMap { displays.contains($0) ? $0 : nil } ?? fallback.display)
@@ -305,6 +367,9 @@ public enum AvatarCatalog {
         if proOnlyNecks.contains(c.neck) { out.neck = "none" }
         if proOnlyFrames.contains(c.frame) { out.frame = "none" }
         if proOnlyBackdrops.contains(c.bg) { out.bg = "auto" }
+        if isProOnly(color: c.color) { out.color = "purple" }
+        if isProOnly(color: c.patternColor) { out.patternColor = out.color }
+        if isProOnly(color: c.accColor) { out.accColor = "default" }
         return out
     }
 
@@ -335,7 +400,8 @@ public enum AvatarCatalog {
         let member = BotCast.members.first { $0.mascot == castId }
         let color = nearestColor(member?.color)
         return AvatarConfig(body: "classic", color: color, pattern: "solid", patternColor: color, eyes: "beady",
-                            nose: "none", mouth: "smile", head: "none", face: "none", neck: "none", frame: "none", bg: "auto", display: "mascot")
+                            nose: "none", cheeks: "none", mouth: "smile", head: "none", face: "none", neck: "none",
+                            accColor: "default", frame: "none", bg: "auto", display: "mascot")
     }
 
     /// The single white body letter for a username: its first letter or digit,
@@ -409,20 +475,22 @@ public struct AvatarParts: Codable, Equatable {
         try JSONDecoder().decode(AvatarParts.self, from: data)
     }
 
-    /// Built-in copy of the placeholder manifest (used when the bundled file is missing / malformed).
+    /// Built-in copy of the shipped manifest's v1 anchors (used when the bundled file is missing / malformed).
     public static let builtIn = AvatarParts(
-        version: 0, placeholder: true,
+        version: 2, placeholder: false,
         bodies: [
-            "classic": Body(faceCenter: [0.5, 0.42], eyeY: 0.36, mouthY: 0.52, cheekY: 0.47, headTop: HeadTop(x: 0.5, y: 0.06, w: 0.62), neckY: 0.7, letterBox: [0.28, 0.56, 0.44, 0.3]),
-            "tall": Body(faceCenter: [0.5, 0.36], eyeY: 0.3, mouthY: 0.45, cheekY: 0.4, headTop: HeadTop(x: 0.5, y: 0.04, w: 0.48), neckY: 0.62, letterBox: [0.3, 0.52, 0.4, 0.32]),
-            "wide": Body(faceCenter: [0.5, 0.45], eyeY: 0.39, mouthY: 0.55, cheekY: 0.5, headTop: HeadTop(x: 0.5, y: 0.12, w: 0.72), neckY: 0.72, letterBox: [0.27, 0.58, 0.46, 0.26]),
-            "blob": Body(faceCenter: [0.5, 0.44], eyeY: 0.38, mouthY: 0.54, cheekY: 0.49, headTop: HeadTop(x: 0.5, y: 0.08, w: 0.6), neckY: 0.72, letterBox: [0.29, 0.57, 0.42, 0.28]),
-            "bean": Body(faceCenter: [0.5, 0.4], eyeY: 0.34, mouthY: 0.5, cheekY: 0.45, headTop: HeadTop(x: 0.52, y: 0.06, w: 0.52), neckY: 0.66, letterBox: [0.3, 0.55, 0.4, 0.3]),
-            "star": Body(faceCenter: [0.5, 0.46], eyeY: 0.41, mouthY: 0.56, cheekY: 0.51, headTop: HeadTop(x: 0.5, y: 0.02, w: 0.4), neckY: 0.74, letterBox: [0.31, 0.58, 0.38, 0.26]),
+            "classic": Body(faceCenter: [0.499, 0.4621], eyeY: 0.3898, mouthY: 0.5343, cheekY: 0.491, headTop: HeadTop(x: 0.5015, y: 0.1544, w: 0.6143), neckY: 0.574, letterBox: [0.289, 0.5849, 0.42, 0.2457]),
+            "tall": Body(faceCenter: [0.498, 0.3124], eyeY: 0.246, mouthY: 0.3787, cheekY: 0.3373, headTop: HeadTop(x: 0.4995, y: 0.0407, w: 0.3037), neckY: 0.4327, letterBox: [0.387, 0.4451, 0.2221, 0.3319]),
+            "wide": Body(faceCenter: [0.499, 0.5927], eyeY: 0.5329, mouthY: 0.6525, cheekY: 0.6145, headTop: HeadTop(x: 0.5039, y: 0.3581, w: 0.6328), neckY: 0.6824, letterBox: [0.289, 0.6906, 0.42, 0.174]),
+            "blob": Body(faceCenter: [0.4985, 0.4595], eyeY: 0.3847, mouthY: 0.5342, cheekY: 0.4894, headTop: HeadTop(x: 0.5005, y: 0.1702, w: 0.4463), neckY: 0.5753, letterBox: [0.2885, 0.5865, 0.42, 0.2392]),
+            "bean": Body(faceCenter: [0.5522, 0.3497], eyeY: 0.2792, mouthY: 0.4202, cheekY: 0.3787, headTop: HeadTop(x: 0.5913, y: 0.0686, w: 0.333), neckY: 0.4742, letterBox: [0.4043, 0.4866, 0.2959, 0.2987]),
+            "star": Body(faceCenter: [0.5005, 0.4381], eyeY: 0.3719, mouthY: 0.5043, cheekY: 0.4573, headTop: HeadTop(x: 0.5015, y: 0.0949, w: 0.2471), neckY: 0.5384, letterBox: [0.356, 0.5512, 0.2891, 0.205]),
+            "drop": Body(faceCenter: [0.4985, 0.4892], eyeY: 0.4206, mouthY: 0.5577, cheekY: 0.5161, headTop: HeadTop(x: 0.5, y: 0.1629, w: 0.248), neckY: 0.5909, letterBox: [0.4195, 0.6034, 0.1581, 0.1993]),
+            "pear": Body(faceCenter: [0.501, 0.4182], eyeY: 0.3456, mouthY: 0.4908, cheekY: 0.4451, headTop: HeadTop(x: 0.5005, y: 0.0826, w: 0.2412), neckY: 0.5405, letterBox: [0.3803, 0.553, 0.2414, 0.2489]),
+            "cloud": Body(faceCenter: [0.4995, 0.5499], eyeY: 0.4856, mouthY: 0.6142, cheekY: 0.5756, headTop: HeadTop(x: 0.5034, y: 0.3574, w: 0.6201), neckY: 0.6495, letterBox: [0.2895, 0.6592, 0.42, 0.1736]),
+            "chunky": Body(faceCenter: [0.498, 0.4315], eyeY: 0.3581, mouthY: 0.505, cheekY: 0.4609, headTop: HeadTop(x: 0.5, y: 0.1408, w: 0.6406), neckY: 0.5528, letterBox: [0.288, 0.5638, 0.42, 0.2498]),
+            "mini": Body(faceCenter: [0.4976, 0.6255], eyeY: 0.5709, mouthY: 0.6801, cheekY: 0.6453, headTop: HeadTop(x: 0.4985, y: 0.451, w: 0.3486), neckY: 0.7074, letterBox: [0.3227, 0.7148, 0.3498, 0.1488]),
+            "hex": Body(faceCenter: [0.4961, 0.4639], eyeY: 0.3919, mouthY: 0.5359, cheekY: 0.4927, headTop: HeadTop(x: 0.499, y: 0.1755, w: 0.416), neckY: 0.5755, letterBox: [0.2861, 0.5863, 0.42, 0.2304]),
         ],
-        parts: [
-            "eyes": Part(slot: "eyeY", scale: 0.46), "mouth": Part(slot: "mouthY", scale: 0.26),
-            "nose": Part(slot: "cheekY", scale: 0.5), "head": Part(slot: "headTop", scale: 1.0),
-            "face": Part(slot: "eyeY", scale: 0.56), "neck": Part(slot: "neckY", scale: 0.6),
-        ])
+        parts: ["eyes": Part(slot: "eyeY", scale: 0.37), "mouth": Part(slot: "mouthY", scale: 0.19), "nose": Part(slot: "cheekY", scale: 0.12), "cheeks": Part(slot: "cheekY", scale: 0.5), "head": Part(slot: "headTop", scale: 1.0), "face": Part(slot: "eyeY", scale: 0.4), "neck": Part(slot: "neckY", scale: 0.32)])
 }

@@ -47,6 +47,7 @@ import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard,
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
 import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, trackRequests } from '@/lib/invite-screens';
 import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends-look';
+import { PODIUM_FLOOR_RISE, PodiumFloor, PodiumPedestal } from '@/components/leaderboard/podium';
 import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
 import { softMix } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
@@ -583,7 +584,8 @@ export function FriendsPanel() {
             ))}
             {/* The podium (the Leaderboard's): gold / silver / bronze steps, letter-tile
                 avatars, the crown on first place once the race has points. */}
-            <div className="grid grid-cols-3 items-end gap-2" style={{ padding: '8px 8px 0' }}>
+            <div className="relative grid grid-cols-3 items-end gap-2" style={{ padding: `8px 8px ${PODIUM_FLOOR_RISE}px` }}>
+              <PodiumFloor inset={8} />
               {podiumSlots(podium.length).map((slot) => {
                 const e = podium[slot.index];
                 return (
@@ -606,16 +608,8 @@ export function FriendsPanel() {
                     />
                     <span className="text-[12px] font-black truncate max-w-full" style={{ color: FR_LOOK.ink }}>{e.username}</span>
                     <SoftNum size={12}>{e.pts.toLocaleString()}</SoftNum>
-                    <span
-                      className="w-full flex items-center justify-center font-black text-white"
-                      style={{
-                        height: slot.step, borderRadius: '12px 12px 0 0', fontSize: 20,
-                        background: `linear-gradient(${slot.from}, ${slot.to})`,
-                        textShadow: '0 1px 2px rgba(59,26,120,0.35)',
-                      }}
-                      aria-label={`${ordinal(slot.place)} place`}
-                    >
-                      {slot.place}
+                    <span className="w-full" aria-label={`${ordinal(slot.place)} place`}>
+                      <PodiumPedestal place={slot.place} height={slot.step} />
                     </span>
                   </Link>
                 );

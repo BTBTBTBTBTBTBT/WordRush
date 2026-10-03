@@ -4,10 +4,11 @@ import parts from './avatar-parts.json';
 
 describe('avatar config (FINISH_SPEC AN3)', () => {
   it('has the spec catalog sizes', () => {
-    expect(AVATAR_BODIES).toHaveLength(6);
-    expect(AVATAR_COLORS).toHaveLength(16);
-    expect(AVATAR_HEADS.filter((h) => h !== 'none')).toHaveLength(21);
-    expect([...AVATAR_FACES, ...AVATAR_NECKS].filter((x) => x !== 'none')).toHaveLength(8);
+    expect(AVATAR_BODIES).toHaveLength(12);
+    expect(AVATAR_COLORS).toHaveLength(38);
+    expect(AVATAR_COLORS.filter((c) => !c.pro)).toHaveLength(33);
+    expect(AVATAR_HEADS.filter((h) => h !== 'none')).toHaveLength(33);
+    expect([...AVATAR_FACES, ...AVATAR_NECKS].filter((x) => x !== 'none')).toHaveLength(20);
     expect(AVATAR_BACKDROPS).toHaveLength(18);
   });
   it('gives every player a deterministic friendly default in their accent', () => {
@@ -22,7 +23,7 @@ describe('avatar config (FINISH_SPEC AN3)', () => {
   });
   it('falls back field by field for unknown ids', () => {
     const fb = defaultAvatar('x', '#2563eb');
-    const v = validateAvatar({ body: 'tall', color: 'neon', eyes: 'laser', head: 'wizard', frame: 'gold' }, fb);
+    const v = validateAvatar({ body: 'tall', color: 'plasma', eyes: 'laser', head: 'wizard', frame: 'gold' }, fb);
     expect(v).toMatchObject({ body: 'tall', color: fb.color, eyes: fb.eyes, head: 'wizard', frame: 'gold', patternColor: fb.color });
     expect(validateAvatar(null, fb)).toEqual(fb);
     expect(validateAvatar({ bg: 'sunset' }, fb).bg).toBe('sunset');
@@ -42,6 +43,18 @@ describe('avatar config (FINISH_SPEC AN3)', () => {
     expect(nearestAvatarColor('bogus')).toBe('purple');
     expect(castPreset('w').color).toBe('purple');
     expect(castPreset('s').color).toBe('red');
+  });
+  it('moves blush / freckles from noses to cheeks (round 2) and keeps old swatches', () => {
+    const fb = defaultAvatar('x', '#2563eb');
+    expect(validateAvatar({ nose: 'blush' }, fb)).toMatchObject({ nose: 'none', cheeks: 'blush' });
+    expect(validateAvatar({ nose: 'freckles' }, fb)).toMatchObject({ nose: 'none', cheeks: 'freckles' });
+    expect(validateAvatar({ nose: 'freckles', cheeks: 'hearts' }, fb)).toMatchObject({ nose: fb.nose, cheeks: 'hearts' });
+    expect(validateAvatar({ nose: 'piggy' }, fb)).toMatchObject({ nose: 'piggy', cheeks: 'none' });
+    for (const id of ['purple', 'violet', 'pink', 'red', 'orange', 'amber', 'yellow', 'green', 'emerald', 'teal', 'sky', 'blue', 'lilac', 'peach', 'mint', 'slate'])
+      expect(validateAvatar({ color: id }, fb).color).toBe(id);
+    expect(validateAvatar({ accColor: 'navy' }, fb).accColor).toBe('navy');
+    expect(validateAvatar({ accColor: 'plaid' }, fb).accColor).toBe('default');
+    expect(enforceAvatarPro({ ...fb, color: 'rainbow', accColor: 'gold' }, false)).toMatchObject({ color: 'purple', accColor: 'default' });
   });
   it('ships a manifest with anchors for every body', () => {
     for (const b of AVATAR_BODIES) expect((parts.bodies as Record<string, unknown>)[b], b).toBeDefined();

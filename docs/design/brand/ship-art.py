@@ -169,8 +169,7 @@ AV_DIR = os.path.join(HERE, 'avatar', 'parts')   # avatar maker parts (FINISH_SP
 for f in sorted(os.listdir(AV_DIR)) if os.path.isdir(AV_DIR) else []:
     if f.startswith('art-av-') and f.endswith('.png'):
         im = Image.open(os.path.join(AV_DIR, f)).convert('RGBA')
-        big = f.startswith('art-av-body-') or f in ('art-av-acc-cape.png', 'art-av-acc-wings.png')
-        tw = 640 if big else 384
+        tw = 640   # compose-avatar.py already sized them: bodies 1024 → 640, back items ≤ 640, the rest ≤ 384
         if im.width > tw:
             im = im.resize((tw, round(im.height * tw / im.width)), Image.LANCZOS)
         ship(f[:-4], im); n += 1
@@ -201,4 +200,12 @@ for mode in ['light', 'dark']:
         f = os.path.join(TOGGLE_DIR, mode, f'{pc}.png')
         if os.path.exists(f):
             ship(f'art-toggle-{mode}-{pc}', wide(f, 480)); n += 1
+PODIUM_DIR = os.path.join(HERE, 'podium', 'out')   # podium pedestals + floor plate (make-pedestals.py; FINISH_SPEC BJ4)
+for k in ['1', '2', '3']:
+    for suf in ['', '-plain']:
+        f = os.path.join(PODIUM_DIR, f'{k}{suf}.png')
+        if os.path.exists(f):
+            ship(f'art-podium-{k}{suf}', wide(f, 300)); n += 1
+if os.path.exists(os.path.join(PODIUM_DIR, 'floor.png')):
+    ship('art-podium-floor', wide(os.path.join(PODIUM_DIR, 'floor.png'), 1080)); n += 1
 print('shipped', n)

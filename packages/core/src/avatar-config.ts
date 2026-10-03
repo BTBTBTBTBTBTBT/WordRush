@@ -7,20 +7,37 @@
 import { captionHash } from './share-captions';
 import { BOT_CAST } from './bot-cast';
 
-export const AVATAR_BODIES = ['classic', 'tall', 'wide', 'blob', 'bean', 'star'] as const;
-export const AVATAR_PATTERNS = ['solid', 'twotone', 'stripes', 'dots', 'gradient', 'sparkle'] as const;
-export const AVATAR_EYES = ['beady', 'happy', 'sparkly', 'sleepy', 'wink', 'hearts', 'stars', 'glasses', 'cyclops'] as const;
-export const AVATAR_MOUTHS = ['smile', 'grin', 'tongue', 'o', 'cat', 'toothy', 'smirk', 'tiny', 'gasp'] as const;
-export const AVATAR_NOSES = ['none', 'button', 'red', 'blush', 'freckles'] as const;
-/** Hats (AN addendum: 21 + none). Pro-only: crown, halo, tiara. */
+// Round 2 (founder 10-03: "more body styles, parts and accessories … more options of everything"):
+// ~2× every category, a CHEEKS category (blush + freckles moved out of noses), 32 colors + Pro specials,
+// 14 patterns, tintable white accessories (accColor). New ids are appended so stored configs stay valid.
+export const AVATAR_BODIES = ['classic', 'tall', 'wide', 'blob', 'bean', 'star', 'drop', 'pear', 'cloud', 'chunky', 'mini', 'hex'] as const;
+export const AVATAR_PATTERNS = [
+  'solid', 'twotone', 'stripes', 'dots', 'gradient', 'sparkle',
+  'hearts', 'stars', 'zigzag', 'checkers', 'tiedye', 'leopard', 'galaxy', 'colorblock',
+] as const;
+export const AVATAR_EYES = [
+  'beady', 'happy', 'sparkly', 'sleepy', 'wink', 'hearts', 'stars', 'glasses', 'cyclops',
+  'sunglasses', 'determined', 'anime', 'joy', 'droopy', 'biground', 'sideglance', 'dizzy',
+] as const;
+export const AVATAR_MOUTHS = [
+  'smile', 'grin', 'tongue', 'o', 'cat', 'toothy', 'smirk', 'tiny', 'gasp',
+  'laugh', 'whistle', 'fang', 'kissy', 'braces', 'oops', 'tongueside', 'teeth',
+] as const;
+export const AVATAR_NOSES = ['none', 'button', 'red', 'pointy', 'bignose', 'cat', 'piggy', 'clownstar'] as const;
+/** Cheeks (round 2): blush + freckles moved here from noses (old configs migrate in validateAvatar). */
+export const AVATAR_CHEEKS = ['none', 'blush', 'freckles', 'hearts', 'starfreckles', 'sparkle', 'bandage'] as const;
+/** Hats (AN addendum: 21 + round 2: 12, + none). Pro-only: crown, halo, tiara. */
 export const AVATAR_HEADS = [
   'none', 'crown', 'party', 'beanie', 'sprout', 'nightcap', 'headphones', 'bow', 'wizard', 'pirate', 'cowboy', 'chef',
   'grad', 'halo', 'flower', 'tophat', 'propeller', 'catears', 'bunnyears', 'tiara', 'viking', 'sweatband',
+  'cap', 'beret', 'minicrown', 'flowercrown', 'bucket', 'santa', 'witch', 'astronaut', 'bigbow', 'pombeanie', 'bearears', 'mohawk',
 ] as const;
-/** Face extras (AN addendum). */
-export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'monocle'] as const;
-/** Neck / back extras (AN addendum). Pro-only: wings, chain. */
-export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain'] as const;
+/** Face extras (AN addendum + round 2). */
+export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'monocle', 'starglasses', 'roundglasses', 'eyepatch', 'facepaint', 'mask', 'curlymustache'] as const;
+/** Neck / back extras (AN addendum + round 2). Pro-only: wings, chain. */
+export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain', 'medal', 'backpack', 'bubbletea', 'guitar', 'supercape', 'fairywings'] as const;
+/** White glossy accessories that take the accessory color (accColor); everything else keeps its own colors. */
+export const AVATAR_TINTABLE: readonly string[] = ['supercape', 'backpack', 'wings', 'chef', 'astronaut'];
 export const AVATAR_FRAMES = ['none', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'pro'] as const;
 
 /**
@@ -53,19 +70,50 @@ export const AVATAR_BACKDROPS: ReadonlyArray<{ id: string; kind: 'solid' | 'grad
 ];
 export const AVATAR_BACKDROP_IDS: readonly string[] = ['auto', ...AVATAR_BACKDROPS.map((b) => b.id)];
 
-/** The 16 swatches: the cast palette (12) + 4 extras. Ids are stable (stored); hexes are the tint. */
-export const AVATAR_COLORS: ReadonlyArray<{ id: string; hex: string }> = [
-  { id: 'purple', hex: '#7c3aed' }, { id: 'violet', hex: '#8b5cf6' }, { id: 'pink', hex: '#ec4899' }, { id: 'red', hex: '#ef4444' },
-  { id: 'orange', hex: '#f97316' }, { id: 'amber', hex: '#f5a524' }, { id: 'yellow', hex: '#eab308' }, { id: 'green', hex: '#22c55e' },
-  { id: 'emerald', hex: '#10b981' }, { id: 'teal', hex: '#0d9488' }, { id: 'sky', hex: '#0ea5e9' }, { id: 'blue', hex: '#2563eb' },
-  { id: 'lilac', hex: '#c4b5fd' }, { id: 'peach', hex: '#fdba74' }, { id: 'mint', hex: '#86efac' }, { id: 'slate', hex: '#64748b' },
+export type AvatarColorGroup = 'bright' | 'pastel' | 'deep' | 'neutral' | 'special';
+
+/**
+ * A body / pattern / accessory swatch. `hex` is the flat tint (and what any single-color use takes);
+ * Pro specials also carry `stops` (a gradient tint, `dir` h = left→right, v = top→bottom, d = diagonal)
+ * that renderers multiply onto the white art instead of the flat hex.
+ */
+export interface AvatarColor { id: string; hex: string; group: AvatarColorGroup; pro?: boolean; stops?: readonly string[]; dir?: 'h' | 'v' | 'd' }
+
+/**
+ * The swatches, grouped in rows (round 2: 16 → 32 + 5 Pro specials). The first 16 ids are the
+ * original catalog (stable: stored); the seeded default only ever picks from those (nearestAvatarColor).
+ */
+export const AVATAR_COLORS: ReadonlyArray<AvatarColor> = [
+  { id: 'purple', hex: '#7c3aed', group: 'bright' }, { id: 'violet', hex: '#8b5cf6', group: 'bright' }, { id: 'pink', hex: '#ec4899', group: 'bright' }, { id: 'red', hex: '#ef4444', group: 'bright' },
+  { id: 'orange', hex: '#f97316', group: 'bright' }, { id: 'amber', hex: '#f5a524', group: 'bright' }, { id: 'yellow', hex: '#eab308', group: 'bright' }, { id: 'green', hex: '#22c55e', group: 'bright' },
+  { id: 'emerald', hex: '#10b981', group: 'bright' }, { id: 'teal', hex: '#0d9488', group: 'bright' }, { id: 'sky', hex: '#0ea5e9', group: 'bright' }, { id: 'blue', hex: '#2563eb', group: 'bright' },
+  { id: 'lilac', hex: '#c4b5fd', group: 'pastel' }, { id: 'peach', hex: '#fdba74', group: 'pastel' }, { id: 'mint', hex: '#86efac', group: 'pastel' }, { id: 'slate', hex: '#64748b', group: 'neutral' },
+  // round 2
+  { id: 'rose', hex: '#fb7185', group: 'bright' }, { id: 'lime', hex: '#84cc16', group: 'bright' },
+  { id: 'bubblegum', hex: '#f9a8d4', group: 'pastel' }, { id: 'babyblue', hex: '#93c5fd', group: 'pastel' }, { id: 'butter', hex: '#fde68a', group: 'pastel' },
+  { id: 'coral', hex: '#fca5a5', group: 'pastel' }, { id: 'seafoam', hex: '#99f6e4', group: 'pastel' },
+  { id: 'navy', hex: '#1e3a8a', group: 'deep' }, { id: 'plum', hex: '#6b21a8', group: 'deep' }, { id: 'forest', hex: '#166534', group: 'deep' },
+  { id: 'maroon', hex: '#881337', group: 'deep' }, { id: 'charcoal', hex: '#374151', group: 'deep' }, { id: 'chocolate', hex: '#78350f', group: 'deep' },
+  { id: 'white', hex: '#f8fafc', group: 'neutral' }, { id: 'cream', hex: '#fef3c7', group: 'neutral' }, { id: 'sand', hex: '#d6c7a1', group: 'neutral' }, { id: 'stone', hex: '#a8a29e', group: 'neutral' },
+  // Pro-only specials
+  { id: 'gold', hex: '#f5b82e', group: 'special', pro: true, stops: ['#fff1b8', '#f5b82e', '#b7791f'], dir: 'v' },
+  { id: 'silver', hex: '#cbd5e1', group: 'special', pro: true, stops: ['#ffffff', '#cbd5e1', '#7c8798'], dir: 'v' },
+  { id: 'rainbow', hex: '#a855f7', group: 'special', pro: true, stops: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#0ea5e9', '#8b5cf6'], dir: 'h' },
+  { id: 'holo', hex: '#c4b5fd', group: 'special', pro: true, stops: ['#f9a8d4', '#c4b5fd', '#99f6e4', '#fde68a', '#f9a8d4'], dir: 'd' },
+  { id: 'neon', hex: '#39ff14', group: 'special', pro: true, stops: ['#d9ff6b', '#39ff14', '#00e5a0'], dir: 'd' },
 ];
+export const AVATAR_COLOR_GROUPS: readonly AvatarColorGroup[] = ['bright', 'pastel', 'deep', 'neutral', 'special'];
+/** The Pro-only swatches. */
+export const AVATAR_PRO_COLORS: readonly string[] = AVATAR_COLORS.filter((c) => c.pro).map((c) => c.id);
+/** The seeded default and accent matching only use the original 16 (stable for existing players). */
+const NEAREST_POOL = AVATAR_COLORS.slice(0, 16);
 
 export type AvatarBody = (typeof AVATAR_BODIES)[number];
 export type AvatarPattern = (typeof AVATAR_PATTERNS)[number];
 export type AvatarEyes = (typeof AVATAR_EYES)[number];
 export type AvatarMouth = (typeof AVATAR_MOUTHS)[number];
 export type AvatarNose = (typeof AVATAR_NOSES)[number];
+export type AvatarCheeks = (typeof AVATAR_CHEEKS)[number];
 export type AvatarHead = (typeof AVATAR_HEADS)[number];
 export type AvatarFace = (typeof AVATAR_FACES)[number];
 export type AvatarNeck = (typeof AVATAR_NECKS)[number];
@@ -81,10 +129,14 @@ export interface AvatarConfig {
   patternColor: string;
   eyes: AvatarEyes;
   nose: AvatarNose;
+  /** Round 2. Missing in old configs: `nose: 'blush' | 'freckles'` migrates here (validateAvatar). */
+  cheeks: AvatarCheeks;
   mouth: AvatarMouth;
   head: AvatarHead;
   face: AvatarFace;
   neck: AvatarNeck;
+  /** The tint for white accessories (AVATAR_TINTABLE): a swatch id, or 'default' (their own white). */
+  accColor: string;
   frame: AvatarFrame;
   /** The backdrop id (AVATAR_BACKDROP_IDS); 'auto' = a light tint of the body color. */
   bg: string;
@@ -99,11 +151,12 @@ export interface AvatarConfig {
 export type AvatarDisplay = 'mascot' | 'photo';
 
 /** Pro-only options (free players see the gold PRO pill → the Go Pro popup). */
-export const AVATAR_PRO_ONLY: Readonly<{ head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; frame: readonly AvatarFrame[]; bg: readonly string[] }> = {
+export const AVATAR_PRO_ONLY: Readonly<{ head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; frame: readonly AvatarFrame[]; bg: readonly string[]; color: readonly string[] }> = {
   head: ['crown', 'halo', 'tiara'],
   neck: ['wings', 'chain'],
   frame: ['diamond', 'pro'],
   bg: ['aurora', 'galaxy'],
+  color: ['gold', 'silver', 'rainbow', 'holo', 'neon'],
 };
 
 /** The friendly subsets the deterministic default picks from (never the odd ones). */
@@ -123,7 +176,7 @@ export function nearestAvatarColor(accentHex: string | null | undefined): string
   if (!a) return 'purple';
   let best = AVATAR_COLORS[0].id;
   let bestD = Infinity;
-  for (const c of AVATAR_COLORS) {
+  for (const c of NEAREST_POOL) {
     const b = hexRgb(c.hex)!;
     const d = (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
     if (d < bestD) { bestD = d; best = c.id; }
@@ -151,10 +204,12 @@ export function defaultAvatar(seed: string, accentHex?: string | null, hasPhoto 
     patternColor: color,
     eyes: DEFAULT_EYES[((h >>> 8) & 0xff) % DEFAULT_EYES.length],
     nose: 'none',
+    cheeks: 'none',
     mouth: DEFAULT_MOUTHS[((h >>> 16) & 0xff) % DEFAULT_MOUTHS.length],
     head: 'none',
     face: 'none',
     neck: 'none',
+    accColor: 'default',
     frame: 'none',
     bg: 'auto',
     display: hasPhoto ? 'photo' : 'mascot',
@@ -177,6 +232,8 @@ export function validateAvatar(raw: unknown, fallback: AvatarConfig = defaultAva
   const r = raw as Record<string, unknown>;
   const color = typeof r.color === 'string' && COLOR_IDS.has(r.color) ? r.color : fallback.color;
   const patternColor = typeof r.patternColor === 'string' && COLOR_IDS.has(r.patternColor) ? r.patternColor : color;
+  // Round 2: blush / freckles were noses; a config without `cheeks` carries them over (nose → none).
+  const legacyCheeks = r.cheeks === undefined && (r.nose === 'blush' || r.nose === 'freckles') ? (r.nose as AvatarCheeks) : null;
   return {
     v: 1,
     body: pick(r.body, AVATAR_BODIES, fallback.body),
@@ -184,11 +241,13 @@ export function validateAvatar(raw: unknown, fallback: AvatarConfig = defaultAva
     pattern: pick(r.pattern, AVATAR_PATTERNS, fallback.pattern),
     patternColor,
     eyes: pick(r.eyes, AVATAR_EYES, fallback.eyes),
-    nose: pick(r.nose, AVATAR_NOSES, fallback.nose),
+    nose: legacyCheeks ? 'none' : pick(r.nose, AVATAR_NOSES, fallback.nose),
+    cheeks: legacyCheeks ?? pick(r.cheeks, AVATAR_CHEEKS, fallback.cheeks ?? 'none'),
     mouth: pick(r.mouth, AVATAR_MOUTHS, fallback.mouth),
     head: pick(r.head, AVATAR_HEADS, fallback.head),
     face: pick(r.face, AVATAR_FACES, fallback.face),
     neck: pick(r.neck, AVATAR_NECKS, fallback.neck),
+    accColor: typeof r.accColor === 'string' && (r.accColor === 'default' || COLOR_IDS.has(r.accColor)) ? r.accColor : fallback.accColor ?? 'default',
     frame: pick(r.frame, AVATAR_FRAMES, fallback.frame),
     bg: typeof r.bg === 'string' && AVATAR_BACKDROP_IDS.includes(r.bg) ? r.bg : fallback.bg ?? 'auto',
     display: r.display === 'mascot' || r.display === 'photo' ? r.display : fallback.display ?? 'mascot',
@@ -204,7 +263,15 @@ export function enforceAvatarPro(c: AvatarConfig, isPro: boolean): AvatarConfig 
     neck: AVATAR_PRO_ONLY.neck.includes(c.neck) ? 'none' : c.neck,
     frame: AVATAR_PRO_ONLY.frame.includes(c.frame) ? 'none' : c.frame,
     bg: AVATAR_PRO_ONLY.bg.includes(c.bg) ? 'auto' : c.bg,
+    color: AVATAR_PRO_ONLY.color.includes(c.color) ? 'purple' : c.color,
+    patternColor: AVATAR_PRO_ONLY.color.includes(c.patternColor) ? (AVATAR_PRO_ONLY.color.includes(c.color) ? 'purple' : c.color) : c.patternColor,
+    accColor: AVATAR_PRO_ONLY.color.includes(c.accColor) ? 'default' : c.accColor,
   };
+}
+
+/** A swatch by id (unknown → purple). */
+export function avatarColor(id: string): AvatarColor {
+  return AVATAR_COLORS.find((c) => c.id === id) ?? AVATAR_COLORS[0];
 }
 
 /** Color swatch hex for a swatch id (unknown → purple). */
@@ -220,7 +287,7 @@ export function avatarColorHex(id: string): string {
 export function castPreset(castId: string): AvatarConfig {
   const member = BOT_CAST.find((b) => b.castId === castId);
   const color = nearestAvatarColor(member?.color);
-  return { v: 1, body: 'classic', color, pattern: 'solid', patternColor: color, eyes: 'beady', nose: 'none', mouth: 'smile', head: 'none', face: 'none', neck: 'none', frame: 'none', bg: 'auto', display: 'mascot' };
+  return { v: 1, body: 'classic', color, pattern: 'solid', patternColor: color, eyes: 'beady', nose: 'none', cheeks: 'none', mouth: 'smile', head: 'none', face: 'none', neck: 'none', accColor: 'default', frame: 'none', bg: 'auto', display: 'mascot' };
 }
 
 // ---------------------------------------------------------------------------

@@ -41,6 +41,7 @@ import { headlineTokens } from '../src/headline-tokens';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
+import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
@@ -774,11 +775,19 @@ export function renderAvatarConfigFixtures() {
   const nearest = ['#7c3aed', '#ec4899', '#0ea5e9', '#123456', '#ffffff', '#000000', 'bogus'].map((hex) => ({ hex, id: nearestAvatarColor(hex) }));
   const fb = defaultAvatar('fixture', '#2563eb');
   const validate = [
-    null, [1], 'x', {}, { body: 'tall', color: 'neon', eyes: 'laser', head: 'wizard', frame: 'gold' },
+    null, [1], 'x', {}, { body: 'tall', color: 'plasma', eyes: 'laser', head: 'wizard', frame: 'gold' },
+    { body: 'tall', color: 'neon' },
     { v: 1, body: 'star', color: 'mint', pattern: 'dots', patternColor: 'pink', eyes: 'cyclops', nose: 'freckles', mouth: 'gasp', head: 'crown', face: 'mustache', neck: 'cape', frame: 'pro', bg: 'galaxy' },
     { bg: 'lava', neck: 'flower', head: 'tiara' },
+    // round 2: blush / freckles moved from noses to cheeks; new ids; accessory color
+    { nose: 'blush' }, { nose: 'freckles', cheeks: 'hearts' }, { nose: 'piggy', cheeks: 'bandage' },
+    { body: 'hex', eyes: 'dizzy', mouth: 'braces', head: 'astronaut', face: 'eyepatch', neck: 'guitar', accColor: 'teal', color: 'rainbow', pattern: 'leopard', patternColor: 'navy' },
+    { accColor: 'nope', cheeks: 'glitter', pattern: 'plaid' },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
-  const pro = [true, false].map((isPro) => ({ isPro, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) }));
+  const pro = [true, false].flatMap((isPro) => [
+    { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
+    { isPro, input: { ...fb, color: 'holo', patternColor: 'gold', accColor: 'neon' }, result: enforceAvatarPro({ ...fb, color: 'holo', patternColor: 'gold', accColor: 'neon' }, isPro) },
+  ]);
   const presets = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'].map((id) => ({ castId: id, config: castPreset(id) }));
   return { colors: AVATAR_COLORS, backdrops: AVATAR_BACKDROPS, defaults, withPhoto, display, nearest, fallback: fb, validate, pro, presets };
 }
@@ -928,6 +937,7 @@ const FILES: Array<[string, unknown]> = [
   ['achievement-rules-fixtures.json', renderAchievementRuleFixtures()],
   ['avatar-resolve-fixtures.json', renderAvatarResolveFixtures()],
   ['podium-layout-fixtures.json', renderPodiumLayoutFixtures()],
+  ['avatar-layout-fixtures.json', renderAvatarLayoutFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

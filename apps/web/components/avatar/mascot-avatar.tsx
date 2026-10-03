@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import type { AvatarConfig, AvatarFrame } from '@wordle-duel/core';
+import { castPreset, defaultAvatar } from '@wordle-duel/core';
 
 import { artSrc, badgeSrc } from '@/lib/art';
 import {
@@ -53,7 +54,12 @@ function probeArt(name: string): Promise<boolean> {
     p = new Promise<boolean>((resolve) => {
       if (typeof Image === 'undefined') { resolve(false); return; }
       const im = new Image();
-      im.onload = () => { artLoaded.add(name); resolve(true); };
+      im.decoding = 'async';
+      // Loaded AND decoded (off the main thread) before the avatar composes with it.
+      im.onload = () => {
+        const done = () => { artLoaded.add(name); resolve(true); };
+        if (typeof im.decode === 'function') im.decode().then(done, done); else done();
+      };
       im.onerror = () => resolve(false);
       im.src = artSrc(name);
     });
@@ -64,8 +70,27 @@ function probeArt(name: string): Promise<boolean> {
 
 const NO_ART: ReadonlySet<string> = new Set();
 
-/** The art-av-* parts of `config` that have loaded (empty while the art is pending). */
-function useAvatarArt(config: AvatarConfig): ReadonlySet<string> {
+/**
+ * Warm the mascot art the first screens show (every body + the default / cast-preset parts) into
+ * the image cache, decoded off the main thread — called when Home / the Leaderboard mount, so
+ * their avatars compose at once instead of waiting on the network.
+ */
+let mascotArtWarmed = false;
+export function preloadMascotArt(): void {
+  if (mascotArtWarmed || typeof Image === 'undefined' || avatarArtPending()) return;
+  mascotArtWarmed = true;
+  const shipped = AVATAR_PARTS.art ?? [];
+  const common = new Set<string>(shipped.filter((n) => n.startsWith('art-av-body-')));
+  for (const c of [defaultAvatar('warm'), ...['w', 'o1', 'r', 'd'].map(castPreset)]) for (const n of avatarArtNames(c)) common.add(n);
+  for (const n of common) if (shipped.includes(n)) void probeArt(n);
+}
+
+/**
+ * The art-av-* parts of `config` that have loaded + `ready`: every part is in (or the probes
+ * settled). Until then the avatar draws NOTHING in its reserved box — no code-drawn stand-in
+ * frame, no part-by-part pop-in; the composed avatar appears once, whole.
+ */
+function useAvatarArt(config: AvatarConfig): { art: ReadonlySet<string>; ready: boolean } {
   const pending = avatarArtPending();
   const ck = avatarConfigKey(config);
   const names = React.useMemo(() => {
@@ -81,18 +106,22 @@ function useAvatarArt(config: AvatarConfig): ReadonlySet<string> {
     return have.length ? new Set(have) : NO_ART;
   }, [names]);
   const [art, setArt] = React.useState<ReadonlySet<string>>(initial);
+  const [settled, setSettled] = React.useState(false);
   React.useEffect(() => {
+    setSettled(false);
     if (!names.length) { setArt(NO_ART); return; }
     let alive = true;
     void Promise.all(names.map((n) => probeArt(n).then((ok) => (ok ? n : null)))).then((r) => {
       if (!alive) return;
       const have = r.filter((n): n is string => !!n);
       setArt(have.length ? new Set(have) : NO_ART);
+      setSettled(true);
     });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  return art;
+  const ready = !names.length || settled || names.every((n) => art.has(n));
+  return { art, ready };
 }
 
 /** Whether the worn tier's art-frame-<tier> has loaded (bronze … diamond; never "none" / "pro"). */
@@ -213,14 +242,14 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
     ? portraitFrame(frame ?? config.frame, { pro, level })
     : effectiveAvatarFrame(frame ?? config.frame, { pro, level });
   const crowned = avatarCrowned(worn, pro);
-  const art = useAvatarArt(config);
+  const { art, ready } = useAvatarArt(config);
   const frameArt = useFrameArt(worn);
   const rawId = React.useId();
   const id = `m${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   const markup = React.useMemo(
-    () => (showPhoto ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc }), id)),
-    [showPhoto, config, initial, s, worn, art, frameArt, id],
+    () => (showPhoto || !ready ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc }), id)),
+    [showPhoto, ready, config, initial, s, worn, art, frameArt, id],
   );
 
   return (

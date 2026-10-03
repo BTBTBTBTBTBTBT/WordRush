@@ -3,6 +3,7 @@ import { Mascot } from '@/components/ui/mascot';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
 import type { MascotId } from '@/lib/mascots';
+import { PodiumPedestal } from '@/components/leaderboard/podium';
 
 // FINISH_SPEC BI23 (founder, 2026-10-03: "get rid of the sign in to track your stats
 // gray circle image and make that screen look nicer"): the signed-out Stats / Friends
@@ -47,18 +48,16 @@ function Chip({ c }: { c: GuestChip }) {
 
 function Podium() {
   const steps = [
-    { rank: '2', h: 56, accent: '#94a3b8' },
-    { rank: '1', h: 78, accent: '#f59e0b' },
-    { rank: '3', h: 42, accent: '#ea580c' },
+    { rank: 2, h: 56 },
+    { rank: 1, h: 78 },
+    { rank: 3, h: 42 },
   ];
   return (
     <div className="flex items-end gap-2">
       {steps.map((s) => (
-        <div key={s.rank} className="flex flex-col items-center gap-1">
-          {s.rank === '1' && <Icon3D name="crown" size={28} />}
-          <div className="flex items-center justify-center text-2xl font-black text-white" style={{ width: 70, height: s.h, textShadow: '0 1px 0 rgba(0,0,0,0.18)', ...glossStyle(s.accent, 14) }}>
-            {s.rank}
-          </div>
+        <div key={s.rank} className="flex flex-col items-center gap-1" style={{ width: 78 }}>
+          {s.rank === 1 && <Icon3D name="crown" size={28} />}
+          <PodiumPedestal place={s.rank} height={s.h} />
         </div>
       ))}
     </div>

@@ -34,9 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.draw.shadow
@@ -398,8 +396,10 @@ object PodiumInk {
 @Composable
 fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScale: Float = 1f, avatar: Dp = 44.dp) {
     val byPlace = spots.associateBy { it.place }
+    Box(modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 12.dp)) {
+    PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
-        modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 12.dp),
+        Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -432,20 +432,10 @@ fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScal
                     SoftNumber(s.points, 13.sp)
                 }
                 val h = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp } * stepScale
-                Box(
-                    Modifier.fillMaxWidth().height(h)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .background(Brush.verticalGradient(PodiumInk.step(place)))
-                        .clearAndSetSemantics { },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "$place", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        style = androidx.compose.ui.text.TextStyle(shadow = Shadow(Color(0x26000000), Offset(0f, 2f), 0f)),
-                    )
-                }
+                PodiumPedestal(place, h)
             }
         }
+    }
     }
 }
 

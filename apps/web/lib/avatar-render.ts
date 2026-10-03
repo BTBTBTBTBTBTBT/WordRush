@@ -20,7 +20,8 @@
 import {
   AVATAR_BACKDROPS, AVATAR_BACKDROP_IDS, AVATAR_BODIES, AVATAR_COLORS, AVATAR_EYES, AVATAR_FACES, AVATAR_FRAMES,
   AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES, AVATAR_PATTERNS, AVATAR_PRO_ONLY, avatarColorHex, levelTier,
-  type AvatarBody, type AvatarConfig, type AvatarFrame, type AvatarHead,
+  AVATAR_CHEEKS, avatarColor, avatarLayout, avatarPatternShapes, avatarPickConflict,
+  type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
 } from '@wordle-duel/core';
 import partsJson from '../../../packages/core/src/avatar-parts.json';
 import { darkenHex, hexAlpha, lightenHex } from './avatar-tile';
@@ -98,6 +99,13 @@ export interface Box { x: number; y: number; w: number; h: number }
 export const BODY_BOX: Record<AvatarBody, Box> = {
   classic: { x: 18, y: 25, w: 64, h: 62 },
   tall: { x: 25, y: 16, w: 50, h: 72 },
+  // round 2 bodies: their code placeholder (shown only until the art loads) borrows a close shape
+  drop: { x: 21, y: 20, w: 58, h: 67 },
+  pear: { x: 22, y: 22, w: 56, h: 65 },
+  cloud: { x: 12, y: 33, w: 76, h: 54 },
+  chunky: { x: 17, y: 24, w: 66, h: 63 },
+  mini: { x: 28, y: 42, w: 44, h: 44 },
+  hex: { x: 18, y: 25, w: 64, h: 62 },
   wide: { x: 12, y: 33, w: 76, h: 54 },
   blob: { x: 17, y: 24, w: 66, h: 63 },
   bean: { x: 21, y: 20, w: 58, h: 67 },
@@ -176,7 +184,7 @@ export const FRONT_NECKS: readonly string[] = ['bowtie', 'scarf', 'chain'];
 
 export type AvatarLayer =
   | 'frameBack' | 'stage' | 'neckBack' | 'body' | 'pattern' | 'gloss' | 'letter'
-  | 'nose' | 'eyes' | 'mouth' | 'neckFront' | 'face' | 'head' | 'frameFront';
+  | 'cheeks' | 'nose' | 'eyes' | 'mouth' | 'neckFront' | 'face' | 'head' | 'frameFront';
 
 /** The layers drawn for `config` at `size`, back → front (AN1; ≤ 28 px keeps only hats among the extras). */
 export function avatarLayers(config: AvatarConfig, size: number, frame: AvatarFrame = config.frame): AvatarLayer[] {
@@ -189,7 +197,8 @@ export function avatarLayers(config: AvatarConfig, size: number, frame: AvatarFr
   out.push('body');
   if (!small && config.pattern !== 'solid') out.push('pattern');
   out.push('gloss', 'letter');
-  if (config.nose !== 'none' && !(small && config.nose === 'freckles')) out.push('nose');
+  if (config.nose !== 'none') out.push('nose');
+  if (!small && config.cheeks && config.cheeks !== 'none') out.push('cheeks');
   out.push('eyes', 'mouth');
   if (!small && FRONT_NECKS.includes(config.neck)) out.push('neckFront');
   if (!small && config.face !== 'none') out.push('face');
@@ -230,15 +239,6 @@ export function effectiveAvatarFrame(frame: AvatarFrame, { pro, level }: { pro?:
   return f;
 }
 
-/** The AA2 crown sprite rides on the avatar when the player is Pro or wears the Pro frame. */
-export function avatarCrowned(frame: AvatarFrame, pro?: boolean | null): boolean {
-  return pro === true || (pro !== false && frame === 'pro');
-}
-
-// ── The initial ─────────────────────────────────────────────────────────────
-
-/** The ONE body letter: the name's first letter or digit, uppercased ("?" when none). */
-export function avatarInitial(name: string | null | undefined): string {
 /**
  * FINISH_SPEC BJ6 photo rule (founder 10-03: a photo is a portrait, never a face on a body):
  * the frame a PHOTO wears — the chosen frame (clamped like any avatar; the Pro gold frame for a
@@ -251,6 +251,15 @@ export function portraitFrame(chosen: AvatarFrame, { pro, level }: { pro?: boole
   return level != null && Number.isFinite(level) ? (levelTier(level) as AvatarFrame) : 'none';
 }
 
+/** The AA2 crown sprite rides on the avatar when the player is Pro or wears the Pro frame. */
+export function avatarCrowned(frame: AvatarFrame, pro?: boolean | null): boolean {
+  return pro === true || (pro !== false && frame === 'pro');
+}
+
+// ── The initial ─────────────────────────────────────────────────────────────
+
+/** The ONE body letter: the name's first letter or digit, uppercased ("?" when none). */
+export function avatarInitial(name: string | null | undefined): string {
   for (const ch of Array.from((name ?? '').trim())) {
     if (/[\p{L}\p{N}]/u.test(ch)) return ch.toLocaleUpperCase();
   }
@@ -259,7 +268,7 @@ export function portraitFrame(chosen: AvatarFrame, { pro, level }: { pro?: boole
 
 // ── Art names ───────────────────────────────────────────────────────────────
 
-export type AvatarArtKind = 'body' | 'eyes' | 'mouth' | 'nose' | 'acc';
+export type AvatarArtKind = 'body' | 'eyes' | 'mouth' | 'nose' | 'cheeks' | 'acc';
 
 export function avatarArtName(kind: AvatarArtKind, id: string): string {
   return `art-av-${kind}-${id}`;
@@ -269,6 +278,7 @@ export function avatarArtName(kind: AvatarArtKind, id: string): string {
 export function avatarArtNames(config: AvatarConfig): string[] {
   const out = [avatarArtName('body', config.body), avatarArtName('eyes', config.eyes), avatarArtName('mouth', config.mouth)];
   if (config.nose !== 'none') out.push(avatarArtName('nose', config.nose));
+  if (config.cheeks && config.cheeks !== 'none') out.push(avatarArtName('cheeks', config.cheeks));
   for (const acc of [config.head, config.face, config.neck]) if (acc !== 'none') out.push(avatarArtName('acc', acc));
   return out;
 }
@@ -314,7 +324,10 @@ export function bodyPath(body: AvatarBody): string {
     return `M${r2(x0 + r)},${r2(y0)} H${r2(x1 - r)} Q${r2(x1)},${r2(y0)} ${r2(x1)},${r2(y0 + r)} V${r2(y1 - r)} Q${r2(x1)},${r2(y1)} ${r2(x1 - r)},${r2(y1)} H${r2(x0 + r)} Q${r2(x0)},${r2(y1)} ${r2(x0)},${r2(y1 - r)} V${r2(y0 + r)} Q${r2(x0)},${r2(y0)} ${r2(x0 + r)},${r2(y0)} Z`;
   };
   switch (body) {
-    case 'classic': return rect(Math.min(b.w, b.h) * 0.3);
+    case 'classic': case 'chunky': case 'hex': return rect(Math.min(b.w, b.h) * 0.3);
+    case 'cloud': return rect(b.h * 0.4);
+    case 'drop': case 'pear': case 'mini':
+      return `M${P(0.52, 0)} C${P(0.86, 0.02)} ${P(1.01, 0.26)} ${P(0.99, 0.54)} C${P(0.98, 0.84)} ${P(0.8, 1)} ${P(0.5, 1)} C${P(0.18, 1)} ${P(0.01, 0.86)} ${P(0.01, 0.56)} C${P(0.01, 0.22)} ${P(0.2, -0.02)} ${P(0.52, 0)} Z`;
     case 'tall': return rect(b.w * 0.42);
     case 'wide': return rect(b.h * 0.4);
     case 'blob':
@@ -397,6 +410,7 @@ function drawEyes(id: AvatarConfig['eyes'], s: PartSpot): string {
     case 'cyclops':
       return `<circle cx="${r2(s.x)}" cy="${r2(s.y)}" r="${r2(6.2 * u)}" fill="#ffffff" stroke="${INK}" stroke-width="${r2(0.9 * u)}"/><circle cx="${r2(s.x)}" cy="${r2(s.y + 0.4 * u)}" r="${r2(3.4 * u)}" fill="${INK}"/><circle cx="${r2(s.x + 1.2 * u)}" cy="${r2(s.y - 0.9 * u)}" r="${r2(1.2 * u)}" fill="#ffffff"/>`;
   }
+  return '';   // round-2 ids draw from art only
 }
 
 function drawNose(id: AvatarConfig['nose'], s: PartSpot, eyes: PartSpot, pal: AvatarPalette): string {
@@ -406,12 +420,19 @@ function drawNose(id: AvatarConfig['nose'], s: PartSpot, eyes: PartSpot, pal: Av
     case 'none': return '';
     case 'button': return `<ellipse cx="${r2(s.x)}" cy="${r2(s.y)}" rx="${r2(1.7 * u)}" ry="${r2(1.15 * u)}" fill="${darkenHex(pal.base, 0.5)}" opacity="0.75"/>`;
     case 'red': return `<circle cx="${r2(s.x)}" cy="${r2(s.y)}" r="${r2(3.1 * u)}" fill="#ef4444"/><circle cx="${r2(s.x + 1 * u)}" cy="${r2(s.y - 1 * u)}" r="${r2(1 * u)}" fill="#ffffff" opacity="0.7"/>`;
-    case 'blush':
-      return [-1, 1].map((k) => `<ellipse cx="${r2(s.x + k * cheekX)}" cy="${r2(s.y + 0.8 * u)}" rx="${r2(3.6 * u)}" ry="${r2(2.2 * u)}" fill="#ff7aa8" opacity="0.6"/>`).join('');
-    case 'freckles':
-      return [-1, 1].map((k) => [[-1.8, -0.6], [0, 0.9], [1.8, -0.4]]
-        .map(([dx, dy]) => `<circle cx="${r2(s.x + k * cheekX + dx * u)}" cy="${r2(s.y + dy * u)}" r="${r2(0.75 * u)}" fill="${darkenHex(pal.base, 0.5)}" opacity="0.7"/>`).join('')).join('');
+    default: return `<ellipse cx="${r2(s.x)}" cy="${r2(s.y)}" rx="${r2(2.2 * u)}" ry="${r2(1.6 * u)}" fill="${darkenHex(pal.base, 0.45)}" opacity="0.75"/>`;
   }
+}
+
+/** Code-drawn cheeks (placeholder until the cheeks art loads). */
+function drawCheeks(id: AvatarConfig['cheeks'], s: PartSpot, eyes: PartSpot, pal: AvatarPalette): string {
+  const u = s.w / 32;
+  const cheekX = eyes.w * 0.42;
+  if (id === 'none') return '';
+  if (id === 'freckles' || id === 'starfreckles')
+    return [-1, 1].map((k) => [[-1.8, -0.6], [0, 0.9], [1.8, -0.4]]
+      .map(([dx, dy]) => `<circle cx="${r2(s.x + k * cheekX + dx * u)}" cy="${r2(s.y + dy * u)}" r="${r2(0.75 * u)}" fill="${darkenHex(pal.base, 0.5)}" opacity="0.7"/>`).join('')).join('');
+  return [-1, 1].map((k) => `<ellipse cx="${r2(s.x + k * cheekX)}" cy="${r2(s.y + 0.8 * u)}" rx="${r2(3.6 * u)}" ry="${r2(2.2 * u)}" fill="#ff7aa8" opacity="0.6"/>`).join('');
 }
 
 function drawMouth(id: AvatarConfig['mouth'], s: PartSpot): string {
@@ -434,6 +455,7 @@ function drawMouth(id: AvatarConfig['mouth'], s: PartSpot): string {
     case 'gasp':
       return `<ellipse cx="${r2(x)}" cy="${r2(y + 1.5 * u)}" rx="${r2(3 * u)}" ry="${r2(3.8 * u)}" fill="${INK}"/><ellipse cx="${r2(x)}" cy="${r2(y + 3.6 * u)}" rx="${r2(1.8 * u)}" ry="${r2(1 * u)}" fill="${tongueFill}"/>`;
   }
+  return '';   // round-2 ids draw from art only
 }
 
 function drawFace(id: AvatarConfig['face'], g: AvatarGeometry): string {
@@ -461,6 +483,7 @@ function drawFace(id: AvatarConfig['face'], g: AvatarGeometry): string {
       return `<path d="M${P(0, 0)} C${P(-2, -2)} ${P(-7, -2.2)} ${P(-8.4, 1.4)} C${P(-6, 0.4)} ${P(-3, 2)} ${P(0, 0.7)} C${P(3, 2)} ${P(6, 0.4)} ${P(8.4, 1.4)} C${P(7, -2.2)} ${P(2, -2)} ${P(0, 0)} Z" fill="#4a2c1a"/>`;
     }
   }
+  return '';   // round-2 ids draw from art only
 }
 
 function tieColor(base: string): string {
@@ -586,6 +609,7 @@ function drawHead(id: AvatarHead, g: AvatarGeometry, crownSrc: string, pal: Avat
     case 'halo':
       return `<ellipse cx="${r2(x)}" cy="${r2(y - 0.28 * w)}" rx="${r2(0.42 * w)}" ry="${r2(0.1 * w)}" fill="none" stroke="#facc15" stroke-width="${r2(0.07 * w)}"/><ellipse cx="${r2(x)}" cy="${r2(y - 0.28 * w)}" rx="${r2(0.42 * w)}" ry="${r2(0.1 * w)}" fill="none" stroke="#fef3c7" stroke-width="${r2(0.025 * w)}"/>`;
   }
+  return '';   // round-2 ids draw from art only
 }
 
 function drawPattern(config: AvatarConfig, g: AvatarGeometry): string {
@@ -619,6 +643,7 @@ function drawPattern(config: AvatarConfig, g: AvatarGeometry): string {
         : sparkle(b.x + u * b.w, b.y + v * b.h, b.w * 0.06 * k, i % 2 ? '#ffffff' : fill)).join('');
     }
   }
+  return '';   // round-2 ids draw from art only
 }
 
 // ── Backdrops (AN addendum) ─────────────────────────────────────────────────
@@ -732,7 +757,10 @@ export function mascotSvg(input: MascotSvgInput): string {
   const frame = input.frame ?? config.frame;
   const layers = new Set(avatarLayers(config, size, frame));
   const has = (name: string) => !!art && art.has(name);
-  const bodyArt = has(avatarArtName('body', config.body));
+  // Draw from art only once EVERY layer of the layout has loaded (fully composed, never a
+  // body with its face still popping in); until then the code-drawn mascot stands in whole.
+  const bodyArt = has(avatarArtName('body', config.body))
+    && avatarLayout(config, { small: isSmallAvatar(size) }).layers.every((l) => has(l.art));
   const fw = frame === 'none' ? 0 : FRAME_WIDTH;
   // The body art fills its square (arms + feet included) and every anchor is a fraction of that square.
   const artBox = bodyArt ? bodyArtSquare(config, fw) : null;
@@ -761,6 +789,7 @@ export function mascotSvg(input: MascotSvgInput): string {
   if (metal) {
     defs.push(`<linearGradient id="${ID}-fr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${metal.shine}"/><stop offset="0.45" stop-color="${metal.ring}"/><stop offset="1" stop-color="${darkenHex(metal.ring, 0.22)}"/></linearGradient>`);
   }
+  if (bodyArt) return mascotArtSvg(input, frame, fw, R, metal, backdrop, defs);
   if (bodyArt) {
     // Tint the white body art by multiply (keeps its gloss + shading) and use its alpha as the pattern mask.
     defs.push(`<filter id="${ID}-tint" color-interpolation-filters="sRGB"><feFlood flood-color="${pal.base}" result="c"/><feComposite in="c" in2="SourceAlpha" operator="in" result="ca"/><feBlend in="ca" in2="SourceGraphic" mode="multiply"/></filter>`);
@@ -824,6 +853,7 @@ export function mascotSvg(input: MascotSvgInput): string {
   out.push(text('#ffffff', 0, ` stroke="${hexAlpha('#ffffff', 0.35)}" stroke-width="${r2(L.fontSize * 0.02)}"`));
 
   // Cheeks / nose → eyes → mouth.
+  if (layers.has('cheeks')) out.push(drawCheeks(config.cheeks, g.nose, g.eyes, pal));
   if (layers.has('nose')) {
     const n = avatarArtName('nose', config.nose);
     out.push(has(n) ? img(n, g.nose.x - g.nose.w / 2, g.nose.y - g.nose.w / 4, g.nose.w, g.nose.w / 2) : drawNose(config.nose, g.nose, g.eyes, pal));
@@ -862,9 +892,109 @@ export function mascotSvg(input: MascotSvgInput): string {
   return `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:block"><defs>${defs.join('')}</defs>${out.join('')}</svg>`;
 }
 
+// ── The art path: the core FIT layout (round 2) ──────────────────────────────
+
+/** A fill for a swatch: its flat hex, or (Pro specials) a gradient def. */
+function swatchFill(c: AvatarColor, id: string, defs: string[]): string {
+  if (!c.stops || c.stops.length < 2) return c.hex;
+  const [x2, y2] = c.dir === 'h' ? [1, 0] : c.dir === 'd' ? [1, 1] : [0, 1];
+  const n = c.stops.length - 1;
+  defs.push(`<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">${c.stops.map((s, i) => `<stop offset="${r2(i / n)}" stop-color="${s}"/>`).join('')}</linearGradient>`);
+  return `url(#${id})`;
+}
+
+/** A pattern's shapes as SVG in body-square units (0–1 → the body rect). */
+function patternSvg(shapes: readonly AvatarPatternShape[], r: AvatarRect, col: Record<string, string>, defs: string[]): string {
+  const X = (v: number) => r2(r.x + v * r.w), Y = (v: number) => r2(r.y + v * r.h), S = (v: number) => r2(v * r.w);
+  return shapes.map((s, i) => {
+    const op = 'a' in s && s.a != null && s.a !== 1 ? ` opacity="${s.a}"` : '';
+    switch (s.t) {
+      case 'rect': return `<rect x="${X(s.x)}" y="${Y(s.y)}" width="${S(s.w)}" height="${r2(s.h * r.h)}" fill="${col[s.c]}"${op}/>`;
+      case 'circle': return `<circle cx="${X(s.x)}" cy="${Y(s.y)}" r="${S(s.r)}" fill="${col[s.c]}"${op}/>`;
+      case 'star': {
+        const pts: string[] = [];
+        for (let k = 0; k < s.n * 2; k++) {
+          const rr = k % 2 === 0 ? s.r : s.inner, a = -Math.PI / 2 + (k * Math.PI) / s.n;
+          pts.push(`${X(s.x + rr * Math.cos(a))},${Y(s.y + rr * Math.sin(a))}`);
+        }
+        return `<polygon points="${pts.join(' ')}" fill="${col[s.c]}"${op}/>`;
+      }
+      case 'heart': {
+        const k = s.s;
+        return `<path d="M${X(s.x)},${Y(s.y + k)} L${X(s.x - k * 0.97)},${Y(s.y - k * 0.1)} A${S(k / 2)},${S(k / 2)} 0 0 1 ${X(s.x)},${Y(s.y - k * 0.4)} A${S(k / 2)},${S(k / 2)} 0 0 1 ${X(s.x + k * 0.97)},${Y(s.y - k * 0.1)} Z" fill="${col[s.c]}"${op}/>`;
+      }
+      case 'poly': return `<polygon points="${s.pts.map(([a, b]) => `${X(a)},${Y(b)}`).join(' ')}" fill="${col[s.c]}"${op}/>`;
+      case 'grad': {
+        const gid = `${ID}-pgr${i}`;
+        defs.push(`<linearGradient id="${gid}" x1="${X(s.x1)}" y1="${Y(s.y1)}" x2="${X(s.x2)}" y2="${Y(s.y2)}" gradientUnits="userSpaceOnUse">${s.stops.map(([o, c, a]) => `<stop offset="${o}" stop-color="${col[c]}" stop-opacity="${a}"/>`).join('')}</linearGradient>`);
+        return `<rect x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}" fill="url(#${gid})"/>`;
+      }
+    }
+  }).join('');
+}
+
+/**
+ * The mascot from art, positioned by the core fit layout (packages/core avatar-layout): every layer's rect is
+ * a fraction of the content square inside the frame band, the white body + white accessories are tinted by
+ * multiply (flat or gradient), the pattern is clipped to the body art and multiplied, then the initial.
+ */
+function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: number, metal: { ring: string; shine: string } | null,
+  backdrop: { defs: string[]; body: string }, defs: string[]): string {
+  const { config, size, art, artSrc } = input;
+  const small = isSmallAvatar(size);
+  const L = avatarLayout(config, { small });
+  const C = 100 - 2 * fw;
+  const box = (r: AvatarRect): AvatarRect => ({ x: fw + r.x * C, y: fw + r.y * C, w: r.w * C, h: r.h * C });
+  const has = (name: string) => !!art && art.has(name);
+  const pal = avatarPalette(config);
+  defs.push(`<filter id="${ID}-alpha" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter>`);
+  const imgAt = (name: string, r: AvatarRect, extra = '') =>
+    `<image href="${esc(artSrc(name))}" x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}" preserveAspectRatio="none"${extra}/>`;
+  const maskOf = (mid: string, name: string, r: AvatarRect) =>
+    `<mask id="${mid}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">${imgAt(name, r, ` filter="url(#${ID}-alpha)"`)}</mask>`;
+  // A white art piece tinted by a swatch: the art, then the swatch multiplied over its alpha (isolated group).
+  const tinted = (name: string, r: AvatarRect, fill: string, extra: string, key: string) => {
+    defs.push(maskOf(`${ID}-m${key}`, name, r));
+    return `<g style="isolation:isolate">${imgAt(name, r)}<g mask="url(#${ID}-m${key})" style="mix-blend-mode:multiply"><rect x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}" fill="${fill}"/>${extra}</g></g>`;
+  };
+  const accFill = config.accColor && config.accColor !== 'default' ? swatchFill(avatarColor(config.accColor), `${ID}-acc`, defs) : null;
+  const out: string[] = [];
+  if (frame !== 'none') out.push(`<rect x="0" y="0" width="100" height="100" rx="${R}" fill="url(#${ID}-fr)"/>`);
+  out.push(backdrop.body);
+  const bodyR = box(L.body);
+  // ground shadow under the feet
+  out.push(`<ellipse cx="${r2(fw + (L.bounds.x + L.bounds.w / 2) * C)}" cy="${r2(fw + (L.body.y + L.body.h * 0.965) * C)}" rx="${r2(L.body.w * C * 0.3)}" ry="${r2(Math.max(1.2, L.body.w * C * 0.035))}" fill="${hexAlpha('#2a1745', 0.16)}"/>`);
+  for (const layer of L.layers) {
+    const r = box(layer.rect);
+    if (layer.layer === 'body') {
+      const bodyFill = swatchFill(avatarColor(config.color), `${ID}-bf`, defs);
+      const pat = !small && config.pattern !== 'solid'
+        ? patternSvg(avatarPatternShapes(config.pattern), bodyR, { ink: pal.pattern, base: pal.base, light: '#ffffff' }, defs)
+        : '';
+      out.push(tinted(layer.art, r, bodyFill, pat, 'b'));
+      // the initial (white, embossed) in the letter box
+      const lb = box(L.letter);
+      const fontSize = Math.min(lb.h / 0.74, lb.w / 0.9) * 0.94;
+      const ch = esc(Array.from(input.initial || '?')[0] ?? '?');
+      const cx = lb.x + lb.w / 2, base = lb.y + lb.h / 2 + fontSize * 0.36;
+      out.push(`<text x="${r2(cx)}" y="${r2(base + fontSize * 0.07)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="${pal.edge}" opacity="0.55">${ch}</text>`);
+      out.push(`<text x="${r2(cx)}" y="${r2(base)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="#ffffff" stroke="${hexAlpha('#ffffff', 0.35)}" stroke-width="${r2(fontSize * 0.02)}">${ch}</text>`);
+      continue;
+    }
+    if (!has(layer.art)) continue;   // unreachable while composing (mascotSvg waits for every layer); kept as a guard
+    out.push(layer.tint && accFill ? tinted(layer.art, r, accFill, '', layer.field) : imgAt(layer.art, r));
+  }
+  if (metal && !input.frameArt) {
+    out.push(`<rect x="${r2(fw - 0.6)}" y="${r2(fw - 0.6)}" width="${r2(100 - 2 * fw + 1.2)}" height="${r2(100 - 2 * fw + 1.2)}" rx="${r2(Math.max(4, R - fw * 0.6))}" fill="none" stroke="${metal.shine}" stroke-width="1.2" opacity="0.9"/>`);
+    out.push(`<rect x="0.7" y="0.7" width="98.6" height="98.6" rx="${R}" fill="none" stroke="${darkenHex(metal.ring, 0.3)}" stroke-width="1.1" opacity="0.55"/>`);
+    if (frame === 'diamond') out.push(sparkle(9, 9, 4, '#ffffff') + sparkle(91, 91, 3.4, '#ffffff'));
+  }
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:block"><defs>${defs.join('')}</defs>${out.join('')}</svg>`;
+}
+
 /** A stable key for a config (every field, in schema order). */
 export function avatarConfigKey(c: AvatarConfig): string {
-  return [c.body, c.color, c.pattern, c.patternColor, c.eyes, c.nose, c.mouth, c.head, c.face, c.neck, c.frame, c.bg, c.display].join('.');
+  return [c.body, c.color, c.pattern, c.patternColor, c.eyes, c.nose, c.cheeks, c.mouth, c.head, c.face, c.neck, c.accColor, c.frame, c.bg, c.display].join('.');
 }
 
 const svgCache = new Map<string, string>();
@@ -900,6 +1030,7 @@ export const BUILDER_TABS = [
   { id: 'pattern', label: 'Pattern' },
   { id: 'eyes', label: 'Eyes' },
   { id: 'nose', label: 'Nose' },
+  { id: 'cheeks', label: 'Cheeks' },
   { id: 'mouth', label: 'Mouth' },
   { id: 'head', label: 'Hats' },
   { id: 'extras', label: 'Extras' },
@@ -909,23 +1040,60 @@ export const BUILDER_TABS = [
 export type BuilderTab = (typeof BUILDER_TABS)[number]['id'];
 
 /** The config fields the builder's option tiles set. */
-export type BuilderField = 'body' | 'color' | 'pattern' | 'patternColor' | 'eyes' | 'nose' | 'mouth' | 'head' | 'face' | 'neck' | 'bg' | 'frame';
+export type BuilderField = 'body' | 'color' | 'pattern' | 'patternColor' | 'eyes' | 'nose' | 'cheeks' | 'mouth' | 'head' | 'face' | 'neck' | 'accColor' | 'bg' | 'frame';
+
+/** Color-swatch fields (the glossy round grid, grouped by row). */
+export const SWATCH_FIELDS: readonly BuilderField[] = ['color', 'patternColor', 'accColor'];
+
+/** The swatch picker's rows (core AvatarColor.group), in order. */
+export const SWATCH_ROWS: ReadonlyArray<{ group: AvatarColor['group']; label: string }> = [
+  { group: 'bright', label: 'Brights' }, { group: 'pastel', label: 'Pastels' }, { group: 'deep', label: 'Deeps' },
+  { group: 'neutral', label: 'Neutrals' }, { group: 'special', label: 'Pro specials' },
+];
+
+/** CSS background for a swatch (its gradient for Pro specials). */
+export function swatchCss(id: string): string {
+  if (id === 'default') return '#ffffff';
+  const c = avatarColor(id);
+  if (!c.stops || c.stops.length < 2) return c.hex;
+  const dir = c.dir === 'h' ? '90deg' : c.dir === 'd' ? '135deg' : '180deg';
+  return `linear-gradient(${dir}, ${c.stops.join(', ')})`;
+}
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const LABELS: Partial<Record<BuilderField, Record<string, string>>> = {
-  pattern: { solid: 'Solid', twotone: 'Two-tone', stripes: 'Stripes', dots: 'Polka dots', gradient: 'Gradient', sparkle: 'Sparkle' },
-  eyes: { beady: 'Beady eyes', happy: 'Happy eyes', sparkly: 'Sparkly eyes', sleepy: 'Sleepy eyes', wink: 'Wink', hearts: 'Heart eyes', stars: 'Star eyes', glasses: 'Round glasses', cyclops: 'One big eye' },
-  nose: { none: 'No nose', button: 'Button nose', red: 'Round red nose', blush: 'Blush cheeks', freckles: 'Freckles' },
-  mouth: { smile: 'Smile', grin: 'Big grin', tongue: 'Tongue out', o: 'Little o', cat: 'Cat smile', toothy: 'Toothy grin', smirk: 'Smirk', tiny: 'Tiny smile', gasp: 'Gasp' },
+  pattern: {
+    solid: 'Solid', twotone: 'Two-tone', stripes: 'Stripes', dots: 'Polka dots', gradient: 'Gradient', sparkle: 'Sparkle',
+    hearts: 'Hearts', stars: 'Stars', zigzag: 'Zigzag', checkers: 'Checkers', tiedye: 'Tie-dye', leopard: 'Leopard spots', galaxy: 'Galaxy', colorblock: 'Color block',
+  },
+  eyes: {
+    beady: 'Beady eyes', happy: 'Happy eyes', sparkly: 'Sparkly eyes', sleepy: 'Sleepy eyes', wink: 'Wink', hearts: 'Heart eyes', stars: 'Star eyes', glasses: 'Round glasses', cyclops: 'One big eye',
+    sunglasses: 'Sunglasses', determined: 'Determined eyes', anime: 'Sparkle eyes', joy: 'Joyful eyes', droopy: 'Droopy eyes', biground: 'Big round eyes', sideglance: 'Side glance', dizzy: 'Dizzy eyes',
+  },
+  nose: { none: 'No nose', button: 'Button nose', red: 'Round red nose', pointy: 'Pointy nose', bignose: 'Big round nose', cat: 'Cat nose', piggy: 'Piggy nose', clownstar: 'Star nose' },
+  cheeks: { none: 'No cheeks', blush: 'Rosy cheeks', freckles: 'Freckles', hearts: 'Heart cheeks', starfreckles: 'Star freckles', sparkle: 'Sparkle blush', bandage: 'Bandage' },
+  mouth: {
+    smile: 'Smile', grin: 'Big grin', tongue: 'Tongue out', o: 'Little o', cat: 'Cat smile', toothy: 'Toothy grin', smirk: 'Smirk', tiny: 'Tiny smile', gasp: 'Gasp',
+    laugh: 'Big laugh', whistle: 'Whistle', fang: 'Little fang', kissy: 'Kissy', braces: 'Braces grin', oops: 'Oops', tongueside: 'Silly tongue', teeth: 'Toothy smile',
+  },
   head: {
     none: 'No hat', crown: 'Crown', party: 'Party hat', beanie: 'Beanie', sprout: 'Sprout', nightcap: 'Nightcap', headphones: 'Headphones',
     bow: 'Bow', wizard: 'Wizard hat', pirate: 'Pirate hat', cowboy: 'Cowboy hat', chef: 'Chef hat', grad: 'Graduation cap', halo: 'Halo',
     flower: 'Flower', tophat: 'Top hat', propeller: 'Propeller cap', catears: 'Cat ears', bunnyears: 'Bunny ears', tiara: 'Tiara',
-    viking: 'Viking helmet', sweatband: 'Sweatband',
+    viking: 'Viking helmet', sweatband: 'Sweatband', cap: 'Baseball cap', beret: 'Beret', minicrown: 'Mini crown', flowercrown: 'Flower crown',
+    bucket: 'Bucket hat', santa: 'Santa hat', witch: 'Witch hat', astronaut: 'Space helmet', bigbow: 'Big bow', pombeanie: 'Pom-pom beanie',
+    bearears: 'Bear ears', mohawk: 'Mohawk',
   },
-  face: { none: 'Nothing on the face', mustache: 'Mustache', 'heart-glasses': 'Heart shades', monocle: 'Monocle' },
-  neck: { none: 'Nothing on the neck', cape: 'Cape', wings: 'Wings', bowtie: 'Bow tie', scarf: 'Scarf', chain: 'Gold chain' },
+  face: {
+    none: 'Nothing on the face', mustache: 'Mustache', 'heart-glasses': 'Heart shades', monocle: 'Monocle', starglasses: 'Star shades',
+    roundglasses: 'Round glasses', eyepatch: 'Eye patch', facepaint: 'Face paint', mask: 'Party mask', curlymustache: 'Curly mustache',
+  },
+  neck: {
+    none: 'Nothing on the neck', cape: 'Cape', wings: 'Wings', bowtie: 'Bow tie', scarf: 'Scarf', chain: 'Gold chain', medal: 'Medal',
+    backpack: 'Backpack', bubbletea: 'Bubble tea', guitar: 'Guitar', supercape: 'Hero cape', fairywings: 'Fairy wings',
+  },
+  accColor: { default: 'Original colors' },
   bg: { auto: 'Match my color', cottoncandy: 'Cotton candy' },
   frame: { none: 'No frame', pro: 'Pro gold' },
 };
@@ -933,6 +1101,7 @@ const LABELS: Partial<Record<BuilderField, Record<string, string>>> = {
 /** The screen-reader / tile label for an option ("Party hat", "Cotton candy"). */
 export function avatarOptionLabel(field: BuilderField, id: string): string {
   const named = LABELS[field === 'patternColor' ? 'color' : field]?.[id];
+  if (!named && (field === 'color' || field === 'patternColor' || field === 'accColor')) return cap(id);
   if (named) return named;
   const base = cap(id.replace(/-/g, ' '));
   if (field === 'body') return `${base} body`;
@@ -948,6 +1117,8 @@ export function avatarOptionIds(field: BuilderField): readonly string[] {
     case 'pattern': return AVATAR_PATTERNS;
     case 'eyes': return AVATAR_EYES;
     case 'nose': return AVATAR_NOSES;
+    case 'cheeks': return AVATAR_CHEEKS;
+    case 'accColor': return ['default', ...AVATAR_COLORS.map((c) => c.id)];
     case 'mouth': return AVATAR_MOUTHS;
     case 'head': return AVATAR_HEADS;
     case 'face': return AVATAR_FACES;
@@ -959,7 +1130,8 @@ export function avatarOptionIds(field: BuilderField): readonly string[] {
 
 /** Pro-only options (core AVATAR_PRO_ONLY): free players see the gold PRO pill → the Go Pro popup. */
 export function avatarProOnly(field: BuilderField, id: string): boolean {
-  const list = (AVATAR_PRO_ONLY as Record<string, readonly string[] | undefined>)[field];
+  const key = field === 'patternColor' || field === 'accColor' ? 'color' : field;
+  const list = (AVATAR_PRO_ONLY as Record<string, readonly string[] | undefined>)[key];
   return !!list && list.includes(id);
 }
 
@@ -987,7 +1159,7 @@ export function randomAvatar(current: AvatarConfig, rng: () => number, { isPro }
   const colors = AVATAR_COLORS.map((c) => c.id);
   const color = pick('color', colors);
   const patternColor = pick('patternColor', colors.filter((c) => c !== color));
-  return {
+  const next: AvatarConfig = {
     ...current,
     body: pick('body', AVATAR_BODIES),
     color,
@@ -995,10 +1167,14 @@ export function randomAvatar(current: AvatarConfig, rng: () => number, { isPro }
     patternColor,
     eyes: pick('eyes', AVATAR_EYES),
     nose: maybe('nose', AVATAR_NOSES, 0.4),
+    cheeks: maybe('cheeks', AVATAR_CHEEKS, 0.5),
     mouth: pick('mouth', AVATAR_MOUTHS),
     head: maybe('head', AVATAR_HEADS, 0.45),
     face: maybe('face', AVATAR_FACES, 0.75),
     neck: maybe('neck', AVATAR_NECKS, 0.7),
+    accColor: rng() < 0.6 ? 'default' : pick('accColor', colors),
     bg: rng() < 0.4 ? 'auto' : pick('bg', AVATAR_BACKDROP_IDS.filter((b) => b !== 'auto')),
   };
+  // never a combination the fit system rules out (the face extra yields)
+  return avatarPickConflict(next, 'face', next.face) ? { ...next, face: 'none' } : next;
 }

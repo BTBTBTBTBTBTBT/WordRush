@@ -18,7 +18,7 @@ enum MascotBuilderMode { case profile, onboarding }
 
 /// The builder's categories, in tab order.
 enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
-    case body, color, pattern, eyes, nose, mouth, hats, extras, backdrop, frame
+    case body, color, pattern, eyes, nose, cheeks, mouth, hats, extras, backdrop, frame
     var id: String { rawValue }
 
     var title: String {
@@ -28,6 +28,7 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
         case .pattern: return "Pattern"
         case .eyes: return "Eyes"
         case .nose: return "Nose"
+        case .cheeks: return "Cheeks"
         case .mouth: return "Mouth"
         case .hats: return "Hats"
         case .extras: return "Extras"
@@ -82,7 +83,36 @@ enum MascotOptionNames {
         case "toothy": return "Toothy"
         case "red": return "Red nose"
         case "button": return "Button"
-        case "blush": return "Blush"
+        case "blush": return "Rosy"
+        case "starfreckles": return "Star freckles"
+        case "sparkle": return "Sparkle"
+        case "bandage": return "Bandage"
+        case "bignose": return "Big nose"
+        case "clownstar": return "Star nose"
+        case "sunglasses": return "Shades"
+        case "anime": return "Sparkle eyes"
+        case "biground": return "Big round"
+        case "sideglance": return "Side glance"
+        case "tongueside": return "Silly tongue"
+        case "teeth": return "Toothy smile"
+        case "minicrown": return "Mini crown"
+        case "flowercrown": return "Flower crown"
+        case "astronaut": return "Space helmet"
+        case "bigbow": return "Big bow"
+        case "pombeanie": return "Pom beanie"
+        case "bearears": return "Bear ears"
+        case "starglasses": return "Star shades"
+        case "roundglasses": return "Round glasses"
+        case "eyepatch": return "Eye patch"
+        case "facepaint": return "Face paint"
+        case "curlymustache": return "Curly 'stache"
+        case "bubbletea": return "Bubble tea"
+        case "supercape": return "Hero cape"
+        case "fairywings": return "Fairy wings"
+        case "tiedye": return "Tie-dye"
+        case "colorblock": return "Color block"
+        case "babyblue": return "Baby blue"
+        case "default": return "Original"
         case "heart-glasses": return "Heart shades"
         case "tophat": return "Top hat"
         case "catears": return "Cat ears"
@@ -118,6 +148,8 @@ struct MascotBuilderView: View {
     @State private var squash: CGFloat = 1
     @State private var showPro = false
     @State private var lastTick = Date.distantPast
+    /// "Mask doesn't fit with Round glasses, so it came off" (the fit system swaps conflicting picks).
+    @State private var note: String?
 
     init(initial: String, config: AvatarConfig, mode: MascotBuilderMode = .profile, hasPhoto: Bool = false,
          level: Int = 1, isPro: Bool = false, saveTitle: String = "Save", saving: Bool = false,
@@ -150,7 +182,7 @@ struct MascotBuilderView: View {
             onChange?(c)
             bounce()
         }
-        .sheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView() }
     }
 
     // MARK: Stage
@@ -286,25 +318,31 @@ struct MascotBuilderView: View {
     @ViewBuilder private var options: some View {
         switch tab {
         case .body: grid(AvatarCatalog.bodies.map { Option(slot: "body", value: $0) })
-        case .color: grid(AvatarCatalog.colorIds.map { Option(slot: "color", value: $0) })
+        case .color: swatchGrid("color")
         case .pattern:
             VStack(alignment: .leading, spacing: 10) {
                 grid(AvatarCatalog.patterns.map { Option(slot: "pattern", value: $0) })
                 if config.pattern != "solid" {
                     FinishLabel("PATTERN COLOR")
-                    swatchRow
+                    swatchGrid("patternColor")
                 }
             }
         case .eyes: grid(AvatarCatalog.eyes.map { Option(slot: "eyes", value: $0) })
         case .nose: grid(AvatarCatalog.noses.map { Option(slot: "nose", value: $0) })
+        case .cheeks: grid(AvatarCatalog.cheeks.map { Option(slot: "cheeks", value: $0) })
         case .mouth: grid(AvatarCatalog.mouths.map { Option(slot: "mouth", value: $0) })
-        case .hats: grid(AvatarCatalog.heads.map { Option(slot: "head", value: $0) })
+        case .hats:
+            VStack(alignment: .leading, spacing: 10) {
+                grid(AvatarCatalog.heads.map { Option(slot: "head", value: $0) })
+                accColorSection
+            }
         case .extras:
             VStack(alignment: .leading, spacing: 10) {
                 FinishLabel("FACE")
                 grid(AvatarCatalog.faces.map { Option(slot: "face", value: $0) })
                 FinishLabel("NECK + BACK")
                 grid(AvatarCatalog.necks.map { Option(slot: "neck", value: $0) })
+                accColorSection
             }
         case .backdrop: grid(AvatarCatalog.backdropIds.map { Option(slot: "bg", value: $0) })
         case .frame:
@@ -317,8 +355,78 @@ struct MascotBuilderView: View {
     }
 
     private func grid(_ opts: [Option]) -> some View {
-        LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(opts) { o in tile(o) }
+        VStack(alignment: .leading, spacing: 6) {
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(opts) { o in tile(o) }
+            }
+            if let note {
+                Text(note).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x6D28D9))
+                    .frame(maxWidth: .infinity).transition(.opacity)
+            }
+        }
+    }
+
+    /// The accessory color row: only while a white (tintable) accessory is worn.
+    @ViewBuilder private var accColorSection: some View {
+        if AvatarCatalog.tintable.contains(config.head) || AvatarCatalog.tintable.contains(config.neck) {
+            FinishLabel("ACCESSORY COLOR")
+            swatchGrid("accColor")
+        }
+    }
+
+    private static let rowTitles = ["bright": "BRIGHTS", "pastel": "PASTELS", "deep": "DEEPS", "neutral": "NEUTRALS", "special": "PRO SPECIALS"]
+
+    /// Glossy round swatches grouped by row (no tiles, no outlines): selected = a white check + a gentle scale.
+    private func swatchGrid(_ slot: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if slot == "accColor" {
+                swatchRow(slot, ["default"])
+            }
+            ForEach(AvatarCatalog.colorGroups, id: \.self) { g in
+                Text(Self.rowTitles[g] ?? g.uppercased()).font(Brand.font(9, .black)).foregroundStyle(FinishInk.secondary)
+                swatchRow(slot, AvatarCatalog.colors.filter { $0.group == g }.map(\.id))
+            }
+        }
+    }
+
+    private func swatchRow(_ slot: String, _ ids: [String]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 40), spacing: 4)], spacing: 4) {
+            ForEach(ids, id: \.self) { id in
+                let o = Option(slot: slot, value: id)
+                let on = isSelected(o)
+                let sw = AvatarCatalog.color(id)
+                let proLocked = id != "default" && sw.pro && !isPro
+                let fill: AnyShapeStyle = id == "default"
+                    ? AnyShapeStyle(Color.white)
+                    : sw.stops.count >= 2
+                        ? AnyShapeStyle(LinearGradient(colors: sw.stops.map { Color(hex: UInt($0.dropFirst(), radix: 16) ?? 0) },
+                                                       startPoint: sw.dir == "h" ? .leading : .topLeading, endPoint: sw.dir == "h" ? .trailing : sw.dir == "d" ? .bottomTrailing : .bottom))
+                        : AnyShapeStyle(Color(hex: AvatarCatalog.colorValue(id)))
+                let light = ["default", "white", "cream", "butter", "seafoam"].contains(id)
+                Button {
+                    if proLocked { showPro = true; return }
+                    config = applied(o)
+                } label: {
+                    ZStack {
+                        Circle().fill(fill)
+                        Circle().fill(RadialGradient(colors: [.white.opacity(0.6), .white.opacity(0)], center: UnitPoint(x: 0.35, y: 0.28), startRadius: 0, endRadius: 14))
+                        if on {
+                            Image(systemName: "checkmark").font(.system(size: 13, weight: .black)).foregroundStyle(light ? Color(hex: 0x7C3AED) : .white)
+                        } else if id == "default" {
+                            Text("AUTO").font(Brand.fixedFont(8, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                        }
+                    }
+                    .frame(width: 32, height: 32)
+                    .shadow(color: Color(hex: AvatarCatalog.colorValue(id)).opacity(0.4), radius: 3, y: 2)
+                    .scaleEffect(on ? 1.14 : 1)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: on)
+                    .overlay(alignment: .topTrailing) { if proLocked { MascotProPill().scaleEffect(0.7).offset(x: 10, y: -8) } }
+                    .frame(width: 40, height: 40)
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("\(MascotOptionNames.name(id))\(proLocked ? ", Pro only" : "")")
+                .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+            }
         }
     }
 
@@ -333,12 +441,10 @@ struct MascotBuilderView: View {
             c.pattern = o.value
             if o.value != "solid" && c.patternColor == c.color { c.patternColor = Self.contrast(for: c.color) }
         case "patternColor": c.patternColor = o.value
-        case "eyes": c.eyes = o.value
-        case "nose": c.nose = o.value
-        case "mouth": c.mouth = o.value
-        case "head": c.head = o.value
-        case "face": c.face = o.value
-        case "neck": c.neck = o.value
+        case "accColor": c.accColor = o.value
+        case "eyes", "nose", "cheeks", "mouth", "head", "face", "neck":
+            // the fit system: a pick that doesn't fit with something worn swaps it out
+            if let fit = MascotParts.fit { c = AvatarFit.applyPick(c, field: o.slot, id: o.value, manifest: fit) }
         case "bg": c.bg = o.value
         case "frame": c.frame = o.value
         default: break
@@ -362,8 +468,10 @@ struct MascotBuilderView: View {
         case "color": return config.color == o.value
         case "pattern": return config.pattern == o.value
         case "patternColor": return config.patternColor == o.value
+        case "accColor": return config.accColor == o.value
         case "eyes": return config.eyes == o.value
         case "nose": return config.nose == o.value
+        case "cheeks": return config.cheeks == o.value
         case "mouth": return config.mouth == o.value
         case "head": return config.head == o.value
         case "face": return config.face == o.value
@@ -404,7 +512,8 @@ struct MascotBuilderView: View {
             case "pattern": return "pattern"
             case "patternColor": return "pattern color"
             case "eyes": return "eyes"
-            case "nose": return o.value == "blush" || o.value == "freckles" ? "cheeks" : "nose"
+            case "nose": return "nose"
+            case "cheeks": return "cheeks"
             case "mouth": return "mouth"
             case "head": return "hat"
             case "face", "neck": return "extra"
@@ -427,7 +536,14 @@ struct MascotBuilderView: View {
         return Button {
             if tier != nil { return }
             if proLocked { showPro = true; return }
-            config = applied(o)
+            let next = applied(o)
+            if let fit = MascotParts.fit, let hit = AvatarFit.pickConflict(config, field: o.slot, id: o.value, manifest: fit) {
+                note = "\(MascotOptionNames.name(o.value)) doesn't fit with \(MascotOptionNames.name(hit.id)), so it came off"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) { note = nil }
+            } else {
+                note = nil
+            }
+            config = next
         } label: {
             VStack(spacing: 4) {
                 MascotAvatar(config: applied(o), initial: initial, size: 54, cached: false)
@@ -454,27 +570,6 @@ struct MascotBuilderView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(a11y(o))
         .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
-    }
-
-    private var swatchRow: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 34), spacing: 8)], spacing: 8) {
-            ForEach(AvatarCatalog.colorIds, id: \.self) { id in
-                let o = Option(slot: "patternColor", value: id)
-                let on = isSelected(o)
-                let c = Color(hex: AvatarCatalog.colorValue(id))
-                Button { config = applied(o) } label: {
-                    Circle()
-                        .fill(LinearGradient(colors: [Color.white.mixed(over: c, 0.3), c], startPoint: .top, endPoint: .bottom))
-                        .frame(width: 22, height: 22)
-                        .overlay(Circle().stroke(Color.white.opacity(0.7), lineWidth: 1.5))
-                        .frame(width: 34, height: 34)
-                        .g5Option(active: on, accent: c, radius: 11)
-                }
-                .buttonStyle(.squish)
-                .accessibilityLabel("\(MascotOptionNames.name(id)) pattern color")
-                .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
-            }
-        }
     }
 
     // MARK: Randomize / Save / Skip
@@ -516,17 +611,20 @@ struct MascotBuilderView: View {
         }
         var c = config
         c.body = any(AvatarCatalog.bodies)
-        c.color = any(AvatarCatalog.colorIds)
+        c.color = any(AvatarCatalog.colorIds.filter { isPro || !AvatarCatalog.isProOnly(color: $0) })
         c.pattern = Bool.random(using: &g) ? "solid" : any(AvatarCatalog.patterns)
         c.patternColor = c.pattern == "solid" ? c.color : any(AvatarCatalog.colorIds.filter { $0 != c.color })
         c.eyes = any(AvatarCatalog.eyes)
-        c.nose = any(AvatarCatalog.noses)
+        c.nose = Bool.random(using: &g) ? "none" : any(AvatarCatalog.noses)
+        c.cheeks = Bool.random(using: &g) ? "none" : any(AvatarCatalog.cheeks)
         c.mouth = any(AvatarCatalog.mouths)
         c.head = Int.random(in: 0..<10, using: &g) < 4 ? "none" : any(wearable("head", AvatarCatalog.heads))
         c.face = Int.random(in: 0..<10, using: &g) < 7 ? "none" : any(AvatarCatalog.faces)
         c.neck = Int.random(in: 0..<10, using: &g) < 6 ? "none" : any(wearable("neck", AvatarCatalog.necks))
         c.bg = Bool.random(using: &g) ? "auto" : any(wearable("bg", AvatarCatalog.backdropIds))
         if c == config { c.eyes = any(AvatarCatalog.eyes.filter { $0 != config.eyes }) }
+        // never a combination the fit system rules out (the face extra yields)
+        if let fit = MascotParts.fit, AvatarFit.pickConflict(c, field: "face", id: c.face, manifest: fit) != nil { c.face = "none" }
         config = c
     }
 }

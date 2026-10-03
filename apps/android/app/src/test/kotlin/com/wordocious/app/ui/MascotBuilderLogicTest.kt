@@ -19,14 +19,16 @@ class MascotBuilderLogicTest {
 
     @Test fun everyTabHasOptionsAndTheSpecOrder() {
         assertEquals(
-            listOf("Presets", "Body", "Color", "Pattern", "Eyes", "Nose", "Mouth", "Hats", "Extras", "Backdrop", "Frame"),
+            listOf("Presets", "Body", "Color", "Pattern", "Eyes", "Nose", "Cheeks", "Mouth", "Hats", "Extras", "Backdrop", "Frame"),
             BuilderTab.entries.map { it.label },
         )
-        BuilderTab.entries.forEach { assertTrue(it.name, MascotBuilderLogic.options(it).isNotEmpty()) }
+        // Round 2: the Color tab is the glossy swatch grid (SwatchGrid rows), not option tiles.
+        BuilderTab.entries.filter { it != BuilderTab.COLOR }.forEach { assertTrue(it.name, MascotBuilderLogic.options(it).isNotEmpty()) }
+        assertEquals(38, com.wordocious.core.AvatarOptions.SWATCHES.size)
         assertEquals(10, MascotBuilderLogic.options(BuilderTab.PRESETS).size)
-        // The full catalogs: 21 hats + None, 8 extras + None, auto + 18 backdrops.
-        assertEquals(22, MascotBuilderLogic.options(BuilderTab.HATS).size)
-        assertEquals(9, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)
+        // The full catalogs (round 2): 33 hats + None, 9 face + 11 neck/back extras + None, auto + 18 backdrops.
+        assertEquals(34, MascotBuilderLogic.options(BuilderTab.HATS).size)
+        assertEquals(21, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)
         assertEquals(19, MascotBuilderLogic.options(BuilderTab.BACKDROP).size)
         assertEquals("none", MascotBuilderLogic.options(BuilderTab.HATS).first().id)
         assertEquals("auto", MascotBuilderLogic.options(BuilderTab.BACKDROP).first().id)

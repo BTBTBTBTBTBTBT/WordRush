@@ -18,8 +18,18 @@ import kotlinx.serialization.json.put
 // photo) says which one every renderer shows; a "photo" display without a photo URL
 // falls back to the mascot. Its default is a function of whether the player has a photo.
 
-/** One color swatch: the stored id + the tint hex. */
-data class AvatarSwatch(val id: String, val hex: String)
+/**
+ * One color swatch: the stored id + the flat tint hex, its picker row, and (Pro specials) gradient `stops`
+ * multiplied onto the white art (`dir` h = left→right, v = top→bottom, d = diagonal).
+ */
+data class AvatarSwatch(
+    val id: String,
+    val hex: String,
+    val group: String = "bright",
+    val pro: Boolean = false,
+    val stops: List<String> = emptyList(),
+    val dir: String = "v",
+)
 
 /** One backdrop: kind "solid" (colors[0]), "gradient" (TL → BR blend) or "pattern" (colors[0] + motif colors). */
 data class AvatarBackdrop(val id: String, val kind: String, val colors: List<String>)
@@ -35,10 +45,14 @@ data class AvatarConfig(
     val patternColor: String = "purple",
     val eyes: String = "beady",
     val nose: String = "none",
+    /** Round 2: blush / freckles moved here from [nose] (old configs migrate in validateAvatar). */
+    val cheeks: String = "none",
     val mouth: String = "smile",
     val head: String = "none",
     val face: String = "none",
     val neck: String = "none",
+    /** The tint for white accessories (AvatarOptions.TINTABLE): a swatch id, or "default". */
+    val accColor: String = "default",
     val frame: String = "none",
     /** A backdrop id (AvatarOptions.BACKDROP_IDS); "auto" = a light tint of the body color. */
     val bg: String = "auto",
@@ -47,23 +61,38 @@ data class AvatarConfig(
 )
 
 object AvatarOptions {
-    val BODIES: List<String> = listOf("classic", "tall", "wide", "blob", "bean", "star")
-    val PATTERNS: List<String> = listOf("solid", "twotone", "stripes", "dots", "gradient", "sparkle")
-    val EYES: List<String> = listOf("beady", "happy", "sparkly", "sleepy", "wink", "hearts", "stars", "glasses", "cyclops")
-    val MOUTHS: List<String> = listOf("smile", "grin", "tongue", "o", "cat", "toothy", "smirk", "tiny", "gasp")
-    val NOSES: List<String> = listOf("none", "button", "red", "blush", "freckles")
+    // Round 2 (founder 10-03): ~2× every category, CHEEKS, 33 colors + 5 Pro specials, 14 patterns, accColor.
+    val BODIES: List<String> = listOf("classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex")
+    val PATTERNS: List<String> = listOf(
+        "solid", "twotone", "stripes", "dots", "gradient", "sparkle",
+        "hearts", "stars", "zigzag", "checkers", "tiedye", "leopard", "galaxy", "colorblock",
+    )
+    val EYES: List<String> = listOf(
+        "beady", "happy", "sparkly", "sleepy", "wink", "hearts", "stars", "glasses", "cyclops",
+        "sunglasses", "determined", "anime", "joy", "droopy", "biground", "sideglance", "dizzy",
+    )
+    val MOUTHS: List<String> = listOf(
+        "smile", "grin", "tongue", "o", "cat", "toothy", "smirk", "tiny", "gasp",
+        "laugh", "whistle", "fang", "kissy", "braces", "oops", "tongueside", "teeth",
+    )
+    val NOSES: List<String> = listOf("none", "button", "red", "pointy", "bignose", "cat", "piggy", "clownstar")
+    val CHEEKS: List<String> = listOf("none", "blush", "freckles", "hearts", "starfreckles", "sparkle", "bandage")
 
-    /** Hats (21 + none). Pro-only: crown, halo, tiara. */
+    /** Hats (21 + round 2: 12, + none). Pro-only: crown, halo, tiara. */
     val HEADS: List<String> = listOf(
         "none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "bow", "wizard", "pirate", "cowboy", "chef",
         "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara", "viking", "sweatband",
+        "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "pombeanie", "bearears", "mohawk",
     )
 
     /** Face extras. */
-    val FACES: List<String> = listOf("none", "mustache", "heart-glasses", "monocle")
+    val FACES: List<String> = listOf("none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch", "facepaint", "mask", "curlymustache")
 
     /** Neck / back extras. Pro-only: wings, chain. */
-    val NECKS: List<String> = listOf("none", "cape", "wings", "bowtie", "scarf", "chain")
+    val NECKS: List<String> = listOf("none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar", "supercape", "fairywings")
+
+    /** White glossy accessories that take the accessory color. */
+    val TINTABLE: List<String> = listOf("supercape", "backpack", "wings", "chef", "astronaut")
 
     val FRAMES: List<String> = listOf("none", "bronze", "silver", "gold", "platinum", "diamond", "pro")
 
@@ -89,13 +118,28 @@ object AvatarOptions {
     )
     val BACKDROP_IDS: List<String> = listOf("auto") + BACKDROPS.map { it.id }
 
-    /** The 16 swatches: the cast palette (12) + 4 extras. Ids are stable (stored); hexes are the tint. */
+    /** The swatches in rows: the original 16 first (stable; the seeded default only picks from them), then round 2. */
     val SWATCHES: List<AvatarSwatch> = listOf(
         AvatarSwatch("purple", "#7c3aed"), AvatarSwatch("violet", "#8b5cf6"), AvatarSwatch("pink", "#ec4899"), AvatarSwatch("red", "#ef4444"),
         AvatarSwatch("orange", "#f97316"), AvatarSwatch("amber", "#f5a524"), AvatarSwatch("yellow", "#eab308"), AvatarSwatch("green", "#22c55e"),
         AvatarSwatch("emerald", "#10b981"), AvatarSwatch("teal", "#0d9488"), AvatarSwatch("sky", "#0ea5e9"), AvatarSwatch("blue", "#2563eb"),
-        AvatarSwatch("lilac", "#c4b5fd"), AvatarSwatch("peach", "#fdba74"), AvatarSwatch("mint", "#86efac"), AvatarSwatch("slate", "#64748b"),
+        AvatarSwatch("lilac", "#c4b5fd", "pastel"), AvatarSwatch("peach", "#fdba74", "pastel"), AvatarSwatch("mint", "#86efac", "pastel"), AvatarSwatch("slate", "#64748b", "neutral"),
+        AvatarSwatch("rose", "#fb7185"), AvatarSwatch("lime", "#84cc16"),
+        AvatarSwatch("bubblegum", "#f9a8d4", "pastel"), AvatarSwatch("babyblue", "#93c5fd", "pastel"), AvatarSwatch("butter", "#fde68a", "pastel"),
+        AvatarSwatch("coral", "#fca5a5", "pastel"), AvatarSwatch("seafoam", "#99f6e4", "pastel"),
+        AvatarSwatch("navy", "#1e3a8a", "deep"), AvatarSwatch("plum", "#6b21a8", "deep"), AvatarSwatch("forest", "#166534", "deep"),
+        AvatarSwatch("maroon", "#881337", "deep"), AvatarSwatch("charcoal", "#374151", "deep"), AvatarSwatch("chocolate", "#78350f", "deep"),
+        AvatarSwatch("white", "#f8fafc", "neutral"), AvatarSwatch("cream", "#fef3c7", "neutral"), AvatarSwatch("sand", "#d6c7a1", "neutral"), AvatarSwatch("stone", "#a8a29e", "neutral"),
+        AvatarSwatch("gold", "#f5b82e", "special", true, listOf("#fff1b8", "#f5b82e", "#b7791f"), "v"),
+        AvatarSwatch("silver", "#cbd5e1", "special", true, listOf("#ffffff", "#cbd5e1", "#7c8798"), "v"),
+        AvatarSwatch("rainbow", "#a855f7", "special", true, listOf("#ef4444", "#f97316", "#eab308", "#22c55e", "#0ea5e9", "#8b5cf6"), "h"),
+        AvatarSwatch("holo", "#c4b5fd", "special", true, listOf("#f9a8d4", "#c4b5fd", "#99f6e4", "#fde68a", "#f9a8d4"), "d"),
+        AvatarSwatch("neon", "#39ff14", "special", true, listOf("#d9ff6b", "#39ff14", "#00e5a0"), "d"),
     )
+    val COLOR_GROUPS: List<String> = listOf("bright", "pastel", "deep", "neutral", "special")
+
+    /** A swatch by id (unknown → purple). */
+    fun swatch(id: String?): AvatarSwatch = SWATCHES.firstOrNull { it.id == id } ?: SWATCHES[0]
 
     /** The swatch ids, in order. */
     val COLORS: List<String> = SWATCHES.map { it.id }
@@ -110,6 +154,7 @@ object AvatarOptions {
         "neck" to setOf("wings", "chain"),
         "frame" to setOf("diamond", "pro"),
         "bg" to setOf("aurora", "galaxy"),
+        "color" to setOf("gold", "silver", "rainbow", "holo", "neon"),
     )
 
     /** Whether [id] in config field [field] ("head", "neck", "frame", "bg") is Pro only. */
@@ -133,7 +178,7 @@ fun nearestAvatarColor(accentHex: String?): String {
     val a = accentHex?.takeIf { it.isNotEmpty() }?.let { hexRgb(it) } ?: return "purple"
     var best = AvatarOptions.SWATCHES[0].id
     var bestD = Long.MAX_VALUE
-    for (c in AvatarOptions.SWATCHES) {
+    for (c in AvatarOptions.SWATCHES.take(16)) {
         val b = hexRgb(c.hex)!!
         val d = (a[0] - b[0]).toLong().let { it * it } + (a[1] - b[1]).toLong().let { it * it } + (a[2] - b[2]).toLong().let { it * it }
         if (d < bestD) { bestD = d; best = c.id }
@@ -162,10 +207,12 @@ fun defaultAvatar(userId: String?, accentHex: String? = null, hasPhoto: Boolean 
         patternColor = color,
         eyes = AvatarOptions.DEFAULT_EYES[(((h ushr 8) and 0xFF) % AvatarOptions.DEFAULT_EYES.size).toInt()],
         nose = "none",
+        cheeks = "none",
         mouth = AvatarOptions.DEFAULT_MOUTHS[(((h ushr 16) and 0xFF) % AvatarOptions.DEFAULT_MOUTHS.size).toInt()],
         head = "none",
         face = "none",
         neck = "none",
+        accColor = "default",
         frame = "none",
         bg = "auto",
         display = defaultAvatarDisplay(hasPhoto),
@@ -190,6 +237,9 @@ fun validateAvatar(raw: JsonElement?, fallback: AvatarConfig = defaultAvatar("")
     val colorIds = AvatarOptions.COLORS
     val color = r.string("color")?.takeIf { it in colorIds } ?: fallback.color
     val patternColor = r.string("patternColor")?.takeIf { it in colorIds } ?: color
+    // Round 2: blush / freckles were noses; a config without `cheeks` carries them over (nose → none).
+    val rawNose = r.string("nose")
+    val legacyCheeks = if (!r.containsKey("cheeks") && (rawNose == "blush" || rawNose == "freckles")) rawNose else null
     return AvatarConfig(
         v = 1,
         body = pick(r.string("body"), AvatarOptions.BODIES, fallback.body),
@@ -197,11 +247,13 @@ fun validateAvatar(raw: JsonElement?, fallback: AvatarConfig = defaultAvatar("")
         pattern = pick(r.string("pattern"), AvatarOptions.PATTERNS, fallback.pattern),
         patternColor = patternColor,
         eyes = pick(r.string("eyes"), AvatarOptions.EYES, fallback.eyes),
-        nose = pick(r.string("nose"), AvatarOptions.NOSES, fallback.nose),
+        nose = if (legacyCheeks != null) "none" else pick(r.string("nose"), AvatarOptions.NOSES, fallback.nose),
+        cheeks = legacyCheeks ?: pick(r.string("cheeks"), AvatarOptions.CHEEKS, fallback.cheeks),
         mouth = pick(r.string("mouth"), AvatarOptions.MOUTHS, fallback.mouth),
         head = pick(r.string("head"), AvatarOptions.HEADS, fallback.head),
         face = pick(r.string("face"), AvatarOptions.FACES, fallback.face),
         neck = pick(r.string("neck"), AvatarOptions.NECKS, fallback.neck),
+        accColor = r.string("accColor")?.takeIf { it == "default" || it in colorIds } ?: fallback.accColor,
         frame = pick(r.string("frame"), AvatarOptions.FRAMES, fallback.frame),
         bg = r.string("bg")?.takeIf { it in AvatarOptions.BACKDROP_IDS } ?: fallback.bg,
         display = pick(r.string("display"), AvatarOptions.DISPLAYS, fallback.display),
@@ -220,6 +272,9 @@ fun enforceAvatarPro(c: AvatarConfig, isPro: Boolean): AvatarConfig {
         neck = if (AvatarOptions.isProOnly("neck", c.neck)) "none" else c.neck,
         frame = if (AvatarOptions.isProOnly("frame", c.frame)) "none" else c.frame,
         bg = if (AvatarOptions.isProOnly("bg", c.bg)) "auto" else c.bg,
+        color = if (AvatarOptions.isProOnly("color", c.color)) "purple" else c.color,
+        patternColor = if (AvatarOptions.isProOnly("color", c.patternColor)) (if (AvatarOptions.isProOnly("color", c.color)) "purple" else c.color) else c.patternColor,
+        accColor = if (AvatarOptions.isProOnly("color", c.accColor)) "default" else c.accColor,
     )
 }
 
@@ -238,7 +293,8 @@ fun castPreset(castId: String?): AvatarConfig {
     val color = nearestAvatarColor(member?.let { "#%06x".format(it.color and 0xFFFFFF) })
     return AvatarConfig(
         v = 1, body = "classic", color = color, pattern = "solid", patternColor = color, eyes = "beady",
-        nose = "none", mouth = "smile", head = "none", face = "none", neck = "none", frame = "none", bg = "auto",
+        nose = "none", cheeks = "none", mouth = "smile", head = "none", face = "none", neck = "none", accColor = "default",
+        frame = "none", bg = "auto",
     )
 }
 
@@ -251,10 +307,12 @@ fun avatarToJson(c: AvatarConfig): JsonObject = buildJsonObject {
     put("patternColor", c.patternColor)
     put("eyes", c.eyes)
     put("nose", c.nose)
+    put("cheeks", c.cheeks)
     put("mouth", c.mouth)
     put("head", c.head)
     put("face", c.face)
     put("neck", c.neck)
+    put("accColor", c.accColor)
     put("frame", c.frame)
     put("bg", c.bg)
     put("display", c.display)

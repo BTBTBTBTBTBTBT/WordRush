@@ -455,21 +455,25 @@ struct PodiumView: View {
     var stage: Color? = nil
     var onTap: ((PodiumEntry) -> Void)? = nil
 
-    private static let gold = [Color(hex: 0xFFD66B), Color(hex: 0xF5A524)]
-    private static let silver = [Color(hex: 0xE4E8F0), Color(hex: 0xAAB3C5)]
-    private static let bronze = [Color(hex: 0xFFC9A0), Color(hex: 0xD9844A)]
-
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             column(place: 2)
             column(place: 1)
             column(place: 3)
         }
+        // The glossy floor plate (art-podium-floor) the pedestals stand on: a flat disc
+        // whose middle line meets the steps' feet (static, one image).
+        .padding(.bottom, Self.floorRise)
+        .background(alignment: .bottom) {
+            ArtThumbs.image("art-podium-floor", points: 360)
+                .resizable().interpolation(.high)
+                .frame(height: Self.floorRise * 2 + 4)
+                .accessibilityHidden(true)
+        }
         .padding(.horizontal, 10).padding(.top, stage == nil ? 12 : 8)
         .background { if let stage { PodiumStage(accent: stage) } }
     }
 
-    private func colors(_ tone: Int) -> [Color] { tone <= 1 ? Self.gold : (tone == 2 ? Self.silver : Self.bronze) }
     private func stepHeight(_ tone: Int) -> CGFloat {
         let t = min(max(tone, 1), 3) - 1
         return compact ? [62, 46, 34][t] : [74, 54, 40][t]
@@ -523,16 +527,39 @@ struct PodiumView: View {
         }
     }
 
+    /// The floor plate's rise under the steps' feet (pt).
+    static let floorRise: CGFloat = 10
+
+    /// The pedestal art (podium art 10-03, docs/design/brand/podium): `art-podium-N` wears
+    /// its numeral; a step whose label isn't its metal's number takes the plain pedestal
+    /// with the label on it. Same heights as the code-drawn steps; the width follows the art.
+    static func pedestalArt(tone: Int, numbered: Bool) -> String {
+        "art-podium-\(min(max(tone, 1), 3))\(numbered ? "" : "-plain")"
+    }
+
+    /// BJ2: the pedestals + floor decoded off main before the Leaderboard / Home first shows them.
+    static func prewarm() {
+        var items: [(String, CGFloat)] = [("art-podium-floor", 360)]
+        for t in 1...3 { items.append((pedestalArt(tone: t, numbered: true), 96)) }
+        ArtThumbs.prewarm(items)
+    }
+
     private func step(tone: Int, label: String) -> some View {
-        ZStack {
-            UnevenRoundedRect(top: 12)
-                .fill(LinearGradient(colors: colors(tone), startPoint: .top, endPoint: .bottom))
-            Text(label)
-                .font(Brand.font(compact ? 20 : 22, .black))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 2)
+        let numbered = label == "\(min(max(tone, 1), 3))"
+        return ZStack {
+            ArtThumbs.image(Self.pedestalArt(tone: tone, numbered: numbered), points: 96)
+                .resizable().interpolation(.high).scaledToFit()
+            if !numbered {
+                Text(label)
+                    .font(Brand.font(compact ? 18 : 20, .black))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 2)
+                    .offset(y: stepHeight(tone) * 0.12)
+            }
         }
         .frame(height: stepHeight(tone))
+        .frame(maxWidth: .infinity)
+        .accessibilityHidden(true)
     }
 
     /// BJ4: an open place — R asleep where the avatar would be, quiet lines, the step
@@ -553,7 +580,7 @@ struct PodiumView: View {
                 .font(Brand.font(compact ? 11 : 12, .heavy))
                 .foregroundStyle((lightOnly ? FinishInk.muted : FinishInk.secondary).opacity(0.8))
                 .lineLimit(1).minimumScaleFactor(0.7)
-            step(tone: place, label: "\(place)").opacity(0.4)
+            step(tone: place, label: "\(place)").opacity(0.45)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)

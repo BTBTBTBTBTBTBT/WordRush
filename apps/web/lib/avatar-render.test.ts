@@ -64,11 +64,11 @@ describe('geometry from the manifest anchors (AN2)', () => {
 });
 
 describe('layers (AN1 order, AN5 small sizes)', () => {
-  const dressed: AvatarConfig = { ...base, pattern: 'stripes', nose: 'freckles', head: 'party', face: 'mustache', neck: 'cape', frame: 'gold' };
+  const dressed: AvatarConfig = { ...base, pattern: 'stripes', nose: 'none', cheeks: 'freckles', head: 'party', face: 'mustache', neck: 'cape', frame: 'gold' };
 
   it('stacks back → front', () => {
     expect(avatarLayers(dressed, 64)).toEqual([
-      'frameBack', 'stage', 'neckBack', 'body', 'pattern', 'gloss', 'letter', 'nose', 'eyes', 'mouth', 'face', 'head', 'frameFront',
+      'frameBack', 'stage', 'neckBack', 'body', 'pattern', 'gloss', 'letter', 'cheeks', 'eyes', 'mouth', 'face', 'head', 'frameFront',
     ]);
     expect(avatarLayers({ ...dressed, neck: 'bowtie' }, 64)).toContain('neckFront');
   });
@@ -78,7 +78,7 @@ describe('layers (AN1 order, AN5 small sizes)', () => {
     expect(small).not.toContain('pattern');
     expect(small).not.toContain('face');
     expect(small).not.toContain('neckBack');
-    expect(small).not.toContain('nose'); // freckles vanish at that size
+    expect(small).not.toContain('cheeks'); // freckles vanish at that size
     expect(small).toContain('head');
     expect(small).toContain('letter');
     expect(avatarLayers(dressed, SMALL_AVATAR_MAX + 1)).toContain('pattern');
@@ -188,13 +188,23 @@ describe('every option draws', () => {
 
 describe('art swap + caching', () => {
   it('draws a loaded body from art (tinted, pattern masked to its alpha)', () => {
-    const art = new Set(['art-av-body-classic', 'art-av-eyes-happy']);
-    const out = svg({ pattern: 'stripes', eyes: 'happy' }, 64, { art });
+    const cfg = { ...base, pattern: 'stripes' as const, eyes: 'happy' as const };
+    const art = new Set(avatarArtNames(cfg));
+    const out = svg(cfg, 64, { art });
     expect(out).toContain('/art/art-av-body-classic.webp');
-    expect(out).toContain(`url(#${MASCOT_ID_TOKEN}-tint)`);
-    expect(out).toContain(`mask="url(#${MASCOT_ID_TOKEN}-mask)"`);
+    // round 2: the art path draws from the core fit layout — the body tint is multiplied over its own alpha
+    expect(out).toContain(`mask="url(#${MASCOT_ID_TOKEN}-mb)"`);
+    expect(out).toContain('mix-blend-mode:multiply');
     expect(out).toContain('/art/art-av-eyes-happy.webp');
     expect(svg({ pattern: 'stripes' }, 64)).not.toContain('art-av-body');
+  });
+
+  it('composes from art only once every layer has loaded (no part pops in after the body)', () => {
+    const cfg = { ...base, eyes: 'happy' as const, head: 'party' as const };
+    const all = avatarArtNames(cfg);
+    const partial = new Set(all.filter((n) => n !== 'art-av-acc-party'));
+    expect(svg(cfg, 64, { art: partial })).not.toContain('art-av-body-classic');
+    expect(svg(cfg, 64, { art: new Set(all) })).toContain('/art/art-av-acc-party.webp');
   });
 
   it('lists the art a config would use', () => {
@@ -224,7 +234,7 @@ describe('art swap + caching', () => {
 
 describe('builder options (AN4)', () => {
   it('labels every option', () => {
-    const fields: BuilderField[] = ['body', 'color', 'pattern', 'patternColor', 'eyes', 'nose', 'mouth', 'head', 'face', 'neck', 'bg', 'frame'];
+    const fields: BuilderField[] = ['body', 'color', 'pattern', 'patternColor', 'eyes', 'nose', 'cheeks', 'mouth', 'head', 'face', 'neck', 'accColor', 'bg', 'frame'];
     for (const f of fields) {
       const ids = avatarOptionIds(f);
       expect(ids.length).toBeGreaterThan(1);
@@ -232,7 +242,7 @@ describe('builder options (AN4)', () => {
     }
     expect(avatarOptionLabel('head', 'tophat')).toBe('Top hat');
     expect(avatarOptionLabel('bg', 'auto')).toBe('Match my color');
-    expect(BUILDER_TABS.map((t) => t.label)).toEqual(['Body', 'Color', 'Pattern', 'Eyes', 'Nose', 'Mouth', 'Hats', 'Extras', 'Backdrop', 'Frame']);
+    expect(BUILDER_TABS.map((t) => t.label)).toEqual(['Body', 'Color', 'Pattern', 'Eyes', 'Nose', 'Cheeks', 'Mouth', 'Hats', 'Extras', 'Backdrop', 'Frame']);
   });
 
   it('marks the Pro-only options from core', () => {

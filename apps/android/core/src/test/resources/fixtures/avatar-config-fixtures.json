@@ -2,67 +2,233 @@
   "colors": [
     {
       "id": "purple",
-      "hex": "#7c3aed"
+      "hex": "#7c3aed",
+      "group": "bright"
     },
     {
       "id": "violet",
-      "hex": "#8b5cf6"
+      "hex": "#8b5cf6",
+      "group": "bright"
     },
     {
       "id": "pink",
-      "hex": "#ec4899"
+      "hex": "#ec4899",
+      "group": "bright"
     },
     {
       "id": "red",
-      "hex": "#ef4444"
+      "hex": "#ef4444",
+      "group": "bright"
     },
     {
       "id": "orange",
-      "hex": "#f97316"
+      "hex": "#f97316",
+      "group": "bright"
     },
     {
       "id": "amber",
-      "hex": "#f5a524"
+      "hex": "#f5a524",
+      "group": "bright"
     },
     {
       "id": "yellow",
-      "hex": "#eab308"
+      "hex": "#eab308",
+      "group": "bright"
     },
     {
       "id": "green",
-      "hex": "#22c55e"
+      "hex": "#22c55e",
+      "group": "bright"
     },
     {
       "id": "emerald",
-      "hex": "#10b981"
+      "hex": "#10b981",
+      "group": "bright"
     },
     {
       "id": "teal",
-      "hex": "#0d9488"
+      "hex": "#0d9488",
+      "group": "bright"
     },
     {
       "id": "sky",
-      "hex": "#0ea5e9"
+      "hex": "#0ea5e9",
+      "group": "bright"
     },
     {
       "id": "blue",
-      "hex": "#2563eb"
+      "hex": "#2563eb",
+      "group": "bright"
     },
     {
       "id": "lilac",
-      "hex": "#c4b5fd"
+      "hex": "#c4b5fd",
+      "group": "pastel"
     },
     {
       "id": "peach",
-      "hex": "#fdba74"
+      "hex": "#fdba74",
+      "group": "pastel"
     },
     {
       "id": "mint",
-      "hex": "#86efac"
+      "hex": "#86efac",
+      "group": "pastel"
     },
     {
       "id": "slate",
-      "hex": "#64748b"
+      "hex": "#64748b",
+      "group": "neutral"
+    },
+    {
+      "id": "rose",
+      "hex": "#fb7185",
+      "group": "bright"
+    },
+    {
+      "id": "lime",
+      "hex": "#84cc16",
+      "group": "bright"
+    },
+    {
+      "id": "bubblegum",
+      "hex": "#f9a8d4",
+      "group": "pastel"
+    },
+    {
+      "id": "babyblue",
+      "hex": "#93c5fd",
+      "group": "pastel"
+    },
+    {
+      "id": "butter",
+      "hex": "#fde68a",
+      "group": "pastel"
+    },
+    {
+      "id": "coral",
+      "hex": "#fca5a5",
+      "group": "pastel"
+    },
+    {
+      "id": "seafoam",
+      "hex": "#99f6e4",
+      "group": "pastel"
+    },
+    {
+      "id": "navy",
+      "hex": "#1e3a8a",
+      "group": "deep"
+    },
+    {
+      "id": "plum",
+      "hex": "#6b21a8",
+      "group": "deep"
+    },
+    {
+      "id": "forest",
+      "hex": "#166534",
+      "group": "deep"
+    },
+    {
+      "id": "maroon",
+      "hex": "#881337",
+      "group": "deep"
+    },
+    {
+      "id": "charcoal",
+      "hex": "#374151",
+      "group": "deep"
+    },
+    {
+      "id": "chocolate",
+      "hex": "#78350f",
+      "group": "deep"
+    },
+    {
+      "id": "white",
+      "hex": "#f8fafc",
+      "group": "neutral"
+    },
+    {
+      "id": "cream",
+      "hex": "#fef3c7",
+      "group": "neutral"
+    },
+    {
+      "id": "sand",
+      "hex": "#d6c7a1",
+      "group": "neutral"
+    },
+    {
+      "id": "stone",
+      "hex": "#a8a29e",
+      "group": "neutral"
+    },
+    {
+      "id": "gold",
+      "hex": "#f5b82e",
+      "group": "special",
+      "pro": true,
+      "stops": [
+        "#fff1b8",
+        "#f5b82e",
+        "#b7791f"
+      ],
+      "dir": "v"
+    },
+    {
+      "id": "silver",
+      "hex": "#cbd5e1",
+      "group": "special",
+      "pro": true,
+      "stops": [
+        "#ffffff",
+        "#cbd5e1",
+        "#7c8798"
+      ],
+      "dir": "v"
+    },
+    {
+      "id": "rainbow",
+      "hex": "#a855f7",
+      "group": "special",
+      "pro": true,
+      "stops": [
+        "#ef4444",
+        "#f97316",
+        "#eab308",
+        "#22c55e",
+        "#0ea5e9",
+        "#8b5cf6"
+      ],
+      "dir": "h"
+    },
+    {
+      "id": "holo",
+      "hex": "#c4b5fd",
+      "group": "special",
+      "pro": true,
+      "stops": [
+        "#f9a8d4",
+        "#c4b5fd",
+        "#99f6e4",
+        "#fde68a",
+        "#f9a8d4"
+      ],
+      "dir": "d"
+    },
+    {
+      "id": "neon",
+      "hex": "#39ff14",
+      "group": "special",
+      "pro": true,
+      "stops": [
+        "#d9ff6b",
+        "#39ff14",
+        "#00e5a0"
+      ],
+      "dir": "d"
     }
   ],
   "backdrops": [
@@ -219,10 +385,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -239,10 +407,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -259,10 +429,12 @@
         "patternColor": "pink",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -279,10 +451,12 @@
         "patternColor": "green",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -299,10 +473,12 @@
         "patternColor": "yellow",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -319,10 +495,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -339,10 +517,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -359,10 +539,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -379,10 +561,12 @@
         "patternColor": "pink",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -399,10 +583,12 @@
         "patternColor": "green",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -419,10 +605,12 @@
         "patternColor": "yellow",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -439,10 +627,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -459,10 +649,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -479,10 +671,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -499,10 +693,12 @@
         "patternColor": "pink",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -519,10 +715,12 @@
         "patternColor": "green",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -539,10 +737,12 @@
         "patternColor": "yellow",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -559,10 +759,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -579,10 +781,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -599,10 +803,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -619,10 +825,12 @@
         "patternColor": "pink",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -639,10 +847,12 @@
         "patternColor": "green",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -659,10 +869,12 @@
         "patternColor": "yellow",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -679,10 +891,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -699,10 +913,12 @@
         "patternColor": "purple",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -719,10 +935,12 @@
         "patternColor": "purple",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -739,10 +957,12 @@
         "patternColor": "pink",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -759,10 +979,12 @@
         "patternColor": "green",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -779,10 +1001,12 @@
         "patternColor": "yellow",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -799,10 +1023,12 @@
         "patternColor": "purple",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -819,10 +1045,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -839,10 +1067,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -859,10 +1089,12 @@
         "patternColor": "pink",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -879,10 +1111,12 @@
         "patternColor": "green",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -899,10 +1133,12 @@
         "patternColor": "yellow",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -919,10 +1155,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -942,10 +1180,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "photo"
@@ -963,10 +1203,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "photo"
@@ -984,10 +1226,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "tiny",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "photo"
@@ -1005,10 +1249,12 @@
         "patternColor": "purple",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "photo"
@@ -1026,10 +1272,12 @@
         "patternColor": "purple",
         "eyes": "sparkly",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "photo"
@@ -1047,10 +1295,12 @@
         "patternColor": "purple",
         "eyes": "wink",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "photo"
@@ -1149,10 +1399,12 @@
     "patternColor": "blue",
     "eyes": "happy",
     "nose": "none",
+    "cheeks": "none",
     "mouth": "grin",
     "head": "none",
     "face": "none",
     "neck": "none",
+    "accColor": "default",
     "frame": "none",
     "bg": "auto",
     "display": "mascot"
@@ -1168,10 +1420,12 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1189,10 +1443,12 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1208,10 +1464,12 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1227,10 +1485,12 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1239,7 +1499,7 @@
     {
       "raw": {
         "body": "tall",
-        "color": "neon",
+        "color": "plasma",
         "eyes": "laser",
         "head": "wizard",
         "frame": "gold"
@@ -1252,11 +1512,37 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "wizard",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "body": "tall",
+        "color": "neon"
+      },
+      "result": {
+        "v": 1,
+        "body": "tall",
+        "color": "neon",
+        "pattern": "solid",
+        "patternColor": "neon",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
         "bg": "auto",
         "display": "mascot"
       }
@@ -1284,11 +1570,13 @@
         "pattern": "dots",
         "patternColor": "pink",
         "eyes": "cyclops",
-        "nose": "freckles",
+        "nose": "none",
+        "cheeks": "freckles",
         "mouth": "gasp",
         "head": "crown",
         "face": "mustache",
         "neck": "cape",
+        "accColor": "default",
         "frame": "pro",
         "bg": "galaxy",
         "display": "mascot"
@@ -1308,10 +1596,140 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "tiara",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "nose": "blush"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "blush",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "nose": "freckles",
+        "cheeks": "hearts"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "hearts",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "nose": "piggy",
+        "cheeks": "bandage"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "piggy",
+        "cheeks": "bandage",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "body": "hex",
+        "eyes": "dizzy",
+        "mouth": "braces",
+        "head": "astronaut",
+        "face": "eyepatch",
+        "neck": "guitar",
+        "accColor": "teal",
+        "color": "rainbow",
+        "pattern": "leopard",
+        "patternColor": "navy"
+      },
+      "result": {
+        "v": 1,
+        "body": "hex",
+        "color": "rainbow",
+        "pattern": "leopard",
+        "patternColor": "navy",
+        "eyes": "dizzy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "braces",
+        "head": "astronaut",
+        "face": "eyepatch",
+        "neck": "guitar",
+        "accColor": "teal",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "accColor": "nope",
+        "cheeks": "glitter",
+        "pattern": "plaid"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1321,6 +1739,24 @@
   "pro": [
     {
       "isPro": true,
+      "input": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "default",
+        "frame": "diamond",
+        "bg": "aurora",
+        "display": "mascot"
+      },
       "result": {
         "v": 1,
         "body": "classic",
@@ -1329,17 +1765,76 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "crown",
         "face": "none",
         "neck": "wings",
+        "accColor": "default",
         "frame": "diamond",
         "bg": "aurora",
         "display": "mascot"
       }
     },
     {
+      "isPro": true,
+      "input": {
+        "v": 1,
+        "body": "classic",
+        "color": "holo",
+        "pattern": "solid",
+        "patternColor": "gold",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "neon",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "holo",
+        "pattern": "solid",
+        "patternColor": "gold",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "neon",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
       "isPro": false,
+      "input": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "default",
+        "frame": "diamond",
+        "bg": "aurora",
+        "display": "mascot"
+      },
       "result": {
         "v": 1,
         "body": "classic",
@@ -1348,10 +1843,51 @@
         "patternColor": "blue",
         "eyes": "happy",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "grin",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "isPro": false,
+      "input": {
+        "v": 1,
+        "body": "classic",
+        "color": "holo",
+        "pattern": "solid",
+        "patternColor": "gold",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "neon",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1369,10 +1905,12 @@
         "patternColor": "purple",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1388,10 +1926,12 @@
         "patternColor": "orange",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1407,10 +1947,12 @@
         "patternColor": "green",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1426,10 +1968,12 @@
         "patternColor": "blue",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1445,10 +1989,12 @@
         "patternColor": "pink",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1464,10 +2010,12 @@
         "patternColor": "sky",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1483,10 +2031,12 @@
         "patternColor": "emerald",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1502,10 +2052,12 @@
         "patternColor": "yellow",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1521,10 +2073,12 @@
         "patternColor": "violet",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
@@ -1540,10 +2094,12 @@
         "patternColor": "red",
         "eyes": "beady",
         "nose": "none",
+        "cheeks": "none",
         "mouth": "smile",
         "head": "none",
         "face": "none",
         "neck": "none",
+        "accColor": "default",
         "frame": "none",
         "bg": "auto",
         "display": "mascot"

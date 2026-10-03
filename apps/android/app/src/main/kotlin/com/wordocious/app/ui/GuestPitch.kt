@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -153,16 +154,12 @@ private fun GuestChipTile(c: GuestChip) {
 /** The Leaderboard's preview: a mini podium (2 · 1 · 3), the crown on first. */
 @Composable
 private fun GuestPodium(modifier: Modifier) {
-    val steps = listOf(
-        Triple("2", 56.dp, Color(0xFF94A3B8)), Triple("1", 78.dp, Color(0xFFF59E0B)), Triple("3", 42.dp, Color(0xFFEA580C)),
-    )
+    val steps = listOf(2 to 56.dp, 1 to 78.dp, 3 to 42.dp)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-        steps.forEach { (rank, h, accent) ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (rank == "1") Icon3D(Icon3DName.CROWN, 28.dp)
-                GlossFace(accent, 70.dp, h, 14.dp) {
-                    Text(rank, fontSize = 24.sp, fontWeight = FontWeight.Black, color = Color.White, fontFamily = Nunito)
-                }
+        steps.forEach { (rank, h) ->
+            Column(Modifier.width(78.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (rank == 1) Icon3D(Icon3DName.CROWN, 28.dp)
+                PodiumPedestal(rank, h)
             }
         }
     }

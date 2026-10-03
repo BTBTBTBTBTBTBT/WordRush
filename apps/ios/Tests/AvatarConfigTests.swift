@@ -17,18 +17,23 @@ final class AvatarConfigTests: XCTestCase {
 
     func testCatalogMatchesFixture() throws {
         let f = try fixture()
-        let colors = try XCTUnwrap(f["colors"] as? [[String: String]])
-        XCTAssertEqual(colors.map { $0["id"]! }, AvatarCatalog.colors.map(\.id))
-        XCTAssertEqual(colors.map { $0["hex"]! }, AvatarCatalog.colors.map(\.hex))
+        let colors = try XCTUnwrap(f["colors"] as? [[String: Any]])
+        XCTAssertEqual(colors.map { $0["id"] as? String }, AvatarCatalog.colors.map(\.id))
+        XCTAssertEqual(colors.map { $0["hex"] as? String }, AvatarCatalog.colors.map(\.hex))
+        XCTAssertEqual(colors.map { $0["group"] as? String }, AvatarCatalog.colors.map(\.group))
+        XCTAssertEqual(colors.map { $0["pro"] as? Bool ?? false }, AvatarCatalog.colors.map(\.pro))
+        XCTAssertEqual(colors.map { $0["stops"] as? [String] ?? [] }, AvatarCatalog.colors.map(\.stops))
         let backdrops = try XCTUnwrap(f["backdrops"] as? [[String: Any]])
         XCTAssertEqual(backdrops.map { $0["id"] as? String }, AvatarCatalog.backdrops.map(\.id))
         XCTAssertEqual(backdrops.map { $0["kind"] as? String }, AvatarCatalog.backdrops.map(\.kind.rawValue))
         XCTAssertEqual(backdrops.map { $0["colors"] as? [String] ?? [] }, AvatarCatalog.backdrops.map(\.colors))
         XCTAssertEqual(AvatarCatalog.backdropIds.first, "auto")
-        XCTAssertEqual(AvatarCatalog.bodies.count, 6)
-        XCTAssertEqual(AvatarCatalog.heads.count, 22)
-        XCTAssertEqual(AvatarCatalog.faces.count + AvatarCatalog.necks.count - 2, 8)
-        XCTAssertEqual(AvatarCatalog.colors.count, 16)
+        XCTAssertEqual(AvatarCatalog.bodies.count, 12)
+        XCTAssertEqual(AvatarCatalog.heads.count, 34)
+        XCTAssertEqual(AvatarCatalog.faces.count + AvatarCatalog.necks.count - 2, 20)
+        XCTAssertEqual(AvatarCatalog.colors.count, 38)
+        XCTAssertEqual(AvatarCatalog.patterns.count, 14)
+        XCTAssertEqual(AvatarCatalog.cheeks.count, 7)
     }
 
     func testDefaultsMatchFixture() throws {
@@ -60,11 +65,9 @@ final class AvatarConfigTests: XCTestCase {
 
     func testProStripMatchesFixture() throws {
         let f = try fixture()
-        var base = try config(f["fallback"])
-        base.head = "crown"; base.neck = "wings"; base.frame = "diamond"; base.bg = "aurora"
         for row in try XCTUnwrap(f["pro"] as? [[String: Any]]) {
             let isPro = try XCTUnwrap(row["isPro"] as? Bool)
-            XCTAssertEqual(AvatarCatalog.enforcePro(base, isPro: isPro), try config(row["result"]))
+            XCTAssertEqual(AvatarCatalog.enforcePro(try config(row["input"]), isPro: isPro), try config(row["result"]))
         }
     }
 

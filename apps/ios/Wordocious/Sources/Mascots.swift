@@ -548,20 +548,17 @@ struct GuestPitch: View {
         .background { Self.gloss(c.accent, radius: 16) }
     }
 
-    /// The Leaderboard's preview: a mini podium (2 · 1 · 3), the crown on first.
+    /// The Leaderboard's preview: a mini podium (2 · 1 · 3) of the pedestal art, the crown on first.
     private var podium: some View {
-        let steps: [(rank: String, height: CGFloat, accent: Color)] = [
-            ("2", 56, Color(hex: 0x94A3B8)), ("1", 78, Color(hex: 0xF59E0B)), ("3", 42, Color(hex: 0xEA580C)),
-        ]
+        let steps: [(rank: Int, height: CGFloat)] = [(2, 56), (1, 78), (3, 42)]
         return HStack(alignment: .bottom, spacing: 8) {
             ForEach(steps.indices, id: \.self) { i in
                 let s = steps[i]
                 VStack(spacing: 4) {
-                    if s.rank == "1" { Icon3D(.crown, size: 28) }
-                    Text(s.rank).font(Brand.font(24, .black)).foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 1)
-                        .frame(width: 70, height: s.height)
-                        .background { Self.gloss(s.accent, radius: 14) }
+                    if s.rank == 1 { Icon3D(.crown, size: 28) }
+                    ArtThumbs.image(PodiumView.pedestalArt(tone: s.rank, numbered: true), points: 96)
+                        .resizable().interpolation(.high).scaledToFit()
+                        .frame(height: s.height)
                 }
             }
         }

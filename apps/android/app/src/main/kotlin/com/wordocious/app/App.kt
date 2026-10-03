@@ -16,6 +16,11 @@ class App : Application() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             com.wordocious.app.data.SoundManager.preload()
         }
+        // Podium art + common avatar parts, decoded off main before Home / the Leaderboard paint them.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            runCatching { com.wordocious.app.ui.PodiumArt.prewarm(this@App, resources.displayMetrics.density) }
+            runCatching { com.wordocious.app.ui.MascotComposer.prewarm(this@App) }
+        }
         // Storage hygiene + cross-midnight grace (iOS launch-sweep parity):
         // Android previously never swept per-seed daily saves, so they
         // accumulated forever.

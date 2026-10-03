@@ -82,8 +82,8 @@ class MascotEngineTest {
         if (text != null) {
             val classic = m.anchors("classic")
             assertEquals(0.3898f, classic.eyeY, 1e-6f)
-            assertEquals(0.2895f, classic.letterBox.x, 1e-6f)
-            assertEquals(0.6257f, classic.headTop.w, 1e-6f)
+            assertEquals(0.289f, classic.letterBox.x, 1e-6f)
+            assertEquals(0.6143f, classic.headTop.w, 1e-6f)
             // Category-level placements: slot names map to the renderer's slots.
             assertEquals("eyes", m.placement("eyes", "beady").slot)
             assertEquals(0.37f, m.placement("eyes", "beady").scale, 1e-6f)
@@ -120,7 +120,7 @@ class MascotEngineTest {
         assertTrue(AvatarParts.isProOnly(AvatarCategory.BACKDROP, "galaxy"))
         assertTrue(AvatarParts.isProOnly(AvatarCategory.FRAME, "diamond"))
         assertFalse(AvatarParts.isProOnly(AvatarCategory.HATS, "beanie"))
-        assertEquals(21, AvatarParts.options(AvatarCategory.HATS).size - 1)
+        assertEquals(33, AvatarParts.options(AvatarCategory.HATS).size - 1)
         assertEquals(19, AvatarParts.options(AvatarCategory.BACKDROP).size)
         // Every option has a label; art names use underscores.
         for (cat in AvatarParts.categories) for (o in AvatarParts.options(cat)) assertTrue("${cat}:${o.id}", o.label.isNotBlank())

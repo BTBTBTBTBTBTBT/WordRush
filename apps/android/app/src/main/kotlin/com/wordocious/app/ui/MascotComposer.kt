@@ -20,6 +20,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.wordocious.app.R
 import com.wordocious.app.data.AvatarFrame
 import com.wordocious.core.AvatarConfig
+import com.wordocious.core.AvatarFit
+import com.wordocious.core.AvatarFitManifest
+import com.wordocious.core.AvatarLayout
+import com.wordocious.core.AvatarOptions
+import com.wordocious.core.AvatarRect
+import com.wordocious.core.AvatarSwatch
 import com.wordocious.core.avatarBackdrop
 import com.wordocious.core.avatarColorHex
 import kotlin.math.PI
@@ -46,11 +52,23 @@ object MascotComposer {
     private val ids = HashMap<String, Int>()
 
     @Volatile private var manifest: AvatarManifest? = null
+    @Volatile private var fit: AvatarFitManifest? = null
+    @Volatile private var fitLoaded = false
     @Volatile private var typeface: Typeface? = null
 
     /** The cached composed avatar for [key] (composing it on a miss). */
     fun image(context: Context, key: MascotKey): ImageBitmap =
         cache.getOrPut(key) { render(context, key).asImageBitmap() }
+
+    /** The composed avatar for [key] when it's already cached (never composes). */
+    fun cached(key: MascotKey): ImageBitmap? = cache.get(key)
+
+    /**
+     * Compose [key] OUTSIDE the cache lock (for a background thread): a main-thread [cached]
+     * hit never waits on a render in flight. Two threads missing at once just compose twice.
+     */
+    fun compose(context: Context, key: MascotKey): ImageBitmap =
+        cache.get(key) ?: render(context, key).asImageBitmap().also { cache.put(key, it) }
 
     /** For tests / memory pressure. */
     fun clearCache() { cache.clear(); parts.clear() }
@@ -79,6 +97,11 @@ object MascotComposer {
         val layers = MascotLayers.plan(cfg, sizeDp.coerceAtLeast(MascotLayers.SMALL_DP + 1f)) // already simplified
         val m = manifest(context)
         val base = colorOf(avatarColorHex(cfg.color), 0xFF7C3AED.toInt())
+        val fm = fitManifest(context)
+        if (fm != null && drawableId(context, "art_av_body_${cfg.body}") != 0) {
+            drawFromLayout(context, c, left, top, size, key, fm, base, sizeDp <= MascotLayers.SMALL_DP)
+            return
+        }
         c.save()
         c.translate(left, top)
         val fw = if (cfg.frame != "none") frameWidth(size) else 0f
@@ -108,6 +131,151 @@ object MascotComposer {
         }
         if (key.crown) drawCrown(context, c, size)
         c.restore()
+    }
+
+    // ── Round 2: the art path at the core FIT layout (parity with web + iOS) ──
+
+    /** The fit manifest (avatar-parts.json v2), or null when the asset is a v1 file. */
+    fun fitManifest(context: Context): AvatarFitManifest? {
+        if (fitLoaded) return fit
+        val text = runCatching { context.assets.open(AvatarManifests.ASSET).bufferedReader().use { it.readText() } }.getOrNull()
+        fit = AvatarFitManifest.parse(text)?.takeIf { it.items.isNotEmpty() }
+        fitLoaded = true
+        return fit
+    }
+
+    /**
+     * Decode the parts the defaults + cast presets wear (and the classic body) into the
+     * part cache on the caller's thread — App.onCreate runs it on the IO pool, so Home /
+     * the Leaderboard never decode an avatar part on main for the common looks.
+     */
+    fun prewarm(context: Context) {
+        val fm = fitManifest(context) ?: return
+        val configs = listOf(com.wordocious.core.defaultAvatar("warm")) + listOf("w", "o1", "r", "d").map { com.wordocious.core.castPreset(it) }
+        val names = LinkedHashSet<String>()
+        configs.forEach { c -> listOf(false, true).forEach { small -> AvatarFit.layout(c, small, fm).layers.forEach { names += it.art } } }
+        names.forEach { n -> drawableId(context, n.replace('-', '_')).takeIf { it != 0 }?.let { runCatching { partBitmap(context, it) } } }
+    }
+
+    private fun solidPaint(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.FILL }
+
+    /** A swatch's paint shader across [r]: flat color, or its Pro gradient. */
+    private fun swatchPaint(sw: AvatarSwatch, r: RectF): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        if (sw.stops.size >= 2) {
+            val (x1, y1) = when (sw.dir) { "h" -> r.right to r.top; "d" -> r.right to r.bottom; else -> r.left to r.bottom }
+            shader = LinearGradient(r.left, r.top, x1, y1, sw.stops.map { colorOf(it, AColor.WHITE) }.toIntArray(), null, Shader.TileMode.CLAMP)
+        } else {
+            color = colorOf(sw.hex, 0xFF7C3AED.toInt())
+        }
+    }
+
+    /** White art [bmp] in [r], multiplied by [fill] (+ [extra] shapes) over its own alpha. */
+    private fun drawTinted(c: Canvas, bmp: Bitmap, r: RectF, fill: Paint, extra: ((Canvas) -> Unit)? = null) {
+        val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        val layer = c.saveLayer(r, null)
+        c.drawBitmap(bmp, null, r, p)
+        val mul = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.MULTIPLY) }
+        c.saveLayer(r, mul)
+        c.drawRect(r, fill)
+        extra?.invoke(c)
+        // keep only the art's alpha
+        c.drawBitmap(bmp, null, r, Paint(Paint.FILTER_BITMAP_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) })
+        c.restore()
+        c.restoreToCount(layer)
+    }
+
+    private fun drawFromLayout(context: Context, c: Canvas, left: Float, top: Float, size: Float, key: MascotKey, fm: AvatarFitManifest, base: Int, small: Boolean) {
+        val cfg = key.config
+        val layout: AvatarLayout = AvatarFit.layout(cfg, small, fm)
+        c.save()
+        c.translate(left, top)
+        val fw = if (cfg.frame != "none") frameWidth(size) else 0f
+        val cs = size - fw * 2f
+        fun box(r: AvatarRect) = RectF(fw + (r.x * cs).toFloat(), fw + (r.y * cs).toFloat(), fw + ((r.x + r.w) * cs).toFloat(), fw + ((r.y + r.h) * cs).toFloat())
+        drawTile(c, size, fw, base, cfg.bg, key.dark)
+        val b = box(layout.body)
+        c.drawOval(RectF(b.centerX() - b.width() * 0.3f, b.top + b.height() * 0.95f, b.centerX() + b.width() * 0.3f, b.top + b.height() * 1.0f),
+            solidPaint(withAlpha(AColor.BLACK, 0.12f)))
+        val acc = if (cfg.accColor == "default") null else AvatarOptions.swatch(cfg.accColor)
+        val patInk = if (cfg.patternColor == cfg.color) mix(base, AColor.WHITE, 0.5f) else colorOf(avatarColorHex(cfg.patternColor), base)
+        for (l in layout.layers) {
+            val r = box(l.rect)
+            val id = drawableId(context, l.art.replace('-', '_'))
+            val bmp = if (id != 0) partBitmap(context, id) else null
+            if (l.layer == "body") {
+                if (bmp != null) drawTinted(c, bmp, r, swatchPaint(AvatarOptions.swatch(cfg.color), r)) { cv ->
+                    if (!small && cfg.pattern != "solid") drawShapes(cv, AvatarFit.patternShapes(cfg.pattern), r, patInk, base)
+                }
+                drawLetterBox(context, c, key.initial, box(layout.letter), base)
+                continue
+            }
+            bmp ?: continue
+            if (l.tint && acc != null) drawTinted(c, bmp, r, swatchPaint(acc, r))
+            else c.drawBitmap(bmp, null, r, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+        }
+        drawFrame(c, cfg.frame, size, context)
+        if (key.crown) drawCrown(context, c, size)
+        c.restore()
+    }
+
+    /** The shared pattern shapes (body-square units → [r]). */
+    private fun drawShapes(c: Canvas, shapes: List<AvatarFit.Shape>, r: RectF, ink: Int, base: Int) {
+        fun col(k: String, a: Double) = withAlpha(when (k) { "ink" -> ink; "base" -> base; else -> AColor.WHITE }, a.toFloat())
+        fun X(v: Double) = r.left + (v * r.width()).toFloat()
+        fun Y(v: Double) = r.top + (v * r.height()).toFloat()
+        for (s in shapes) when (s) {
+            is AvatarFit.Shape.Rect -> c.drawRect(X(s.x), Y(s.y), X(s.x + s.w), Y(s.y + s.h), solidPaint(col(s.c, s.a)))
+            is AvatarFit.Shape.Circle -> c.drawCircle(X(s.x), Y(s.y), (s.r * r.width()).toFloat(), solidPaint(col(s.c, s.a)))
+            is AvatarFit.Shape.Star -> {
+                val path = Path()
+                for (k in 0 until s.n * 2) {
+                    val rad = if (k % 2 == 0) s.r else s.inner
+                    val ang = -PI / 2 + k * PI / s.n
+                    val px = X(s.x + rad * cos(ang)); val py = Y(s.y + rad * sin(ang))
+                    if (k == 0) path.moveTo(px, py) else path.lineTo(px, py)
+                }
+                path.close(); c.drawPath(path, solidPaint(col(s.c, s.a)))
+            }
+            is AvatarFit.Shape.Heart -> {
+                val k = s.s
+                val path = Path()
+                path.moveTo(X(s.x), Y(s.y + k))
+                path.lineTo(X(s.x - k * 0.97), Y(s.y - k * 0.1))
+                path.arcTo(RectF(X(s.x - k), Y(s.y - k * 0.75), X(s.x), Y(s.y + k * 0.25)), 160f, 200f)
+                path.arcTo(RectF(X(s.x), Y(s.y - k * 0.75), X(s.x + k), Y(s.y + k * 0.25)), 180f, 200f)
+                path.close(); c.drawPath(path, solidPaint(col(s.c, s.a)))
+            }
+            is AvatarFit.Shape.Poly -> {
+                val path = Path()
+                s.pts.forEachIndexed { i, (a, b2) -> if (i == 0) path.moveTo(X(a), Y(b2)) else path.lineTo(X(a), Y(b2)) }
+                path.close(); c.drawPath(path, solidPaint(col(s.c, s.a)))
+            }
+            is AvatarFit.Shape.Grad -> {
+                val p = Paint(Paint.ANTI_ALIAS_FLAG)
+                p.shader = LinearGradient(X(s.x1), Y(s.y1), X(s.x2), Y(s.y2), s.stops.map { col(it.second, it.third) }.toIntArray(),
+                    s.stops.map { it.first.toFloat() }.toFloatArray(), Shader.TileMode.CLAMP)
+                c.drawRect(r, p)
+            }
+        }
+    }
+
+    /** The white initial fitted into [box] (the cast letters' emboss). */
+    private fun drawLetterBox(context: Context, c: Canvas, initial: String, box: RectF, base: Int) {
+        val s = box.height() * 3.5f
+        val text = initial.ifEmpty { "?" }
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = font(context); textAlign = Paint.Align.CENTER; textSize = box.height() }
+        val bounds = Rect()
+        p.getTextBounds(text, 0, text.length, bounds)
+        val fit = min(box.height() / max(bounds.height(), 1).toFloat(), box.width() / max(bounds.width(), 1).toFloat())
+        p.textSize = p.textSize * min(fit, 1.6f)
+        p.getTextBounds(text, 0, text.length, bounds)
+        val x = box.centerX(); val y = box.centerY() - bounds.exactCenterY()
+        p.color = mix(base, AColor.BLACK, 0.45f); p.alpha = 150
+        c.drawText(text, x, y + s * 0.025f, p)
+        p.setShadowLayer(s * 0.03f, 0f, s * 0.012f, withAlpha(mix(base, AColor.BLACK, 0.5f), 0.45f))
+        p.color = AColor.WHITE
+        c.drawText(text, x, y, p)
+        p.clearShadowLayer()
     }
 
     // ── shared helpers (also used by the photo frame) ─────────────────────

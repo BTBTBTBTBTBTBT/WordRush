@@ -44,6 +44,9 @@ import { bannerHeadline, type GroupProgress } from '@wordle-duel/core';
 const SWEEP_KEYS = new Set<string>(SWEEP_MODES.map((m) => m.dbKey as string));
 const sweepEntries = <T,>(m: Map<string, T>): Array<[string, T]> => Array.from(m.entries()).filter(([k]) => SWEEP_KEYS.has(k));
 import { hasPlayedModeToday, cleanupOldPlayData, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
+import { preloadPodiumArt } from '@/lib/leaderboard-podium';
+import { preloadMascotArt } from '@/components/avatar/mascot-avatar';
+import { artSrc } from '@/lib/art';
 
 /** Today's progress over a set of cards: finished and won among their daily modes. */
 function progressOf(cards: HomeCard[], today: Map<string, DailyCompletion>): GroupProgress {
@@ -107,6 +110,9 @@ export default function HomePage() {
   const visibleMore = MORE_GAME_MODES.filter((m) => flagOn(m.flagKey));
 
   const isPro = isProActive;
+
+  // Podium art 10-03: warm the pedestals + floor once Home mounts (the Leaderboard opens without a pop-in).
+  useEffect(() => { preloadPodiumArt(artSrc); preloadMascotArt(); }, []);
 
   // One-time-per-day celebration modal when every sweep daily is complete. Keyed
   // on the local day; re-fires if the player upgrades a Sweep → Flawless.
