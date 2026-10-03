@@ -49,8 +49,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
     .map(({ seed, ...m }) => ({ ...m, daily: typeof seed === 'string' ? seed.startsWith('daily-') : null }));
 
+  // BJ12: a signed-in caller (the apps send their bearer — on their own Stats tab that is the
+  // owner, right after a finish) always reads fresh; a shared-cache copy up to 150 s old kept the
+  // game just played out of Today's Games / Recent Matches. Anonymous profile views keep the CDN.
+  const authed = !!req.headers.get('authorization');
   return NextResponse.json(
     { matches: data },
-    { headers: { 'Cache-Control': privacyCacheHeader(gate, 'public, s-maxage=30, stale-while-revalidate=120') } },
+    { headers: { 'Cache-Control': authed ? 'private, no-store' : privacyCacheHeader(gate, 'public, s-maxage=30, stale-while-revalidate=120') } },
   );
 }

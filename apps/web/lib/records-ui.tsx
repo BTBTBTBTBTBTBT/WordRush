@@ -46,7 +46,8 @@ export const peekAllTimeRecords = (): AllTimeRecord[] | null =>
 
 export const RECORD_LABELS: Record<string, { label: string; icon: IconLike; format: (v: number) => string }> = {
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
-  fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => `${v} guesses` },
+  // BJ12: "1 guess", never "1 guesses" (a one-guess Classic record is real).
+  fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => (v === 1 ? '1 guess' : `${v} guesses`) },
   most_games_played: { label: 'Most Games Played', icon: Zap, format: (v) => `${v} games` },
   longest_streak: { label: 'Longest Win Streak', icon: Flame3D, format: (v) => `${v} wins` },
   most_gold_medals: { label: 'Most Gold Medals', icon: Crown3D, format: (v) => `${v} golds` },

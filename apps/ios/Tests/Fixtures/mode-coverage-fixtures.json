@@ -1,0 +1,1154 @@
+{
+  "modes": [
+    {
+      "dbKey": "DUEL",
+      "id": "practice",
+      "title": "Classic",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Classic",
+        "bronze": "Doug took bronze in Classic",
+        "perfect": "You played a perfect Classic",
+        "fewestValue": "1 guess",
+        "fewest": "Doug set the all-time Classic Fewest Guesses · 1 guess",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Classic Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "QUORDLE",
+      "id": "quordle",
+      "title": "QuadWord",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 4,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 4,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in QuadWord",
+        "bronze": "Doug took bronze in QuadWord",
+        "perfect": "You played a perfect QuadWord",
+        "fewestValue": "4 guesses",
+        "fewest": "Doug set the all-time QuadWord Fewest Guesses · 4 guesses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time QuadWord Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "OCTORDLE",
+      "id": "octordle",
+      "title": "OctoWord",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 8,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 8,
+          "boardsSolved": 8,
+          "totalBoards": 8,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 9,
+          "boardsSolved": 8,
+          "totalBoards": 8,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 8,
+          "boardsSolved": 7,
+          "totalBoards": 8,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 8,
+          "boardsSolved": 8,
+          "totalBoards": 8,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 8,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 8,
+          "totalBoards": 8,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in OctoWord",
+        "bronze": "Doug took bronze in OctoWord",
+        "perfect": "You played a perfect OctoWord",
+        "fewestValue": "8 guesses",
+        "fewest": "Doug set the all-time OctoWord Fewest Guesses · 8 guesses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time OctoWord Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "SEQUENCE",
+      "id": "sequence",
+      "title": "Succession",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 4,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 4,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Succession",
+        "bronze": "Doug took bronze in Succession",
+        "perfect": "You played a perfect Succession",
+        "fewestValue": "4 guesses",
+        "fewest": "Doug set the all-time Succession Fewest Guesses · 4 guesses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Succession Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "RESCUE",
+      "id": "rescue",
+      "title": "Deliverance",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 4,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 4,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 4,
+          "totalBoards": 4,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Deliverance",
+        "bronze": "Doug took bronze in Deliverance",
+        "perfect": "You played a perfect Deliverance",
+        "fewestValue": "4 guesses",
+        "fewest": "Doug set the all-time Deliverance Fewest Guesses · 4 guesses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Deliverance Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "DUEL_6",
+      "id": "six",
+      "title": "Six",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Six",
+        "bronze": "Doug took bronze in Six",
+        "perfect": "You played a perfect Six",
+        "fewestValue": "1 guess",
+        "fewest": "Doug set the all-time Six Fewest Guesses · 1 guess",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Six Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "DUEL_7",
+      "id": "seven",
+      "title": "Seven",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Seven",
+        "bronze": "Doug took bronze in Seven",
+        "perfect": "You played a perfect Seven",
+        "fewestValue": "1 guess",
+        "fewest": "Doug set the all-time Seven Fewest Guesses · 1 guess",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Seven Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "GAUNTLET",
+      "id": "gauntlet",
+      "title": "Gauntlet",
+      "group": "core",
+      "guessSemantics": "guesses",
+      "guessBase": 21,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 21,
+          "boardsSolved": 21,
+          "totalBoards": 21,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 22,
+          "boardsSolved": 21,
+          "totalBoards": 21,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 21,
+          "boardsSolved": 20,
+          "totalBoards": 21,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 21,
+          "boardsSolved": 21,
+          "totalBoards": 21,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 21,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 21,
+          "totalBoards": 21,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Gauntlet",
+        "bronze": "Doug took bronze in Gauntlet",
+        "perfect": "You played a perfect Gauntlet",
+        "fewestValue": "21 guesses",
+        "fewest": "Doug set the all-time Gauntlet Fewest Guesses · 21 guesses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Gauntlet Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "PROPERNOUNDLE",
+      "id": "propernoundle",
+      "title": "ProperNoundle",
+      "group": "more",
+      "guessSemantics": "guesses",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in ProperNoundle",
+        "bronze": "Doug took bronze in ProperNoundle",
+        "perfect": "You played a perfect ProperNoundle",
+        "fewestValue": "1 guess",
+        "fewest": "Doug set the all-time ProperNoundle Fewest Guesses · 1 guess",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time ProperNoundle Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "SUDOKU",
+      "id": "sudoku",
+      "title": "Sudocious",
+      "group": "more",
+      "guessSemantics": "mistakes",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Sudocious",
+        "bronze": "Doug took bronze in Sudocious",
+        "perfect": "You played a perfect Sudocious",
+        "fewestValue": "0 mistakes",
+        "fewest": "Doug set the all-time Sudocious Fewest Mistakes · 0 mistakes",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Sudocious Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "SCRAMBLE",
+      "id": "scramble",
+      "title": "Muddle",
+      "group": "more",
+      "guessSemantics": "checks",
+      "guessBase": 5,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 5,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 6,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Muddle",
+        "bronze": "Doug took bronze in Muddle",
+        "perfect": "You played a perfect Muddle",
+        "fewestValue": "5 checks",
+        "fewest": "Doug set the all-time Muddle Fewest Checks · 5 checks",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Muddle Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "HUB",
+      "id": "hub",
+      "title": "Hubbub",
+      "group": "more",
+      "guessSemantics": "rank",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Hubbub",
+        "bronze": "Doug took bronze in Hubbub",
+        "perfect": "You played a perfect Hubbub",
+        "fewestValue": "Pandemonium",
+        "fewest": "Doug set the all-time Hubbub Best Rank · Pandemonium",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Hubbub Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "CROSSWORD",
+      "id": "crossword",
+      "title": "Crosswordocious",
+      "group": "more",
+      "guessSemantics": "checks",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Crosswordocious",
+        "bronze": "Doug took bronze in Crosswordocious",
+        "perfect": "You played a perfect Crosswordocious",
+        "fewestValue": "0 checks",
+        "fewest": "Doug set the all-time Crosswordocious Fewest Checks · 0 checks",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Crosswordocious Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "GROUPS",
+      "id": "groups",
+      "title": "Kindred",
+      "group": "more",
+      "guessSemantics": "guesses",
+      "guessBase": 4,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 4,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 5,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 4,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Kindred",
+        "bronze": "Doug took bronze in Kindred",
+        "perfect": "You played a perfect Kindred",
+        "fewestValue": "4 guesses",
+        "fewest": "Doug set the all-time Kindred Fewest Guesses · 4 guesses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Kindred Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "LADDER",
+      "id": "ladder",
+      "title": "Letter Ladder",
+      "group": "more",
+      "guessSemantics": "overPar",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Letter Ladder",
+        "bronze": "Doug took bronze in Letter Ladder",
+        "perfect": "You played a perfect Letter Ladder",
+        "fewestValue": "Par",
+        "fewest": "Doug set the all-time Letter Ladder Best vs Par · Par",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Letter Ladder Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "CRYPTOGRAM",
+      "id": "cryptogram",
+      "title": "Codebreaker",
+      "group": "more",
+      "guessSemantics": "checks",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Codebreaker",
+        "bronze": "Doug took bronze in Codebreaker",
+        "perfect": "You played a perfect Codebreaker",
+        "fewestValue": "0 checks",
+        "fewest": "Doug set the all-time Codebreaker Fewest Checks · 0 checks",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Codebreaker Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "WORDSEARCH",
+      "id": "wordsearch",
+      "title": "Spyglass",
+      "group": "more",
+      "guessSemantics": "misses",
+      "guessBase": 10,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 10,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 11,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 10,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 10,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 10,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Spyglass",
+        "bronze": "Doug took bronze in Spyglass",
+        "perfect": "You played a perfect Spyglass",
+        "fewestValue": "0 misses",
+        "fewest": "Doug set the all-time Spyglass Fewest Misses · 0 misses",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Spyglass Fastest Win · 1m 15s"
+      }
+    },
+    {
+      "dbKey": "REGIONS",
+      "id": "regions",
+      "title": "Starsweep",
+      "group": "more",
+      "guessSemantics": "mistakes",
+      "guessBase": 1,
+      "dailyEligible": true,
+      "enabled": true,
+      "perfect": [
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 2,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 0,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": false,
+          "expected": false
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 3,
+          "totalBoards": 3,
+          "completed": true,
+          "expected": true
+        },
+        {
+          "guessCount": 1,
+          "boardsSolved": 1,
+          "totalBoards": 1,
+          "completed": true,
+          "expected": true
+        }
+      ],
+      "moments": {
+        "gold": "Doug took gold in Starsweep",
+        "bronze": "Doug took bronze in Starsweep",
+        "perfect": "You played a perfect Starsweep",
+        "fewestValue": "0 mistakes",
+        "fewest": "Doug set the all-time Starsweep Fewest Mistakes · 0 mistakes",
+        "fastestValue": "1m 15s",
+        "fastest": "Doug set the all-time Starsweep Fastest Win · 1m 15s"
+      }
+    }
+  ],
+  "moreSweep": {
+    "keys": [
+      "PROPERNOUNDLE",
+      "SUDOKU",
+      "SCRAMBLE",
+      "HUB",
+      "CROSSWORD",
+      "GROUPS",
+      "LADDER",
+      "CRYPTOGRAM",
+      "WORDSEARCH",
+      "REGIONS"
+    ],
+    "sweep": "Doug — More Games Sweep, all ten played",
+    "flawless": "You — Flawless More Games, all ten won"
+  }
+}

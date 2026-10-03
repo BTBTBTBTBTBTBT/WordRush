@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
-import { MODE_BY_DBKEY, MORE_GAME_MODES } from '@/lib/modes.generated';
-import { FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
+import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { FRIENDLY_TITLES, moreSweepModeKeys, type FriendlyKind } from '@wordle-duel/core';
 import { fetchAvatarFields, withAvatarFields } from '@/lib/avatar-fields-server';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +20,8 @@ export const dynamic = 'force-dynamic';
  */
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DAYS = 7;
+/** BJ12: the More Games dailies a More Games Sweep needs — the same catalog set the Moments copy counts. */
+const MORE_SWEEP_KEYS = moreSweepModeKeys(MODES);
 
 export interface FeedEvent {
   id: string;
@@ -83,7 +85,7 @@ export async function GET(req: NextRequest) {
       .in('holder_id', ids).gte('achieved_at', `${cutoff}T00:00:00Z`),
     admin.from('daily_results').select('user_id, day, game_mode, completed')
       .in('user_id', ids).eq('play_type', 'solo').gte('day', cutoff).lte('day', day)
-      .in('game_mode', MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).map((m) => m.dbKey as string)),
+      .in('game_mode', MORE_SWEEP_KEYS),
     admin.from('shield_gifts').select('sender_id, recipient_id, week_start, created_at')
       .or(`sender_id.in.(${ids.join(',')}),recipient_id.in.(${ids.join(',')})`)
       .gte('created_at', `${cutoff}T00:00:00Z`),
@@ -127,7 +129,7 @@ export async function GET(req: NextRequest) {
     });
   }
   // More Games Sweep / Flawless: every More Games daily on one day (visual tier, never a bonus row).
-  const moreTotal = MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).length;
+  const moreTotal = MORE_SWEEP_KEYS.length;
   if (moreTotal > 0) {
     const perDay = new Map<string, { played: Set<string>; won: number }>();
     for (const r of (moreRows ?? []) as any[]) {

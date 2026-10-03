@@ -187,6 +187,18 @@ export function installPendingRecordDrainTriggers(userId: string): () => void {
   };
 }
 
+/**
+ * BJ12: ANY game just landed in `matches` / user_stats — Unlimited, VS, bots,
+ * not only today's daily (which fires 'daily-completion'). The data-cache
+ * prefetcher re-reads the Stats bundle on it, so Recent Matches and Today's
+ * Games already hold the game when the player opens Stats.
+ */
+export const GAME_RECORDED_EVENT = 'game-recorded';
+function dispatchGameRecorded(gameMode: string): void {
+  if (typeof window === 'undefined') return;
+  try { window.dispatchEvent(new CustomEvent(GAME_RECORDED_EVENT, { detail: { gameMode } })); } catch {}
+}
+
 function dispatchDailyCompletion(detail: { gameMode: string; won: boolean; guesses: number; timeSeconds: number; score: number }): void {
   if (typeof window === 'undefined') return;
   try { window.dispatchEvent(new CustomEvent('daily-completion', { detail })); } catch {}
@@ -648,6 +660,7 @@ export async function recordMatch(data: {
     // (lets this ship before the migration; forfeit rows need it).
     ...(data.forfeit ? { forfeit: true } : {}),
   });
+  dispatchGameRecorded(data.gameMode);
 }
 
 /**
@@ -716,6 +729,7 @@ export async function recordSoloMatch(data: {
     }), 'matches insert');
     if (error) throw error;
     if (trackPending) markPendingRecordDone(data.gameMode, data.seed, 'soloMatch');
+    dispatchGameRecorded(data.gameMode);
   } catch (err) {
     console.error('recordSoloMatch failed:', err);
     if ((err as any)?.code) reportRejectedWrite(`recordSoloMatch ${data.gameMode}`, err);
@@ -1933,6 +1947,7 @@ export async function recordCpuResult(
           fastest_time: timeSeconds,
         });
     }
+    dispatchGameRecorded(mode);
   } catch {
     /* best-effort practice write */
   }

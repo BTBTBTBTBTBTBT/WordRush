@@ -85,11 +85,14 @@ function DataPrefetcher() {
       t = setTimeout(run, AFTER_FINISH_MS);
     };
     window.addEventListener('daily-completion', onFinish);
+    // BJ12: Unlimited / VS / bot games too, so Recent Matches is never a game behind.
+    window.addEventListener('game-recorded', onFinish);
     return () => {
       cancelled = true;
       cancelIntro();
       if (t) clearTimeout(t);
       window.removeEventListener('daily-completion', onFinish);
+      window.removeEventListener('game-recorded', onFinish);
     };
   }, [userId]);
 

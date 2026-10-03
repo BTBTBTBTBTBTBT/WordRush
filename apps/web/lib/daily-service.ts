@@ -2,7 +2,7 @@ import { supabase } from './supabase-client';
 import { requiredDailyModeCount, sweepModesFor } from './daily-modes';
 import { SWEEP_MODES } from './modes.generated';
 import { MODE_BY_DBKEY } from './modes.generated';
-import { getDailySeedDate } from '@wordle-duel/core';
+import { getDailySeedDate, isPerfectDailyResult } from '@wordle-duel/core';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
 import { isPlausibleDailyResult } from '@/lib/plausibility';
@@ -985,25 +985,11 @@ export async function checkAndAwardPerfectMedal(
 ) {
   if (!completed) return;
 
-  // Define perfect criteria per mode
-  const perfectCriteria: Record<string, () => boolean> = {
-    DUEL: () => guessCount === 1,
-    PROPERNOUNDLE: () => guessCount === 1,
-    DUEL_6: () => guessCount === 1,
-    DUEL_7: () => guessCount === 1,
-    QUORDLE: () => boardsSolved === 4 && guessCount <= 4,
-    OCTORDLE: () => boardsSolved === 8 && guessCount <= 8,
-    SEQUENCE: () => boardsSolved === 4 && guessCount <= 4,
-    RESCUE: () => boardsSolved === 4 && guessCount <= 4,
-    GAUNTLET: () => boardsSolved === 21,
-  };
-
-  // More Games (Stage 3): a perfect run is guess_count at the catalog's guessBase
-  // with every board solved — the same rule the explicit rows above encode.
-  const meta = MODE_BY_DBKEY[gameMode];
-  const check = perfectCriteria[gameMode]
-    ?? (meta?.group === 'more' ? () => guessCount <= meta.guessBase && boardsSolved >= totalBoards : undefined);
-  if (!check || !check()) return;
+  // The shared rule (packages/core mode-coverage, BJ12): the word modes'
+  // explicit table, and every More Games title perfect at the catalog's
+  // guessBase with every board solved — so a new puzzle is covered with no
+  // list to update (iOS/Android used to miss the puzzles entirely).
+  if (!isPerfectDailyResult(gameMode, MODE_BY_DBKEY[gameMode], guessCount, boardsSolved, totalBoards, completed)) return;
 
   // Check if they already have a perfect medal for this day+mode
   const { data: existing } = await (supabase as any)

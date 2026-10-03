@@ -373,7 +373,8 @@ export default function StatsPage() {
   // The All-time page's VS boards keep their OWN People | Bots choice, so picking Bots there never
   // re-scopes the rest of All-time (its charts read activeTab).
   const [vsTab, setVsTab] = useState<'vs' | 'vs_cpu'>('vs');
-  const vsModes = useMemo(() => SWEEP_MODES.filter((m) => hasVs(m.dbKey as string)), []);
+  // BJ12: every game with live VS boards — the sweep word games plus ProperNoundle (it was missing here).
+  const vsModes = useMemo(() => [...SWEEP_MODES, ...MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey)].filter((m) => hasVs(m.dbKey as string)), []);
 
   if (loading) {
     return (

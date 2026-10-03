@@ -1524,3 +1524,23 @@ Pro ended Sep 30, 2026" with W waving) and the Settings upsell names the end dat
 store prices, and the web Pro page / Go Pro popup gained the renewal terms + Terms / Privacy links (a guest's web Subscribe
 now signs in first instead of doing nothing). Copy lives in one tested place per platform (SubscriptionCopy: Core / data /
 lib/payment/subscription-copy.ts).
+
+BJ12. Every game reaches Stats (Today + All-time + recent) and Friends Moments; mode-consistency test (founder 10-03: "Make
+sure the games all tie to stats and the Moments part too, so the recent history is always up to date … with all new games").
+Audit of all 18 catalog games (+ Unlimited, VS people / bots) end to end: the writes (user_stats, daily_results, matches) and
+the Stats picker / Today / All-time / recent-match chrome were already catalog-driven ×3, and the server allowlists (the
+game_mode CHECKs on daily_results, matches, user_stats, daily_seeds; the plausibility floors; the daily-medals cron) hold every
+mode. Gaps fixed: (1) the Perfect medal — the Moments "played a perfect …" row — was a hand-typed nine-word-mode switch on iOS
+and Android, so no More Games puzzle ever earned one on a phone (prod: zero, against 86 qualifying results since 09-22); now one
+shared rule ×3 (packages/core mode-coverage isPerfectDailyResult: the word modes' table, every More Games title at the
+catalog's guessBase with every board solved) + docs/sql/20261003-more-games-perfect-medals-backfill.sql (not applied).
+(2) Moments copy ×3 from one core headline (modeMomentHeadline): the More Games Sweep count from the catalog (was the literal
+"all ten"), a puzzle record reads through its game ("Sudocious Fewest Mistakes · 0 mistakes", was "Fewest Guesses" on web and
+iOS), "1 guess" not "1 guesses". (3) Stats VS boards ×3 include ProperNoundle (word games only before). (4) Recent history
+never a game behind: web re-reads the Stats bundle on any recorded game (Unlimited / VS / bots, not only today's daily); iOS
+Stats re-reads match list + totals on GameResultsService.gameRecorded; the profile matches API never serves a signed-in caller
+a CDN copy (was up to 150 s stale right after a finish). (5) Android puzzle finishes flip only TODAY's card and keep the
+recorded score (notePuzzleFinish; a cross-midnight puzzle marked today done and the score read 0). Tests: core
+mode-coverage.test.ts (every mode in every generated catalog, a reachable Perfect, its Moments headlines, fixture freshness)
++ mode-coverage-fixtures.json pinned by iOS ModeCoverageFixtureTests and Android ModeCoverageFixtureTest; web
+lib/mode-coverage.test.ts (recording call sites, recent-match chrome, format parity with core, feed wiring).

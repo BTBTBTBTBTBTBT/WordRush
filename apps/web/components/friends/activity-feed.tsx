@@ -5,11 +5,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Medal, Star, Sparkles, LayoutGrid } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import type { FriendlyKind } from '@wordle-duel/core';
+import { modeMomentHeadline, moreSweepModeKeys, moreSweepMomentText, recordValueText, type FriendlyKind } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchFriendsFeed, reactToMoment, type FeedEvent, type FeedReactions } from '@/lib/friends-service';
 import { getTodayLocal } from '@/lib/daily-service';
-import { recordValue, RECORD_LABELS } from '@/lib/records-ui';
+import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { WIN_FG } from '@/lib/tile-theme';
 import {
   FR, KIND_COLOR, REACTIONS, REACTION_LABEL, gameMomentText, kindForTitle, reactionChips, toggleReaction, type ReactionKey,
@@ -44,6 +44,9 @@ import { ReactionIcon, REACTION_TINT } from './reaction-icon';
 
 const DOUBLE_TAP_MS = 300;
 
+/** BJ12: how many More Games dailies a More Games Sweep moment covers (the feed route counts the same set). */
+const MORE_SWEEP_TOTAL = moreSweepModeKeys(MODES).length;
+
 /** Art already on the Friends screen (the banner's O1 cheer, the add-friend card's I) — never repeated in a moment (A7). */
 const SCREEN_POSES: PoseArtName[] = [poseArt('o1', 'cheer'), poseArt('i', 'reach')];
 const LONG_PRESS_MS = 450;
@@ -72,27 +75,31 @@ function describe(e: FeedEvent): { text: string; icon: React.ReactNode } {
   switch (e.type) {
     case 'flawless': return { text: `${who} won every daily — Flawless Victory`, icon: <Icon3D name="trophy" size={16} /> };
     case 'sweep': return { text: `${who} swept the dailies`, icon: <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} /> };
-    case 'more_flawless': return { text: `${who} — Flawless More Games, all ten won`, icon: <LayoutGrid className="w-4 h-4" style={{ color: '#b45309' }} /> };
-    case 'more_sweep': return { text: `${who} — More Games Sweep, all ten played`, icon: <LayoutGrid className="w-4 h-4" style={{ color: '#4f46e5' }} /> };
+    // BJ12: the count comes from the catalog (it was a literal "ten").
+    case 'more_flawless': return { text: moreSweepMomentText(who, true, MORE_SWEEP_TOTAL), icon: <LayoutGrid className="w-4 h-4" style={{ color: '#b45309' }} /> };
+    case 'more_sweep': return { text: moreSweepMomentText(who, false, MORE_SWEEP_TOTAL), icon: <LayoutGrid className="w-4 h-4" style={{ color: '#4f46e5' }} /> };
     case 'game': {
       const kind = kindForTitle(e.gameTitle);
       return { text: gameMomentText(e), icon: kind ? <GameIconSquare kind={kind} size={20} /> : <Icon3D name="trophy" size={16} /> };
     }
     case 'gift': return { text: `${who} sent ${e.otherName ?? 'a friend'} a streak shield`, icon: <Icon3D name="shield" size={16} /> };
     case 'record': {
-      const label = e.kind ? RECORD_LABELS[e.kind]?.label ?? e.kind : 'record';
-      const val = e.kind && e.value != null ? recordValue(e.kind, e.value, e.gameMode) : '';
-      return { text: `${who} set the all-time ${e.gameTitle ? `${e.gameTitle} ` : ''}${label}${val ? ` · ${val}` : ''}`, icon: <Star className="w-4 h-4" style={{ color: '#d97706' }} fill="currentColor" /> };
+      // BJ12: the shared headline — "Fewest Mistakes · 0 mistakes" for Sudocious, never "Fewest Guesses".
+      const meta = e.gameMode ? MODE_BY_DBKEY[e.gameMode] : undefined;
+      const val = e.kind && e.value != null ? recordValueText(e.kind, e.value, meta?.guessSemantics, meta?.guessBase ?? 1) : null;
+      return { text: modeMomentHeadline(e, meta?.guessSemantics, val), icon: <Star className="w-4 h-4" style={{ color: '#d97706' }} fill="currentColor" /> };
     }
     case 'medal':
     default: {
+      // BJ12: the shared medal headline (packages/core mode-coverage) — every game, every platform.
       const k = e.kind ?? '';
-      if (k === 'gold') return { text: `${who} took gold in ${e.gameTitle ?? e.gameMode}`, icon: <Icon3D name="crown" size={16} /> };
-      if (k === 'silver') return { text: `${who} took silver in ${e.gameTitle ?? e.gameMode}`, icon: <Medal className="w-4 h-4" style={{ color: '#9ca3af' }} /> };
-      if (k === 'bronze') return { text: `${who} took bronze in ${e.gameTitle ?? e.gameMode}`, icon: <Medal className="w-4 h-4" style={{ color: '#b45309' }} /> };
-      if (k === 'perfect') return { text: `${who} played a perfect ${e.gameTitle ?? e.gameMode}`, icon: <Star className="w-4 h-4" style={{ color: WIN_FG }} fill="currentColor" /> };
-      if (k.startsWith('streak_')) return { text: `${who} hit a ${k.slice(7)}-day streak`, icon: <Icon3D name="flame" size={16} /> };
-      return { text: `${who} earned a medal in ${e.gameTitle ?? e.gameMode}`, icon: <Medal className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} /> };
+      const text = modeMomentHeadline(e, null, null);
+      if (k === 'gold') return { text, icon: <Icon3D name="crown" size={16} /> };
+      if (k === 'silver') return { text, icon: <Medal className="w-4 h-4" style={{ color: '#9ca3af' }} /> };
+      if (k === 'bronze') return { text, icon: <Medal className="w-4 h-4" style={{ color: '#b45309' }} /> };
+      if (k === 'perfect') return { text, icon: <Star className="w-4 h-4" style={{ color: WIN_FG }} fill="currentColor" /> };
+      if (k.startsWith('streak_')) return { text, icon: <Icon3D name="flame" size={16} /> };
+      return { text, icon: <Medal className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} /> };
     }
   }
 }
