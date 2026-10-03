@@ -35,13 +35,17 @@ def shadow(im, op=0.3):
 
 def compose(mode):
     host, pose, place = GAMES[mode]
-    word = trim(Image.open(os.path.join(HERE, f'gt-{mode}-lettering-keyed.png')).convert('RGBA'))
+    # 10-03: hi-res re-letters (full-size ChatGPT downloads, titles/hires/) win over the old pane captures.
+    hires = os.path.join(HERE, 'hires', f'gt-{mode}-lettering.png')
+    src = hires if os.path.exists(hires) else os.path.join(HERE, f'gt-{mode}-lettering-keyed.png')
+    word = trim(Image.open(src).convert('RGBA'))
     a = np.array(word.getchannel('A')) > 128
     rows = a[:, ::2].sum(axis=1)
     band = np.nonzero(rows > rows.max() * 0.45)[0]
     ltop, lbot = band[0], band[-1]
     lh = lbot - ltop
-    ch = trim(Image.open(os.path.join(POSES, f'{host}-{pose}.png')).convert('RGBA'))
+    hhost = os.path.join(HERE, 'hires', 'hosts', f'{mode}.png')   # 10-03 full-res host drawn for this title
+    ch = trim(Image.open(hhost if os.path.exists(hhost) else os.path.join(POSES, f'{host}-{pose}.png')).convert('RGBA'))
     if place == 'end':
         h = int(lh * 1.75)
         ch = ch.resize((round(ch.width * h / ch.height), h), Image.LANCZOS)
@@ -65,7 +69,8 @@ def compose(mode):
         canvas.alpha_composite(word, (0, top_extra))
         x = int(word.width * 0.78 - ch.width / 2)
         y = top_extra + ltop + sink - h
-    canvas.alpha_composite(shadow(ch), (x + 3, y + 5))
+    sc = max(1, word.height // 150)
+    canvas.alpha_composite(shadow(ch), (x + 3 * sc, y + 5 * sc))
     canvas.alpha_composite(ch, (x, y))
     out = trim(canvas)
     out.save(os.path.join(HERE, f'gt-{mode}-title.png'))

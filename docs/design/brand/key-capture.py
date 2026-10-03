@@ -1,13 +1,18 @@
 # Cut a ChatGPT capture shot on a flat key color (magenta, green or cyan) out to a
 # transparent PNG (founder prefers free ChatGPT art over the paid API).
-#   python3 key-capture.py <capture.jpg> <x0,y0,x1,y1> <magenta|green|cyan> <out.png>
+#   python3 key-capture.py <capture.jpg> <x0,y0,x1,y1|full> <magenta|green|cyan> <out.png> [native]
+# 'native' / 'native-all' (lettering: every key pocket goes) (full-size ChatGPT downloads, 10-03): keep the source resolution, just trim — no 1024 canvas.
 # Soft alpha from the distance to the key color, then despill so no tint is
 # left on the edges; upscaled to 1024 to sit next to the API-made cast.
 import sys
 from PIL import Image, ImageFilter
 
-src, box, key, out = sys.argv[1], [int(v) for v in sys.argv[2].split(',')], sys.argv[3], sys.argv[4]
-im = Image.open(src).convert('RGB').crop(box)
+src, key, out = sys.argv[1], sys.argv[3], sys.argv[4]
+NATIVE = len(sys.argv) > 5 and sys.argv[5] in ('native', 'native-all')
+ALL_POCKETS = len(sys.argv) > 5 and sys.argv[5] == 'native-all'   # lettering: key every key-colored pocket
+im = Image.open(src).convert('RGB')
+if sys.argv[2] != 'full':
+    im = im.crop([int(v) for v in sys.argv[2].split(',')])
 # Sample the key from the four corners (the capture's exact shade, not the ideal one).
 corners = [im.getpixel((4, 4)), im.getpixel((im.width - 5, 4)), im.getpixel((4, im.height - 5)), im.getpixel((im.width - 5, im.height - 5))]
 K = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
@@ -34,7 +39,7 @@ border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
 sizes = ndimage.sum(np.ones_like(lab), lab, index=np.arange(1, nlab + 1))
 keep_bg = np.zeros(nlab + 1, bool)
 for i in range(1, nlab + 1):
-    keep_bg[i] = (i in border) or sizes[i - 1] > bg.size * 0.004
+    keep_bg[i] = ALL_POCKETS or (i in border) or sizes[i - 1] > bg.size * 0.004
 bg = keep_bg[lab]
 band = ndimage.binary_dilation(bg, iterations=3) & ~bg
 alpha = np.full(d.shape, 255.0)
@@ -58,6 +63,10 @@ a2 = alpha.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.6)
 rgba.putalpha(a2)
 bbox = a2.point(lambda v: 255 if v > 24 else 0).getbbox()
 rgba = rgba.crop(bbox)
+if NATIVE:
+    rgba.save(out)
+    print('key', K, 'saved', out, rgba.size)
+    sys.exit(0)
 scale = 900 / max(rgba.size)
 rgba = rgba.resize((round(rgba.width * scale), round(rgba.height * scale)), Image.LANCZOS)
 canvas = Image.new('RGBA', (1024, 1024), (0, 0, 0, 0))

@@ -6,7 +6,7 @@
 #   UI icons     icons/<name>-capture.png    → icon3d-<name>       (256 square)
 #   moments      titles/<m>-lettering-keyed  → art-moment-<m>      (width 900)
 #   scenes       scenes/<scene>.png          → art-scene-<scene>   (width 600)
-#   game titles  titles/gt-<id>-title.png    → art-game-<id>       (width 900)
+#   game titles  titles/gt-<id>-title.png    → art-game-<id>       (width 1200)
 # Web:     apps/web/public/art/<name>.webp
 # Android: res/drawable-nodpi/<name with _>.webp
 # iOS:     Assets.xcassets/<name>.imageset/<name>.png (art-wall-*: Wallpapers.xcassets)
@@ -124,7 +124,8 @@ for sc in SCENES:
 for g in GAMES:
     if g.startswith('pocket-') or g in ('vs', 'more'):
         continue
-    ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 900)); n += 1
+    # 10-03: hi-res re-letters + full-res hosts → 1200 wide (was 900 from pane captures)
+    ship(f'art-game-{g}', wide(os.path.join(HERE, 'titles', f'gt-{g}-title.png'), 1200)); n += 1
 ship('game-sweep', square(os.path.join(HERE, 'games', 'sweep.png'))); n += 1   # Sweep tile (founder 10-02)
 for pc in ['star-placed', 'star-correct', 'star-wrong', 'cross']:   # Starsweep pieces (founder 10-02)
     ship(f'art-starsweep-{pc}', square(os.path.join(HERE, 'games', 'starsweep', f'{pc}.png'), 256, 0.04)); n += 1
