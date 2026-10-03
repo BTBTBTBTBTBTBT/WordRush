@@ -64,10 +64,11 @@ struct HomeHostMascot: View {
                     .padding(.bottom, size * 0.02)
             }
         case .mascot(let config):
-            MascotAvatar(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username),
-                         size: size * 0.92)
-                .shadow(color: Color(hex: 0x4C1D95).opacity(0.14), radius: 3, x: 0, y: 2)
-                .padding(.bottom, size * 0.02)
+            // FINISH_SPEC BJ6 (coordinator 10-03): the host is a full-body CUTOUT — no backdrop
+            // tile, no frame, no border — standing free on the cap like W. (Everywhere else the
+            // avatar keeps its backdrop + frame.)
+            MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
+                .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
         case .w:
             // Decoded ahead of Home's first frame (prewarm), drawn at its display size.
             if ArtAsset.exists(Self.wPose) {
@@ -103,5 +104,36 @@ struct HomeHostMascot: View {
                 }
             }
         }
+    }
+}
+
+/// BJ6: a player's mascot drawn as a free-standing figure — the same layered art (or the
+/// code-drawn placeholder) the avatar renders, minus its backdrop stage, tile clip, border and
+/// frame. Static: one Canvas, drawn once per config.
+struct MascotCutout: View {
+    let config: AvatarConfig
+    let initial: String
+    let size: CGFloat
+
+    var body: some View {
+        var c = config
+        c.frame = "none"
+        let small = size <= MascotParts.smallSize
+        return Group {
+            if let fit = MascotParts.fit, MascotParts.art("body", c.body) != nil {
+                let layout = AvatarFit.layout(c, small: small, manifest: fit)
+                Canvas { ctx, _ in
+                    MascotArtPainter.paint(ctx, side: size, layout: layout, config: c, initial: initial, small: small)
+                }
+            } else {
+                let hasHat = c.head != "none"
+                let u = size * (hasHat ? 0.84 : 0.94)
+                Canvas { ctx, _ in MascotPainter.paint(ctx, u: u, config: c, initial: initial, small: small) }
+                    .frame(width: u, height: u)
+                    .position(x: size / 2, y: size - u / 2)
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
