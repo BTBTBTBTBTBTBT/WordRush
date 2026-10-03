@@ -7,7 +7,7 @@
 -- (POST /api/referrals/dismiss, service role, scoped to the caller's own rows as inviter); read via
 -- GET /api/referrals/dismiss. No RLS change: clients never select or write this column directly.
 --
--- NOT APPLIED. Apply after a backup (scripts/db-backup.sh), then read back:
+-- APPLIED 2026-10-03 ~12:24 CT after backup 20261003T172342Z (read back OK). Read back with:
 --   select column_name from information_schema.columns
 --    where table_schema = 'public' and table_name = 'referrals' and column_name = 'inviter_dismissed_at';
 -- Until it is applied, the apps keep working: every platform also keeps a per-user local dismissed
