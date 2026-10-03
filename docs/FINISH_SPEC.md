@@ -1060,3 +1060,50 @@ gap above the stats, peeking cast crammed bottom-right): both game rows span the
 tiles across, Puzzles 10 tiles across, sized up to fill — tiles grow until the width is used), vertical space
 distributed so there's no empty band between the rows and the stat chips; the medium already has the full cast row
 at the top, so DROP the peeking cast on medium (keep it on small only).
+
+## BD. A unique badge for every achievement (founder 10-02: "Add cool images to match what achievements you get, we
+repeat a lot of the same ones right now")
+All 73 achievements (list: docs/design/brand/badges/achievements.txt, key|name|description) get their OWN badge art
+`art-ach-<key>` in the existing shield-badge style (glossy candy, purple shield rim) with a symbol that tells that
+achievement's story (e.g. first_win a tiny trophy + first-place ribbon, streak_30 a calendar with a flame, octo_boss
+eight mini boards, quad_king four boards wearing a crown, speed_demon a stopwatch with a lightning tail, rescue_hero
+a shield carrying a letter tile, close_call a nervous tile on the last row…). Made in tonight's ChatGPT session
+(3x3 sheets). Apps: render art-ach-<key> when it exists, else fall back to the current icon badge — no layout change.
+
+## BE. New achievements for the new games (founder 10-02: "think about new achievements we can add and add additional
+photos to correspond with all the new games even the pocket games")
+38 new achievements in docs/design/brand/badges/achievements-new.txt (key|name|description): every Puzzle (Muddle,
+Hubbub, Kindred, Letter Ladder, Codebreaker, Spyglass, Starsweep + Puzzle Sweep/Week/Grand Sweep), the bot ladder +
+cast (Rip, five rungs, Webster, all ten, Bot of the Day), friends (first friend, 10 friends, race win, friend streak,
+reactions), all six pocket games (+ Pocket Pro), the mascot maker, Halloween week, Early Bird / Night Owl.
+- Web (owns the server): add them to achievement-service.ts definitions with categories + the award checks where
+  the data already exists (puzzle results, VS/bot results, friends, reactions, friendly/pocket game results, avatar
+  saves, finish timestamps); check whether user_achievements.achievement_key has a CHECK/enum (if a migration is
+  needed, write it to docs/sql/ and STOP — the coordinator applies it after a backup). Any achievement whose
+  trigger data isn't recorded yet: define it but mark it `hidden: true` (not shown until its tracking ships) and
+  list it in the report.
+- iOS + Android: mirror the definitions (or read them from the API/catalog if that's how they work today), show them in
+  the grid + unlock popup, and award client-side only where the platforms already award today.
+- Art: each gets its own art-ach-<key> badge (tonight's ChatGPT session, with BD); fallback to the category icon.
+
+## BF. Achievement unlocked — players must SEE it (founder 10-02: "a celebratory popup with mascots, highlighting an
+achievement received and purpose for it. Right now, I never know when I get achievements")
+Likely root cause: achievements are awarded server-side after a result is saved, but the clients never learn which
+ones are NEW, so the V2 popup never fires. Fix detection first, then the popup:
+BF1. Detection (all three): the result-submit / daily-completion / VS-result / friendly-game endpoints return
+     `newAchievements: [{key, name, description, category, xp?}]` for keys inserted by THIS request (web server owns
+     this; null-safe for old clients). Clients ALSO diff on app open / foreground: fetch the user's achievements,
+     compare with a locally stored "seen" set, and queue any unseen unlocks (so server-side awards from crons or
+     other devices still celebrate once). First launch after this update: mark everything already earned as seen
+     (no flood of old popups).
+BF2. The popup (one shared component per platform, R1 card language): a celebratory full-screen moment —
+     rays + confetti + `unlock` sound + success haptic; a mascot pair holding up the badge (new art
+     `art-scene-achievement` tonight: two cast members presenting an empty glowing frame/pedestal where the badge
+     art is composited; until it lands, the related game's host pose beside the badge); the achievement's own badge
+     big (art-ach-<key>, fallback category icon) springing in; lettering "ACHIEVEMENT UNLOCKED!" (LiveHeadline gold);
+     the NAME in big soft-number ink; the PURPOSE line = its description ("Solve all ten Puzzles in one day"); XP
+     reward chip if any; "3 of 111 unlocked" progress; candy buttons "Awesome!" (dismiss) + "See all" (→ Stats
+     achievements) + share icon (image share of the badge card, S-style). Several unlocked at once → queue them
+     one after another (with a "2 more" chip), never stacked. Shown AFTER the win popup closes (never on top of it),
+     and not during a live VS match. Reduce Motion: no rays/confetti.
+BF3. Tests: unseen-diff logic (new key → queued once; already-seen → no popup; first-launch seeding), queue order.

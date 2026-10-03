@@ -10,7 +10,11 @@ import WordociousCore
 /// is a deferred follow-up.)
 struct AchievementDef: Identifiable, Decodable {
     let key: String, name: String, description: String, category: String
-    var icon: String? = nil   // present in the /api/achievements payload; unused for rendering
+    var icon: String? = nil   // present in the /api/achievements payload (badge fallback)
+    /// FINISH_SPEC BE: defined but not shown until its tracking ships.
+    var hidden: Bool? = nil
+    /// BF2: the XP reward, when the catalog carries one.
+    var xp: Int? = nil
     var id: String { key }
 }
 
@@ -70,6 +74,17 @@ enum AchievementService {
             } catch { /* unique-violation or transient — ignore */ }
         }
         func has(_ k: String) -> Bool { awarded.contains(k) }
+        /// FINISH_SPEC BE: the new achievements award only once the web catalog
+        /// defines them (and never a hidden one) — so no popup ever shows a key the
+        /// server doesn't know yet.
+        func tryUnlockNew(_ key: String) async {
+            guard !awarded.contains(key) else { return }
+            let live = await MainActor.run { () -> Bool in
+                guard let d = AchievementCatalog.shared.find(key) else { return false }
+                return d.hidden != true
+            }
+            if live { await tryUnlock(key) }
+        }
         let isDaily = seed?.hasPrefix("daily-") ?? false
         let today = LeaderboardService.todayLocal()
 
@@ -173,6 +188,22 @@ enum AchievementService {
             if timeSeconds < 180 { await tryUnlock("regions_swift") }
         }
         if gameMode == "GAUNTLET" && won { await tryUnlock("gauntlet_master") }
+
+        // FINISH_SPEC BE — the new game-finish achievements iOS can judge from this
+        // result (the bot / friends / pocket / mascot ones are awarded server-side).
+        if won {
+            if gameMode == "SCRAMBLE" && hintsUsed == 0 { await tryUnlockNew("punchline_pro") }
+            if gameMode == "HUB" && guessCount == 1 { await tryUnlockNew("hive_mind") }
+            if gameMode == "GROUPS" && guessCount == GROUPS_PERFECT_GUESSES { await tryUnlockNew("kindred_spirit") }
+            if gameMode == "CRYPTOGRAM" && guessCount == 1 { await tryUnlockNew("clean_crack") }
+            if gameMode == "REGIONS" && guessCount == 1 && hintsUsed == 0 { await tryUnlockNew("perfect_constellation") }
+        }
+        if isDaily {
+            let hour = Calendar.current.component(.hour, from: Date())
+            if hour < 7 && hour >= 4 { await tryUnlockNew("early_bird") }
+            if hour < 4 { await tryUnlockNew("night_owl") }
+            if Season.current(day: today) == .halloween { await tryUnlockNew("spooky_season") }
+        }
         if gameMode == "DUEL" && won && guessCount <= 2 { await tryUnlock("no_sweat") }
         if won && timeSeconds < 15 { await tryUnlock("blitz") }
         if won && timeSeconds < 10 { await tryUnlock("quick_draw") }
@@ -228,6 +259,11 @@ enum AchievementService {
                 ("scramble_regular","SCRAMBLE",50),
             ]
             for (key, mode, thresh) in mastery where soloWinsByMode(mode) >= thresh { await tryUnlock(key) }
+            // FINISH_SPEC BE: 25 solves of each Puzzle.
+            let puzzle25: [(String, String)] = [("muddle_master", "SCRAMBLE"), ("kindred_regular", "GROUPS"),
+                                                ("ladder_climber", "LADDER"), ("code_cracker", "CRYPTOGRAM"),
+                                                ("sharp_spotter", "WORDSEARCH"), ("starstruck", "REGIONS")]
+            for (key, mode) in puzzle25 where mode == gameMode && soloWinsByMode(mode) >= 25 { await tryUnlockNew(key) }
 
             let totalPlayed = stats.reduce(0) { $0 + $1.total_games }
             if totalPlayed >= 500 { await tryUnlock("dedicated") }
@@ -313,6 +349,17 @@ enum AchievementService {
                 if totalTime < 900 { await tryUnlock("speed_sweep") }
                 // rows are filtered completed=true, so the full set present == Flawless day.
                 if totalTime < 1080 { await tryUnlock("flawless_speed") }
+            }
+            // FINISH_SPEC BE: every Puzzle today (Puzzle Sweep), and every Wordocious
+            // daily + every Puzzle (Grand Sweep).
+            let puzzleKeys = Set(await MainActor.run { moreDailyModes().compactMap(\.dbKey) })
+            let todayAll = Set(todays.map { $0.game_mode })
+            if !puzzleKeys.isEmpty, puzzleKeys.contains(gameMode), puzzleKeys.isSubset(of: todayAll) {
+                await tryUnlockNew("puzzle_sweep")
+                if Set(sweepSet).isSubset(of: todayAll) { await tryUnlockNew("grand_sweep") }
+            } else if sweepSet.contains(gameMode), !puzzleKeys.isEmpty,
+                      puzzleKeys.isSubset(of: todayAll), Set(sweepSet).isSubset(of: todayAll) {
+                await tryUnlockNew("grand_sweep")
             }
             if playType == "vs" && won && !has("triple_threat") {
                 if todays.reduce(0, { $0 + ($1.vs_wins ?? 0) }) >= 3 { await tryUnlock("triple_threat") }

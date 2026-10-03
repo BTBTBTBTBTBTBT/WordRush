@@ -1,5 +1,6 @@
 'use client';
 
+import { avatarAchievements, unlockAchievements } from '@/lib/achievement-service';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -392,6 +393,8 @@ export function FirstRunTour() {
     setAvatarSaving(true);
     setAvatarNote('');
     const res = await saveProfileWithAvatar(supabase as unknown as ProfilesUpdater, p.id, {}, choiceForConfig(config));
+    // FINISH_SPEC BE: Self Portrait / Dress Up once the mascot is saved.
+    if (!res.error) void unlockAchievements(p.id, avatarAchievements(config));
     setAvatarSaving(false);
     if (res.error) {
       setAvatarNote((res.error as { message?: string }).message ?? 'Could not save your mascot. Please try again.');

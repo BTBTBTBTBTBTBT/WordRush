@@ -22,6 +22,10 @@ object AchievementService {
     data class AchievementDef(
         val key: String, val name: String, val description: String, val category: String,
         val icon: String? = null,   // present in /api/achievements; picks the badge art (ui/BadgeKit.kt BadgeArt)
+        /** BE: defined but not shown until its tracking ships (the catalog drops these). */
+        val hidden: Boolean = false,
+        /** BF2: the XP reward, when the catalog sends one. */
+        val xp: Int? = null,
     )
 
 
@@ -51,6 +55,14 @@ object AchievementService {
             .mapNotNull { r -> r.unlockedAt?.let { r.achievementKey to it } }
             .toMap()
     }.getOrElse { emptyMap() }
+
+    /** BF1: every earned key → `unlocked_at` ("" when missing); null on a failed fetch (never "none earned"). */
+    suspend fun fetchEarnedOrNull(userId: String): Map<String, String>? = runCatching {
+        SupabaseConfig.client.postgrest["achievements"]
+            .select(Columns.raw("achievement_key, unlocked_at")) { filter { eq("user_id", userId) } }
+            .decodeList<DatedRow>()
+            .associate { r -> r.achievementKey to (r.unlockedAt ?: "") }
+    }.getOrNull()
 
     // ============================================================
     // Unlock detection — 1:1 port of web checkAchievements()

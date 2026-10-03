@@ -28,10 +28,13 @@ object AchievementCatalog {
 
     private var mem: List<AchievementService.AchievementDef>? = null
 
+    /** BE: hidden achievements (their tracking hasn't shipped) never show in the grid or popups. */
+    fun visible(all: List<AchievementService.AchievementDef>): List<AchievementService.AchievementDef> = all.filter { !it.hidden }
+
     fun cached(): List<AchievementService.AchievementDef> {
         mem?.let { return it }
         val raw = prefs.getString(CACHE_KEY, null) ?: return emptyList()
-        return runCatching { json.decodeFromString(Payload.serializer(), raw).achievements }
+        return runCatching { visible(json.decodeFromString(Payload.serializer(), raw).achievements) }
             .getOrDefault(emptyList()).also { if (it.isNotEmpty()) mem = it }
     }
 
@@ -42,7 +45,7 @@ object AchievementCatalog {
             }
             val result = if (conn.responseCode in 200..299) {
                 val body = conn.inputStream.bufferedReader().use { it.readText() }
-                val list = json.decodeFromString(Payload.serializer(), body).achievements
+                val list = visible(json.decodeFromString(Payload.serializer(), body).achievements)
                 mem = list
                 prefs.edit().putString(CACHE_KEY, body).apply()
                 list

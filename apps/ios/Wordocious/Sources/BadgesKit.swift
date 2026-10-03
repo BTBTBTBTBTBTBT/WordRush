@@ -16,6 +16,18 @@ enum BadgeArt {
         return ArtAsset.exists(name) ? name : "art-badge-star"
     }
 
+    /// FINISH_SPEC BE: the achievement's own badge (`art-ach-<key>`) when it ships,
+    /// else its icon badge, else its CATEGORY's icon badge, else the star.
+    static func achievementAsset(key: String, icon: String?, category: String) -> String {
+        let own = "art-ach-\(key)"
+        if ArtAsset.exists(own) { return own }
+        if let icon, ArtAsset.exists("art-badge-\(icon)") { return "art-badge-\(icon)" }
+        let byCategory = ["beginner": "star", "consistency": "flame", "skill": "target",
+                          "social": "users", "collection": "trophy"][category]
+        if let c = byCategory, ArtAsset.exists("art-badge-\(c)") { return "art-badge-\(c)" }
+        return "art-badge-star"
+    }
+
     /// The tier's display color (the old chip colors) — popup accents and rings.
     static func tierAccent(_ tier: LevelTier) -> Color {
         switch tier {
@@ -47,6 +59,9 @@ enum BadgeArt {
 /// grayscale at 45% opacity with the small 3D lock in the corner.
 struct AchievementBadgeArt: View {
     let icon: String?
+    /// FINISH_SPEC BE: the achievement (its own art-ach-<key> badge first).
+    var key: String = ""
+    var category: String = ""
     let unlocked: Bool
     var size: CGFloat = 56
     var glow: Color = Color(hex: 0x7C3AED)
@@ -60,7 +75,8 @@ struct AchievementBadgeArt: View {
                     .offset(x: size * 0.125, y: -size * 0.125)
                     .allowsHitTesting(false)
             }
-            Image(BadgeArt.achievementAsset(icon))
+            Image(key.isEmpty ? BadgeArt.achievementAsset(icon)
+                              : BadgeArt.achievementAsset(key: key, icon: icon, category: category))
                 .resizable().interpolation(.high).scaledToFit()
                 .frame(width: size, height: size)
                 .grayscale(unlocked ? 0 : 1)
@@ -114,7 +130,7 @@ struct AchievementBadgeCell: View {
     var body: some View {
         let dark = Theme.isDark
         VStack(spacing: 4) {
-            AchievementBadgeArt(icon: def.icon, unlocked: unlocked, size: 54, glow: accent)
+            AchievementBadgeArt(icon: def.icon, key: def.key, category: def.category, unlocked: unlocked, size: 54, glow: accent)
                 .padding(.top, 2)
             Text(def.name).font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.heading)
                 .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.75)
@@ -169,7 +185,7 @@ struct AchievementDetailSheet: View {
                 BadgeRays(color: accent.opacity(unlocked ? 0.12 : 0.05))
                     .frame(width: 220, height: 220)
                     .mask(RadialGradient(colors: [.black, .clear], center: .center, startRadius: 12, endRadius: 110))
-                AchievementBadgeArt(icon: def.icon, unlocked: unlocked, size: 150, glow: accent)
+                AchievementBadgeArt(icon: def.icon, key: def.key, category: def.category, unlocked: unlocked, size: 150, glow: accent)
             }
             .frame(height: 190)
             .accessibilityHidden(true)

@@ -1,0 +1,37 @@
+muddle_master|Muddle Master|Solve 25 Muddles
+punchline_pro|Punchline Pro|Solve a Muddle without a hint
+hive_mind|Hive Mind|Reach the top rank in Hubbub
+pangram_hunter|Pangram Hunter|Find 10 Hubbub pangrams
+kindred_spirit|Kindred Spirit|Solve a Kindred with no mistakes
+kindred_regular|Kindred Fan|Solve 25 Kindreds
+ladder_climber|Ladder Climber|Solve 25 Letter Ladders
+under_par|Under Par|Solve a Letter Ladder under par
+code_cracker|Code Cracker|Solve 25 Codebreakers
+sharp_spotter|Sharp Spotter|Solve 25 Spyglass word searches
+starstruck|Starstruck|Solve 25 Starsweeps
+perfect_constellation|Perfect Constellation|Solve a Starsweep with no wrong stars
+puzzle_sweep|Puzzle Sweep|Solve all ten Puzzles in one day
+puzzle_week|Puzzle Week|Sweep the Puzzles 7 days in a row
+grand_sweep|Grand Sweep|Sweep every Wordocious daily and every Puzzle in one day
+wake_up_call|Wake-Up Call|Beat Rip in a VS battle
+halfway_hero|Halfway Hero|Clear five rungs of the bot ladder
+boss_battle|Boss Battle|Beat Webster, the final boss
+meet_the_cast|Meet the Cast|Beat all ten cast bots
+daily_duelist|Daily Duelist|Beat the Bot of the Day 7 times
+best_buds|Best Buds|Add your first friend
+squad_goals|Squad Goals|Have 10 friends
+race_day|Race Day|Win today's friends race
+ride_or_die|Ride or Die|Keep a 7-day friend streak
+cheerleader|Cheerleader|Send 25 reactions
+rock_solid|Rock Solid|Win 10 Rock Paper Scissors matches
+three_in_a_row|Three in a Row|Win 10 Tic-Tac-Tile matches
+called_it|Called It|Win 10 Call It matches
+team_player|Team Player|Finish 10 Pass the Puzzle games
+spooky_speller|Spooky Speller|Win 10 Ghost games
+chain_reaction|Chain Reaction|Make a 20-word Word Chain
+pocket_pro|Pocket Pro|Win at least one of every pocket game
+self_portrait|Self Portrait|Make your own mascot
+dress_up|Dress Up|Save a mascot with a hat, an extra and a backdrop
+spooky_season|Spooky Season|Finish a daily during Halloween week
+early_bird|Early Bird|Finish a daily before 7 AM
+night_owl|Night Owl|Finish a daily between midnight and 4 AM

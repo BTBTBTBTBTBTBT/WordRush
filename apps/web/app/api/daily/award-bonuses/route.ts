@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { verifyUser } from '@/lib/api-auth';
 import { sweepModesFor } from '@/lib/daily-modes';
+import { dayStreaks, puzzleDayAchievements, shiftDay } from '@wordle-duel/core';
+import { MORE_GAME_MODES } from '@/lib/modes.generated';
+import { grantAchievements } from '@/lib/achievements-server';
+import type { NewAchievement } from '@/lib/achievement-service';
+
+/** The daily Puzzles (More Games with a daily). */
+const PUZZLE_KEYS: string[] = MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).map((m) => m.dbKey as string);
+
+/**
+ * FINISH_SPEC BE + BF1: Puzzle Sweep / Puzzle Week / Grand Sweep for `day`,
+ * from the player's own daily_results; returns the ones THIS request granted.
+ */
+async function puzzleDayGrants(admin: any, userId: string, day: string, wordSweepDone: boolean): Promise<NewAchievement[]> {
+  try {
+    const { data } = await admin
+      .from('daily_results')
+      .select('day, game_mode, completed')
+      .eq('user_id', userId)
+      .eq('play_type', 'solo')
+      .in('game_mode', PUZZLE_KEYS)
+      .gte('day', shiftDay(day, -60))
+      .lte('day', day);
+    const byDay = new Map<string, Set<string>>();
+    for (const r of (data ?? []) as Array<{ day: string; game_mode: string }>) {
+      if (!byDay.has(r.day)) byDay.set(r.day, new Set());
+      byDay.get(r.day)!.add(r.game_mode);
+    }
+    const days: Record<string, { played: number; won: number }> = {};
+    for (const [d, set] of byDay) days[d] = { played: set.size, won: 0 };
+    const keys = puzzleDayAchievements({
+      puzzlesDone: byDay.get(day)?.size ?? 0,
+      puzzlesTotal: PUZZLE_KEYS.length,
+      wordSweepDone,
+      puzzleSweepStreak: dayStreaks(days, PUZZLE_KEYS.length, day).sweep,
+    });
+    return keys.length ? await grantAchievements(admin, userId, keys) : [];
+  } catch {
+    return [];
+  }
+}
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -63,7 +103,7 @@ export async function POST(req: NextRequest) {
     const sweepAlready = existing?.sweep_awarded ?? false;
     const flawlessAlready = existing?.flawless_awarded ?? false;
     if (sweepAlready && flawlessAlready) {
-      return NextResponse.json({ awarded: false, reason: 'already_awarded' });
+      return NextResponse.json({ awarded: false, reason: 'already_awarded', newAchievements: await puzzleDayGrants(admin, userId, day, true) });
     }
 
     // The authoritative facts: what did this user actually record that day?
@@ -83,7 +123,7 @@ export async function POST(req: NextRequest) {
     const required = sweepModesFor(day).length;
 
     if (played.size < required) {
-      return NextResponse.json({ awarded: false, reason: 'incomplete', played: played.size, required });
+      return NextResponse.json({ awarded: false, reason: 'incomplete', played: played.size, required, newAchievements: await puzzleDayGrants(admin, userId, day, false) });
     }
 
     const sweepNew = !sweepAlready;
@@ -91,7 +131,7 @@ export async function POST(req: NextRequest) {
     let xpBonus = 0;
     if (sweepNew) xpBonus += DAILY_SWEEP_XP;
     if (flawlessNew) xpBonus += FLAWLESS_EXTRA_XP;
-    if (xpBonus === 0) return NextResponse.json({ awarded: false, reason: 'nothing_new' });
+    if (xpBonus === 0) return NextResponse.json({ awarded: false, reason: 'nothing_new', newAchievements: await puzzleDayGrants(admin, userId, day, true) });
 
     await admin.from('daily_bonuses').upsert(
       {
@@ -118,6 +158,8 @@ export async function POST(req: NextRequest) {
       sweepAwarded: sweepNew,
       flawlessAwarded: flawlessNew,
       xpBonus,
+      // BF1: the achievements THIS request granted (additive; old clients ignore it).
+      newAchievements: await puzzleDayGrants(admin, userId, day, true),
     });
   } catch (error: any) {
     console.error('[award-bonuses]', error);

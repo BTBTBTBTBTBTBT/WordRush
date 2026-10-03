@@ -111,6 +111,7 @@ async function doLoad(): Promise<void> {
     );
     if (!res.ok) return;
     const json = await res.json();
+    void import('./achievement-service').then((m) => m.announceNewAchievements(json?.newAchievements)).catch(() => {}); // BF1
     friendsList = json.friends ?? [];
     incomingList = json.incoming ?? [];
     friendIds = new Set(friendsList.map((f) => f.id.toLowerCase()));
@@ -311,6 +312,8 @@ export async function fetchFriendsFeed(): Promise<{ events: FeedEvent[]; reactio
 /** Toggle one reaction on a moment (spec §6). ownerId = the moment's userId (they get a push). */
 export async function reactToMoment(momentId: string, ownerId: string, emoji: string, on: boolean): Promise<boolean> {
   const res = await post('/api/friends/react', { momentId, ownerId, emoji, on });
+  // BF1: celebrate what the server granted (Cheerleader).
+  if (res?.ok) res.clone().json().then((json: any) => { void import('./achievement-service').then((m) => m.announceNewAchievements(json?.newAchievements)).catch(() => {}); }).catch(() => {});
   return !!res?.ok;
 }
 

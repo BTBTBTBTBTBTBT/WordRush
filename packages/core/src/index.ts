@@ -29,3 +29,4 @@ export * from './avatar-config';
 export * from './friendly-games';
 export * from './leaderboard-title';
 export * from './headline-tokens';
+export * from './achievement-rules';

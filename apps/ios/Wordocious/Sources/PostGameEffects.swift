@@ -221,6 +221,8 @@ struct VictoryOverlay: View {
         .contentShape(Rectangle())
         .onTapGesture { if actions.isEmpty { onDismiss() } }
         .onAppear(perform: start)
+        // BF2: achievement popups wait until this win / lose card closes.
+        .holdsAchievementPopups("victory")
         // No haptic here: the game screen already fires Haptics.success/error at
         // the moment of finishing — the old unconditional success() buzzed a
         // CELEBRATION haptic on losses too.

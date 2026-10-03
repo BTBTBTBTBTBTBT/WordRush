@@ -9,13 +9,23 @@ import SwiftUI
 final class AchievementCatalog: ObservableObject {
     static let shared = AchievementCatalog()
 
+    /// The visible catalog (hidden achievements stay hidden — FINISH_SPEC BE).
     @Published private(set) var all: [AchievementDef] = []
+    /// Everything the API serves, hidden ones included (lookups by key).
+    private var everything: [AchievementDef] = []
+
+    func find(_ key: String) -> AchievementDef? { everything.first { $0.key == key } }
+
+    private func set(_ list: [AchievementDef]) {
+        everything = list
+        all = list.filter { $0.hidden != true }
+    }
     private static let cacheKey = "achievements-catalog-v2"
     private var loaded = false
 
     struct Payload: Decodable { let achievements: [AchievementDef] }
 
-    init() { if let cached = Self.readCache() { all = cached } }
+    init() { if let cached = Self.readCache() { set(cached) } }
 
     func load() async {
         if loaded { return }
@@ -28,7 +38,7 @@ final class AchievementCatalog: ObservableObject {
         guard let (data, _) = try? await Net.api.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         loaded = true
-        all = payload.achievements
+        set(payload.achievements)
         UserDefaults.standard.set(data, forKey: Self.cacheKey)
     }
 

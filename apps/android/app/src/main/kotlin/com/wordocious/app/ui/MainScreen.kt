@@ -754,6 +754,14 @@ fun MainScreen() {
               vsInvite == null && vsActive == null && vsChallengeCode == null && !vsLobby
       }
       val soloGameAccent = soloGame?.accent
+      // BF2: no achievement popup over a live VS match.
+      if (vsActive != null || vsInvite != null) androidx.compose.runtime.DisposableEffect(Unit) {
+          BadgeMoments.holds++
+          onDispose { BadgeMoments.holds-- }
+      }
+      // BF2: the popup's "See all" opens Stats (its achievements live there).
+      val seeAll = BadgeMoments.seeAllRequests
+      androidx.compose.runtime.LaunchedEffect(seeAll) { if (seeAll > 0) goToRoot(2, scrollToTop = false) }
       // AY: every non-VS layer's top-left home button lands on the Home root (single-fire).
       // A live VS match keeps its own home (its leave-the-match confirm / the lobby).
       val goHome: (() -> Unit)? = if (vsActive == null && vsInvite == null) {

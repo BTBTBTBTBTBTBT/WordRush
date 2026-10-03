@@ -226,7 +226,14 @@ struct ProfileTab: View {
             .onReceive(NotificationCenter.default.publisher(for: StatsJump.openVS)) { _ in
                 if StatsJump.consumeVS() { select(StatsRailKey.vs) }
             }
-            .onAppear { if StatsJump.consumeVS() { select(StatsRailKey.vs) } }
+            .onAppear {
+                if StatsJump.consumeVS() { select(StatsRailKey.vs) }
+                if StatsJump.consumeAchievements() { select(StatsRailKey.all) }
+            }
+            // BF2 "See all" from an unlock popup: All-time holds the achievements grid.
+            .onReceive(NotificationCenter.default.publisher(for: StatsJump.openAchievements)) { _ in
+                if StatsJump.consumeAchievements() { select(StatsRailKey.all) }
+            }
             .fullScreenCover(item: $badgeGame) { g in
                 NavigationStack {
                     if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
@@ -1177,6 +1184,13 @@ struct ProfileTab: View {
         ("skill", "Skill", 0x2563EB), ("social", "Social", 0x0D9488), ("collection", "Collection", 0xD97706),
     ]
 
+    private var extraAchCategories: [(key: String, label: String, color: UInt)] {
+        let known = Set(achCategories.map(\.key))
+        var seen = Set<String>()
+        return achievementCatalog.all.map(\.category).filter { !known.contains($0) && seen.insert($0).inserted }
+            .map { (key: $0, label: $0.replacingOccurrences(of: "_", with: " ").capitalized, color: 0x7C3AED) }
+    }
+
     private var achievementsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -1186,7 +1200,9 @@ struct ProfileTab: View {
                 Spacer()
                 Text("\(unlockedAchievements.count) / \(achievementCatalog.all.count)").softNumber(14)
             }
-            ForEach(achCategories, id: \.key) { cat in
+            // FINISH_SPEC BE: any category the catalog adds beyond the five known ones
+            // still shows (its own group, purple) — new achievements never vanish.
+            ForEach(achCategories + extraAchCategories, id: \.key) { cat in
                 let items = achievementCatalog.all.filter { $0.category == cat.key }
                 if !items.isEmpty {
                     let n = items.filter { unlockedAchievements.contains($0.key) }.count

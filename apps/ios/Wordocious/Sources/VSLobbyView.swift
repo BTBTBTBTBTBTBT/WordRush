@@ -601,6 +601,21 @@ enum StatsJump {
         NotificationCenter.default.post(name: openVS, object: nil)
     }
 
+    /// FINISH_SPEC BF2 "See all": Stats → All-time (the achievements grid).
+    static let openAchievements = Notification.Name("wordocious.open-stats-achievements")
+    private(set) static var pendingAchievements = false
+
+    static func requestAchievements() {
+        pendingAchievements = true
+        NotificationCenter.default.post(name: .openStats, object: nil)
+        NotificationCenter.default.post(name: openAchievements, object: nil)
+    }
+
+    static func consumeAchievements() -> Bool {
+        defer { pendingAchievements = false }
+        return pendingAchievements
+    }
+
     /// The Stats tab handled it.
     static func consumeVS() -> Bool {
         defer { pendingVS = false }

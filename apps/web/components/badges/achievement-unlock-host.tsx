@@ -5,6 +5,7 @@ import { BadgeCelebrationPopup } from './badge-celebration';
 import { dismissCelebration, getCelebrations, subscribeCelebrations, type BadgeCelebration } from '@/lib/badges';
 import { playSound } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
+import { leaveGuard } from '@/lib/nav-home';
 
 // Plays the badge celebrations (docs/FINISH_SPEC.md V2 / V3) one after
 // another: achievement unlocks announced by lib/achievement-service.ts and a
@@ -20,10 +21,14 @@ function elect() {
   hosts.forEach((set, i) => set(i === 0));
 }
 
-/** Something else is celebrating (the R1 win / lose popup). */
+/**
+ * Something else has the screen: the R1 win / lose popup (BF2: unlocks show
+ * only AFTER it closes), or a live VS match (its leave guard is up — never
+ * interrupt a race).
+ */
 function blocked(): boolean {
   if (typeof document === 'undefined') return false;
-  return !!document.querySelector('.result-pop');
+  return !!document.querySelector('.result-pop') || leaveGuard() !== null;
 }
 
 export function AchievementUnlockHost() {

@@ -332,6 +332,11 @@ fun WinPopupFrame(
 ) {
     val still = WTheme.reducedMotion
     var shown by remember { mutableStateOf(false) }
+    // BF2: achievement popups wait until this one has closed.
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        com.wordocious.app.ui.BadgeMoments.holds++
+        onDispose { com.wordocious.app.ui.BadgeMoments.holds-- }
+    }
     val feedbackView = androidx.compose.ui.platform.LocalView.current
     LaunchedEffect(Unit) {
         shown = true

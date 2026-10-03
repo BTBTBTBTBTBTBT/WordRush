@@ -38,6 +38,7 @@ import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, da
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens } from '../src/headline-tokens';
+import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, nearestAvatarColor, validateAvatar } from '../src/avatar-config';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { currentSeason, levelTier, levelTierLabel } from '../src/level-season';
@@ -802,6 +803,41 @@ export function renderHeadlineTokenFixtures() {
   return { cases: cases.map(([text, names]) => ({ text, names, tokens: headlineTokens(text, names) })) };
 }
 
+// FINISH_SPEC BE: the new achievements' catalog + rules.
+export function renderAchievementRuleFixtures() {
+  const win = (kind: 'rps' | 'ttt' | 'coin' | 'pass' | 'ghost' | 'chain', n: number, won = true) => Array.from({ length: n }, () => ({ kind, finished: true, won }));
+  return {
+    catalog: NEW_ACHIEVEMENTS,
+    hidden: HIDDEN_ACHIEVEMENT_KEYS,
+    puzzleCounts: [{}, { SCRAMBLE: 25, GROUPS: 24, LADDER: 30, REGIONS: 25 }, { CRYPTOGRAM: 25, WORDSEARCH: 26 }].map((w) => ({ wins: w, keys: puzzleCountAchievements(w) })),
+    puzzleResults: [
+      { gameMode: 'SCRAMBLE', won: true, guessCount: 7, hintsUsed: 0 }, { gameMode: 'SCRAMBLE', won: true, guessCount: 5, hintsUsed: 1 },
+      { gameMode: 'HUB', won: true, guessCount: 1, hintsUsed: 0 }, { gameMode: 'GROUPS', won: true, guessCount: 4, hintsUsed: 0 },
+      { gameMode: 'GROUPS', won: true, guessCount: 5, hintsUsed: 0 }, { gameMode: 'REGIONS', won: true, guessCount: 1, hintsUsed: 0 },
+      { gameMode: 'REGIONS', won: false, guessCount: 1, hintsUsed: 0 },
+    ].map((r) => ({ ...r, keys: puzzleResultAchievements(r) })),
+    pangrams: { games: [{ letters: 'PLAYING', found: ['PLAYING', 'PAYING', 'PLAYINGS'] }, { letters: 'ABC', found: ['ABC'] }], count: pangramCount([{ letters: 'PLAYING', found: ['PLAYING', 'PAYING', 'PLAYINGS'] }, { letters: 'ABC', found: ['ABC'] }]) },
+    puzzleDays: [
+      { puzzlesDone: 10, puzzlesTotal: 10, wordSweepDone: true, puzzleSweepStreak: 7 },
+      { puzzlesDone: 10, puzzlesTotal: 10, wordSweepDone: false, puzzleSweepStreak: 1 },
+      { puzzlesDone: 9, puzzlesTotal: 10, wordSweepDone: true, puzzleSweepStreak: 0 },
+    ].map((d) => ({ ...d, keys: puzzleDayAchievements(d) })),
+    bots: [[0, 0], [1, 0], [5, 6], [10, 7]].map(([c, w]) => ({ ladderCleared: c, botOfDayWins: w, keys: botAchievements({ ladderCleared: c, botOfDayWins: w }) })),
+    friends: [
+      { friendCount: 0, reactionsSent: 0, bestFriendStreak: 0, wonRace: false },
+      { friendCount: 10, reactionsSent: 25, bestFriendStreak: 7, wonRace: true },
+    ].map((f) => ({ ...f, keys: friendAchievements(f) })),
+    races: [[500, [300, 0]], [500, [500]], [500, [0, 0]], [0, [10]]].map(([mine, fr]) => ({ mine, friends: fr, won: wonFriendsRace(mine as number, fr as number[]) })),
+    pocket: [
+      { name: '10 rps wins + a 20-word chain', games: [...win('rps', 10), { kind: 'chain' as const, finished: false, won: false, chainWords: 20 }] },
+      { name: 'one win of each', games: (['rps', 'ttt', 'coin', 'pass', 'ghost', 'chain'] as const).flatMap((k) => win(k, 1)) },
+      { name: '10 pass games finished, none won', games: win('pass', 10, false) },
+    ].map((c) => ({ ...c, keys: pocketAchievements(c.games) })),
+    avatars: [null, { head: 'none', face: 'none', neck: 'none', bg: 'auto' }, { head: 'wizard', face: 'none', neck: 'cape', bg: 'galaxy' }, { head: 'wizard', face: 'monocle', neck: 'none', bg: 'auto' }].map((config) => ({ config, keys: avatarAchievements(config) })),
+    moments: [[0, null], [3, null], [4, null], [6, 'halloween'], [7, null], [23, 'halloween']].map(([h, s]) => ({ localHour: h, season: s, keys: momentAchievements({ localHour: h as number, season: s as string | null }) })),
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -824,6 +860,7 @@ const FILES: Array<[string, unknown]> = [
   ['push-copy-fixtures.json', renderPushCopyFixtures()],
   ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
   ['headline-tokens-fixtures.json', renderHeadlineTokenFixtures()],
+  ['achievement-rules-fixtures.json', renderAchievementRuleFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

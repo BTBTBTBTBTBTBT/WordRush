@@ -1,5 +1,6 @@
 'use client';
 
+import { avatarAchievements, unlockAchievements } from '@/lib/achievement-service';
 import { useEffect, useRef, useState } from 'react';
 import { validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
@@ -93,6 +94,8 @@ export function ProfileEditModal({ open, onClose }: Props) {
     setAvatarSaving(true);
     setAvatarNote('');
     const res = await saveProfileWithAvatar(supabase as unknown as ProfilesUpdater, profile.id, {}, choiceForConfig(config));
+    // FINISH_SPEC BE: Self Portrait / Dress Up once the mascot is saved.
+    if (!res.error) void unlockAchievements(profile.id, avatarAchievements(config));
     setAvatarSaving(false);
     if (res.error) {
       setAvatarNote((res.error as { message?: string }).message ?? 'Could not save your avatar. Please try again.');

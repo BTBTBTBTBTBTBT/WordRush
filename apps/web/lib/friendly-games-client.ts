@@ -119,6 +119,7 @@ export async function sendMove(id: string, move: FriendlyMove): Promise<MoveOutc
   const res = await post(`/api/friends/games/${encodeURIComponent(id)}/move`, { move });
   if (!res) return { ok: false, error: 'Network error. Try again.' };
   const json = await res.json().catch(() => ({}));
+  if (res.ok) void import('./achievement-service').then((m) => m.announceNewAchievements(json?.newAchievements)).catch(() => {}); // BF1
   if (res.ok && json.game) { remember(json.game); return { ok: true, game: json.game as GameView }; }
   if (res.status === 409) return { ok: false, error: json.error ?? 'The game moved on. Try again.', retry: !!json.retry };
   return { ok: false, error: json.error ?? 'That move did not go through' };
@@ -128,6 +129,7 @@ export async function resignGame(id: string): Promise<GameView | null> {
   const res = await post(`/api/friends/games/${encodeURIComponent(id)}/resign`, {});
   if (!res?.ok) return null;
   const json = await res.json().catch(() => ({}));
+  void import('./achievement-service').then((m) => m.announceNewAchievements(json?.newAchievements)).catch(() => {}); // BF1
   if (json.game) remember(json.game);
   return (json.game as GameView) ?? null;
 }

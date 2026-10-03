@@ -238,6 +238,8 @@ struct VSGameView: View {
         // the bottom safe area — pushing the keyboard's bottom row off-screen.
         // Solo games hide it via fullScreenCover; mirror that here.
         .hidesBottomNav()
+        // BF2: no achievement popups during a live VS match.
+        .holdsAchievementPopups("vs-live", active: vm.screen == .match || vm.screen == .waiting)
         // Friends "On now · in <game>" (spec §1): the game on screen.
         .presenceActivity(mode.rawValue)
         .onAppear {

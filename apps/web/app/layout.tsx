@@ -11,6 +11,7 @@ import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
 import { GoProPopupHost } from '@/components/pro/go-pro-popup';
 import { ProWelcomeHost } from '@/components/pro/pro-welcome';
 import { AchievementUnlockHost } from '@/components/badges/achievement-unlock-host';
+import { AchievementWatcher } from '@/components/badges/achievement-watcher';
 import { WelcomeModal } from '@/components/modals/welcome-modal';
 import { FirstRunTour } from '@/components/onboarding/first-run-tour';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
@@ -175,6 +176,7 @@ export default function RootLayout({
                     <GoProPopupHost />
                     <ProWelcomeHost />
                     <AchievementUnlockHost />
+                    <AchievementWatcher />
                     <SharePreviewHost />
                     <ShareVariantHost />
                     <PwaProvider />

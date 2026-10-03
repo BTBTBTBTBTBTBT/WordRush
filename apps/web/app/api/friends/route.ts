@@ -5,7 +5,9 @@ import { sweepAll } from '@/lib/supabase-sweep';
 import { sweepModesFor } from '@/lib/modes.generated';
 import { settleWeek } from '@/lib/weekly-race';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
-import { friendStreak } from '@wordle-duel/core';
+import { friendAchievements, friendStreak, shiftDay, wonFriendsRace } from '@wordle-duel/core';
+import { grantAchievements } from '@/lib/achievements-server';
+import type { NewAchievement } from '@/lib/achievement-service';
 import { selectWithAvatarColumns, withOwnAvatarFields, type AvatarFields } from '@/lib/avatar-fields-server';
 
 export const dynamic = 'force-dynamic';
@@ -91,6 +93,8 @@ export async function GET(req: NextRequest) {
   // per-day TOTAL points across all modes, me vs each friend.
   let meDigest: { playedToday: number; weekPoints: number; todayPoints?: number; lastWeekPoints?: number; pastWeekPoints?: number[]; flawlessStreak?: number } | null = null;
   let lastWeek: { weekStart: string; rank: number; points: number; circleSize: number; winnerId: string | null; winnerName: string | null; winnerPoints: number } | null = null;
+  let raceWonYesterday = false;
+  let bestFriendStreak = 0;
   if (wantDigest && friends.length >= 0) {
     const ids = [me, ...friends.map((f) => f.id)];
     const cutoff = new Date(`${day}T00:00:00Z`);
@@ -243,6 +247,10 @@ export async function GET(req: NextRequest) {
     } catch {
       // Settlement is a bonus — never fail the friends list over it.
     }
+    // FINISH_SPEC BE: yesterday's friends race (settled once the day is over).
+    const yday = shiftDay(day, -1);
+    raceWonYesterday = wonFriendsRace(myDays.get(yday) ?? 0, (friends as any[]).map((f) => (totals.get(f.id)?.get(yday) ?? 0) as number));
+    bestFriendStreak = Math.max(0, ...(friends as any[]).map((f) => (f.friendStreak ?? 0) as number));
     meDigest = {
       playedToday: playedCount.get(me) ?? 0,
       weekPoints: weekPointsOf(me),
@@ -253,8 +261,22 @@ export async function GET(req: NextRequest) {
     };
   }
 
+  // FINISH_SPEC BE + BF1: the friends achievements (Best Buds, Squad Goals,
+  // Race Day, Ride or Die, Cheerleader), granted here and returned as
+  // `newAchievements` (additive; old clients ignore it). Best effort.
+  let newAchievements: NewAchievement[] = [];
+  try {
+    const { count: reactionsSent } = await admin.from('moment_reactions').select('*', { count: 'exact', head: true }).eq('user_id', me);
+    newAchievements = await grantAchievements(admin, me, friendAchievements({
+      friendCount: friends.length,
+      reactionsSent: reactionsSent ?? 0,
+      bestFriendStreak,
+      wonRace: raceWonYesterday,
+    }));
+  } catch { /* never fail the friends list over achievements */ }
+
   return NextResponse.json(
-    { friends, incoming, outgoing, outgoingProfiles, me: meDigest, lastWeek },
+    { friends, incoming, outgoing, outgoingProfiles, me: meDigest, lastWeek, newAchievements },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

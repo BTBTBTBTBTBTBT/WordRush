@@ -1339,6 +1339,10 @@ export async function awardDailyBonusesIfComplete(_userId: string): Promise<Dail
     });
     if (!res.ok) return null;
     const data = await res.json();
+    // BF1: celebrate what the server granted (Puzzle Sweep / Week, Grand Sweep).
+    if (Array.isArray(data?.newAchievements) && data.newAchievements.length) {
+      import('./achievement-service').then((m) => m.announceNewAchievements(data.newAchievements)).catch(() => {});
+    }
     if (!data?.awarded) return null;
     return {
       sweepAwarded: !!data.sweepAwarded,

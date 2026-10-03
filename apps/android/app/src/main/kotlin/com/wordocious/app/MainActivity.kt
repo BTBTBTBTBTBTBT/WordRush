@@ -201,6 +201,8 @@ class MainActivity : ComponentActivity() {
                     androidx.compose.runtime.LaunchedEffect(isAuthenticated) {
                         if (isAuthenticated) {
                             com.wordocious.app.data.PresenceService.start()
+                            // FINISH_SPEC BF1: the launch diff (seeds "seen" on the first run).
+                            launch(kotlinx.coroutines.Dispatchers.IO) { com.wordocious.app.data.AchievementSeen.check() }
                             // FCM's first token can arrive before sign-in, when
                             // there is no user id to key the row on — so push it
                             // again here, mirroring iOS PushRegistration.register().
@@ -286,6 +288,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         com.wordocious.app.data.PresenceService.start()
+        // FINISH_SPEC BF1: celebrate achievements earned anywhere (server, cron, another device) once.
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.wordocious.app.data.AchievementSeen.check() }
         // Remote flags (More Games §7): refresh at launch and on every
         // foreground return, so a kill switch lands within one resume.
         com.wordocious.app.data.FlagsService.load()

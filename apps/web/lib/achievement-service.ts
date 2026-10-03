@@ -3,6 +3,11 @@ import { getTodayLocal } from './daily-service';
 import { sweepModesFor, DAILY_MODES } from './daily-modes';
 import { MODE_BY_DBKEY } from './modes.generated';
 import { achievementBadge, CATEGORY_ACCENT, queueCelebrations } from './badges';
+import {
+  NEW_ACHIEVEMENTS, type AchievementCategory, avatarAchievements, botAchievements, currentSeason, momentAchievements, pangramAchievements, pangramCount,
+  puzzleCountAchievements, puzzleResultAchievements,
+} from '@wordle-duel/core';
+import { markAchievementsSeen } from './achievement-seen';
 
 // ============================================================
 // Achievement Definitions
@@ -12,11 +17,16 @@ export interface AchievementDef {
   key: string;
   name: string;
   description: string;
-  category: 'beginner' | 'consistency' | 'skill' | 'social' | 'collection';
+  /** The catalog category id (core AchievementCategory: the original five + puzzles, vs, bots, friends, pocket, mascot, seasonal, streaks). */
+  category: AchievementCategory;
   icon: string;
+  /** XP the unlock pays, when it pays any. */
+  xp?: number;
+  /** FINISH_SPEC BE: defined but not shown or awarded until its tracking ships. */
+  hidden?: boolean;
 }
 
-export const ACHIEVEMENTS: AchievementDef[] = [
+const BASE_ACHIEVEMENTS: AchievementDef[] = [
   // Beginner
   { key: 'first_win', name: 'First Win', description: 'Win any game', category: 'beginner', icon: 'trophy' },
   { key: 'all_modes', name: 'All Modes Played', description: 'Play every game mode', category: 'beginner', icon: 'grid' },
@@ -245,6 +255,57 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'vs_marathoner', name: 'VS Marathoner', description: 'Play 100 VS matches', category: 'social', icon: 'swords' },
 ];
 
+/**
+ * Every definition, hidden ones included (FINISH_SPEC BE: the 38 new-game
+ * achievements come from packages/core achievement-rules.ts so iOS + Android
+ * mirror them; their badge art is art-ach-<key>, falling back to `icon`).
+ */
+export const ACHIEVEMENT_CATALOG: AchievementDef[] = [
+  ...BASE_ACHIEVEMENTS,
+  ...NEW_ACHIEVEMENTS.map((a) => ({ ...a })),
+];
+
+/** The achievements players see (and can earn): the catalog minus the hidden ones. */
+export const ACHIEVEMENTS: AchievementDef[] = ACHIEVEMENT_CATALOG.filter((a) => !a.hidden);
+
+/** BF1: the payload an endpoint returns for each NEW unlock. */
+export interface NewAchievement { key: string; name: string; description: string; category: AchievementDef['category']; xp?: number }
+
+/** Known, visible keys → their NewAchievement payloads (unknown / hidden keys dropped). */
+export function newAchievementPayloads(keys: readonly string[]): NewAchievement[] {
+  return keys
+    .map((k) => ACHIEVEMENTS.find((a) => a.key === k))
+    .filter((a): a is AchievementDef => !!a)
+    .map(({ key, name, description, category }) => ({ key, name, description, category }));
+}
+
+/**
+ * Insert the given keys for the signed-in player (client; RLS insert-own) and
+ * celebrate the ones that are new. Hidden / unknown keys are skipped.
+ */
+export async function unlockAchievements(userId: string, keys: readonly string[]): Promise<string[]> {
+  const wanted = keys.filter((k) => ACHIEVEMENTS.some((a) => a.key === k));
+  if (!userId || wanted.length === 0) return [];
+  const { data: existing } = await (supabase as any).from('achievements').select('achievement_key').eq('user_id', userId).in('achievement_key', wanted);
+  const have = new Set((existing || []).map((a: any) => a.achievement_key));
+  const fresh: string[] = [];
+  for (const key of wanted) {
+    if (have.has(key)) continue;
+    const { error } = await (supabase as any).from('achievements').insert({ user_id: userId, achievement_key: key });
+    if (!error) fresh.push(key);
+  }
+  announceAchievementUnlocks(fresh);
+  return fresh;
+}
+
+/** BF1: celebrate the `newAchievements` an endpoint returned (null-safe). */
+export function announceNewAchievements(list: ReadonlyArray<{ key: string }> | null | undefined): void {
+  if (!Array.isArray(list) || list.length === 0) return;
+  announceAchievementUnlocks(list.map((a) => a.key).filter((k): k is string => typeof k === 'string'));
+}
+
+export { avatarAchievements, botAchievements };
+
 // ============================================================
 // Achievement Checking
 // ============================================================
@@ -275,6 +336,7 @@ export async function checkAchievements(
 
   const tryUnlock = async (key: string) => {
     if (alreadyUnlocked.has(key)) return;
+    if (!ACHIEVEMENTS.some((a) => a.key === key)) return; // BE: hidden (untracked) keys are never awarded
     const { error } = await (supabase as any)
       .from('achievements')
       .insert({ user_id: userId, achievement_key: key });
@@ -961,6 +1023,31 @@ export async function checkAchievements(
     }
   }
 
+  // ─── FINISH_SPEC BE: the new-game achievements (rules in packages/core achievement-rules.ts) ───
+  for (const key of puzzleResultAchievements({ gameMode, won, guessCount, hintsUsed })) await tryUnlock(key);
+  const PUZZLE_COUNT_MODES = ['SCRAMBLE', 'GROUPS', 'LADDER', 'CRYPTOGRAM', 'WORDSEARCH', 'REGIONS'];
+  if (won && playType === 'solo' && PUZZLE_COUNT_MODES.includes(gameMode)) {
+    const { data: rows } = await (supabase as any)
+      .from('user_stats').select('game_mode, wins').eq('user_id', userId).eq('play_type', 'solo').in('game_mode', PUZZLE_COUNT_MODES);
+    const wins: Record<string, number> = {};
+    for (const r of rows || []) wins[r.game_mode] = (wins[r.game_mode] ?? 0) + (r.wins || 0);
+    for (const key of puzzleCountAchievements(wins)) await tryUnlock(key);
+  }
+  if (gameMode === 'HUB' && won && !alreadyUnlocked.has('pangram_hunter')) {
+    const { data: hubRows } = await (supabase as any)
+      .from('matches').select('solutions, player1_guesses').eq('player1_id', userId).eq('game_mode', 'HUB').limit(500);
+    const games = (hubRows || []).map((m: any) => ({
+      letters: String(m?.solutions?.[1] ?? ''),
+      found: ((m?.player1_guesses ?? []) as string[]).filter((e) => e[0] === '+' || e[0] === '!').map((e) => e.slice(1)),
+    }));
+    for (const key of pangramAchievements(pangramCount(games))) await tryUnlock(key);
+  }
+  // Moments: a daily finished at the player's local hour / in Halloween week.
+  if (seed?.startsWith('daily-')) {
+    const now = new Date();
+    for (const key of momentAchievements({ localHour: now.getHours(), season: currentSeason(getTodayLocal()) })) await tryUnlock(key);
+  }
+
   announceAchievementUnlocks(unlocked);
   return unlocked;
 }
@@ -973,6 +1060,8 @@ export async function checkAchievements(
  */
 export function announceAchievementUnlocks(keys: string[]): void {
   if (keys.length === 0) return;
+  // BF1: anything celebrated here is "seen" — the open / focus diff won't replay it.
+  markAchievementsSeen(keys);
   const items = keys
     .map((k) => ACHIEVEMENTS.find((a) => a.key === k))
     .filter((a): a is AchievementDef => !!a)
@@ -983,6 +1072,7 @@ export function announceAchievementUnlocks(keys: string[]): void {
       description: a.description,
       badge: achievementBadge(a.icon),
       accent: CATEGORY_ACCENT[a.category] ?? '#7c3aed',
+      ...(a.xp ? { xp: a.xp } : null),
     }));
   queueCelebrations(items);
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
-import { gameView, profilesById, sideOf, type GameRow } from '@/lib/friendly-games-server';
+import { gameView, grantPocketAchievements, profilesById, sideOf, type GameRow } from '@/lib/friendly-games-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,5 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (saved) next = saved as GameRow;
   }
   const profs = await profilesById(admin, [oppId]);
-  return NextResponse.json({ game: gameView(next, me, profs.get(oppId)) });
+  // FINISH_SPEC BE + BF1: the friend just won — both players' pocket achievements update.
+  const [newAchievements] = await Promise.all([grantPocketAchievements(admin, me), grantPocketAchievements(admin, oppId)]);
+  return NextResponse.json({ game: gameView(next, me, profs.get(oppId)), newAchievements });
 }

@@ -24,6 +24,15 @@ export const ACHIEVEMENT_CATEGORIES = [
   ['skill', 'Skill'],
   ['social', 'Social'],
   ['collection', 'Collection'],
+  // FINISH_SPEC BE
+  ['puzzles', 'Puzzles'],
+  ['bots', 'Bots'],
+  ['vs', 'VS'],
+  ['friends', 'Friends'],
+  ['pocket', 'Pocket Games'],
+  ['mascot', 'Mascot Maker'],
+  ['streaks', 'Early & Late'],
+  ['seasonal', 'Seasonal'],
 ] as const;
 
 type Progress = { current: number; target: number } | null;

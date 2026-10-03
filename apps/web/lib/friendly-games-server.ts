@@ -148,3 +148,29 @@ export function winnerId(row: Pick<GameRow, 'player_a' | 'player_b'>, state: Fri
   const w = friendlyWinner(state);
   return w === 'a' ? row.player_a : w === 'b' ? row.player_b : null;
 }
+
+/**
+ * FINISH_SPEC BE + BF1: the pocket-game achievements for one player, from all
+ * of their friendly_games rows (rules in core pocketAchievements). Granted with
+ * the service-role client; returns the ones THIS call inserted.
+ */
+export async function grantPocketAchievements(admin: any, userId: string): Promise<import('./achievement-service').NewAchievement[]> {
+  try {
+    const { pocketAchievements } = await import('@wordle-duel/core');
+    const { grantAchievements } = await import('./achievements-server');
+    const { data } = await admin
+      .from('friendly_games')
+      .select('kind, status, winner, state')
+      .or(`player_a.eq.${userId},player_b.eq.${userId}`)
+      .limit(2000);
+    const games = ((data ?? []) as Array<Pick<GameRow, 'kind' | 'status' | 'winner' | 'state'>>).map((g) => ({
+      kind: g.kind,
+      finished: g.status === 'done' || g.status === 'resigned',
+      won: g.winner === userId,
+      chainWords: g.kind === 'chain' ? ((g.state as { words?: unknown[] })?.words?.length ?? 0) : undefined,
+    }));
+    return await grantAchievements(admin, userId, pocketAchievements(games));
+  } catch {
+    return [];
+  }
+}

@@ -63,6 +63,13 @@ struct WordociousApp: App {
                 // FINISH_SPEC §AS6: the header's streak / shield / flawless popups,
                 // full-screen from the root (never clipped inside the header).
                 .overlay { HeaderPopupHost() }
+                // BF1: a result just landed — the server may have awarded achievements.
+                .onReceive(NotificationCenter.default.publisher(for: DailyCompletionsStore.completionRecorded)) { _ in
+                    Task {
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                        await AchievementUnlockCenter.shared.sync()
+                    }
+                }
                 .overlay { ColdStartIntroHost() }
                 .background { AchievementUnlockHost() } // FINISH_SPEC §V2: arms the unlock popups (own window).
                 .background { ProWelcomeHost() } // FINISH_SPEC §AP: arms Welcome to Pro (own window).
@@ -95,6 +102,8 @@ struct WordociousApp: App {
                     await ModerationService.loadBlockedIds()
                     // APNs token capture (send path comes later with the key).
                     PushRegistration.register()
+                    // FINISH_SPEC BF1: celebrate any achievement earned but never seen here.
+                    await AchievementUnlockCenter.shared.sync()
                 }
                 // Keep the always-on presence socket alive only while
                 // foregrounded + signed in, so the LIVE count reflects real
@@ -113,6 +122,8 @@ struct WordociousApp: App {
                         }
                         PresenceService.shared.start()
                         LivePlayerCount.shared.setBackgrounded(false)
+                        // BF1: foreground — unseen unlocks (server awards, other devices).
+                        if LaunchGate.isOpen { Task { await AchievementUnlockCenter.shared.sync() } }
                         Task { await FlagsService.shared.load() }
                         // Recompute the daily reminder: if today's 9 dailies are
                         // done (or it's past 18:00) it rolls to tomorrow, so a

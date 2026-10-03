@@ -209,6 +209,9 @@ struct GameScreen: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()
+        // BF2: unlocks never land over the finishing board or the win card — they
+        // wait from the finish until the card has closed (or the game is left).
+        .holdsAchievementPopups("game-finish", active: vm.isFinished && !revealComplete)
         // Cards on the game screen lift with the game's accent (ART_SPEC §15).
         .environment(\.pageTint, .forGame(mode))
         // Friends "On now · in <game>" (spec §1): the game on screen.

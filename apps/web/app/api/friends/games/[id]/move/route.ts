@@ -5,7 +5,7 @@ import { FRIENDLY_TITLES, applyFriendlyMove, containsBlockedTerm, friendlyCardLi
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
-import { gameView, hasWordPrefix, isListWord, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
+import { gameView, grantPocketAchievements, hasWordPrefix, isListWord, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,5 +85,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ).catch(() => {});
   }
 
-  return NextResponse.json({ game: gameView(next, me, profs.get(oppId)) });
+  // FINISH_SPEC BE + BF1: a finished game (or a long Word Chain) can earn the
+  // pocket achievements — granted for BOTH players; the mover gets theirs back
+  // as newAchievements, the friend sees theirs on their next open / focus.
+  let newAchievements: Awaited<ReturnType<typeof grantPocketAchievements>> = [];
+  if (result.done || row.kind === 'chain') {
+    [newAchievements] = await Promise.all([grantPocketAchievements(admin, me), result.done ? grantPocketAchievements(admin, oppId) : Promise.resolve([])]);
+  }
+
+  return NextResponse.json({ game: gameView(next, me, profs.get(oppId)), newAchievements });
 }

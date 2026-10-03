@@ -38,6 +38,8 @@ export interface CpuProgression {
   /** UTC day the Bot of the Day was last played, and how it went. */
   botOfDayPlayedDay: string | null;
   botOfDayResult: 'won' | 'lost' | 'draw' | null;
+  /** FINISH_SPEC BE (Daily Duelist): lifetime Bot of the Day wins on this device (counted from 2026-10-02). */
+  botOfDayWins?: number;
 }
 
 const DEFAULT: CpuProgression = {
@@ -52,6 +54,7 @@ const DEFAULT: CpuProgression = {
   ladderVersion: LADDER_VERSION,
   botOfDayPlayedDay: null,
   botOfDayResult: null,
+  botOfDayWins: 0,
 };
 
 /** A fresh progression (what a new device starts with). */
@@ -153,6 +156,7 @@ export function recordBotOfDay(won: boolean, todayUtc: string): CpuProgression {
     const yesterday = prev.toISOString().slice(0, 10);
     p.botOfDayStreak = p.botOfDayLastDay === yesterday ? p.botOfDayStreak + 1 : 1;
     p.botOfDayLastDay = todayUtc;
+    p.botOfDayWins = (p.botOfDayWins ?? 0) + 1;
     save(p);
   }
   return p;

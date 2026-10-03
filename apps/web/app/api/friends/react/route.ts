@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { friendAchievements } from '@wordle-duel/core';
+import { grantAchievements } from '@/lib/achievements-server';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
 
@@ -44,5 +46,13 @@ export async function POST(req: NextRequest) {
       'feed',
     ).catch(() => {});
   }
-  return NextResponse.json({ ok: true });
+  // FINISH_SPEC BE + BF1: Cheerleader (25 reactions sent), returned as newAchievements.
+  let newAchievements: Awaited<ReturnType<typeof grantAchievements>> = [];
+  if (fresh) {
+    try {
+      const { count } = await admin.from('moment_reactions').select('*', { count: 'exact', head: true }).eq('user_id', me);
+      newAchievements = await grantAchievements(admin, me, friendAchievements({ friendCount: 0, reactionsSent: count ?? 0, bestFriendStreak: 0, wonRace: false }));
+    } catch { /* best effort */ }
+  }
+  return NextResponse.json({ ok: true, newAchievements });
 }

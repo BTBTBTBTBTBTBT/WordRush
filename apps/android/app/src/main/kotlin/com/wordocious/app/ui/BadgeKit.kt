@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.platform.LocalContext
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.DrawableRes
@@ -121,6 +123,28 @@ object BadgeArt {
     fun slug(icon: String?): String {
         val s = icon?.trim()?.lowercase(Locale.US)?.replace('-', '_')?.replace(' ', '_').orEmpty()
         return if (s in ACHIEVEMENT_SLUGS) s else "star"
+    }
+
+    /** BE: an achievement's own badge art name (`art_ach_<key>`, shipped as the art lands). */
+    fun ownArtName(key: String): String = "art_ach_" + key.trim().lowercase(Locale.US).replace('-', '_').replace(' ', '_')
+
+    /** BE the category's fallback icon slug for an achievement whose icon has no art. */
+    fun categorySlug(category: String?): String = when (category?.trim()?.lowercase(Locale.US)) {
+        "puzzles", "puzzle" -> "grid"
+        "bots", "bot", "vs", "versus" -> "swords"
+        "friends", "social" -> "group"
+        "pocket", "pocket_games", "pocket games" -> "sparkles"
+        "mascot", "style", "avatar" -> "crown"
+        "seasonal", "time", "special" -> "calendar"
+        "streaks", "streak" -> "flame"
+        else -> "star"
+    }
+
+    /** The badge for [icon] when it has art, else its [category]'s icon. */
+    @DrawableRes
+    fun achievement(icon: String?, category: String?): Int {
+        val s = icon?.trim()?.lowercase(Locale.US)?.replace('-', '_')?.replace(' ', '_').orEmpty()
+        return achievement(if (s in ACHIEVEMENT_SLUGS) s else categorySlug(category))
     }
 
     @DrawableRes
@@ -293,8 +317,26 @@ object BadgeMoments {
     /** How many are waiting, the current one included. */
     val count: Int get() = items.size
 
-    fun achievements(keys: List<String>) {
-        if (keys.isNotEmpty()) post(keys.map { BadgeMoment.Achievement(it) })
+    /** BF2: the player's unlocked total ("3 of 111 unlocked"); null until known. */
+    var unlockedCount by mutableStateOf<Int?>(null)
+
+    /** BF2: >0 while something must not be covered (the win popup, a live VS match) — popups wait. */
+    var holds by androidx.compose.runtime.mutableIntStateOf(0)
+
+    /** BF2: bumped by "See all" — MainScreen opens Stats on its achievements. */
+    var seeAllRequests by androidx.compose.runtime.mutableIntStateOf(0)
+
+    /**
+     * Queue the unlock popup for [keys] (oldest first). A client-side unlock ([fromDiff] false)
+     * is also marked seen, so the launch / foreground diff never celebrates it twice.
+     */
+    fun achievements(keys: List<String>, fromDiff: Boolean = false) {
+        if (keys.isEmpty()) return
+        if (!fromDiff) {
+            runCatching { com.wordocious.app.data.AchievementSeen.markSeen(keys) }
+            unlockedCount = unlockedCount?.plus(keys.size)
+        }
+        post(keys.map { BadgeMoment.Achievement(it) })
     }
 
     fun levelUp(level: Int) = post(listOf(BadgeMoment.LevelUp(level)))
@@ -386,7 +428,14 @@ private val GRAYSCALE = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatur
  * locked = grayscale at 45 % with a small 3D lock in the corner. Decorative.
  */
 @Composable
-fun AchievementBadge(icon: String?, size: Dp, unlocked: Boolean, modifier: Modifier = Modifier, glow: Color? = null) {
+fun AchievementBadge(
+    icon: String?, size: Dp, unlocked: Boolean, modifier: Modifier = Modifier, glow: Color? = null,
+    /** BE: the achievement's key (its own `art_ach_<key>` badge when shipped) and category (the fallback). */
+    key: String? = null, category: String? = null,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val own = remember(key) { key?.let { MascotComposer.drawableId(context, BadgeArt.ownArtName(it)) } ?: 0 }
+    val badgeRes = if (own != 0) own else BadgeArt.achievement(icon, category)
     Box(modifier.size(size).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
         if (unlocked && glow != null) {
             Box(
@@ -403,7 +452,7 @@ fun AchievementBadge(icon: String?, size: Dp, unlocked: Boolean, modifier: Modif
             )
         }
         Image(
-            artPainter(BadgeArt.achievement(icon), size),
+            artPainter(badgeRes, size),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             colorFilter = if (unlocked) null else GRAYSCALE,
@@ -465,7 +514,7 @@ fun AchievementTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        AchievementBadge(def.icon, 54.dp, unlocked, glow = accent)
+        AchievementBadge(def.icon, 54.dp, unlocked, glow = accent, key = def.key, category = def.category)
         Text(
             def.name, fontSize = 10.sp, fontWeight = FontWeight.Black,
             color = if (dark) WTheme.text else if (unlocked) FinishInk.heading else FinishInk.muted,
@@ -516,7 +565,7 @@ fun AchievementDetailSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            BadgeStage(def.icon, 150.dp, accent, unlocked = unlocked, spring = false)
+            BadgeStage(def.icon, 150.dp, accent, unlocked = unlocked, spring = false, key = def.key, category = def.category)
             AchievementInk.label(def.category)?.let {
                 Text(
                     it.uppercase(Locale.US), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
@@ -579,6 +628,8 @@ private fun BadgeStage(
     unlocked: Boolean = true,
     spring: Boolean = true,
     @DrawableRes res: Int? = null,
+    key: String? = null,
+    category: String? = null,
 ) {
     val still = WTheme.reducedMotion
     val pop = remember { Animatable(if (still || !spring) 1f else 0.3f) }
@@ -642,7 +693,7 @@ private fun BadgeStage(
             if (res != null) {
                 Image(painterResource(res), null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
             } else {
-                AchievementBadge(icon, size, unlocked)
+                AchievementBadge(icon, size, unlocked, key = key, category = category)
             }
         }
     }
@@ -662,11 +713,13 @@ private val BADGE_BAR = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color
 fun AchievementUnlockHost() {
     val moment = BadgeMoments.current
     var ready by remember { mutableStateOf(false) }
-    LaunchedEffect(moment == null) {
-        if (moment == null) ready = false
+    // BF2: never on top of the win popup or during a live VS match — wait until they're gone.
+    val held = BadgeMoments.holds > 0
+    LaunchedEffect(moment == null, held) {
+        if (moment == null || held) ready = false
         else { delay(900); ready = true }
     }
-    if (moment == null || !ready) return
+    if (moment == null || !ready || held) return
     androidx.activity.compose.BackHandler { BadgeMoments.dismiss() }
     key(moment.id) {
         when (moment) {
@@ -684,21 +737,100 @@ private fun AchievementUnlockPopup(key: String, waiting: Int, onNice: () -> Unit
     val def = catalog.firstOrNull { it.key == key }
     val accent = AchievementInk.accent(def?.category)
     val name = def?.name ?: BadgeMath.fallbackName(key)
-    BadgePopupFrame(accent, paneTitle = "Achievement unlocked: $name", waiting = waiting, onNice = onNice) {
-        BadgeStage(def?.icon, 132.dp, accent)
-        Text(
-            "ACHIEVEMENT UNLOCKED", style = softNumberStyle(15.sp), letterSpacing = 1.2.sp,
-            textAlign = TextAlign.Center, maxLines = 1,
-        )
-        Text(
-            name, fontSize = 24.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
-            color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
-        )
+    val context = LocalContext.current
+    val total = catalog.size.takeIf { it > 0 }
+    val unlocked = BadgeMoments.unlockedCount
+    // BF2: the celebration — the badge presented by a mascot pair (the art-scene-achievement
+    // frame when it ships; until then two cast poses flank the badge), the gold live lettering,
+    // the NAME, the PURPOSE line, the XP chip, "N of M unlocked", Awesome! / See all / share.
+    BadgePopupFrame(
+        accent, paneTitle = "Achievement unlocked: $name", waiting = waiting, onNice = onNice,
+        primaryLabel = "Awesome!",
+        actions = {
+            CandyButton("See all", onClick = { onNice(); BadgeMoments.seeAllRequests++ }, color = CandyColor.PEACH, size = CandySize.SMALL)
+            SoftControl(Icon3DName.SHARE, "Share achievement", onClick = {
+                BadgeShare.share(context, key, name, def?.description, def?.icon, def?.category)
+            }, iconSize = 26.dp)
+        },
+    ) {
+        AchievementPresenters(key) {
+            BadgeStage(def?.icon, 120.dp, accent, key = def?.key ?: key, category = def?.category)
+        }
+        LiveHeadline("ACHIEVEMENT UNLOCKED!", HeadlinePalette.CELEBRATION, Modifier.fillMaxWidth(), maxSize = 20.sp, minSize = 13.sp, maxLines = 1)
+        Text(name, style = softNumberStyle(26.sp), textAlign = TextAlign.Center)
         def?.description?.let {
             Text(
                 it, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
                 color = if (WTheme.isDark) WTheme.textSecondary else FinishInk.muted,
             )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            def?.xp?.takeIf { it > 0 }?.let { xp ->
+                Text(
+                    "+$xp XP", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF5A2E00),
+                    modifier = Modifier.clip(RoundedCornerShape(50))
+                        .background(Brush.verticalGradient(listOf(Color(0xFFFFE08A), Color(0xFFF5A524))))
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                )
+            }
+            if (unlocked != null && total != null) {
+                Text(
+                    "${minOf(unlocked, total)} of $total unlocked", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * BF2 the mascot pair presenting the badge: `art_scene_achievement` (two cast members holding
+ * an empty glowing frame) behind the badge when it has shipped; until then S (trophy) and W
+ * (proud) flank it. Decorative.
+ */
+@Composable
+private fun AchievementPresenters(key: String, badge: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val scene = remember { MascotComposer.drawableId(context, "art_scene_achievement") }
+    if (scene != 0) {
+        Box(Modifier.fillMaxWidth().height(170.dp), contentAlignment = Alignment.Center) {
+            Image(artPainter(scene, 300.dp), null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().clearAndSetSemantics { })
+            Box(Modifier.padding(bottom = 14.dp)) { badge() }
+        }
+    } else {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) {
+            CastPose(MascotId.S, "trophy", 64.dp)
+            badge()
+            CastPose(MascotId.W, "proud", 64.dp)
+        }
+    }
+}
+
+/** BF2 the share: an image card of the badge, its name and purpose (S-style), shared as a PNG. */
+object BadgeShare {
+    fun share(context: android.content.Context, key: String, name: String, description: String?, icon: String?, category: String?) {
+        runCatching {
+            val w = 1080; val h = 1080
+            val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+            val c = android.graphics.Canvas(bmp)
+            c.drawColor(0xFFF7F1FF.toInt())
+            val own = MascotComposer.drawableId(context, BadgeArt.ownArtName(key))
+            val res = if (own != 0) own else BadgeArt.achievement(icon, category)
+            com.wordocious.app.data.ShareFinish.decode(context, res)?.let { art ->
+                c.drawBitmap(art, null, android.graphics.RectF(290f, 170f, 790f, 670f), android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+            }
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = android.graphics.Paint.Align.CENTER
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(context, com.wordocious.app.R.font.nunito)
+            }
+            p.color = 0xFFB45309.toInt(); p.textSize = 52f; p.isFakeBoldText = true
+            c.drawText("ACHIEVEMENT UNLOCKED!", w / 2f, 110f, p)
+            p.color = 0xFF3B1A78.toInt(); p.textSize = 84f
+            c.drawText(name, w / 2f, 790f, p)
+            description?.let { p.color = 0xFF5A4A72.toInt(); p.textSize = 46f; p.isFakeBoldText = false; c.drawText(it, w / 2f, 870f, p) }
+            p.color = 0xFF7C3AED.toInt(); p.textSize = 40f; p.isFakeBoldText = true
+            c.drawText("wordocious.com", w / 2f, 1010f, p)
+            com.wordocious.app.data.ShareImage.shareBitmap(context, bmp, "I unlocked \"$name\" on Wordocious!")
         }
     }
 }
@@ -732,6 +864,10 @@ private fun BadgePopupFrame(
     paneTitle: String,
     waiting: Int,
     onNice: () -> Unit,
+    /** BF2: the primary candy's label ("Awesome!" on an achievement). */
+    primaryLabel: String = "Nice!",
+    /** BF2: extra actions beside the primary (See all, share). */
+    actions: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     val still = WTheme.reducedMotion
@@ -781,7 +917,10 @@ private fun BadgePopupFrame(
             ) {
                 content()
                 Spacer(Modifier.height(6.dp))
-                CandyButton("Nice!", onClick = close, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CandyButton(primaryLabel, onClick = close, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
+                    actions?.invoke(this)
+                }
                 if (waiting > 0) {
                     Text(
                         "$waiting more", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,

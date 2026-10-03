@@ -1,5 +1,6 @@
 'use client';
 
+import { botAchievements, unlockAchievements } from '@/lib/achievement-service';
 import { setLeaveGuard } from '@/lib/nav-home';
 import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
 import {
@@ -861,6 +862,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             recordBotOfDay(won, getTodayUTC());
             recordBotOfDayResult(dayResult, getTodayUTC());
           }
+          // FINISH_SPEC BE: the bot ladder + cast achievements (progression is per device).
+          void unlockAchievements(me.id, botAchievements({ ladderCleared: ladderAfter.ladderCleared, botOfDayWins: loadCpuProgression().botOfDayWins ?? 0 }));
           // A bot stepped into the Daily Battle (§6): the local result key, never a
           // daily_results 'vs' row (People record and the VS leaderboard stay people-only).
           if (dailyVsActive) {

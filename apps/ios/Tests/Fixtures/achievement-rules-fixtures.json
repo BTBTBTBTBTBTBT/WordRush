@@ -1,0 +1,736 @@
+{
+  "catalog": [
+    {
+      "key": "muddle_master",
+      "name": "Muddle Master",
+      "description": "Solve 25 Muddles",
+      "category": "puzzles",
+      "icon": "shuffle"
+    },
+    {
+      "key": "punchline_pro",
+      "name": "Punchline Pro",
+      "description": "Solve a Muddle without a hint",
+      "category": "puzzles",
+      "icon": "sparkles"
+    },
+    {
+      "key": "hive_mind",
+      "name": "Hive Mind",
+      "description": "Reach the top rank in Hubbub",
+      "category": "puzzles",
+      "icon": "crown"
+    },
+    {
+      "key": "pangram_hunter",
+      "name": "Pangram Hunter",
+      "description": "Find 10 Hubbub pangrams",
+      "category": "puzzles",
+      "icon": "sparkles"
+    },
+    {
+      "key": "kindred_spirit",
+      "name": "Kindred Spirit",
+      "description": "Solve a Kindred with no mistakes",
+      "category": "puzzles",
+      "icon": "group"
+    },
+    {
+      "key": "kindred_regular",
+      "name": "Kindred Fan",
+      "description": "Solve 25 Kindreds",
+      "category": "puzzles",
+      "icon": "group"
+    },
+    {
+      "key": "ladder_climber",
+      "name": "Ladder Climber",
+      "description": "Solve 25 Letter Ladders",
+      "category": "puzzles",
+      "icon": "trending-up"
+    },
+    {
+      "key": "under_par",
+      "name": "Under Par",
+      "description": "Solve a Letter Ladder under par",
+      "category": "puzzles",
+      "icon": "target",
+      "hidden": true
+    },
+    {
+      "key": "code_cracker",
+      "name": "Code Cracker",
+      "description": "Solve 25 Codebreakers",
+      "category": "puzzles",
+      "icon": "key-round"
+    },
+    {
+      "key": "sharp_spotter",
+      "name": "Sharp Spotter",
+      "description": "Solve 25 Spyglass word searches",
+      "category": "puzzles",
+      "icon": "target"
+    },
+    {
+      "key": "starstruck",
+      "name": "Starstruck",
+      "description": "Solve 25 Starsweeps",
+      "category": "puzzles",
+      "icon": "star"
+    },
+    {
+      "key": "perfect_constellation",
+      "name": "Perfect Constellation",
+      "description": "Solve a Starsweep with no wrong stars",
+      "category": "puzzles",
+      "icon": "star"
+    },
+    {
+      "key": "puzzle_sweep",
+      "name": "Puzzle Sweep",
+      "description": "Solve all ten Puzzles in one day",
+      "category": "puzzles",
+      "icon": "sparkles"
+    },
+    {
+      "key": "puzzle_week",
+      "name": "Puzzle Week",
+      "description": "Sweep the Puzzles 7 days in a row",
+      "category": "puzzles",
+      "icon": "flame"
+    },
+    {
+      "key": "grand_sweep",
+      "name": "Grand Sweep",
+      "description": "Sweep every Wordocious daily and every Puzzle in one day",
+      "category": "puzzles",
+      "icon": "crown"
+    },
+    {
+      "key": "wake_up_call",
+      "name": "Wake-Up Call",
+      "description": "Beat Rip in a VS battle",
+      "category": "bots",
+      "icon": "swords"
+    },
+    {
+      "key": "halfway_hero",
+      "name": "Halfway Hero",
+      "description": "Clear five rungs of the bot ladder",
+      "category": "bots",
+      "icon": "trending-up"
+    },
+    {
+      "key": "boss_battle",
+      "name": "Boss Battle",
+      "description": "Beat Webster, the final boss",
+      "category": "bots",
+      "icon": "crown"
+    },
+    {
+      "key": "meet_the_cast",
+      "name": "Meet the Cast",
+      "description": "Beat all ten cast bots",
+      "category": "bots",
+      "icon": "group"
+    },
+    {
+      "key": "daily_duelist",
+      "name": "Daily Duelist",
+      "description": "Beat the Bot of the Day 7 times",
+      "category": "bots",
+      "icon": "calendar"
+    },
+    {
+      "key": "best_buds",
+      "name": "Best Buds",
+      "description": "Add your first friend",
+      "category": "friends",
+      "icon": "group"
+    },
+    {
+      "key": "squad_goals",
+      "name": "Squad Goals",
+      "description": "Have 10 friends",
+      "category": "friends",
+      "icon": "group"
+    },
+    {
+      "key": "race_day",
+      "name": "Race Day",
+      "description": "Win today's friends race",
+      "category": "friends",
+      "icon": "trophy"
+    },
+    {
+      "key": "ride_or_die",
+      "name": "Ride or Die",
+      "description": "Keep a 7-day friend streak",
+      "category": "friends",
+      "icon": "flame"
+    },
+    {
+      "key": "cheerleader",
+      "name": "Cheerleader",
+      "description": "Send 25 reactions",
+      "category": "friends",
+      "icon": "sparkles"
+    },
+    {
+      "key": "rock_solid",
+      "name": "Rock Solid",
+      "description": "Win 10 Rock Paper Scissors matches",
+      "category": "pocket",
+      "icon": "target"
+    },
+    {
+      "key": "three_in_a_row",
+      "name": "Three in a Row",
+      "description": "Win 10 Tic-Tac-Tile matches",
+      "category": "pocket",
+      "icon": "grid"
+    },
+    {
+      "key": "called_it",
+      "name": "Called It",
+      "description": "Win 10 Call It matches",
+      "category": "pocket",
+      "icon": "star"
+    },
+    {
+      "key": "team_player",
+      "name": "Team Player",
+      "description": "Finish 10 Pass the Puzzle games",
+      "category": "pocket",
+      "icon": "group"
+    },
+    {
+      "key": "spooky_speller",
+      "name": "Spooky Speller",
+      "description": "Win 10 Ghost games",
+      "category": "pocket",
+      "icon": "quote"
+    },
+    {
+      "key": "chain_reaction",
+      "name": "Chain Reaction",
+      "description": "Make a 20-word Word Chain",
+      "category": "pocket",
+      "icon": "shuffle"
+    },
+    {
+      "key": "pocket_pro",
+      "name": "Pocket Pro",
+      "description": "Win at least one of every pocket game",
+      "category": "pocket",
+      "icon": "crown"
+    },
+    {
+      "key": "self_portrait",
+      "name": "Self Portrait",
+      "description": "Make your own mascot",
+      "category": "mascot",
+      "icon": "star"
+    },
+    {
+      "key": "dress_up",
+      "name": "Dress Up",
+      "description": "Save a mascot with a hat, an extra and a backdrop",
+      "category": "mascot",
+      "icon": "sparkles"
+    },
+    {
+      "key": "spooky_season",
+      "name": "Spooky Season",
+      "description": "Finish a daily during Halloween week",
+      "category": "seasonal",
+      "icon": "calendar"
+    },
+    {
+      "key": "early_bird",
+      "name": "Early Bird",
+      "description": "Finish a daily before 7 AM",
+      "category": "streaks",
+      "icon": "calendar"
+    },
+    {
+      "key": "night_owl",
+      "name": "Night Owl",
+      "description": "Finish a daily between midnight and 4 AM",
+      "category": "streaks",
+      "icon": "calendar"
+    }
+  ],
+  "hidden": [
+    "under_par"
+  ],
+  "puzzleCounts": [
+    {
+      "wins": {},
+      "keys": []
+    },
+    {
+      "wins": {
+        "SCRAMBLE": 25,
+        "GROUPS": 24,
+        "LADDER": 30,
+        "REGIONS": 25
+      },
+      "keys": [
+        "muddle_master",
+        "ladder_climber",
+        "starstruck"
+      ]
+    },
+    {
+      "wins": {
+        "CRYPTOGRAM": 25,
+        "WORDSEARCH": 26
+      },
+      "keys": [
+        "code_cracker",
+        "sharp_spotter"
+      ]
+    }
+  ],
+  "puzzleResults": [
+    {
+      "gameMode": "SCRAMBLE",
+      "won": true,
+      "guessCount": 7,
+      "hintsUsed": 0,
+      "keys": [
+        "punchline_pro"
+      ]
+    },
+    {
+      "gameMode": "SCRAMBLE",
+      "won": true,
+      "guessCount": 5,
+      "hintsUsed": 1,
+      "keys": []
+    },
+    {
+      "gameMode": "HUB",
+      "won": true,
+      "guessCount": 1,
+      "hintsUsed": 0,
+      "keys": [
+        "hive_mind"
+      ]
+    },
+    {
+      "gameMode": "GROUPS",
+      "won": true,
+      "guessCount": 4,
+      "hintsUsed": 0,
+      "keys": [
+        "kindred_spirit"
+      ]
+    },
+    {
+      "gameMode": "GROUPS",
+      "won": true,
+      "guessCount": 5,
+      "hintsUsed": 0,
+      "keys": []
+    },
+    {
+      "gameMode": "REGIONS",
+      "won": true,
+      "guessCount": 1,
+      "hintsUsed": 0,
+      "keys": [
+        "perfect_constellation"
+      ]
+    },
+    {
+      "gameMode": "REGIONS",
+      "won": false,
+      "guessCount": 1,
+      "hintsUsed": 0,
+      "keys": []
+    }
+  ],
+  "pangrams": {
+    "games": [
+      {
+        "letters": "PLAYING",
+        "found": [
+          "PLAYING",
+          "PAYING",
+          "PLAYINGS"
+        ]
+      },
+      {
+        "letters": "ABC",
+        "found": [
+          "ABC"
+        ]
+      }
+    ],
+    "count": 2
+  },
+  "puzzleDays": [
+    {
+      "puzzlesDone": 10,
+      "puzzlesTotal": 10,
+      "wordSweepDone": true,
+      "puzzleSweepStreak": 7,
+      "keys": [
+        "puzzle_sweep",
+        "puzzle_week",
+        "grand_sweep"
+      ]
+    },
+    {
+      "puzzlesDone": 10,
+      "puzzlesTotal": 10,
+      "wordSweepDone": false,
+      "puzzleSweepStreak": 1,
+      "keys": [
+        "puzzle_sweep"
+      ]
+    },
+    {
+      "puzzlesDone": 9,
+      "puzzlesTotal": 10,
+      "wordSweepDone": true,
+      "puzzleSweepStreak": 0,
+      "keys": []
+    }
+  ],
+  "bots": [
+    {
+      "ladderCleared": 0,
+      "botOfDayWins": 0,
+      "keys": []
+    },
+    {
+      "ladderCleared": 1,
+      "botOfDayWins": 0,
+      "keys": [
+        "wake_up_call"
+      ]
+    },
+    {
+      "ladderCleared": 5,
+      "botOfDayWins": 6,
+      "keys": [
+        "wake_up_call",
+        "halfway_hero"
+      ]
+    },
+    {
+      "ladderCleared": 10,
+      "botOfDayWins": 7,
+      "keys": [
+        "wake_up_call",
+        "halfway_hero",
+        "boss_battle",
+        "meet_the_cast",
+        "daily_duelist"
+      ]
+    }
+  ],
+  "friends": [
+    {
+      "friendCount": 0,
+      "reactionsSent": 0,
+      "bestFriendStreak": 0,
+      "wonRace": false,
+      "keys": []
+    },
+    {
+      "friendCount": 10,
+      "reactionsSent": 25,
+      "bestFriendStreak": 7,
+      "wonRace": true,
+      "keys": [
+        "best_buds",
+        "squad_goals",
+        "race_day",
+        "ride_or_die",
+        "cheerleader"
+      ]
+    }
+  ],
+  "races": [
+    {
+      "mine": 500,
+      "friends": [
+        300,
+        0
+      ],
+      "won": true
+    },
+    {
+      "mine": 500,
+      "friends": [
+        500
+      ],
+      "won": false
+    },
+    {
+      "mine": 500,
+      "friends": [
+        0,
+        0
+      ],
+      "won": false
+    },
+    {
+      "mine": 0,
+      "friends": [
+        10
+      ],
+      "won": false
+    }
+  ],
+  "pocket": [
+    {
+      "name": "10 rps wins + a 20-word chain",
+      "games": [
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "chain",
+          "finished": false,
+          "won": false,
+          "chainWords": 20
+        }
+      ],
+      "keys": [
+        "rock_solid",
+        "chain_reaction"
+      ]
+    },
+    {
+      "name": "one win of each",
+      "games": [
+        {
+          "kind": "rps",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "ttt",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "coin",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "ghost",
+          "finished": true,
+          "won": true
+        },
+        {
+          "kind": "chain",
+          "finished": true,
+          "won": true
+        }
+      ],
+      "keys": [
+        "pocket_pro"
+      ]
+    },
+    {
+      "name": "10 pass games finished, none won",
+      "games": [
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        },
+        {
+          "kind": "pass",
+          "finished": true,
+          "won": false
+        }
+      ],
+      "keys": [
+        "team_player"
+      ]
+    }
+  ],
+  "avatars": [
+    {
+      "config": null,
+      "keys": []
+    },
+    {
+      "config": {
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "bg": "auto"
+      },
+      "keys": [
+        "self_portrait"
+      ]
+    },
+    {
+      "config": {
+        "head": "wizard",
+        "face": "none",
+        "neck": "cape",
+        "bg": "galaxy"
+      },
+      "keys": [
+        "self_portrait",
+        "dress_up"
+      ]
+    },
+    {
+      "config": {
+        "head": "wizard",
+        "face": "monocle",
+        "neck": "none",
+        "bg": "auto"
+      },
+      "keys": [
+        "self_portrait"
+      ]
+    }
+  ],
+  "moments": [
+    {
+      "localHour": 0,
+      "season": null,
+      "keys": [
+        "night_owl"
+      ]
+    },
+    {
+      "localHour": 3,
+      "season": null,
+      "keys": [
+        "night_owl"
+      ]
+    },
+    {
+      "localHour": 4,
+      "season": null,
+      "keys": [
+        "early_bird"
+      ]
+    },
+    {
+      "localHour": 6,
+      "season": "halloween",
+      "keys": [
+        "early_bird",
+        "spooky_season"
+      ]
+    },
+    {
+      "localHour": 7,
+      "season": null,
+      "keys": []
+    },
+    {
+      "localHour": 23,
+      "season": "halloween",
+      "keys": [
+        "spooky_season"
+      ]
+    }
+  ]
+}

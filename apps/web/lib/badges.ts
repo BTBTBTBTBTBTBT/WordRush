@@ -41,6 +41,15 @@ export const CATEGORY_ACCENT: Record<string, string> = {
   skill: '#2563eb',
   social: '#0d9488',
   collection: '#d97706',
+  // FINISH_SPEC BE: the new-game categories.
+  puzzles: '#db2777',
+  vs: '#0f766e',
+  bots: '#4f46e5',
+  friends: '#e11d48',
+  pocket: '#0891b2',
+  mascot: '#9333ea',
+  seasonal: '#ea580c',
+  streaks: '#ca8a04',
 };
 
 /** True when going from `prevLevel` to `newLevel` lands in a new tier. */
@@ -120,7 +129,7 @@ export function formatUnlockDate(iso: string | null | undefined): string {
 // ── The celebration queue (V2 + V3) ─────────────────────────────────────────
 
 export type BadgeCelebration =
-  | { kind: 'achievement'; key: string; name: string; description: string; badge: AchievementBadgeName; accent: string }
+  | { kind: 'achievement'; key: string; name: string; description: string; badge: AchievementBadgeName; accent: string; xp?: number }
   | { kind: 'tier'; level: number; tier: LevelTier; accent: string };
 
 /** The window event fired with every batch (detail: the queued items). */
