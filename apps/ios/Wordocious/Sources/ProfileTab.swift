@@ -5,15 +5,15 @@ import WordociousCore
 /// and Records merge into one Stats tab that "flows like butter"). Port of
 /// app/stats/page.tsx:
 ///   STATS headline → player card → the game picker window (GamePickerCard,
-///   FINISH_SPEC §C3 — the Leaderboard's picker) → ONE page below it:
-///   Today (landing, TodayCard + the five newest games) · a game page per
-///   daily mode (Solo | VS toggle where a live VS board exists, today's line,
-///   the §18 registry stats) · All-time (snapshot hero, Your Records, every
-///   chart, Signature, Standing trend, Progression, VS — record + rivalries +
-///   Bots + a word-game board — then Recent Matches).
-/// The Sweep tile opens a Sweep page (streaks + sweep records). A horizontal
-/// swipe on the page moves one step through the picker. Zero new fetches beyond the old page except
-/// today's VS result, the sweep streak and today's standing.
+///   FINISH_SPEC §C3 — the Leaderboard's picker) → ONE scroll below it (FINISH_SPEC
+///   BJ1, founder 10-03: no Today | All-time toggle): the picked game's — or
+///   Overview's — TODAY section first, its ALL-TIME section beneath.
+///   Overview: TodayCard + today's games, then the snapshot hero, Your Records, every
+///   chart, Signature, Standing trend, Progression, VS and Recent Matches. A game:
+///   today's result (or "Not played today" + Play), then its all-time stats. The
+///   Sweep tile: today's sweep runs, then the sweep records.
+/// A horizontal swipe moves one step through the picker. Everything sits in ONE
+/// LazyVStack (every card its own lazy element) — BJ1's measured scroll fix.
 struct ProfileTab: View {
     /// §AJ: a footer tap pops this tab's stack (token).
     @ObservedObject private var tabRouter = TabRouterModel.shared
@@ -22,13 +22,14 @@ struct ProfileTab: View {
     @State private var showAuth = false
     @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
-    /// Which page the rail shows: StatsRailKey.today | .all | a mode dbKey (.vs maps to .all).
-    /// FINISH_SPEC BG: two independent selections — scope (Today | All-time) × game
-    /// (nil = Overview). Core `StatsSelection` resolves what shows.
+    /// FINISH_SPEC BJ1: the picked GAME (nil = Overview). Core `StatsSelection.sections`
+    /// resolves the two sections shown — Today first, All-time beneath.
     @State private var sel = StatsSelection.initial
-    /// The picker's key for the current game, or the scope's own key on Overview
-    /// (no tile selected) — the page id and the lookups below.
-    private var selected: String { sel.game ?? (sel.scope == .today ? StatsRailKey.today : StatsRailKey.all) }
+    /// The picked game's key, or "overview" — the page id and the lookups below.
+    private var selected: String { sel.game ?? "overview" }
+    /// BJ1: the quick crossfade on a pick (opacity only) and the scroll-to-top request.
+    @State private var pageFade: Double = 1
+    @State private var scrollTopToken = 0
     /// Bumped by select(.vs): content() scrolls All-time to its VS section.
     @State private var vsScrollToken = 0
     /// A drag started in a horizontal-scrolling row — it never pages the game.
@@ -169,34 +170,37 @@ struct ProfileTab: View {
         // the page magnified and stuck — never reintroduce it.)
         var t = Transaction(); t.disablesAnimations = true
         if key == StatsRailKey.vs {
-            withTransaction(t) { sel = StatsSelection(scope: .allTime, game: nil) }
+            // Overview, then glide to its All-time VS section.
+            withTransaction(t) { sel = .initial }
             vsScrollToken += 1
             return
         }
-        // BG: the toggle changes the SCOPE only (the game stays); a picker tap changes
-        // the GAME only (the scope stays; the picked game again → Overview).
-        let next: StatsSelection
+        // BJ1: a picker tap picks the GAME (the picked game again → Overview); the legacy
+        // Today / All-time keys both mean Overview now.
         switch key {
-        case StatsRailKey.today: next = sel.withScope(.today)
-        case StatsRailKey.all: next = sel.withScope(.allTime)
-        default: next = sel.picking(key)
+        case StatsRailKey.today, StatsRailKey.all: apply(sel.opening(nil))
+        default: apply(sel.picking(key))
         }
-        apply(next)
     }
 
-    /// Show `next` (one quick crossfade; VS-less games drop the scope to Solo).
+    /// Show `next`: the content swaps in one un-animated transaction, fades in from 35%
+    /// (opacity only — cheap, no layout animation) and the scroll returns to the top.
     private func apply(_ next: StatsSelection) {
         guard next != sel else { return }
-        withAnimation(Theme.animation(.easeInOut(duration: 0.15))) {
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) {
             sel = next
             if let g = next.game, g != GamePicker.sweep, !hasVs(g) { activeTab = "solo" }
+            pageFade = Theme.reduceMotion ? 1 : 0.35
+            scrollTopToken += 1
         }
+        withAnimation(.easeOut(duration: 0.16)) { pageFade = 1 }
     }
 
-    /// A Today-card row → that game, keeping the scope (never toggles it off).
+    /// A Today-card row → that game (never toggles it off).
     private func jump(to key: String) {
         if key == StatsRailKey.vs || key == StatsRailKey.today || key == StatsRailKey.all { select(key); return }
-        apply(StatsSelection(scope: sel.scope, game: key))
+        apply(sel.opening(key))
     }
 
     /// Solo | VS and People | Bots — the same un-animated swap as the rail.
@@ -214,7 +218,7 @@ struct ProfileTab: View {
     /// Swipe on the page moves one step through the picker (founder: no 19-page
     /// swipe — but a swipe between neighbors is the natural gesture).
     private func step(_ delta: Int) {
-        // BG: the swipe walks the GAME only (Overview first), within the current scope.
+        // BJ1: the swipe walks the GAME (Overview first).
         let games = pickerOrder.filter { $0 != StatsRailKey.today && $0 != StatsRailKey.all }
         let next = sel.swiped(delta, order: games)
         guard next != sel else { return }
@@ -253,11 +257,11 @@ struct ProfileTab: View {
             }
             .onAppear {
                 if StatsJump.consumeVS() { select(StatsRailKey.vs) }
-                if StatsJump.consumeAchievements() { apply(StatsSelection(scope: .allTime, game: nil)) }
+                if StatsJump.consumeAchievements() { apply(.initial) }
             }
-            // BF2 "See all" from an unlock popup: All-time holds the achievements grid.
+            // BF2 "See all" from an unlock popup: Overview's All-time holds the achievements grid.
             .onReceive(NotificationCenter.default.publisher(for: StatsJump.openAchievements)) { _ in
-                if StatsJump.consumeAchievements() { apply(StatsSelection(scope: .allTime, game: nil)) }
+                if StatsJump.consumeAchievements() { apply(.initial) }
             }
             .fullScreenCover(item: $badgeGame) { g in
                 NavigationStack {
@@ -281,7 +285,7 @@ struct ProfileTab: View {
                 NavigationStack { CustomDailyView(id: m.id) }
             }
             .onDailyRecorded { reloadToken += 1 }
-            .onAppear { if let uid = auth.profile?.id { seedFromMemo(uid) }; refreshToday() }   // refresh: the day may have rolled over
+            .onAppear { if let uid = auth.profile?.id { seedFromMemo(uid) }; refreshToday(); prewarmBadges() }   // refresh: the day may have rolled over
             .onChange(of: auth.isProActive) { _ in refreshToday() }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
                 // P1: every independent fetch runs concurrently (was 8+ serial
@@ -381,6 +385,7 @@ struct ProfileTab: View {
                     memo.set("quizRecord:\(uid)", quizRecord)
                 }
                 _ = await (completionsLoad, catalogLoad)
+                prewarmBadges()
             }
             // Banner inside the NavigationStack so the ScrollView insets for it
             // (the Sign-out button stays scrollable above the banner) and it
@@ -390,6 +395,15 @@ struct ProfileTab: View {
             .tabRootTracked(.stats)
         }
         .id(TabRouterModel.shared.token(.stats))
+    }
+
+    /// BJ1: decode + downsample (and pre-gray the locked) achievement badges off the main
+    /// thread, so scrolling into the grid never decodes art mid-scroll.
+    private func prewarmBadges() {
+        let unlocked = unlockedAchievements
+        BadgeArt.prewarm(achievementCatalog.all.map {
+            (name: BadgeArt.achievementAsset(key: $0.key, icon: $0.icon, category: $0.category), gray: !unlocked.contains($0.key))
+        }, points: 54)
     }
 
     /// Paint from the session memo in one pass (no animation). Cheap and synchronous,
@@ -442,71 +456,98 @@ struct ProfileTab: View {
             .sheet(isPresented: $showAuth) { AuthView() }
     }
 
+    /// The scroll's top anchor (a pick scrolls back here).
+    private let topAnchorId = "stats-top"
+    /// The page id: a pick (or the Solo | VS toggle) builds the sections fresh, so every card
+    /// paints the new game's memo in its first frame.
+    private var pageKey: String { "page-\(selected)-\(activeTab)" }
+
     private func content(_ p: Profile) -> some View {
-        // Web order (app/stats/page.tsx, D2): player card →
-        // StatsRail → ONE page keyed on the selection (Today · a game page ·
-        // All-time). The page swaps instantly (select()); a horizontal
-        // swipe on it moves one chip along the rail.
+        // FINISH_SPEC BJ1 (founder 10-03 on 241: "stats was almost unscrollable because it was going
+        // so slow"). Measured: the page was ONE VStack that built and laid out every card — every
+        // Swift Chart, ~120 achievement badges (each a grayscale filter + an image shadow, both
+        // offscreen passes), the medal list, the VS board — at once, and re-evaluated all of it on
+        // any state change. Now everything sits in ONE LazyVStack, every card its own element
+        // (the achievements grid one element per row), so only what's on screen is built.
         ScrollViewReader { proxy in
         ScrollView {
-            VStack(spacing: 16) {
-                statsTitle
+            LazyVStack(spacing: 16) {
+                statsTitle.id(topAnchorId)
                 header(p)
                 gamePicker
-                // BG: one quick crossfade between pages — the old and new page OVERLAP in
-                // the ZStack (never stacked one under the other, which jumped the page).
-                ZStack(alignment: .top) {
-                VStack(spacing: 16) {
-                    // BG: content = scope × game (core StatsSelection.view).
-                    switch sel.view {
-                    case .todayOverview:
-                        todayPage
-                    case .allTimeOverview:
-                        allTimePage(p)
-                    case .todayGame(let g):
-                        if g == GamePicker.sweep { sweepPage }
-                        else if let m = selectedMeta, let gm = GameMode(rawValue: g) { gameTodayPage(m, mode: gm) }
-                        else { todayPage }
-                    case .allTimeGame(let g):
-                        if g == GamePicker.sweep { sweepPage }
-                        else if let m = selectedMeta, let gm = GameMode(rawValue: g) { gamePage(p, meta: m, mode: gm) }
-                        else { allTimePage(p) }
-                    }
+                // BJ1: ONE scroll — Today, then All-time. The single-element ForEach keys the
+                // sections on the page, so a pick builds them fresh (no stale cards).
+                ForEach([pageKey], id: \.self) { _ in
+                    pageSections(p)
                 }
-                .id("page-\(sel.scope.rawValue)-\(selected)-\(activeTab)")
-                .transition(.opacity)
-                }
-                // Scroll-jump fix (founder, build 237): the swipe is measured in SCREEN
-                // space (in the scrolling content's own space a vertical scroll's travel
-                // cancels out, so a slightly diagonal scroll past Achievements read as a
-                // sideways swipe, swapped the game page and snapped the page back up to
-                // the picker). Only a clearly horizontal swipe pages (core StatsSwipe), and
-                // never one that started in a horizontal-scrolling row.
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 24, coordinateSpace: .global).onEnded { v in
-                        defer { pageSwipeBlocked = false }
-                        guard !pageSwipeBlocked,
-                              let dir = StatsSwipe.step(dx: Double(v.translation.width), dy: Double(v.translation.height))
-                        else { return }
-                        step(dir)
-                    }
-                )
+                .opacity(pageFade)
             }
             .padding(.horizontal, 12).padding(.top, 8)
             // §AS3: the last section always ends clear of the docked footer (its
             // measured height + 16 pt) and stays tappable.
             .tabScrollTail()
+            // Scroll-jump fix (founder, build 237): the swipe is measured in SCREEN space, and
+            // only a clearly horizontal swipe (≥ 70 pt, twice as wide as tall — core StatsSwipe)
+            // pages, never one that started in a horizontal-scrolling row. Only `onEnded`:
+            // nothing is written while the finger moves.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 24, coordinateSpace: .global).onEnded { v in
+                    defer { pageSwipeBlocked = false }
+                    guard !pageSwipeBlocked,
+                          let dir = StatsSwipe.step(dx: Double(v.translation.width), dy: Double(v.translation.height))
+                    else { return }
+                    step(dir)
+                }
+            )
         }
         .reportsScrollMotion()   // §AQ2: idle loops pause while scrolling
-        // select(.vs) swapped to All-time un-animated; once that page is laid out, glide
-        // down to its VS section (web: scrollIntoView smooth, block start).
+        // select(.vs) swapped to Overview un-animated; once it is laid out, glide down to
+        // its VS section (web: scrollIntoView smooth, block start).
         .onChange(of: vsScrollToken) { _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
                 withAnimation(Theme.animation(.easeOut(duration: 0.35))) { proxy.scrollTo(vsSectionId, anchor: .top) }
             }
         }
+        // BJ1: a pick resets the scroll to the top (instant).
+        .onChange(of: scrollTopToken) { _ in proxy.scrollTo(topAnchorId, anchor: .top) }
+        }
+        // §V1: tap a badge = the detail sheet with the big badge (lifted off the lazy grid rows).
+        .sheet(item: $achievementDetail) { a in
+            let on = unlockedAchievements.contains(a.key)
+            AchievementDetailSheet(def: a, unlocked: on, unlockedAt: achievementDates[a.key],
+                                   progress: on ? nil : achievementProgressMap()[a.key],
+                                   accent: Color(hex: achCategories.first { $0.key == a.category }?.color ?? 0x7C3AED))
         }
     }
+
+    /// BJ1: the view's two sections — TODAY first, ALL-TIME beneath (core StatsSelection).
+    @ViewBuilder private func pageSections(_ p: Profile) -> some View {
+        let secs = sel.sections
+        StatsSectionBanner(today: true, note: Self.todayNote())
+        switch secs.first {
+        case .todayGame(let g)?:
+            if let m = selectedMeta, let gm = GameMode(rawValue: g) { gameTodayPage(m, mode: gm) } else { todayPage }
+        case .todaySweep?:
+            sweepToday
+        default:
+            todayPage
+        }
+        StatsSectionBanner(today: false, note: memberSince(p).map { "Since \($0)" })
+        switch secs.last {
+        case .allTimeGame(let g)?:
+            if let m = selectedMeta, let gm = GameMode(rawValue: g) { gamePage(p, meta: m, mode: gm) } else { allTimePage(p) }
+        case .allTimeSweep?:
+            sweepAllTime
+        default:
+            allTimePage(p)
+        }
+    }
+
+    private static let todayNoteFormatter: DateFormatter = {
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "EEE, MMM d"
+        return f
+    }()
+    private static func todayNote() -> String { todayNoteFormatter.string(from: Date()) }
 
     // MARK: Pages
 
@@ -535,11 +576,9 @@ struct ProfileTab: View {
         }
     }
 
-    /// The Sweep tile's page (FINISH_SPEC §C2b / §C3): today's sweep progress and the
-    /// sweep + flawless runs as tinted tiles, then the Daily Sweeps and Puzzles Sweeps
-    /// record cards and the daily points trend (sweep / flawless days marked). All
-    /// from data the page already holds (no new fetches).
-    @ViewBuilder private var sweepPage: some View {
+    /// The Sweep tile's TODAY (FINISH_SPEC §C2b / §C3, BJ1): today's sweep progress and the
+    /// running sweep / flawless / Puzzles streaks as tinted tiles. From data the page holds.
+    @ViewBuilder private var sweepToday: some View {
         let done = completions.completedCount
         let total = DailyCompletionsStore.totalDailyModes
         HStack(spacing: 10) {
@@ -569,7 +608,11 @@ struct ProfileTab: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
-        SectionHeader("Your Records", accent: Color(hex: 0xD97706))
+    }
+
+    /// The Sweep tile's ALL-TIME (BJ1): the Daily Sweeps and Puzzles Sweeps record cards and
+    /// the daily points trend (sweep / flawless days marked).
+    @ViewBuilder private var sweepAllTime: some View {
         SweepRecordsCard(sweep: sweepStats, sweepRankToday: yours.sweepRankToday, sweepRankAllTime: yours.sweepRankAllTime)
         PuzzleSweepsCard(totals: puzzleTotals)
         DailyPointsChartCard(puzzleKeys: visibleMore.compactMap(\.dbKey))
@@ -580,7 +623,7 @@ struct ProfileTab: View {
     @ViewBuilder private func gamePage(_ p: Profile, meta m: HomeMode, mode gm: GameMode) -> some View {
         let tab = gamePageTab
         if hasVs(gm.rawValue) { soloVsToggle(accent: m.accent) }
-        // BG: All-time + Game — that game's all-time stats (today lives on Today + Game).
+        // BJ1: the game's ALL-TIME section (its TODAY sits above it).
         // Your records in this game (the old Records → You "bests by mode" card).
         if tab == "solo" {
             GameRecordsCard(dbKey: gm.rawValue,
@@ -594,21 +637,28 @@ struct ProfileTab: View {
         ProDeepModeCard(gameMode: gm.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(gm), playType: tab)
     }
 
-    /// FINISH_SPEC BG: Today + Game — THAT game today: its result (or "Not played yet —
-    /// Play"), today's rank, and today's rows for it (Unlimited folded in).
+    /// FINISH_SPEC BJ1: the game's TODAY section — its result line, today's rank and today's
+    /// rows for it (Unlimited folded in); not played yet → the brand empty state + Play.
     @ViewBuilder private func gameTodayPage(_ m: HomeMode, mode gm: GameMode) -> some View {
-        todayLine(m)
-        if m.dbKey.flatMap({ completions.byMode[$0] }) != nil {
-            DailyRankBadge(gameMode: gm)
-        }
-        if let p = auth.profile {
-            let key = m.dbKey ?? gm.rawValue
-            let mine = todayEntries.filter { e in
-                switch e {
-                case .single(let r): return r.game_mode == key
-                case .group(let mode, _): return mode == key
-                }
+        let played = m.dbKey.flatMap({ completions.byMode[$0] }) != nil
+        let key = m.dbKey ?? gm.rawValue
+        let mine = todayEntries.filter { e in
+            switch e {
+            case .single(let r): return r.game_mode == key
+            case .group(let mode, _): return mode == key
             }
+        }
+        if played {
+            todayLine(m)
+            DailyRankBadge(gameMode: gm)
+        } else {
+            BrandEmptyState(title: "Not played today",
+                            line: "Today's \(m.title) is waiting. Your result lands here.",
+                            scene: .noStats, host: Mascots.stats, artHeight: 96,
+                            actionTitle: "Play \(m.title)", actionSymbol: "play.fill",
+                            action: { Haptics.tap(); openDaily(m) })
+        }
+        if let p = auth.profile, played || !mine.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 SectionHeader("Today's \(m.title) games", accent: m.accent)
                 TodayGamesList(entries: mine, profileId: p.id, opponentNames: opponentNames,
@@ -910,33 +960,18 @@ struct ProfileTab: View {
 
     /// FINISH_SPEC §C3: the Stats game picker IS the Leaderboard picker — the shared
     /// `GamePickerCard` (every game visible, WORDOCIOUS row + the Sweep tile, PUZZLES
-    /// row; today's W / L on each tile). Its header row carries the Today | All-time
-    /// toggle; while a game (or the Sweep tile) is picked neither segment is lit.
+    /// row; today's W / L on each tile). BJ1: no Today | All-time toggle — the page below
+    /// always shows both, as section banners.
     private var gamePicker: some View {
         GamePickerCard(selection: sel.game ?? "", accent: Self.pickerAccent, ink: Self.pickerInk,
                        results: todayResults,
                        sweepResult: completions.allDone ? true : nil,
                        onSelect: { select($0) }) {
-            VStack(spacing: 8) {
-                // FINISH_SPEC BB1: the selected game's own title art as the header
-                // (LiveHeadline in its accent when there's no art); pops on change.
-                pickerHeadline
-                    .id(sel.game ?? "overview")
-                    .frame(maxWidth: .infinity)
-                // BG: the header always says what's shown — the scope chip under the title.
-                Text(sel.scope == .today ? "TODAY" : "ALL-TIME")
-                    .font(Brand.font(11, .black)).tracking(1.2)
-                    .foregroundStyle(Theme.isDark ? Theme.textPrimary : FinishInk.heading)
-                    .padding(.horizontal, 12).padding(.top, 5).padding(.bottom, 3)
-                    .tintedPill(pickerHeadAccent)
-                    .accessibilityLabel(sel.scope == .today ? "Showing today" : "Showing all-time")
-                // BB2 / BG: the candy Today | All-time control — ALWAYS shows its selected half.
-                CandySegmented(options: [(key: StatsRailKey.today, label: "Today"), (key: StatsRailKey.all, label: "All-time")],
-                               selection: sel.scope == .today ? StatsRailKey.today : StatsRailKey.all,
-                               accent: pickerHeadAccent,
-                               accessibilityLabel: "Today or all-time") { select($0) }
-                    .frame(maxWidth: 280)
-            }
+            // FINISH_SPEC BB1: the selected game's own title art as the header
+            // (LiveHeadline in its accent when there's no art); pops on change.
+            pickerHeadline
+                .id(sel.game ?? "overview")
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -1278,56 +1313,62 @@ struct ProfileTab: View {
             .map { (key: $0, label: $0.replacingOccurrences(of: "_", with: " ").capitalized, color: 0x7C3AED) }
     }
 
-    private var achievementsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                // Under the shared "PROGRESSION" banner (web parity): a plain
-                // card-style title rather than an all-caps section header.
-                FinishLabel("Achievements")
-                Spacer()
-                Text("\(unlockedAchievements.count) / \(achievementCatalog.all.count)").softNumber(14)
-            }
-            // FINISH_SPEC BE: any category the catalog adds beyond the five known ones
-            // still shows (its own group, purple) — new achievements never vanish.
-            ForEach(achCategories + extraAchCategories, id: \.key) { cat in
-                let items = achievementCatalog.all.filter { $0.category == cat.key }
-                if !items.isEmpty {
-                    let n = items.filter { unlockedAchievements.contains($0.key) }.count
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Text(cat.label.uppercased()).font(Brand.font(11, .black)).tracking(0.4).foregroundStyle(Color(hex: cat.color))
-                            Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+    /// BJ1: the achievements grid as lazy rows — the header, then per category its label
+    /// and its badge rows (3 a row), each row its own lazy element, so only the rows on
+    /// screen are built (the eager grid built all ~120 badges at once). The locked badges'
+    /// progress is computed ONCE per pass (it used to rebuild the whole table per badge).
+    @ViewBuilder private var achievementsSection: some View {
+        let progress = achievementProgressMap()
+        HStack {
+            // Under the shared "PROGRESSION" banner (web parity): a plain
+            // card-style title rather than an all-caps section header.
+            FinishLabel("Achievements")
+            Spacer()
+            Text("\(unlockedAchievements.count) / \(achievementCatalog.all.count)").softNumber(14)
+        }
+        // FINISH_SPEC BE: any category the catalog adds beyond the five known ones
+        // still shows (its own group, purple) — new achievements never vanish.
+        ForEach(achCategories + extraAchCategories, id: \.key) { cat in
+            let items = achievementCatalog.all.filter { $0.category == cat.key }
+            if !items.isEmpty {
+                let n = items.filter { unlockedAchievements.contains($0.key) }.count
+                let color = Color(hex: cat.color)
+                LazyVStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(cat.label.uppercased()).font(Brand.font(11, .black)).tracking(0.4).foregroundStyle(color)
+                        Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+                    }
+                    ForEach(Array(stride(from: 0, to: items.count, by: 3)), id: \.self) { i in
+                        HStack(alignment: .top, spacing: 8) {
+                            ForEach(i..<min(i + 3, items.count), id: \.self) { j in
+                                achievementCell(items[j], color: color, progress: progress[items[j].key])
+                            }
+                            ForEach(0..<(3 - min(3, items.count - i)), id: \.self) { _ in
+                                Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                            }
                         }
-                        // Eager (not lazy): no estimated heights to correct mid-scroll.
-                        EagerGrid(items: items, columns: 3) { achievementCell($0, color: Color(hex: cat.color)) }
                     }
                 }
             }
-        }
-        // §V1: tap a badge = the detail sheet with the big badge.
-        .sheet(item: $achievementDetail) { a in
-            let on = unlockedAchievements.contains(a.key)
-            AchievementDetailSheet(def: a, unlocked: on, unlockedAt: achievementDates[a.key],
-                                   progress: on ? nil : achievementProgress(a.key),
-                                   accent: Color(hex: achCategories.first { $0.key == a.category }?.color ?? 0x7C3AED))
         }
     }
 
     /// §V1: the badge art instead of the ✓ / ? text tile — unlocked = full color +
     /// glow + name + date; locked = grayscale, 45%, the 3D lock, name + progress.
-    private func achievementCell(_ a: AchievementDef, color: Color) -> some View {
+    private func achievementCell(_ a: AchievementDef, color: Color, progress: (c: Int, t: Int)?) -> some View {
         let on = unlockedAchievements.contains(a.key)
         return Button { Haptics.tap(); achievementDetail = a } label: {
             AchievementBadgeCell(def: a, unlocked: on, unlockedAt: achievementDates[a.key],
-                                 progress: on ? nil : achievementProgress(a.key), accent: color)
+                                 progress: on ? nil : progress, accent: color)
         }
         .buttonStyle(.squish)
     }
 
-    /// Progress toward a locked achievement from the data this page already holds
-    /// (the profile row + user_stats); nil = no known progress (no bar).
-    private func achievementProgress(_ key: String) -> (c: Int, t: Int)? {
-        guard let p = auth.profile else { return nil }
+    /// Progress toward each locked achievement from the data this page already holds
+    /// (the profile row + user_stats); a missing key = no known progress (no bar).
+    /// BJ1: built once per pass (was rebuilt for every badge).
+    private func achievementProgressMap() -> [String: (c: Int, t: Int)] {
+        guard let p = auth.profile else { return [:] }
         let medalsTotal = p.goldMedals + p.silverMedals + p.bronzeMedals
         let soloWins: (String) -> Int = { m in statRows.filter { $0.gameMode == m && $0.playType == "solo" }.reduce(0) { $0 + $1.wins } }
         let played = statRows.reduce(0) { $0 + $1.totalGames }
@@ -1358,8 +1399,9 @@ struct ProfileTab: View {
             ]
             for (k, mode, t) in mastery { map[k] = (soloWins(mode), t) }
         }
-        if let m = map[key], m.0 < m.1 { return (max(0, m.0), m.1) }
-        return nil
+        var out: [String: (c: Int, t: Int)] = [:]
+        for (k, m) in map where m.0 < m.1 { out[k] = (max(0, m.0), m.1) }
+        return out
     }
 
     // MARK: Solo/VS toggle + VS RECORD card (ports profile/page.tsx section D)

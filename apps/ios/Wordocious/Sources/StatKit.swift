@@ -294,6 +294,9 @@ struct CountUpNumber: View {
     /// §A2: draw as a soft number at this size (overrides `font` / `color`).
     var soft: CGFloat? = nil
     @State private var shown = 0
+    /// BJ1: a value counts up ONCE per session — the Stats page is lazy now, so a card that
+    /// scrolls back into view would otherwise replay 24 re-layouts mid-scroll.
+    private static var counted = Set<String>()
 
     @ViewBuilder private var label: some View {
         if let soft {
@@ -306,7 +309,9 @@ struct CountUpNumber: View {
     var body: some View {
         label
             .onAppear {
-                guard !Theme.reduceMotion, value > 0 else { shown = value; return }
+                let key = "\(value)\(suffix)"
+                guard !Theme.reduceMotion, value > 0, !ScrollMotion.shared.scrolling,
+                      Self.counted.insert(key).inserted else { shown = value; return }
                 let steps = min(value, 24)
                 let stepDur = 0.5 / Double(steps)
                 for i in 1...steps {

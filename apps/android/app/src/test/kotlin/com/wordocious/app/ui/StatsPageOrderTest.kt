@@ -31,15 +31,4 @@ class StatsPageOrderTest {
         assertNull(statsSwipeTarget(order, "LADDER", forward = true))
         assertNull(statsSwipeTarget(order, "UNKNOWN", forward = true))
     }
-
-    @Test
-    fun segmentAndTodayPage() {
-        assertEquals(RAIL_TODAY, statsSegmentFor(RAIL_TODAY))
-        assertEquals(RAIL_ALL, statsSegmentFor(RAIL_ALL))
-        assertNull(statsSegmentFor(RAIL_SWEEP))
-        assertNull(statsSegmentFor("DUEL"))
-        assertTrue(statsShowsToday(RAIL_SWEEP))
-        assertTrue(statsShowsToday(RAIL_TODAY))
-        assertFalse(statsShowsToday(RAIL_ALL))
-    }
 }

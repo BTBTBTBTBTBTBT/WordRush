@@ -188,11 +188,12 @@ fun ProfileScreen(
     var vsDailyWon by remember { mutableStateOf(mainSeed?.vsDailyWon) }
     var standing by remember { mutableStateOf(mainSeed?.standing) }
     var sweepStats by remember { mutableStateOf(mainSeed?.sweepStats ?: MatchStatsService.DailySweepStats()) }
-    // BG: what shows = SCOPE (Today | All-time) × GAME (Overview or one game) — see StatsNav.
+    // BJ1 (founder 10-03): the GAME (null = Overview, RAIL_SWEEP = the Daily Sweep) — every view
+    // is ONE scroll, its TODAY section then its ALL-TIME section (StatsNav.sections). No toggle.
     var view by remember { mutableStateOf(StatsNav.DEFAULT) }
-    val cell = StatsNav.cell(view)
-    // The legacy page key the per-page data reads: a game's db key, else Today / All-time.
-    val selected: String = view.game?.takeIf { it != RAIL_SWEEP } ?: view.scope.key
+    val sections = StatsNav.sections(view)
+    // The picked game's db key (null on Overview / the Sweep) — the per-page data reads it.
+    val selected: String? = view.game?.takeIf { it != RAIL_SWEEP }
     // A game page's Solo | VS toggle (only where the game has a live VS board).
     var gameTab by remember { mutableStateOf("solo") }
     // BG audit: a newly picked game starts on Solo (its VS tab never carries over from the last game).
@@ -203,9 +204,9 @@ fun ProfileScreen(
     // The per-mode chart fetch is scoped to the page: a game page → that mode
     // and its toggle; Today and All-time → the global Solo view (the charts the
     // All-time page draws). All-time's VS board has its own scope (vsCharts below).
-    val isGamePage = com.wordocious.app.ModeGen.byDbKey(selected) != null
+    val isGamePage = selected != null && com.wordocious.app.ModeGen.byDbKey(selected) != null
     val pageMode: String? = if (isGamePage) selected else null
-    val pageTab: String = if (isGamePage && hasVs(selected) && gameTab == "vs") "vs" else "solo"
+    val pageTab: String = if (pageMode != null && hasVs(pageMode) && gameTab == "vs") "vs" else "solo"
     var loading by remember { mutableStateOf(mainSeed == null) }
     // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -331,7 +332,7 @@ fun ProfileScreen(
     // All-time's VS board (founder, 2026-10-01: VS left the rail for the bottom of All-time) draws
     // one word game's Live/CPU charts while the page above it draws the global Solo ones, so it
     // keeps its own scope — same memo keys as a game page's VS tab, so the two share a cache.
-    val onAllTime = selected == RAIL_ALL
+    val onAllTime = view.game == null   // BJ1: Overview's ALL-TIME section holds the VS boards
     val vsChartsKey = userId?.let { "profileCharts:$it:$vsMode:$vsTab:$isProActive" }
     var vsChartsState by remember { mutableStateOf<Pair<String, ProfileChartsMemo>?>(null) }
     val vsCharts: ProfileChartsMemo? = vsChartsState?.takeIf { it.first == vsChartsKey }?.second
@@ -393,28 +394,31 @@ fun ProfileScreen(
     }
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     // A jump to RAIL_VS (the Today card's VS Battle pill) opens All-time and scrolls to its VS
-    // section (founder, 2026-10-01). vsSectionY is that header's offset inside the page item.
+    // section (founder, 2026-10-01).
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(listState) // AJ: a re-tap of Stats scrolls to the top.
-    var vsSectionY by remember { mutableStateOf(-1) }
+    // The VS header's item index in the list (written while the list content is built).
+    val vsIndexHolder = remember { IntArray(1) { -1 } }
     var vsJump by remember { mutableStateOf(0) }
     fun go(key: String) {
-        if (key == RAIL_VS) { view = StatsView(StatsScope.ALL_TIME, null); vsJump++ } else view = StatsNav.jump(view, key)
+        if (key == RAIL_VS) { view = StatsView(null); vsJump++ } else view = StatsNav.jump(view, key)
     }
     LaunchedEffect(vsJumpRequest) { if (vsJumpRequest > 0) go(RAIL_VS) }
     LaunchedEffect(vsJump) {
         if (vsJump == 0) return@LaunchedEffect
-        // Let the All-time page compose and measure first (web waits 60 ms too).
+        // Let Overview compose first (web waits 60 ms too), then glide to its VS header.
         kotlinx.coroutines.delay(60)
-        val y = androidx.compose.runtime.snapshotFlow { vsSectionY }.first { it >= 0 }
-        listState.animateScrollToItem(PAGE_ITEM_INDEX, y)
+        vsIndexHolder[0].takeIf { it >= 0 }?.let { listState.animateScrollToItem(it) }
+    }
+    // BJ1: picking a game resets the scroll to the top (the new page crossfades in).
+    val firstGame = remember { booleanArrayOf(true) }
+    LaunchedEffect(view.game) {
+        if (firstGame[0]) firstGame[0] = false else listState.scrollToItem(0)
     }
     // A picker / toggle tap: the light tick the old rail gave (none under Reduce Motion).
     fun tick() { if (!WTheme.reducedMotion) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove) }
-    /** BG the picker: sets the GAME, keeps the scope (the picked game again → Overview). */
+    /** BJ1 the picker: sets the GAME (the picked game again → Overview). */
     fun pick(key: String) { tick(); view = StatsNav.pick(view, key) }
-    /** BG the toggle: sets the SCOPE, keeps the game. */
-    fun pickScope(key: String) { tick(); view = StatsNav.toggle(view, if (key == RAIL_ALL) StatsScope.ALL_TIME else StatsScope.TODAY) }
     // Swipe on the page moves one item along the picker order (founder: no 19-page
     // swipe — but a swipe between neighbors is the natural gesture).
     // Founder 10-02 (the Stats "jumps back to the picker" bug — web found the cause): a slightly
@@ -439,12 +443,16 @@ fun ProfileScreen(
             }
             if (!childTook) {
                 statsSwipeForward(dx, dy, threshold)?.let { fwd ->
-                    // BG: a swipe changes the GAME only, within the current scope.
+                    // BJ1: a swipe changes the GAME.
                     StatsNav.swipe(view, pageOrder.filter { it != RAIL_TODAY && it != RAIL_ALL }, forward = fwd)?.let { view = it }
                 }
             }
         }
     }
+
+    // BJ1: one quick opacity-only crossfade per game pick, shared by every page item.
+    val pageFade = remember(view.game, pageTab) { androidx.compose.animation.core.Animatable(if (WTheme.reducedMotion) 1f else 0.4f) }
+    LaunchedEffect(pageFade) { pageFade.animateTo(1f, androidx.compose.animation.core.tween(160)) }
 
     val isGuest by AuthService.isGuest.collectAsState()
     if (isGuest) {
@@ -463,7 +471,10 @@ fun ProfileScreen(
         // navigationBarsPadding keeps the bottom of the scroll (Sign Out / Delete
         // Account) clear of the system gesture-nav inset; the host Scaffold already
         // reserves the bottom-nav height. Extra 24dp tail matches web's pb-32.
+        // BJ1: the page swipe watches the whole list (the list's own vertical scroll consumes
+        // vertical drags first, so only a clearly sideways swipe ever switches the game).
         modifier = Modifier.fillMaxSize().pageBackground(PageTint.STATS)
+            .then(swipeModifier)
             .padding(horizontal = 16.dp),
         state = listState,
         contentPadding = PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD + 8.dp), // AS3
@@ -524,41 +535,36 @@ fun ProfileScreen(
                 withSweep = true,
                 sweepKey = RAIL_SWEEP,
                 badge = { key -> todayDailies[key]?.completed },
-                // BB1: the picked game's title art as the card's header (none on Today / All-time).
-                // BG: the header always says what's shown — the game's title art (or OVERVIEW) + the scope chip.
-                title = { StatsPickerTitle(view.game, view.scope) },
-                header = {
-                    StatsSegmented(
-                        options = listOf(RAIL_TODAY to "Today", RAIL_ALL to "All-time"),
-                        selected = view.scope.key, // BG: always shows its selection
-                        onSelect = { pickScope(it) },
-                        modifier = Modifier.weight(1f),
-                        fontSize = 13.sp,
-                    )
-                },
+                // BB1: the picked game's title art as the card's header (OVERVIEW lettering with none).
+                // BJ1: no Today | All-time toggle — the page shows both, as section banners.
+                title = { StatsPickerTitle(view.game) },
             )
         }
 
-        // ── ONE page below the picker; a horizontal swipe moves one picker item. The page swaps
-        //    INSTANTLY (founder, 2026-09-29): the F1 SwapFade faded+rose the whole page for
-        //    220 ms on every rail / Solo|VS / VS-board tap — the Solo|VS toggle and VS board
-        //    picker live inside the page, so the tapped control itself faded back in, the old
-        //    page cross-faded underneath, and AnimatedContent's size transform slid everything
-        //    below. key() keeps the old per-page state reset. The 5th item: PAGE_ITEM_INDEX. ──
-        item {
-            val page = selected; val tab = pageTab
-            androidx.compose.runtime.key(view, tab) {
-                // BG: a quick crossfade on each switch (opacity only — no layout jump).
-                val fadeIn = remember { androidx.compose.animation.core.Animatable(if (WTheme.reducedMotion) 1f else 0.4f) }
-                LaunchedEffect(Unit) { fadeIn.animateTo(1f, androidx.compose.animation.core.tween(160)) }
-                Column(
-                    Modifier.fillMaxWidth().graphicsLayer { this.alpha = fadeIn.value }.then(swipeModifier),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    when {
-                        // ── Today: your day in one card (TodayCard.kt). ──
-                        // The Sweep tile shows the Today page (it holds the sweep), tile highlighted.
-                        cell == StatsCell.TODAY_OVERVIEW -> {
+        // ── FINISH_SPEC BJ1 (founder 10-03: "each game should populate their daily stats first and
+        //    all time beneath, no more toggle … stats was almost unscrollable"): ONE scroll below the
+        //    picker — the picked game's (or Overview's) TODAY section, then its ALL-TIME section.
+        //    Every card is its OWN lazy item (the whole page used to be one giant item, so every
+        //    chart and the full achievements grid composed and measured at once); keys carry the
+        //    page so a pick resets per-page state, and one shared alpha (graphicsLayer — draw phase
+        //    only) gives the quick crossfade. ──
+        val pageKey = "${view.game ?: "overview"}:$pageTab"
+        val tab = pageTab
+        val pageMod = Modifier.fillMaxWidth().graphicsLayer { this.alpha = pageFade.value }
+        var n = 4   // spacer · STATS headline · player card · picker
+        val page: (String, @Composable () -> Unit) -> Unit = { k, content ->
+            n++
+            item(key = "$pageKey/$k", contentType = k) { Box(pageMod) { content() } }
+        }
+        val sinceNote = memberSince(profile?.createdAt)?.let { "Since $it" }
+
+        // ── TODAY ──
+        page("today-banner") {
+            StatsSectionBanner(today = true, note = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d", java.util.Locale.US)))
+        }
+        when (sections[0]) {
+            StatsSection.TODAY_OVERVIEW, StatsSection.TODAY_SWEEP -> {
+                page("today-card") {
                         TodayCard(
                             sweepModes = DAILY_MODES,
                             moreModes = visibleMore,
@@ -572,11 +578,9 @@ fun ProfileScreen(
                             onPlayDaily = onPlayDaily,
                             onJump = { go(it) },
                         )
-                        // Founder (2026-09-26): the most recent games — daily AND unlimited —
-                        // right under the Sweep streak / Best moment row; the full history
-                        // stays on All-time. Same rows, same stats (RecentMatches.kt).
-                        // Founder, 2026-09-27: every game played TODAY (daily and unlimited),
-                        // no cap, no "See all" link — the full history lives on All-time.
+                }
+                if (sections[0] == StatsSection.TODAY_OVERVIEW) page("today-games") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         SectionHeader("Today's Games", accent = Color(0xFF2563EB))
                         // Founder, 2026-09-29: dailies and VS keep a row each; Unlimited solo
                         // games fold into one row per game (Pro only — free players see none).
@@ -585,171 +589,178 @@ fun ProfileScreen(
                             loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
                             emptyScene = SceneArt.NO_STATS, emptyText = Mascots.statsEmptyLine,
                         )
+                    }
+                }
+            }
+            else -> {
+                val gamePage = selected ?: ""
+                val gm = runCatching { GameMode.valueOf(gamePage) }.getOrNull()
+                val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
+                val done = todayDailies[gamePage]
+                val hasRows = todayRows(recentMatches.filter { it.gameMode == gamePage }, userId, isProActive).isNotEmpty()
+                if (done == null) page("today-not-played") {
+                    // BJ1: the daily not played yet → the brand empty state with a Play button.
+                    BrandEmptyState(
+                        title = "Not played today",
+                        line = "Today's ${gameTitleLabelForKey(gamePage)} is waiting. Your result lands here.",
+                        scene = SceneArt.NO_STATS, artHeight = 96.dp,
+                        actionLabel = "Play ${gameTitleLabelForKey(gamePage)}", actionIcon = CandyIcon.PLAY,
+                        onAction = { gm?.let(onPlayDaily) },
+                    )
+                } else {
+                    page("today-line") { TodayLineCard(dbKey = gamePage, completion = done, accent = accent) { gm?.let(onPlayDaily) } }
+                    page("today-board") {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            com.wordocious.app.ui.game.CompletedDailyBoard(gamePage)
+                            gm?.let { com.wordocious.app.ui.game.DailyRankBadge(it) }
                         }
+                    }
+                }
+                if (done != null || hasRows) page("today-games") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionHeader("Today's Games", accent = accent)
+                        TodayGamesList(
+                            matches = recentMatches.filter { it.gameMode == gamePage }, opponentNames = opponentNames, userId = userId,
+                            loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
+                            emptyScene = SceneArt.NO_STATS, emptyText = "No ${gameTitleLabelForKey(gamePage)} games yet today.",
+                        )
+                    }
+                }
+            }
+        }
 
-                        // ── All-time: the snapshot hero, YOUR RECORDS, every chart the old
-                        //    "All" dashboard drew, then Progression, VS and Recent Matches. ──
-                        cell == StatsCell.ALL_TIME_OVERVIEW -> {
-                            SnapshotHero(
-                                totalWins = profile?.totalWins ?: 0,
-                                totalLosses = profile?.totalLosses ?: 0,
-                                currentStreak = profile?.currentStreak ?: 0,
-                                bestStreak = profile?.bestStreak ?: 0,
-                                dailyStreak = profile?.dailyLoginStreak ?: 0,
-                                bestDailyStreak = profile?.bestDailyLoginStreak ?: 0,
-                                gamesThisWeek = activity7.sumOf { it.played },
-                                level = profile?.level ?: 1,
-                                xpToNext = 1000 - ((profile?.xp ?: 0) % 1000),
-                                isPro = isProActive, onGoPro = onGoPro,
-                            )
-                            // ── Your records (D2 step 3): what the Records → You view used to hold —
-                            //    Next Up, Daily Sweeps, Medals + Global Records held, the Trophy Shelf.
-                            //    The Global Records tile is the door to the Hall of Fame (RecordsScreen). ──
-                            SectionHeader("Your Records", accent = Color(0xFFD97706))
-                            NextUpCard(dailyStreak = profile?.dailyLoginStreak ?: 0, chases = yours.chases)
-                            SweepRecordsCard(sweep = sweepStats, sweepRankToday = yours.sweepRankToday, sweepRankAllTime = yours.sweepRankAllTime)
-                            // Founder, 2026-10-01 stats audit: the Puzzles' own sweep records, then the
-                            // Word of the Day record (hidden until the first answer).
-                            PuzzleSweepsCard(puzzleRecords)
-                            quizRecord?.takeIf { it.answered > 0 }?.let { WordOfTheDayRecordCard(it) }
-                            // §294 (D3.3): settled weekly-race finishes, hidden until the first week settles.
-                            userId?.let { WeeklyFinishesCard(it) }
-                            RecordsHeldRow(recordsHeld = yours.recordsHeld, onOpenRecords = onOpenRecords)
-                            TrophyShelf(recordsHeld = yours.recordsHeld)
-
-                            // ── "All" global view — web Trends order (restat R1). ──
-                            if (activityCal.any { it.played > 0 }) DailyCalendarCard(activityCal)
-                            if (activity7.isNotEmpty()) ActivityCard(activity7)
-                            // Guess distribution + solve time always render — their own
-                            // empty copy is the guidance (iOS keeps both cards visible).
-                            // The distribution counts the word games only (the custom
-                            // engines score in their own units).
-                            GuessDistributionCard(guessDist, hint = "word games")
-                            // The eight Wordocious games only (founder, 2026-10-01 stats audit).
-                            SolveTimeCard(solveTimes, hint = "Wordocious games")
-                            // Daily points trend: Wordocious and Puzzles lines, sweep/flawless days marked.
-                            DailyPointsChartCard(sweepPoints)
-                            if (topWords.isNotEmpty()) TopWordsCard(topWords)
-                            else if (chartsLoaded) {
-                                StatsEmptyCard(
-                                    "Top Words", accent = Color(0xFFD97706),
-                                    hint = "Your most-guessed words appear here as you play.",
-                                )
-                            }
-                            // Opener Lab (basic): favorite starting words + conversion.
-                            OpenerLabCard(playType = tab)
-                            // Weekday form: your best day of the week.
-                            WeekdayFormCard(playType = tab)
-                            // WHEN YOU PLAY (time-of-day) — closes the All view on iOS too.
-                            if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
-                            // Insights — up to two derived one-liners.
-                            val insights = profileInsights(stats, activity7, profile, todayDailies)
-                            if (insights.isNotEmpty()) InsightsCard(insights)
-                            // Signature (audit, 2026-09-26): best day, best week, comebacks, perfects — free.
-                            userId?.let { SignatureCard(it) }
-                            // Standing trend — your Top X% per day over 30 days (Pro).
-                            userId?.let { StandingTrendCard(it, isPro = isProActive, onGoPro = onGoPro) }
-                            // Pro Stats (global view; SOLO rows only).
-                            if (!isProActive || stats.isNotEmpty()) {
-                                ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
-                            }
-                            // Skill Radar — the five-axis signature chart (Pro).
-                            SkillRadarCard(isPro = isProActive, onGoPro = onGoPro)
-
-                            // ── Progression: medals + achievements under one banner ──
-                            SectionHeader("Progression", accent = Color(0xFFF59E0B))
-                            DailyMedals(profile, medals)
-                            AchievementsSection(unlockedAchievements, profile)
-
-                            if (loading) {
-                                StatsCard(StatsInk.LAVENDER, bar = null) {
-                                    Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), Alignment.Center) { CastLoader(null, tips = true) }
-                                }
-                            }
-
-                            // ── VS (founder, 2026-10-01): VS left the game rail (rarely played; the grid
-                            //    now comes out even). Its record (with today's result), Rivalries, the
-                            //    Bots record and one word game's board — People or Bots — live here. ──
-                            Box(Modifier.onGloballyPositioned { vsSectionY = it.positionInParent().y.toInt() }) {
-                                SectionHeader("VS", accent = Color(0xFFEC4899))
-                            }
-                            VsRecordCard(stats, vsDailyWon)
-                            // Rivalries — most-faced opponents with head-to-head bars
-                            // (Pro), only once there's an actual VS record (web parity).
-                            val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
-                            if (vsTotal > 0) RivalriesCard(isPro = isProActive, onGoPro = onGoPro)
-                            CpuRecordCard(stats)
-                            VsBoardPicker(
-                                modes = DAILY_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
-                                onMode = { vsMode = it }, onTab = { vsTab = it },
-                            )
-                            ModeStatsBody(
-                                mode = vsMode, tab = vsTab, stats = stats,
-                                modeStreaks = vsCharts?.modeStreaks ?: emptyMap(),
-                                modeAgg = vsCharts?.modeAgg ?: com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES,
-                                guessDist = vsCharts?.guessDist ?: emptyList(),
-                                modeCal = vsCharts?.modeCal ?: emptyList(),
-                                solveTimes = vsCharts?.solveTimes ?: emptyList(),
-                                topWords = vsCharts?.topWords ?: emptyList(),
-                                chartsLoaded = vsCharts != null,
-                                timeOfDay = vsCharts?.timeOfDay ?: emptyList(),
-                                proInsights = vsCharts?.proInsights ?: com.wordocious.app.data.MatchStatsService.ProInsights(),
-                                isProActive = isProActive, onGoPro = onGoPro,
-                            )
-
-                            // ── Recent matches ──
-                            // Web parity (profile/page.tsx): skeleton rows while loading, then the
-                            // matches or "No matches played yet." — the section never just vanishes.
-                            SectionHeader("Recent Matches", accent = Color(0xFF2563EB))
-                            RecentMatchesList(
-                                // The newest 50 — the list also carries all of today for Today's Games.
-                                matches = recentMatches.take(50), opponentNames = opponentNames, userId = userId,
-                                loading = loading, limit = 5,
-                                emptyScene = SceneArt.NO_STATS, emptyText = Mascots.statsEmptyLine,
-                            )
-                        }
-
-                        // ── A game page: Solo | VS (only with a live VS board), today's
-                        //    line, your records in it, then the registry-driven per-mode stats. ──
-                        // ── BG Today + a game: THAT game today — its line (result / "Play"), the
-                        //    finished board, today's rank, and today's games of it. ──
-                        cell == StatsCell.TODAY_GAME -> {
-                            val gm = runCatching { GameMode.valueOf(page) }.getOrNull()
-                            val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
-                            TodayLineCard(dbKey = page, completion = todayDailies[page], accent = accent) { gm?.let(onPlayDaily) }
-                            if (todayDailies[page] != null) {
-                                com.wordocious.app.ui.game.CompletedDailyBoard(page)
-                                gm?.let { com.wordocious.app.ui.game.DailyRankBadge(it) }
-                            }
-                            SectionHeader("Today's Games", accent = accent)
-                            TodayGamesList(
-                                matches = recentMatches.filter { it.gameMode == page }, opponentNames = opponentNames, userId = userId,
-                                loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
-                                emptyScene = SceneArt.NO_STATS, emptyText = "No ${gameTitleLabelForKey(page)} games yet today.",
-                            )
-                        }
-
-                        // ── BG All-time + a game: THAT game's all-time stats. ──
-                        else -> {
-                            val gm = runCatching { GameMode.valueOf(page) }.getOrNull()
-                            val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
-                            if (hasVs(page)) GameSoloVsToggle(active = gameTab, accent = accent) { gameTab = it }
-                            // Your records in this game (the old Records → You "bests by mode" card) — Solo only.
-                            if (tab == "solo") {
-                                GameRecordsCard(
-                                    dbKey = page,
-                                    my = stats.find { it.gameMode == page && it.playType == "solo" },
-                                    recordsHeld = yours.recordsHeld,
-                                    chases = yours.chases,
-                                )
-                            }
-                            ModeStatsBody(
-                                mode = page, tab = tab, stats = stats, modeStreaks = modeStreaks, modeAgg = modeAgg,
-                                guessDist = guessDist, modeCal = modeCal, solveTimes = solveTimes, topWords = topWords,
-                                chartsLoaded = chartsLoaded, timeOfDay = timeOfDay, proInsights = proInsights,
-                                isProActive = isProActive, onGoPro = onGoPro,
-                            )
-                        }
+        // ── ALL-TIME ──
+        page("all-banner") { StatsSectionBanner(today = false, note = sinceNote) }
+        when (sections[1]) {
+            StatsSection.ALL_TIME_OVERVIEW -> {
+                page("hero") {
+                    SnapshotHero(
+                        totalWins = profile?.totalWins ?: 0,
+                        totalLosses = profile?.totalLosses ?: 0,
+                        currentStreak = profile?.currentStreak ?: 0,
+                        bestStreak = profile?.bestStreak ?: 0,
+                        dailyStreak = profile?.dailyLoginStreak ?: 0,
+                        bestDailyStreak = profile?.bestDailyLoginStreak ?: 0,
+                        gamesThisWeek = activity7.sumOf { it.played },
+                        level = profile?.level ?: 1,
+                        xpToNext = 1000 - ((profile?.xp ?: 0) % 1000),
+                        isPro = isProActive, onGoPro = onGoPro,
+                    )
+                }
+                // ── Your records (D2 step 3): Next Up, Daily Sweeps, Puzzles Sweeps, Word of the Day,
+                //    weekly finishes, Medals + Global Records held (the Hall of Fame door), Trophy Shelf. ──
+                page("records-head") { SectionHeader("Your Records", accent = Color(0xFFD97706)) }
+                page("next-up") { NextUpCard(dailyStreak = profile?.dailyLoginStreak ?: 0, chases = yours.chases) }
+                page("sweep-records") { SweepRecordsCard(sweep = sweepStats, sweepRankToday = yours.sweepRankToday, sweepRankAllTime = yours.sweepRankAllTime) }
+                page("puzzle-sweeps") { PuzzleSweepsCard(puzzleRecords) }
+                quizRecord?.takeIf { it.answered > 0 }?.let { q -> page("quiz") { WordOfTheDayRecordCard(q) } }
+                userId?.let { uid -> page("weekly") { WeeklyFinishesCard(uid) } }
+                page("records-held") { RecordsHeldRow(recordsHeld = yours.recordsHeld, onOpenRecords = onOpenRecords) }
+                page("trophies") { TrophyShelf(recordsHeld = yours.recordsHeld) }
+                // ── "All" global view — web Trends order (restat R1). ──
+                if (activityCal.any { it.played > 0 }) page("calendar") { DailyCalendarCard(activityCal) }
+                if (activity7.isNotEmpty()) page("activity7") { ActivityCard(activity7) }
+                // Guess distribution + solve time always render — their own empty copy is the guidance.
+                page("guess-dist") { GuessDistributionCard(guessDist, hint = "word games") }
+                // The eight Wordocious games only (founder, 2026-10-01 stats audit).
+                page("solve-time") { SolveTimeCard(solveTimes, hint = "Wordocious games") }
+                page("daily-points") { DailyPointsChartCard(sweepPoints) }
+                if (topWords.isNotEmpty()) page("top-words") { TopWordsCard(topWords) }
+                else if (chartsLoaded) page("top-words") {
+                    StatsEmptyCard("Top Words", accent = Color(0xFFD97706), hint = "Your most-guessed words appear here as you play.")
+                }
+                page("opener-lab") { OpenerLabCard(playType = tab) }
+                page("weekday") { WeekdayFormCard(playType = tab) }
+                if (timeOfDay.any { it.played > 0 }) page("time-of-day") { WhenYouPlayCard(timeOfDay) }
+                val insights = profileInsights(stats, activity7, profile, todayDailies)
+                if (insights.isNotEmpty()) page("insights") { InsightsCard(insights) }
+                userId?.let { uid -> page("signature") { SignatureCard(uid) } }
+                userId?.let { uid -> page("standing") { StandingTrendCard(uid, isPro = isProActive, onGoPro = onGoPro) } }
+                if (!isProActive || stats.isNotEmpty()) page("pro-stats") {
+                    ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
+                }
+                page("skill-radar") { SkillRadarCard(isPro = isProActive, onGoPro = onGoPro) }
+                // ── Progression: medals + achievements under one banner ──
+                page("progression-head") { SectionHeader("Progression", accent = Color(0xFFF59E0B)) }
+                page("medals") { DailyMedals(profile, medals) }
+                page("achievements") { AchievementsSection(unlockedAchievements, profile) }
+                if (loading) page("loading") {
+                    StatsCard(StatsInk.LAVENDER, bar = null) {
+                        Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), Alignment.Center) { CastLoader(null, tips = true) }
+                    }
+                }
+                // ── VS (founder, 2026-10-01): its record (with today's result), Rivalries, the Bots
+                //    record and one word game's board — People or Bots. ──
+                vsIndexHolder[0] = n
+                page("vs-head") { SectionHeader("VS", accent = Color(0xFFEC4899)) }
+                page("vs-record") { VsRecordCard(stats, vsDailyWon) }
+                val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
+                if (vsTotal > 0) page("rivalries") { RivalriesCard(isPro = isProActive, onGoPro = onGoPro) }
+                page("cpu-record") { CpuRecordCard(stats) }
+                page("vs-picker") {
+                    VsBoardPicker(
+                        modes = DAILY_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
+                        onMode = { vsMode = it }, onTab = { vsTab = it },
+                    )
+                }
+                page("vs-board-$vsMode-$vsTab") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ModeStatsBody(
+                            mode = vsMode, tab = vsTab, stats = stats,
+                            modeStreaks = vsCharts?.modeStreaks ?: emptyMap(),
+                            modeAgg = vsCharts?.modeAgg ?: com.wordocious.app.data.ModeStats.EMPTY_AGGREGATES,
+                            guessDist = vsCharts?.guessDist ?: emptyList(),
+                            modeCal = vsCharts?.modeCal ?: emptyList(),
+                            solveTimes = vsCharts?.solveTimes ?: emptyList(),
+                            topWords = vsCharts?.topWords ?: emptyList(),
+                            chartsLoaded = vsCharts != null,
+                            timeOfDay = vsCharts?.timeOfDay ?: emptyList(),
+                            proInsights = vsCharts?.proInsights ?: com.wordocious.app.data.MatchStatsService.ProInsights(),
+                            isProActive = isProActive, onGoPro = onGoPro,
+                        )
+                    }
+                }
+                // ── Recent matches (web parity: skeleton rows while loading, then the rows or the empty state). ──
+                page("recent") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionHeader("Recent Matches", accent = Color(0xFF2563EB))
+                        RecentMatchesList(
+                            // The newest 50 — the list also carries all of today for Today's Games.
+                            matches = recentMatches.take(50), opponentNames = opponentNames, userId = userId,
+                            loading = loading, limit = 5,
+                            emptyScene = SceneArt.NO_STATS, emptyText = Mascots.statsEmptyLine,
+                        )
+                    }
+                }
+            }
+            StatsSection.ALL_TIME_SWEEP -> {
+                // The Daily Sweep's all-time: the sweep + Puzzles records and the points trend.
+                page("sweep-records") { SweepRecordsCard(sweep = sweepStats, sweepRankToday = yours.sweepRankToday, sweepRankAllTime = yours.sweepRankAllTime) }
+                page("puzzle-sweeps") { PuzzleSweepsCard(puzzleRecords) }
+                page("daily-points") { DailyPointsChartCard(sweepPoints) }
+            }
+            else -> {
+                val gamePage = selected ?: ""
+                val gm = runCatching { GameMode.valueOf(gamePage) }.getOrNull()
+                val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
+                if (hasVs(gamePage)) page("solo-vs") { GameSoloVsToggle(active = gameTab, accent = accent) { gameTab = it } }
+                // Your records in this game (the old Records → You "bests by mode" card) — Solo only.
+                if (tab == "solo") page("game-records") {
+                    GameRecordsCard(
+                        dbKey = gamePage,
+                        my = stats.find { it.gameMode == gamePage && it.playType == "solo" },
+                        recordsHeld = yours.recordsHeld,
+                        chases = yours.chases,
+                    )
+                }
+                page("mode-stats") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ModeStatsBody(
+                            mode = gamePage, tab = tab, stats = stats, modeStreaks = modeStreaks, modeAgg = modeAgg,
+                            guessDist = guessDist, modeCal = modeCal, solveTimes = solveTimes, topWords = topWords,
+                            chartsLoaded = chartsLoaded, timeOfDay = timeOfDay, proInsights = proInsights,
+                            isProActive = isProActive, onGoPro = onGoPro,
+                        )
                     }
                 }
             }
@@ -766,10 +777,6 @@ internal fun statsSummaryHeadline(wins: Int, played: Int, streak: Int): String {
     val base = "${"%,d".format(wins)} WIN${if (wins == 1) "" else "S"} · $rate% WIN RATE"
     return if (streak >= 2) "$base · $streak STREAK" else base
 }
-
-/** The page item's index in the Stats LazyColumn (spacer · STATS headline · player card ·
- *  picker · page): the VS jump scrolls to it, offset by the VS section header's y inside it. */
-private const val PAGE_ITEM_INDEX = 4
 
 /** One chart scope's fetch: a mode (null = the global All view) and a play type. All chart
  *  fetches run CONCURRENTLY (was 6 serial round-trips + a 9-query per-mode streak N+1 — now

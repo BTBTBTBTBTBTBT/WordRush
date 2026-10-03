@@ -220,43 +220,70 @@ fun StatsSegmented(
 }
 
 /**
- * BB1 / BG the Stats picker card's header — it always says what's shown: the picked game's
- * own title art ~48 dp tall (no art — the Sweep, puzzles without art — the name in the live
- * lettering), or "OVERVIEW" with no game picked, and a small TODAY / ALL-TIME chip under it.
- * Pops in on each change.
+ * BB1 the Stats picker card's header — it says what's shown: the picked game's own title
+ * art ~48 dp tall (no art — the Sweep, puzzles without art — the name in the live
+ * lettering), or "OVERVIEW" with no game picked. Pops in on each change. (BJ1: the
+ * TODAY / ALL-TIME chip left with the toggle — the page shows both, as section banners.)
  */
 @Composable
-fun StatsPickerTitle(key: String?, scope: StatsScope) {
-    androidx.compose.runtime.key(key, scope) {
+fun StatsPickerTitle(key: String?) {
+    androidx.compose.runtime.key(key) {
         val still = WTheme.reducedMotion
         val pop = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (still) 1f else 0.85f) }
         androidx.compose.runtime.LaunchedEffect(Unit) { if (!still) pop.animateTo(1f, Motion.springIn()) }
         val label = when (key) { null -> "Overview"; RAIL_SWEEP -> "Daily Sweep"; else -> gameTitleLabelForKey(key) }
         val art = if (key == null || key == RAIL_SWEEP) null else gameTitleArtResForKey(key)
-        Column(
-            Modifier.fillMaxWidth().graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+        Box(
+            Modifier.fillMaxWidth().height(44.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value }
                 .semantics(mergeDescendants = true) { heading() },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
-                if (art != null) {
-                    androidx.compose.foundation.Image(
-                        artPainter(art, 260.dp), contentDescription = label,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                        modifier = Modifier.fillMaxHeight(),
-                    )
-                } else {
-                    LiveHeadline(label.uppercase(), HeadlinePalette.STATS, Modifier.fillMaxWidth(), maxSize = 24.sp, minSize = 14.sp, maxLines = 1)
-                }
+            if (art != null) {
+                androidx.compose.foundation.Image(
+                    artPainter(art, 260.dp), contentDescription = label,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    modifier = Modifier.fillMaxHeight(),
+                )
+            } else {
+                LiveHeadline(label.uppercase(), HeadlinePalette.STATS, Modifier.fillMaxWidth(), maxSize = 24.sp, minSize = 14.sp, maxLines = 1)
             }
-            val chipInk = if (scope == StatsScope.TODAY) Color(0xFF2563EB) else Color(0xFFB45309)
+        }
+    }
+}
+
+/** BJ1 the two Stats section banners' gradients — TODAY blue → violet, ALL-TIME amber → pink. */
+object StatsSectionInk {
+    val today = listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+    val allTime = listOf(Color(0xFFD97706), Color(0xFFDB2777))
+}
+
+/**
+ * FINISH_SPEC BJ1 a Stats section header — TODAY first, ALL-TIME beneath (the Today | All-time
+ * toggle is gone). Brand gradient caps + a short gradient rule, a small muted [note] on the
+ * right (the date, "Since Mar 2025"). Static (no animation, no box): cheap to scroll past.
+ * Twins: iOS StatsSectionBanner, web components/stats/stats-section-banner.tsx.
+ */
+@Composable
+fun StatsSectionBanner(today: Boolean, note: String?, modifier: Modifier = Modifier) {
+    val colors = if (today) StatsSectionInk.today else StatsSectionInk.allTime
+    val brush = Brush.horizontalGradient(colors)
+    Row(
+        modifier.fillMaxWidth().padding(top = 8.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(Modifier.semantics { heading() }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                if (scope == StatsScope.TODAY) "TODAY" else "ALL-TIME",
-                fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
-                color = if (WTheme.isDark) WTheme.textSecondary else chipInk,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(Wash.mix(chipInk, 0.12f))
-                    .padding(horizontal = 9.dp, vertical = 2.dp),
+                if (today) "TODAY" else "ALL-TIME",
+                style = androidx.compose.ui.text.TextStyle(brush = brush),
+                fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 0.08.em,
+            )
+            Box(Modifier.width(44.dp).height(4.dp).clip(RoundedCornerShape(50)).background(brush))
+        }
+        if (note != null) {
+            Text(
+                note.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.08.em,
+                color = WTheme.textSecondary, modifier = Modifier.padding(bottom = 4.dp),
             )
         }
     }

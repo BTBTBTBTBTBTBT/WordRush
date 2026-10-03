@@ -2087,3 +2087,17 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 @keyframes wq-pop { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .wq-tile[data-state="right"] { animation: none !important; } }
 [data-reduced-motion="true"] .wq-tile[data-state="right"] { animation: none !important; }
+
+/* FINISH_SPEC BJ1 (founder 10-03: "stats was almost unscrollable"): the Stats page's
+   below-the-fold groups skip layout + paint until they near the viewport. The padding /
+   negative margins give the cards' soft shadows room inside the paint containment
+   (content-visibility clips to the padding box); `auto` remembers the real height so the
+   scrollbar never jumps. */
+.stats-cv {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+  padding: 0 16px 28px;
+  margin-left: -16px;
+  margin-right: -16px;
+  margin-bottom: -28px !important;
+}

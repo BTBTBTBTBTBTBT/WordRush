@@ -18,7 +18,9 @@ struct ProfileDashboard: View {
     var playType: String = "solo"
 
     var body: some View {
-        VStack(spacing: 12) {
+        // FINISH_SPEC BJ1: a Group, not a VStack — inside the Stats LazyVStack each chart is
+        // its own lazy element (built only when it nears the screen), not one tall block.
+        Group {
             if mode == nil {
                 // Web All-view Trends order (restat R1): activity calendar →
                 // last-7-days → guess distribution → solve time → daily points

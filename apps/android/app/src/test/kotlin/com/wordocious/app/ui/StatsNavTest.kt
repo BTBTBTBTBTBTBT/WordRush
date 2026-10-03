@@ -2,50 +2,45 @@ package com.wordocious.app.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** FINISH_SPEC BG: Stats content = scope × game. */
+/** FINISH_SPEC BJ1: no Today | All-time toggle — every view is ONE scroll, Today first, All-time beneath. */
 class StatsNavTest {
-    private val today = StatsScope.TODAY
-    private val all = StatsScope.ALL_TIME
-
-    @Test fun defaultIsTodayOverview() {
-        assertEquals(StatsView(today, null), StatsNav.DEFAULT)
-        assertEquals(StatsCell.TODAY_OVERVIEW, StatsNav.cell(StatsNav.DEFAULT))
+    @Test fun defaultIsOverviewWithBothSections() {
+        assertEquals(StatsView(null), StatsNav.DEFAULT)
+        assertEquals(listOf(StatsSection.TODAY_OVERVIEW, StatsSection.ALL_TIME_OVERVIEW), StatsNav.sections(StatsNav.DEFAULT))
     }
 
-    @Test fun eachOfTheFourCells() {
-        assertEquals(StatsCell.TODAY_OVERVIEW, StatsNav.cell(StatsView(today, null)))
-        assertEquals(StatsCell.TODAY_GAME, StatsNav.cell(StatsView(today, "QUORDLE")))
-        assertEquals(StatsCell.ALL_TIME_OVERVIEW, StatsNav.cell(StatsView(all, null)))
-        assertEquals(StatsCell.ALL_TIME_GAME, StatsNav.cell(StatsView(all, "QUORDLE")))
-        // The Sweep tile is its scope's overview.
-        assertEquals(StatsCell.ALL_TIME_OVERVIEW, StatsNav.cell(StatsView(all, RAIL_SWEEP)))
+    @Test fun aGameShowsItsTodayThenItsAllTime() {
+        assertEquals(listOf(StatsSection.TODAY_GAME, StatsSection.ALL_TIME_GAME), StatsNav.sections(StatsView("QUORDLE")))
+        assertEquals(listOf(StatsSection.TODAY_SWEEP, StatsSection.ALL_TIME_SWEEP), StatsNav.sections(StatsView(RAIL_SWEEP)))
+        for (g in listOf(null, "DUEL", RAIL_SWEEP)) {
+            val s = StatsNav.sections(StatsView(g))
+            assertEquals(2, s.size)
+            assertTrue(s[0].name.startsWith("TODAY_"))
+            assertTrue(s[1].name.startsWith("ALL_TIME_"))
+        }
     }
 
-    @Test fun toggleKeepsTheGame() {
-        val v = StatsNav.toggle(StatsView(today, "QUORDLE"), all)
-        assertEquals(StatsView(all, "QUORDLE"), v)
-        assertEquals(StatsCell.ALL_TIME_GAME, StatsNav.cell(v))
+    @Test fun pickSwapsTheGameAndReTapClearsIt() {
+        val picked = StatsNav.pick(StatsNav.DEFAULT, "SCRAMBLE")
+        assertEquals(StatsView("SCRAMBLE"), picked)
+        assertEquals(StatsView("OCTORDLE"), StatsNav.pick(picked, "OCTORDLE"))
+        assertEquals(StatsView(null), StatsNav.pick(picked, "SCRAMBLE"))
     }
 
-    @Test fun pickKeepsTheScopeAndReTapClearsTheGame() {
-        val picked = StatsNav.pick(StatsView(all, null), "SCRAMBLE")
-        assertEquals(StatsView(all, "SCRAMBLE"), picked)
-        assertEquals(StatsView(all, "OCTORDLE"), StatsNav.pick(picked, "OCTORDLE"))
-        assertEquals(StatsView(all, null), StatsNav.pick(picked, "SCRAMBLE"))
-    }
-
-    @Test fun swipeChangesOnlyTheGame() {
+    @Test fun swipeWalksTheGames() {
         val games = listOf("DUEL", "QUORDLE", "OCTORDLE")
-        assertEquals(StatsView(all, "DUEL"), StatsNav.swipe(StatsView(all, null), games, forward = true))
-        assertEquals(StatsView(all, null), StatsNav.swipe(StatsView(all, "DUEL"), games, forward = false))
-        assertNull(StatsNav.swipe(StatsView(all, null), games, forward = false))
-        assertNull(StatsNav.swipe(StatsView(all, "OCTORDLE"), games, forward = true))
+        assertEquals(StatsView("DUEL"), StatsNav.swipe(StatsView(null), games, forward = true))
+        assertEquals(StatsView(null), StatsNav.swipe(StatsView("DUEL"), games, forward = false))
+        assertNull(StatsNav.swipe(StatsView(null), games, forward = false))
+        assertNull(StatsNav.swipe(StatsView("OCTORDLE"), games, forward = true))
     }
 
-    @Test fun jumpsFromTheTodayCard() {
-        assertEquals(StatsView(today, "DUEL"), StatsNav.jump(StatsView(today, null), "DUEL"))
-        assertEquals(StatsView(all, null), StatsNav.jump(StatsView(today, "DUEL"), RAIL_ALL))
+    @Test fun jumpsFromTheTodayCardAndLegacyKeys() {
+        assertEquals(StatsView("DUEL"), StatsNav.jump(StatsNav.DEFAULT, "DUEL"))
+        assertEquals(StatsView(null), StatsNav.jump(StatsView("DUEL"), RAIL_ALL))
+        assertEquals(StatsView(null), StatsNav.jump(StatsView("DUEL"), RAIL_TODAY))
     }
 }

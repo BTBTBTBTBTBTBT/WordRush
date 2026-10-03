@@ -86,62 +86,47 @@ export function isPageSwipe(dx: number, dy: number): boolean {
   return Math.abs(dx) >= 70 && Math.abs(dx) >= 2 * Math.abs(dy);
 }
 
-// ── FINISH_SPEC BG: SCOPE × GAME ────────────────────────────────────────────
-// Two independent selections, always both visible: SCOPE (Today | All-time,
-// the candy toggle — never cleared) and GAME (null = Overview, the Sweep, or
-// one game from the picker). Content = scope × game. Toggling keeps the game;
-// picking keeps the scope; re-tapping the picked game returns to Overview.
-// URL: ?scope=all-time (Today is the default) & ?view=<game key | sweep>.
+// ── FINISH_SPEC BJ1: ONE scroll per game — TODAY first, ALL-TIME beneath ─────
+// (founder 10-03, replacing BG's Today | All-time toggle: "each game should populate
+// their daily stats first and all time beneath, no more toggle"). The only
+// selection is the GAME (null = Overview, the Sweep, or one game from the picker);
+// every view shows both sections, Today then All-time. Re-tapping the picked game
+// returns to Overview. URL: ?view=<game key | sweep> (the legacy ?scope= is ignored).
 
-export type StatsScope = 'today' | 'all';
-export interface StatsState { scope: StatsScope; game: string | null }
-export type StatsCell = 'today-overview' | 'today-game' | 'all-overview' | 'all-game';
+export interface StatsState { game: string | null }
+/** What a view's two sections show, top to bottom. */
+export type StatsSection = 'today-overview' | 'today-game' | 'today-sweep' | 'all-overview' | 'all-game' | 'all-sweep';
 
-export const DEFAULT_STATS: StatsState = { scope: 'today', game: null };
-export const SCOPE_PARAM = 'scope';
+export const DEFAULT_STATS: StatsState = { game: null };
 
-/** Which of the four content cells a state shows. */
-export function statsCell(s: StatsState): StatsCell {
-  return `${s.scope}-${s.game ? 'game' : 'overview'}` as StatsCell;
+/** The two sections of a view — Today first, All-time beneath. Always both. */
+export function statsSections(s: StatsState): [StatsSection, StatsSection] {
+  const kind = s.game === null ? 'overview' : s.game === VIEW_SWEEP ? 'sweep' : 'game';
+  return [`today-${kind}`, `all-${kind}`] as [StatsSection, StatsSection];
 }
 
-/** The toggle: switch scope, KEEP the game. */
-export function setStatsScope(s: StatsState, scope: StatsScope): StatsState {
-  return s.scope === scope ? s : { ...s, scope };
-}
-
-/** A picker tap (a view key: a game db key or VIEW_SWEEP): KEEP the scope; tapping the picked game again → Overview. */
+/** A picker tap (a view key: a game db key or VIEW_SWEEP); tapping the picked game again → Overview. */
 export function pickStatsGame(s: StatsState, game: string): StatsState {
-  return { ...s, game: s.game === game ? null : game };
+  return { game: s.game === game ? null : game };
 }
 
-/** Jump straight to a game (a Today row, a link), keeping the scope — never toggles off. */
+/** Jump straight to a game (a Today row, a link) — never toggles off. */
 export function openStatsGame(s: StatsState, game: string | null): StatsState {
-  return s.game === game ? s : { ...s, game };
+  return s.game === game ? s : { game };
 }
 
-/**
- * Read the URL: ?scope= (all-time | today) and ?view= (a game key, sweep, or
- * the legacy all-time / vs / today). A legacy ?view=all-time with no scope means
- * All-time + Overview; an unknown game is Overview.
- */
-export function parseStatsParams(scope: string | null | undefined, view: string | null | undefined, isGameKey: (k: string) => boolean): StatsState {
+/** Read ?view= (a game key, sweep, or the legacy all-time / vs / today — all Overview now). */
+export function parseStatsParams(view: string | null | undefined, isGameKey: (k: string) => boolean): StatsState {
   const v = parseViewParam(view, isGameKey);
-  const legacyAll = v === VIEW_ALL;
-  const sc: StatsScope = scope === 'all-time' || scope === VIEW_ALL ? 'all' : scope === 'today' ? 'today' : legacyAll ? 'all' : 'today';
-  const game = v === VIEW_TODAY || v === VIEW_ALL ? null : v;
-  return { scope: sc, game };
+  return { game: v === VIEW_TODAY || v === VIEW_ALL ? null : v };
 }
 
-/** The URL for a state (Today + Overview is the bare page). */
+/** The URL for a state (Overview is the bare page). */
 export function statsUrl(s: StatsState): string {
-  const q: string[] = [];
-  if (s.scope === 'all') q.push(`${SCOPE_PARAM}=all-time`);
-  if (s.game) q.push(`${VIEW_PARAM}=${s.game}`);
-  return q.length ? `/stats?${q.join('&')}` : '/stats';
+  return s.game ? `/stats?${VIEW_PARAM}=${s.game}` : '/stats';
 }
 
-/** Swipe order for the GAME only (within the current scope): Overview, the WORDOCIOUS row (Sweep last), the PUZZLES row. */
+/** Swipe order for the GAME: Overview, the WORDOCIOUS row (Sweep last), the PUZZLES row. */
 export function gameSwipeOrder(rows: PickerRows): Array<string | null> {
   return [null, ...rows.wordocious.map((t) => viewForPickerKey(t.key)), ...rows.puzzles.map((t) => viewForPickerKey(t.key))];
 }

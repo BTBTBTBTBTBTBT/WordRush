@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreImage
 import WordociousCore
 
 // FINISH_SPEC §V: the 3D achievement badges + the level-tier badges.
@@ -39,19 +40,57 @@ enum BadgeArt {
         }
     }
 
+    // FINISH_SPEC BJ1: built once (a DateFormatter per badge per pass cost the Stats grid
+    // ~120 formatter builds every time it re-evaluated).
+    private static func formatter(_ format: String) -> DateFormatter {
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = format
+        return f
+    }
+    private static let shortSameYear = formatter("MMM d")
+    private static let shortOtherYear = formatter("MMM d, yyyy")
+    private static let long = formatter("MMMM d, yyyy")
+
     /// "Sep 12" (this year) / "Sep 12, 2025" from an `unlocked_at` timestamp.
     static func shortDate(_ stamp: String?) -> String? {
         guard let stamp, let d = parseTimestamp(stamp) else { return nil }
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US")
         let sameYear = Calendar.current.component(.year, from: d) == Calendar.current.component(.year, from: Date())
-        f.dateFormat = sameYear ? "MMM d" : "MMM d, yyyy"
-        return f.string(from: d)
+        return (sameYear ? shortSameYear : shortOtherYear).string(from: d)
     }
 
     static func longDate(_ stamp: String?) -> String? {
         guard let stamp, let d = parseTimestamp(stamp) else { return nil }
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "MMMM d, yyyy"
-        return f.string(from: d)
+        return long.string(from: d)
+    }
+
+    /// FINISH_SPEC BJ1: the badge bitmap drawn at its slot size — downsampled once
+    /// (ArtThumbs), and for a LOCKED badge a grayscale copy rendered once and cached,
+    /// instead of SwiftUI's `.grayscale` filter (an offscreen pass per badge per frame
+    /// while the Stats grid scrolls). Thread-safe: `prewarm` runs off the main thread.
+    private static let grayCache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>(); c.countLimit = 300; return c
+    }()
+    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+
+    static func badgeImage(_ name: String, points: CGFloat, gray: Bool) -> UIImage? {
+        guard gray else { return ArtThumbs.uiImage(name, points: points) ?? UIImage(named: name) }
+        let key = "\(name)|\(Int(points))" as NSString
+        if let hit = grayCache.object(forKey: key) { return hit }
+        guard let src = ArtThumbs.uiImage(name, points: points) ?? UIImage(named: name),
+              let cg = src.cgImage else { return nil }
+        let input = CIImage(cgImage: cg)
+        let mono = input.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0])
+        guard let out = ciContext.createCGImage(mono, from: input.extent) else { return src }
+        let img = UIImage(cgImage: out, scale: src.scale, orientation: src.imageOrientation)
+        grayCache.setObject(img, forKey: key)
+        return img
+    }
+
+    /// Decode + downsample (and gray) every badge of `defs` off the main thread, so the
+    /// first scroll through the grid never decodes art on the main thread.
+    static func prewarm(_ defs: [(name: String, gray: Bool)], points: CGFloat) {
+        Task.detached(priority: .utility) {
+            for d in defs { _ = badgeImage(d.name, points: points, gray: d.gray) }
+        }
     }
 }
 
@@ -75,13 +114,19 @@ struct AchievementBadgeArt: View {
                     .offset(x: size * 0.125, y: -size * 0.125)
                     .allowsHitTesting(false)
             }
-            Image(key.isEmpty ? BadgeArt.achievementAsset(icon)
-                              : BadgeArt.achievementAsset(key: key, icon: icon, category: category))
-                .resizable().interpolation(.high).scaledToFit()
-                .frame(width: size, height: size)
-                .grayscale(unlocked ? 0 : 1)
-                .opacity(unlocked ? 1 : 0.45)
-                .shadow(color: unlocked ? glow.opacity(0.35) : .clear, radius: size * 0.12, x: 0, y: size * 0.05)
+            // BJ1: a pre-rendered (downsampled, pre-grayed when locked) bitmap — no per-frame
+            // grayscale filter and no image shadow (the radial glow above carries the lift).
+            let name = key.isEmpty ? BadgeArt.achievementAsset(icon)
+                                   : BadgeArt.achievementAsset(key: key, icon: icon, category: category)
+            Group {
+                if let ui = BadgeArt.badgeImage(name, points: size, gray: !unlocked) {
+                    Image(uiImage: ui).resizable().interpolation(.high).scaledToFit()
+                } else {
+                    Image(name).resizable().interpolation(.high).scaledToFit()
+                }
+            }
+            .frame(width: size, height: size)
+            .opacity(unlocked ? 1 : 0.45)
             if !unlocked {
                 Icon3D(.lock, size: max(14, size * 0.3))
                     .offset(x: size * 0.06, y: -size * 0.04)

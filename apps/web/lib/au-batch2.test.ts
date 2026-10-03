@@ -74,7 +74,8 @@ describe('BB Stats picker polish', () => {
     const src = read('components/ui/candy-segment.tsx');
     expect(src).toContain('transform: `translateX(');
     expect(src).toMatch(/height = (3[6-9]|40)/);
-    expect(read('components/stats/stats-picker.tsx')).toContain('<CandySegment');
+    // BJ1 (founder 10-03): the Stats picker no longer carries the Today | All-time toggle.
+    expect(read('components/stats/stats-picker.tsx')).not.toContain('<CandySegment');
   });
 });
 

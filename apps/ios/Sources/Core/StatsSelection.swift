@@ -1,59 +1,64 @@
 import Foundation
 
-/// FINISH_SPEC BG: the Stats page is TWO independent selections — the SCOPE
-/// (Today | All-time, always showing its selected half) and the GAME (nil = Overview,
-/// or one game from the picker). What shows is scope × game. Toggling the scope keeps
-/// the game; picking a game keeps the scope; tapping the picked game again returns to
-/// Overview; the swipe walks the GAME only. Pure, unit tested.
-public enum StatsScope: String, Equatable, CaseIterable {
-    case today, allTime
-}
-
-public enum StatsView: Equatable {
+/// FINISH_SPEC BJ1 (founder 10-03, replacing BG's Today | All-time toggle: "each game should
+/// populate their daily stats first and all time beneath, no more toggle"). The only selection
+/// is the GAME (nil = Overview, the Sweep tile's key, or one game from the picker); every view is
+/// ONE scroll — its TODAY section first, its ALL-TIME section beneath, always both. Tapping the
+/// picked game again returns to Overview; the swipe walks the games. Pure, unit tested; twins:
+/// Android StatsNav (StatsRail.kt), web lib/stats-view.ts.
+public enum StatsSection: Equatable {
     case todayOverview
     case todayGame(String)
+    case todaySweep
     case allTimeOverview
     case allTimeGame(String)
+    case allTimeSweep
+
+    /// Whether this is the TODAY half (else ALL-TIME).
+    public var isToday: Bool {
+        switch self {
+        case .todayOverview, .todayGame, .todaySweep: return true
+        default: return false
+        }
+    }
 }
 
 public struct StatsSelection: Equatable {
-    public var scope: StatsScope
+    /// The picker's Sweep tile key (iOS `GamePicker.sweep`).
+    public static let sweepKey = "sweep"
+
     /// A game's key (a daily's dbKey, or the Sweep tile's key); nil = Overview.
     public var game: String?
 
-    public init(scope: StatsScope = .today, game: String? = nil) {
-        self.scope = scope
-        self.game = game
-    }
+    public init(game: String? = nil) { self.game = game }
 
-    /// The page opens on Today + Overview.
+    /// The page opens on Overview.
     public static let initial = StatsSelection()
 
-    /// The content to show.
-    public var view: StatsView {
-        switch (scope, game) {
-        case (.today, nil): return .todayOverview
-        case (.today, let g?): return .todayGame(g)
-        case (.allTime, nil): return .allTimeOverview
-        case (.allTime, let g?): return .allTimeGame(g)
+    /// The view's two sections, top to bottom: Today, then All-time. Always both.
+    public var sections: [StatsSection] {
+        switch game {
+        case nil: return [.todayOverview, .allTimeOverview]
+        case Self.sweepKey?: return [.todaySweep, .allTimeSweep]
+        case let g?: return [.todayGame(g), .allTimeGame(g)]
         }
     }
 
-    /// The toggle — the picked game stays.
-    public func withScope(_ s: StatsScope) -> StatsSelection { StatsSelection(scope: s, game: game) }
-
-    /// A picker tap — the scope stays; the picked game again → Overview.
+    /// A picker tap — the picked game again → Overview.
     public func picking(_ g: String) -> StatsSelection {
-        StatsSelection(scope: scope, game: game == g ? nil : g)
+        StatsSelection(game: game == g ? nil : g)
     }
 
-    /// The swipe: one step through `order` (the picker's games), Overview first —
-    /// the scope stays. Off either end → unchanged.
+    /// A jump (a Today row, a link) — never toggles off.
+    public func opening(_ g: String?) -> StatsSelection { StatsSelection(game: g) }
+
+    /// The swipe: one step through `order` (the picker's games), Overview first.
+    /// Off either end, or an unknown game → unchanged.
     public func swiped(_ delta: Int, order: [String]) -> StatsSelection {
         let slots: [String?] = [nil] + order.map { Optional($0) }
         guard let i = slots.firstIndex(where: { $0 == game }) else { return self }
         let j = i + delta
         guard slots.indices.contains(j) else { return self }
-        return StatsSelection(scope: scope, game: slots[j])
+        return StatsSelection(game: slots[j])
     }
 }

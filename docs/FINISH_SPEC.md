@@ -1314,3 +1314,29 @@ web softRow / softInput): selected = deeper wash + glow, fields = soft fill, err
 single-fire (600 ms debounce, ignored while a sheet is up) and the Settings sheet builds light: Linked sign-ins (identity
 load + provider art, below the fold) mounts ~0.35 s after the sheet lands. Rules: iOS Core SettingsPreviews
 (SettingsPreviewsTests), Android data/SettingsPreviews (SettingsPreviewsTest), web lib/settings-previews.ts, unit tested.
+
+## BJ. Fluidity round 2 (founder 10-03)
+BJ1. Stats: Today then All-time in one scroll per game, no toggle; measured smooth scrolling (founder on iOS 2.7 (241): "each
+game should populate their daily stats first and all time beneath, no more toggle, it is really choppy … stats was almost
+unscrollable because it was going so slow"). Replaces BG's Today | All-time toggle ×3: the picker picks the GAME only
+(Overview, the Daily Sweep, or one game; re-tap → Overview); every view is ONE scroll — a TODAY section banner (brand gradient
+caps + a short gradient rule + the date) with that game's today (Overview: the Today card + today's games; a game: its result
+line, rank, finished board and today's rows, or "NOT PLAYED TODAY" + a Play candy in the shared BrandEmptyState; the Sweep:
+today's runs), then an ALL-TIME banner ("Since Mar 2025") with its all-time stats and charts. A pick swaps the content with one
+quick opacity-only fade and resets the scroll to the top; the swipe still walks the games with the same diagonal guard (≥ 70 and
+twice as wide as tall). Pure model + tests: iOS core StatsSelection.sections (StatsSelectionTests), Android StatsNav.sections
+(StatsNavTest), web lib/stats-view.ts statsSections (stats-sections.test.ts).
+Measured (iOS Release, iPhone 17 Pro simulator, seeded Pro account with a full history; a debug autoplay drove the scroll
+top → bottom → top at 2,400 pt/s with a CADisplayLink frame monitor + main-thread CPU, then removed). Before → after:
+Overview (the ~16,500-pt page) round trip 44–58 s (≈ 4–6 fps) → 13.7 s (the autoplay's nominal time, ≈ 57 fps); hitch time
+876–931 → 47–59 ms/s; worst frame 1.1–1.4 s → 0.10–0.14 s; main thread 95–98% → 25% busy; game pages 24–412 → 7–29 ms/s
+hitch time (worst frame 53–88 → 33–40 ms); switching games: worst frame 0.9–1.8 s (building the whole All-time page, ~180
+badge bodies at once) → 77–82 ms, hitch time 463–625 → 57–67 ms/s. Causes and fixes: the page was ONE eager VStack — every Swift Chart, ~120
+achievement badges (each a SwiftUI grayscale filter + an image shadow = two offscreen passes), medals, VS board — built, laid
+out and composited at once. Now ONE LazyVStack with every card its own element (charts split out of ProfileDashboard, the
+achievements grid one lazy row of three), locked badges drawn from a pre-grayed downsampled bitmap (decoded off the main thread
+when Stats opens) with no image shadow, cached date formatters, the badge progress table built once per pass instead of per
+badge, and count-ups that play once per session (never replayed mid-scroll). Android: the page was ONE LazyColumn item holding
+every card — now every card is its own keyed lazy item, one draw-phase alpha for the fade, the swipe on the list. Web: no
+scroll listener writes React state and nothing scrolling uses backdrop-filter; the below-the-fold All-time groups use
+content-visibility: auto (.stats-cv) so the browser skips their layout and paint until they near the viewport.

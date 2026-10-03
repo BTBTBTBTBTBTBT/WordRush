@@ -1,38 +1,49 @@
 import XCTest
 @testable import WordociousCore
 
-/// FINISH_SPEC BG: scope × game on the Stats page.
+/// FINISH_SPEC BJ1: no Today | All-time toggle — every view is ONE scroll, Today first, All-time beneath.
 final class StatsSelectionTests: XCTestCase {
-    func testTheFourCells() {
-        XCTAssertEqual(StatsSelection.initial.view, .todayOverview)
-        XCTAssertEqual(StatsSelection(scope: .today, game: "QUORDLE").view, .todayGame("QUORDLE"))
-        XCTAssertEqual(StatsSelection(scope: .allTime).view, .allTimeOverview)
-        XCTAssertEqual(StatsSelection(scope: .allTime, game: "QUORDLE").view, .allTimeGame("QUORDLE"))
+    func testOverviewShowsTodayThenAllTime() {
+        XCTAssertEqual(StatsSelection.initial.game, nil)
+        XCTAssertEqual(StatsSelection.initial.sections, [.todayOverview, .allTimeOverview])
     }
 
-    func testToggleKeepsGamePickKeepsScopeRetapClears() {
+    func testAGameShowsItsTodayThenItsAllTime() {
+        XCTAssertEqual(StatsSelection(game: "QUORDLE").sections, [.todayGame("QUORDLE"), .allTimeGame("QUORDLE")])
+        XCTAssertEqual(StatsSelection(game: StatsSelection.sweepKey).sections, [.todaySweep, .allTimeSweep])
+        for g in [nil, "DUEL", StatsSelection.sweepKey] as [String?] {
+            let s = StatsSelection(game: g).sections
+            XCTAssertEqual(s.count, 2)
+            XCTAssertTrue(s[0].isToday)
+            XCTAssertFalse(s[1].isToday)
+        }
+    }
+
+    func testPickSwapsTheGameRetapClearsJumpNeverToggles() {
         let quad = StatsSelection.initial.picking("QUORDLE")
-        XCTAssertEqual(quad.view, .todayGame("QUORDLE"))
-        // Today/QuadWord → All-time/QuadWord immediately.
-        XCTAssertEqual(quad.withScope(.allTime).view, .allTimeGame("QUORDLE"))
-        // Picking another game keeps All-time.
-        XCTAssertEqual(quad.withScope(.allTime).picking("SUDOKU").view, .allTimeGame("SUDOKU"))
-        // Re-tapping the picked game returns to Overview (scope kept).
-        XCTAssertEqual(quad.withScope(.allTime).picking("QUORDLE").view, .allTimeOverview)
-        // Back to Today keeps the game.
-        XCTAssertEqual(quad.withScope(.allTime).withScope(.today).view, .todayGame("QUORDLE"))
+        XCTAssertEqual(quad.sections, [.todayGame("QUORDLE"), .allTimeGame("QUORDLE")])
+        XCTAssertEqual(quad.picking("SUDOKU").game, "SUDOKU")
+        XCTAssertEqual(quad.picking("QUORDLE"), .initial)
+        XCTAssertEqual(quad.opening("QUORDLE"), quad)
+        XCTAssertEqual(quad.opening(nil), .initial)
     }
 
-    func testSwipeChangesTheGameOnly() {
-        let order = ["DUEL", "QUORDLE", "SWEEP"]
-        var s = StatsSelection(scope: .allTime)
+    func testSwipeWalksTheGames() {
+        let order = ["DUEL", "QUORDLE", "sweep"]
+        var s = StatsSelection.initial
         s = s.swiped(1, order: order)
-        XCTAssertEqual(s, StatsSelection(scope: .allTime, game: "DUEL"))
+        XCTAssertEqual(s, StatsSelection(game: "DUEL"))
         s = s.swiped(1, order: order)
-        XCTAssertEqual(s.view, .allTimeGame("QUORDLE"))
-        XCTAssertEqual(s.swiped(-2, order: order).view, .allTimeOverview)
+        XCTAssertEqual(s.sections, [.todayGame("QUORDLE"), .allTimeGame("QUORDLE")])
+        XCTAssertEqual(s.swiped(-2, order: order), .initial)
         XCTAssertEqual(s.swiped(5, order: order), s)            // off the end: unchanged
         XCTAssertEqual(StatsSelection.initial.swiped(-1, order: order), .initial)
         XCTAssertEqual(StatsSelection(game: "GONE").swiped(1, order: order).game, "GONE")   // unknown: unchanged
+    }
+
+    func testTheDiagonalScrollGuardStillHolds() {
+        XCTAssertNil(StatsSwipe.step(dx: 80, dy: 45))     // diagonal: a scroll, not a swipe
+        XCTAssertNotNil(StatsSwipe.step(dx: -120, dy: 30))
+        XCTAssertNil(StatsSwipe.step(dx: 60, dy: 0))      // under 70
     }
 }
