@@ -48,15 +48,15 @@ import kotlinx.coroutines.launch
 /** H the region pastels (pure, unit-tested): lilac, peach, mint, sky, butter, pink, aqua, coral, lavender. */
 object StarsweepPalette {
     val PASTELS: List<Color> = listOf(
-        Color(0xFFE6DAFF), // lilac
-        Color(0xFFFFDDC7), // peach
-        Color(0xFFCFF3DE), // mint
-        Color(0xFFD3E9FF), // sky
-        Color(0xFFFFF0B0), // butter
-        Color(0xFFFFD9EA), // pink
-        Color(0xFFC9F1EE), // aqua
-        Color(0xFFFFD1CA), // coral
-        Color(0xFFE0DCF8), // lavender
+        Color(0xFFC7A8FF), // lilac
+        Color(0xFFFFB98A), // peach
+        Color(0xFF8EE6B4), // mint
+        Color(0xFF9CCBFF), // sky
+        Color(0xFFFFDD66), // butter
+        Color(0xFFFFA6CF), // pink
+        Color(0xFF84E3DC), // aqua
+        Color(0xFFFFA096), // coral
+        Color(0xFFB4B9FF), // lavender
     )
     private const val NIGHT = 0xFF1E1730.toInt()
 

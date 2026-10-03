@@ -18,15 +18,15 @@ export interface RegionTint {
 
 /** The light-theme pastels, in pick order (lilac and lavender only meet on a 9 × 9 board). */
 export const STARSWEEP_TINTS: readonly RegionTint[] = [
-  { name: 'lilac', face: '#ead6ff', top: '#f6edff', lip: '#c3a1ec', bed: '#dcc2fa' },
-  { name: 'peach', face: '#ffdcc4', top: '#ffeee2', lip: '#eab08c', bed: '#f9cbab' },
-  { name: 'mint', face: '#c9f2dc', top: '#e4faee', lip: '#92d4b0', bed: '#b3e9cc' },
-  { name: 'sky', face: '#cfe6ff', top: '#e7f3ff', lip: '#98c0ec', bed: '#b9d8fb' },
-  { name: 'butter', face: '#fff0b0', top: '#fff8d8', lip: '#e3c96a', bed: '#fbe591' },
-  { name: 'pink', face: '#ffd3e8', top: '#ffe9f3', lip: '#eba0c3', bed: '#fbbfdb' },
-  { name: 'aqua', face: '#c4f1f1', top: '#e2f9f9', lip: '#86d0d0', bed: '#a9e7e7' },
-  { name: 'coral', face: '#ffc9c2', top: '#ffe4e0', lip: '#ec9c91', bed: '#fbb2a8' },
-  { name: 'lavender', face: '#d9dcfb', top: '#eceefe', lip: '#a5aae6', bed: '#c6cbf6' },
+  { name: 'lilac', face: '#c7a8ff', top: '#e3d3ff', lip: '#9a72e6', bed: '#b58ffa' },
+  { name: 'peach', face: '#ffb98a', top: '#ffd9bf', lip: '#e08a52', bed: '#fba673' },
+  { name: 'mint', face: '#8ee6b4', top: '#c2f3d6', lip: '#4fbf86', bed: '#72daa0' },
+  { name: 'sky', face: '#9ccbff', top: '#cde4ff', lip: '#5e9be6', bed: '#82bafb' },
+  { name: 'butter', face: '#ffdd66', top: '#ffeeaa', lip: '#d9ae2a', bed: '#fbd04a' },
+  { name: 'pink', face: '#ffa6cf', top: '#ffd0e6', lip: '#e06fa3', bed: '#fb8ebf' },
+  { name: 'aqua', face: '#84e3dc', top: '#bdf1ed', lip: '#3fbdb3', bed: '#66d7cd' },
+  { name: 'coral', face: '#ffa096', top: '#ffcdc7', lip: '#e66a5d', bed: '#fb8a7e' },
+  { name: 'lavender', face: '#b4b9ff', top: '#d8dbff', lip: '#7c83e6', bed: '#9ba1fa' },
 ];
 
 /** The dark theme's card base the dark pastels are mixed toward ([data-theme="dark"] --color-card-base). */

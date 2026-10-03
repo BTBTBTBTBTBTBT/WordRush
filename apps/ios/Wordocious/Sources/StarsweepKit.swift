@@ -35,15 +35,15 @@ struct StarsweepTone {
 enum StarsweepPalette {
     /// Fixed, in order: lilac, peach, mint, sky, butter, pink, aqua, coral, lavender.
     static let tones: [StarsweepTone] = [
-        StarsweepTone(pastel: Color(hex: 0xE4D6FF), deep: Color(hex: 0xA78BFA)),   // lilac
-        StarsweepTone(pastel: Color(hex: 0xFFDDC6), deep: Color(hex: 0xFB923C)),   // peach
-        StarsweepTone(pastel: Color(hex: 0xCFF4DD), deep: Color(hex: 0x34D399)),   // mint
-        StarsweepTone(pastel: Color(hex: 0xD3E8FF), deep: Color(hex: 0x60A5FA)),   // sky
-        StarsweepTone(pastel: Color(hex: 0xFFF0B5), deep: Color(hex: 0xEAB308)),   // butter
-        StarsweepTone(pastel: Color(hex: 0xFFD5EA), deep: Color(hex: 0xF472B6)),   // pink
-        StarsweepTone(pastel: Color(hex: 0xC9F3EF), deep: Color(hex: 0x2DD4BF)),   // aqua
-        StarsweepTone(pastel: Color(hex: 0xFFCFC9), deep: Color(hex: 0xFB7185)),   // coral
-        StarsweepTone(pastel: Color(hex: 0xDFE0FF), deep: Color(hex: 0x818CF8)),   // lavender
+        StarsweepTone(pastel: Color(hex: 0xC7A8FF), deep: Color(hex: 0xA78BFA)),   // lilac
+        StarsweepTone(pastel: Color(hex: 0xFFB98A), deep: Color(hex: 0xFB923C)),   // peach
+        StarsweepTone(pastel: Color(hex: 0x8EE6B4), deep: Color(hex: 0x34D399)),   // mint
+        StarsweepTone(pastel: Color(hex: 0x9CCBFF), deep: Color(hex: 0x60A5FA)),   // sky
+        StarsweepTone(pastel: Color(hex: 0xFFDD66), deep: Color(hex: 0xEAB308)),   // butter
+        StarsweepTone(pastel: Color(hex: 0xFFA6CF), deep: Color(hex: 0xF472B6)),   // pink
+        StarsweepTone(pastel: Color(hex: 0x84E3DC), deep: Color(hex: 0x2DD4BF)),   // aqua
+        StarsweepTone(pastel: Color(hex: 0xFFA096), deep: Color(hex: 0xFB7185)),   // coral
+        StarsweepTone(pastel: Color(hex: 0xB4B9FF), deep: Color(hex: 0x818CF8)),   // lavender
     ]
 
     static func tone(_ region: Int) -> StarsweepTone { tones[max(0, region) % tones.count] }
