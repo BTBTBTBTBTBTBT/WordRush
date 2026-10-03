@@ -208,4 +208,15 @@ for k in ['1', '2', '3']:
             ship(f'art-podium-{k}{suf}', wide(f, 300)); n += 1
 if os.path.exists(os.path.join(PODIUM_DIR, 'floor.png')):
     ship('art-podium-floor', wide(os.path.join(PODIUM_DIR, 'floor.png'), 1080)); n += 1
+CAST_TITLES = os.path.join(HERE, 'titles', 'cast-colors')   # cast-color titles (founder 10-03; not wired until the mapping is confirmed)
+# Only the approved menu/page set ships; pocket-* and the TITLE-INVENTORY titles wait for founder approval.
+CAST_TITLE_SET = ['dailies', 'puzzles', 'wotd', 'vsbattle', 'leaderboard', 'stats', 'friends', 'settings', 'gopro', 'strategy',
+                  'guides', 'menu', 'welcome', 'howto', 'words', 'moregames', 'records', 'faq', 'privacy', 'terms']
+for t in CAST_TITLE_SET:
+    if os.path.exists(os.path.join(CAST_TITLES, t + '.png')):
+        ship('art-titlecast-' + t, wide(os.path.join(CAST_TITLES, t + '.png'), 1080)); n += 1
+BTN_DIR = os.path.join(HERE, 'buttons', 'cast', 'out')   # cast-color button skins: three-slice, caps = height / 2 (make-skins.py)
+for f in sorted(os.listdir(BTN_DIR)) if os.path.isdir(BTN_DIR) else []:
+    if f.endswith('.png'):
+        ship('art-btn-' + f[:-4], Image.open(os.path.join(BTN_DIR, f)).convert('RGBA')); n += 1
 print('shipped', n)
