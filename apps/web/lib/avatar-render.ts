@@ -749,12 +749,25 @@ export interface MascotSvgInput {
   crownSrc: string;
   /** artSrc from lib/art (name → public path). */
   artSrc: (name: string) => string;
+  /**
+   * FINISH_SPEC BJ6 round 5: the full-body CUTOUT (the Home host only) — no backdrop stage, no
+   * frame band / shine, no border strokes, and the svg doesn't clip what pokes past its square.
+   * Everything else (body, pattern, letter, face, accessories, ground shadow) is drawn as usual.
+   */
+  cutout?: boolean;
+}
+
+/** The svg document around a mascot's layers (a cutout lets hats / ears poke past the square). */
+function svgDoc(defs: readonly string[], out: readonly string[], cutout: boolean): string {
+  const style = cutout ? 'display:block;overflow:visible' : 'display:block';
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="${style}"><defs>${defs.join('')}</defs>${out.join('')}</svg>`;
 }
 
 /** The mascot SVG markup (ids use MASCOT_ID_TOKEN). Pure: same input → same string. */
 export function mascotSvg(input: MascotSvgInput): string {
   const { config, size, art, crownSrc, artSrc } = input;
-  const frame = input.frame ?? config.frame;
+  const cutout = !!input.cutout;
+  const frame: AvatarFrame = cutout ? 'none' : input.frame ?? config.frame;
   const layers = new Set(avatarLayers(config, size, frame));
   const has = (name: string) => !!art && art.has(name);
   // Draw from art only once EVERY layer of the layout has loaded (fully composed, never a
@@ -777,7 +790,7 @@ export function mascotSvg(input: MascotSvgInput): string {
     `<linearGradient id="${ID}-gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>`,
   ];
   const stageRx = r2(Math.max(4, R - fw * 0.6));
-  const backdrop = backdropSvg(config.bg, pal, fw, stageRx);
+  const backdrop = cutout ? { defs: [] as string[], body: '' } : backdropSvg(config.bg, pal, fw, stageRx);
   defs.push(...backdrop.defs);
   if (layers.has('pattern')) {
     defs.push(`<linearGradient id="${ID}-pg" x1="0" y1="${r2(b.y)}" x2="0" y2="${r2(b.y + b.h)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${lightenHex(pal.pattern, 0.25)}"/><stop offset="0.55" stop-color="${pal.pattern}"/><stop offset="1" stop-color="${darkenHex(pal.pattern, 0.14)}"/></linearGradient>`);
@@ -889,7 +902,7 @@ export function mascotSvg(input: MascotSvgInput): string {
     if (frame === 'diamond') out.push(sparkle(9, 9, 4, '#ffffff') + sparkle(91, 91, 3.4, '#ffffff'));
   }
 
-  return `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:block"><defs>${defs.join('')}</defs>${out.join('')}</svg>`;
+  return svgDoc(defs, out, cutout);
 }
 
 // ── The art path: the core FIT layout (round 2) ──────────────────────────────
@@ -941,6 +954,7 @@ function patternSvg(shapes: readonly AvatarPatternShape[], r: AvatarRect, col: R
 function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: number, metal: { ring: string; shine: string } | null,
   backdrop: { defs: string[]; body: string }, defs: string[]): string {
   const { config, size, art, artSrc } = input;
+  const cutout = !!input.cutout;
   const small = isSmallAvatar(size);
   const L = avatarLayout(config, { small });
   const C = 100 - 2 * fw;
@@ -989,7 +1003,7 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
     out.push(`<rect x="0.7" y="0.7" width="98.6" height="98.6" rx="${R}" fill="none" stroke="${darkenHex(metal.ring, 0.3)}" stroke-width="1.1" opacity="0.55"/>`);
     if (frame === 'diamond') out.push(sparkle(9, 9, 4, '#ffffff') + sparkle(91, 91, 3.4, '#ffffff'));
   }
-  return `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:block"><defs>${defs.join('')}</defs>${out.join('')}</svg>`;
+  return svgDoc(defs, out, cutout);
 }
 
 /** A stable key for a config (every field, in schema order). */
@@ -1004,7 +1018,7 @@ const SVG_CACHE_MAX = 400;
 export function cachedMascotSvg(input: MascotSvgInput): string {
   const frame = input.frame ?? input.config.frame;
   const artKey = input.art && input.art.size ? avatarArtNames(input.config).filter((n) => input.art!.has(n)).join(',') : '';
-  const key = `${avatarConfigKey(input.config)}|${input.initial}|${frame}|${isSmallAvatar(input.size) ? 's' : 'l'}|${artKey}|${input.frameArt ? 'fa' : ''}`;
+  const key = `${avatarConfigKey(input.config)}|${input.initial}|${frame}|${isSmallAvatar(input.size) ? 's' : 'l'}|${artKey}|${input.frameArt ? 'fa' : ''}|${input.cutout ? 'cut' : ''}`;
   const hit = svgCache.get(key);
   if (hit) return hit;
   const svg = mascotSvg(input);

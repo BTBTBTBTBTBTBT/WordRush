@@ -267,3 +267,41 @@ describe('builder options (AN4)', () => {
     }
   });
 });
+
+describe('BJ6 round 5: the Home host cutout', () => {
+  const ID = MASCOT_ID_TOKEN;
+  const backdropFill = `fill="url(#${ID}-st)"`;
+  const frameFill = `fill="url(#${ID}-fr)"`;
+  // The tile's outer border stroke (the frame's edge line).
+  const borderStroke = '<rect x="0.7" y="0.7" width="98.6" height="98.6"';
+
+  it('the normal avatar keeps its backdrop stage, frame band and border strokes', () => {
+    const s = svg({ frame: 'gold', bg: 'auto' }, 88);
+    expect(s).toContain(backdropFill);
+    expect(s).toContain(frameFill);
+    expect(s).toContain(borderStroke);
+    expect(s).not.toContain('overflow:visible');
+  });
+
+  it('the cutout drops the backdrop, frame and border but keeps the mascot', () => {
+    for (const bg of ['auto', ...AVATAR_BACKDROP_IDS.slice(0, 3)]) {
+      const s = svg({ frame: 'gold', bg } as Partial<AvatarConfig>, 88, { cutout: true });
+      expect(s).not.toContain(`id="${ID}-st"`);
+      expect(s).not.toContain(backdropFill);
+      expect(s).not.toContain(frameFill);
+      expect(s).not.toContain(`id="${ID}-fr"`);
+      expect(s).not.toContain(borderStroke);
+      // Not clipped to its square (hats / ears may poke past it).
+      expect(s).toContain('overflow:visible');
+      // The mascot itself is all there: body, letter, ground shadow.
+      expect(s).toContain(`fill="url(#${ID}-bg)"`);
+      expect(s).toContain('B</text>');
+      expect(s).toContain('<ellipse');
+    }
+  });
+
+  it('caches the cutout apart from the normal avatar', () => {
+    const input = { config: { ...base, frame: 'gold' as const }, initial: 'B', size: 88, crownSrc: '', artSrc: (n: string) => n };
+    expect(cachedMascotSvg({ ...input, cutout: true })).not.toBe(cachedMascotSvg(input));
+  });
+});

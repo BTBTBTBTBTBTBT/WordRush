@@ -37,6 +37,11 @@ export interface MascotAvatarProps {
   level?: number | null;
   /** An accessible name; omit when the name is printed beside the avatar. */
   label?: string;
+  /**
+   * FINISH_SPEC BJ6 round 5 (the Home host only): the full-body cutout — no backdrop, no tile
+   * clip, no border / frame, no crown; never a photo. Everywhere else avatars keep their tile.
+   */
+  cutout?: boolean;
   /** Outer box-shadow (a presence / white ring) — follows the rounded corners. */
   shadow?: string;
   className?: string;
@@ -244,25 +249,25 @@ function PhotoTile({ url, size, frame, onError }: { url: string; size: number; f
 
 // ── The avatar ──────────────────────────────────────────────────────────────
 
-function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, label, shadow, className = '', style }: MascotAvatarProps) {
+function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, label, shadow, className = '', style, cutout = false }: MascotAvatarProps) {
   const s = clampAvatarSize(size);
   const [photoFailed, setPhotoFailed] = React.useState(false);
   React.useEffect(() => { setPhotoFailed(false); }, [photoUrl]);
-  const showPhoto = !!photoUrl && !photoFailed;
+  const showPhoto = !cutout && !!photoUrl && !photoFailed;
   // BJ6 photo rule: a photo is a framed portrait (chosen frame, else the level's tier frame);
   // the mascot keeps its own frame. The photo is never drawn on a mascot body.
-  const worn = showPhoto
+  const worn: AvatarFrame = cutout ? 'none' : showPhoto
     ? portraitFrame(frame ?? config.frame, { pro, level })
     : effectiveAvatarFrame(frame ?? config.frame, { pro, level });
-  const crowned = avatarCrowned(worn, pro);
+  const crowned = !cutout && avatarCrowned(worn, pro);
   const { art, ready } = useAvatarArt(config);
   const frameArt = useFrameArt(worn);
   const rawId = React.useId();
   const id = `m${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   const markup = React.useMemo(
-    () => (showPhoto || !ready ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc }), id)),
-    [showPhoto, ready, config, initial, s, worn, art, frameArt, id],
+    () => (showPhoto || !ready ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc, cutout }), id)),
+    [showPhoto, ready, config, initial, s, worn, art, frameArt, id, cutout],
   );
 
   return (
@@ -271,7 +276,7 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      style={{ width: s, height: s, borderRadius: avatarRadiusPx(s), boxShadow: shadow, ...style }}
+      style={{ width: s, height: s, borderRadius: cutout ? undefined : avatarRadiusPx(s), boxShadow: cutout ? undefined : shadow, ...style }}
     >
       {showPhoto
         ? <PhotoTile url={photoUrl!} size={s} frame={worn} onError={() => setPhotoFailed(true)} />
