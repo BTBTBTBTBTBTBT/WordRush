@@ -48,31 +48,43 @@ export function modeSwitchLayout(mode: PlayMode, { locked = false }: { locked?: 
 /** Slot sizes (px). */
 export const BANNER_SLOT = {
   /**
-   * Room above the card for the host's overhang. FINISH_SPEC BH3 (founder 10-03: the banner is
-   * "bloated"): the host is 52 now and centered on the headline row, so 8 (was 16).
+   * Room above the card for the host's overhang. FINISH_SPEC BJ6 symmetric hero (founder 10-03,
+   * iOS parity): the 72 px host stands centered on the card's top edge, its top 28 above the
+   * card. Coordinator 10-03 (no bloat, iOS parity): Home moves down only 16 over BH3's 6, so the
+   * headroom is 22 and the host's last `hostOverhang` (6) rises over the header's empty bottom
+   * edge — the Home scroller starts that much higher with matching top padding (app/page.tsx),
+   * so its clip never cuts the host's head.
    */
-  headroom: 6,
+  headroom: 22,
+  hostOverhang: 6,
+  /** BJ6: the host box, how far it rises above the card, and how far it reaches into the card. */
+  hostSize: 72,
+  hostRise: 28,
+  hostInset: 44,
   /** The swept / flawless top bar (kept in Unlimited on that day, recolored). */
   topBar: 10,
   /** The card border on an art-frame day (softBorder's 1.5 px). */
   border: 1.5,
-  /** The strip's top padding: art frame / host frame. */
-  stripTopArt: 4,
-  stripTopHost: 4,
+  /**
+   * The strip's top padding: BJ6 — the host's lower 44 px sits in it, so the headline starts
+   * under the host (art frame: 44 minus the 10 top bar and its border).
+   */
+  stripTopArt: 33,
+  stripTopHost: 44,
   stripBottom: 4,
-  /** Gap between the headline row and the controls block (8 above the switch). */
-  stripGap: 8,
-  /** BH3: ONE headline line (auto-fit, never wraps; was a two-line 51 box). */
-  headline: 32,
-  /** The share button's box, reserved even when there is nothing to share. */
+  /** Gap between the headline row and the controls block (BJ6: 6 above the switch). */
+  stripGap: 6,
+  /** BH3 / BJ6: ONE headline line (auto-fit, never wraps), 28 tall. */
+  headline: 28,
+  /** The share button's box. BJ6: it lives in the app header now (not part of the banner's rows). */
   share: 34,
   /** The celebration art beside the headline (and Unlimited's U loop in the same box). */
   art: 100,
   /**
-   * BH3: the controls block under the headline — the centered DAILY | UNLIMITED switch (28,
-   * ~64% wide), a 4 px gap, then the centered one-line meta line (12, 11 px small caps).
+   * BH3: the controls block under the headline — the centered DAILY | UNLIMITED switch (28),
+   * a 3 px gap (BJ6), then the centered one-line meta line (12, 11 px small caps).
    */
-  controls: 44,
+  controls: 43,
   switchRow: 28,
   metaLine: 12,
   /** A row's label · status · streak line. */
@@ -143,7 +155,8 @@ export function homeBannerSlots(mode: PlayMode, input: BannerInput): BannerSlots
   const border = art ? S.border : 0;
   const stripTop = art ? S.stripTopArt : S.stripTopHost;
   const artHeight = art ? S.art : 0;
-  const headerRow = Math.max(S.headline, S.share, artHeight);
+  // BJ6: the share button moved to the app header, so the row is the headline (or the art).
+  const headerRow = Math.max(S.headline, artHeight);
   const stripHeight = stripTop + headerRow + S.stripGap + S.controls + S.stripBottom;
   const wordTilesTop = S.headroom + border + topBar + stripHeight + S.wordPadTop + S.rowHeader + S.rowGap;
   const wordSection = S.wordPadTop + S.rowHeader + S.rowGap + S.tileLg + S.wordPadBottom;

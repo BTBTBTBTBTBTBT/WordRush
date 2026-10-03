@@ -71,11 +71,14 @@ describe('Home game card (§21)', () => {
 
   it('rebalances the Home banner card (FINISH_SPEC BI21)', () => {
     const s = src('components/home/home-banner.tsx');
-    // BJ6 (plan A): the host stands inside the strip on the left; the headline centers in the
-    // remaining column with symmetric side room, the share button in the strip's top-right corner.
+    // BJ6 symmetric hero (founder 10-03): the host centered on the card's top edge, the headline /
+    // switch / meta line centered under it; no side column, no asymmetric room, no share on the card.
     expect(s).toContain('<HomeHost');
-    expect(s).toContain('paddingLeft: HEADLINE_SIDE_CLEAR');
-    expect(s).toContain('const HEADLINE_SIDE_CLEAR = 28');
+    expect(s).toContain('left: `calc(50% - ${BANNER_SLOT.hostSize / 2}px)`');
+    expect(s).toContain('top: slots.headroom - BANNER_SLOT.hostRise');
+    expect(s).not.toMatch(/HEADLINE_SIDE_CLEAR|paddingLeft:/);
+    expect(s).not.toContain("aria-label=\"Share today's progress\"");
+    expect(src('components/ui/app-header.tsx')).toContain('label="Share today\'s progress"');
     expect(s).toContain('justify-center text-center');
     // The centered switch fills its (narrower) column up to 260, equal halves, the PRO crown inside the Unlimited half.
     expect(s).toContain("width: '100%', maxWidth: 260");
@@ -96,9 +99,12 @@ describe('Home game card (§21)', () => {
     expect(BANNER_SLOT.headline).toBeLessThanOrEqual(34);
     expect(BANNER_SLOT.rowGap).toBe(4);
     expect(BANNER_SLOT.wordPadBottom + BANNER_SLOT.puzzlePadTop).toBe(8);
-    // At a phone's ~29 px tiles: was 273 (headroom 16 + strip 127 + rows 130); now 208 (−24%).
+    // At a phone's ~29 px tiles: was 273 (headroom 16 + strip 127 + rows 130); BH3 208 (−24%).
+    // BJ6 symmetric hero (founder 10-03): the 72 px host rises 28 above the card (headroom 6 → 22,
+    // the other 6 over the header's bottom edge) and reaches 44 into it (strip top 4 → 44;
+    // headline 28, gaps 6 / 3) — measured 255.
     const h = homeBannerSlots('daily', { dailyTier: 'none', puzzleTier: 'none', playedAny: true }).height;
-    expect(h - 2 * (BANNER_SLOT.tileLg - 29)).toBeLessThanOrEqual(208);
+    expect(h - 2 * (BANNER_SLOT.tileLg - 29)).toBeLessThanOrEqual(255);
     expect(src('components/ui/mascot.tsx')).toContain('export const BANNER_HOST_SIZE = 52');
   });
 

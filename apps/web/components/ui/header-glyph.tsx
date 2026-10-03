@@ -14,7 +14,7 @@ export const GLYPH_SIZE = 23;
 /** The approved number size (px). */
 export const GLYPH_NUM_SIZE = 17;
 /** The tap area (px): the control is at least this big, so neighbors never share a target. */
-const TAP = 44;
+export const TAP = 44;
 
 interface HeaderGlyphProps {
   icon: Icon3DName;

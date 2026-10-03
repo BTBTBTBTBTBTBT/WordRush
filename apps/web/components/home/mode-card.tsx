@@ -47,7 +47,7 @@ export function modeCardState(args: {
   resetCountdownText: string;
   subtitleOverride?: string | null;
 }): ModeCardState {
-  const { card, playMode, dailyResult, vsWon, playedToday, isPro, signedIn, resetCountdownText, subtitleOverride } = args;
+  const { card, playMode, dailyResult, vsWon, playedToday, isPro, signedIn, subtitleOverride } = args;
   if (subtitleOverride != null) {
     return { isDailyDone: false, isLocked: false, badge: null, subtitle: subtitleOverride };
   }
@@ -68,7 +68,9 @@ export function modeCardState(args: {
         ? compactCardLine(`${formatGuessStat(card.guessSemantics, card.guessBase, dailyResult.guesses)} · ${formatShortTime(dailyResult.timeSeconds)}`)
         : 'Played today')
     : isLocked
-    ? `Back in ${resetCountdownText}`
+    // BJ6 (founder 10-03, one of each thing on Home): the reset countdown lives once, in the
+    // banner's meta line — a locked card no longer repeats it.
+    ? 'Played today'
     : card.desc;
   return { isDailyDone, isLocked, badge, subtitle };
 }

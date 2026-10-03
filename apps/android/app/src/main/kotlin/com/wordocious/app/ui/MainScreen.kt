@@ -601,6 +601,7 @@ fun MainScreen() {
                             onSettings = { showSettings = true },
                             onNav = { infoRoute = it },
                             onSignIn = { showSignIn = true },
+                            homeShare = selectedTab == 0, // BJ6: Home's share control
                         )
                     }
                     Box(modifier = Modifier.weight(1f).fillMaxSize()) {

@@ -36,11 +36,31 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** BJ6 Plan A: the Good Morning host's box (≈ 2× the old corner host). */
-internal val HOME_HOST_BOX = 84.dp
+/** BJ6 symmetric hero (iOS parity pin): the Good Morning host's box. */
+internal val HOME_HOST_BOX = 72.dp
 
-/** BJ6 Plan A: the headline's symmetric side room (the corner share button never crowds it). */
-internal val HOME_HEADLINE_SIDE = 28.dp
+/** BJ6: how far the host's head rises above the card's top edge (the rest overlaps the card). */
+internal val HOME_HOST_RISE = 28.dp
+
+/**
+ * BJ6 (coordinator, founder hates bloat): the space above the card grows only 16 dp over the
+ * compressed banner's 6 dp ([HOME_BANNER_TOP] = 22, iOS parity: Home moves down 16). The host's
+ * remaining [HOME_HOST_OVERHANG] (6 dp) rises over the header's empty bottom edge: Home's scroll
+ * viewport extends that far up (HomeScreen), so the scroll clip never cuts the host's head.
+ */
+internal val HOME_BANNER_TOP = 22.dp
+internal val HOME_HOST_OVERHANG = HOME_HOST_RISE - HOME_BANNER_TOP
+
+/**
+ * BJ6: the frosted strip's top padding (dp) — it clears the host's lower part (box − rise),
+ * or a plain 4 when the scene band sits on top (the host then stands on the band). Decided by
+ * today's dailies only, so the Daily ⇄ Unlimited switch never moves anything.
+ */
+internal fun homeStripTop(sceneBand: Boolean): Float =
+    if (sceneBand) 4f else HOME_HOST_BOX.value - HOME_HOST_RISE.value
+
+/** BJ6: the header's share control shows (slot kept either way) only in Daily once a game is finished. */
+internal fun homeShareVisible(unlimited: Boolean, playedToday: Int): Boolean = !unlimited && playedToday > 0
 
 /** BJ6: the host waves once per app launch (process-level). */
 internal object HomeHostWave {
@@ -48,8 +68,8 @@ internal object HomeHostWave {
 }
 
 /**
- * FINISH_SPEC BJ6 Plan A — the Good Morning card's host, standing INSIDE the card on the left
- * of the frosted headline strip, on a soft elliptical floor shadow. One component, so the
+ * FINISH_SPEC BJ6 — the Good Morning card's host, centered on the card's top edge (head above
+ * the card, feet on the frosted strip) on a soft elliptical floor shadow. One component, so the
  * founder's option B (the player at the end of the cast row) is a placement change only:
  *  • a signed-in player whose resolved avatar is a PHOTO → the photo whole as a framed portrait
  *    (~86% of the box; the chosen frame, else their tier frame — never on a mascot body);
@@ -94,10 +114,11 @@ internal fun HomeHost(size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier, w
         modifier.size(size).clearAndSetSemantics { }
             .graphicsLayer { alpha = if (hidden) 0f else 1f }
             .drawBehind {
-                // The soft floor shadow at its feet: radial purple-black ~20% → clear, 78% × 13%.
+                // The soft floor shadow under its feet (on the strip): radial purple-black ~20% →
+                // clear, 78% × 13%, centered on the box's bottom edge.
                 val w = this.size.width * 0.78f
                 val h = this.size.height * 0.13f
-                val top = this.size.height - h
+                val top = this.size.height - h / 2f
                 drawOval(
                     Brush.radialGradient(
                         listOf(Color(0xFF1E0B3A).copy(alpha = 0.20f), Color(0xFF1E0B3A).copy(alpha = 0f)),

@@ -33,7 +33,8 @@ describe('night art 10-03 wiring', () => {
   });
 
   it('the gold clock sprite leads the reset countdowns', () => {
-    for (const f of ['components/modals/vs-limit-modal.tsx', 'components/home/today-card.tsx']) {
+    // BJ6: the desktop Today card no longer repeats the reset countdown (one of each thing on Home).
+    for (const f of ['components/modals/vs-limit-modal.tsx']) {
       expect(read(f), f).toContain("badgeSrc('icon-clock-sprite')");
     }
   });

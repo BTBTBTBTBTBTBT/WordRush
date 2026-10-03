@@ -151,7 +151,8 @@ describe('no per-frame React work on hot screens', () => {
   it('re-renders only the clock each second on Home', () => {
     const home = read('app/page.tsx');
     expect(home).not.toMatch(/useCountdown\(getSecondsUntilMidnightLocal\)/);
-    expect(home).toMatch(/useCountdown\(getResetSeconds, needsResetClock\)/);
+    // BJ6: Home's cards no longer show the reset countdown, so the page doesn't subscribe at all.
+    expect(home).not.toMatch(/useCountdown\(/);
     expect(read('components/home/home-banner.tsx')).toContain('<HomeClock render=');
   });
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { BANNER_SLOT } from '@/lib/stationary-layout';
 import { afterIntro } from '@/lib/intro';
 import { homeCardTapBlocked } from '@/lib/nav-home';
 import { useState, useEffect, useRef } from 'react';
@@ -27,7 +28,6 @@ import { PendingInvitesBanner } from '@/components/invites/pending-invites-banne
 import { FirstGameCard } from '@/components/ui/first-game-card';
 import type { PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
-import { useCountdown } from '@/hooks/use-countdown';
 import { getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
@@ -43,7 +43,7 @@ import { bannerHeadline, type GroupProgress } from '@wordle-duel/core';
 // completions map can never move N/8, the celebration or the Wordocious row.
 const SWEEP_KEYS = new Set<string>(SWEEP_MODES.map((m) => m.dbKey as string));
 const sweepEntries = <T,>(m: Map<string, T>): Array<[string, T]> => Array.from(m.entries()).filter(([k]) => SWEEP_KEYS.has(k));
-import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
+import { hasPlayedModeToday, cleanupOldPlayData, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 /** Today's progress over a set of cards: finished and won among their daily modes. */
 function progressOf(cards: HomeCard[], today: Map<string, DailyCompletion>): GroupProgress {
@@ -322,9 +322,8 @@ export default function HomePage() {
     resetCountdownText: resetText,
     subtitleOverride: null,
   });
-  const needsResetClock = [...visibleCards, ...puzzleCards].some((c) => { const st = cardState(c, ''); return st.isLocked && !st.isDailyDone; });
-  const resetSecs = useCountdown(getResetSeconds, needsResetClock);
-  const resetCountdownText = resetSecs !== null ? formatCountdown(resetSecs) : '';
+  // BJ6: the reset countdown shows once on Home (the banner's meta line), so cards don't subscribe to it.
+  const resetCountdownText = '';
 
   const handleVsClick = (vsHref: string) => {
     router.push(vsHref);
@@ -387,7 +386,8 @@ export default function HomePage() {
 
   return (
     <PageBackground tint="home" className="fixed inset-0 flex flex-col">
-      <AppHeader />
+      {/* BJ6: today's share lives in the header on Home (Daily, once a game is finished). */}
+      <AppHeader share={{ visible: playMode === 'daily' && wordRow.progress.played + puzzleRow.progress.played > 0, onShare: shareToday }} />
 
       {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): the
           scroller stays full width, its content centers at up to 1100 px; the
@@ -401,7 +401,9 @@ export default function HomePage() {
       <div
         ref={homeScrollRef}
         className="px-4 page-wide-pad flex-1 min-h-0 overflow-y-auto pb-tab-clear"
-        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        /* BJ6: the scroller reaches BANNER_SLOT.hostOverhang up over the header's empty bottom
+           edge (content starts where it did), so the Good Morning host's head isn't clipped. */
+        style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: -BANNER_SLOT.hostOverhang, paddingTop: BANNER_SLOT.hostOverhang }}
         onClickCapture={(e) => { if (homeCardTapBlocked()) { e.preventDefault(); e.stopPropagation(); } }}
       >
         {/* home-hero: display: contents on phones (no box, nothing moves); the desktop hero row. */}
@@ -421,7 +423,6 @@ export default function HomePage() {
           onModeChange={setPlayMode}
           name={name}
           onOpen={open}
-          onShare={shareToday}
         />
         </div>
         {/* Desktop website only (hidden below 1024 px): today's progress beside the banner. */}
@@ -432,11 +433,8 @@ export default function HomePage() {
             unlimited={playMode === 'unlimited'}
             wordPlayed={wordRow.unlimitedPlayed}
             puzzlesPlayed={puzzleRow.unlimitedPlayed}
-            streak={profile?.daily_login_streak ?? 0}
             next={nextCard}
             onOpen={open}
-            onShare={shareToday}
-            canShare={wordRow.progress.played + puzzleRow.progress.played > 0}
           />
         </div>
         </div>

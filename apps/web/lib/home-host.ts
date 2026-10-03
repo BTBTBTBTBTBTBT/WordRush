@@ -23,8 +23,8 @@ export function homeHostChoice(resolved: ResolvedAvatar | null | undefined): Hom
   return { kind: 'w' };
 }
 
-/** The host box (≈ 2x the old 52 corner host) and the portrait's share of it. */
-export const HOME_HOST_SIZE = 84;
+/** The host box (BJ6 symmetric hero: 72, centered on the card top edge) and the portrait share of it. */
+export const HOME_HOST_SIZE = 72;
 export const HOME_HOST_PORTRAIT = Math.round(HOME_HOST_SIZE * 0.86);
 
 /**

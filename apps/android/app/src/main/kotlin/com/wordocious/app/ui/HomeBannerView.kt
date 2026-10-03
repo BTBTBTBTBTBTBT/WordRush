@@ -162,9 +162,12 @@ fun HomeBannerView(
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
     CappedFontScale {
-        // BJ6 Plan A (founder 10-03): the host stands INSIDE the card, left of the headline
-        // column — nothing peeks above the card any more (no top headroom).
-        Box(Modifier.fillMaxWidth()) {
+        // BJ6 symmetric hero (founder 10-03: "even and symmetrical"): the host stands CENTERED
+        // on the card's top edge — its head rises [HOME_HOST_RISE] above the card ([HOME_BANNER_TOP]
+        // of this box's top padding + [HOME_HOST_OVERHANG] over the header's bottom edge, inside
+        // Home's extended scroll viewport), its lower part overlaps the frosted strip.
+        // The share control lives in the app header (HomeShareControl), not on the card.
+        Box(Modifier.fillMaxWidth().padding(top = HOME_BANNER_TOP)) {
         Column(
             Modifier.fillMaxWidth()
                 .bannerGlow(double)
@@ -187,21 +190,13 @@ fun HomeBannerView(
             // Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious
             // row's glow. ART_SPEC §18.4: white at 72% (the fill under it is a smooth gradient, so
             // a backdrop blur would change nothing on Android; no platform backdrop blur here).
-            // BJ6 Plan A: [host 84 dp | the headline column centered in the rest], the share
-            // button overlaid at the strip's top-right corner.
-            Box(
-                // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
-                Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f)),
-            ) {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, end = 12.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-            // The celebration art carries the cast on a swept day: a W host then hides (keeps its slot).
-            HomeHost(HOME_HOST_BOX, wVisible = slots.hostShown)
+            // BJ6: the card mirrors on its center line — the strip clears the host's lower part
+            // (no clearance when the scene band sits on top: the host then stands on the band).
             Column(
-                Modifier.weight(1f),
-                // BH3: one headline line, 8 above the slim switch, the meta line 4 under it.
+                // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
+                Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f))
+                    .padding(start = 12.dp, top = homeStripTop(bandTier != BannerTier.NONE).dp, end = 12.dp, bottom = 4.dp),
+                // BH3: one headline line, then the slim switch, the meta line under it (BJ6: 6 / 3).
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -211,23 +206,22 @@ fun HomeBannerView(
                 // switch, then the centered meta line.
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
-                    // BJ6: symmetric side room so the corner share button never crowds it.
-                    Box(Modifier.fillMaxWidth().padding(horizontal = HOME_HEADLINE_SIDE)) {
+                    Box(Modifier.fillMaxWidth()) {
                         BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited, name = name)
                         BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited, name = name)
                     }
                 }
                 // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
                 // the UNLIMITED half for free players and guests, whose tap opens Go Pro.
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 DailyUnlimitedSwitch(
                     if (unlimited) PlayMode.UNLIMITED else PlayMode.DAILY,
                     locked = !isPro,
                     onChange = { m -> if (m == PlayMode.UNLIMITED && !isPro) paywall = true else onModeChange(m) },
                 )
                 // Z: both meta lines laid out on top of each other (the slot is the taller).
-                // BH3: 4 under the switch, 11 sp small caps.
-                Box(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
+                // BH3: under the switch (BJ6: 3), 11 sp small caps.
+                Box(Modifier.fillMaxWidth().padding(top = 3.dp), contentAlignment = Alignment.Center) {
                     val metaStyle = TextStyle(
                         fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, lineHeight = 12.sp,
                         fontFeatureSettings = "tnum, smcp", textAlign = TextAlign.Center,
@@ -244,21 +238,6 @@ fun HomeBannerView(
                     )
                 }
             }
-            }
-            // Nothing to share before the first finished game (iOS/web parity). Z: the slot stays
-            // (empty) in Unlimited and before the first game. BJ6: the strip's TOP-RIGHT corner.
-            val canShare = !unlimited && word.progress.played + puzzles.progress.played > 0
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 4.dp).size(BannerSlotSpec.SHARE.dp)
-                    .graphicsLayer { alpha = 1f - modeFade }
-                    .then(if (canShare) Modifier.squishClickable("Share today's progress", icon = true) { onShare(headline) } else Modifier),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (word.progress.played + puzzles.progress.played > 0) {
-                    Icon3D(Icon3DName.SHARE, 22.dp, contentDescription = null, modifier = Modifier)
-                }
-            }
-            }
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
             val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
             BannerGroupRow(word, wTier, "WORDOCIOUS", tileSlots, unlimited, completions, onOpen,
@@ -268,8 +247,18 @@ fun HomeBannerView(
                 Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 6.dp),
                 flameSlot = slots.puzzlesFlameSlot, dailyTier = dailyPTier)
         }
+        // BJ6: the host, centered on the card's top edge (drawn over the card). On a swept day the
+        // celebration art carries the cast: a W host then hides (alpha 0, keeps its place).
+        HomeHost(HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE), wVisible = slots.hostShown)
         }
     }
+    // BJ6: the share control moved to the app header (Home only): publish its state + action.
+    val shareHeadline by androidx.compose.runtime.rememberUpdatedState(headline)
+    val shareAction by androidx.compose.runtime.rememberUpdatedState(onShare)
+    HomeSharePublisher(
+        visible = homeShareVisible(unlimited, word.progress.played + puzzles.progress.played),
+        onShare = { shareAction(shareHeadline) },
+    )
 }
 
 /**
@@ -647,7 +636,7 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
 @Composable
 private fun BannerHeadlineLayer(headline: String, double: Boolean, @Suppress("UNUSED_PARAMETER") headInk: Color, alpha: Float, active: Boolean, name: String? = null) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 32.dp)
+        Modifier.fillMaxWidth().heightIn(min = 28.dp) // BJ6: 28 (was 32)
             .graphicsLayer { this.alpha = alpha }
             .then(if (active) Modifier else Modifier.clearAndSetSemantics { }),
         verticalAlignment = Alignment.CenterVertically,

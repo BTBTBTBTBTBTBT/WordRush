@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { castPreset, defaultAvatar, levelTier } from '@wordle-duel/core';
 import { resolveRowAvatar } from './avatar-cast';
 import { portraitFrame } from './avatar-render';
+import { BANNER_SLOT } from './stationary-layout';
 import {
   HOME_HOST_PORTRAIT, HOME_HOST_SIZE, __resetHomeHostWaveForTests, homeHostChoice, homeHostHidden, takeHomeHostWave,
 } from './home-host';
@@ -42,9 +43,16 @@ describe('BJ6 Home host choice', () => {
     expect(homeHostHidden({ kind: 'photo', photoUrl: UPLOADED, config: defaultAvatar('x') }, true)).toBe(false);
   });
 
-  it('is about twice the old corner host; the portrait is ~86% of the box', () => {
-    expect(HOME_HOST_SIZE).toBe(84);
-    expect(HOME_HOST_PORTRAIT).toBe(72);
+  it('is the 72 px symmetric hero (iOS parity); the portrait is ~86% of the box', () => {
+    expect(HOME_HOST_SIZE).toBe(72);
+    expect(HOME_HOST_PORTRAIT).toBe(62);
+    expect(HOME_HOST_SIZE).toBe(BANNER_SLOT.hostSize);
+    // Its top 28 above the card's top edge, 44 inside it — the strip's top padding.
+    expect(BANNER_SLOT.hostRise + BANNER_SLOT.hostInset).toBe(BANNER_SLOT.hostSize);
+    // Home moves down only 16 over BH3's 6 headroom; the rest overhangs the header's bottom edge.
+    expect(BANNER_SLOT.headroom).toBe(6 + 16);
+    expect(BANNER_SLOT.headroom + BANNER_SLOT.hostOverhang).toBe(BANNER_SLOT.hostRise);
+    expect(BANNER_SLOT.stripTopHost).toBe(BANNER_SLOT.hostInset);
   });
 
   describe('wave once per launch', () => {

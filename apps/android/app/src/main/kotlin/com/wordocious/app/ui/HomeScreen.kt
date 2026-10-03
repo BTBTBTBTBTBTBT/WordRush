@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.layout
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -234,7 +235,17 @@ fun HomeScreen(
         val homeScroll = rememberScrollState()
         ScrollToTopOnReselect(homeScroll) // AJ/BI11: only a re-tap of Home at its root scrolls to the top.
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(homeScroll)
+            modifier = Modifier.fillMaxSize()
+                // BJ6: the viewport reaches HOME_HOST_OVERHANG up over the header's empty bottom
+                // edge (content starts where it did), so the Good Morning host's head isn't clipped.
+                .layout { m, c ->
+                    val up = HOME_HOST_OVERHANG.roundToPx()
+                    val p = if (c.hasBoundedHeight) m.measure(c.copy(minHeight = c.minHeight + up, maxHeight = c.maxHeight + up))
+                        else m.measure(c)
+                    layout(p.width, p.height - up) { p.place(0, -up) }
+                }
+                .verticalScroll(homeScroll)
+                .padding(top = HOME_HOST_OVERHANG)
                 .padding(horizontal = 16.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {

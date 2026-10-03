@@ -73,7 +73,6 @@ interface Props {
   /** The player's username; empty for a guest. */
   name: string;
   onOpen: (card: HomeCard) => void;
-  onShare: () => void;
 }
 
 /**
@@ -159,12 +158,8 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
 
 /** BH3: the one-line headline's lettering (~30 px line), shrinking to fit. */
 const HEAD_SIZE = 20;
-/** BJ6: the headline's symmetric side room (the share button sits in the strip's top-right corner). */
-const HEADLINE_SIDE_CLEAR = 28;
-/** BJ6: the gap between the host and the centered headline column. */
-const HOST_GAP = 6;
 
-export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen, onShare }: Props) {
+export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen }: Props) {
   const unlimited = playMode === 'unlimited';
   // FINISH_SPEC Z: the slots (frame, headline box, share box, art box, rows)
   // come from today's DAILY state only, so the switch never moves the tiles or
@@ -283,23 +278,13 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       {/* FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look even"):
           the headline centered on the card's center line, then a centered wide
           DAILY | UNLIMITED switch, then the centered meta line. */}
-      {/* BJ6 (plan A): the host stands INSIDE the strip on its left (84 px, on a soft floor
-          shadow); the headline / switch / meta column centers in the remaining width. */}
-      <div className="banner-frost relative flex items-center" style={{ gap: HOST_GAP, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
-      <HomeHost
-        choice={host.choice}
-        initial={host.initial}
-        level={host.level}
-        pro={host.pro}
-        // The celebration art carries the cast: W steps out (keeps his slot); your own host stays.
-        hidden={homeHostHidden(host.choice, !!(tierArt || seasonArt))}
-      />
-      <div className="flex-1 min-w-0 flex flex-col" style={{ gap: BANNER_SLOT.stripGap }}>
+      {/* BJ6 symmetric hero (founder 10-03): the host stands centered on the card's top edge
+          (drawn beside the card, below); its lower 44 px sit in the strip's top padding, and
+          the headline / switch / meta line center under it — the card mirrors on its center line. */}
+      <div className="banner-frost relative flex flex-col" style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
-        {/* BJ6: symmetric side room keeps the headline centered in its column; the share
-            button sits in the strip's top-right corner. */}
-        <div className="relative flex items-start" style={{ paddingLeft: HEADLINE_SIDE_CLEAR, paddingRight: tierArt || seasonArt ? 0 : HEADLINE_SIDE_CLEAR }}>
+        <div className="relative flex items-start">
           {/* Z + BH3: the headline box is one line tall in both modes (the lettering scales to fit). */}
           <div className="flex-1 min-w-0 flex items-center justify-center text-center gap-1.5" style={{ height: slots.headline }}>
             {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
@@ -393,20 +378,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           </div>
         </div>
       </div>
-      {/* Nothing to share before the first finished game (iOS/Android parity). BJ6: the share
-          button lives in the strip's top-right corner. */}
-      {content.showShare ? (
-        <button
-          type="button"
-          onClick={onShare}
-          aria-label="Share today's progress"
-          className="mode-xfade absolute flex items-center justify-center active:opacity-60"
-          style={{ top: slots.stripTop + (slots.headline - slots.shareWidth) / 2, right: 6, width: slots.shareWidth, height: slots.shareWidth, zIndex: 2 }}
-        >
-          <Icon3D name="share" size={24} />
-        </button>
-      ) : null}
-      </div>
 
       <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px 12px ${BANNER_SLOT.wordPadBottom}px` }}>
         {row(word, wTier, 'WORDOCIOUS')}
@@ -417,8 +388,27 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
     </div>
   );
 
-  // BJ6: the host stands inside the card now — nothing peeks above it (the slots' headroom stays).
-  return <div className="relative shrink-0" style={{ paddingTop: slots.headroom }}>{card}</div>;
+  // BJ6 symmetric hero: the host centered on the card's top edge — its top 28 above the card
+  // (the headroom), 44 inside (over the strip's top padding). The share button is in the app header.
+  return (
+    <div className="relative shrink-0" style={{ paddingTop: slots.headroom }}>
+      {card}
+      <span
+        className="absolute"
+        style={{ top: slots.headroom - BANNER_SLOT.hostRise, left: `calc(50% - ${BANNER_SLOT.hostSize / 2}px)`, width: BANNER_SLOT.hostSize, height: BANNER_SLOT.hostSize, zIndex: 2 }}
+      >
+        <HomeHost
+          choice={host.choice}
+          initial={host.initial}
+          level={host.level}
+          pro={host.pro}
+          size={BANNER_SLOT.hostSize}
+          // The celebration art carries the cast: W steps out (keeps his slot); your own host stays.
+          hidden={homeHostHidden(host.choice, !!(tierArt || seasonArt))}
+        />
+      </span>
+    </div>
+  );
 }
 
 /**

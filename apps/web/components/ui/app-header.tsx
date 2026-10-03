@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { CastHeader, CAST_ROW } from '@/components/ui/cast-header';
-import { HeaderGlyph } from '@/components/ui/header-glyph';
+import { HeaderGlyph, TAP } from '@/components/ui/header-glyph';
 import { CandyButton } from '@/components/ui/candy-button';
 import { MenuModal } from '@/components/modals/menu-modal';
 import { SettingsDialog } from '@/components/settings-dialog';
@@ -38,7 +38,13 @@ import { DESKTOP_MIN, minWidthQuery } from '@/lib/desktop-layout';
 // pages), the counters + help + settings on the right. Below 1024 px the extra
 // tabs are hidden and the header is exactly the phone header.
 
-export function AppHeader() {
+/** FINISH_SPEC BJ6: Home's share-today control (Home only): its slot stays even while hidden. */
+export interface HeaderShare {
+  visible: boolean;
+  onShare: () => void;
+}
+
+export function AppHeader({ share }: { share?: HeaderShare } = {}) {
   const { profile, isProActive, isGuest, exitGuest } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -200,6 +206,11 @@ export function AppHeader() {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {/* BJ6: Home's share button beside "?" and the gear (same size / spacing). Hidden in
+                Unlimited and before the first finished game; the slot stays so the row never jumps. */}
+            {share && (share.visible
+              ? <HeaderGlyph icon="share" onClick={share.onShare} label="Share today's progress" />
+              : <span aria-hidden="true" className="shrink-0" style={{ width: TAP, height: TAP }} />)}
             {/* "?" menu — opens the site-nav menu (native MenuSheet parity) */}
             <HeaderGlyph icon="help" onClick={() => openSheetOnce(() => setHelpOpen(true))} label="Menu" />
             {/* Settings button — always visible (theme, sound, accessibility). BI25: single-fire. */}

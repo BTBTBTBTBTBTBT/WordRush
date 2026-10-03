@@ -31,7 +31,8 @@ describe('home banner slots', () => {
     const s = homeBannerSlots('unlimited', { dailyTier: 'none', puzzleTier: 'none', playedAny: false });
     expect(s.shareWidth).toBe(BANNER_SLOT.share);
     expect(s.headline).toBe(BANNER_SLOT.headline);
-    expect(s.headerRow).toBeGreaterThanOrEqual(BANNER_SLOT.share);
+    // BJ6: the share button lives in the app header; the row holds the one-line headline.
+    expect(s.headerRow).toBeGreaterThanOrEqual(BANNER_SLOT.headline);
   });
 
   it('keep the art frame on a swept day in Unlimited, filled with the U loop', () => {

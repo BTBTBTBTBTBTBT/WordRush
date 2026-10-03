@@ -1,10 +1,7 @@
 'use client';
 
 import { CandyButton } from '@/components/ui/candy-button';
-import { badgeSrc } from '@/lib/art';
-import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
-import { HomeClock } from '@/components/home/home-clock';
 import { BRAND_ACCENT, SOFT_INK, alphaHex, softCard, softPill } from '@/lib/soft-surface';
 import type { GroupProgress } from '@wordle-duel/core';
 import type { HomeCard } from './mode-chrome';
@@ -13,8 +10,8 @@ import type { HomeCard } from './mode-chrome';
 // Home hero's right half beside the banner — today's progress at a glance in
 // the same tinted-card language (A1 wash + the purple → pink top bar, A2 soft
 // numbers, A8 candy button): DAILIES and PUZZLES tiles (played / total, a
-// static progress bar, wins), the live countdown to the new puzzles, the daily
-// streak, and one candy action (play the next unplayed daily, else share).
+// static progress bar, wins) and one candy action (play the next unplayed daily). BJ6: the
+// countdown, streak and share live once each elsewhere on Home (banner meta line, header).
 
 const DAILIES_ACCENT = '#7c3aed';
 const PUZZLES_ACCENT = '#f59e0b';
@@ -53,21 +50,17 @@ function ProgressTile({ label, accent, progress, unlimited, unlimitedPlayed }: {
   );
 }
 
-export function HomeTodayCard({ word, puzzles, unlimited, wordPlayed, puzzlesPlayed, streak, next, onOpen, onShare, canShare }: {
+export function HomeTodayCard({ word, puzzles, unlimited, wordPlayed, puzzlesPlayed, next, onOpen }: {
   word: GroupProgress;
   puzzles: GroupProgress;
   unlimited: boolean;
   /** Unlimited mode: games played today per row. */
   wordPlayed: number;
   puzzlesPlayed: number;
-  streak: number;
   /** The next unplayed daily, if any. */
   next?: HomeCard;
   onOpen: (card: HomeCard) => void;
-  onShare: () => void;
-  canShare: boolean;
 }) {
-  const allDone = !unlimited && word.played + puzzles.played >= word.total + puzzles.total;
   return (
     <section aria-label="Today's progress" className="relative overflow-hidden h-full flex flex-col" style={softCard(BRAND_ACCENT, { radius: 22 })}>
       <div aria-hidden="true" style={{ height: 10, flex: 'none', background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
@@ -76,38 +69,21 @@ export function HomeTodayCard({ word, puzzles, unlimited, wordPlayed, puzzlesPla
           <h2 className="m-0 text-[12px] font-black uppercase" style={{ letterSpacing: '0.14em', color: SOFT_INK.title }}>
             {unlimited ? 'Unlimited today' : 'Today'}
           </h2>
-          {streak > 0 && (
-            <span className="flex items-center gap-1" aria-label={`${streak}-day streak`}>
-              <Icon3D name="flame" size={18} />
-              <SoftNum size={16}>{streak}</SoftNum>
-              <span className="text-[11px] font-extrabold" style={{ color: SOFT_INK.detail }}>day streak</span>
-            </span>
-          )}
+          {/* BJ6: the streak lives in the header's flame counter (one of each thing on Home). */}
         </div>
         <div className="grid grid-cols-2 gap-2.5">
           <ProgressTile label="Dailies" accent={DAILIES_ACCENT} progress={word} unlimited={unlimited} unlimitedPlayed={wordPlayed} />
           <ProgressTile label="Puzzles" accent={PUZZLES_ACCENT} progress={puzzles} unlimited={unlimited} unlimitedPlayed={puzzlesPlayed} />
         </div>
-        <div className="mt-auto flex items-end gap-3">
-          <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase" style={{ letterSpacing: '0.12em', color: SOFT_INK.label }}>
-              {/* The gold clock sprite (night art 10-03). */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={badgeSrc('icon-clock-sprite')} alt="" aria-hidden="true" width={14} height={14} decoding="async" className="shrink-0 select-none" style={{ width: 14, height: 14 }} />
-              {allDone ? 'New puzzles in' : 'Resets in'}
-            </span>
-            <HomeClock render={(clock) => <SoftNum size={24}>{clock}</SoftNum>} />
-          </div>
-          {next ? (
+        {/* BJ6 (one of each thing on Home): the reset countdown lives in the banner's meta line and
+            the share button in the app header, so this card keeps only the next daily to play. */}
+        {next ? (
+          <div className="mt-auto flex justify-end">
             <CandyButton size="md" color="purple" icon="play" onClick={() => onOpen(next)} className="shrink-0" style={{ maxWidth: '62%' }}>
               {next.title}
             </CandyButton>
-          ) : canShare ? (
-            <CandyButton size="md" color="pink" icon="share" onClick={onShare} className="shrink-0">
-              Share today
-            </CandyButton>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

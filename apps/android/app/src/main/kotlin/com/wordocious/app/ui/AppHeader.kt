@@ -76,6 +76,8 @@ fun AppHeader(
     onNav: (String) -> Unit = {},
     onSettings: () -> Unit = {},
     onSignIn: () -> Unit = {},
+    /** BJ6: Home's "Share today's progress" control beside ? and the gear (the Home tab only). */
+    homeShare: Boolean = false,
 ) {
     val profile by AuthService.profile.collectAsState()
     val isGuest by AuthService.isGuest.collectAsState()
@@ -86,7 +88,7 @@ fun AppHeader(
     ) {
         // AS2 (founder 10-02): the controls row (streak · shield · ? · settings) ON TOP, the
         // WORDOCIOUS cast row under it.
-        HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn)
+        HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn, homeShare)
         Spacer(Modifier.height(4.dp))
         CastTitle(pro = AuthService.isProActive)
     }
@@ -143,6 +145,7 @@ private fun HeaderControlsRow(
     onNav: (String) -> Unit,
     onSettings: () -> Unit,
     onSignIn: () -> Unit,
+    homeShare: Boolean = false,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     var lastSheetTap by remember { mutableStateOf<Long?>(null) }
@@ -201,6 +204,8 @@ private fun HeaderControlsRow(
             CandyButton("Sign In", onClick = onSignIn, size = CandySize.SMALL)
             Spacer(Modifier.width(2.dp))
         }
+        // BJ6: Home's share control, same size + spacing as ? and the gear (slot kept while hidden).
+        if (homeShare) HomeShareControl()
         // BI25: help / gear are single-fire (a double tap can't open and then close).
         SoftControl(Icon3DName.HELP, "Help", onClick = {
             val now = android.os.SystemClock.uptimeMillis()
