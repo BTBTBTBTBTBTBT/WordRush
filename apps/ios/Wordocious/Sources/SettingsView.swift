@@ -26,6 +26,8 @@ struct SettingsView: View {
     @AppStorage(CastSkin.debugKey) private var debugSeason = ""
     @State private var reminderDenied = false
     @State private var showDeleteConfirm = false
+    /// BJ11: Manage Subscription shows the branded hand-off before Apple's sheet.
+    @State private var showManage = false
     @State private var deleting = false
     @State private var deleteError = false
     @State private var infoKind: InfoKind?
@@ -110,18 +112,23 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 // Apple's native manage-subscriptions sheet (cancel,
                                 // change plan, resubscribe). Works signed-out too —
-                                // it's the App Store account's subs, not ours. URL
-                                // fallback if no foreground scene is available.
-                                Button {
-                                    Task {
-                                        if let scene = UIApplication.shared.connectedScenes
-                                            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                                            try? await AppStore.showManageSubscriptions(in: scene)
-                                        } else if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                                            await UIApplication.shared.open(url)
+                                // it's the App Store account's subs, not ours. BJ11: the
+                                // row says what opens, and the hand-off sheet comes first.
+                                Button { showManage = true } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text("Manage Subscription").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                                            Text(SubscriptionCopy.handoff(.apple).line)
+                                                .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                                         }
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .heavy))
+                                            .foregroundStyle(G5Accent.gold.opacity(0.8)).accessibilityHidden(true)
                                     }
-                                } label: { linkRow("Manage Subscription", accent: G5Accent.gold) }.buttonStyle(.squish)
+                                    .padding(.vertical, 8)
+                                    .frame(minHeight: 44)
+                                    .contentShape(Rectangle())
+                                }.buttonStyle(.squish)
                             }
                         }
                         section("ABOUT", accent: G5Accent.purple) {
@@ -222,6 +229,7 @@ struct SettingsView: View {
             } message: {
                 Text("Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
             }
+            .proManageHandoff($showManage)
             .alert("Delete your account?", isPresented: $showDeleteConfirm) {
                 Button("Cancel", role: .cancel) {}
                 Button(deleting ? "Deleting…" : "Delete Forever", role: .destructive) {

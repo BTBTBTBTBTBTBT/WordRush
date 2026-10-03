@@ -142,6 +142,53 @@ fun openManageSubscription(context: android.content.Context) {
     }
 }
 
+// ── BJ11 the subscription hand-off ───────────────────────────────────────────
+
+/**
+ * FINISH_SPEC BJ11 (founder 10-03: "When I clicked check subscription somewhere the Apple
+ * menu popped up"): before Play's own subscriptions page opens, a short sheet in our look
+ * says what is about to open — W points the way, one line, why it's Play's page, the
+ * candy CTA, and Restore Purchases. Every Manage subscription entry point shows it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ManageSubscriptionHandoff(onDismiss: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val dark = WTheme.isDark
+    val copy = com.wordocious.app.data.SubscriptionCopy.handoff(com.wordocious.app.data.SubscriptionCopy.Store.GOOGLE)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    SoftModalSheet(
+        onDismissRequest = onDismiss, sheetState = sheetState,
+        containerColor = if (dark) WTheme.bg else Wash.mix(PRO_ID_GOLD, 0.12f),
+    ) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 22.dp, end = 22.dp, bottom = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            CastPose(MascotId.W, "point", 96.dp)
+            Text(
+                copy.line, fontSize = 19.sp, fontWeight = FontWeight.Black, fontFamily = Nunito,
+                color = if (dark) WTheme.text else FinishInk.heading, textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                copy.body, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                color = if (dark) WTheme.textMuted else FinishInk.muted,
+            )
+            CandyButton(
+                copy.cta, onClick = { openManageSubscription(context); onDismiss() },
+                color = CandyColor.AMBER, size = CandySize.LARGE, fill = true, icon = CandyIcon.ARROW,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
+            CandyButton(
+                "Restore Purchases", onClick = { com.wordocious.app.data.StoreManager.restore() },
+                color = CandyColor.PEACH, size = CandySize.SMALL,
+            )
+        }
+    }
+}
+
 // ── AA1 the crown sprite ─────────────────────────────────────────────────────
 
 /**
@@ -200,10 +247,11 @@ internal const val PRO_CROWN_TWINKLE_MS = 8000L
 @Composable
 fun YoureProSheet(onDismiss: () -> Unit) {
     val profile by AuthService.profile.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
     val dark = WTheme.isDark
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
+    var manage by remember { mutableStateOf(false) }
+    if (manage) ManageSubscriptionHandoff(onDismiss = { manage = false })
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = if (dark) WTheme.bg else Wash.mix(PRO_ID_GOLD, 0.12f),
     ) {
@@ -226,7 +274,7 @@ fun YoureProSheet(onDismiss: () -> Unit) {
             }
             ProFacts(profile, dark)
             CandyButton(
-                "Manage subscription", onClick = { openManageSubscription(context) },
+                "Manage subscription", onClick = { manage = true },
                 color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true, modifier = Modifier.fillMaxWidth(),
             )
             CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
@@ -320,10 +368,11 @@ fun ProAvatarFrame(pro: Boolean, size: Dp, shape: Shape, modifier: Modifier = Mo
 fun ProSettingsCard(modifier: Modifier = Modifier) {
     val profile by AuthService.profile.collectAsState()
     val pro = profile != null && AuthService.isProActive
-    val context = androidx.compose.ui.platform.LocalContext.current
     val dark = WTheme.isDark
     var paywall by remember { mutableStateOf(false) }
     if (paywall) com.wordocious.app.ui.game.ProPaywallDialog(onDismiss = { paywall = false }, onPro = { paywall = false })
+    var manage by remember { mutableStateOf(false) }
+    if (manage) ManageSubscriptionHandoff(onDismiss = { manage = false })
     TintedCard(
         PRO_ID_GOLD, modifier.fillMaxWidth(), bar = MomentInk.proBar,
         tint = accentWash(PRO_ID_GOLD, 0.16f),
@@ -355,8 +404,11 @@ fun ProSettingsCard(modifier: Modifier = Modifier) {
                         color = if (dark) WTheme.textMuted else FinishInk.muted,
                     )
                 } else {
+                    // BJ11: a former member's upsell names the day their Pro ended.
+                    val lapsed = com.wordocious.app.data.SubscriptionCopy.lapsedLine(profile?.proExpiresAt, AuthService.isProActive)
                     Text(
-                        "Every game unlimited, no ads, VS on every mode.", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        lapsed?.let { "$it. Switch it back on any time." } ?: "Every game unlimited, no ads, VS on every mode.",
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         color = if (dark) WTheme.textMuted else FinishInk.muted,
                     )
                 }
@@ -364,7 +416,7 @@ fun ProSettingsCard(modifier: Modifier = Modifier) {
         }
         if (pro) {
             CandyButton(
-                "Manage subscription", onClick = { openManageSubscription(context) },
+                "Manage subscription", onClick = { manage = true },
                 color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true, modifier = Modifier.fillMaxWidth(),
             )
         } else {

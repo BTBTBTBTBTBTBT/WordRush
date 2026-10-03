@@ -1,69 +1,31 @@
 'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { CandyButton } from '@/components/ui/candy-button';
 import { HeaderBack } from '@/components/ui/page-header';
-import { PopupBar, POPUP_ACCENT, popupCard, softRow } from '@/components/ui/soft-popup';
+import { PopupBar, POPUP_ACCENT, popupCard, softRow, SoftSectionLabel } from '@/components/ui/soft-popup';
 import { badgeSrc } from '@/lib/art';
 import { proRenewalLabel } from '@/lib/pro-crown';
+import { ManageSubscriptionRows, useStripePortal } from '@/components/pro/manage-subscription';
 
 // FINISH_SPEC AA1: tapping the crown W wears in the living cast header opens
-// this small "You're Pro 👑" sheet — the plan, the renewal date (what the
-// profile has: pro_expires_at; nothing is shown when it's missing) and Manage.
-// Manage is the Settings › Subscription path: Stripe's customer portal for a
-// web purchase on file, else the App Store / Google Play subscription pages
-// (the web can't tell which store a phone purchase came from).
+// this small "You're Pro" sheet — the plan, the renewal date (what the
+// profile has: pro_expires_at; nothing is shown when it's missing) and the
+// manage rows. BJ11: the rows are always shown and each says what opens —
+// Stripe's billing page for a web purchase on file, Apple's / Google Play's
+// subscription settings (the web can't tell which store a phone purchase came from).
 
 const GOLD = POPUP_ACCENT.gold;
 const GOLD_BAR = 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)';
 
-const STORES = [
-  { label: 'Manage on App Store', description: 'Subscribed on iPhone or iPad', href: 'https://apps.apple.com/account/subscriptions' },
-  { label: 'Manage on Google Play', description: 'Subscribed on Android', href: 'https://play.google.com/store/account/subscriptions?package=com.wordocious.app' },
-] as const;
-
 export function ProCrownSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { user, session, profile } = useAuth();
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
-  const [showStores, setShowStores] = useState(false);
+  const { profile } = useAuth();
+  const portal = useStripePortal();
   const p = profile as unknown as { pro_expires_at?: string | null; stripe_customer_id?: string | null } | null;
   const renewal = proRenewalLabel(p?.pro_expires_at ?? null);
   const webBilling = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && !!p?.stripe_customer_id;
 
-  // Same call as Settings › Manage web subscription (POST /api/stripe/portal).
-  const manage = async () => {
-    setNote(null);
-    if (!webBilling || !user) {
-      setShowStores(true);
-      return;
-    }
-    setPortalLoading(true);
-    try {
-      const res = await fetch('/api/stripe/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
-        body: JSON.stringify({ returnUrl: window.location.href }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      setShowStores(true);
-      setNote(res.status === 404
-        ? 'No web subscription found for this account. If you subscribed on a phone, use the store links.'
-        : 'Could not open billing right now. Please try again later.');
-    } catch {
-      setNote('Could not open billing.');
-    } finally {
-      setPortalLoading(false);
-    }
-  };
-
-  const close = () => { onOpenChange(false); setShowStores(false); setNote(null); };
+  const close = () => { onOpenChange(false); };
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
@@ -108,28 +70,8 @@ export function ProCrownSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             )}
           </dl>
 
-          <CandyButton color="amber" size="md" block className="mt-4" onClick={manage} disabled={portalLoading}>
-            {portalLoading ? 'Opening…' : 'Manage'}
-          </CandyButton>
-
-          {showStores && (
-            <div className="mt-2 space-y-1.5 text-left">
-              {STORES.map((s) => (
-                <a
-                  key={s.href}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full px-3 py-2.5"
-                  style={softRow(GOLD, { radius: 14 })}
-                >
-                  <span className="block font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{s.label}</span>
-                  <span className="block text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{s.description}</span>
-                </a>
-              ))}
-            </div>
-          )}
-          {note && <p className="m-0 mt-2 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{note}</p>}
+          <SoftSectionLabel ink="#b45309" className="mt-4 mb-1.5 px-1 text-left">Manage subscription</SoftSectionLabel>
+          <ManageSubscriptionRows webBilling={webBilling} onPortal={portal.open} portalBusy={portal.busy} note={portal.note} accent={GOLD} />
         </div>
       </DialogContent>
     </Dialog>

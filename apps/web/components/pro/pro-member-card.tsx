@@ -6,6 +6,7 @@ import { ART_SIZE, artSrc, badgeSrc } from '@/lib/art';
 import { proRenewalLabel } from '@/lib/pro-crown';
 import { memberSince, proPlanLine } from '@/lib/pro-identity';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
+import { proLapsedLine } from '@/lib/payment/subscription-copy';
 import { softBackground, softBorder, softShadow } from '@/lib/soft-surface';
 
 // FINISH_SPEC AA3: the slot at the top of Settings. Pro members get a
@@ -35,6 +36,8 @@ export function ProMemberCard({ onManage, onGoPro, manageBusy = false, webBillin
   const p = profile as unknown as { created_at?: string | null; pro_expires_at?: string | null } | null;
   const since = pro ? memberSince(p?.created_at) : null;
   const renewal = pro ? proRenewalLabel(p?.pro_expires_at ?? null) : null;
+  // BJ11: a former member's upsell names the day their Pro ended.
+  const lapsed = !loading && profile ? proLapsedLine(p?.pro_expires_at ?? null, isProActive) : null;
   const [sw, sh] = ART_SIZE[SCENE];
 
   return (
@@ -83,7 +86,7 @@ export function ProMemberCard({ onManage, onGoPro, manageBusy = false, webBillin
               </>
             ) : (
               <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Every game unlimited, no ads, VS on every mode.
+                {lapsed ? `${lapsed}. Switch it back on any time.` : 'Every game unlimited, no ads, VS on every mode.'}
               </p>
             )}
           </div>

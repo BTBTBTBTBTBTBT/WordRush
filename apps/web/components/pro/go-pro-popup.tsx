@@ -16,6 +16,7 @@ import { AuthModal } from '@/components/auth/auth-modal';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { softShadow } from '@/lib/soft-surface';
 import { feedback } from '@/lib/sound-events';
+import { CHECKOUT_HANDOFF_LINE, webRenewalDisclosure } from '@/lib/payment/subscription-copy';
 
 // The redesigned Go Pro popup (docs/FINISH_SPEC.md G1, R3): W crowned with
 // the golden star, the plan picker (Yearly preselected, Monthly), and one
@@ -105,7 +106,7 @@ export function GoProPopupHost() {
           role="dialog"
           aria-modal="true"
           aria-label="Go Pro"
-          className="relative w-full max-w-sm animate-fade-in-scale"
+          className="relative w-full max-w-sm soft-pop"
           style={popupCard(GOLD, { radius: 26, share: 0.15 })}
           onClick={(e) => e.stopPropagation()}
         >
@@ -154,9 +155,19 @@ export function GoProPopupHost() {
               onClick={subscribe}
               disabled={loading || (!!user && !paymentsEnabled)}
             >
-              {!user ? 'Sign in to go Pro' : !paymentsEnabled ? 'Coming soon' : loading ? 'Processing...' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
+              {!user ? 'Sign in to go Pro' : !paymentsEnabled ? 'Coming soon' : loading ? 'Opening checkout…' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
             </CandyButton>
             {error && <p className="mt-2 text-xs font-bold" style={{ color: 'var(--color-loss-text)' }}>{error}</p>}
+            {/* BJ11: where the purchase happens, the renewal terms and the legal links, before checkout opens. */}
+            {user && paymentsEnabled && (
+              <p className="m-0 mt-2 text-[11px] font-extrabold" style={{ color: '#b45309' }}>{CHECKOUT_HANDOFF_LINE}</p>
+            )}
+            <p className="m-0 mt-1.5 text-[10px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+              {webRenewalDisclosure(PRO_PLANS.monthly.price, PRO_PLANS.yearly.price)}{' '}
+              <a href="/terms" style={{ color: '#7c3aed', fontWeight: 800 }}>Terms</a>
+              {' · '}
+              <a href="/privacy" style={{ color: '#7c3aed', fontWeight: 800 }}>Privacy</a>
+            </p>
           </div>
         </div>
       </div>

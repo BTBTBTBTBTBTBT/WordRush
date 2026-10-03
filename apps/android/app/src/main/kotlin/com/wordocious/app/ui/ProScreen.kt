@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.StoreManager
+import com.wordocious.app.data.SubscriptionCopy
 import com.wordocious.app.ui.theme.WTheme
 
 /**
@@ -179,6 +180,28 @@ fun ProScreen(onDone: () -> Unit) {
                         "You're enjoying all Pro benefits!", fontSize = 15.sp, fontWeight = FontWeight.Black,
                         color = proInk, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
                     )
+                    // BJ11: the member state carries the plan, its renewal, the branded
+                    // Manage hand-off (then Play's page) and Restore Purchases.
+                    Text(
+                        ProIdentityText.renewalLine(profile?.proExpiresAt), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+                        color = proMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                    )
+                    var manage by remember { mutableStateOf(false) }
+                    if (manage) ManageSubscriptionHandoff(onDismiss = { manage = false })
+                    CandyButton(
+                        "Manage subscription", onClick = { manage = true },
+                        color = CandyColor.AMBER, size = CandySize.LARGE, fill = true, modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        SubscriptionCopy.handoff(SubscriptionCopy.Store.GOOGLE).line, fontSize = 11.sp, fontWeight = FontWeight.Black,
+                        color = if (WTheme.isDark) WTheme.textSecondary else proLabel, textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    CandyButton(
+                        "Restore Purchases", onClick = { StoreManager.restore() },
+                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
                 }
                 BenefitsCard()
             } else {
@@ -259,6 +282,7 @@ private fun PlansContent() {
     var plan by rememberSaveable { mutableStateOf(StoreManager.PRO_YEARLY) }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LapsedCard()
         BenefitsCard()
 
         Spacer(Modifier.height(2.dp))
@@ -310,9 +334,9 @@ private fun PlansContent() {
             color = CandyColor.PEACH, size = CandySize.MEDIUM,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
-        // Disclosure (Google Play wording for Android).
+        // Disclosure (Google Play wording for Android) — BJ11: the live Play prices.
         Text(
-            "Monthly ($6.99) and Yearly ($59.99) are auto-renewing subscriptions billed through Google Play. Payment is charged to your Google account at confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the period ends; manage or cancel in Google Play → Subscriptions. The Day Pass is a one-time 24-hour purchase and does not renew.",
+            SubscriptionCopy.playDisclosure(prices[StoreManager.PRO_MONTHLY] ?: "\$6.99", prices[StoreManager.PRO_YEARLY] ?: "\$59.99"),
             fontSize = 10.sp, color = proMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp),
         )
         // Terms / Privacy links under the disclosure (iOS ProView.swift:153) —
@@ -332,6 +356,28 @@ private fun PlansContent() {
         ) {
             InfoLinkChip("Terms of Service", PRO_GOLD) { open("https://wordocious.com/terms") }
             InfoLinkChip("Privacy Policy", PRO_GOLD) { open("https://wordocious.com/privacy") }
+        }
+    }
+}
+
+/** BJ11: a former member — W waves them back, with the day their Pro ended. */
+@Composable
+private fun LapsedCard() {
+    val profile by AuthService.profile.collectAsState()
+    val line = SubscriptionCopy.lapsedLine(profile?.proExpiresAt, AuthService.isProActive) ?: return
+    TintedCard(
+        PRO_GOLD, Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, bar = MomentInk.proBar,
+        tint = accentWash(PRO_GOLD, 0.14f),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.Top,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CastPose(MascotId.W, "wave", 64.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Welcome back", fontSize = 15.sp, fontWeight = FontWeight.Black, color = proInk)
+                Text(line, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.textSecondary else proLabel)
+                Text(SubscriptionCopy.LAPSED_BODY, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = proMuted)
+            }
         }
     }
 }

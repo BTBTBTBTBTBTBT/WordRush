@@ -8,6 +8,7 @@ import { useTheme, Theme } from '@/lib/theme-context';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 import { isHapticsOn, setHapticsOn } from '@/lib/haptics';
 import { ProMemberCard } from '@/components/pro/pro-member-card';
+import { ManageSubscriptionRows } from '@/components/pro/manage-subscription';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { getKeyboardLayout, setKeyboardLayout, type KeyboardLayout } from '@/lib/keyboard-layout';
 import { useAuth } from '@/lib/auth-context';
@@ -105,7 +106,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       if (data.url) {
         window.location.href = data.url;
       } else if (res.status === 404) {
-        setPortalError('No web subscription found for this account — if you subscribed on a phone, use the store links below.');
+        setPortalError('No web subscription found for this account. If you subscribed on a phone, use the store rows.');
       } else {
         setPortalError('Could not open billing right now. Please try again later.');
       }
@@ -235,55 +236,16 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           <div ref={subscriptionRef} style={{ scrollMarginTop: 8 }}>
           <SettingsSection title="Subscription" accent={SETTINGS_ACCENT.subscription}>
-            {/* The web can't tell which store a Pro sub was bought in, so link
-                both stores' manage pages. Bought on the web (Stripe)? The
-                portal row below appears once web billing is live and opens
-                Stripe's self-serve manage/cancel. */}
-            <div className="space-y-1.5">
-              {/* §255: only offer the web portal when a web purchase is on file —
-                  the row was appearing for every account, including ones that
-                  subscribed on a phone or were granted Pro. */}
-              {webBilling && (
-                <button
-                  onClick={handleManageWebBilling}
-                  disabled={portalLoading}
-                  className="block w-full text-left p-3 disabled:opacity-50"
-                  style={settingsRowStyle(SETTINGS_ACCENT.subscription)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>
-                        {portalLoading ? 'Opening…' : 'Manage web subscription'}
-                      </div>
-                      <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Bought on wordocious.com — cancel or update card</div>
-                    </div>
-                  </div>
-                </button>
-              )}
-              {[
-                { label: 'Manage on App Store', description: 'Subscribed on iPhone or iPad', href: 'https://apps.apple.com/account/subscriptions' },
-                { label: 'Manage on Google Play', description: 'Subscribed on Android', href: 'https://play.google.com/store/account/subscriptions?package=com.wordocious.app' },
-              ].map((s) => (
-                <a
-                  key={s.href}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full text-left p-3"
-                  style={settingsRowStyle(SETTINGS_ACCENT.subscription)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{s.label}</div>
-                      <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{s.description}</div>
-                    </div>
-                  </div>
-                </a>
-              ))}
-              {portalError && (
-                <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-text-muted)' }}>{portalError}</p>
-              )}
-            </div>
+            {/* The web can't tell which store a Pro sub was bought in, so both
+                stores' manage pages are rows; a web (Stripe) purchase on file adds
+                the billing-page row first (§255). BJ11: each row says what opens. */}
+            <ManageSubscriptionRows
+              webBilling={webBilling}
+              onPortal={handleManageWebBilling}
+              portalBusy={portalLoading}
+              note={portalError}
+              rowStyle={settingsRowStyle(SETTINGS_ACCENT.subscription)}
+            />
           </SettingsSection>
           </div>
 

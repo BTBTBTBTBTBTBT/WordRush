@@ -1455,3 +1455,23 @@ tiles — 170 floor gone, tip card), notification prefs, and the Leaderboard (re
 card one line). No duplicate facts: under the Leaderboard result / rank row the completed-board toggle reads YOUR BOARD
 (the solve line above already says "Solved in 3 guesses · 23s"). The podium, Stats, in-game boards and finish screens are
 untouched.
+
+BJ11. Old logo retired everywhere in-repo; subscribe menus in the new aesthetic (founder 10-03: "When I clicked check
+subscription somewhere the Apple menu popped up with the old logo showing"; "Anywhere that would have the old W icon should
+be looked at"). Logo sweep (contact sheet of every logo-like asset vs the pre-B icon): the app icons, launch, splash, adaptive
+and push icons were already icon B; what still carried the old white-W tile is gone — the Play feature graphic
+(apps/android/feature-graphic-1024x500.png, rebuilt by scripts/store-screenshots/play-feature-graphic.py from icon B) and the
+docs logo marks (docs/design/brand/logo/mark*.png are icon-B rounded tiles; the old tile lives only in logo/retired/, and
+draw-logo.py writes there). New: the Android 13+ themed-icon `monochrome` layer (the W-mascot silhouette), the web push badge
+= that white silhouette (badge-96.png; a full-color badge reads as a blank square), and an upload kit for the dashboards we
+don't own (logo/upload/: Play hi-res icon 512, Stripe icon 512, Google OAuth logo 120). Apple's Manage Subscriptions sheet
+shows the App Store listing's icon, which turns into icon B when 2.7 is released. Subscribe menus ×3: never a cold jump to a
+billing page — every Manage subscription (Settings row, the member card, the "You're Pro" sheet, the Pro page's member state)
+opens a short branded hand-off first (W pointing, "Opens your Apple subscription settings" / "Opens your Google Play
+subscriptions", why it's the store's page, the amber candy, Restore Purchases); the web lists rows that each say what opens
+(Stripe's secure billing page, Apple's, Google Play's) and every Subscribe says "Opens Stripe's secure checkout". The Pro page:
+GO PRO lettering on iOS too, a member state with the plan, renewal, Manage and Restore, a lapsed state ("Welcome back · Your
+Pro ended Sep 30, 2026" with W waving) and the Settings upsell names the end date; the auto-renew disclosure uses the live
+store prices, and the web Pro page / Go Pro popup gained the renewal terms + Terms / Privacy links (a guest's web Subscribe
+now signs in first instead of doing nothing). Copy lives in one tested place per platform (SubscriptionCopy: Core / data /
+lib/payment/subscription-copy.ts).

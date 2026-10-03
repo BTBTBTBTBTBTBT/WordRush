@@ -172,18 +172,81 @@ enum ProMemberSince {
 }
 
 /// Apple's manage-subscriptions sheet (the same path as Settings' Manage
-/// Subscription row), with the App Store URL as the fallback.
+/// Subscription row), with the App Store URL as the fallback. BJ11: never opened
+/// cold — every entry point shows `ProManageHandoffSheet` first.
 enum ProManage {
+    /// Shows Apple's sheet and returns once the player closes it.
     @MainActor
-    static func open() {
-        Task {
-            if let scene = UIApplication.shared.connectedScenes
-                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                try? await AppStore.showManageSubscriptions(in: scene)
-            } else if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                await UIApplication.shared.open(url)
-            }
+    static func show() async {
+        if let scene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            try? await AppStore.showManageSubscriptions(in: scene)
+        } else if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+            await UIApplication.shared.open(url)
         }
+    }
+}
+
+// MARK: - BJ11 The subscription hand-off
+
+/// FINISH_SPEC BJ11 (founder 10-03: "When I clicked check subscription somewhere the
+/// Apple menu popped up"): before Apple's own subscription sheet opens, a short sheet in
+/// our look says what is about to open — W points the way, one line, why it's Apple's
+/// page, the candy CTA, and Restore Purchases (Guideline 3.1.1 keeps it visible). It
+/// stays under Apple's sheet and closes itself when the player comes back.
+struct ProManageHandoffSheet: View {
+    @ObservedObject private var store = StoreManager.shared
+    @Environment(\.dismiss) private var dismiss
+    @State private var opening = false
+    @State private var restoring = false
+    private let copy = SubscriptionCopy.handoff(.apple)
+
+    var body: some View {
+        ZStack {
+            PageBackground(tint: .home)
+            VStack(spacing: 10) {
+                Capsule().fill(ProGold.accent.opacity(0.35)).frame(width: 40, height: 5).padding(.top, 8)
+                PoseImage(.w, "point", height: 96)
+                Text(copy.line)
+                    .font(Brand.font(19, .black)).foregroundStyle(FinishInk.number)
+                    .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
+                Text(copy.body)
+                    .font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 6)
+                Button {
+                    opening = true
+                    Task {
+                        await ProManage.show()
+                        opening = false
+                        dismiss()
+                    }
+                } label: { CandyLabel(title: copy.cta, symbol: "arrow.up.right") }
+                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                    .disabled(opening)
+                    .padding(.top, 4)
+                Button {
+                    restoring = true
+                    Task { await store.restore(); restoring = false }
+                } label: { CandyLabel(title: restoring ? "Restoring…" : "Restore Purchases", symbol: "arrow.clockwise") }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .disabled(restoring)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 22)
+        }
+        .presentationDetents([.medium])
+        .alert("Restore issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(store.lastError ?? "") }
+    }
+}
+
+extension View {
+    /// BJ11: present the subscription hand-off (instead of opening Apple's sheet cold).
+    func proManageHandoff(_ isPresented: Binding<Bool>) -> some View {
+        sheet(isPresented: isPresented) { ProManageHandoffSheet() }
     }
 }
 
@@ -200,6 +263,7 @@ struct ProMemberSheet: View {
     @ObservedObject private var auth = AuthService.shared
     @Environment(\.dismiss) private var dismiss
     @State private var info: ProPlanInfo = .fromProfile(AuthService.shared.profile)
+    @State private var showManage = false
 
     var body: some View {
         ZStack {
@@ -227,7 +291,7 @@ struct ProMemberSheet: View {
                 .padding(.vertical, 14).padding(.horizontal, 16)
                 .tintedCard(accent: ProGold.accent, bar: ProGold.bar, radius: 20, barHeight: 8, tint: 0.12, line: 0.32)
 
-                Button { ProManage.open() } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
+                Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
                     .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
                 Button { dismiss() } label: { CandyLabel(title: "Close") }
                     .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
@@ -236,6 +300,7 @@ struct ProMemberSheet: View {
             .padding(.horizontal, 20)
         }
         .presentationDetents([.medium])
+        .proManageHandoff($showManage)
         .task { info = await ProPlanInfo.load(profile: auth.profile) }
     }
 }
@@ -249,6 +314,7 @@ struct SettingsProCard: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var info: ProPlanInfo?
     @State private var showPro = false
+    @State private var showManage = false
 
     var body: some View {
         Group {
@@ -285,13 +351,14 @@ struct SettingsProCard: View {
                 }
                 Spacer(minLength: 0)
             }
-            Button { ProManage.open() } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
+            Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
                 .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .tintedCard(accent: ProGold.accent, bar: ProGold.bar, radius: 20, barHeight: 8, tint: 0.14, line: 0.34)
         .task(id: auth.profile?.id) { info = await ProPlanInfo.load(profile: auth.profile) }
+        .proManageHandoff($showManage)
     }
 
     private var upsell: some View {
@@ -302,7 +369,10 @@ struct SettingsProCard: View {
                         .font(Brand.font(22, .black))
                         .foregroundStyle(FinishInk.number)
                         .accessibilityAddTraits(.isHeader)
-                    Text("Unlimited games, VS on every mode, no ads and 4 streak shields every month.")
+                    // BJ11: a former member's upsell names the day their Pro ended.
+                    Text(SubscriptionCopy.lapsedLine(expiresAt: auth.profile?.proExpiryDate, proActive: auth.isProActive)
+                            .map { "\($0). Switch it back on any time." }
+                         ?? "Unlimited games, VS on every mode, no ads and 4 streak shields every month.")
                         .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

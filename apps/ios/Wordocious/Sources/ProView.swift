@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import WordociousCore
 
 /// Pro / subscription screen — matches app/pro/page.tsx (header, benefits,
 /// monthly/yearly plans, day pass, active-Pro state). Real StoreKit 2 purchases
@@ -10,6 +11,9 @@ struct ProView: View {
     @ObservedObject var store = StoreManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showAuth = false
+    /// BJ11: Manage subscription (active members) shows the hand-off before Apple's sheet.
+    @State private var showManage = false
+    @State private var info: ProPlanInfo = .fromProfile(AuthService.shared.profile)
 
     private let gold = Color(hex: 0xD97706)
     /// FINISH_SPEC §G1: the gold card family (tint, line, top bar).
@@ -66,6 +70,7 @@ struct ProView: View {
                 Text(store.lastError ?? "")
             }
             .sheet(isPresented: $showAuth) { AuthView() }
+            .proManageHandoff($showManage)
         }
         // FINISH_SPEC §AP: LET'S PLAY on Welcome to Pro takes the player back to where
         // they were — the Pro page closes itself behind it.
@@ -91,36 +96,71 @@ struct ProView: View {
         .padding(.top, 8)
     }
 
-    /// §G1: the crowned W (`art-scene-pro-crown`) large at the top, the gold GO PRO
-    /// caps under it (the whole-cast GO PRO art would draw W twice — §A7).
+    /// §G1 + BJ11: the GO PRO lettering as the page headline (web / Android parity),
+    /// then the crowned W (`art-scene-pro-crown`) large under it.
     private var header: some View {
         VStack(spacing: 6) {
+            PageHeadline(.gopro)
             if ArtAsset.exists("art-scene-pro-crown") {
                 Image("art-scene-pro-crown").resizable().interpolation(.high).scaledToFit()
                     .frame(maxWidth: 300, maxHeight: 170)
                     .accessibilityHidden(true)
             }
-            PageTitle("Go Pro", colors: PageHeaderStyle.gold, size: 30)
             Text("Play unlimited & ad-free — every mode, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
         }
         .padding(.top, 4).padding(.bottom, 18)
     }
 
+    /// BJ11: the member state — the plan and its renewal, Manage subscription (the
+    /// branded hand-off, then Apple's sheet) and Restore Purchases, all in one card.
     private var activePro: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             HStack(spacing: 8) {
                 Icon3D(.crown, size: 26)
                 Text("ACTIVE PRO").font(Brand.font(15, .black)).tracking(1.2).foregroundStyle(Self.ink)
             }
             Text("You're enjoying all Pro benefits!").font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
+            Text(info.dateLine.map { "\(info.plan) · \($0)" } ?? info.plan)
+                .font(Brand.font(13, .heavy)).foregroundStyle(FinishInk.heading)
+                .multilineTextAlignment(.center)
+            Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                .padding(.top, 4)
+            Text(SubscriptionCopy.handoff(.apple).line)
+                .font(Brand.font(11, .heavy)).foregroundStyle(Self.ink.opacity(0.8))
+            Button { Task { await store.restore() } } label: {
+                CandyLabel(title: "Restore Purchases", symbol: "arrow.clockwise")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
         }
-        .padding(24).frame(maxWidth: .infinity)
+        .padding(20).frame(maxWidth: .infinity)
         .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.12, line: 0.32)
+        .task(id: auth.profile?.id) { info = await ProPlanInfo.load(profile: auth.profile) }
+    }
+
+    /// BJ11: a former member — W waves them back, with the day their Pro ended.
+    @ViewBuilder private var lapsedCard: some View {
+        if let line = SubscriptionCopy.lapsedLine(expiresAt: auth.profile?.proExpiryDate, proActive: auth.isProActive) {
+            HStack(spacing: 12) {
+                PoseImage(.w, "wave", height: 64)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Welcome back").font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                    Text(line).font(Brand.font(12, .heavy)).foregroundStyle(Self.ink)
+                    Text(SubscriptionCopy.lapsedBody).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(14)
+            .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.12, line: 0.30)
+            .accessibilityElement(children: .combine)
+        }
     }
 
     private var plansContent: some View {
         VStack(alignment: .leading, spacing: 10) {
+            lapsedCard
             FinishLabel("Benefits", color: Self.ink)
             VStack(spacing: 0) {
                 ForEach(0..<benefits.count, id: \.self) { i in benefitRow(benefits[i]).stripedRow(i, accent: Self.goldTint) }
@@ -167,7 +207,9 @@ struct ProView: View {
 
     private var subscriptionDisclosure: some View {
         VStack(spacing: 6) {
-            Text("Monthly ($\(monthlyPrice)) and Yearly ($\(yearlyPrice)) are auto-renewing subscriptions. Payment is charged to your Apple Account at confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the period ends; manage or cancel in Settings → Apple Account. The Day Pass is a one-time 24-hour purchase and does not renew.")
+            // BJ11: the live App Store prices (localized), not the US fallback.
+            Text(SubscriptionCopy.appleDisclosure(monthly: displayPrice(.monthly, fallback: monthlyPrice),
+                                                  yearly: displayPrice(.yearly, fallback: yearlyPrice)))
                 .font(Brand.font(10, .regular)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {

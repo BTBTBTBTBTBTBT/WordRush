@@ -16,6 +16,12 @@ import { PopupBar, SoftSectionLabel, softRow } from '@/components/ui/soft-popup'
 import { ART_SIZE, artSrc, badgeSrc, onPageShadow } from '@/lib/art';
 import { GiftProCard } from '@/components/friends/invite-screens';
 import { softBackground, softBorder, softIconTile, softShadow } from '@/lib/soft-surface';
+import { PoseArt } from '@/components/ui/soft-popup';
+import { AuthModal } from '@/components/auth/auth-modal';
+import { ManageSubscriptionRows, useStripePortal } from '@/components/pro/manage-subscription';
+import { proRenewalLabel } from '@/lib/pro-crown';
+import { memberSince } from '@/lib/pro-identity';
+import { CHECKOUT_HANDOFF_LINE, PRO_LAPSED_BODY, proLapsedLine, webRenewalDisclosure } from '@/lib/payment/subscription-copy';
 
 // The Pro page (docs/FINISH_SPEC.md G1): the gold card family — gold-tinted
 // cards with the gold top bar, W crowned with the golden star
@@ -60,8 +66,17 @@ const goldCard: React.CSSProperties = {
 type PlanKey = 'yearly' | 'monthly';
 
 export default function ProPage() {
-  const { user, session, refreshProfile, isProActive } = useAuth();
+  const { user, session, profile, refreshProfile, isProActive } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
+  // BJ11: a guest's Subscribe signs in first (it was a dead button), then comes back here.
+  const [authOpen, setAuthOpen] = useState(false);
+  const portal = useStripePortal();
+  const pf = profile as unknown as { created_at?: string | null; pro_expires_at?: string | null; stripe_customer_id?: string | null } | null;
+  const webBilling = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && !!pf?.stripe_customer_id;
+  const renewal = isProActive ? proRenewalLabel(pf?.pro_expires_at ?? null) : null;
+  const since = isProActive ? memberSince(pf?.created_at) : null;
+  // BJ11: a former member (Pro window in the past) is welcomed back above the plans.
+  const lapsed = user ? proLapsedLine(pf?.pro_expires_at ?? null, isProActive) : null;
   const [payError, setPayError] = useState<string | null>(null);
   // The plan the big CTA buys (yearly preselected: the best value).
   const [plan, setPlan] = useState<PlanKey>('yearly');
@@ -79,9 +94,12 @@ export default function ProPage() {
       return () => clearTimeout(t);
     }
   }, [refreshProfile]);
+  // A guest who signed in from the Subscribe button lands back on the plans.
+  useEffect(() => { if (user && authOpen) setAuthOpen(false); }, [user, authOpen]);
 
   const handleSubscribe = async (planId: string) => {
-    if (!user || !paymentsEnabled) return;
+    if (!user) { setAuthOpen(true); return; }
+    if (!paymentsEnabled) return;
     setLoading(planId);
     setPayError(null);
     try {
@@ -171,9 +189,17 @@ export default function ProPage() {
                 <img src={badgeSrc('pro-crown-sprite')} alt="" aria-hidden="true" width={22} height={22} style={{ width: 22, height: 22, transform: 'rotate(-8deg)' }} />
                 <span className="text-white font-black text-sm" style={{ textShadow: '0 1px 2px rgba(59, 26, 120, 0.5)' }}>You&apos;re Pro</span>
               </div>
-              <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="m-0 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 You&apos;re enjoying all Pro benefits!
               </p>
+              {(since || renewal) && (
+                <p className="m-0 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  {[since, renewal ? `Renews or ends ${renewal}` : null].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              {/* BJ11: manage right here — each row says what opens (Stripe / Apple / Google Play). */}
+              <SoftSectionLabel ink="#b45309" className="mt-5 mb-2 px-1 text-left">Manage subscription</SoftSectionLabel>
+              <ManageSubscriptionRows webBilling={webBilling} onPortal={portal.open} portalBusy={portal.busy} note={portal.note} accent={GOLD} />
             </div>
           </div>
           {/* T4 (docs/FINISH_SPEC.md): Pro players gift a week of Pro from the Friends tab (the InvitePanel there). */}
@@ -185,6 +211,18 @@ export default function ProPage() {
           </>
         ) : (
           <>
+            {/* BJ11: a former member — W waves them back, with the day their Pro ended. */}
+            {lapsed && (
+              <div className="mb-4 flex items-center gap-3 p-3.5" style={goldCard} role="status">
+                <PoseArt pose="art-pose-w-wave" size={64} priority />
+                <div className="min-w-0 text-left">
+                  <p className="m-0 text-[15px] font-black" style={{ color: 'var(--color-text)' }}>Welcome back</p>
+                  <p className="m-0 text-xs font-extrabold" style={{ color: '#b45309' }}>{lapsed}</p>
+                  <p className="m-0 mt-0.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{PRO_LAPSED_BODY}</p>
+                </div>
+              </div>
+            )}
+
             {/* Benefits: feature rows with 3D icons on the gold card. */}
             <div className="mb-6" style={goldCard}>
               <PopupBar accent={GOLD} gradient={GOLD_BAR} />
@@ -261,8 +299,12 @@ export default function ProPage() {
                   onClick={() => handleSubscribe(selected.id)}
                   disabled={loading !== null || !paymentsEnabled}
                 >
-                  {!paymentsEnabled ? 'Coming soon' : loading === selected.id ? 'Processing...' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
+                  {!user ? 'Sign in to go Pro' : !paymentsEnabled ? 'Coming soon' : loading === selected.id ? 'Opening checkout…' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
                 </CandyButton>
+                {/* BJ11: say where the purchase happens before it opens. */}
+                {user && paymentsEnabled && (
+                  <p className="m-0 mt-2 text-center text-[11px] font-extrabold" style={{ color: '#b45309' }}>{CHECKOUT_HANDOFF_LINE}</p>
+                )}
               </div>
             </div>
 
@@ -282,13 +324,13 @@ export default function ProPage() {
                 size="md"
                 block
                 onClick={() => handleSubscribe(PRO_PLANS.day.id)}
-                disabled={loading !== null || !paymentsEnabled}
+                disabled={loading !== null || (!!user && !paymentsEnabled)}
                 style={{ textTransform: 'none' }}
               >
                 {!paymentsEnabled
                   ? 'Coming soon'
                   : loading === PRO_PLANS.day.id
-                  ? 'Processing...'
+                  ? 'Opening checkout…'
                   : `Just today — $${PRO_PLANS.day.price.toFixed(0)} for 24 hours of Pro →`}
               </CandyButton>
               <p className="mt-2 text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -299,6 +341,15 @@ export default function ProPage() {
               {payError && (
                 <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--color-loss-text)' }}>{payError}</p>
               )}
+              {/* Price + renewal terms and the legal links on the purchase surface (BJ11). */}
+              <p className="m-0 mt-3 text-center text-[10px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                {webRenewalDisclosure(PRO_PLANS.monthly.price, PRO_PLANS.yearly.price)}
+              </p>
+              <p className="m-0 mt-1 text-center text-[10px] font-extrabold">
+                <a href="/terms" style={{ color: '#7c3aed' }}>Terms of Service</a>
+                <span aria-hidden="true" style={{ color: 'var(--color-text-muted)' }}> · </span>
+                <a href="/privacy" style={{ color: '#7c3aed' }}>Privacy Policy</a>
+              </p>
               {/* T4 (docs/FINISH_SPEC.md): the gift area — O3 with the crowned gift box on the gold card. */}
               <GiftProCard className="mt-5">
                 <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -393,6 +444,7 @@ export default function ProPage() {
       </div>
 
       <BottomNav />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </PageBackground>
   );
 }

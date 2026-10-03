@@ -261,23 +261,21 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // SUBSCRIPTION — Play's manage-subscriptions page for this app
             // (cancel, change plan, resubscribe). iOS opens Apple's native
-            // sheet; this is the Play analogue.
+            // sheet; this is the Play analogue. BJ11: the branded hand-off
+            // (what opens + Restore Purchases) comes first, never a cold jump.
             Section("SUBSCRIPTION", SettingsAccent.subscription, padded = true) {
+                var manage by remember { mutableStateOf(false) }
+                if (manage) ManageSubscriptionHandoff(onDismiss = { manage = false })
                 CandyButton(
                     "Manage Subscription",
-                    onClick = {
-                        runCatching {
-                            context.startActivity(
-                                android.content.Intent(
-                                    android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse(
-                                        "https://play.google.com/store/account/subscriptions?package=com.wordocious.app"
-                                    ),
-                                )
-                            )
-                        }
-                    },
+                    onClick = { manage = true },
                     color = CandyColor.AMBER, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
+                )
+                Text(
+                    com.wordocious.app.data.SubscriptionCopy.handoff(com.wordocious.app.data.SubscriptionCopy.Store.GOOGLE).line,
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 )
             }
 
