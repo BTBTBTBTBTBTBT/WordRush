@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { startProWelcome } from '@/lib/pro-welcome';
 import { useParams, useRouter } from 'next/navigation';
 import { CandyButton } from '@/components/ui/candy-button';
 import { StateCard } from '@/components/ui/soft-popup';
@@ -62,6 +63,9 @@ export default function JoinReferralPage() {
       });
       const data = await res.json();
       if (data.ok) {
+        // AP: the gifted week gets the Welcome to Pro moment (signal BEFORE the refresh, so the
+        // host sees the not-Pro → Pro transition with it; it was marked silently before).
+        if (user) startProWelcome(user.id, { kind: 'gift', proBefore: false });
         setClaimResult('claimed');
         await refreshProfile();
         setTimeout(() => router.replace('/'), 1800);

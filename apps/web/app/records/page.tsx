@@ -1,6 +1,7 @@
 'use client';
 
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
+import { CandySegment } from '@/components/ui/candy-segment';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Users, User, Swords } from 'lucide-react';
@@ -544,15 +545,17 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
         {/* Solo/VS + Friends (per-mode only — Sweep is solo-only, cross-mode). */}
         {!isSweep && (
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <SegmentedPill
+            {/* The candy toggle (night art 10-03 sprites, proposal 4). */}
+            <CandySegment<'solo' | 'vs'>
               label="Solo or VS"
-              accent={color}
               value={playType}
               onChange={setPlayType}
+              height={36}
+              style={{ width: 150 }}
               options={[
-                ['solo', <><User className="w-3 h-3" />Solo</>],
-                ['vs', <><Swords className="w-3 h-3" />VS</>],
-              ] as const}
+                { key: 'solo', label: <><User className="w-3.5 h-3.5" aria-hidden="true" />Solo</> },
+                { key: 'vs', label: <><Swords className="w-3.5 h-3.5" aria-hidden="true" />VS</> },
+              ]}
             />
             {/* FRIENDS (§207). */}
             {userId && (

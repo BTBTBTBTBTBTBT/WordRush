@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { CandySegment } from '@/components/ui/candy-segment';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
 import {
@@ -21,7 +22,6 @@ import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { PageHeader } from '@/components/ui/page-header';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { SoftNum } from '@/components/ui/soft-number';
-import { TintSegment } from '@/components/stats/tint-segment';
 import { alphaHex, cardBarStyle, softBorder, softCard, softIconTile, softPill } from '@/lib/soft-surface';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
@@ -69,7 +69,7 @@ import type { Database } from '@/lib/database.types';
 import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
 import { PageBackground } from '@/components/ui/page-background';
 import { MedalArt } from '@/components/stats/medal-art';
-import { BadgeArt, LevelBadge } from '@/components/badges/badge-art';
+import { AchievementArt, BadgeArt, LevelBadge } from '@/components/badges/badge-art';
 import { achievementBadge, levelBadge, TIER_ACCENT } from '@/lib/badges';
 import { levelTier } from '@wordle-duel/core';
 import { readPageCache, sameData, writePageCache } from '@/lib/page-cache';
@@ -702,7 +702,7 @@ export default function PublicProfilePage() {
                 <div className="mt-2 flex flex-col items-center gap-1.5">
                   {featuredName && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wide px-3 py-0.5 rounded-full" style={{ ...softPill(accentHex, { bar: false }), color: accentHex }}>
-                      <BadgeArt name={achievementBadge(featuredDef!.icon)} size={18} className="-my-1" /> {featuredName}
+                      <AchievementArt achKey={featuredDef!.key} fallback={achievementBadge(featuredDef!.icon)} size={18} className="-my-1" /> {featuredName}
                     </span>
                   )}
                   {bioText && <p className="text-sm font-bold max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
@@ -809,15 +809,13 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Solo / VS toggle */}
-          <TintSegment<'solo' | 'vs'>
+          <CandySegment<'solo' | 'vs'>
             options={[
-              { key: 'solo', label: 'Solo', icon: <User className="w-3.5 h-3.5" aria-hidden="true" /> },
-              { key: 'vs', label: 'VS', icon: <Swords className="w-3.5 h-3.5" aria-hidden="true" /> },
+              { key: 'solo', label: <><User className="w-3.5 h-3.5" aria-hidden="true" />Solo</> },
+              { key: 'vs', label: <><Swords className="w-3.5 h-3.5" aria-hidden="true" />VS</> },
             ]}
             value={activeTab}
             onChange={setActiveTab}
-            accent="#7c3aed"
-            ink="#6d28d9"
             label="Solo or VS"
           />
 

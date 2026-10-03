@@ -68,7 +68,7 @@ export function avatarFrameFor(level: number | null | undefined, chosen?: unknow
   return tier;
 }
 
-/** The (coming) frame art name. NOT in ART_SIZE: render it only after it loads. */
+/** The tier's frame art (night art 10-03; outer edge = the canvas). Drawn over the avatar once it loads. */
 export function frameArtName(tier: LevelTier): string {
   return `art-frame-${tier}`;
 }

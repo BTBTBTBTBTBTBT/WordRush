@@ -1,6 +1,7 @@
 'use client';
 
 import { CandyButton } from '@/components/ui/candy-button';
+import { badgeSrc } from '@/lib/art';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { HomeClock } from '@/components/home/home-clock';
@@ -89,7 +90,10 @@ export function HomeTodayCard({ word, puzzles, unlimited, wordPlayed, puzzlesPla
         </div>
         <div className="mt-auto flex items-end gap-3">
           <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <span className="text-[10px] font-black uppercase" style={{ letterSpacing: '0.12em', color: SOFT_INK.label }}>
+            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase" style={{ letterSpacing: '0.12em', color: SOFT_INK.label }}>
+              {/* The gold clock sprite (night art 10-03). */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={badgeSrc('icon-clock-sprite')} alt="" aria-hidden="true" width={14} height={14} decoding="async" className="shrink-0 select-none" style={{ width: 14, height: 14 }} />
               {allDone ? 'New puzzles in' : 'Resets in'}
             </span>
             <HomeClock render={(clock) => <SoftNum size={24}>{clock}</SoftNum>} />

@@ -58,6 +58,21 @@ export function decideProWelcome({ welcomed, proNow, signal }: ProWelcomeState):
   return 'show';
 }
 
+/**
+ * A gifted week's server marker (GET /api/pro/gift → the caller's redeemed referral) still
+ * deserves its welcome: redeemed within the gift week (+1 day of slack for a late first open).
+ * This is what catches a gift redeemed where no in-session signal fired (another device, the
+ * /join Accept path before it signaled, the native apps).
+ */
+export const GIFT_WELCOME_DAYS = 8;
+
+export function giftWelcomeDue(redeemedAt: string | null | undefined, nowMs: number = Date.now()): boolean {
+  if (!redeemedAt) return false;
+  const t = Date.parse(redeemedAt);
+  if (!Number.isFinite(t)) return false;
+  return t <= nowMs + 60_000 && nowMs - t < GIFT_WELCOME_DAYS * 86_400_000;
+}
+
 /** The Stripe return: ?purchase=success (and the plan id the server adds). */
 export function purchaseSignalFromSearch(search: string): ProWelcomeSignal | null {
   let params: URLSearchParams;

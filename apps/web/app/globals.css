@@ -1616,6 +1616,31 @@
 @media (prefers-reduced-motion: reduce) {
   .mode-xfade { animation: none; }
   .mode-switch-thumb { transition: none; }
+/* Candy toggles (lib/candy-toggle.ts; night art 10-03 sprites): light / dark sprites + the off-label ink. */
+:root {
+  --candy-track: url(/art/art-toggle-light-track.webp);
+  --candy-thumb: url(/art/art-toggle-light-thumb-on.webp);
+  --candy-switch: url(/art/art-toggle-light-switch.webp);
+  --candy-switch-on: url(/art/art-toggle-light-switch-on.webp);
+  --candy-knob: url(/art/art-toggle-light-knob.webp);
+  --candy-ink-off: #6d28d9;
+}
+[data-theme="dark"] {
+  --candy-track: url(/art/art-toggle-dark-track.webp);
+  --candy-thumb: url(/art/art-toggle-dark-thumb-on.webp);
+  --candy-switch: url(/art/art-toggle-dark-switch.webp);
+  --candy-switch-on: url(/art/art-toggle-dark-switch-on.webp);
+  --candy-knob: url(/art/art-toggle-dark-knob.webp);
+  --candy-ink-off: #c4b5fd;
+}
+.candy-slide { transition: transform 280ms cubic-bezier(0.3, 1.4, 0.5, 1), opacity 160ms ease-out; }
+.candy-fade { transition: opacity 180ms ease-out; }
+/* Referral credit notices (components/referrals/invite-panel.tsx): a dismissed row fades + collapses. */
+.credit-row { transition: opacity 200ms ease-out, max-height 220ms ease-out, padding 220ms ease-out; max-height: 120px; }
+.credit-row[data-leaving="true"] { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; min-height: 0 !important; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .credit-row { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .candy-slide, .candy-fade { transition: none; } }
+[data-reduced-motion="true"] .candy-slide, [data-reduced-motion="true"] .candy-fade { transition: none; }
 }
 
 /* ── FINISH_SPEC V2 / V3 · the badge celebration popup (components/badges/badge-celebration.tsx):
@@ -1773,6 +1798,12 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 
 /* ── FINISH_SPEC AR · LiveHeadline (components/ui/live-headline.tsx): the title-art
    lettering for dynamic headlines. Per glyph: a gold text-stroke copy + stacked
+/* The Gauntlet header's current medallion (components/gauntlet/gauntlet-progress.tsx): one gentle
+   scale-in when a stage starts (transform + opacity only, no loop, no glow). */
+@keyframes gauntlet-medal-in { from { transform: scale(0.55); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+.gauntlet-medal-in { animation: gauntlet-medal-in 340ms cubic-bezier(0.3, 1.45, 0.5, 1) both; }
+@media (prefers-reduced-motion: reduce) { .gauntlet-medal-in { animation: none !important; } }
+[data-reduced-motion="true"] .gauntlet-medal-in { animation: none !important; }
    1 px drop-shadows (the 3D edge) BEHIND the gradient fill (background-clip: text),
    then a white top gloss clipped to the glyph. ── */
 .lh {

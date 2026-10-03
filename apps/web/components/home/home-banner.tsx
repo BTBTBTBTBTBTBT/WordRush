@@ -1,7 +1,8 @@
 'use client';
 
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
-import { ProPill, UNLIMITED_PEACH } from '@/components/game/finished-kit';
+import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
+import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useState } from 'react';
 import { LiveHeadline } from '@/components/ui/live-headline';
 import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
@@ -11,7 +12,7 @@ import { softBorder } from '@/lib/soft-surface';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { ART_SIZE, artSrc, isGameArtIcon, onPageShadow } from '@/lib/art';
+import { ART_SIZE, artSrc, badgeSrc, isGameArtIcon, onPageShadow } from '@/lib/art';
 import {
   bannerClockLine, bannerHeadline, groupStatus, groupTier, unlimitedGroupStatus,
   type BannerTier, type GroupProgress,
@@ -50,6 +51,9 @@ const TIER_ART_H = 100;
 const UNLIMITED_BAR = `linear-gradient(90deg, #fdba74, ${UNLIMITED_PEACH} 55%, #ec4899)`;
 const LOOP_ART = 'art-scene-unlimited-loop' as const;
 
+
+/** The thumb's inset inside the candy track's rim. */
+const SWITCH_PAD = candyPad(BANNER_SLOT.switchRow);
 export interface BannerRow {
   cards: HomeCard[];
   progress: GroupProgress;
@@ -206,10 +210,20 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         style={{
           flex: '1 1 0', minWidth: 0, height: MODE_SWITCH.height, padding: 0, borderRadius: 999, fontSize: 11, letterSpacing: 0.6,
           background: 'transparent',
-          color: on ? (mode === 'daily' ? '#4c1d95' : '#6d28d9') : '#7c3aed',
+          color: on ? CANDY_INK.on : CANDY_INK.off,
+          textShadow: on ? '0 1px 0 rgba(76, 29, 149, 0.45)' : undefined,
+          transition: 'color 160ms ease-out',
         }}
       >
-        <span className="inline-flex items-center gap-1.5">{label}{locked && <span className="inline-flex items-center gap-0.5"><ProPill /></span>}</span>
+        {/* Proposal 1 (night art 10-03): the gold PRO crown rides inside the Unlimited half — no pill.
+            AA4: only for players without Pro (it marks the perk, never Pro's own switch). */}
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {locked && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={badgeSrc('pro-crown-sprite')} alt="" aria-hidden="true" width={15} height={15} decoding="async" draggable={false} className="select-none pointer-events-none" style={{ width: 15, height: 15, marginTop: -2 }} />
+          )}
+        </span>
       </button>
     );
   };
@@ -347,15 +361,17 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             role="group"
             aria-label="Daily or Unlimited"
             className="relative flex"
-            style={{ padding: MODE_SWITCH.pad, borderRadius: 999, background: 'rgba(124,58,237,0.12)', width: '76%', maxWidth: 280, height: BANNER_SLOT.switchRow }}
+            style={{ padding: MODE_SWITCH.pad, width: '76%', maxWidth: 280, height: BANNER_SLOT.switchRow }}
           >
+            {/* The candy toggle sprites (night art 10-03): the glossy track + a sliding glossy thumb, three-sliced. */}
+            <span aria-hidden="true" className="absolute inset-0 pointer-events-none" style={threeSlice('track', BANNER_SLOT.switchRow, '--candy-track')} />
             <span
               aria-hidden="true"
               className="mode-switch-thumb absolute"
               style={{
-                top: MODE_SWITCH.pad, left: MODE_SWITCH.pad, height: MODE_SWITCH.height, width: `calc(50% - ${MODE_SWITCH.pad}px)`,
-                transform: unlimited ? 'translateX(100%)' : 'translateX(0)', borderRadius: 999,
-                background: '#f5eeff', boxShadow: '0 1px 3px rgba(76, 29, 149, 0.18)',
+                top: SWITCH_PAD, left: SWITCH_PAD, height: BANNER_SLOT.switchRow - SWITCH_PAD * 2, width: `calc(50% - ${SWITCH_PAD}px)`,
+                transform: unlimited ? 'translateX(100%)' : 'translateX(0)',
+                ...threeSlice('thumb-on', BANNER_SLOT.switchRow - SWITCH_PAD * 2, '--candy-thumb'),
               }}
             />
             {segment('daily', 'DAILY')}

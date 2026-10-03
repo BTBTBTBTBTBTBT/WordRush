@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { PageHeadline } from '@/components/ui/page-headline';
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
@@ -86,8 +86,8 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
         {/* Header (HEADER_SPEC §4): gradient caps title with C (Help / Guides) beside it, white close circle. */}
         <PageHeader
           className="px-5 pt-3 pb-2 flex-shrink-0"
-          // AS1: never plain text — live lettering until art-title-menu ships.
-          title={<LiveHeadline text="Menu" palette="menu" size={24} align="left" level={2} />}
+          // The MENU lettering art (night art 10-03; was LiveHeadline until it shipped), iOS parity.
+          title={<PageHeadline name="art-title-menu" label="Menu" as="div" level={2} maxHeight={40} style={{ justifyContent: 'flex-start' }} />}
           titleTag="h2"
           titleSize={20}
           host={PAGE_HOSTS.guides}

@@ -139,7 +139,7 @@ export async function redeemReferral(userId: string, code: string): Promise<
         const { broadcastPush } = await import('./push/broadcast');
         void broadcastPush(
           {
-            title: 'Your invite worked 🎉',
+            title: 'Your invite worked!',
             body: `${invitee?.username ?? 'Your friend'} joined Wordocious — you're now friends`,
             url: `/profile/${userId}`,
           },

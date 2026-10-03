@@ -9,6 +9,7 @@ import {
   cachedMascotSvg, clampAvatarSize, effectiveAvatarFrame, withAvatarId,
 } from '@/lib/avatar-render';
 import { darkenHex } from '@/lib/avatar-tile';
+import { frameArtName, isAvatarFrame } from '@/lib/avatar-cast';
 import { PRO_AVATAR, proAvatarDecor } from '@/lib/pro-identity';
 
 /**
@@ -94,6 +95,38 @@ function useAvatarArt(config: AvatarConfig): ReadonlySet<string> {
   return art;
 }
 
+/** Whether the worn tier's art-frame-<tier> has loaded (bronze … diamond; never "none" / "pro"). */
+function useFrameArt(worn: AvatarFrame): string | null {
+  const name = isAvatarFrame(worn) ? frameArtName(worn) : null;
+  const [ok, setOk] = React.useState(() => !!name && artLoaded.has(name));
+  React.useEffect(() => {
+    if (!name) { setOk(false); return; }
+    if (artLoaded.has(name)) { setOk(true); return; }
+    let alive = true;
+    void probeArt(name).then((loaded) => { if (alive) setOk(loaded); });
+    return () => { alive = false; };
+  }, [name]);
+  return ok ? name : null;
+}
+
+/** The tier frame art over the avatar (iOS AvatarFrameRing parity): fills the box, decorative. */
+function FrameArt({ name, size }: { name: string; size: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={artSrc(name)}
+      alt=""
+      aria-hidden="true"
+      width={size}
+      height={size}
+      decoding="async"
+      draggable={false}
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ width: size, height: size, maxWidth: 'none' }}
+    />
+  );
+}
+
 // ── Pieces ──────────────────────────────────────────────────────────────────
 
 /** AA2: the tiny gold crown sprite on the avatar's top-right corner (≈35%), tilted off the corner. */
@@ -174,6 +207,7 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
   const worn = effectiveAvatarFrame(frame ?? config.frame, { pro, level });
   const crowned = avatarCrowned(worn, pro);
   const art = useAvatarArt(config);
+  const frameArt = useFrameArt(worn);
   const rawId = React.useId();
   const id = `m${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const [photoFailed, setPhotoFailed] = React.useState(false);
@@ -181,8 +215,8 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
   const showPhoto = !!photoUrl && !photoFailed;
 
   const markup = React.useMemo(
-    () => (showPhoto ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, crownSrc: badgeSrc('pro-crown-sprite'), artSrc }), id)),
-    [showPhoto, config, initial, s, worn, art, id],
+    () => (showPhoto ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc }), id)),
+    [showPhoto, config, initial, s, worn, art, frameArt, id],
   );
 
   return (
@@ -196,6 +230,7 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
       {showPhoto
         ? <PhotoTile url={photoUrl!} size={s} frame={worn} onError={() => setPhotoFailed(true)} />
         : <span className="absolute inset-0 block" dangerouslySetInnerHTML={{ __html: markup }} />}
+      {frameArt && <FrameArt name={frameArt} size={s} />}
       {crowned && <ProCrown size={s} />}
     </span>
   );

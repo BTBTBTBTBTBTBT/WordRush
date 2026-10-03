@@ -703,6 +703,11 @@ export interface MascotSvgInput {
   frame?: AvatarFrame;
   /** Art names (art-av-*) that have loaded: those parts are drawn from art. */
   art?: ReadonlySet<string>;
+  /**
+   * The worn tier's art-frame-<tier> has loaded and is drawn OVER the svg (night art 10-03, iOS
+   * AvatarFrameRing parity): keep the metal band underneath, skip the code-drawn front shine.
+   */
+  frameArt?: boolean;
   /** /art/art-badge-pro-crown-sprite.webp (the crown hat). */
   crownSrc: string;
   /** artSrc from lib/art (name → public path). */
@@ -836,7 +841,7 @@ export function mascotSvg(input: MascotSvgInput): string {
   }
 
   // Front frame: the inner shine at the stage edge (+ diamond glints).
-  if (layers.has('frameFront') && metal) {
+  if (layers.has('frameFront') && metal && !input.frameArt) {
     out.push(`<rect x="${r2(fw - 0.6)}" y="${r2(fw - 0.6)}" width="${r2(100 - 2 * fw + 1.2)}" height="${r2(100 - 2 * fw + 1.2)}" rx="${r2(Math.max(4, R - fw * 0.6))}" fill="none" stroke="${metal.shine}" stroke-width="1.2" opacity="0.9"/>`);
     out.push(`<rect x="0.7" y="0.7" width="98.6" height="98.6" rx="${R}" fill="none" stroke="${darkenHex(metal.ring, 0.3)}" stroke-width="1.1" opacity="0.55"/>`);
     if (frame === 'diamond') out.push(sparkle(9, 9, 4, '#ffffff') + sparkle(91, 91, 3.4, '#ffffff'));
@@ -857,7 +862,7 @@ const SVG_CACHE_MAX = 400;
 export function cachedMascotSvg(input: MascotSvgInput): string {
   const frame = input.frame ?? input.config.frame;
   const artKey = input.art && input.art.size ? avatarArtNames(input.config).filter((n) => input.art!.has(n)).join(',') : '';
-  const key = `${avatarConfigKey(input.config)}|${input.initial}|${frame}|${isSmallAvatar(input.size) ? 's' : 'l'}|${artKey}`;
+  const key = `${avatarConfigKey(input.config)}|${input.initial}|${frame}|${isSmallAvatar(input.size) ? 's' : 'l'}|${artKey}|${input.frameArt ? 'fa' : ''}`;
   const hit = svgCache.get(key);
   if (hit) return hit;
   const svg = mascotSvg(input);

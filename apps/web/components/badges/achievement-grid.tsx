@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { BadgeArt } from './badge-art';
+import { AchievementArt } from './badge-art';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton } from '@/components/ui/candy-button';
 import { POPUP_DIM, PopupBar, popupCard } from '@/components/ui/soft-popup';
 import { ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import { achievementBadge, achievementTarget, CATEGORY_ACCENT, formatUnlockDate } from '@/lib/badges';
-import { alphaHex, softBackground, softBorder, softPill } from '@/lib/soft-surface';
+import { alphaHex, softBackground, softPill } from '@/lib/soft-surface';
 
 // The achievements grid (docs/FINISH_SPEC.md V1): the 3D badge per
 // achievement, grouped by category. Unlocked = full color with a soft glow,
@@ -134,11 +134,12 @@ function AchievementTile({ def, color, unlockedAt, progress, onOpen }: {
       className="flex flex-col items-center text-center px-1.5 pt-2 pb-2 min-w-0"
       style={isUnlocked
         ? softPill(color, { radius: 14 })
-        : { background: softBackground(color, 0.06), border: softBorder(color, 0.06), borderRadius: 14 }}
+        : { background: softBackground(color, 0.06), borderRadius: 14 }}
     >
       <span className="relative block" style={{ width: 56, height: 56 }} aria-hidden="true">
-        <BadgeArt
-          name={achievementBadge(def.icon)}
+        <AchievementArt
+          achKey={def.key}
+          fallback={achievementBadge(def.icon)}
           size={56}
           style={isUnlocked
             ? { filter: `drop-shadow(0 0 8px ${alphaHex(color, 0.5)}) drop-shadow(0 3px 4px rgba(59, 26, 120, 0.18))` }
@@ -214,8 +215,9 @@ export function AchievementSheet({ def, unlockedAt, progress, onClose }: {
               />
             )}
             <span className="absolute" style={{ inset: 24, borderRadius: '50%', background: `radial-gradient(circle, ${alphaHex(color, isUnlocked ? 0.32 : 0.12)}, transparent 70%)` }} />
-            <BadgeArt
-              name={achievementBadge(def.icon)}
+            <AchievementArt
+              achKey={def.key}
+              fallback={achievementBadge(def.icon)}
               size={136}
               priority
               className="absolute rp-spring"

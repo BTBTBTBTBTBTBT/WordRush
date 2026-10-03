@@ -1,6 +1,7 @@
 'use client';
 
 import { Switch } from '@/components/ui/switch';
+import { CandySwitch } from '@/components/ui/candy-switch';
 import { SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
 import { alphaHex, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 import { KEY_DELETE, KEY_ENTER, KEY_SPACE, keyRows, themePreview } from '@/lib/settings-previews';
@@ -141,8 +142,12 @@ export function KeyRowPreview({ layout }: { layout: string }) {
   );
 }
 
-/** A tinted switch: the accent when on, its soft wash when off. */
-export function SoftSwitch({ checked, onCheckedChange, accent, disabled, label }: {
+/**
+ * The settings switch: the candy on/off switch (night art 10-03 sprites, "Small menus with flair"
+ * proposal 3) — frosted lilac off, glossy purple on, a pearl knob that springs across.
+ * `accent` is kept for callers (the row keeps its accent wash).
+ */
+export function SoftSwitch({ checked, onCheckedChange, disabled, label }: {
   checked: boolean;
   onCheckedChange: (v: boolean) => void;
   accent: string;
@@ -150,19 +155,7 @@ export function SoftSwitch({ checked, onCheckedChange, accent, disabled, label }
   /** Accessible name when the row text isn't its label. */
   label?: string;
 }) {
-  return (
-    <Switch
-      checked={checked}
-      onCheckedChange={onCheckedChange}
-      disabled={disabled}
-      aria-label={label}
-      className="shrink-0"
-      style={{
-        background: checked ? `linear-gradient(${alphaHex(accent, 0.75)}, ${accent})` : alphaHex(accent, 0.2),
-        boxShadow: checked ? `inset 0 -2px 0 rgba(0, 0, 0, 0.12), 0 2px 6px ${alphaHex(accent, 0.3)}` : `inset 0 1px 2px ${alphaHex(accent, 0.25)}`,
-      }}
-    />
-  );
+  return <CandySwitch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} label={label} />;
 }
 
 /** A toggle row: label + hint on a tinted row, the tinted switch at the end. */

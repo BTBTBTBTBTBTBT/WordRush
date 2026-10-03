@@ -18,6 +18,7 @@ import {
   PRO_WELCOME_BENEFITS,
   PRO_WELCOME_EVENT,
   decideProWelcome,
+  giftWelcomeDue,
   letsPlayHref,
   markProWelcomed,
   proWelcomeHeadline,
@@ -57,7 +58,9 @@ function dropCrown(delayMs: number) {
 interface Shown { kind: ProWelcomeKind; shields: boolean }
 
 export function ProWelcomeHost() {
-  const { user, profile, isProActive, refreshProfile } = useAuth();
+  const { user, session, profile, isProActive, refreshProfile } = useAuth();
+  const sessionToken = useRef<string | null>(null);
+  sessionToken.current = session?.access_token ?? null;
   const userId = user?.id ?? null;
   const [shown, setShown] = useState<Shown | null>(null);
   // This session's signal + the shield count when the session first saw the profile.
@@ -102,7 +105,24 @@ export function ProWelcomeHost() {
     }
     if (shieldsAtStart.current === null) shieldsAtStart.current = profile.streak_shields ?? 0;
     const d = decideProWelcome({ welcomed: readProWelcomed(userId), proNow: isProActive, signal: signal.current });
-    if (d === 'mark') { markProWelcomed(userId); signal.current = null; return; }
+    if (d === 'mark') {
+      markProWelcomed(userId);
+      signal.current = null;
+      // Pro with no in-session signal: a gifted week redeemed elsewhere (another device, a
+      // native app) still gets its welcome once — the server marker decides (GET /api/pro/gift).
+      void (async () => {
+        try {
+          const token = sessionToken.current;
+          if (!token) return;
+          const res = await fetch('/api/pro/gift', { headers: { Authorization: `Bearer ${token}` } });
+          const body = await res.json().catch(() => null);
+          if (lastUser.current !== userId || !giftWelcomeDue(body?.gift?.redeemedAt)) return;
+          setShown({ kind: 'gift', shields: false });
+          feedback('celebrate');
+        } catch { /* offline: the welcome is a nicety */ }
+      })();
+      return;
+    }
     if (d !== 'show' || !signal.current) return;
     const s = signal.current;
     markProWelcomed(userId);

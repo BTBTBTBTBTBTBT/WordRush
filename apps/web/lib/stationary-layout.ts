@@ -168,13 +168,17 @@ export function homeBannerContent(mode: PlayMode, input: BannerInput): BannerCon
 
 // ── The Home game cards ────────────────────────────────────────────────────
 
-/** Card measures shared with components/home/mode-card.tsx MODE_CARD. */
-export const CARD_SLOT = { titleLine: 20, titleSlot: 26, descLine: 16, descLines: 2, icon: 52 } as const;
+/**
+ * Card measures shared with components/home/mode-card.tsx MODE_CARD (FINISH_SPEC BH2: the compact
+ * card): a one-line name (21 line box), ONE subtitle line (16), the 42 icon, and the W / L / ✓
+ * badge pinned to the icon's corner (22) so the name gets the column's full width.
+ */
+export const CARD_SLOT = { titleLine: 21, iconBadge: 22, descLine: 16, descLines: 1, icon: 42 } as const;
 
 export interface CardSlots {
-  /** The title line's right-end slot (badge / lock), reserved even when empty. */
-  titleSlotWidth: number;
-  /** The subtitle box: always two lines tall (a one-line result sits on its bottom line). */
+  /** The badge on the icon's bottom-right corner (badge / lock), the same box in both modes. */
+  iconBadge: number;
+  /** The subtitle box: one line, always reserved (a result or the description fills it). */
   descHeight: number;
   /** The text column's height for a one-line title. */
   textHeight: number;
@@ -185,8 +189,8 @@ export function modeCardSlots(mode: PlayMode): CardSlots {
   void mode;
   const descHeight = CARD_SLOT.descLine * CARD_SLOT.descLines;
   return {
-    titleSlotWidth: CARD_SLOT.titleSlot,
+    iconBadge: CARD_SLOT.iconBadge,
     descHeight,
-    textHeight: Math.max(CARD_SLOT.icon, CARD_SLOT.titleLine + descHeight),
+    textHeight: CARD_SLOT.titleLine + descHeight,
   };
 }

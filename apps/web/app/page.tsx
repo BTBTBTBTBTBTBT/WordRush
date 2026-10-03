@@ -361,7 +361,7 @@ export default function HomePage() {
 
   // home-cards: 2 columns on phones; 3–4 on the desktop website (globals.css).
   const grid = (cards: HomeCard[]) => (
-    <div className="home-cards grid grid-cols-2 gap-2">
+    <div className="home-cards grid grid-cols-2 gap-2.5">
       {cards.map((card) => {
         const state = stateFor(card);
         const href = hrefFor(card);
@@ -445,12 +445,12 @@ export default function HomePage() {
             §12, §19.2), one header style, ~78% width, centered. */}
         <div className="home-games page-grid-2 flex flex-col gap-2">
         <div className="flex flex-col gap-2">
-        <HomeSectionTitle name="art-title-dailies" label="Dailies" />
+        <HomeSectionTitle name="art-title-dailies" label="Dailies" compact />
         {grid(wordCards)}
         </div>
 
         <div className="flex flex-col gap-2">
-        <HomeSectionTitle id="puzzles" name="art-title-puzzles" label="Puzzles" />
+        <HomeSectionTitle id="puzzles" name="art-title-puzzles" label="Puzzles" compact />
         {grid(puzzleCards)}
         </div>
         </div>

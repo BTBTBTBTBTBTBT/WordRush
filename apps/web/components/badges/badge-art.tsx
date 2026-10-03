@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import { SoftNum } from '@/components/ui/soft-number';
-import { badgeSrc, type BadgeName } from '@/lib/art';
+import { ART_SIZE, artSrc, badgeSrc, type BadgeName } from '@/lib/art';
 import { levelBadge, levelLabel } from '@/lib/badges';
 
 // The 3D badges (docs/FINISH_SPEC.md V): the badge art itself, the level badge
@@ -20,6 +20,45 @@ export function BadgeArt({ name, size, label, priority = false, className = '', 
   return (
     <Image
       src={badgeSrc(name)}
+      alt={label ?? ''}
+      aria-hidden={label ? undefined : true}
+      role={label ? 'img' : undefined}
+      width={size}
+      height={size}
+      priority={priority}
+      loading={priority ? undefined : 'lazy'}
+      draggable={false}
+      className={`block shrink-0 select-none pointer-events-none ${className}`}
+      style={{ width: size, height: size, objectFit: 'contain', ...style }}
+    />
+  );
+}
+
+/** The achievement's own badge art name (FINISH_SPEC BD / night art 10-03), or null if it hasn't shipped. */
+export function achievementArtName(key: string): string | null {
+  const name = `art-ach-${key}`;
+  return name in (ART_SIZE as Record<string, unknown>) ? name : null;
+}
+
+/**
+ * An achievement's badge: its own `art-ach-<key>` (BD, all 117 shipped 10-03) when it exists,
+ * else the category / icon badge (`fallback`). Same box either way, so no layout change; iOS
+ * BadgeArt.achievementAsset + Android AchievementBadge parity.
+ */
+export function AchievementArt({ achKey, fallback, size, label, priority = false, className = '', style }: {
+  achKey: string;
+  fallback: BadgeName;
+  size: number;
+  label?: string;
+  priority?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const own = achievementArtName(achKey);
+  if (!own) return <BadgeArt name={fallback} size={size} label={label} priority={priority} className={className} style={style} />;
+  return (
+    <Image
+      src={artSrc(own)}
       alt={label ?? ''}
       aria-hidden={label ? undefined : true}
       role={label ? 'img' : undefined}

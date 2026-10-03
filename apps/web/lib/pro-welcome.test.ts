@@ -95,3 +95,18 @@ describe('copy + routing', () => {
     for (const b of PRO_WELCOME_BENEFITS) expect(`${b.title} ${b.line}`).not.toMatch(/—/);
   });
 });
+
+describe('giftWelcomeDue (the gifted week server marker, GET /api/pro/gift)', () => {
+  const now = Date.parse('2026-10-03T12:00:00Z');
+  it('welcomes a gift redeemed during the gift week', async () => {
+    const { giftWelcomeDue } = await import('./pro-welcome');
+    expect(giftWelcomeDue('2026-10-03T11:00:00Z', now)).toBe(true);
+    expect(giftWelcomeDue('2026-09-27T12:00:00Z', now)).toBe(true); // 6 days ago
+  });
+  it('never for an old gift, a missing marker or garbage', async () => {
+    const { giftWelcomeDue } = await import('./pro-welcome');
+    expect(giftWelcomeDue('2026-09-20T12:00:00Z', now)).toBe(false);
+    expect(giftWelcomeDue(null, now)).toBe(false);
+    expect(giftWelcomeDue('not a date', now)).toBe(false);
+  });
+});

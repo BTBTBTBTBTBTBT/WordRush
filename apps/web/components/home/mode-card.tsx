@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { GameArt } from '@/components/ui/game-art';
 import { isGameArtIcon, onPageShadow } from '@/lib/art';
-import { SOFT, accentInk, alphaHex, overAlpha, softBackground } from '@/lib/soft-surface';
+import { SOFT, accentInk, softBackground } from '@/lib/soft-surface';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
 import { modeCardSlots } from '@/lib/stationary-layout';
+import { TRIM, trimPath, trimStops } from '@/lib/card-trim';
 
 // The home-grid mode card, extracted verbatim from app/page.tsx (More Games
 // Stage 5) so the More Games sheet renders the SAME card pixel for pixel. The
@@ -67,59 +68,75 @@ export function modeCardState(args: {
         ? `${formatGuessStat(card.guessSemantics, card.guessBase, dailyResult.guesses)} · ${formatShortTime(dailyResult.timeSeconds)}`
         : 'Played today')
     : isLocked
-    ? `Play again in ${resetCountdownText}`
+    ? `Back in ${resetCountdownText}`
     : card.desc;
   return { isDailyDone, isLocked, badge, subtitle };
 }
 
 /**
- * The §18.2 card's measures (docs/ART_SPEC.md): 10 px band, 52 px icon, name 900 / 16, description 12.5.
- * §21: `titleLine` is the name's line box (16 × leading-tight), the row the badge centers on;
- * `descLine` the subtitle's line height; `padX` / `padY` the inner padding. The Word of the Day
- * and VS Battle cards reuse the surface, band and padding (§21.5).
+ * The card's measures (FINISH_SPEC BH2, the compact card; was §18.2's 10 band / 52 icon / 2-line
+ * subtitle at ~104 tall): 74 tall, the candy trim (9 band + 4 drip), a 42 icon centered on the left,
+ * the name 900 / 17 on one line (shrinks for long names, never wraps), ONE subtitle line 13 / 500
+ * (ellipsis), padding 10, the W / L / ✓ badge (22) on the icon's corner. The VS Battle card reuses
+ * the surface, trim and padding (§21.5).
  */
 export const MODE_CARD = {
-  radius: 18, band: 10, icon: 52, name: 16, nameMin: 11, desc: 12.5,
-  titleLine: 20, descLine: 16, badge: 26, padX: 10, padY: 10,
+  radius: 16, band: TRIM.band, icon: 42, name: 17, nameMin: 11, desc: 13,
+  titleLine: 21, descLine: 16, badge: 22, padX: 10, padY: 10, height: 74,
 } as const;
 
 /**
- * The game card's surface (§18.2 / §21.5; FINISH_SPEC A1 — no plain white):
- * every card takes a soft wash of its game's accent (≈13% over white) with a
- * 1.5 px accent border (≈32%), radius 18 and the page's tinted shadow. A
- * finished daily gets a stronger wash and an accent border so "played" still
- * reads; a locked card a gray wash and border. Shared with the Word of the Day
- * and VS Battle cards so all of Home is one card style. Dark mode keeps the
- * dark surface under the wash (--color-card-base).
+ * The game card's surface (§18.2 / §21.5; FINISH_SPEC A1 — no plain white; BH4 — no strokes):
+ * every card takes a soft wash of its game's accent (≈13% over white), radius 16 and the page's
+ * tinted shadow. A finished daily gets a stronger wash so "played" still reads; a locked card a
+ * gray wash. Shared with the VS Battle card so all of Home is one card style. Dark mode keeps
+ * the dark surface under the wash (--color-card-base).
  */
 export function modeCardSurface(accent: string, { done = false, locked = false }: { done?: boolean; locked?: boolean } = {}): CSSProperties {
   const share = done ? 0.2 : SOFT.tint;
   return {
     background: locked ? softBackground('#9ca3af', SOFT.tint) : softBackground(accent, share),
-    border: `1.5px solid ${locked ? '#d1d5db' : done ? `${accent}66` : alphaHex(accent, overAlpha(SOFT.line, share))}`,
     borderRadius: MODE_CARD.radius,
     // §11: lifts off the page tint with the page's tinted shadow.
     boxShadow: onPageShadow(),
   };
 }
 
-/** The colored top band in the card's accent, rounded with the card (the card clips it). */
+/**
+ * The candy cap trim across the card's top (FINISH_SPEC BH1; replaces the flat band): one SVG
+ * path — a slim glossy band in the game's color with a row of frosting drips along its bottom.
+ * It takes `band` of the card's flow; the drips hang over the padding below it. The card's
+ * rounded clip rounds its top corners. Static: no blur, no shadow, no animation.
+ */
 export function ModeCardBand({ accent, locked = false }: { accent: string; locked?: boolean }) {
+  const gid = `trim${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
-    <div
-      aria-hidden="true"
-      style={{
-        height: MODE_CARD.band,
-        background: locked ? '#d1d5db' : `linear-gradient(90deg, ${accent}, ${accent}cc)`,
-      }}
-    />
+    <div aria-hidden="true" className="relative pointer-events-none" style={{ height: TRIM.band, zIndex: 1 }}>
+      <svg
+        className="absolute inset-x-0 top-0 block"
+        width="100%"
+        height={TRIM.band + TRIM.drip}
+        viewBox={`0 0 ${TRIM.viewW} ${TRIM.band + TRIM.drip}`}
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            {trimStops(accent, locked).map(([o, c]) => <stop key={o} offset={o} stopColor={c} />)}
+          </linearGradient>
+        </defs>
+        <path d={TRIM_PATH} fill={`url(#${gid})`} />
+      </svg>
+    </div>
   );
 }
 
+const TRIM_PATH = trimPath();
+
 /**
- * The slot at the right end of a card's title line (§21.1): the 3D badge (or
+ * The slot at the right end of a title line (§21.1): the 3D badge (or
  * lock) at its own size, vertically centered on the name's line
  * box, without making the line taller (the art overflows the box evenly).
+ * Used by the VS Battle card; the game cards pin their badge to the icon (BH2).
  */
 export function TitleLineSlot({ children, line = MODE_CARD.titleLine }: { children: ReactNode; line?: number }) {
   return (
@@ -131,18 +148,14 @@ export function TitleLineSlot({ children, line = MODE_CARD.titleLine }: { childr
 
 /**
  * `unlimited`: Pro's Unlimited mode (home redesign, 2026-10-01): no badges. FINISH_SPEC Y: no infinity
- * mark; Z: the title-line slot and the two-line subtitle box exist in both modes (empty when a mode has
+ * mark; Z: the badge slot and the one-line subtitle box exist in both modes (empty when a mode has
  * nothing for them), so Daily ⇄ Unlimited never moves or resizes a card (lib/stationary-layout.ts).
  *
- * Layout (ART_SPEC §18.2 + §21): a white card, radius 18, with a thick 10 px
- * band in the game's accent across its rounded top; then a row: the glossy
- * game icon at 52 px (no chip box) and a text column exactly as tall as the
- * icon, pinned to it: the game name in its accent (900, 16; shrinks to fit a
- * long single word) at the icon's top, the description / result line
- * (secondary ink, 12.5, two lines max) sitting on the icon's bottom edge. The
- * 3D W / L / ✓ badge sits at the right end of the title line (the lock takes
- * the same slot). No disclosure chevron (§21.4). A text
- * block taller than the icon grows the card and the icon stays centered on it.
+ * Layout (FINISH_SPEC BH): a compact card 74 tall, radius 16, no stroke, with the candy trim across
+ * its rounded top; under it a row centered in the rest of the card: the glossy game icon at 42
+ * (no chip box) with the 3D W / L / ✓ badge (or the lock) pinned to its bottom-right corner, then
+ * the text column: the game name in its accent (900, 17, one line, shrinking for long names) over
+ * ONE muted subtitle line (13, ellipsis). No disclosure chevron (§21.4).
  */
 export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; state: ModeCardState; unlimited?: boolean }) {
   const { isDailyDone, isLocked, badge, subtitle } = state;
@@ -151,64 +164,51 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
   const glyph = Icon && isGameArtIcon(Icon)
     ? null
     : card.romanNumeral
-    ? <span className="text-[18px] font-black leading-none" style={{ color: card.accentColor }}>{card.romanNumeral}</span>
+    ? <span className="text-[16px] font-black leading-none" style={{ color: card.accentColor }}>{card.romanNumeral}</span>
     : Icon
-    ? <Icon className="w-7 h-7" style={{ color: card.accentColor }} />
+    ? <Icon className="w-6 h-6" style={{ color: card.accentColor }} />
     : null;
-  // One slot at the end of the title line: the W / L / ✓ badge once today's
-  // daily is on the books (§4: 26 px); otherwise the lock; Unlimited leaves it empty.
+  // One slot on the icon's corner: the W / L / ✓ badge once today's daily is on
+  // the books (§4); otherwise the lock; Unlimited leaves it empty.
   const slot = unlimited ? null
     : isDailyDone && badge
     ? <Icon3D name={BADGE_ICON[badge]} size={MODE_CARD.badge} label={BADGE_LABEL[badge]} />
-    : isLocked
-    ? <Icon3D name="lock" size={15} label="Locked" />
+    : isLocked && isDailyDone
+    ? <Icon3D name="lock" size={14} label="Locked" />
     : null;
   const slots = modeCardSlots(unlimited ? 'unlimited' : 'daily');
   return (
     <div
       data-squish="card"
-      className={`relative cursor-pointer overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
-      style={modeCardSurface(card.accentColor, { done: isDailyDone, locked: isLocked })}
+      className={`relative cursor-pointer overflow-hidden flex flex-col ${isLocked ? 'opacity-60' : ''}`}
+      style={{ ...modeCardSurface(card.accentColor, { done: isDailyDone, locked: isLocked }), minHeight: MODE_CARD.height }}
     >
-      {/* Thick top band in the game's accent (§18.2), rounded with the card. */}
+      {/* BH1: the candy cap trim in the game's color, rounded with the card. */}
       <ModeCardBand accent={card.accentColor} locked={isLocked} />
 
-      <div
-        className="flex items-center gap-2"
-        style={{ padding: `${MODE_CARD.padY}px ${MODE_CARD.padX}px`, minHeight: 84 - MODE_CARD.band }}
-      >
+      <div className="flex-1 flex items-center gap-2" style={{ padding: `0 ${MODE_CARD.padX}px` }}>
         {/* Icon — the game's art when daily is done (even if locked); the lock
-            only when locked without a result. */}
-        <div className="shrink-0 flex items-center justify-center" style={{ width: MODE_CARD.icon, height: MODE_CARD.icon }}>
+            only when locked without a result. The badge rides its corner. */}
+        <div className="relative shrink-0 flex items-center justify-center" style={{ width: MODE_CARD.icon, height: MODE_CARD.icon }}>
           {(isLocked && !isDailyDone)
-            ? <Icon3D name="lock" size={30} />
+            ? <Icon3D name="lock" size={26} />
             : <GameArt id={card.id} size={MODE_CARD.icon} fallback={glyph} />}
-        </div>
-        {/* §21.2: the text column spans the icon — title on its top edge, the
-            subtitle's last line on its bottom edge. Title line (20) + two
-            subtitle lines (32) = the icon's 52, so a wrapping description
-            fills it exactly and Daily ⇄ Unlimited never reflows the grid
-            (§255); a one-line result just sits at the bottom. */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between" style={{ minHeight: MODE_CARD.icon }} data-testid="mode-card-text">
-          <div className="flex items-start gap-1">
-            <div className="flex-1 min-w-0">
-              <FitName color={isLocked ? 'var(--color-text-muted)' : null} accent={card.accentColor}>{card.title}</FitName>
-            </div>
-            {/* Z: the slot is always there (empty in Unlimited / before a result) so the name never reflows. */}
-            <span className="shrink-0" style={{ width: slots.titleSlotWidth }}>
-              {slot && <TitleLineSlot>{slot}</TitleLineSlot>}
+          {slot && (
+            <span className="absolute flex items-center justify-center" style={{ right: -6, bottom: -5, width: slots.iconBadge, height: slots.iconBadge }}>
+              {slot}
             </span>
-          </div>
-          {/* Z: a fixed two-line box; a one-line result sits on its bottom line. */}
-          <div className="flex flex-col justify-end" style={{ height: slots.descHeight }}>
-            <div
-              key={unlimited ? 'u' : 'd'}
-              className="font-semibold mode-xfade"
-              style={{ fontSize: MODE_CARD.desc, color: 'var(--color-text-secondary)', lineHeight: `${MODE_CARD.descLine}px`, maxHeight: MODE_CARD.descLine * 2,
-                       overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-            >
-              {subtitle}
-            </div>
+          )}
+        </div>
+        {/* BH2: name over one subtitle line, centered on the icon. */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center" style={{ height: slots.textHeight }} data-testid="mode-card-text">
+          <FitName color={isLocked ? 'var(--color-text-muted)' : null} accent={card.accentColor}>{card.title}</FitName>
+          {/* Z: a fixed one-line box, the same in both modes. */}
+          <div
+            key={unlimited ? 'u' : 'd'}
+            className="font-medium mode-xfade truncate"
+            style={{ fontSize: MODE_CARD.desc, color: 'var(--color-text-muted)', lineHeight: `${MODE_CARD.descLine}px`, height: slots.descHeight }}
+          >
+            {subtitle}
           </div>
         </div>
       </div>
@@ -219,9 +219,8 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /**
- * The game name at 900 / 16 in its color, wrapping at spaces (Letter Ladder),
- * and shrinking (down to 11) only when one word is wider than the column
- * (Crosswordocious on a phone).
+ * The game name at 900 / 17 in its color on ONE line (BH2), shrinking (down to 11)
+ * only when it is wider than the column (Crosswordocious, ProperNoundle on a phone).
  */
 function FitName({ color, accent, children }: { color: string | null; accent: string; children: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -237,14 +236,12 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
       if (width === lastWidth) return;
       lastWidth = width;
       let size: number = MODE_CARD.name;
-      el.style.overflowWrap = 'normal';
       el.style.fontSize = `${size}px`;
       while (size > MODE_CARD.nameMin && el.scrollWidth > width + 0.5) {
         size -= 0.5;
         el.style.fontSize = `${size}px`;
       }
-      // Still too wide at the floor (a very narrow screen): let the word break.
-      if (el.scrollWidth > width + 0.5) el.style.overflowWrap = 'anywhere';
+      // Still too wide at the floor (a very narrow screen): the ellipsis takes over (never wraps).
     };
     fit();
     if (typeof ResizeObserver === 'undefined') return;
@@ -255,8 +252,8 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
   return (
     <div
       ref={ref}
-      className={`font-black leading-tight ${ink?.className ?? ''}`}
-      style={{ fontSize: MODE_CARD.name, ...(ink ? ink.style : { color: color ?? undefined }) }}
+      className={`font-black whitespace-nowrap overflow-hidden text-ellipsis ${ink?.className ?? ''}`}
+      style={{ fontSize: MODE_CARD.name, lineHeight: `${MODE_CARD.titleLine}px`, ...(ink ? ink.style : { color: color ?? undefined }) }}
     >
       {children}
     </div>

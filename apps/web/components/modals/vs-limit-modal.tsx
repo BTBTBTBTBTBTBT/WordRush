@@ -6,7 +6,7 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { cardBarStyle, softCard } from '@/lib/soft-surface';
-import { poseSrc } from '@/lib/art';
+import { badgeSrc, poseSrc } from '@/lib/art';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
@@ -66,9 +66,12 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
             </p>
 
             <div
-              className="inline-flex items-baseline gap-1.5 px-4 py-2 mb-4"
+              className="inline-flex items-center gap-1.5 px-4 py-2 mb-4"
               style={softCard('#7c3aed', { radius: 999, shadow: false })}
             >
+              {/* The gold clock sprite (night art 10-03). */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={badgeSrc('icon-clock-sprite')} alt="" aria-hidden="true" width={18} height={18} decoding="async" className="shrink-0 select-none" style={{ width: 18, height: 18 }} />
               <span className="text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>Resets in</span>
               <SoftNum size={16}>{countdown}</SoftNum>
             </div>

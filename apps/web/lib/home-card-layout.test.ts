@@ -11,17 +11,40 @@ const root = path.join(__dirname, '..');
 const src = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('Home game card (§21)', () => {
-  it('makes the text column exactly the icon tall: title line + two subtitle lines', () => {
-    expect(MODE_CARD.titleLine).toBe(MODE_CARD.name * 1.25); // leading-tight
-    expect(MODE_CARD.titleLine + 2 * MODE_CARD.descLine).toBe(MODE_CARD.icon);
+  it('is the compact card (FINISH_SPEC BH2): 74 tall, 42 icon, 17 name, ONE 13 subtitle line', () => {
+    expect(MODE_CARD.height).toBeGreaterThanOrEqual(72);
+    expect(MODE_CARD.height).toBeLessThanOrEqual(76);
+    expect(MODE_CARD.icon).toBeGreaterThanOrEqual(40);
+    expect(MODE_CARD.icon).toBeLessThanOrEqual(44);
+    expect(MODE_CARD.name).toBe(17);
+    expect(MODE_CARD.desc).toBe(13);
+    // The name line + one subtitle line fit beside the icon, under the trim.
+    expect(MODE_CARD.titleLine + MODE_CARD.descLine).toBeLessThanOrEqual(MODE_CARD.icon);
+    expect(MODE_CARD.band + MODE_CARD.icon + 2 * 8).toBeLessThanOrEqual(MODE_CARD.height);
   });
 
-  it('puts the badge on the title line, not in the corner, and drops the chevron', () => {
+  it('pins the badge to the icon, keeps the name on one line, no stroke and no chevron (BH)', () => {
     const card = src('components/home/mode-card.tsx');
-    expect(card).toContain('<TitleLineSlot>{slot}</TitleLineSlot>');
-    expect(card).toContain('flex flex-col justify-between');
-    expect(card).not.toMatch(/absolute top-1 right-1\.5/);
+    expect(card).toContain('slots.iconBadge');
+    expect(card).toContain('whitespace-nowrap');
+    expect(card).toContain('truncate');
+    expect(card).not.toMatch(/WebkitLineClamp|overflowWrap = 'anywhere'/);
+    expect(card).not.toMatch(/border:\s*`/);
     expect(card).not.toContain('ChevronRight');
+  });
+
+  it('draws the trim as ONE static path (BH1/BH4)', () => {
+    const card = src('components/home/mode-card.tsx');
+    const band = card.slice(card.indexOf('export function ModeCardBand'), card.indexOf('const TRIM_PATH'));
+    expect(band.match(/<path /g)).toHaveLength(1);
+    expect(band).not.toMatch(/filter|blur|animate|transition|boxShadow/);
+  });
+
+  it('shrinks the DAILIES / PUZZLES titles ~25% (BH2)', () => {
+    const page = src('app/page.tsx');
+    expect(page).toContain('label="Dailies" compact');
+    expect(page).toContain('label="Puzzles" compact');
+    expect(page).toContain('home-cards grid grid-cols-2 gap-2.5');
   });
 
   it('frames VS Battle with the game card surface and band (§21.5)', () => {

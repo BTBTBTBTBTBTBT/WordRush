@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { isCredit, readDismissed, showClearAll, visibleCreditRows, writeDismissed } from '@/lib/referral-credits';
 import useSWR from 'swr';
 import { X as XIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -64,6 +65,34 @@ export function InvitePanel() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   /** T1: the gift just sent (its invite-sent screen shows until Done). */
   const [sentCode, setSentCode] = useState<string | null>(null);
+  /** Founder 10-03: credit notices the player X'd (local list + the server flag), and the ones fading out. */
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() => new Set());
+  const [leaving, setLeaving] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    if (!user) return;
+    setDismissed(readDismissed(user.id));
+    if (!session) return;
+    let alive = true;
+    // Other devices' dismissals (referrals.inviter_dismissed_at); [] until that column ships.
+    fetch('/api/referrals/dismiss', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then((r) => r.json())
+      .then((d) => { if (alive && Array.isArray(d?.ids) && d.ids.length) setDismissed(writeDismissed(user.id, d.ids)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [user, session]);
+  const dismissCredits = (ids: string[]) => {
+    if (!user || !ids.length) return;
+    setLeaving((prev) => new Set([...prev, ...ids]));
+    // The row fades + collapses (opacity / height), then leaves the list for good.
+    window.setTimeout(() => setDismissed(writeDismissed(user.id, ids)), 220);
+    if (session) {
+      void fetch('/api/referrals/dismiss', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      }).catch(() => {});
+    }
+  };
 
   const { data: invites, mutate } = useSWR(
     user ? ['referrals-mine', user.id] : null,
@@ -118,9 +147,9 @@ export function InvitePanel() {
   // Settled rows ("X joined! +3 days", "X subscribed!") also retire once the
   // invite's own expiry has passed — a join is news for a week, not a
   // permanent line (founder, 2026-09-26).
-  const visibleInvites = (invites ?? []).filter(
+  const visibleInvites = visibleCreditRows((invites ?? []).filter(
     (i) => i.status !== 'revoked' && new Date(i.expires_at).getTime() > Date.now(),
-  );
+  ), dismissed);
 
   const handleCreate = async () => {
     if (!session) return;
@@ -227,8 +256,22 @@ export function InvitePanel() {
       )}
       {error && <div className="flex justify-center" role="alert"><FeedbackPill key={error} message={error} tone="error" /></div>}
 
+      {showClearAll(visibleInvites) && (
+        <div className="flex justify-end -mb-1">
+          {/* Founder 10-03: a quiet Clear all once there are 2+ credit notices. */}
+          <button
+            type="button"
+            onClick={() => dismissCredits(visibleInvites.filter((i) => isCredit(i.status)).map((i) => i.id))}
+            className="text-[11px] font-extrabold px-2"
+            style={{ color: FR_LOOK.sub, minHeight: 32 }}
+          >
+            Clear all
+          </button>
+        </div>
+      )}
       {visibleInvites.length > 0 && (
-        <div className="overflow-hidden" style={{ borderRadius: 12, border: `1.5px solid ${softMix(FR_LOOK.gold, 0.3)}` }}>
+        // No outline around the list (founder: no bordered boxes); the striped rows read as one block.
+        <div className="overflow-hidden" style={{ borderRadius: 12 }}>
           {visibleInvites.slice(0, 6).map((inv, i) => {
             const label = STATUS_LABEL[inv.status] ?? STATUS_LABEL.pending;
             const open = inv.status === 'pending';
@@ -242,7 +285,8 @@ export function InvitePanel() {
             return (
               <div
                 key={inv.id}
-                className="flex items-center gap-2 px-3 py-2 text-xs font-bold"
+                className="credit-row flex items-center gap-2 px-3 py-2 text-xs font-bold"
+                data-leaving={leaving.has(inv.id) ? 'true' : undefined}
                 style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(FR_LOOK.gold, 0.2)}`, minHeight: 44 }}
               >
                 {open ? (
@@ -278,6 +322,20 @@ export function InvitePanel() {
                   </>
                 )}
                 {inv.status === 'converted' && <Icon3D name="crown" size={14} />}
+                {isCredit(inv.status) && (
+                  // Founder 10-03: X a credit notice away (soft circle, no outline, 44 px tap area).
+                  <button
+                    type="button"
+                    onClick={() => dismissCredits([inv.id])}
+                    aria-label={`Dismiss: ${settledText ?? label.text}`}
+                    className="shrink-0 -my-2 -mr-2 flex items-center justify-center"
+                    style={{ width: 44, height: 44 }}
+                  >
+                    <span className="flex items-center justify-center rounded-full" style={{ width: 24, height: 24, background: softMix(FR_LOOK.gold, 0.22) }}>
+                      <XIcon className="w-3.5 h-3.5" style={{ color: '#92400e' }} aria-hidden="true" />
+                    </span>
+                  </button>
+                )}
               </div>
             );
           })}
