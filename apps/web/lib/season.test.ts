@@ -137,9 +137,10 @@ describe('share wordmark reflow', () => {
 });
 
 describe('Halloween prop slots', () => {
-  it('point at the not-yet-shipped files, which stay out of ART_SIZE', () => {
+  it('point at the shipped files (night art 10-03), which are in ART_SIZE', () => {
     expect(halloweenPropSrc('pumpkin')).toBe('/art/art-halloween-prop-pumpkin.webp');
     expect(HALLOWEEN_BANNER_SRC).toBe('/art/art-scene-banner-halloween.webp');
-    expect(Object.keys(ART_SIZE).some((k) => k.startsWith('art-halloween-prop-'))).toBe(false);
+    for (const p of ['pumpkin', 'bat', 'candy', 'ghost']) expect(Object.keys(ART_SIZE)).toContain(`art-halloween-prop-${p}`);
+    expect(Object.keys(ART_SIZE)).toContain('art-scene-banner-halloween');
   });
 });

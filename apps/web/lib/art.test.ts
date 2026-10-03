@@ -135,14 +135,14 @@ describe('second pass (§6–§9)', () => {
 });
 
 describe('game title art (§10)', () => {
-  it('ships all 18 titles, ≈900 wide and much wider than tall', () => {
+  it('ships all 18 titles, 900–1200 wide (10-03 hi-res re-letters) and much wider than tall', () => {
     expect(GAME_TITLE_ART_IDS).toHaveLength(18);
     for (const id of GAME_TITLE_ART_IDS) {
       const name = gameTitleArt(id) as ArtName;
       expect(name).toBe(`art-game-${id}`);
       const [w, h] = ART_SIZE[name];
       expect(w, name).toBeGreaterThanOrEqual(600);
-      expect(w, name).toBeLessThanOrEqual(1000);
+      expect(w, name).toBeLessThanOrEqual(1200);
       expect(w, name).toBeGreaterThan(h * 2.5);
       expect(fs.existsSync(pub(artSrc(name))), name).toBe(true);
     }

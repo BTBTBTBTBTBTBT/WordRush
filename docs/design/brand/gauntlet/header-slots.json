@@ -1,0 +1,34 @@
+{
+  "size": [
+    1899,
+    659
+  ],
+  "slots": [
+    {
+      "x": 0.1193,
+      "y": 0.7678,
+      "d": 0.1343
+    },
+    {
+      "x": 0.3115,
+      "y": 0.7693,
+      "d": 0.1327
+    },
+    {
+      "x": 0.5016,
+      "y": 0.7693,
+      "d": 0.1327
+    },
+    {
+      "x": 0.6914,
+      "y": 0.7701,
+      "d": 0.1332
+    },
+    {
+      "x": 0.8826,
+      "y": 0.7701,
+      "d": 0.1332
+    }
+  ],
+  "note": "socket centers + inner silver diameter as fractions of the header WIDTH (d) and width/height (x/y); draw art-gauntlet-medal-current / -cleared at ~1.18 x d centered on a socket"
+}

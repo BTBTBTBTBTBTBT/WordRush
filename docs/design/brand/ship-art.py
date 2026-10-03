@@ -27,7 +27,8 @@ os.makedirs(WEB, exist_ok=True)
 
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 PAGES = ['friends', 'stats', 'records', 'vs', 'puzzles', 'wotd', 'settings', 'howto', 'gopro', 'moregames',
-         'welcome', 'leaderboard', 'dailies', 'guides', 'strategy', 'words', 'faq', 'privacy', 'terms', 'vsbattle']
+         'welcome', 'leaderboard', 'dailies', 'guides', 'strategy', 'words', 'faq', 'privacy', 'terms', 'vsbattle',
+         'menu']   # MENU: night art 10-03 (FINISH_SPEC AS1)
 GAMES = ['practice', 'vs', 'quordle', 'octordle', 'sequence', 'rescue', 'six', 'seven', 'gauntlet',
          'propernoundle', 'more', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder',
          'cryptogram', 'wordsearch', 'regions',
@@ -158,4 +159,46 @@ WALLS_WIDE = os.path.join(HERE, 'wallpapers', 'out-wide')
 for f in sorted(os.listdir(WALLS_WIDE)) if os.path.isdir(WALLS_WIDE) else []:
     if f.endswith('.png'):
         ship('art-' + f[:-4], Image.open(os.path.join(WALLS_WIDE, f))); n += 1
+# ── Night art 10-03 (NIGHT-ART-QUEUE.md; full-size ChatGPT downloads) ──
+GAUNTLET_DIR = os.path.join(HERE, 'gauntlet')   # AU6 header + stage medallions
+if os.path.exists(os.path.join(GAUNTLET_DIR, 'header.png')):
+    ship('art-gauntlet-header', wide(os.path.join(GAUNTLET_DIR, 'header.png'), 1200)); n += 1
+    for md in ['locked', 'current', 'cleared']:
+        ship(f'art-gauntlet-medal-{md}', square(os.path.join(GAUNTLET_DIR, f'medal-{md}.png'), 256, 0.02)); n += 1
+AV_DIR = os.path.join(HERE, 'avatar', 'parts')   # avatar maker parts (FINISH_SPEC AN2) — fixed canvases, NOT trimmed
+for f in sorted(os.listdir(AV_DIR)) if os.path.isdir(AV_DIR) else []:
+    if f.startswith('art-av-') and f.endswith('.png'):
+        im = Image.open(os.path.join(AV_DIR, f)).convert('RGBA')
+        big = f.startswith('art-av-body-') or f in ('art-av-acc-cape.png', 'art-av-acc-wings.png')
+        tw = 640 if big else 384
+        if im.width > tw:
+            im = im.resize((tw, round(im.height * tw / im.width)), Image.LANCZOS)
+        ship(f[:-4], im); n += 1
+ACH_DIR = os.path.join(HERE, 'badges', 'ach')   # a badge per achievement (FINISH_SPEC BD/BE): art-ach-<key>
+for f in sorted(os.listdir(ACH_DIR)) if os.path.isdir(ACH_DIR) else []:
+    if f.endswith('.png'):
+        ship('art-ach-' + f[:-4], square(os.path.join(ACH_DIR, f), 256, 0.03)); n += 1
+for sc, w_ in [('achievement', 1200), ('welcome-cast', 1200), ('all-set', 1200), ('banner-halloween', 1200)]:   # BF2, AO
+    if os.path.exists(os.path.join(HERE, 'scenes', f'{sc}.png')):
+        ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), w_)); n += 1
+REACT_DIR = os.path.join(HERE, 'icons', 'react')   # friend reactions (FINISH_SPEC AM1): art-react-<key>
+for k in ['clap', 'fire', 'wow', 'grr', 'rematch', 'heart']:
+    if os.path.exists(os.path.join(REACT_DIR, f'{k}.png')):
+        ship(f'art-react-{k}', square(os.path.join(REACT_DIR, f'{k}.png'), 256, 0.03)); n += 1
+if os.path.exists(os.path.join(HERE, 'badges', 'sprites', 'icon-clock-sprite.png')):   # AL addendum 2 countdown chip
+    ship('art-badge-icon-clock-sprite', square(os.path.join(HERE, 'badges', 'sprites', 'icon-clock-sprite.png'), 256, 0.03)); n += 1
+FRAMES_DIR = os.path.join(HERE, 'icons', 'frames')   # rounded-square avatar frames (AH / AN6): art-frame-<tier>
+for t in ['bronze', 'silver', 'gold', 'platinum', 'diamond']:
+    if os.path.exists(os.path.join(FRAMES_DIR, f'{t}.png')):
+        ship(f'art-frame-{t}', square(os.path.join(FRAMES_DIR, f'{t}.png'), 256, 0.0)); n += 1
+PROPS_DIR = os.path.join(HERE, 'cast', 'halloween', 'props')   # Halloween props (FINISH_SPEC X)
+for pr in ['pumpkin', 'bat', 'candy', 'ghost']:
+    if os.path.exists(os.path.join(PROPS_DIR, f'{pr}.png')):
+        ship(f'art-halloween-prop-{pr}', square(os.path.join(PROPS_DIR, f'{pr}.png'), 256, 0.03)); n += 1
+TOGGLE_DIR = os.path.join(HERE, 'toggles')   # candy segmented-toggle sprites (night queue #10; not wired yet)
+for mode in ['light', 'dark']:
+    for pc in ['track', 'switch', 'thumb-on', 'thumb-off', 'knob', 'switch-on']:
+        f = os.path.join(TOGGLE_DIR, mode, f'{pc}.png')
+        if os.path.exists(f):
+            ship(f'art-toggle-{mode}-{pc}', wide(f, 480)); n += 1
 print('shipped', n)

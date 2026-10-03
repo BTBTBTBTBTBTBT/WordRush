@@ -44,7 +44,9 @@ export type TitleArtName =
   // §12: the Home section header above the daily games (§19.2: reads just DAILIES).
   | 'art-title-dailies'
   // FINISH_SPEC O1: the Home VS BATTLE section title (lettering only).
-  | 'art-title-vsbattle';
+  | 'art-title-vsbattle'
+  // FINISH_SPEC AS1 (night art 10-03): the ? menu sheet's MENU title.
+  | 'art-title-menu';
 
 /**
  * The seamless letter-tile page pattern (§11; v2 §18): 720 px square of big
@@ -121,7 +123,14 @@ export type SceneName =
   | 'gift-pro'
   // First-run onboarding (FINISH_SPEC W)
   | 'onboard-tiles'
-  | 'onboard-score';
+  | 'onboard-score'
+  // Night art 10-03: achievement unlocked (BF2: C + O1 presenting an empty pedestal — the badge goes on top),
+  // first-run WELCOME (all ten waving) + ALL SET (all ten cheering, an empty spot for the player's mascot),
+  // the Halloween Home banner (FINISH_SPEC X).
+  | 'achievement'
+  | 'welcome-cast'
+  | 'all-set'
+  | 'banner-halloween';
 export type SceneArtName = `art-scene-${SceneName}`;
 
 /** Which scene each empty / error / done state draws (§7), beside PAGE_HOSTS. */
@@ -250,7 +259,7 @@ export function medalSrc(medal: Medal): string {
  */
 export const ACHIEVEMENT_BADGES = ['calendar', 'crown', 'flame', 'grid', 'group', 'key-round', 'medal', 'quote', 'shuffle', 'sparkles', 'star', 'swords', 'target', 'trending-up', 'trophy', 'zap'] as const;
 export const LEVEL_BADGES = ['level-bronze', 'level-diamond', 'level-gold', 'level-platinum', 'level-pro', 'level-silver'] as const;
-export type BadgeName = (typeof ACHIEVEMENT_BADGES)[number] | (typeof LEVEL_BADGES)[number] | 'pro-crown-sprite' | 'icon-star-sprite' | 'icon-zap-sprite';
+export type BadgeName = (typeof ACHIEVEMENT_BADGES)[number] | (typeof LEVEL_BADGES)[number] | 'pro-crown-sprite' | 'icon-star-sprite' | 'icon-zap-sprite' | 'icon-clock-sprite';
 export type BadgeArtName = `art-badge-${BadgeName}`;
 
 /** Public path of a badge, e.g. badgeSrc('flame') → /art/art-badge-flame.webp. */
@@ -270,7 +279,22 @@ export function halloweenSrc(id: PoseCastId): string {
   return artSrc(`art-halloween-${id}`);
 }
 
-export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName | PoseArtName | StarsweepArtName | MuddleCoinArtName | GamePieceArtName | MedalArtName | BadgeArtName | HalloweenArtName;
+/**
+ * Night art 2026-10-03 (docs/design/brand/NIGHT-ART-2026-10-03.md): a badge per achievement (art-ach-<key>, 256²),
+ * the avatar maker parts (art-av-*, fixed canvases — see packages/core/src/avatar-parts.json), friend reactions,
+ * rounded-square avatar frames, Halloween props, the Gauntlet header + stage medallions, and the candy toggle sprites.
+ */
+export type NightArtName =
+  | `art-ach-${string}`
+  | `art-av-${string}`
+  | `art-react-${'clap' | 'fire' | 'wow' | 'grr' | 'rematch' | 'heart'}`
+  | `art-frame-${'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond'}`
+  | `art-halloween-prop-${'pumpkin' | 'bat' | 'candy' | 'ghost'}`
+  | 'art-gauntlet-header'
+  | `art-gauntlet-medal-${'locked' | 'current' | 'cleared'}`
+  | `art-toggle-${'light' | 'dark'}-${'track' | 'switch' | 'thumb-on' | 'thumb-off' | 'knob' | 'switch-on'}`;
+
+export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName | PoseArtName | StarsweepArtName | MuddleCoinArtName | GamePieceArtName | MedalArtName | BadgeArtName | HalloweenArtName | NightArtName;
 
 /** Real pixel sizes of public/art/<name>.webp (width, height). */
 export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
@@ -432,6 +456,218 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-piece-ttt-o': [256, 256],
   // Finishing build: the 62 cast poses, all 320 px square.
   ...(Object.fromEntries(POSE_ART_NAMES.map((n) => [n, [POSE_SIZE, POSE_SIZE] as const])) as Record<PoseArtName, readonly [number, number]>),
+  // night art 2026-10-03
+  'art-ach-all_modes': [256, 256],
+  'art-ach-best_buds': [256, 256],
+  'art-ach-blitz': [256, 256],
+  'art-ach-boss_battle': [256, 256],
+  'art-ach-called_it': [256, 256],
+  'art-ach-centurion': [256, 256],
+  'art-ach-century_club': [256, 256],
+  'art-ach-chain_reaction': [256, 256],
+  'art-ach-cheerleader': [256, 256],
+  'art-ach-classic_master': [256, 256],
+  'art-ach-close_call': [256, 256],
+  'art-ach-code_cracker': [256, 256],
+  'art-ach-crossword_first': [256, 256],
+  'art-ach-crossword_regular': [256, 256],
+  'art-ach-cryptogram_first': [256, 256],
+  'art-ach-daily_debut': [256, 256],
+  'art-ach-daily_devotee': [256, 256],
+  'art-ach-daily_duelist': [256, 256],
+  'art-ach-daily_regular': [256, 256],
+  'art-ach-daily_sweep': [256, 256],
+  'art-ach-dedicated': [256, 256],
+  'art-ach-diamond_hands': [256, 256],
+  'art-ach-dominant': [256, 256],
+  'art-ach-dress_up': [256, 256],
+  'art-ach-eagle_eye': [256, 256],
+  'art-ach-early_bird': [256, 256],
+  'art-ach-elite': [256, 256],
+  'art-ach-endurance': [256, 256],
+  'art-ach-extended_vocab': [256, 256],
+  'art-ach-first_win': [256, 256],
+  'art-ach-flawless_10': [256, 256],
+  'art-ach-flawless_25': [256, 256],
+  'art-ach-flawless_5': [256, 256],
+  'art-ach-flawless_speed': [256, 256],
+  'art-ach-flawless_streak': [256, 256],
+  'art-ach-flawless_streak_5': [256, 256],
+  'art-ach-flawless_victory': [256, 256],
+  'art-ach-gauntlet_god': [256, 256],
+  'art-ach-gauntlet_master': [256, 256],
+  'art-ach-gold_rush': [256, 256],
+  'art-ach-golden_touch': [256, 256],
+  'art-ach-grand_sweep': [256, 256],
+  'art-ach-groups_first': [256, 256],
+  'art-ach-halfway_hero': [256, 256],
+  'art-ach-hat_trick': [256, 256],
+  'art-ach-hive_mind': [256, 256],
+  'art-ach-hub_first': [256, 256],
+  'art-ach-iron_will': [256, 256],
+  'art-ach-kindred_regular': [256, 256],
+  'art-ach-kindred_spirit': [256, 256],
+  'art-ach-ladder_climber': [256, 256],
+  'art-ach-lightning_round': [256, 256],
+  'art-ach-linguist': [256, 256],
+  'art-ach-lucky_seven': [256, 256],
+  'art-ach-marathon_runner': [256, 256],
+  'art-ach-medal_10': [256, 256],
+  'art-ach-medal_50': [256, 256],
+  'art-ach-medal_wall': [256, 256],
+  'art-ach-meet_the_cast': [256, 256],
+  'art-ach-muddle_master': [256, 256],
+  'art-ach-night_owl': [256, 256],
+  'art-ach-no_sweat': [256, 256],
+  'art-ach-obsessed': [256, 256],
+  'art-ach-octo_boss': [256, 256],
+  'art-ach-pangram_hunter': [256, 256],
+  'art-ach-perfect_constellation': [256, 256],
+  'art-ach-perfectionist': [256, 256],
+  'art-ach-pocket_pro': [256, 256],
+  'art-ach-proper_scholar': [256, 256],
+  'art-ach-punchline_pro': [256, 256],
+  'art-ach-puzzle_sweep': [256, 256],
+  'art-ach-puzzle_week': [256, 256],
+  'art-ach-quad_king': [256, 256],
+  'art-ach-quick_draw': [256, 256],
+  'art-ach-race_day': [256, 256],
+  'art-ach-regions_first': [256, 256],
+  'art-ach-rescue_hero': [256, 256],
+  'art-ach-ride_or_die': [256, 256],
+  'art-ach-rising_star': [256, 256],
+  'art-ach-rival': [256, 256],
+  'art-ach-rock_solid': [256, 256],
+  'art-ach-self_portrait': [256, 256],
+  'art-ach-sequence_ace': [256, 256],
+  'art-ach-sharp_spotter': [256, 256],
+  'art-ach-sharpshooter': [256, 256],
+  'art-ach-six_shooter': [256, 256],
+  'art-ach-speed_demon': [256, 256],
+  'art-ach-speed_sweep': [256, 256],
+  'art-ach-spooky_season': [256, 256],
+  'art-ach-spooky_speller': [256, 256],
+  'art-ach-squad_goals': [256, 256],
+  'art-ach-starstruck': [256, 256],
+  'art-ach-streak_14': [256, 256],
+  'art-ach-streak_30': [256, 256],
+  'art-ach-streak_7': [256, 256],
+  'art-ach-streak_master': [256, 256],
+  'art-ach-sudoku_first': [256, 256],
+  'art-ach-sudoku_scholar': [256, 256],
+  'art-ach-sweep_streak_60': [256, 256],
+  'art-ach-sweep_streak_7': [256, 256],
+  'art-ach-team_player': [256, 256],
+  'art-ach-the_natural': [256, 256],
+  'art-ach-thousand_words': [256, 256],
+  'art-ach-three_in_a_row': [256, 256],
+  'art-ach-triple_threat': [256, 256],
+  'art-ach-unbreakable': [256, 256],
+  'art-ach-under_par': [256, 256],
+  'art-ach-unstoppable': [256, 256],
+  'art-ach-untouchable': [256, 256],
+  'art-ach-versatile_victor': [256, 256],
+  'art-ach-vs_centurion': [256, 256],
+  'art-ach-vs_marathoner': [256, 256],
+  'art-ach-vs_veteran': [256, 256],
+  'art-ach-wake_up_call': [256, 256],
+  'art-ach-wordsearch_first': [256, 256],
+  'art-ach-wordsmith': [256, 256],
+  'art-ach-year_one': [256, 256],
+  'art-av-acc-beanie': [384, 384],
+  'art-av-acc-bow': [384, 384],
+  'art-av-acc-bowtie': [384, 384],
+  'art-av-acc-bunnyears': [384, 384],
+  'art-av-acc-cape': [640, 640],
+  'art-av-acc-catears': [384, 384],
+  'art-av-acc-chain': [384, 384],
+  'art-av-acc-chef': [384, 384],
+  'art-av-acc-cowboy': [384, 384],
+  'art-av-acc-crown': [384, 384],
+  'art-av-acc-flower': [384, 384],
+  'art-av-acc-grad': [384, 384],
+  'art-av-acc-halo': [384, 384],
+  'art-av-acc-headphones': [384, 384],
+  'art-av-acc-heart-glasses': [384, 384],
+  'art-av-acc-monocle': [384, 384],
+  'art-av-acc-mustache': [384, 384],
+  'art-av-acc-nightcap': [384, 384],
+  'art-av-acc-party': [384, 384],
+  'art-av-acc-pirate': [384, 384],
+  'art-av-acc-propeller': [384, 384],
+  'art-av-acc-scarf': [384, 384],
+  'art-av-acc-sprout': [384, 384],
+  'art-av-acc-sweatband': [384, 384],
+  'art-av-acc-tiara': [384, 384],
+  'art-av-acc-tophat': [384, 384],
+  'art-av-acc-viking': [384, 384],
+  'art-av-acc-wings': [640, 640],
+  'art-av-acc-wizard': [384, 384],
+  'art-av-body-bean': [640, 640],
+  'art-av-body-blob': [640, 640],
+  'art-av-body-classic': [640, 640],
+  'art-av-body-star': [640, 640],
+  'art-av-body-tall': [640, 640],
+  'art-av-body-wide': [640, 640],
+  'art-av-eyes-beady': [384, 192],
+  'art-av-eyes-cyclops': [384, 192],
+  'art-av-eyes-glasses': [384, 192],
+  'art-av-eyes-happy': [384, 192],
+  'art-av-eyes-hearts': [384, 192],
+  'art-av-eyes-sleepy': [384, 192],
+  'art-av-eyes-sparkly': [384, 192],
+  'art-av-eyes-stars': [384, 192],
+  'art-av-eyes-wink': [384, 192],
+  'art-av-mouth-cat': [384, 384],
+  'art-av-mouth-gasp': [384, 384],
+  'art-av-mouth-grin': [384, 384],
+  'art-av-mouth-o': [384, 384],
+  'art-av-mouth-smile': [384, 384],
+  'art-av-mouth-smirk': [384, 384],
+  'art-av-mouth-tiny': [384, 384],
+  'art-av-mouth-tongue': [384, 384],
+  'art-av-mouth-toothy': [384, 384],
+  'art-av-nose-blush': [384, 192],
+  'art-av-nose-button': [384, 192],
+  'art-av-nose-freckles': [384, 192],
+  'art-av-nose-red': [384, 192],
+  'art-badge-icon-clock-sprite': [256, 256],
+  'art-frame-bronze': [256, 256],
+  'art-frame-diamond': [256, 256],
+  'art-frame-gold': [256, 256],
+  'art-frame-platinum': [256, 256],
+  'art-frame-silver': [256, 256],
+  'art-gauntlet-header': [1200, 416],
+  'art-gauntlet-medal-cleared': [256, 256],
+  'art-gauntlet-medal-current': [256, 256],
+  'art-gauntlet-medal-locked': [256, 256],
+  'art-halloween-prop-bat': [256, 256],
+  'art-halloween-prop-candy': [256, 256],
+  'art-halloween-prop-ghost': [256, 256],
+  'art-halloween-prop-pumpkin': [256, 256],
+  'art-react-clap': [256, 256],
+  'art-react-fire': [256, 256],
+  'art-react-grr': [256, 256],
+  'art-react-heart': [256, 256],
+  'art-react-rematch': [256, 256],
+  'art-react-wow': [256, 256],
+  'art-scene-achievement': [1200, 519],
+  'art-scene-all-set': [1200, 381],
+  'art-scene-banner-halloween': [905, 570],
+  'art-scene-welcome-cast': [1200, 402],
+  'art-title-menu': [1080, 300],
+  'art-toggle-dark-knob': [243, 245],
+  'art-toggle-dark-switch': [340, 200],
+  'art-toggle-dark-switch-on': [438, 202],
+  'art-toggle-dark-thumb-off': [428, 216],
+  'art-toggle-dark-thumb-on': [382, 201],
+  'art-toggle-dark-track': [480, 166],
+  'art-toggle-light-knob': [244, 246],
+  'art-toggle-light-switch': [341, 199],
+  'art-toggle-light-switch-on': [437, 202],
+  'art-toggle-light-thumb-off': [421, 217],
+  'art-toggle-light-thumb-on': [375, 196],
+  'art-toggle-light-track': [480, 167],
 };
 
 const GAME_TITLE_ART_SET: ReadonlySet<string> = new Set(GAME_TITLE_ART_IDS);
@@ -474,6 +710,7 @@ export const TITLE_ART_LABEL: Record<TitleArtName, string> = {
   'art-title-leaderboard': 'Leaderboard',
   'art-title-dailies': 'Dailies',
   'art-title-vsbattle': 'VS Battle',
+  'art-title-menu': 'Menu',
 };
 
 /** The Leaderboard day titles' words (core leaderboardTitle's weekday names), Sunday first. */

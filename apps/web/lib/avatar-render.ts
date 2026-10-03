@@ -129,15 +129,28 @@ export interface AvatarGeometry {
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Where every part goes for `config`, from the body's anchors (pure; tested). */
-export function avatarGeometry(config: Pick<AvatarConfig, 'body' | 'neck'>, { small = false }: { small?: boolean } = {}, manifest: PartsManifest = AVATAR_PARTS): AvatarGeometry {
+/**
+ * The body art's square in the 100-unit tile (night art 10-03: the real manifest's anchors are fractions of
+ * this square on every platform) — the same box iOS / Android draw the body art into: 86% of the inner tile
+ * (76% with a hat, set lower for the headroom), centered.
+ */
+export function bodyArtSquare(config: Pick<AvatarConfig, 'head'>, frameWidth = 0): Box {
+  const inner = 100 - frameWidth * 2;
+  const hat = config.head !== 'none';
+  const u = inner * (hat ? 0.76 : 0.86);
+  return { x: frameWidth + (inner - u) / 2, y: frameWidth + inner * (hat ? 0.21 : 0.09), w: u, h: u };
+}
+
+export function avatarGeometry(config: Pick<AvatarConfig, 'body' | 'neck'> & Partial<Pick<AvatarConfig, 'head'>>, { small = false, artFrame = null }: { small?: boolean; artFrame?: Box | null } = {}, manifest: PartsManifest = AVATAR_PARTS): AvatarGeometry {
   const body = (AVATAR_BODIES as readonly string[]).includes(config.body) ? config.body : 'classic';
-  const box = BODY_BOX[body];
+  // With the body art in, the anchors are fractions of the art square (see bodyArtSquare).
+  const box = artFrame ?? BODY_BOX[body];
   const a = bodyAnchors(body, manifest);
   const fx = box.x + a.faceCenter[0] * box.w;
   const y = (v: number) => box.y + v * box.h;
   const [lx, ly, lw, lh] = a.letterBox;
   // A bow tie / scarf / chain sits at the top of the letter box: the letter steps down under it.
-  const tieShift = !small && FRONT_NECKS.includes(config.neck) ? 0.07 : 0;
+  const tieShift = !artFrame && !small && FRONT_NECKS.includes(config.neck) ? 0.07 : 0;
   const letterBox: Box = { x: box.x + lx * box.w, y: y(ly + tieShift), w: lw * box.w, h: (lh - tieShift) * box.h };
   // Nunito 900 caps ≈ 0.72 em tall and up to ≈ 0.9 em wide (W): fit both, a touch inside the box.
   const fontSize = Math.min(letterBox.h / 0.74, letterBox.w / 0.9) * 0.94;
@@ -701,17 +714,17 @@ export function mascotSvg(input: MascotSvgInput): string {
   const { config, size, art, crownSrc, artSrc } = input;
   const frame = input.frame ?? config.frame;
   const layers = new Set(avatarLayers(config, size, frame));
-  const g = avatarGeometry(config, { small: isSmallAvatar(size) });
-  const pal = avatarPalette(config);
-  const b = g.box;
   const has = (name: string) => !!art && art.has(name);
   const bodyArt = has(avatarArtName('body', config.body));
+  const fw = frame === 'none' ? 0 : FRAME_WIDTH;
+  // The body art fills its square (arms + feet included) and every anchor is a fraction of that square.
+  const artBox = bodyArt ? bodyArtSquare(config, fw) : null;
+  const g = avatarGeometry(config, { small: isSmallAvatar(size), artFrame: artBox });
+  const pal = avatarPalette(config);
+  const b = g.box;
   const path = bodyPath(config.body);
   const R = 100 * AVATAR_RADIUS;
-  const fw = frame === 'none' ? 0 : FRAME_WIDTH;
   const metal = frame === 'none' ? null : AVATAR_FRAME_COLOR[frame];
-  // The art body's box: the body plus room for its arms and feet.
-  const artBox = { x: b.x - b.w * 0.14, y: b.y - b.h * 0.04, w: b.w * 1.28, h: b.h * 1.14 };
 
   const defs: string[] = [
     `<clipPath id="${ID}-clip"><path d="${path}"/></clipPath>`,
@@ -735,7 +748,7 @@ export function mascotSvg(input: MascotSvgInput): string {
     // Tint the white body art by multiply (keeps its gloss + shading) and use its alpha as the pattern mask.
     defs.push(`<filter id="${ID}-tint" color-interpolation-filters="sRGB"><feFlood flood-color="${pal.base}" result="c"/><feComposite in="c" in2="SourceAlpha" operator="in" result="ca"/><feBlend in="ca" in2="SourceGraphic" mode="multiply"/></filter>`);
     defs.push(`<filter id="${ID}-alpha" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter>`);
-    defs.push(`<mask id="${ID}-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><image href="${esc(artSrc(avatarArtName('body', config.body)))}" x="${r2(artBox.x)}" y="${r2(artBox.y)}" width="${r2(artBox.w)}" height="${r2(artBox.h)}" preserveAspectRatio="xMidYMax meet" filter="url(#${ID}-alpha)"/></mask>`);
+    defs.push(`<mask id="${ID}-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><image href="${esc(artSrc(avatarArtName('body', config.body)))}" x="${r2(artBox!.x)}" y="${r2(artBox!.y)}" width="${r2(artBox!.w)}" height="${r2(artBox!.h)}" preserveAspectRatio="none" filter="url(#${ID}-alpha)"/></mask>`);
   }
 
   const out: string[] = [];
@@ -746,17 +759,19 @@ export function mascotSvg(input: MascotSvgInput): string {
   if (layers.has('frameBack')) out.push(`<rect x="0" y="0" width="100" height="100" rx="${R}" fill="url(#${ID}-fr)"/>`);
   out.push(backdrop.body);
   // Ground shadow.
-  out.push(`<ellipse cx="${r2(b.x + b.w / 2)}" cy="${r2(b.y + b.h + 4.2)}" rx="${r2(b.w * 0.42)}" ry="2.6" fill="${hexAlpha('#2a1745', 0.16)}"/>`);
+  out.push(`<ellipse cx="${r2(b.x + b.w / 2)}" cy="${r2(artBox ? b.y + b.h * 0.965 : b.y + b.h + 4.2)}" rx="${r2(b.w * (artBox ? 0.32 : 0.42))}" ry="2.6" fill="${hexAlpha('#2a1745', 0.16)}"/>`);
 
   // Cape (behind).
   if (layers.has('neckBack')) {
     const backArt = avatarArtName('acc', config.neck);
-    out.push(has(backArt) ? img(backArt, g.neck.x - g.neck.w * 0.9, g.neck.y - g.neck.w * 0.6, g.neck.w * 1.8, g.neck.w * 1.8) : drawNeckBack(config.neck, g));
+    // Back art (cape, wings) is drawn on the full body square, under the body (same on iOS / Android).
+    const backBox = artBox ?? bodyArtSquare(config, fw);
+    out.push(has(backArt) ? img(backArt, backBox.x, backBox.y, backBox.w, backBox.h) : drawNeckBack(config.neck, g));
   }
 
   // Body.
   if (bodyArt) {
-    out.push(`<image href="${esc(artSrc(avatarArtName('body', config.body)))}" x="${r2(artBox.x)}" y="${r2(artBox.y)}" width="${r2(artBox.w)}" height="${r2(artBox.h)}" preserveAspectRatio="xMidYMax meet" filter="url(#${ID}-tint)"/>`);
+    out.push(`<image href="${esc(artSrc(avatarArtName('body', config.body)))}" x="${r2(artBox!.x)}" y="${r2(artBox!.y)}" width="${r2(artBox!.w)}" height="${r2(artBox!.h)}" preserveAspectRatio="none" filter="url(#${ID}-tint)"/>`);
   } else {
     // Stubby arms + feet (behind), the darker lip, then the body in its shaded tint.
     if (config.body !== 'star') {
@@ -808,7 +823,7 @@ export function mascotSvg(input: MascotSvgInput): string {
   // Bow tie / flower, face accessory, hat.
   if (layers.has('neckFront')) {
     const n = avatarArtName('acc', config.neck);
-    out.push(has(n) ? img(n, g.neck.x - g.neck.w / 2, g.letter.box.y - g.neck.w / 2, g.neck.w, g.neck.w) : drawNeckFront(config.neck, g, pal));
+    out.push(has(n) ? img(n, g.neck.x - g.neck.w / 2, (artBox ? g.neck.y : g.letter.box.y) - g.neck.w / 2, g.neck.w, g.neck.w) : drawNeckFront(config.neck, g, pal));
   }
   if (layers.has('face')) {
     const n = avatarArtName('acc', config.face);
@@ -816,7 +831,8 @@ export function mascotSvg(input: MascotSvgInput): string {
   }
   if (layers.has('head')) {
     const n = avatarArtName('acc', config.head);
-    out.push(has(n) ? img(n, g.head.x - g.head.w / 2, g.head.y - g.head.w, g.head.w, g.head.w) : drawHead(config.head, g, crownSrc, pal));
+    // Hat art (square canvas, bottom-aligned): its bottom 18% overlaps the top of the head (same on iOS / Android).
+    out.push(has(n) ? img(n, g.head.x - g.head.w / 2, g.head.y - g.head.w * 0.82, g.head.w, g.head.w) : drawHead(config.head, g, crownSrc, pal));
   }
 
   // Front frame: the inner shine at the stage edge (+ diamond glints).

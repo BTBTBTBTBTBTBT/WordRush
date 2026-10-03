@@ -1,21 +1,219 @@
 {
-  "version": 0,
-  "placeholder": true,
-  "note": "PLACEHOLDER anchors (FINISH_SPEC AN2). The coordinator replaces this file with the real per-shape anchors after the art-av-* files land. Coordinates are 0-1 body coordinates.",
+  "version": 1,
+  "placeholder": false,
+  "frame": "square",
+  "note": "Real anchors (night art 2026-10-03, docs/design/brand/avatar/compose-avatar.py). Every coordinate is a 0-1 fraction of the body art SQUARE (u x u), the same box the body art fills on every platform. Part widths = scale x u (head: headTop.w x scale x u). Hats: the canvas bottom sits 18% of its height below headTop.y. Back accessories (cape, wings) fill the body square under the body.",
   "bodies": {
-    "classic": { "faceCenter": [0.5, 0.42], "eyeY": 0.36, "mouthY": 0.52, "cheekY": 0.47, "headTop": { "x": 0.5, "y": 0.06, "w": 0.62 }, "neckY": 0.7, "letterBox": [0.28, 0.56, 0.44, 0.3] },
-    "tall": { "faceCenter": [0.5, 0.36], "eyeY": 0.3, "mouthY": 0.45, "cheekY": 0.4, "headTop": { "x": 0.5, "y": 0.04, "w": 0.48 }, "neckY": 0.62, "letterBox": [0.3, 0.52, 0.4, 0.32] },
-    "wide": { "faceCenter": [0.5, 0.45], "eyeY": 0.39, "mouthY": 0.55, "cheekY": 0.5, "headTop": { "x": 0.5, "y": 0.12, "w": 0.72 }, "neckY": 0.72, "letterBox": [0.27, 0.58, 0.46, 0.26] },
-    "blob": { "faceCenter": [0.5, 0.44], "eyeY": 0.38, "mouthY": 0.54, "cheekY": 0.49, "headTop": { "x": 0.5, "y": 0.08, "w": 0.6 }, "neckY": 0.72, "letterBox": [0.29, 0.57, 0.42, 0.28] },
-    "bean": { "faceCenter": [0.5, 0.4], "eyeY": 0.34, "mouthY": 0.5, "cheekY": 0.45, "headTop": { "x": 0.52, "y": 0.06, "w": 0.52 }, "neckY": 0.66, "letterBox": [0.3, 0.55, 0.4, 0.3] },
-    "star": { "faceCenter": [0.5, 0.46], "eyeY": 0.41, "mouthY": 0.56, "cheekY": 0.51, "headTop": { "x": 0.5, "y": 0.02, "w": 0.4 }, "neckY": 0.74, "letterBox": [0.31, 0.58, 0.38, 0.26] }
+    "classic": {
+      "faceCenter": [
+        0.4995,
+        0.4621
+      ],
+      "eyeY": 0.3898,
+      "mouthY": 0.5343,
+      "cheekY": 0.491,
+      "headTop": {
+        "x": 0.5039,
+        "y": 0.1514,
+        "w": 0.6257
+      },
+      "neckY": 0.574,
+      "letterBox": [
+        0.2895,
+        0.5849,
+        0.42,
+        0.2457
+      ]
+    },
+    "tall": {
+      "faceCenter": [
+        0.4976,
+        0.3124
+      ],
+      "eyeY": 0.246,
+      "mouthY": 0.3787,
+      "cheekY": 0.3373,
+      "headTop": {
+        "x": 0.5015,
+        "y": 0.0303,
+        "w": 0.3166
+      },
+      "neckY": 0.4327,
+      "letterBox": [
+        0.3871,
+        0.4451,
+        0.2209,
+        0.3319
+      ]
+    },
+    "wide": {
+      "faceCenter": [
+        0.5,
+        0.5927
+      ],
+      "eyeY": 0.5329,
+      "mouthY": 0.6525,
+      "cheekY": 0.6145,
+      "headTop": {
+        "x": 0.5068,
+        "y": 0.3535,
+        "w": 0.6484
+      },
+      "neckY": 0.6824,
+      "letterBox": [
+        0.29,
+        0.6906,
+        0.42,
+        0.174
+      ]
+    },
+    "blob": {
+      "faceCenter": [
+        0.499,
+        0.4595
+      ],
+      "eyeY": 0.3847,
+      "mouthY": 0.5342,
+      "cheekY": 0.4894,
+      "headTop": {
+        "x": 0.5034,
+        "y": 0.123,
+        "w": 0.4989
+      },
+      "neckY": 0.5753,
+      "letterBox": [
+        0.325,
+        0.5865,
+        0.348,
+        0.2392
+      ]
+    },
+    "bean": {
+      "faceCenter": [
+        0.5522,
+        0.3497
+      ],
+      "eyeY": 0.2792,
+      "mouthY": 0.4202,
+      "cheekY": 0.3787,
+      "headTop": {
+        "x": 0.6016,
+        "y": 0.0303,
+        "w": 0.3846
+      },
+      "neckY": 0.4742,
+      "letterBox": [
+        0.4181,
+        0.4866,
+        0.2684,
+        0.2987
+      ]
+    },
+    "star": {
+      "faceCenter": [
+        0.5,
+        0.4381
+      ],
+      "eyeY": 0.3719,
+      "mouthY": 0.5043,
+      "cheekY": 0.4573,
+      "headTop": {
+        "x": 0.5015,
+        "y": 0.0303,
+        "w": 0.36
+      },
+      "neckY": 0.5384,
+      "letterBox": [
+        0.3649,
+        0.5512,
+        0.2701,
+        0.205
+      ]
+    }
   },
   "parts": {
-    "eyes": { "slot": "eyeY", "scale": 0.46 },
-    "mouth": { "slot": "mouthY", "scale": 0.26 },
-    "nose": { "slot": "cheekY", "scale": 0.5 },
-    "head": { "slot": "headTop", "scale": 1.0 },
-    "face": { "slot": "eyeY", "scale": 0.56 },
-    "neck": { "slot": "neckY", "scale": 0.6 }
-  }
+    "eyes": {
+      "slot": "eyeY",
+      "scale": 0.37
+    },
+    "mouth": {
+      "slot": "mouthY",
+      "scale": 0.19
+    },
+    "nose": {
+      "slot": "cheekY",
+      "scale": 0.46
+    },
+    "head": {
+      "slot": "headTop",
+      "scale": 1.0
+    },
+    "face": {
+      "slot": "eyeY",
+      "scale": 0.4
+    },
+    "neck": {
+      "slot": "neckY",
+      "scale": 0.32
+    }
+  },
+  "art": [
+    "art-av-acc-beanie",
+    "art-av-acc-bow",
+    "art-av-acc-bowtie",
+    "art-av-acc-bunnyears",
+    "art-av-acc-cape",
+    "art-av-acc-catears",
+    "art-av-acc-chain",
+    "art-av-acc-chef",
+    "art-av-acc-cowboy",
+    "art-av-acc-crown",
+    "art-av-acc-flower",
+    "art-av-acc-grad",
+    "art-av-acc-halo",
+    "art-av-acc-headphones",
+    "art-av-acc-heart-glasses",
+    "art-av-acc-monocle",
+    "art-av-acc-mustache",
+    "art-av-acc-nightcap",
+    "art-av-acc-party",
+    "art-av-acc-pirate",
+    "art-av-acc-propeller",
+    "art-av-acc-scarf",
+    "art-av-acc-sprout",
+    "art-av-acc-sweatband",
+    "art-av-acc-tiara",
+    "art-av-acc-tophat",
+    "art-av-acc-viking",
+    "art-av-acc-wings",
+    "art-av-acc-wizard",
+    "art-av-body-bean",
+    "art-av-body-blob",
+    "art-av-body-classic",
+    "art-av-body-star",
+    "art-av-body-tall",
+    "art-av-body-wide",
+    "art-av-eyes-beady",
+    "art-av-eyes-cyclops",
+    "art-av-eyes-glasses",
+    "art-av-eyes-happy",
+    "art-av-eyes-hearts",
+    "art-av-eyes-sleepy",
+    "art-av-eyes-sparkly",
+    "art-av-eyes-stars",
+    "art-av-eyes-wink",
+    "art-av-mouth-cat",
+    "art-av-mouth-gasp",
+    "art-av-mouth-grin",
+    "art-av-mouth-o",
+    "art-av-mouth-smile",
+    "art-av-mouth-smirk",
+    "art-av-mouth-tiny",
+    "art-av-mouth-tongue",
+    "art-av-mouth-toothy",
+    "art-av-nose-blush",
+    "art-av-nose-button",
+    "art-av-nose-freckles",
+    "art-av-nose-red"
+  ]
 }

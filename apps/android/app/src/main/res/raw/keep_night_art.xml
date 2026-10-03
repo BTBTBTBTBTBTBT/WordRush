@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Night art 2026-10-03: avatar parts, achievement badges, frames and onboarding / unlock scenes
+     are looked up by name (getIdentifier: MascotComposer, BadgeKit, Onboarding, AvatarCast); keep them
+     through resource shrinking. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_av_*,@drawable/art_ach_*,@drawable/art_frame_*,@drawable/art_scene_achievement,@drawable/art_scene_welcome_cast,@drawable/art_scene_all_set,@drawable/art_gauntlet_*" />

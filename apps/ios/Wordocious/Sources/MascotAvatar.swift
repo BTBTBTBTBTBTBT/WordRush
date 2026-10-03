@@ -240,7 +240,8 @@ enum MascotPainter {
 
         // Cape-type accessories (behind the body): cape, wings.
         if !small && MascotParts.behind.contains(c.neck) {
-            if let art = MascotParts.art("acc", c.neck) { drawArt(ctx, art, cx: a.faceX * u, cy: a.neckY * u, w: partW("neck", u) * 1.6) }
+            // Back art (cape, wings) fills the body square under the body (same on web / Android).
+            if let art = MascotParts.art("acc", c.neck) { ctx.draw(Image(art), in: rect) }
             else if c.neck == "wings" { wings(ctx, u: u, a: a) }
             else { cape(ctx, u: u, a: a) }
         }
@@ -314,7 +315,12 @@ enum MascotPainter {
         // Head accessory (kept at every size).
         if c.head != "none" {
             let w = a.headTop.w * u * MascotParts.manifest.part("head").scale
-            if let art = MascotParts.art("acc", c.head) { drawArt(ctx, art, cx: a.headTop.x * u, cy: a.headTop.y * u, w: w) }
+            if let art = MascotParts.art("acc", c.head) {
+                // Hat art: its bottom 18% overlaps the top of the head (same on web / Android).
+                let img = ctx.resolve(Image(art))
+                let h = img.size.width > 0 ? w * img.size.height / img.size.width : w
+                ctx.draw(img, in: CGRect(x: a.headTop.x * u - w / 2, y: a.headTop.y * u - h * 0.82, width: w, height: h))
+            }
             else { head(ctx, c.head, x: a.headTop.x * u, y: a.headTop.y * u, w: w) }
         }
     }
